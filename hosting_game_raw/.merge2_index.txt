@@ -1,0 +1,125 @@
+# WAVE-2 MERGE INDEX
+# All paths relative to /home/sites/sugarcraft/hosting_game_raw/ unless noted.
+# BASE = /home/sites/sugarcraft/hosting_game.md  (current wave-1 merged doc, 11236 lines)
+#
+# BASE preamble (orchestrator handles): 1-484  (title, TOC, "# 0. Foundations")
+# BASE category slices:
+#   cat1 485-2104 | cat2 2105-4109 | cat3 4110-5229 | cat4 5230-6762 | cat5 6763-7523
+#   cat6 7524-8500 | cat7 8501-9462 | cat8 9463-10514 | cat9 10515-11236
+#
+# ---- CAT 1 : Levels, scenarios, and progression ----
+BASE            1: 485-2104
+ceo_fresh       1: 14-297
+ceo_informed    A1: 51-436     B1: 1694-1907
+gd_fresh        1: 62-376
+gd_informed     A1: 40-290     B1: 1639-1855
+gen_fresh       1: 15-197
+gen_informed    A1: 49-795     B1: 2483-2641
+sys_fresh       1: 21-362
+sys_informed    A1: 24-501     B1: 1881-2065
+vis_fresh       1: 34-279
+vis_informed    A1: 25-217     B1: 1695-1998
+#
+# ---- CAT 2 : Threats ----
+BASE            2: 2105-4109
+ceo_fresh       2: 298-509
+ceo_informed    A2: 437-648    B2: 1908-2037
+gd_fresh        2: 377-573
+gd_informed     A2: 291-486    B2: 1856-2057
+gen_fresh       2: 198-424
+gen_informed    A2: 796-1127   B2: 2642-2782
+sys_fresh       2: 363-658
+sys_informed    A2: 502-907    B2: 2066-2287
+vis_fresh       2: 280-514
+vis_informed    A2: 218-426    B2: 1999-2190
+#
+# ---- CAT 3 : Visitors, traffic, and clients ----
+BASE            3: 4110-5229
+ceo_fresh       3: 510-723
+ceo_informed    A3: 649-780    B3: 2038-2155
+gd_fresh        3: 574-716
+gd_informed     A3: 487-655    B3: 2058-2187
+gen_fresh       3: 425-580
+gen_informed    A3: 1128-1316  B3: 2783-2987
+sys_fresh       3: 659-847
+sys_informed    A3: 908-1041   B3: 2288-2394
+vis_fresh       3: 515-671
+vis_informed    A3: 427-593    B3: 2191-2358
+#
+# ---- CAT 4 : Buildables: services and infrastructure ----
+BASE            4: 5230-6762
+ceo_fresh       4: 724-932
+ceo_informed    A4: 781-1059   B4: 2156-2298
+gd_fresh        4: 717-888
+gd_informed     A4: 656-847    B4: 2188-2407
+gen_fresh       4: 581-769
+gen_informed    A4: 1317-1662  B4: 2988-3137
+sys_fresh       4: 848-1119
+sys_informed    A4: 1042-1283  B4: 2395-2564
+vis_fresh       4: 672-932
+vis_informed    A4: 594-780    B4: 2359-2557
+#
+# ---- CAT 5 : Unlocks and discovery ----
+BASE            5: 6763-7523
+ceo_fresh       5: 933-1077
+ceo_informed    A5: 1060-1150  B5: 2299-2370
+gd_fresh        5: 889-991
+gd_informed     A5: 848-980    B5: 2408-2519
+gen_fresh       5: 770-877
+gen_informed    A5: 1663-1772  B5: 3138-3224
+sys_fresh       5: 1120-1279
+sys_informed    A5: 1284-1405  B5: 2565-2635
+vis_fresh       5: 933-1002
+vis_informed    A5: 781-906    B5: 2558-2644
+#
+# ---- CAT 6 : Economy, money, and scoring ----
+BASE            6: 7524-8500
+ceo_fresh       6: 1078-1254
+ceo_informed    A6: 1151-1383  B6: 2371-2570
+gd_fresh        6: 992-1108
+gd_informed     A6: 981-1178   B6: 2520-2653
+gen_fresh       6: 878-1006
+gen_informed    A6: 1773-1952  B6: 3225-3397
+sys_fresh       6: 1280-1454
+sys_informed    A6: 1406-1541  B6: 2636-2716
+vis_fresh       6: 1003-1145
+vis_informed    A6: 907-1061   B6: 2645-2758
+#
+# ---- CAT 7 : Core gameplay mechanics ----
+BASE            7: 8501-9462
+ceo_fresh       7: 1255-1412
+ceo_informed    A7: 1384-1475  B7: 2571-2640
+gd_fresh        7: 1109-1230   PLUS section-0 "four load-bearing mechanics": 16-61
+gd_informed     A7: 1179-1403  B7: 2654-2854
+gen_fresh       7: 1007-1158
+gen_informed    A7: 1953-2204  B7: 3398-3532
+sys_fresh       7: 1455-1649
+sys_informed    A7: 1542-1689  B7: 2717-2815
+vis_fresh       7: 1146-1340
+vis_informed    A7: 1062-1255  B7: 2759-2892
+#
+# ---- CAT 8 : Visuals and presentation ----
+BASE            8: 9463-10514
+ceo_fresh       8: 1413-1595
+ceo_informed    A8: 1476-1596  B8: 2641-2679
+gd_fresh        8: 1231-1334
+gd_informed     A8: 1404-1517  B8: 2855-2980
+gen_fresh       8: 1159-1339
+gen_informed    A8: 2205-2342  B8: 3533-3664
+sys_fresh       8: 1650-1916
+sys_informed    A8: 1690-1785  B8: 2816-2888
+vis_fresh       8: 1341-1635   PLUS "three visual laws": 11-33   PLUS style-guide appendix: 1718-1732
+vis_informed    A8: 1256-1579  B8: 2893-3218
+#
+# ---- CAT 9 : Anything else ----
+BASE            9: 10515-11236
+ceo_fresh       9: 1596-1697
+ceo_informed    A9: 1597-1693  B9: 2680-2738
+gd_fresh        9: 1335-1439
+gd_informed     A9: 1518-1638  B9: 2981-3177  (includes closing note)
+gen_fresh       9: 1340-1466
+gen_informed    A9: 2343-2482  B9: 3665-3755
+sys_fresh       9: 1917-2083
+sys_informed    A9: 1786-1880  B9: 2889-2974  (includes summary)
+vis_fresh       9: 1636-1717
+vis_informed    A9: 1580-1694  B9: 3219-3353
