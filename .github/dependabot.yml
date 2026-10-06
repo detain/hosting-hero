@@ -8,15 +8,58 @@
 # --frozen-lockfile CI. Root-scoped updates fix manifest and lock in one PR.
 # Ref: dependabot-core#10758 (closed fixed by #10806, Dec 2024) and the
 # ecosystem table in "Dependabot ecosystems" docs — pnpm maps to `npm`.
+#
+# Grouping law (added 2026-10-06 after PR #2): a catch-all group with no
+# update-types filter lets one doomed major hold the whole weekly batch
+# hostage — PR #2 bundled TS7 + vitest5 + vite8 + @types/node26, and TS7
+# crashes vue-tsc (`ERR_PACKAGE_PATH_NOT_EXPORTED` on typescript/lib/tsc),
+# so even the harmless bumps died with it. Minor+patch ride one always-
+# mergeable grouped PR; every major stands on its own PR for individual CI.
 version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-    # One grouped PR per run (mirrors the security-side "npm_and_yarn" group
-    # name), covering every workspace manifest plus the root lockfile.
+    open-pull-requests-limit: 5
     groups:
       npm_and_yarn:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Declined 2026-10-06 (PR #2 review) — lift only by owner decision.
+      # TS 7 is the Go-native port; it no longer exports the JS compiler
+      # path vue-tsc 3.3.12 requires. 6.0.3 verified green against the full
+      # CI mirror on 2026-10-06 (typecheck incl. vue-tsc, 943+244+38 tests,
+      # api-verify 1078, ci-verify 4/4) — 6.x major PRs are welcome.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0-0"]
+      # vitest 5 shifts test semantics (clearMocks default, module-runner
+      # details) that the byte-identity canary/parity arms are sensitive
+      # to; harness migration is the owning lanes' deliberate call.
+      - dependency-name: "vitest"
+        versions: [">=5.0.0-0"]
+      # vite 8 swaps the build core to rolldown. proto tests + build
+      # passed the local mirror on 2026-10-06, but dev-server and
+      # worker-chunk behavior is not CI-covered; adoption belongs to
+      # apps/proto, not a bot.
+      - dependency-name: "vite"
+        versions: [">=8.0.0-0"]
+      # NOTE: @types/node is intentionally NOT pinned — 26.6.4 verified
+      # green (headless typecheck + 38 tests) on 2026-10-06.
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
