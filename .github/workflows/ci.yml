@@ -31,7 +31,7 @@ jobs:
           cache: pnpm
 
       - name: Install
-        run: pnpm install --frozen-lockfile=false
+        run: pnpm install --frozen-lockfile
 
       - name: sim-core determinism (kernel + pipeline + replay)
         run: pnpm -F @hh/sim-core exec vitest run src/kernel src/pipeline src/replay
@@ -57,7 +57,7 @@ jobs:
           cache: pnpm
 
       - name: Install
-        run: pnpm install --frozen-lockfile=false
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck
         run: pnpm -r typecheck
