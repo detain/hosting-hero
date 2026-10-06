@@ -1,0 +1,735 @@
+/**
+ * The tick driver (MASTER_REPORT §4.1 / hosting_game.md §7.13): advances one
+ * GameState through the canonical TICK_STEP_ORDER, threading step outputs
+ * into step inputs, applying the in-band state updates the frozen step shapes
+ * cannot express (hop progress, latency stamps, terminal purges), and owning
+ * the two pieces of cross-tick memory the contract has no GameState field
+ * for: the pending re-entry schedule (retries/referrals/returns awaiting
+ * their backoff) and retry-lineage depth.
+ *
+ * Determinism notes:
+ *  - every RNG stream is OPENED PER KEY via the kernel (`streamFor(seed,
+ *    domain, minute)`), so step-internal consumption order can never perturb
+ *    another step or tick (§4.1 R-16 stream isolation);
+ *  - the driver never reads a wall clock — `advanceClocks` takes an INJECTED
+ *    fixed delta; default = 1 real second at 1× ⇒ exactly one sim minute ⇒
+ *    one tick (kernel/time DEFAULT_TICK_US);
+ *  - cross-tick memory (pending re-entries, id-mint counter, retry depths)
+ *    is a pure function of (initial state, input sequence) — replays match;
+ *    export/import hooks let the replay wave checkpoint it (§3.3) until
+ *    types.ts grows a GameState slot for it (friction reported);
+ *  - UNIT_HOLD (defaults module) is cleared before every tick so no hold
+ *    smuggles across ticks through the side-table.
+ */
+
+import type {
+  BackpressureIn,
+  BoardState,
+  ClockState,
+  ConfidenceContribution,
+  Contract,
+  DependencyEdge,
+  EntityId,
+  ExternalIntent,
+  Fixed,
+  GameState,
+  HandState,
+  InspectionDepth,
+  LaneStats,
+  NodeRecord,
+  NodeSlotRecord,
+  ObservedCell,
+  ObservedKey,
+  Outcome,
+  OutcomeCandidate,
+  OutcomeIn,
+  PolicyCard,
+  PlayerIntent,
+  PipelineSlots,
+  QosClassDef,
+  QueueWaitIn,
+  ReplayContentHashes,
+  RetryPolicy,
+  RngStream,
+  RuleFiring,
+  RuleId,
+  RoutingLock,
+  RunSeed,
+  SimEvent,
+  SimTick,
+  SimTimeUs,
+  Unit,
+  UnitDraft,
+  WaveEnvelope,
+} from "../types.ts";
+import { asEntityId, emptyMoneyBuckets } from "../types.ts";
+import { FIXED_UNIT, FIXED_ZERO } from "../kernel/fixed.ts";
+import {
+  DEFAULT_TICK_US,
+  MICROS_PER_SEC,
+  advanceClocks,
+  simMinuteOf,
+  tickOf,
+  type ClockAdvance,
+  type SpeedFactor,
+} from "../kernel/time.ts";
+import { streamFor } from "../kernel/rng.ts";
+import { TICK_US, sortedIds, withUnit } from "./internal.ts";
+import { UNIT_HOLD } from "./defaults.ts";
+import { DEFAULT_KNEE_RHO, utilization } from "./queue.ts";
+import { applyIntentDoor, mintHandState, type IntentDoorConfig, type IntentReceipt } from "./intent-door.ts";
+
+/* ═══════════════════════════ Per-tick ambient inputs ═══════════════════════════ */
+
+/** Everything the steps need that GameState does not carry (envelopes,
+ *  evidence, board edges, tuning knobs). The host wave assembles these per
+ *  tick from director/board/policy modules — replay-log fodder. */
+export interface TickInputs {
+  readonly envelopes: readonly WaveEnvelope[];
+  readonly evidence: readonly ConfidenceContribution[];
+  readonly classes: readonly QosClassDef[];
+  readonly dependencyEdges: readonly DependencyEdge[];
+  readonly retryPolicy: RetryPolicy;
+  /** Inspection ROC slider 0..1 (R-52). */
+  readonly aggression: Fixed;
+  /** ρ split point for the express/deep routing decision (R-05). */
+  readonly expressMaxConfidence: Fixed;
+  /** Knee threshold — default 0.7 when omitted (R-07; OD-2 sheet owns it). */
+  readonly kneeRho?: Fixed;
+  readonly routingLocks?: readonly RoutingLock[];
+  readonly valueByUnit?: ReadonlyMap<EntityId, Fixed>;
+  /** Contention multiplier feeding storm pressure (R-61). */
+  readonly stormFactor?: Fixed;
+  readonly suppressedRuleIds?: readonly RuleId[];
+  readonly lanes?: ReadonlyMap<EntityId, LaneStats>;
+  /** THE INTENT DOOR (closes proto friction #1): external player/rule intents
+   *  fed to THIS tick, applied before step 1 in (tick, seq) order — every
+   *  entry executed (mutating its named slice + an `intent-executed` event)
+   *  or refused (deterministic `intent-refused` event, nothing consumed).
+   *  Ambient-input contract: feed each intent EXACTLY ONCE, the driver keeps
+   *  no intent schedule (pause-with-orders: stamp at the paused tick, feed
+   *  the whole queue on the first unfrozen advance — §7.13).
+   *  Accepts replay/bundle.ts `StampedIntent` values structurally (the
+   *  optional `extras` sidecar is ignored by the door, preserved by the
+   *  bundle writer). */
+  readonly externalIntents?: readonly ExternalIntent[];
+}
+
+/* ═══════════════════════════ Driver surface ═══════════════════════════ */
+
+export interface TickResult {
+  readonly state: GameState;
+  /** Events from all steps, concatenated in canonical step order — door
+   *  events LEAD (the door runs before step 1), then arrival…, outcome…,
+   *  backpressure…, economics…. */
+  readonly events: readonly SimEvent[];
+  readonly outcomes: readonly Outcome[];
+  readonly ruleFirings: readonly RuleFiring[];
+  readonly intents: readonly PlayerIntent[];
+  /** Per-intent door verdicts in canonical (tick, seq) application order —
+   *  host ticker/HUD sugar over the replay-grade event record. */
+  readonly doorReceipts: readonly IntentReceipt[];
+  /** 0..1 retry-storm pressure this tick (metastability read-out). */
+  readonly pressure: Fixed;
+  /** Re-entries scheduled but not yet matured (storm headroom). */
+  readonly pendingReentries: number;
+}
+
+/** Checkpointable cross-tick driver memory (replay-wave hand-off). */
+export interface PendingReentry {
+  readonly draft: UnitDraft;
+  readonly readyAtTick: SimTick;
+  readonly retryDepth: number;
+  readonly lineageRoot: EntityId;
+}
+
+export interface TickDriverOptions {
+  /** Fixed per-advance delta; default = 1 real s @ 1× ⇒ exactly 1 tick. */
+  readonly tickAdvance?: ClockAdvance;
+  /** Macro-tick length for tick numbering (default one sim minute). */
+  readonly tickUs?: SimTimeUs;
+  /** Intent-door wiring (hand costs/occupancy, placement validator, policy
+   *  card lookup). Omitted = defaults; door still runs for any fed schedule. */
+  readonly intents?: IntentDoorConfig;
+}
+
+export interface TickDriver {
+  /** Advance `state` one canonical tick. Pure w.r.t. GameState; the driver's
+   *  internal schedule mutates exactly like the run it belongs to. */
+  advance(state: GameState, inputs: TickInputs): TickResult;
+  /** Export/import the re-entry schedule for save/replay checkpoints (§3.3). */
+  exportPending(): readonly PendingReentry[];
+  importPending(pending: readonly PendingReentry[], mintCounter: number): void;
+  currentMintCounter(): number;
+}
+
+/** Mint the initial GameState. Map INSERTION order is part of the
+ *  deterministic identity (§3.4), so callers pass nodes/lanes/contracts in
+ *  sorted order. */
+export function createInitialState(options: {
+  readonly runSeed: RunSeed;
+  readonly engineVersion: string;
+  readonly contentHashes: ReplayContentHashes;
+  readonly clocks: ClockState;
+  readonly nodes?: readonly NodeRecord[];
+  readonly lanes?: readonly LaneStats[];
+  readonly contracts?: readonly Contract[];
+  readonly ruleBook?: readonly PolicyCard[];
+  readonly ruleBookHash?: string;
+  /** INTENT-DOOR embeds (optional — pre-door hosts digest unchanged). Pass a
+   *  `hands`/`board` slice directly, or just `handCapacity` to mint a full
+   *  idle rail (§7.5: T0–1 → 1 hand, T2 → 2 …). */
+  readonly hands?: HandState;
+  readonly handCapacity?: number;
+  readonly board?: BoardState;
+}): GameState {
+  const nodes = new Map<EntityId, NodeRecord>();
+  for (const node of options.nodes ?? []) nodes.set(node.id, node);
+  const lanes = new Map<EntityId, LaneStats>();
+  for (const lane of options.lanes ?? []) lanes.set(lane.laneId, lane);
+  const contracts = new Map<EntityId, Contract>();
+  for (const contract of options.contracts ?? []) contracts.set(contract.id, contract);
+  const hands =
+    options.hands ??
+    (options.handCapacity !== undefined ? mintHandState(options.handCapacity) : undefined);
+  return Object.freeze({
+    runSeed: options.runSeed,
+    engineVersion: options.engineVersion,
+    contentHashes: options.contentHashes,
+    context: Object.freeze({
+      tick: tickOf(options.clocks, DEFAULT_TICK_US),
+      minute: simMinuteOf(options.clocks),
+      clocks: options.clocks,
+    }),
+    units: Object.freeze(new Map<EntityId, Unit>()),
+    nodes: Object.freeze(nodes),
+    lanes: Object.freeze(lanes),
+    observed: Object.freeze(new Map<ObservedKey, ObservedCell<unknown>>()),
+    cash: emptyMoneyBuckets(),
+    ledgerSeq: 0,
+    contracts: Object.freeze(contracts),
+    ruleBook: Object.freeze([...(options.ruleBook ?? [])]),
+    ruleBookHash: options.ruleBookHash ?? "",
+    ...(hands !== undefined ? { hands } : {}),
+    ...(options.board !== undefined ? { board: options.board } : {}),
+  });
+}
+
+/**
+ * `createTickDriver(steps, rng, clocks[, options])` — the §7.13 engine entry.
+ * `rng` is the ROOT entropy handle: its key's runSeed must match
+ * `state.runSeed` or the driver fails fast; per-step streams are opened BY
+ * KEY, never by forking the root, so tick N's draws can never depend on tick
+ * N−1's consumption order. `clocks` documents the run's clock origin (the
+ * driver derives each tick's clocks from `state.context.clocks` — one clock
+ * chain: the GameState's); pass the SAME clocks used for createInitialState.
+ */
+export function createTickDriver(
+  steps: PipelineSlots,
+  rng: RngStream,
+  clocks: ClockState,
+  options: TickDriverOptions = {},
+): TickDriver {
+  const tickAdvance: ClockAdvance = options.tickAdvance ?? {
+    realElapsedUs: MICROS_PER_SEC,
+    speed: 1 as SpeedFactor,
+    incident: false,
+  };
+  const tickUs = options.tickUs ?? DEFAULT_TICK_US;
+  if (tickUs !== DEFAULT_TICK_US) {
+    throw new Error(
+      `createTickDriver: custom tickUs ${tickUs}µs is not supported by the default step set (queue aging assumes one sim minute per tick)`,
+    );
+  }
+  const rootSeed: RunSeed = rng.key.runSeed;
+  const originClocks: ClockState = clocks; // validated identity anchor for the run
+  const doorConfig: IntentDoorConfig = options.intents ?? {};
+
+  let pending: PendingReentry[] = [];
+  let mintCounter = 0;
+  const retryDepthById = new Map<EntityId, number>();
+  let intentSeq = 0;
+
+  function advance(state: GameState, inputs: TickInputs): TickResult {
+    if (state.runSeed !== rootSeed) {
+      throw new Error(
+        `tick driver: state.runSeed ${state.runSeed} does not match root rng seed ${rootSeed}`,
+      );
+    }
+    if (state.context.clocks.realUs < originClocks.realUs) {
+      throw new Error("tick driver: state clocks run backwards vs the run origin");
+    }
+    UNIT_HOLD.clear(); // no hold may leak across ticks
+
+    const clocksNow = advanceClocks(state.context.clocks, tickAdvance);
+    const context = Object.freeze({
+      tick: tickOf(clocksNow, tickUs),
+      minute: simMinuteOf(clocksNow),
+      clocks: clocksNow,
+    });
+    const simNow = clocksNow.simUs;
+    const open = (domain: string) => streamFor(state.runSeed, domain, context.minute);
+
+    /* ── THE INTENT DOOR (§7.13 canonical position: BEFORE step 1) ───────
+       External intents execute in (tick, seq) order against the pre-arrival
+       state: placed devices are routable THIS tick, board edges/hands/
+       ruleBook mutate their named slices only, refusals are event-logged.
+       No RNG stream is opened here — the door is pure insert. */
+    const door = applyIntentDoor(state, context, inputs.externalIntents ?? [], doorConfig);
+    const worked: GameState = door.state;
+
+    /* ── cross-tick memory: mature pending re-entries ─────────────────── */
+    const matured: Unit[] = [];
+    const stillPending: PendingReentry[] = [];
+    for (const entry of pending) {
+      if (entry.readyAtTick > context.tick) {
+        stillPending.push(entry);
+        continue;
+      }
+      const unitId = asEntityId(`re${mintCounter}@${context.tick}`);
+      mintCounter += 1;
+      retryDepthById.set(unitId, entry.retryDepth);
+      matured.push(mintUnitFromDraft(entry.draft, unitId, context.tick));
+    }
+    pending = stillPending;
+
+    /* ── step 1 · arrival (re-entries arrive THROUGH the same roster as
+       fresh spawns — R-12: storms re-enter as new arrivals) ────────────── */
+    const arrivalOut = steps.arrival({ context, envelopes: inputs.envelopes, rng: open("arrival") });
+
+    // Tick roster: in-flight (GameState insertion order) → fresh arrivals →
+    // matured re-entries (schedule order). All orders deterministic.
+    let units: readonly Unit[] = [...worked.units.values(), ...arrivalOut.units, ...matured];
+    const unitsById = new Map<EntityId, Unit>();
+    for (const unit of units) unitsById.set(unit.id, unit);
+
+    /* ── steps 2–4 · scoring → qos → route ────────────────────────────── */
+    units = steps.scoring({ context, units, evidence: inputs.evidence }).units;
+    units = steps.qosClassify({ context, units, classes: inputs.classes }).units;
+    units = steps
+      .route({
+        context,
+        units,
+        nodes: worked.nodes,
+        routingLocks: inputs.routingLocks ?? [],
+        expressMaxConfidence: inputs.expressMaxConfidence,
+        rng: open("route"),
+      })
+      .units;
+    for (const unit of units) unitsById.set(unit.id, unit);
+
+    /* ── step 5 · serve (slot-occupancy queueing core) ────────────────── */
+    const serveOut = steps.serve({ context, units, nodes: worked.nodes });
+    let nodes = serveOut.nodes;
+
+    // Derive hop progress from the assignment ledger (ServeOut has no units
+    // channel — contract friction, documented in defaults.ts):
+    //   new start ⇒ serviceStartUs == simNow; completion ⇒ blocked=false and
+    //   serviceStartUs < simNow; hold ⇒ blocked=true.
+    const completedNodes = new Map<EntityId, EntityId>();
+    const newlyAdmittedIds = new Set<EntityId>();
+    const heldIds = new Set<EntityId>();
+    // A multi-slot unit (R-32 "size ≠ 1") completes with ONE assignment PER
+    // slot, all sharing releasedAtUs. Hop progress must fire once per
+    // (unitId, nodeId) per tick, else consecutive same-node hops double-
+    // advance the route and double-charge the latency (FIX-2).
+    const completionSeen = new Set<string>();
+    for (const assignment of serveOut.assignments) {
+      const unit = unitsById.get(assignment.unitId);
+      if (unit === undefined) continue;
+      if (assignment.blocked) {
+        heldIds.add(assignment.unitId);
+        continue;
+      }
+      if (assignment.serviceStartUs === simNow) {
+        newlyAdmittedIds.add(assignment.unitId);
+        continue;
+      }
+      const completionKey = `${assignment.unitId}>${assignment.nodeId}`;
+      if (completionSeen.has(completionKey)) continue;
+      completionSeen.add(completionKey);
+      if (unit.routeHops[0] === assignment.nodeId) {
+        const hopTime = nodeServiceTime(nodes, assignment.nodeId);
+        unitsById.set(
+          assignment.unitId,
+          withUnit(unit, {
+            routeHops: Object.freeze(unit.routeHops.slice(1)),
+            accumulatedLatencyUs: unit.accumulatedLatencyUs + hopTime,
+            waitingOn: null,
+          }),
+        );
+        completedNodes.set(assignment.unitId, assignment.nodeId);
+      }
+    }
+    const downstreamOfHold = new Map<EntityId, EntityId>();
+    for (const unitId of heldIds) {
+      const hold = UNIT_HOLD.get(unitId);
+      if (hold !== undefined) downstreamOfHold.set(unitId, hold);
+    }
+
+    /* ── step 6 · queue wait (analytic hockey stick, R-07) ────────────── */
+    const queueWaitInput: QueueWaitInputSafe = {
+      context,
+      waiting: serveOut.waiting,
+      nodes,
+      kneeRho: inputs.kneeRho ?? DEFAULT_KNEE_RHO,
+    };
+    const queueWaitOut = steps.queueWait(queueWaitInput);
+
+    // Real elapsed aging: queued and dependency-held units pay one tick of
+    // sim time per tick they don't move (minute-granular honesty; the
+    // analytic curve stays a PREDICTION fed to step 9, never double-stamped).
+    const queuedSet = new Set<EntityId>(serveOut.waiting);
+    units = units.map((unit) => {
+      const tracked = unitsById.get(unit.id) ?? unit;
+      const ages = queuedSet.has(tracked.id) || heldIds.has(tracked.id);
+      return ages
+        ? withUnit(tracked, { accumulatedLatencyUs: tracked.accumulatedLatencyUs + TICK_US })
+        : tracked;
+    });
+    for (const unit of units) unitsById.set(unit.id, unit);
+
+    /* ── step 7 · inspect (admitted-this-tick units: once per hop) ────── */
+    const depths = new Map<EntityId, InspectionDepth>();
+    for (const node of nodes.values()) depths.set(node.id, node.inspectionDepth);
+    const admittedUnits = units.filter((unit) => newlyAdmittedIds.has(unit.id));
+    const inspectOut = steps.inspect({
+      context,
+      units: admittedUnits,
+      depths,
+      aggression: inputs.aggression,
+      rng: open("inspect"),
+    });
+    const blockedByInspection = new Map<EntityId, EntityId>();
+    for (const verdict of inspectOut.verdicts) {
+      const unit = unitsById.get(verdict.unitId);
+      if (unit === undefined) continue;
+      unitsById.set(
+        verdict.unitId,
+        withUnit(unit, { inspectionCostUs: unit.inspectionCostUs + verdict.costUs }),
+      );
+      if (verdict.blocked) blockedByInspection.set(verdict.unitId, verdict.nodeId);
+    }
+    units = units.map((unit) => unitsById.get(unit.id) ?? unit);
+
+    /* ── step 8 · dependency block (formalize + edge-validate, R-09) ──── */
+    const dependencyOut = steps.dependencyBlock({
+      context,
+      assignments: serveOut.assignments,
+      edges: inputs.dependencyEdges,
+    });
+    const confirmedBlocks = new Set<EntityId>();
+    for (const block of dependencyOut.blocks) confirmedBlocks.add(block.unitId);
+    units = units.map((unit) => {
+      const stillHeld = confirmedBlocks.has(unit.id) && !blockedByInspection.has(unit.id);
+      const nextWaiting = stillHeld ? (downstreamOfHold.get(unit.id) ?? unit.waitingOn) : null;
+      if (unit.waitingOn === nextWaiting) return unit;
+      return withUnit(unit, { waitingOn: nextWaiting });
+    });
+    for (const unit of units) unitsById.set(unit.id, unit);
+    // Holds step 8 could not validate against the edge list are orphaned —
+    // release their waitingOn so a graph drift can never wedge capacity.
+    const orphanHolds: EntityId[] = [];
+    for (const unitId of heldIds) {
+      if (!confirmedBlocks.has(unitId)) orphanHolds.push(unitId);
+    }
+    if (orphanHolds.length > 0) nodes = releaseHolds(nodes, orphanHolds);
+
+    /* ── step 9 · patience check (R-60 LUT bounces) ───────────────────── */
+    const patienceOut = steps.patienceCheck({ context, units, waits: queueWaitOut.waits });
+    const bouncedSet = new Set<EntityId>();
+    for (const unitId of patienceOut.bounced) {
+      if (blockedByInspection.has(unitId) || !unitsById.has(unitId)) continue;
+      bouncedSet.add(unitId);
+    }
+
+    /* ── step 10 · outcome (the four terminals, R-11) ─────────────────── */
+    const candidates: OutcomeCandidate[] = [];
+    const candidateSeen = new Set<EntityId>();
+    const pushCandidate = (unitId: EntityId, preset: OutcomeCandidate["terminal"]): void => {
+      if (candidateSeen.has(unitId)) return;
+      const unit = unitsById.get(unitId);
+      if (unit === undefined) return;
+      candidateSeen.add(unitId);
+      const done = completedNodes.get(unitId);
+      const reachedGoal = unit.routeHops.length === 0 && done !== undefined;
+      candidates.push(
+        Object.freeze({
+          unitId,
+          nodeId: done ?? unit.routeHops[0] ?? null,
+          targetId: reachedGoal ? (done ?? null) : null,
+          terminal: preset,
+        }),
+      );
+    };
+    for (const unit of units) {
+      if (unit.routeHops.length === 0 && !completedNodes.has(unit.id)) {
+        // Parked zombie (FIX-7): empty route, completed nothing — it can
+        // never queue, never age through the queue path, never terminate.
+        // Idle-reap it once its patience budget is spent so a mis-authored
+        // (empty) path cannot leak units into the roster forever.
+        const idleUs = (context.tick - unit.arrivedAtTick) * TICK_US;
+        if (idleUs > unit.patienceUs) pushCandidate(unit.id, "bounced");
+        continue;
+      }
+      if (bouncedSet.has(unit.id) || blockedByInspection.has(unit.id)) continue;
+      pushCandidate(unit.id, null);
+    }
+    for (const unitId of bouncedSet) pushCandidate(unitId, "bounced");
+    for (const unitId of serveOut.shed) {
+      // hard-ceiling shed: terminal like a bounce (R-06 silent); preset keeps
+      // it out of the inspection/patience resolution branches.
+      pushCandidate(unitId, "bounced");
+    }
+    for (const unitId of blockedByInspection.keys()) pushCandidate(unitId, null);
+
+    const outcomeInput: OutcomeInputSafe = {
+      context,
+      candidates,
+      inspections: inspectOut.verdicts,
+      bounced: [...bouncedSet],
+      completed: [...completedNodes.keys()].filter(
+        (id) => (unitsById.get(id)?.routeHops.length ?? 1) === 0,
+      ),
+      valueByUnit: inputs.valueByUnit ?? new Map<EntityId, Fixed>(),
+      rng: open("outcome"),
+      unitsById,
+    };
+    const outcomeOut = steps.outcome(outcomeInput);
+    const terminalById = new Map<EntityId, Outcome>();
+    for (const outcome of outcomeOut.outcomes) terminalById.set(outcome.unitId, outcome);
+
+    // Purge terminals from slots/queues BEFORE economics observes the nodes.
+    if (terminalById.size > 0) nodes = purgeTerminals(nodes, terminalById.keys());
+
+    /* ── step 11 · backpressure (storm engine, R-12) ──────────────────── */
+    const backpressureInput: BackpressureInputSafe = {
+      context,
+      outcomes: outcomeOut.outcomes,
+      policy: inputs.retryPolicy,
+      stormFactor: inputs.stormFactor ?? FIXED_UNIT,
+      rng: open("backpressure"),
+      unitsById,
+      retryDepthById,
+    };
+    const backpressureOut = steps.backpressure(backpressureInput);
+    for (const draft of backpressureOut.reentries) {
+      const depth = draft.retryOf === null ? 0 : (retryDepthById.get(draft.retryOf) ?? 0) + 1;
+      const lineageRoot = lineageRootOf(draft, unitsById);
+      const backoffUs =
+        draft.retryOf === null
+          ? 0n
+          : inputs.retryPolicy.backoffBaseUs * 2n ** BigInt(Math.min(depth, 20));
+      const jitterUs =
+        draft.retryOf !== null && inputs.retryPolicy.jitterPurchased
+          ? BigInt(streamFor(state.runSeed, "backoff", context.minute, lineageRoot).range(1_000_000))
+          : 0n;
+      const delayTicks = (backoffUs + jitterUs + TICK_US - 1n) / TICK_US;
+      pending.push(
+        Object.freeze({
+          draft,
+          readyAtTick: context.tick + delayTicks,
+          retryDepth: depth,
+          lineageRoot,
+        }),
+      );
+    }
+
+    /* ── step 12 · state economics (SINGLE observed-layer writer) ─────── */
+    const economicsOut = steps.stateEconomics({
+      context,
+      prior: worked,
+      outcomes: outcomeOut.outcomes,
+      reentries: backpressureOut.reentries,
+      nodes,
+      lanes: inputs.lanes ?? worked.lanes,
+    });
+    const observed = new Map<ObservedKey, ObservedCell<unknown>>(worked.observed);
+    for (const write of economicsOut.observedWrites) observed.set(write.key, write.cell);
+    const lanes = new Map<EntityId, LaneStats>();
+    for (const lane of economicsOut.laneStats) lanes.set(lane.laneId, lane);
+
+    /* ── step 12.5 · rule phase (delegates to the passed interpreter) ─── */
+    const ruleOut = steps.rulePhase({
+      context,
+      observed,
+      book: worked.ruleBook,
+      suppressed: inputs.suppressedRuleIds ?? [],
+      rng: open("rules"),
+    });
+    const intents: PlayerIntent[] = ruleOut.intents.map((intent) =>
+      Object.freeze({ ...intent, seq: (intentSeq += 1) }),
+    );
+
+    /* ── rebuild GameState (immutable-by-convention) ──────────────────── */
+    const nextUnits = new Map<EntityId, Unit>();
+    for (const unit of units) {
+      if (terminalById.has(unit.id)) {
+        retryDepthById.delete(unit.id);
+        UNIT_HOLD.delete(unit.id);
+        continue;
+      }
+      const tracked = unitsById.get(unit.id) ?? unit;
+      nextUnits.set(tracked.id, tracked);
+    }
+    const nextLedgerSeq = economicsOut.ledgerEntry === null ? worked.ledgerSeq : worked.ledgerSeq + 1;
+    const next: GameState = Object.freeze({
+      ...worked,
+      context,
+      units: Object.freeze(nextUnits),
+      nodes,
+      lanes: Object.freeze(lanes),
+      observed: Object.freeze(observed),
+      cash: economicsOut.cash,
+      ledgerSeq: nextLedgerSeq,
+    });
+
+    const events: SimEvent[] = [
+      ...door.events, // the door is canonically BEFORE step 1
+      ...arrivalOut.events,
+      ...outcomeOut.events,
+      ...backpressureOut.events,
+      ...economicsOut.events,
+    ];
+    return Object.freeze({
+      state: next,
+      events: Object.freeze(events),
+      outcomes: outcomeOut.outcomes,
+      ruleFirings: ruleOut.firings,
+      intents: Object.freeze(intents),
+      doorReceipts: door.receipts,
+      pressure: backpressureOut.pressure,
+      pendingReentries: pending.length,
+    });
+  }
+
+  return Object.freeze({
+    advance,
+    exportPending: (): readonly PendingReentry[] =>
+      Object.freeze(pending.map((entry) => Object.freeze({ ...entry }))),
+    importPending(nextPending: readonly PendingReentry[], mintCounterValue: number): void {
+      pending = nextPending.map((entry) => Object.freeze({ ...entry }));
+      mintCounter = mintCounterValue;
+    },
+    currentMintCounter: () => mintCounter,
+  });
+}
+
+/* ═══════════════════ input structs with driver extensions ═══════════════════
+ * Declared as named types (not inline literals) so the extra, step-private
+ * fields pass type-checking contravariantly against the frozen TickStep
+ * signatures — foreign steps simply never see them. */
+
+type QueueWaitInputSafe = QueueWaitIn;
+
+interface OutcomeInputSafe extends OutcomeIn {
+  readonly unitsById: ReadonlyMap<EntityId, Unit>;
+}
+
+interface BackpressureInputSafe extends BackpressureIn {
+  readonly unitsById: ReadonlyMap<EntityId, Unit>;
+  readonly retryDepthById: ReadonlyMap<EntityId, number>;
+}
+
+/* ═══════════════════════════ internal mechanics ═══════════════════════════ */
+
+function mintUnitFromDraft(draft: UnitDraft, id: EntityId, tick: SimTick): Unit {
+  return Object.freeze({
+    id,
+    type: draft.type,
+    sizeCost: draft.sizeCost,
+    patienceUs: draft.patienceUs,
+    trueIntent: draft.trueIntent,
+    source: draft.source,
+    retryOf: draft.retryOf,
+    arrivedAtTick: tick,
+    accumulatedLatencyUs: 0n,
+    inspectionCostUs: 0n,
+    confidence: FIXED_ZERO,
+    qosClassId: null,
+    routeHops: [],
+    waitingOn: null,
+  });
+}
+
+function nodeServiceTime(nodes: ReadonlyMap<EntityId, NodeRecord>, nodeId: EntityId): SimTimeUs {
+  return nodes.get(nodeId)?.serviceTimeUs ?? 0n;
+}
+
+/** Remove terminal units from every queue and free every slot they hold.
+ *  Nodes iterated in pinned sorted order; ρ refreshed with the ONE shared
+ *  helper (queue.utilization — same rounding + ceiling the serve step uses,
+ *  FIX-6). */
+function purgeTerminals(
+  nodes: ReadonlyMap<EntityId, NodeRecord>,
+  unitIds: Iterable<EntityId>,
+): ReadonlyMap<EntityId, NodeRecord> {
+  const doomed = new Set<EntityId>(unitIds);
+  if (doomed.size === 0) return nodes;
+  const next = new Map<EntityId, NodeRecord>();
+  for (const nodeId of sortedIds(nodes.keys())) {
+    const node = nodes.get(nodeId);
+    if (node === undefined) continue;
+    const queue = node.queue.filter((id) => !doomed.has(id));
+    let changed = queue.length !== node.queue.length;
+    const slots = node.slots.map((slot) => {
+      if (slot.occupied && slot.unitId !== null && doomed.has(slot.unitId)) {
+        changed = true;
+        return Object.freeze({
+          occupied: false,
+          unitId: null,
+          waitingOn: null,
+          releasedAtUs: null,
+        }) satisfies NodeSlotRecord;
+      }
+      return slot;
+    });
+    const updated = changed
+      ? Object.freeze({
+          ...node,
+          slots: Object.freeze(slots),
+          queue: Object.freeze(queue),
+          queueDepth: queue.length,
+          utilizationRho: utilization({ ...node, slots }),
+        })
+      : node;
+    next.set(nodeId, updated);
+  }
+  return next;
+}
+
+/** Release orphaned (step-8-unvalidated) holds: clear waitingOn so the slot
+ *  completes normally next tick — a graph drift must never wedge capacity. */
+function releaseHolds(
+  nodes: ReadonlyMap<EntityId, NodeRecord>,
+  unitIds: readonly EntityId[],
+): ReadonlyMap<EntityId, NodeRecord> {
+  const freed = new Set<EntityId>(unitIds);
+  const next = new Map<EntityId, NodeRecord>();
+  for (const nodeId of sortedIds(nodes.keys())) {
+    const node = nodes.get(nodeId);
+    if (node === undefined) continue;
+    let changed = false;
+    const slots = node.slots.map((slot) => {
+      if (slot.waitingOn !== null && slot.unitId !== null && freed.has(slot.unitId)) {
+        changed = true;
+        return Object.freeze({ ...slot, waitingOn: null });
+      }
+      return slot;
+    });
+    next.set(nodeId, changed ? Object.freeze({ ...node, slots: Object.freeze(slots) }) : node);
+  }
+  return next;
+}
+
+/** Follow retryOf lineage to the original visitor id (stable backoff key). */
+function lineageRootOf(draft: UnitDraft, unitsById: ReadonlyMap<EntityId, Unit>): EntityId {
+  let cursor: EntityId = draft.retryOf ?? asEntityId(draft.type);
+  let guard = 0;
+  for (;;) {
+    const unit = unitsById.get(cursor);
+    if (unit === undefined || unit.retryOf === null || guard > 64) return cursor;
+    cursor = unit.retryOf;
+    guard += 1;
+  }
+}
