@@ -35,7 +35,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/topology` | `src/topology/index.ts` | ✅ 99 exports (round-2 fixes incl. `domains.projectionVersion`) |
 | `@hh/sim-core/waves` | `src/waves/index.ts` | ✅ 74 exports |
 | `@hh/sim-core/replay` | `src/replay/index.ts` | ✅ 59 exports (barrel is an EXPLICIT name list) |
-| `@hh/sim-core/loader` | `src/loader/index.ts` | ✅ 76 exports |
+| `@hh/sim-core/loader` | `src/loader/index.ts` | ✅ 89 exports |
 | `@hh/sim-core/save` | `src/save/index.ts` | ✅ 183 exports — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
@@ -680,7 +680,15 @@ survives; unknown field = `UNKNOWN_FIELD` throw naming the dotted path;
 result deep-frozen and key-ordered for digesting), the `_todo` placeholder
 collector with criticality, the Ruleset Diff Linter (eight codes enforcing
 §4.3 authoring law), era availability resolution, threat/visitor registry
-indexes, and 3-shape wave-table structural checks (laws stay in waves/).
+indexes, 3-shape wave-table structural checks (laws stay in waves/), and the
+i18n grammar-pack consumption contract (R46; §9.3/§9.11): strict pack boundary
+parse enforcing the decision/flavour root wall at parse (the closed root sets
+are re-declared loader-side; `packages/content/script/validate.mjs` stays the
+LAW SOURCE for the authoring gates — verbatim-sync, technique ban-list,
+dead-slot — which the parser deliberately does NOT duplicate), globally
+unique keys, era objects reduced to {eras ascending, fallback} sharing one
+slot set, plus key resolution, plain-number era picking (exact > nearest
+earlier > fallback) and single-pass inert-brace slot filling.
 Never touches the filesystem — the corpus is injected (CONVENTIONS §4 no
 platform access). Import: `@hh/sim-core/loader`. NOTE: CONVENTIONS formerly
 called this "zod" — FIXED 2026-10-06: §1/§1.1/§3/§4 now describe the
@@ -714,6 +722,16 @@ the package).
 | `formatLintReport` | `(report) => readonly string[]` | human lines for CI log | pinned |
 | `WAVE_BAND_VOCAB` `ENVELOPE_SHAPE_PHASES` | const arrays | the shared vocab checks (bands §1.7 / ramp-plateau-decay) | closed |
 | `inspectWaveTableStructure` | `(raw: unknown, ref: string) => WaveStructureIssue[]` | STRUCTURE-only wave-table check (3-shape law); semantic laws live in waves/enforcer | pure |
+| `I18nSlotKind` `I18nNamespace` | `"entity"\|"number"\|"money"\|"duration"\|"tick"\|"pct"\|"time"\|"text"`; `"decision"\|"flavour"` | pack vocabularies (slot-glossary kinds per schema/i18n-pack.schema.json; §9.3 namespace pair) | closed |
+| `LoadedI18nSlot` | `interface { kind; desc: string \| null }` | one slot-glossary entry | post-parse immutable |
+| `PlainI18nTemplate` `EraVariantI18nTemplate` `I18nTemplate` | interfaces; union discriminated by `kind: "plain" \| "era-variant"` | parsed template: single body, or `{eras year→body ascending, fallback}`; every template carries namespace, key and its sorted distinct slot set | frozen; eras iterate ascending by year |
+| `LoadedI18nPack` | interface | the frozen pack: header fields + eraCodes/slots/decision/flavour/provenance as sealed ReadonlyMaps (insertion pinned at parse) | deep-frozen; every map code-unit (era: numeric-year) sorted |
+| `loadI18nPack` | `(raw: unknown) => LoadedI18nPack` | THE pack boundary parse — §9.3 root wall (root outside the closed re-declared vocabularies fails loud, BAD_ENUM), global key uniqueness asserted at parse, era objects {eras, fallback} one-slot-set law, {slot} token syntax; authoring gates stay in validate.mjs (law source) | deterministic, deep-frozen |
+| `resolveTemplate` | `(pack, key) => I18nTemplate` | lookup by globally-unique key (both namespaces searched; parse-time uniqueness makes it unambiguous); miss fails loud naming key + pack | pure |
+| `pickEraText` | `(pack, key, eraYear: number) => string` | era selection: exact year > nearest EARLIER year > fallback (a later era's copy never leaks into the past); plain keys return their body, year inert | plain-integer year compare — no Date/Intl |
+| `fillTemplate` | `(pack, key, slots: Readonly<Record<string, string \| number>>) => string` | fill a PLAIN template by key; exact-set law (missing → MISSING_FIELD listing them, extra → UNKNOWN_FIELD listing them); era-variant keys fail loud pointing at pickEraText — no silent era guess | single-pass left-to-right; substituted braces stay inert (no recursive expansion) |
+| `fillTemplateBody` | `(body, slots, where?) => string` | the same substitution over any slot-syntax-valid body (composition partner of pickEraText); slot values are string or safe integer only | single-pass; substituted braces inert |
+| `stableSerializePackKeys` | `(pack) => string[]` | every template key across both namespaces, code-unit sorted — content-hash / corpus-diff surface | order-pinned |
 
 ---
 
