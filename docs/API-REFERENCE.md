@@ -522,7 +522,7 @@ Import: `@hh/sim-core/topology`.
 | `TopologyGraph` | interface (opaque-ish record of maps) | the whole Board state — every mutation bumps one `version` | all iterations sorted |
 | `compareIds` `sortedIds` | `(a,b) => -1\|0\|1`; `(iterable) => readonly EntityId[]` | the code-unit sort idiom | locale-free |
 | `createGraph` | `() => TopologyGraph` | empty board | pure |
-| `PowerFeed` `powerFeeds` `feedAncestorOfKind` | interface; `(graph, device) => readonly PowerFeed[]`; `(graph, device, kind) => readonly EntityId[]` | the power tree walk (outlet→PDU→room…), ancestry by ancestor kind | pinned |
+| `PowerFeed` `powerFeeds` `feedAncestorOfKind` | interface; `(graph, device) => readonly PowerFeed[]`; `(graph, device, kind) => readonly EntityId[]` | the power tree walk — each chain starts at the device's DIRECT supplier and climbs to a root (outlet→PDU→room→facility, T-b pin); ancestry by ancestor kind reads that chain head-first | pinned |
 | `dataAncestors` `dataDescendants` | `(graph, id) => readonly EntityId[]` | dependency flood rails (what CAN cascade) | BFS sorted |
 | `controlAncestors` `governedBy` `powerConsumers` `governorsOf` | `(graph, …) => readonly EntityId[]` | control-domain and power-direction reads | sorted |
 | `TrustGrant` `paintTrust` `isTrustedTo` `trustAnchors` | interface; `(graph, grants) => void`; `(graph, principal, target) => boolean`; `(graph, id) => readonly EntityId[]` | trust is regenerated wholesale from grants — never hand-painted | sorted regeneration |
@@ -536,7 +536,7 @@ Import: `@hh/sim-core/topology`.
 | `DomainKind` `DeathModel` `FailureDomain` | `"pdu"\|"rack"\|"switch"\|"template"`; `"kill-all"\|"degrade-all"`; interface | what fails together (§4.2 hyperedges) | closed |
 | `domainId` | `(kind, anchor) => EntityId` | stable domain identity | pure |
 | `pduDomains` `rackDomains` `switchDomains` `templateDomains` `buildDomainSet` `DomainSet` | `(graph, [index]) => readonly FailureDomain[]` / set | the four materializers + aggregate set | sorted enumeration |
-| `projectionVersion` | `(graph: TopologyGraph, index: PhysicalIndex) => number` | T-1 dual-version stamp of the joint graph+index projection (`graph.version × 1_000_003 + index.version`): any cache over a graph+index view (blast radius!) MUST key on THIS, never `graph.version` alone, or a placement with an untouched graph serves a stale result | pure; total over both version counters |
+| `projectionVersion` | `(graph: TopologyGraph, index: PhysicalIndex) => string` | T-1 dual-version stamp of the joint graph+index projection — the exact pair key `` `${graph.version}:${index.version}` `` (T-a: the old `× 1_000_003` fold collided at index.version ≥ 1_000_003, e.g. (1, 1000003) ≡ (2, 0)): any cache over a graph+index view (blast radius!) MUST key on THIS, never `graph.version` alone, or a placement with an untouched graph serves a stale result | pure; injective over both version counters |
 | `BlastRadius` `PersonBlast` `BlastComputer` | interfaces | the ONE flood answer: affected (dead) / degraded (amber) sets; person variant; reusable computer bound to graph+index | `computeBlast(graph, domains, anchor)` — deterministic BFS+union |
 | `computeBlast` | `(graph: TopologyGraph, domains: DomainSet, anchor: EntityId) => BlastRadius` | flood rides DATA edges, geography never gates it; kill-all domains whose anchor died explode wholly | pinned order |
 | `computePersonBlast` | `(graph, person) => PersonBlast` | runbook/credential holder reach | pinned |

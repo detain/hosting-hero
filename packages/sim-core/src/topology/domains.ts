@@ -170,7 +170,8 @@ export function templateDomains(graph: TopologyGraph): readonly FailureDomain[] 
 /* ═══════════════════════ Aggregate projection ═══════════════════════ */
 
 export interface DomainSet {
-  readonly version: number;
+  /** Exact `(graph, index)` pair key — see `projectionVersion` (T-a). */
+  readonly version: string;
   readonly domains: readonly FailureDomain[];
   /** node → domains it belongs to (member index, sorted by domain id). */
   domainsFor(node: EntityId): readonly FailureDomain[];
@@ -181,15 +182,25 @@ export interface DomainSet {
  * consumes BOTH stores — `rackDomains` reads PhysicalIndex's own version
  * (placeDevice/removeDevice/registerRack/registerCircuit bump it) while the
  * rest read graph.version. Any cache keyed on a projection of graph+index
- * MUST key on THIS number, never on graph.version alone, or a placement
+ * MUST key on THIS stamp, never on graph.version alone, or a placement
  * with an untouched graph serves a stale blast radius.
+ *
+ * T-a: the stamp is the EXACT pair key `"${graph.version}:${index.version}"`.
+ * The previous fold `graph.version * 1_000_003 + index.version` collided
+ * whenever index.version reached 1_000_003 — the pairs (1, 1_000_003) and
+ * (2, 0) both folded to 2_000_006 — a theoretical-but-free bug, fixed by
+ * refusing to fold at all. String key over BigInt arithmetic: every cache
+ * that consumes this stamp is a `Map`, which hashes strings exactly as
+ * cheaply as numbers, and one small allocation per lookup is noise at
+ * cache-key frequency (one call per hover-frame per queried node).
+ * Pinned by the "projectionVersion pair key (T-a)" tests.
  */
-export function projectionVersion(graph: TopologyGraph, index: PhysicalIndex): number {
-  return graph.version * 1_000_003 + index.version;
+export function projectionVersion(graph: TopologyGraph, index: PhysicalIndex): string {
+  return `${graph.version}:${index.version}`;
 }
 
 /** Rebuild the full co-location projection. Callers cache by
- *  (graph.version, index.version) — cheap enough to memoize freely. */
+ *  `projectionVersion(graph, index)` — cheap enough to memoize freely. */
 export function buildDomainSet(graph: TopologyGraph, index: PhysicalIndex): DomainSet {
   const domains = [...pduDomains(graph), ...rackDomains(graph, index), ...switchDomains(graph), ...templateDomains(graph)].sort(
     (a, b) => compareIds(a.id, b.id),

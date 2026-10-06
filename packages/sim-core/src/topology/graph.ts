@@ -375,13 +375,20 @@ export function createGraph(): TopologyGraph {
 
 /* ═══════════════════════════ Structural queries ═══════════════════════════ */
 
-/** One upstream power feed PATH, from the consumer socket to one root
- *  supplier. A dual-fed outlet (ATS) yields one entry per upstream path —
- *  conservative on purpose: redundancy math treats every traversed PDU as a
- *  shared domain until proven otherwise. */
+/**
+ * One upstream power feed PATH, from the consumer socket to one root
+ * supplier. A dual-fed outlet (ATS) yields one entry per upstream path —
+ * conservative on purpose: redundancy math treats every traversed PDU as a
+ * shared domain until proven otherwise. */
 export interface PowerFeed {
   readonly slot: string;
-  /** [supplier, supplier-of-supplier, …] — nearest first, terminated at a root. */
+  /** [supplier, supplier-of-supplier, …] — nearest first, terminated at a
+   *  root. T-b pin: `chain[0]` IS the node feeding the device (the direct
+   *  supplier), NOT the tier above it — consumers like redundancy's
+   *  `feedNodes` and `feedAncestorOfKind` read "which upstreams does this
+   *  node sit behind" off this array, and a chain that skipped the direct
+   *  supplier hid the very PDU a device hangs off. Pinned by the
+   *  "powerFeeds chain shape (T-b)" tests. */
   readonly chain: readonly EntityId[];
 }
 
@@ -449,7 +456,9 @@ function compareChains(a: readonly EntityId[], b: readonly EntityId[]): number {
   return a.length - b.length;
 }
 
-/** Every incoming power feed path of `device`, ordered by (slot, chain). */
+/** Every incoming power feed path of `device`, ordered by (slot, chain).
+ *  Each chain starts at the device's DIRECT supplier (T-b) — see
+ *  `PowerFeed.chain`. */
 export function powerFeeds(graph: TopologyGraph, device: EntityId): readonly PowerFeed[] {
   const budget: PathBudget = { remaining: MAX_UPSTREAM_PATHS };
   const feeds: PowerFeed[] = [];
@@ -460,7 +469,9 @@ export function powerFeeds(graph: TopologyGraph, device: EntityId): readonly Pow
       feeds.push({ slot: edge.slot, chain: [edge.from] });
       continue;
     }
-    for (const chain of paths) feeds.push({ slot: edge.slot, chain });
+    // `upstreamPaths` enumerates the suppliers ABOVE edge.from; the feed of
+    // the device itself begins at edge.from (T-b), so it heads every chain.
+    for (const chain of paths) feeds.push({ slot: edge.slot, chain: [edge.from, ...chain] });
   }
   return feeds.sort(
     (a, b) =>
@@ -470,7 +481,9 @@ export function powerFeeds(graph: TopologyGraph, device: EntityId): readonly Pow
 }
 
 /** Nearest ancestor (per feed) whose node `kind` matches — e.g. the PDU each
- *  PSU feed ultimately hangs off. Null when a feed bypasses that tier. */
+ *  PSU feed ultimately hangs off. The search walks the chain from its head,
+ *  so the DIRECT supplier (chain[0], T-b) is part of the answer space; null
+ *  only when a feed genuinely bypasses that tier. */
 export function feedAncestorOfKind(
   graph: TopologyGraph,
   device: EntityId,

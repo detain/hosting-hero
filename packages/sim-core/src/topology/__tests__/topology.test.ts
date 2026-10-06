@@ -6,8 +6,8 @@
 import { describe, it, expect } from "vitest";
 import { asEntityId, asMoney } from "../../types";
 import type { EntityId, MoneyUnit } from "../../types";
-import { createGraph, powerFeeds, dataDescendants, paintTrust, compareIds } from "../graph";
-import type { TrustGrant } from "../graph";
+import { createGraph, powerFeeds, feedAncestorOfKind, dataDescendants, paintTrust, compareIds } from "../graph";
+import type { TopologyGraph, TrustGrant } from "../graph";
 import {
   createPhysicalIndex,
   classifyPlacement,
@@ -17,8 +17,8 @@ import {
   thermalCouplingFixed,
   AdjacencyClass,
 } from "../physical";
-import type { PlacementRecord, RackRecord, FacilityRecord } from "../physical";
-import { buildDomainSet } from "../domains";
+import type { PhysicalIndex, PlacementRecord, RackRecord, FacilityRecord } from "../physical";
+import { buildDomainSet, projectionVersion } from "../domains";
 import { createBlastComputer, computeBlast, computePersonBlast } from "../blast";
 import { parseLink, negotiateDown, findTimeoutViolations, createLinkRegistry } from "../link";
 import { assessRedundancy, maxIndependentSet } from "../redundancy";
@@ -549,9 +549,10 @@ describe("powerFeeds determinism (T-2)", () => {
     const reverse = build(e("pdu-b"), e("pdu-a"));
     expect(forward).toEqual(reverse); // same feed SET ⇒ same answer, any authoring order
     expect(forward).toHaveLength(2); // one entry per upstream path
-    // same slot AND same chain head → tie broken by the next link, ascending
-    expect(forward[0]?.chain).toEqual([e("dist"), e("pdu-a")]);
-    expect(forward[1]?.chain).toEqual([e("dist"), e("pdu-b")]);
+    // same slot AND same chain head+second (T-b: chains start at the direct
+    // supplier psu1, then dist) → tie broken by the third link, ascending
+    expect(forward[0]?.chain).toEqual([e("psu1"), e("dist"), e("pdu-a")]);
+    expect(forward[1]?.chain).toEqual([e("psu1"), e("dist"), e("pdu-b")]);
   });
 });
 
@@ -719,7 +720,10 @@ describe("upstream path cap (T-10)", () => {
     expect(feeds).toHaveLength(256);
     const keys = feeds.map((f) => f.chain.join("/"));
     expect(keys).toEqual([...keys].sort()); // total order over full chains
-    expect(new Set(feeds.map((f) => f.chain[0]))).toEqual(new Set([e("L7a"), e("L7b")]));
+    // T-b: every chain heads at srv's DIRECT supplier L8a; the 2^8 fork
+    // happens one tier up, so the merge pair now lives at chain[1].
+    expect(new Set(feeds.map((f) => f.chain[0]))).toEqual(new Set([e("L8a")]));
+    expect(new Set(feeds.map((f) => f.chain[1]))).toEqual(new Set([e("L7a"), e("L7b")]));
   });
 });
 
@@ -740,5 +744,115 @@ describe("frozen records (T-11)", () => {
     }).toThrow(TypeError);
     expect(g.node(e("srv"))?.kind).toBe("server"); // store intact
     expect(g.edge(edge.id)?.to).toBe(e("db"));
+  });
+});
+
+/* ROUND-3 HYGIENE · T-a (exact pair key) + T-b (chain head = direct supplier) */
+
+/* T-a · projectionVersion is the exact "graph:index" string — no fold ceiling */
+describe("projectionVersion pair key (T-a)", () => {
+  /** projectionVersion reads ONLY the two version counters, so forging the
+   *  pair inputs is an honest unit probe — and the only cheap way to reach
+   *  the counter combinations the old ×1_000_003 fold collided on. */
+  const stampAt = (graphVersion: number, indexVersion: number): string =>
+    projectionVersion(
+      { version: graphVersion } as unknown as TopologyGraph,
+      { version: indexVersion } as unknown as PhysicalIndex,
+    );
+
+  it("is the exact `${graph.version}:${index.version}` string", () => {
+    expect(stampAt(7, 9)).toBe("7:9");
+    expect(stampAt(0, 0)).toBe("0:0");
+  });
+
+  it("separates every pair the old fold collided", () => {
+    // old math: 1*1_000_003 + 1_000_003 === 2*1_000_003 + 0 === 2_000_006
+    expect(stampAt(1, 1_000_003)).not.toBe(stampAt(2, 0));
+    expect(stampAt(0, 12_345_678)).not.toBe(stampAt(12_345_678, 0));
+  });
+
+  it("real stores: stable across reads, moves on graph AND on index mutations", () => {
+    const g = createGraph();
+    const index = createPhysicalIndex();
+    index.registerFacility(fac1);
+    index.registerRack(rackA);
+    expect(projectionVersion(g, index)).toBe("0:2");
+    expect(projectionVersion(g, index)).toBe("0:2"); // pure reads repeat exactly
+    g.addNode({ id: e("srv"), kind: "server" });
+    expect(projectionVersion(g, index)).toBe("1:2"); // graph half moved
+    index.placeDevice(placement(e("srv"), rackA.id, 1));
+    expect(projectionVersion(g, index)).toBe("1:3"); // index half moved, graph still 1 (T-1 shape)
+  });
+
+  it("DomainSet.version carries the same pair stamp", () => {
+    const g = createGraph();
+    const index = createPhysicalIndex();
+    index.registerFacility(fac1);
+    expect(buildDomainSet(g, index).version).toBe("0:1");
+  });
+});
+
+/* T-b · powerFeeds chains START at the device's direct supplier */
+describe("powerFeeds chain shape (T-b)", () => {
+  /** facility → room → PDU → PSU, the canonical §7.3 shared-circuit depth:
+   *  the PDU is the PSU's DIRECT supplier and has upstream feeders itself. */
+  function deepFeedGraph() {
+    const g = createGraph();
+    for (const [id, kind] of [
+      ["fac", "facility"],
+      ["room", "room"],
+      ["pdu", "pdu"],
+      ["psu", "psu"],
+    ] as const) {
+      g.addNode({ id: e(id), kind });
+    }
+    g.addEdge({ kind: "power", from: e("fac"), to: e("room"), slot: e("feeder") });
+    g.addEdge({ kind: "power", from: e("room"), to: e("pdu"), slot: e("in") });
+    g.addEdge({ kind: "power", from: e("pdu"), to: e("psu"), slot: e("outlet") });
+    return g;
+  }
+
+  it("3-deep feed: chain is [pdu, room, facility] — direct supplier FIRST, root LAST", () => {
+    const feeds = powerFeeds(deepFeedGraph(), e("psu"));
+    expect(feeds).toHaveLength(1);
+    expect(feeds[0]?.slot).toBe(e("outlet"));
+    expect(feeds[0]?.chain).toEqual([e("pdu"), e("room"), e("fac")]);
+    // the documented invariant: chain[0] is exactly the node feeding the
+    // device. Under the pre-T-b enumeration this chain read [room, facility]
+    // and the shared PDU — the very domain §7.3 warns about — was invisible.
+    expect(feeds[0]?.chain[0]).toBe(e("pdu"));
+  });
+
+  it("root-fed device: the single-node chain IS the direct supplier (invariant holds at every depth)", () => {
+    const g = createGraph();
+    g.addNode({ id: e("srv"), kind: "server" });
+    g.addNode({ id: e("pdu"), kind: "pdu" });
+    g.addEdge({ kind: "power", from: e("pdu"), to: e("srv"), slot: e("o1") });
+    expect(powerFeeds(g, e("srv"))[0]?.chain).toEqual([e("pdu")]);
+  });
+
+  it("feedAncestorOfKind answers its own doc example: the PDU a feed hangs off", () => {
+    const g = deepFeedGraph();
+    expect(feedAncestorOfKind(g, e("psu"), "pdu")).toEqual([{ slot: e("outlet"), ancestor: e("pdu") }]);
+    // the device itself is never in its own chain — only upstreams are
+    expect(feedAncestorOfKind(g, e("psu"), "psu")).toEqual([{ slot: e("outlet"), ancestor: null }]);
+  });
+
+  it("redundancy pins the PDU token for two PSUs behind one room-fed circuit", () => {
+    const g = deepFeedGraph();
+    g.addNode({ id: e("psu2"), kind: "psu" });
+    g.addEdge({ kind: "power", from: e("pdu"), to: e("psu2"), slot: e("outlet-2") });
+    const verdict = assessRedundancy(g, {
+      id: e("pair"),
+      label: "dual PSU",
+      members: [e("psu"), e("psu2")],
+      claimedN: 1,
+    });
+    expect(verdict.broken).toBe(true);
+    expect(verdict.domain).toBe("power");
+    // the hit set must NAME the circuit (pre-T-b it could only ever report
+    // the room/facility above it); .some, not .find — the hits sort puts
+    // "facility" first by code point.
+    expect(verdict.hits.some((h) => h.type === "power" && h.shared === e("pdu"))).toBe(true);
   });
 });

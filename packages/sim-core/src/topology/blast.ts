@@ -22,8 +22,8 @@
  *    the caller walk the graph afterwards.
  *
  * Caching: memoized per (projection version, node). The projection version
- * is the (graph.version, index.version) pair folded into one monotonic-ish
- * stamp (domains.ts `projectionVersion`, T-1) — the flood reads BOTH stores
+ * is the exact `"graph.version:index.version"` pair key (domains.ts
+ * `projectionVersion`, T-1/T-a) — the flood reads BOTH stores
  * (rack domains come from the physical index), so a placement that never
  * touches the graph still invalidates every radius. The cache is a pure
  * accelerator — results are byte-identical with the cache disabled (the
@@ -215,11 +215,12 @@ export function computePersonBlast(graph: TopologyGraph, person: EntityId): Pers
 export function createBlastComputer(graph: TopologyGraph, index: PhysicalIndex): BlastComputer {
   /**
    * projection version → node → radius. Old versions simply stop being read.
-   * T-1: the key is the (graph.version, index.version) stamp, NOT
-   * graph.version — a placeDevice bumps only the index, and the rack domains
+   * T-1: the key is the `"graph:index"` pair stamp, NOT graph.version alone —
+   * a placeDevice bumps only the index, and the rack domains
    * it creates must invalidate the cached radii they now appear in.
+   * T-a: the stamp is a string, so this Map keys on strings.
    */
-  const radiusCache = new Map<number, Map<EntityId, BlastRadius>>();
+  const radiusCache = new Map<string, Map<EntityId, BlastRadius>>();
   /** Person blast reads the graph alone — graph.version is its full truth. */
   const personCache = new Map<number, Map<EntityId, PersonBlast>>();
 
@@ -227,7 +228,7 @@ export function createBlastComputer(graph: TopologyGraph, index: PhysicalIndex):
     return buildDomainSet(graph, index);
   }
 
-  function bucketFor<T>(cache: Map<number, Map<EntityId, T>>, at: number): Map<EntityId, T> {
+  function bucketFor<K extends string | number, T>(cache: Map<K, Map<EntityId, T>>, at: K): Map<EntityId, T> {
     const atVersion = cache.get(at);
     if (atVersion !== undefined) return atVersion;
     const fresh = new Map<EntityId, T>();
