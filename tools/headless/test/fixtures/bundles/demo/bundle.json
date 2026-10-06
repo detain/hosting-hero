@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "3.0",
+  "id": "headless:demo-shared-web",
+  "meta": {
+    "name": "Demo Shared-Web Estate",
+    "codexSummary": "Small shared-hosting tower: cheap requests, tight patience.",
+    "tone": "straight",
+    "official": false
+  },
+  "visitor": {
+    "unitTerm": "hit",
+    "durationClass": "Session",
+    "stats": { "patience": 8, "value": 3, "weight": 42, "loyalty": 2, "fragility": 5 },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": { "budgetMs": 800, "bounceSigmoid": [0.6, 1.0, 1.6] }
+    }
+  },
+  "goal": { "nodeType": "origin" },
+  "scarce": { "resourceId": "cpu-shares" },
+  "tempo": { "simTimeScale": "ms" },
+  "threats": {
+    "familyWeights": { "malicious": 30, "entropic": 20, "customerAsThreat": 25 },
+    "activeFamilies": ["ddos", "entropic"],
+    "waveTable": "demo:wave-1"
+  },
+  "economy": { "unitOfSale": "cpu-share", "revenueShape": "flat-mrc", "cashTiming": "prepaid" },
+  "verbs": { "dominant": "provision" }
+}
