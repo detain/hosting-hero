@@ -100,3 +100,12 @@ jobs:
       - name: "Contract: proto web build"
         if: matrix.node == '22.x'
         run: pnpm -F proto build
+
+      # The G5 fixture is a rootDir-law-forced (TS6059) byte-identical mirror
+      # of apps/proto/src/gates/g5/quarter.ts below its declared TEST FIXTURE
+      # MIRROR header (SYNC LAW in the header: edit upstream first, re-copy
+      # after). The comparison logic lives in the pre-push mirror script and
+      # is invoked standalone here to match the individual-step style.
+      - name: "Contract: G5 fixture mirror diff (SYNC LAW)"
+        if: matrix.node == '22.x'
+        run: node scripts/ci-verify.mjs g5-mirror-diff
