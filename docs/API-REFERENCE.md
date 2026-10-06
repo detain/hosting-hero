@@ -992,7 +992,13 @@ of it). waves'
     the pipeline-local structural embed of "what CAN happen" (§4.2 graph-is-map)
     — `{ version; edges: ReadonlyMap<EntityId, BoardEdgeRecord> }`, version
     bumps on every mutation (topology's memoization convention), digest sorts
-    edges by id (Map insertion order NEVER read); `hands` is the action-economy
+    edges by id (Map insertion order NEVER read); `edges` read-onlyness is a
+    TYPE-level guarantee — `Object.freeze` on a Map seals its properties, not
+    its contents, and `ReadonlyMap` exists only at compile time; the runtime
+    deep-freeze applies to the RECORDS, not Map contents, so writers replace
+    the Map (the door never mutates it in place — pinned by the refusal-pass
+    identity test, which is why there is no defensive copy either); `hands` is
+    the action-economy
     ledger `{ capacity; tokens: readonly HandToken[] }` (§7.5: T0–1 staff = 1
     hand, T2 = 2 …). Both are OPTIONAL `GameState` fields: pre-door hosts
     compile and digest byte-identically (digest-switch law — `digest.ts`
@@ -1125,12 +1131,17 @@ remain reported-only — hand to the owning lanes:
 6. **Headless CLI needs a flag the root README flow doesn't mention:** `node
    --experimental-transform-types` (enum in `types.ts` forces it) — matches
    its own package scripts; just be aware when copying commands.
-7. **Proto friction #1 is CLOSED but the proto comment is stale (DOCS-SYNC-2
-   pass).** The intent door (`TickInputs.externalIntents` + `applyIntentDoor`)
-   landed 2026-10-06, yet `apps/proto/src/runner/simCoreRunner.ts` still
-   comments "no legal input door for verbs" and buffers `intentLog` — proto
-   lane's call to rewire `submit()` to feed `externalIntents` per tick. Also
-   residual stale wording OUTSIDE editable remit here: `docs/GLOSSARY.md`
+ 7. ~~**Proto friction #1 is CLOSED but the proto comment is stale (DOCS-SYNC-2
+    pass).**~~ — SUPERSEDED (round-3): the rewire LANDED @1b9b3ba —
+    `simCoreRunner.submit()` now feeds `TickInputs.externalIntents` (verbs
+    stamped `tick+1`, fed exactly once) and folds `doorReceipts` into notices;
+    the "no legal input door" comment is gone from the file. Pinned by
+    `src/__tests__/simCoreRunner.test.ts` ("intent-door wiring" block). See
+    MODULE-STATUS "Proto adoption LANDED" row. The intent door
+    (`TickInputs.externalIntents` + `applyIntentDoor`) had landed 2026-10-06;
+    the then-stale buffer-and-comment state this item recorded no longer
+    exists. Also
+    residual stale wording OUTSIDE editable remit here: `docs/GLOSSARY.md`
    "blast radius / Big Red Button" row still says "BFS over the *observed*
    graph" (item 3 fixed CONVENTIONS only; GLOSSARY is additive-rows-only for
    this lane — hand to its owner).

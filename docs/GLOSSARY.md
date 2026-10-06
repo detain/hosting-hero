@@ -15,7 +15,7 @@
 - **policy bead** — the 8-shape state marker on a cable (TLS/valve/fuse/timeout/pool/retry/gate/egress). (§4.2)
 - **the morph** — the single Rack⇄Topology view transition that preserves object identity (no re-creation). (§4.2, §7.4)
 - **The Fold** — the Iron Board ↔ The Book transition; a **shader crossfade + layout morph**, not a camera flight. (§2.2 R-1)
-- **blast radius / Big Red Button** — BFS over the *observed* graph, memoized by `board.version`; the scope-selector verb. (§4.2, §4.1)
+- **blast radius / Big Red Button** — flood over `TopologyGraph` + `DomainSet` (the TWO-LAYER LAW meeting in `blast.ts`: DATA-dependency flood ∪ co-location domains, never the observed layer), memoized by the joint projection stamp `projectionVersion(graph, index)`; the scope-selector verb. (§4.2, §4.1)
 - **Broken-N+1** — the struck-through badge showing effective-vs-nominal redundancy across five correlations × four topologies. (§4.1, §4.2)
 - **timeout monotonicity law** — wasted in-flight work on a timeout is modeled (the retry-storm amplifier), rendered as a shrinking budget with violation markers. (§4.1, §4.2)
 - **Scale Handshake** — the snap (not zoom) by which "each tier's map becomes one icon in the next." (§4.2; `hosting_game.md §1.1`)
