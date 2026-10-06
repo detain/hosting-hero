@@ -54,6 +54,7 @@ describe("cli: run + replay-verify + digest", () => {
     expect(first.stderr.toLowerCase()).not.toContain("error");
     expect(first.stdout).toContain("chain:");
     expect(first.stdout).toMatch(/stats: arrived=\d+ served=\d+/);
+    expect(first.stdout).toContain("slots=real-v1"); // ACTIVE_COMPOSITION is the CLI default
 
     const second = await cli("run", BUNDLE_DIR, "--seed", "42", "--ticks", "50", "--snapshot-every", "25");
     const chainOf = (out: string): string => /chain: ([0-9a-f]{32})/.exec(out)?.[1] ?? "";
@@ -61,6 +62,36 @@ describe("cli: run + replay-verify + digest", () => {
 
     const third = await cli("run", BUNDLE_DIR, "--seed", "43", "--ticks", "50", "--snapshot-every", "25");
     expect(chainOf(third.stdout)).not.toBe(chainOf(first.stdout)); // seed-sensitive
+
+    // Real composition produces the defense dynamics the stub approximated:
+    // hostiles land (breach) AND get neutralized (blocked) — both nonzero.
+    expect(first.stdout).toMatch(/landed=[1-9]\d*/);
+    expect(first.stdout).toMatch(/blocked=[1-9]\d*/);
+  }, 120_000);
+
+  it("run --flavor stub-v1 reproduces the FROZEN stub-era bytes exactly", async () => {
+    const stubArtifactPath = join(workDir, "run-50-stub.json");
+    const result = await cli(
+      "run", BUNDLE_DIR, "--seed", "42", "--ticks", "50", "--snapshot-every", "25",
+      "--flavor", "stub-v1", "--out", stubArtifactPath,
+    );
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("slots=stub-v1");
+    // Every number below is the pre-swap baseline capture (stub era, v1 CLI):
+    expect(result.stdout).toContain("stats: arrived=211 served=190 landed=0 bounced=0 blocked=17 events=418");
+    expect(result.stdout).toContain("chain: 5522f344d6bbb83718dfd72a2153524f");
+    expect(result.stdout).toContain("final: 3d4b9bef635615b145f51b0121e3c11b");
+
+    // A stub-stamped artifact replays at its stamped flavor — never the live default.
+    const verify = await cli("replay-verify", stubArtifactPath);
+    expect(verify.code).toBe(0);
+    expect(verify.stdout).toContain("PASS");
+  }, 120_000);
+
+  it("run rejects an unknown --flavor with usage exit 2", async () => {
+    const result = await cli("run", BUNDLE_DIR, "--seed", "1", "--ticks", "5", "--flavor", "quantum-v9");
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain('--flavor must be "stub-v1" or "real-v1"');
   }, 120_000);
 
   it("replay-verify PASSES on a fresh artifact", async () => {
@@ -121,12 +152,26 @@ describe("cli: canary / parity / bench / usage", () => {
     expect(bad.stdout).toContain("forbidden:Math.random");
   }, 120_000);
 
-  it("parity prints a parsable report with the fixture id", async () => {
+  it("parity prints a parsable report with the fixture id + stamped flavor", async () => {
     const result = await cli("parity", "--seed", "11", "--ticks", "60");
     expect(result.code).toBe(0);
-    const report = JSON.parse(result.stdout.trim()) as { fixture: string; ticks: number };
-    expect(report.fixture).toBe("hh-parity-v1");
+    const report = JSON.parse(result.stdout.trim()) as {
+      fixture: string;
+      ticks: number;
+      combined: string;
+      arms: { engineRun: { slotsFlavor: string } };
+    };
+    expect(report.fixture).toBe("hh-parity-v2");
     expect(report.ticks).toBe(60);
+    expect(report.arms.engineRun.slotsFlavor).toBe("real-v1");
+
+    const stub = await cli("parity", "--seed", "11", "--ticks", "60", "--flavor", "stub-v1");
+    const stubReport = JSON.parse(stub.stdout.trim()) as {
+      combined: string;
+      arms: { engineRun: { slotsFlavor: string } };
+    };
+    expect(stubReport.arms.engineRun.slotsFlavor).toBe("stub-v1");
+    expect(stubReport.combined).not.toBe(report.combined); // flavors diverge in Arm D
   }, 120_000);
 
   it("bench reports rates and honors --target both ways", async () => {

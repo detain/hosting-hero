@@ -12,8 +12,9 @@
  *      range, fork paths — the counter-based streams of §4.1 R-16)
  *   C. clock scales             (advanceClocks under speed 1/2/4 + incident
  *      flips, scaleUs floors on the business/wall rational scales)
- *   D. the stub-composition tick loop (full 13-step threading + canonical
- *      state digests + chain digest)
+ *   D. the composed tick loop (full 13-step threading + canonical state
+ *      digests + chain digest) — real-v1 (pipeline/defaults createDefaultSlots)
+ *      by default, stub-v1 selectable for regression comparison
  *
  * Every arm is reduced to a canonical digest via canonical.ts (bigint-safe,
  * insertion-order-preserving, no platform crypto). Byte-identical digests
@@ -30,10 +31,12 @@ import { canonicalize, digestOfCanonical, fnv1a64Hex, serializeCanonical } from 
 import { HARNESS_BUNDLE, PARITY_CLOCK, bundleContentHash, runEngine } from "./engine.ts";
 import { parseBundleValue } from "./bundle.ts";
 import type { ParsedBundle } from "./bundle.ts";
-import type { PipelineSlots } from "./sim-core.ts";
-import { createSlots } from "./slots.ts";
+import { ACTIVE_COMPOSITION, createSlots, type CompositionFlavor } from "./slots.ts";
 
-export const PARITY_FIXTURE = "hh-parity-v1";
+/** v2: Arm D flipped stub-v1 → real-v1 (createDefaultSlots) and the report
+ *  gained `arms.engineRun.slotsFlavor`. v1 combined digests are the stub-era
+ *  goldens, pinned in test/parity.test.ts as the regression arm. */
+export const PARITY_FIXTURE = "hh-parity-v2";
 
 export interface ParityReport {
   readonly fixture: string;
@@ -43,11 +46,7 @@ export interface ParityReport {
     readonly fixedArithmetic: string;
     readonly rngStreams: string;
     readonly clockScales: string;
-    readonly engineRun: {
-      readonly chainDigest: string;
-      readonly finalStateHash: string;
-      readonly checkpointCount: number;
-    };
+    readonly engineRun: EngineArmReport;
   };
   readonly combined: string;
 }
@@ -182,24 +181,25 @@ function advanceScripted(clock: ClockState, tick: bigint): ClockState {
   });
 }
 
-/* ─────────────── Arm D: stub-composition engine run ─────────────── */
+/* ─────────────── Arm D: composed engine run (real-v1 default) ─────────────── */
 
 export interface EngineArmReport {
   readonly chainDigest: string;
   readonly finalStateHash: string;
   readonly checkpointCount: number;
+  readonly slotsFlavor: CompositionFlavor;
 }
 
-function exerciseEngine(seed: RunSeed, ticks: number, slots?: PipelineSlots): EngineArmReport {
+function exerciseEngine(seed: RunSeed, ticks: number, flavor: CompositionFlavor): EngineArmReport {
   const parsed: ParsedBundle = parseBundleValue(HARNESS_BUNDLE, "harness:embedded");
-  const composition: PipelineSlots =
-    slots ??
-    createSlots({
-      bundleId: parsed.bundle.id,
-      ...(parsed.patienceUs === null ? {} : { patienceUs: parsed.patienceUs }),
-      unitTerm: parsed.unitTerm,
-      baselineRatePerMin: parsed.baselineRatePerMin,
-    }).slots;
+  const composition = createSlots({
+    seed,
+    bundleId: parsed.bundle.id,
+    flavor,
+    ...(parsed.patienceUs === null ? {} : { patienceUs: parsed.patienceUs }),
+    unitTerm: parsed.unitTerm,
+    baselineRatePerMin: parsed.baselineRatePerMin,
+  });
   const run = runEngine({
     seed,
     ticks,
@@ -209,7 +209,8 @@ function exerciseEngine(seed: RunSeed, ticks: number, slots?: PipelineSlots): En
       sheetsHash: bundleContentHash(parsed.bundle),
       ruleBookHash: "0".repeat(32),
     },
-    slots: composition,
+    slots: composition.slots,
+    slotsFlavor: composition.flavor,
     clockScript: PARITY_CLOCK,
     bundleId: parsed.bundle.id,
   });
@@ -217,6 +218,7 @@ function exerciseEngine(seed: RunSeed, ticks: number, slots?: PipelineSlots): En
     chainDigest: run.chainDigest,
     finalStateHash: digestOfCanonical(canonicalize(run.finalState, "$")),
     checkpointCount: run.checkpoints.length,
+    slotsFlavor: run.slotsFlavor,
   };
 }
 
@@ -230,7 +232,11 @@ function doubleHex(value: bigint): string {
 
 /* ─────────────── fixture assembly ─────────────── */
 
-export function runParityFixture(seedValue: bigint, ticks = 1_000, slots?: PipelineSlots): ParityReport {
+export function runParityFixture(
+  seedValue: bigint,
+  ticks = 1_000,
+  flavor: CompositionFlavor = ACTIVE_COMPOSITION,
+): ParityReport {
   if (!Number.isSafeInteger(ticks) || ticks < 1) {
     throw new Error(`runParityFixture: ticks must be ≥ 1, got ${String(ticks)}`);
   }
@@ -239,7 +245,7 @@ export function runParityFixture(seedValue: bigint, ticks = 1_000, slots?: Pipel
     fixedArithmetic: doubleHex(exerciseFixed(seedValue, ticks)),
     rngStreams: doubleHex(exerciseRng(seed, ticks)),
     clockScales: doubleHex(exerciseClocks(ticks)),
-    engineRun: exerciseEngine(seed, ticks, slots),
+    engineRun: exerciseEngine(seed, ticks, flavor),
   };
   const report: ParityReport = {
     fixture: PARITY_FIXTURE,
@@ -254,8 +260,12 @@ export function runParityFixture(seedValue: bigint, ticks = 1_000, slots?: Pipel
 
 /** The fixture as a single canonical string — what both arms must print
  *  byte-identically (test/parity.test.ts asserts exactly this). */
-export function parityFixtureCanonical(seedValue: bigint, ticks?: number): string {
-  return serializeCanonical(canonicalize(runParityFixture(seedValue, ticks), "$"));
+export function parityFixtureCanonical(
+  seedValue: bigint,
+  ticks?: number,
+  flavor: CompositionFlavor = ACTIVE_COMPOSITION,
+): string {
+  return serializeCanonical(canonicalize(runParityFixture(seedValue, ticks, flavor), "$"));
 }
 
-export { createSlots };
+export { ACTIVE_COMPOSITION, createSlots };

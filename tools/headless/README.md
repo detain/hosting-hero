@@ -3,13 +3,17 @@
 The CI-proof for **RISK-1** (MASTER_REPORT §8; docs/ARCHITECTURE.md §6): the
 ratified stack is *one engine, two runtimes* — a browser Web-Worker build and
 a Node port — and silent divergence between them is the project's most
-expensive possible failure. This package makes that risk **testable today**,
-before the real pipeline modules are wired together, and stays the gate as
-they land.
+expensive possible failure. This package made that risk testable from the
+stub era, and is the live gate for the real pipeline composition.
 
 Everything here lives in `tools/headless/` and imports sim-core **source
 files directly** (see Adapter Design). Nothing outside this package may import
 it; it imports nothing from sibling apps.
+
+**Status 2026-10-06 — the swap happened.** The ACTIVE composition is now
+`real-v1` (`pipeline/defaults.ts#createDefaultSlots`); the stub stays alive as
+the selectable `stub-v1` regression arm (`--flavor stub-v1`) and its pinned
+engine bytes still prove the harness threading itself never drifted.
 
 ---
 
@@ -25,12 +29,12 @@ pnpm -F headless-tools cli -- <cmd>  # or: node --experimental-transform-types s
 
 | Command | What it does | Exit codes |
 |---|---|---|
-| `run <bundleDir> --seed N --ticks N [--snapshot-every K] [--out FILE]` | Executes the stub-composition sim for N ticks off `<bundleDir>/bundle.json`. Prints stats, per-tick **chain digest**, **final-state digest**, checkpoint list. `--out` writes a self-contained replay artifact (bundle JSON embedded). | 0 ok · 2 usage |
-| `replay-verify <artifact.json>` | Re-executes the run captured by `--out` and compares **every checkpoint hash + the chain digest + final state byte-identically**. This is the LONG-SAVE / MP-resync primitive in miniature. | 0 pass · 1 divergence · 2 usage |
+| `run <bundleDir> --seed N --ticks N [--snapshot-every K] [--out FILE] [--flavor F]` | Executes the composed sim (flavor `stub-v1`\|`real-v1`, default `real-v1`) for N ticks off `<bundleDir>/bundle.json`. Prints stats (`landed` counts adversarial breaches — real composition only), per-tick **chain digest**, **final-state digest**, checkpoint list. `--out` writes a self-contained replay artifact (bundle JSON embedded, flavor stamped). | 0 ok · 2 usage |
+| `replay-verify <artifact.json>` | Re-executes the run captured by `--out` **at the flavor stamped into the artifact** and compares **every checkpoint hash + the chain digest + final state byte-identically**. Stub-era artifacts therefore still replay stub-exactly. This is the LONG-SAVE / MP-resync primitive in miniature. | 0 pass · 1 divergence · 2 usage |
 | `digest <state.json>` | Canonical (bigint-tagged, insertion-order) digest of a state tree — accepts a standalone state file or a full run artifact (hashes its `finalState`). Includes a decode→re-encode stability self-check. | 0 ok · 1 unstable/garbage |
 | `canary [dir]` | Forbidden-API scan (default target `packages/sim-core/src`). | 0 clean · 1 violations |
-| `parity [--seed N] [--ticks N]` | Runs the dual-runtime parity fixture in this runtime; prints the JSON report. | 0 |
-| `bench [--seed N] [--ticks N] [--target TPS]` | Kernel micro-rates + engine ticks/sec vs the PROVISIONAL budget. | 0 met · 1 missed |
+| `parity [--seed N] [--ticks N] [--flavor F]` | Runs the dual-runtime parity fixture in this runtime; prints the flavor-stamped JSON report. | 0 |
+| `bench [--seed N] [--ticks N] [--target TPS] [--flavor F]` | Kernel micro-rates + engine ticks/sec vs the PROVISIONAL budget. | 0 met · 1 missed |
 
 ---
 
@@ -54,8 +58,9 @@ every source file is loader-agnostic.
 
 ## Dual-runtime parity harness
 
-`src/harness.ts::runParityFixture(seed, ticks=1000)` is a pure, I/O-free
-scripted workout of exactly the kernel surfaces where engines diverge:
+`src/harness.ts::runParityFixture(seed, ticks=1000, flavor=ACTIVE_COMPOSITION)`
+is a pure, I/O-free scripted workout of exactly the kernel surfaces where
+engines diverge:
 
 - **Arm A — fixed-point:** Q16.16 `fromRatio/mul/div/add/sub/clamp/compare`
   chains, incl. *counted overflow throws* (the exception paths are parity
@@ -66,8 +71,12 @@ scripted workout of exactly the kernel surfaces where engines diverge:
 - **Arm C — clocks:** `advanceClocks` under speed 1/2/4 + incident flips
   (`PARITY_CLOCK`), `scaleUs` floors on `BUSINESS_SCALE_DEFAULT`/`WALL_SCALE`,
   `tickOf`/`simMinuteOf`, counted `subUs` negative-guard throws;
-- **Arm D — engine:** the full 13-step stub composition for 1 000 ticks with
-  canonical **state digests every 100 ticks** and the rolling chain digest.
+- **Arm D — engine:** the full 13-step **real-v1** composition
+  (`pipeline/defaults.ts#createDefaultSlots` + the adapter's synthetic-baseline
+  envelopes) for 1 000 ticks with canonical **state digests every 100 ticks**
+  and the rolling chain digest. The report stamps `slotsFlavor`; the
+  `stub-v1` arm is selectable for regression and its engineRun digests are
+  pinned byte-identical to the stub era (fixture `hh-parity-v2`).
 
 Every arm reduces through `src/canonical.ts` — a deterministic JSON form
 (sorted object keys, **insertion-ordered** `{"#map":…}`, exact `{"#bi":…}`
@@ -75,8 +84,14 @@ bigints, floats *rejected on sight*) — hashed by a **double FNV-1a/64** (no
 platform crypto, so no encoding/Endian questions in the thing we're certifying).
 
 `test/parity.test.ts` runs the fixture **×10 inside vitest** (byte-stability),
-spawns the **plain-Node arm ×2**, and requires all three byte-identical.
-That is the RISK-1 tripwire: divergence here = build break.
+spawns the **plain-Node arm ×2**, and requires all three byte-identical — for
+the default real-v1 arm **and** the stub-v1 regression arm. Pinned goldens:
+real-v1 combined `b0162ab554c4665a18892f2139d7fee8`, stub-v1 combined
+`a9b4b7b81c2fbedd7d50246936a458d1` (stub-era engine bytes
+`f753121d…`/`be86ce13…` unchanged; the combined moved only because the v2
+report shape stamps the flavor), kernel arms A/B/C identical across both
+flavors and both eras. That is the RISK-1 tripwire: divergence here = build
+break.
 
 ## Forbidden-API canary (`src/canary.ts`)
 
@@ -99,48 +114,59 @@ lane): `node:`-prefixed imports, `process.`, `require(`, `__dirname`,
 Known limitation (documented in code): regex literals are not parsed.
 
 **Current verdict on the tree (re-checked by `test/canary.test.ts` on every
-run): 65 files scanned, 0 violations, 0 advisories — sim-core is
-runtime-neutral as promised.** The planted-violation fixture
-(`test/fixtures/canary/violations.ts`) locks detection of every rule at exact
-lines, with comment/string decoys that must NOT fire.
+run): 88 files scanned, 0 violations, 0 advisories — including the REAL slots
+code paths (`pipeline/defaults.ts` and friends), which is the point: the
+engine directories stay runtime-neutral as promised.** The planted-violation
+fixture (`test/fixtures/canary/violations.ts`) locks detection of every rule
+at exact lines, with comment/string decoys that must NOT fire.
 
 ## Bench + the PROVISIONAL budget
 
 `bench` measures kernel op-rates (fixed-point, rng draws, clock advances) and
-full stub-composition ticks/sec, vs **≥ 10 000 ticks/s** by default
-(`--target` overrides). The budget is **PROVISIONAL, not ratified** — it was
-re-derived from measurement + a CPU profile (2026-10-06, derivation recorded
-in `src/bench.ts`): empty-estate floor ≈ 27k t/s, loaded stub ≈ 14.5k t/s on
-the dev box. The profile's headline finding: the hot path is **sim-core
-kernel bigint math** (`mix64`/splitmix per rng draw, Q16.16 ops) — a kernel
-property shared with the real modules, so the 10k floor is set ~30% under the
-measured rate as a pure catastrophe detector (accidental O(n²), allocator
-churn), not a gameplay performance contract. Current box comfortably passes;
-`--target` is honored both directions and exits non-zero when missed.
+full-composition ticks/sec, vs **≥ 7 000 ticks/s** by default (`--target`
+overrides, `--flavor` selects). The budget is **PROVISIONAL, not ratified** —
+re-derived from measurement on 2026-10-06 (derivation recorded in
+`src/bench.ts`): real-v1 9,175–11,711 t/s; stub-v1 18,833–20,942 t/s on the
+dev box — the real steps cost ≈ 2× the stub (per-unit rng forks, frozen-record
+allocation, Map copies, observed cells). The 7k floor sits ~30 % under the
+measured real floor as a pure catastrophe detector (accidental O(n²),
+allocator churn), not a gameplay performance contract; the old 10k stub-era
+number MISSED the real composition's worst sample, so keeping it would have
+manufactured red CI instead of measuring regressions. Current box passes with
+headroom; `--target` is honored both directions and exits non-zero when missed.
 
 ## Adapter design (the swap, in one move each)
 
-Real modules (pipeline/economy/policy/observed, owned by sibling agents) land
-concurrently. Two files isolate every coupling point:
+Two files isolate every coupling point — and the flip they were built for
+landed 2026-10-06 without touching the harness:
 
 1. **`src/sim-core.ts`** — the *only* file with sim-core paths. Today it
-   re-exports `../../../packages/sim-core/src/{types,kernel/*}.ts` because
-   the package's `exports` map exposes only `"."` → `src/index.ts`, and
-   `index.ts`'s extensionless re-exports break plain-Node resolution. When
-   sim-core adds subpath exports, this file's 4 lines become bare specifiers.
+   re-exports `../../../packages/sim-core/src/{types,kernel/*}.ts` **plus
+   `pipeline/defaults.ts`** (five lines) because the package's `exports` map
+   exposes only `"."` → `src/index.ts`, and `index.ts`'s extensionless
+   re-exports break plain-Node resolution. `pipeline/defaults.ts` and its
+   siblings import each other with explicit `.ts` specifiers, so they are
+   plain-Node-safe. When sim-core adds subpath exports, these five lines
+   become bare specifiers.
 2. **`src/slots.ts`** — the *only* composition adapter. `createSlots(cfg)`
-   returns `{ slots: PipelineSlots, flavor }`; today flavor `stub-v1`. When
-   `pipeline/defaults.ts#createDefaultSlots` (with economy/policy/observed
-   steps) is ready, this file changes one import + one call — **and the
-   parity harness, CLI, bench and every test automatically certify the real
-   composition across both runtimes with zero further edits.**
+   returns `{ slots: PipelineSlots, flavor }`; **ACTIVE_COMPOSITION is now
+   `real-v1`** (`createDefaultSlots`), with the stub preserved as the
+   selectable `stub-v1` regression flavor (`{ flavor }` in code, `--flavor`
+   on the CLI). The real flavor adds exactly two adapter duties, documented
+   inline: (a) the default arrival step has no synthetic-traffic fallback, so
+   the wrapper injects the world baseline (organic ¾ + probe ¼ envelopes
+   summing *exactly* to `cfg.baselineRatePerMin`; external envelopes always
+   win verbatim); (b) `DefaultPipelineConfig` fields with no harness knob are
+   pinned to documented v0 readings (stub-era patience default, R-08 stamps
+   at stub scale, `detectionRatio = 1.0` so the aggression slider moves the
+   real ROC exactly as it moved the stub's, zero viral loop, etc.).
 
-The stub (`src/stub-slots.ts`) is deliberately complete against the contract:
-all 13 steps type-check against the real In/Out shapes, use kernel `fx`/
-`streamFor`/clock math only, keep steps pure (Law 3), and thread cause-stamped
-events. Documented stub omissions (real modules own these): dependency
-blocking, shed, retry re-entries (step 11's input carries no unit bodies),
-empty rule interpreter (a legal implementation per `types.ts` step 12.5).
+The stub (`src/stub-slots.ts`) remains byte-frozen as that regression arm: its
+parity engineRun digests are pinned to the stub-era goldens, so the engine
+threading (extension inputs, `UNIT_HOLD` clearing, retry-depth side table) is
+proven inert to foreign slots. Documented stub omissions — dependency
+blocking, shed, retry re-entries, empty rule interpreter — are exercised by
+the real-v1 arm instead; that was always their purpose.
 
 ## Determinism notes for artifact readers
 
@@ -150,8 +176,11 @@ empty rule interpreter (a legal implementation per `types.ts` step 12.5).
   keys are sorted — the two rules are explicit, not accidents);
 - `timing`/bench numbers are measured with wall clocks **outside** sim state
   and never enter a digest;
-- `engineVersion` + `slotsComposition` are stamped into every artifact —
-  replaying across a composition flip must fail loudly (it will).
+- `engineVersion` + `slotsComposition` are stamped into every artifact and
+  `replay-verify` re-executes **at the stamped flavor** — a stub-era artifact
+  replays stub-exactly even though the live default is real-v1 (proven in
+  `test/cli.test.ts`). An unknown flavor string in an artifact fails loudly
+  at parse time.
 
 ## Lane report (things outside this package, for the orchestrator)
 
@@ -163,9 +192,11 @@ empty rule interpreter (a legal implementation per `types.ts` step 12.5).
   `index.ts`'s extensionless re-exports make the barrel unusable from plain
   Node ESM (`ERR_MODULE_NOT_FOUND`); the kernel files themselves are clean
   (`import type` only).
-- **kernel perf finding (report-only):** under the parity/bench workloads the
-  hottest sim-core function is `rng.ts#mix64` (bigint splitmix64) — a
-  32-bit-limb `Math.imul` rewrite (exactly what `canonical.ts::fnv1a64Hex`
-  does against a bigint oracle) would likely double engine throughput if the
-  kernel owner chooses it. Behavior must stay bit-identical; the parity
-  harness here would certify the swap for free.
+- **kernel perf finding (RESOLVED 2026-10-06):** the `rng.ts#mix64` bigint
+  splitmix64 → 32-bit-limb `Math.imul` rewrite this lane proposed (against a
+  bigint oracle, bit-identical behavior) was adopted by the kernel lane. The
+  post-swap numbers above (stub-v1 18.8–20.9k t/s) already include it. New
+  measurement from the composition swap: **real-v1 costs ≈ 2× the stub**
+  (9.2–11.7k t/s) — the cost centers are the defaults' per-unit `rng.fork`
+  per hop, frozen-record allocation, and Map copies. If more throughput is
+  wanted, profile there next; this harness certifies any such swap for free.

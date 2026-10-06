@@ -1,19 +1,23 @@
 /**
- * Perf bench stub — ticks/sec + kernel micro-rates vs a PROVISIONAL budget.
+ * Perf bench — ticks/sec + kernel micro-rates vs a PROVISIONAL budget.
  *
- * PROVISIONAL BUDGET (see README §Budget): the stub composition must sustain
- * ≥ 10,000 ticks/s on the CI box (seed 7, 20k ticks, bundle weight 40 ≈ 4
- * units/tick). Re-derived from MEASUREMENT (this box, CPU profile, 2026-10-06):
- *   - empty-estate floor ≈ 27k t/s; loaded stub ≈ 14.5k t/s;
- *   - the hot path is sim-core kernel bigint arithmetic (mix64/splitmix per
- *     rng draw + Q16.16 ops) — i.e. the budget is a KERNEL property, shared
- *     with the real modules, not stub sloppiness;
- *   - 10k is ~30% under today's measured rate: low enough to pass on slower
- *     CI runners, high enough that any accidental O(n²) (e.g. per-tick full
- *     state walks that grow unbounded) trips it immediately.
+ * PROVISIONAL BUDGET (see README §Budget): the engine (seed 7, 20k ticks,
+ * PARITY_CLOCK workout, bundle weight 40 ≈ 4 units/tick) must sustain
+ * ≥ 7,000 ticks/s. Re-derived from MEASUREMENT (this box, 2026-10-06, ×3 runs
+ * per flavor via `bench --flavor …`):
+ *   - real-v1 (createDefaultSlots composition): 9,175–11,711 t/s;
+ *   - stub-v1 (frozen regression arm): 18,833–20,942 t/s — the real steps
+ *     cost ≈ 2× the stub (per-unit rng forks, frozen record allocation,
+ *     Map copies, observed-cell writes per hop);
+ *   - the hot path remains sim-core kernel bigint work shared by both
+ *     flavors plus those allocation costs — not stub sloppiness;
+ *   - 7,000 is ~30 % under the measured REAL floor: low enough to pass on
+ *     slower CI runners, high enough that any accidental O(n²) (e.g. per-tick
+ *     full state walks that grow unbounded) trips it immediately. The old
+ *     10k stub-era budget MISSED the real composition's worst sample —
+ *     keeping it would have manufactured red CI, not measured a regression.
  * It is a placeholder to catch catastrophes, NOT a ratified performance
- * contract. Override with --target. Expect re-derivation when real modules
- * land AND if the kernel adopts 32-bit-limb hashing (see README lane note).
+ * contract. Override with --target; select flavor with --flavor.
  *
  * Wall-clock here is measurement scaffolding OUTSIDE sim state (hrtime is
  * permitted in tooling; it never enters a digest — CONVENTIONS §4 binds the
@@ -24,8 +28,9 @@ import { clocks, fx, streams, asRunSeed } from "./sim-core.ts";
 import { PARITY_CLOCK, runFromBundle } from "./engine.ts";
 import { parseBundleValue, type ParsedBundle } from "./bundle.ts";
 import { HARNESS_BUNDLE } from "./engine.ts";
+import type { CompositionFlavor } from "./slots.ts";
 
-export const PROVISIONAL_TARGET_TICKS_PER_SEC = 10_000;
+export const PROVISIONAL_TARGET_TICKS_PER_SEC = 7_000;
 
 export interface BenchResult {
   readonly seed: string;
@@ -47,15 +52,20 @@ function hrMs(start: bigint, end: bigint): number {
   return Number(end - start) / 1_000_000;
 }
 
-export function runBench(seedValue: bigint, ticks: number, targetTicksPerSec: number = PROVISIONAL_TARGET_TICKS_PER_SEC): BenchResult {
+export function runBench(
+  seedValue: bigint,
+  ticks: number,
+  targetTicksPerSec: number = PROVISIONAL_TARGET_TICKS_PER_SEC,
+  flavor?: CompositionFlavor,
+): BenchResult {
   if (!Number.isSafeInteger(ticks) || ticks < 1) throw new Error(`bench: ticks must be ≥ 1, got ${String(ticks)}`);
 
   const parsed: ParsedBundle = parseBundleValue(HARNESS_BUNDLE, "bench:embedded");
   // Warm-up so JIT shapes exist before timing (measurement hygiene only).
-  runFromBundle(parsed, seedValue, Math.min(200, ticks), 100, PARITY_CLOCK);
+  runFromBundle(parsed, seedValue, Math.min(200, ticks), 100, PARITY_CLOCK, flavor);
 
   const start = process.hrtime.bigint();
-  runFromBundle(parsed, seedValue, ticks, 100, PARITY_CLOCK);
+  runFromBundle(parsed, seedValue, ticks, 100, PARITY_CLOCK, flavor);
   const engineMs = hrMs(start, process.hrtime.bigint());
 
   const seed = asRunSeed(seedValue);

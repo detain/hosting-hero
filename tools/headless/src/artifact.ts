@@ -13,7 +13,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 import { asRunSeed, type Checkpoint, type TypeBundle } from "./sim-core.ts";
 import { canonicalize, digestOfCanonical, type CanonicalValue } from "./canonical.ts";
-import { HEADLESS_ENGINE_VERSION, runFromBundle, SLOTS_COMPOSITION, type RunOutput } from "./engine.ts";
+import { FLAT_CLOCK, HEADLESS_ENGINE_VERSION, runFromBundle, type RunOutput } from "./engine.ts";
+import { isCompositionFlavor, type CompositionFlavor } from "./slots.ts";
 import { parseBundleValue, type ParsedBundle } from "./bundle.ts";
 
 export const RUN_ARTIFACT_KIND = "hh-run";
@@ -21,7 +22,7 @@ export const RUN_ARTIFACT_KIND = "hh-run";
 export interface RunArtifact {
   readonly kind: typeof RUN_ARTIFACT_KIND;
   readonly engineVersion: string;
-  readonly slotsComposition: string;
+  readonly slotsComposition: CompositionFlavor;
   readonly bundleDir: string;
   readonly runSeed: string; // decimal bigint string
   readonly ticks: number;
@@ -50,7 +51,7 @@ export function buildArtifact(
   return {
     kind: RUN_ARTIFACT_KIND,
     engineVersion: HEADLESS_ENGINE_VERSION,
-    slotsComposition: SLOTS_COMPOSITION,
+    slotsComposition: run.slotsFlavor,
     bundleDir,
     runSeed: seedValue.toString(),
     ticks,
@@ -106,6 +107,12 @@ export function parseArtifact(value: unknown, source: string): RunArtifact {
   if (!Array.isArray(checkpoints)) throw new Error(`artifact ${source}: checkpoints must be an array`);
   const chainDigest = record["chainDigest"];
   if (typeof chainDigest !== "string") throw new Error(`artifact ${source}: chainDigest missing`);
+  const slotsComposition = record["slotsComposition"];
+  if (!isCompositionFlavor(slotsComposition)) {
+    throw new Error(
+      `artifact ${source}: slotsComposition must be a known flavor ("stub-v1"|"real-v1"), got ${String(slotsComposition)}`,
+    );
+  }
   const bundle = record["bundleJson"];
   if (typeof bundle !== "string") throw new Error(`artifact ${source}: embedded bundleJson missing`);
   const finalState = record["finalState"];
@@ -120,13 +127,15 @@ export interface VerifyResult {
   readonly rerunChainDigest: string;
 }
 
-/** Re-execute the artifact's inputs and compare every checkpoint + the chain
- *  digest byte-for-byte. This is `replay-verify`. */
+/** Re-execute the artifact's inputs — at the composition flavor it was
+ *  stamped with (a stub-era artifact replays stub, a real-era artifact
+ *  replays real; the stamp is provenance AND replay input) — and compare
+ *  every checkpoint + the chain digest byte-for-byte. This is `replay-verify`. */
 export function verifyArtifact(artifact: RunArtifact): VerifyResult {
   const bundleValue = JSON.parse(artifact.bundleJson) as TypeBundle;
   const parsed = parseBundleValue(bundleValue, `artifact:${artifact.bundleDir}`);
   const seed = asRunSeed(BigInt(artifact.runSeed));
-  const run = runFromBundle(parsed, seed, artifact.ticks, artifact.snapshotEveryTicks);
+  const run = runFromBundle(parsed, seed, artifact.ticks, artifact.snapshotEveryTicks, FLAT_CLOCK, artifact.slotsComposition);
 
   const mismatches: string[] = [];
   if (run.chainDigest !== artifact.chainDigest) {

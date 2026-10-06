@@ -13,24 +13,27 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { runFromBundle } from "./engine.ts";
+import { FLAT_CLOCK, runFromBundle } from "./engine.ts";
 import { parseBundleJson } from "./bundle.ts";
 import { buildArtifact, readArtifact, verifyArtifact, writeArtifact } from "./artifact.ts";
 import { canonicalize, digestOfCanonical, decodeCanonical, type CanonicalValue } from "./canonical.ts";
 import { runParityFixture } from "./harness.ts";
+import { isCompositionFlavor, ACTIVE_COMPOSITION, type CompositionFlavor } from "./slots.ts";
 import { formatReport, scanDirectory, simCoreSrcDir } from "./canary.ts";
 import { formatBench, runBench, PROVISIONAL_TARGET_TICKS_PER_SEC } from "./bench.ts";
 
 const USAGE = `headless-tools — Node-port harness for @hh/sim-core (RISK-1 parity gate)
 
 Usage:
-  run <bundleDir> --seed N --ticks N [--snapshot-every K] [--out FILE]
-        Executes the stub-composition sim for N ticks (bundleDir/bundle.json
-        holds the TypeBundle). Prints digests; --out writes a replay artifact.
+  run <bundleDir> --seed N --ticks N [--snapshot-every K] [--out FILE] [--flavor F]
+        Executes the composed sim for N ticks (bundleDir/bundle.json holds the
+        TypeBundle). Flavor F is stub-v1|real-v1 (default ${ACTIVE_COMPOSITION}).
+        Prints digests; --out writes a replay artifact (stamped with the flavor).
 
   replay-verify <artifact.json>
-        Re-executes the run captured in a --out artifact and compares every
-        checkpoint + chain digest byte-for-byte. Exit 1 on any divergence.
+        Re-executes the run captured in a --out artifact AT ITS STAMPED FLAVOR
+        and compares every checkpoint + chain digest byte-for-byte. Exit 1 on
+        any divergence.
 
   digest <state.json>
         Prints the canonical (bigint-tagged, insertion-order) digest of a
@@ -40,11 +43,11 @@ Usage:
         Scans TypeScript sources (default: packages/sim-core/src) for
         forbidden runtime-sensitive APIs. Exit 1 on violations.
 
-  parity [--seed N] [--ticks N] [--json]
+  parity [--seed N] [--ticks N] [--flavor F]
         Runs the dual-runtime parity fixture in THIS runtime and prints the
         report (the CI test compares this against the vitest arm).
 
-  bench [--seed N] [--ticks N] [--target TPS]
+  bench [--seed N] [--ticks N] [--target TPS] [--flavor F]
         Kernel + engine throughput vs the PROVISIONAL budget
         (${PROVISIONAL_TARGET_TICKS_PER_SEC.toLocaleString("en-US")} ticks/s; see README §Budget).`;
 
@@ -102,6 +105,13 @@ function parsePositiveInt(raw: string, label: string): number {
   return value;
 }
 
+/** --flavor boundary: narrow the raw string into the closed composition union. */
+function parseFlavor(raw: string | undefined): CompositionFlavor | undefined {
+  if (raw === undefined) return undefined;
+  if (isCompositionFlavor(raw)) return raw;
+  throw new UsageError(`--flavor must be "stub-v1" or "real-v1", got "${raw}"`);
+}
+
 class UsageError extends Error {}
 
 /* ─────────────────────────── commands ─────────────────────────── */
@@ -115,11 +125,12 @@ function cmdRun(positional: readonly string[], flags: Flags): number {
   const seed = parseSeed(requireFlag(flags, "seed"));
   const ticks = parsePositiveInt(requireFlag(flags, "ticks"), "ticks");
   const snapshotEvery = parsePositiveInt(flags.get("snapshot-every") ?? "100", "snapshot-every");
+  const flavor = parseFlavor(flags.get("flavor"));
 
   const parsed = parseBundleJson(readFileSync(bundlePath, "utf8"), bundlePath);
 
   const wallStart = process.hrtime.bigint();
-  const run = runFromBundle(parsed, seed, ticks, snapshotEvery);
+  const run = runFromBundle(parsed, seed, ticks, snapshotEvery, FLAT_CLOCK, flavor);
   const wallMs = Number(process.hrtime.bigint() - wallStart) / 1e6;
 
   const artifact = buildArtifact(parsed, bundleDir, seed, ticks, snapshotEvery, run, {
@@ -133,7 +144,7 @@ function cmdRun(positional: readonly string[], flags: Flags): number {
   process.stdout.write(
     [
       `run: bundle=${parsed.bundle.id} seed=${seed.toString()} ticks=${String(ticks)} slots=${artifact.slotsComposition}`,
-      `stats: arrived=${String(run.stats.arrived)} served=${String(run.stats.served)} bounced=${String(run.stats.bounced)} blocked=${String(run.stats.blocked)} events=${String(run.stats.events)}`,
+      `stats: arrived=${String(run.stats.arrived)} served=${String(run.stats.served)} landed=${String(run.stats.landed)} bounced=${String(run.stats.bounced)} blocked=${String(run.stats.blocked)} events=${String(run.stats.events)}`,
       `chain: ${run.chainDigest}`,
       `final: ${digestOfCanonical(artifact.finalState)}`,
       `checkpoints: ${String(artifact.checkpoints.length)}${artifact.checkpoints.length > 0 ? ` (last @tick ${artifact.checkpoints[artifact.checkpoints.length - 1]?.tick}: ${artifact.checkpoints[artifact.checkpoints.length - 1]?.stateHash})` : ""}`,
@@ -194,7 +205,7 @@ function cmdParity(positional: readonly string[], flags: Flags): number {
   void positional;
   const seed = parseSeed(flags.get("seed") ?? "7");
   const ticks = parsePositiveInt(flags.get("ticks") ?? "1000", "ticks");
-  const report = runParityFixture(seed, ticks);
+  const report = runParityFixture(seed, ticks, parseFlavor(flags.get("flavor")));
   process.stdout.write(`${JSON.stringify(report)}\n`);
   return 0;
 }
@@ -203,7 +214,7 @@ function cmdBench(flags: Flags): number {
   const seed = parseSeed(flags.get("seed") ?? "7");
   const ticks = parsePositiveInt(flags.get("ticks") ?? "20000", "ticks");
   const target = parsePositiveInt(flags.get("target") ?? String(PROVISIONAL_TARGET_TICKS_PER_SEC), "target");
-  const result = runBench(seed, ticks, target);
+  const result = runBench(seed, ticks, target, parseFlavor(flags.get("flavor")));
   process.stdout.write(formatBench(result) + "\n");
   return result.target.met ? 0 : 1;
 }

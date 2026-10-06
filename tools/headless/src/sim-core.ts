@@ -14,9 +14,15 @@
  *  - `types.ts` contains `export enum`, so the plain-Node arm runs with
  *    `--experimental-transform-types` (documented in README).
  *
- * WHEN sim-core adds subpath exports (`"./types"`, `"./kernel/*"`): change the
- * four lines below to bare specifiers and delete this comment. No other file
- * in tools/headless touches sim-core paths.
+ * The same argument holds for `pipeline/defaults.ts` (swap point #2's real
+ * composition): it and its siblings (`internal.ts`, `bounce.ts`, `queue.ts`)
+ * import each other exclusively with explicit `.ts` specifiers and type-only
+ * imports — plain-Node-safe in BOTH parity arms.
+ *
+ * WHEN sim-core adds subpath exports (`"./types"`, `"./kernel/*"`,
+ * `"./pipeline/defaults"`): change the five lines below to bare specifiers
+ * and delete this comment. No other file in tools/headless touches sim-core
+ * paths.
  */
 
 export * from "../../../packages/sim-core/src/types.ts";
@@ -24,3 +30,4 @@ export * from "../../../packages/sim-core/src/types.ts";
 export * as fx from "../../../packages/sim-core/src/kernel/fixed.ts";
 export * as streams from "../../../packages/sim-core/src/kernel/rng.ts";
 export * as clocks from "../../../packages/sim-core/src/kernel/time.ts";
+export * as pipeline from "../../../packages/sim-core/src/pipeline/defaults.ts";

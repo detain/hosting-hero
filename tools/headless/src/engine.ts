@@ -21,6 +21,7 @@ import {
   asRunSeed,
   clocks,
   fx,
+  pipeline,
   streams,
   type Checkpoint,
   type ClockState,
@@ -40,11 +41,10 @@ import {
 } from "./sim-core.ts";
 import { canonicalize, digestOfCanonical, fnv1a64Hex } from "./canonical.ts";
 import { startingCash, startingLanes, startingNodes, stubConfigFromBundle, type StubSlotsConfig } from "./stub-slots.ts";
-import { createSlots } from "./slots.ts";
+import { createSlots, type CompositionFlavor } from "./slots.ts";
 import type { ParsedBundle } from "./bundle.ts";
 
 export const HEADLESS_ENGINE_VERSION = "0.0.0-headless.1";
-export const SLOTS_COMPOSITION = "stub-v1";
 
 /** Speed 1|2|4 — defined in kernel/time.ts, re-exported under `clocks`. */
 type SpeedFactor = clocks.SpeedFactor;
@@ -83,10 +83,14 @@ function advance(clock: ClockState, tick: bigint, script: ClockScript): ClockSta
   });
 }
 
-/* ─────────────────────────── stub-world inputs ─────────────────────────── */
+/* ─────────────────────────── per-call step inputs ─────────────────────────── */
 
 /** Tuning-sheet stand-ins: classes/depths/knee live OUTSIDE GameState in v0
- *  (content-hash-pinned via contentHashes.sheetsHash in a real run). */
+ *  (content-hash-pinned via contentHashes.sheetsHash in a real run). Both
+ *  flavors consume these as step INPUTS at call time: the default
+ *  qosClassify/inspect/queueWait steps read classes/depths/aggression/kneeRho
+ *  from their In shapes, so this sheet stays the fixture's tuning surface even
+ *  on the real composition. */
 export const STUB_CONFIG: StubSlotsConfig = stubConfigFromBundle({});
 
 const STUB_EXPRESS_MAX: Fixed = fx.fromRatio(5n, 10n);
@@ -107,6 +111,9 @@ export interface RunParams {
   readonly snapshotEveryTicks: number;
   readonly contentHashes: ReplayContentHashes;
   readonly slots: PipelineSlots;
+  /** Which composition `slots` came from — echoed onto RunOutput and stamped
+   *  into artifacts (provenance; replay re-executes the stamped flavor). */
+  readonly slotsFlavor: CompositionFlavor;
   readonly clockScript: ClockScript;
   readonly bundleId: string;
   readonly config?: StubSlotsConfig;
@@ -115,8 +122,14 @@ export interface RunParams {
 export interface RunStats {
   readonly arrived: number;
   readonly served: number;
+  /** Units that walked away on patience alone (never defense-kills). */
   readonly bounced: number;
+  /** Units stopped by the ROC — stub terminal blocked-false-positive, real
+   *  bounced-with-`defense:*` cause (defaults.ts resolveTerminal). */
   readonly blocked: number;
+  /** Adversarial units that reached their goal (real composition only — the
+   *  stub's frozen terminal set never emitted "landed"). */
+  readonly landed: number;
   readonly events: number;
 }
 
@@ -126,6 +139,7 @@ export interface RunOutput {
   /** Rolling per-tick chain hash (32 hex) — divergence tripwire. */
   readonly chainDigest: string;
   readonly stats: RunStats;
+  readonly slotsFlavor: CompositionFlavor;
 }
 
 export function initialState(seed: RunSeed, contentHashes: ReplayContentHashes, bundleId: string): GameState {
@@ -162,11 +176,22 @@ export function runEngine(params: RunParams): RunOutput {
   let state = initialState(params.seed, params.contentHashes, params.bundleId);
   const checkpoints: Checkpoint[] = [];
   let chain = "0".repeat(32);
-  const stats = { arrived: 0, served: 0, bounced: 0, blocked: 0, events: 0 };
+  const stats = { arrived: 0, served: 0, bounced: 0, blocked: 0, landed: 0, events: 0 };
+  /* Run-local lineage side-table (outside GameState — never digested): unit id
+   * → retry generation. The default backpressure step caps retries via the
+   * BackpressureInExt.retryDepthById extension input (defaults.ts header).
+   * The stub ignores it. Entries outlive their unit — ids are unique, so a
+   * stale depth read can only come from a lineage lookup, never a collision. */
+  const retryDepths = new Map<EntityId, number>();
 
   for (let t = 0; t < params.ticks; t += 1) {
     const context = state.context;
     const rngFor = (domain: string) => streams.streamFor(params.seed, domain, context.minute);
+
+    /* Driver obligation of the default serve/dependencyBlock pair (defaults.ts
+     * header): the UNIT_HOLD side-table lives one synchronous tick. The stub
+     * never writes it, so the clear is inert on that path. */
+    pipeline.UNIT_HOLD.clear();
 
     /* Occupancy BEFORE serve → completions derived after (stub-slots). */
     const occupiedBefore = new Set<EntityId>();
@@ -221,7 +246,11 @@ export function runEngine(params: RunParams): RunOutput {
       const tail = unit.routeHops[unit.routeHops.length - 1] ?? null;
       candidates.push({ unitId: unit.id, nodeId: head, targetId: tail, terminal: null });
     }
-    const outcomeOut = slots.outcome({
+    /* Extension inputs (defaults.ts): outcome + backpressure read the live
+     * unit bodies through `unitsById`; the stub steps ignore the extra fields
+     * (structural typing — a non-fresh subtype passes where the base input is
+     * declared). */
+    const outcomeIn: pipeline.OutcomeInExt = {
       context,
       candidates,
       inspections: inspectOut.verdicts,
@@ -229,14 +258,19 @@ export function runEngine(params: RunParams): RunOutput {
       completed,
       valueByUnit: new Map<EntityId, Fixed>(),
       rng: rngFor("outcome"),
-    });
-    const backpressureOut = slots.backpressure({
+      unitsById: unitsMap,
+    };
+    const outcomeOut = slots.outcome(outcomeIn);
+    const backpressureIn: pipeline.BackpressureInExt = {
       context,
       outcomes: outcomeOut.outcomes,
       policy: STUB_RETRY_POLICY,
       stormFactor: STUB_STORM_FACTOR,
       rng: rngFor("backpressure"),
-    });
+      unitsById: unitsMap,
+      retryDepthById: retryDepths,
+    };
+    const backpressureOut = slots.backpressure(backpressureIn);
     const economicsOut = slots.stateEconomics({
       context,
       prior: state,
@@ -289,6 +323,12 @@ export function runEngine(params: RunParams): RunOutput {
     }
     for (const [i, draft] of backpressureOut.reentries.entries()) {
       const id = asEntityId(`r${context.tick.toString()}-${i.toString()}`);
+      if (draft.retryOf !== null) {
+        // Retry child: one generation past its parent's (arrival parents were
+        // never registered → depth 0 → child starts at 1). Viral drafts carry
+        // retryOf = null and legitimately re-enter at generation 0.
+        retryDepths.set(id, (retryDepths.get(draft.retryOf) ?? 0) + 1);
+      }
       nextUnits.set(id, materializeDraft(draft, context, id));
     }
 
@@ -305,8 +345,16 @@ export function runEngine(params: RunParams): RunOutput {
     stats.events += tickEvents.length;
     for (const outcome of outcomeOut.outcomes) {
       if (outcome.terminal === "served") stats.served += 1;
-      if (outcome.terminal === "bounced") stats.bounced += 1;
+      if (outcome.terminal === "landed") stats.landed += 1;
       if (outcome.terminal === "blocked-false-positive") stats.blocked += 1;
+      if (outcome.terminal === "bounced") {
+        /* Real composition neutralizes defense-killed hostiles as bounced with
+         * a `defense:*` cause (defaults.ts); the stub's patience bounces carry
+         * `outcome:bounced:*`. Route by cause so the buckets keep their stub-era
+         * meanings: bounced = walked away, blocked = stopped by the ROC. */
+        if (outcome.causeId.startsWith("defense:")) stats.blocked += 1;
+        else stats.bounced += 1;
+      }
     }
 
     state = {
@@ -339,7 +387,13 @@ export function runEngine(params: RunParams): RunOutput {
     }
   }
 
-  return { finalState: state, checkpoints, chainDigest: chain, stats: { ...stats } };
+  return {
+    finalState: state,
+    checkpoints,
+    chainDigest: chain,
+    stats: { ...stats },
+    slotsFlavor: params.slotsFlavor,
+  };
 }
 
 function materializeDraft(draft: UnitDraft, context: TickContext, id: EntityId): Unit {
@@ -370,17 +424,22 @@ export function bundleContentHash(bundle: TypeBundle): string {
   return digestOfCanonical(canonicalize(JSON.stringify(bundle), "$.bundle-json"));
 }
 
-/** Full run from a parsed bundle + seed (used by CLI, bench, parity). */
+/** Full run from a parsed bundle + seed (used by CLI, bench, parity). The
+ *  optional `flavor` selects the composition — replay of a stamped artifact
+ *  re-executes the flavor it was recorded with (see artifact.ts). */
 export function runFromBundle(
   parsed: ParsedBundle,
   seedValue: bigint,
   ticks: number,
   snapshotEveryTicks: number,
   clockScript: ClockScript = FLAT_CLOCK,
+  flavor?: CompositionFlavor,
 ): RunOutput {
   const seed = asRunSeed(seedValue);
-  const { slots } = createSlots({
+  const { slots, flavor: usedFlavor } = createSlots({
+    seed,
     bundleId: parsed.bundle.id,
+    ...(flavor === undefined ? {} : { flavor }),
     ...(parsed.patienceUs === null ? {} : { patienceUs: parsed.patienceUs }),
     unitTerm: parsed.unitTerm,
     baselineRatePerMin: parsed.baselineRatePerMin,
@@ -396,6 +455,7 @@ export function runFromBundle(
     snapshotEveryTicks,
     contentHashes,
     slots,
+    slotsFlavor: usedFlavor,
     clockScript,
     bundleId: parsed.bundle.id,
   });

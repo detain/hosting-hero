@@ -8,9 +8,16 @@
  *
  * Same scripted 1k-tick fixture (fixed-point chains incl. overflow-throw
  * counts, six keyed rng domains + fork + counter re-open, clock scales under
- * speed 1/2/4 + incident flips, full stub-composition engine run with
- * canonical state digests) must produce BYTE-IDENTICAL canonical reports.
+ * speed 1/2/4 + incident flips, full REAL-composition engine run — the
+ * pipeline/defaults.ts slots since the 2026-10-06 swap — with canonical state
+ * digests) must produce BYTE-IDENTICAL canonical reports across arms.
  * ×10 stability proves zero hidden runtime state.
+ *
+ * The stub composition stays alive as a REGRESSION arm (--flavor stub-v1):
+ * its engineRun digests must remain byte-identical to the stub-era goldens
+ * pinned below, proving the swap touched only the composition, never the
+ * engine threading. The combined digests differ from the hh-parity-v1 era
+ * because the v2 report shape stamps `slotsFlavor` onto Arm D.
  */
 
 import { execFile } from "node:child_process";
@@ -20,6 +27,7 @@ import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 
 import { PARITY_FIXTURE, parityFixtureCanonical, runParityFixture } from "../src/harness.ts";
+import type { CompositionFlavor } from "../src/slots.ts";
 import { canonicalize, serializeCanonical } from "../src/canonical.ts";
 import type { ParityReport } from "../src/harness.ts";
 
@@ -29,16 +37,47 @@ const PKG_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SEED = 7n;
 const TICKS = 1_000;
 
+/* ─────────────── pinned fixture goldens (regenerated 2026-10-06) ─────────────── */
+
+/** real-v1 (ACTIVE_COMPOSITION) — the default arms below. */
+const REAL_V1_COMBINED = "b0162ab554c4665a18892f2139d7fee8";
+const REAL_V1_ENGINE_CHAIN = "3d749386b41a71dc4b388641d957070e";
+const REAL_V1_ENGINE_FINAL = "0c6cf3d32180a1f3e700cb3cd9c6cc85";
+
+/** stub-v1 — engine bytes are the FROZEN stub-era goldens (identical to the
+ *  hh-parity-v1 report: chain f753121d…, final be86ce13…). The combined value
+ *  differs from v1 only because the report gained slotsFlavor + the new id. */
+const STUB_V1_COMBINED = "a9b4b7b81c2fbedd7d50246936a458d1";
+const STUB_ERA_ENGINE_CHAIN = "f753121d4dc24e32f97eceb9628e5068";
+const STUB_ERA_ENGINE_FINAL = "be86ce13375db0db370fcc7535b34785";
+
+/** Kernel arms — untouched by the composition swap; same values in the stub
+ *  and real eras (fixture runs at seed 7 / 1k ticks regardless of flavor). */
+const KERNEL_ARM_DIGESTS = {
+  fixedArithmetic: "2641ffc9c3d4afde9994f98e13d20bac",
+  rngStreams: "249c60d7cf4b109b7d164537bb0cdbf1",
+  clockScales: "41db9036fc434582cfda2bc35f74de43",
+} as const;
+
 function canonicalReport(report: ParityReport): string {
   return serializeCanonical(canonicalize(report, "$"));
 }
 
-async function nodeArmCanonical(): Promise<string> {
-  const { stdout, stderr } = await run(
-    process.execPath,
-    ["--experimental-transform-types", CLI, "parity", "--seed", SEED.toString(), "--ticks", String(TICKS)],
-    { cwd: PKG_ROOT, maxBuffer: 16 * 1024 * 1024 },
-  );
+async function nodeArmCanonical(flavor?: CompositionFlavor): Promise<string> {
+  const args = [
+    "--experimental-transform-types",
+    CLI,
+    "parity",
+    "--seed",
+    SEED.toString(),
+    "--ticks",
+    String(TICKS),
+  ];
+  if (flavor !== undefined) args.push("--flavor", flavor);
+  const { stdout, stderr } = await run(process.execPath, args, {
+    cwd: PKG_ROOT,
+    maxBuffer: 16 * 1024 * 1024,
+  });
   // stderr carries only the ExperimentalWarning banner — never an error.
   expect(stderr.toLowerCase()).not.toContain("error");
   const report = JSON.parse(stdout.trim()) as ParityReport;
@@ -65,6 +104,40 @@ describe("dual-runtime parity harness", () => {
     expect(nodeArm1).toBe(nodeArm2);
     expect(nodeArm1).toBe(vitestArm);
   }, 180_000);
+
+  it("stub-v1 arm matches across runtimes too (regression arms are parity-gated)", async () => {
+    const vitestArm = canonicalReport(runParityFixture(SEED, TICKS, "stub-v1"));
+    const nodeArm = await nodeArmCanonical("stub-v1");
+    expect(nodeArm).toBe(vitestArm);
+  }, 180_000);
+
+  it("real-v1 default matches the pinned 2026-10-06 goldens", () => {
+    const report = runParityFixture(SEED, TICKS);
+    expect(report.arms.engineRun.slotsFlavor).toBe("real-v1");
+    expect(report.arms.engineRun.chainDigest).toBe(REAL_V1_ENGINE_CHAIN);
+    expect(report.arms.engineRun.finalStateHash).toBe(REAL_V1_ENGINE_FINAL);
+    expect(report.combined).toBe(REAL_V1_COMBINED);
+  });
+
+  it("stub-v1 regression arm preserves the frozen stub-era engine bytes", () => {
+    const report = runParityFixture(SEED, TICKS, "stub-v1");
+    expect(report.arms.engineRun.slotsFlavor).toBe("stub-v1");
+    expect(report.arms.engineRun.chainDigest).toBe(STUB_ERA_ENGINE_CHAIN);
+    expect(report.arms.engineRun.finalStateHash).toBe(STUB_ERA_ENGINE_FINAL);
+    expect(report.combined).toBe(STUB_V1_COMBINED);
+    // The two compositions genuinely differ — the swap is a behavior change,
+    // not a relabeling (engine arms must not collide).
+    expect(report.arms.engineRun.chainDigest).not.toBe(REAL_V1_ENGINE_CHAIN);
+  });
+
+  it("kernel arms are invariant under the composition swap", () => {
+    for (const flavor of ["real-v1", "stub-v1"] as const) {
+      const report = runParityFixture(SEED, TICKS, flavor);
+      expect(report.arms.fixedArithmetic).toBe(KERNEL_ARM_DIGESTS.fixedArithmetic);
+      expect(report.arms.rngStreams).toBe(KERNEL_ARM_DIGESTS.rngStreams);
+      expect(report.arms.clockScales).toBe(KERNEL_ARM_DIGESTS.clockScales);
+    }
+  });
 
   it("report internals: every arm digest is 32 lowercase hex; engine arms exercised", () => {
     const report = runParityFixture(SEED, TICKS);
