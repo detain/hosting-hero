@@ -1,0 +1,49 @@
+/* Base chrome: the DOM compositor tier. HUD text never scales — all px, no
+   transform-linked type (§7.16). Background carries atmosphere (gradient +
+   grain-ready field), never a flat slab. */
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  color: #d7e3ea;
+  background:
+    radial-gradient(1200px 700px at 70% -10%, color-mix(in srgb, var(--hh-accent) 9%, transparent), transparent 60%),
+    linear-gradient(160deg, color-mix(in srgb, var(--hh-surface) 80%, #000) 0%, var(--hh-surface) 55%, color-mix(in srgb, var(--hh-surface) 70%, #000) 100%);
+  font-family: var(--hh-typeface);
+  overflow: hidden;
+}
+
+#app { height: 100dvh; display: grid; grid-template-rows: 48px 1fr; }
+
+.app-shell { position: relative; min-height: 0; }
+
+.instrument-rail {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  bottom: 12px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 2px;
+  z-index: 30;
+}
+
+.hud-buttons { display: flex; gap: 6px; margin-right: 4px; }
+.hud-buttons button {
+  font-family: var(--hh-typeface);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--hh-accent);
+  background: color-mix(in srgb, var(--hh-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hh-accent) 40%, transparent);
+  border-radius: var(--hh-radius);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.hud-buttons button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--hh-accent) 30%, transparent);
+}

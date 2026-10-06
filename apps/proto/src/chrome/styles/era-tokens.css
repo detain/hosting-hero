@@ -1,0 +1,22 @@
+/**
+ * Chrome Skin Token Set (§1.6): era = EXACTLY four tokens.
+ *   --hh-typeface · --hh-radius · --hh-surface · --hh-accent
+ * Layout, hierarchy, iconography and spacing NEVER change with era; every
+ * bezel in the game re-skins for free because they consume only these four.
+ * The two demo eras below are deliberately far apart (§100s terminal steel
+ * vs modern ink-glass) to prove the token law is real, not decorative.
+ */
+
+html[data-era="1998"] {
+  --hh-typeface: "VT323", "IBM Plex Mono", "Courier New", monospace;
+  --hh-radius: 0px;
+  --hh-surface: #171d24;
+  --hh-accent: #f2b133;
+}
+
+html[data-era="2026"] {
+  --hh-typeface: "Space Grotesk", "Avenir Next", "Segoe UI Variable", sans-serif;
+  --hh-radius: 12px;
+  --hh-surface: #0d131c;
+  --hh-accent: #35e0e6;
+}
