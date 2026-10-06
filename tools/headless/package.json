@@ -16,7 +16,7 @@
     "bench": "node --experimental-transform-types src/cli.ts bench"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.6.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
   }
