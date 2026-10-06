@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.tsbuildinfo
+
+# coverage / reports
+coverage/
+
+# environment
+.env
+.env.*
+
+# editor / OS noise
+.DS_Store
+Thumbs.db
+*.swp
+
+# logs
+*.log
+.logs/
+
+# python bytecode (scripts/ tooling)
+__pycache__/
+
+# import-tool resume state (regenerable)
+scripts/.hosting_game_import/

@@ -1,0 +1,31 @@
+{
+  "name": "@hh/sim-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic simulation kernel + shared contract types for Hosting Hero (MASTER_REPORT §3, §4.1, §7.0 P0).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./kernel": "./src/kernel.ts",
+    "./pipeline": "./src/pipeline/index.ts",
+    "./policy": "./src/policy/index.ts",
+    "./economy": "./src/economy/index.ts",
+    "./observed": "./src/observed/index.ts",
+    "./topology": "./src/topology/index.ts",
+    "./waves": "./src/waves/index.ts",
+    "./replay": "./src/replay/index.ts",
+    "./loader": "./src/loader/index.ts",
+    "./save": "./src/save/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.4"
+  }
+}

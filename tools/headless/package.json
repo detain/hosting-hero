@@ -1,0 +1,23 @@
+{
+  "name": "headless-tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Node-port harness for @hh/sim-core: CLI, dual-runtime parity gate, forbidden-API canary, perf bench stub. Implements docs/ARCHITECTURE.md §6 / MASTER_REPORT RISK-1 (browser-JS vs Node parity is the ratified-stack risk — this package makes it testable in CI).",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "cli": "node --experimental-transform-types src/cli.ts",
+    "canary": "node --experimental-transform-types src/cli.ts canary",
+    "parity": "node --experimental-transform-types src/cli.ts parity",
+    "bench": "node --experimental-transform-types src/cli.ts bench"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,9 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+  - "tools/*"
+
+# esbuild ships its native binary via a postinstall script (required by
+# vitest); pnpm only runs build scripts for explicitly trusted deps.
+allowBuilds:
+  esbuild: true
