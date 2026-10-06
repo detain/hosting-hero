@@ -8,6 +8,7 @@ import type { MetricCandidate } from "./promotion";
 import { G1_INSTRUMENTS, instrumentReading, type InstrumentReading, type InstrumentDef } from "./instruments/registry";
 import { observedKey, asEntityId, type ObservedKey } from "@hh/sim-core";
 import { fixedToDisplay } from "../shared/protocol";
+import { formatMoney } from "./numberLaw";
 
 function lookup(projection: SimProjection, entity: string, property: string) {
   return projection.observed.get(observedKey(asEntityId(entity), property) as ObservedKey);
@@ -57,17 +58,9 @@ export function worstState(projection: SimProjection): InstrumentReading["state"
 
 /* ═══════════════════════════ labels ═══════════════════════════ */
 
-/** Money never abbreviated below $10k (Number Law §1.8); tabular display. */
-export function formatMicroUsd(microUsd: bigint): string {
-  const negative = microUsd < 0n;
-  const abs = negative ? -microUsd : microUsd;
-  const dollars = Number(abs / 10_000n) / 100; // µ$ → $ at cent precision
-  const body =
-    abs >= 10_000_000_000n // $10k floor for abbreviation
-      ? `${(dollars / 1000).toFixed(1)}k`
-      : dollars.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return `${negative ? "−" : ""}$${body}`;
-}
+/** Money law lives in numberLaw.ts now (§8.15 consolidation); this name is
+ *  kept as the chrome-facing alias — App.vue and metrics.test.ts pin it. */
+export { formatMoney as formatMicroUsd } from "./numberLaw";
 
 /** Run clock on the SIM clock, formatted "T+3h12m" (integer display math). */
 export function formatRunClock(simUs: bigint): string {
@@ -87,6 +80,117 @@ export function rhoDisplayOf(projection: SimProjection): number | null {
   return cell === undefined || cell.value === null || typeof cell.value !== "bigint"
     ? null
     : fixedToDisplay(cell.value);
+}
+
+/* ═══════════════════ top-bar threshold registry (§1.4) ═══════════════════ */
+
+/**
+ * The permanent four — cash / MRR / reputation / clock — are law, not
+ * configuration (§1.4). Their extractors read ONLY SimProjection fields and
+ * observed cells; a missing cell is NO DATA ("?"), never a zero (§4.1 R-66).
+ */
+export interface HudMetricDef {
+  readonly id: "cash" | "mrr" | "reputation" | "clock";
+  readonly label: string;
+  /** µ$ money rows format via the money law; ratio rows are plain numbers. */
+  readonly read: (projection: SimProjection) => { readonly dollars: number | null } | { readonly text: string };
+}
+
+function dollarsFrom(microUsd: bigint | null): number | null {
+  return microUsd === null ? null : Number(microUsd / 100n) / 10_000; // µ$ → $ cents-safe
+}
+
+export const HUD_PERMANENT_METRICS: readonly HudMetricDef[] = Object.freeze([
+  {
+    id: "cash",
+    label: "cash",
+    read: (p) => ({ dollars: dollarsFrom(p.freeCashMicroUsd) }),
+  },
+  {
+    id: "mrr",
+    label: "MRR",
+    read: (p) => {
+      const cell = lookup(p, "company", "mrrMicroUsd");
+      const raw = cell?.value;
+      return { dollars: raw === null || raw === undefined || typeof raw !== "bigint" ? null : dollarsFrom(raw) };
+    },
+  },
+  {
+    id: "reputation",
+    label: "reputation",
+    read: (p) => {
+      const cell = lookup(p, "company", "reputation");
+      const raw = cell?.value;
+      return { dollars: raw === null || raw === undefined || typeof raw !== "bigint" ? null : fixedToDisplay(raw) };
+    },
+  },
+  {
+    id: "clock",
+    label: "run clock",
+    read: (p) => ({ text: formatRunClock(p.clocks.simUs) }),
+  },
+]);
+
+export interface HudPermanentRow {
+  readonly id: string;
+  readonly label: string;
+  /** Pre-formatted display string (money law / plain / "?"). */
+  readonly value: string;
+  /** Raw display number for candidate wiring — null on NO DATA. */
+  readonly numeric: number | null;
+  readonly state: "live" | "no-data";
+}
+
+/** Rows for the permanent chips of the top bar (§8.8 HUD skeleton). */
+export function hudPermanentRows(projection: SimProjection | null): readonly HudPermanentRow[] {
+  if (projection === null) {
+    return HUD_PERMANENT_METRICS.map((def) => ({
+      id: def.id,
+      label: def.label,
+      value: "?",
+      numeric: null,
+      state: "no-data" as const,
+    }));
+  }
+  return HUD_PERMANENT_METRICS.map((def) => {
+    const reading = def.read(projection);
+    if ("text" in reading) {
+      return { id: def.id, label: def.label, value: reading.text, numeric: null, state: "live" as const };
+    }
+    if (reading.dollars === null) {
+      return { id: def.id, label: def.label, value: "?", numeric: null, state: "no-data" as const };
+    }
+    const value =
+      def.id === "cash" || def.id === "mrr"
+        ? formatMoneyFromDollars(reading.dollars)
+        : reading.dollars.toFixed(2);
+    return { id: def.id, label: def.label, value, numeric: reading.dollars, state: "live" as const };
+  });
+}
+
+/** Display dollars → money law. Goes back through µ$ to keep the $10k
+ *  abbreviation floor EXACTLY where formatMoney defines it. */
+function formatMoneyFromDollars(dollars: number): string {
+  const safe = Number.isSafeInteger(Math.round(dollars * 100)) ? Math.round(dollars * 100) : 0;
+  return formatMoney(BigInt(safe) * 10_000n);
+}
+
+/**
+ * Full candidate list for the generalized top bar: the permanent four plus
+ * the promotable instrument readings. Permanents carry threshold null —
+ * informational, un-promotable, un-collapsible (§1.4 law).
+ */
+export function buildHudCandidates(projection: SimProjection): MetricCandidate[] {
+  const permanents: MetricCandidate[] = hudPermanentRows(projection).map((row) => ({
+    id: row.id,
+    label: row.label,
+    kind: "permanent" as const,
+    value: row.numeric,
+    threshold: null,
+    direction: "up" as const,
+    span: 1,
+  }));
+  return [...permanents, ...buildCandidates(projection)];
 }
 
 export type { InstrumentDef };

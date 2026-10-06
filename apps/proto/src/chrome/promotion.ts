@@ -83,3 +83,43 @@ export function planPromotion(
     collapsedCount: Math.max(0, wanted - promoted.length),
   };
 }
+
+export type PinOutcome = "pinned" | "unpinned" | "capacity-refused";
+
+export interface PinResult {
+  readonly candidates: readonly MetricCandidate[];
+  readonly outcome: PinOutcome;
+}
+
+/**
+ * Manual override (§1.4), pure: flip `userPinned` on one promotable.
+ * A pin is REFUSED when the slots are already full of other users' pins —
+ * the law pins first, so a fifth pin past capacity would silently evict
+ * someone else's choice, which is the player's decision to make, not ours.
+ * Permanents and unknown ids fail loudly.
+ */
+export function toggleUserPin(
+  candidates: readonly MetricCandidate[],
+  id: string,
+  options: PromotionOptions,
+): PinResult {
+  const target = candidates.find((c) => c.id === id);
+  if (target === undefined) throw new Error(`toggleUserPin: unknown metric "${id}"`);
+  if (target.kind !== "promotable") {
+    throw new Error(`toggleUserPin: "${id}" is ${target.kind} — permanents cannot be unpinned`);
+  }
+  if (target.userPinned === true) {
+    return {
+      candidates: candidates.map((c) => (c.id === id ? { ...c, userPinned: false } : c)),
+      outcome: "unpinned",
+    };
+  }
+  const pinsElsewhere = candidates.filter((c) => c.userPinned === true && c.id !== id).length;
+  if (pinsElsewhere >= options.promotedSlots) {
+    return { candidates, outcome: "capacity-refused" };
+  }
+  return {
+    candidates: candidates.map((c) => (c.id === id ? { ...c, userPinned: true } : c)),
+    outcome: "pinned",
+  };
+}
