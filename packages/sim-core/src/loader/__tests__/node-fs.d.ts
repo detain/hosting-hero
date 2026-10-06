@@ -15,3 +15,7 @@ declare module "node:path" {
 }
 
 declare const process: { cwd(): string };
+
+/** Vitest 4 no longer leaks `lib.dom` via vite/client — declare the one
+ *  console method real-content.test.ts uses (verdict printing, not logic). */
+declare const console: { log(...args: unknown[]): void };

@@ -14,3 +14,7 @@ declare module "node:path" {
 }
 
 declare const process: { cwd(): string };
+
+/** Vitest 4 no longer leaks `lib.dom` via vite/client — declare the structured
+ *  clone helper fixtures.ts/table.test.ts use to deep-copy parsed tables. */
+declare function structuredClone<T>(value: T): T;
