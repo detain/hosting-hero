@@ -66,13 +66,16 @@ jobs:
         if: matrix.node != '20.x'
         run: pnpm -r test
 
-      # headless-tools declares engines >=22.18 and its parity/cli suites spawn
-      # `node --experimental-transform-types` (a Node >=22.7 flag). Demanding it
-      # run on 20.x would violate that package's own engines contract, so only
-      # this arm excludes it; every other package tests on both runtimes.
+      # headless-tools declares engines >=22.18 (its parity/cli suites spawn
+      # `node --experimental-transform-types`, a Node >=22.7 flag) and proto's
+      # jsdom component tests need jsdom's structuredClone markAsUncloneable
+      # hook (Node >=22). The 20.x arm therefore certifies the portability
+      # claim that matters — @hh/sim-core (the library the Node port embeds)
+      # typechecks and runs its full deterministic suite on Node 20 — while
+      # apps are tested on 22.x per their own engines contracts.
       - name: Test (Node-20-compatible packages)
         if: matrix.node == '20.x'
-        run: pnpm -r --filter '!headless-tools' test
+        run: pnpm -r --filter '@hh/sim-core' test
 
       # ── Contract gates ───────────────────────────────────────────────
       # Project-wide invariants (docs currency, content schema, runtime

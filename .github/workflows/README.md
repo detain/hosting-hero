@@ -13,12 +13,16 @@ fixed-point and RNG streams; the pipeline suite pins the 13-step deterministic
 queueing loop; the replay harness re-runs captured states ×100 and requires
 byte-identical canonical digests. Runs alone, no builds — the earliest red flag.
 
-**verify matrix — install → `pnpm -r typecheck` → `pnpm -r test` (Node 20.x + 22.x).**
-Contract: every workspace package compiles under strict TS and passes its suite
-on both ratified runtimes. One exception, honest and documented: `headless-tools`
-declares `engines.node >=22.18` and spawns `--experimental-transform-types`
-sub-processes, so its tests run on the 22.x arm only (20.x runs `--filter
-'!headless-tools'`).
+**verify matrix — install → `pnpm -r typecheck` → tests (Node 20.x + 22.x).**
+Contract: every workspace package compiles under strict TS on both matrix
+runtimes. Tests run fully on 22.x; the 20.x arm certifies the portability
+claim that matters — `@hh/sim-core` (the library the Node port embeds) — by
+running its complete deterministic suite (`--filter '@hh/sim-core'`). The
+apps stay off 20.x by their own contracts: `headless-tools` declares
+`engines.node >=22.18` and spawns `--experimental-transform-types`
+sub-processes (Node ≥22.7), and `proto`'s jsdom component tests need the
+structuredClone `markAsUncloneable` hook (Node ≥22). Root `engines.node`
+remains `>=22`; if the owner ever ratifies true 20.x support, widen this arm.
 
 **Contract: API-reference drift — `node docs/api-verify.test.mjs`.**
 Contract: `docs/API-REFERENCE.md` lists exactly the names `@hh/sim-core`
