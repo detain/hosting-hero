@@ -1,0 +1,127 @@
+# GLOSSARY — Coined Terms Used in Code Naming
+
+**Source of truth:** `reports/MASTER_REPORT.md` (2026-10-06). Citations: `§N.M` = `MASTER_REPORT.md`; `hosting_game.md §x.y` = the original design doc heading (as cited inside the report). These are the project's own coinages; they are **intended to become identifiers** (types, modules, config keys, UI component names), so they are defined here in the exact sense the architecture uses. Grouped by domain; one line each.
+
+## Boards, topology & the map
+
+- **Iron Board** — the infrastructure/network board (racks, links, traffic); the "world" layer of the game. (§1; `hosting_game.md §7.15`, §4.4)
+- **The Book** — the second board: the sales/contract desk that feeds and stresses the Iron Board; Vue-DOM Chrome, not Pixi world. (§1, §4.4; `hosting_game.md §7.15`)
+- **Two Books toggle** — the player switch between cash and accrual accounting views on The Book. (§4.4)
+- **Shared Pipe** — the one pipe carrying **two-directional** flow: every buildable is a filter with a dual effect (threat-stop × visitor-cost). (§1, §4.2; `hosting_game.md §7.1`)
+- **graph-is-map** — the structural law that the network graph *is* the board and the battlefield: what you build is what traffic walks and threats attack. (§1, §4.2)
+- **logical graph / physical layout** — the two-layer law: the graph = what *can* happen; the physical layout (PDU/rack/switch/template co-residency hyperedges) = what happens *at the same time*. (§4.2, `hosting_game.md §7.1`)
+- **FailureDomain** — a co-residency hyperedge with `deathModel ∈ {KILL_ALL, DEGRADE_ALL, SHARED_CAPACITY}`. (§4.2 architecture contribution)
+- **LinkObject** — first-class connection object, unified for technical *and* commercial links ("contracts are cables"). (§4.2)
+- **policy bead** — the 8-shape state marker on a cable (TLS/valve/fuse/timeout/pool/retry/gate/egress). (§4.2)
+- **the morph** — the single Rack⇄Topology view transition that preserves object identity (no re-creation). (§4.2, §7.4)
+- **The Fold** — the Iron Board ↔ The Book transition; a **shader crossfade + layout morph**, not a camera flight. (§2.2 R-1)
+- **blast radius / Big Red Button** — BFS over the *observed* graph, memoized by `board.version`; the scope-selector verb. (§4.2, §4.1)
+- **Broken-N+1** — the struck-through badge showing effective-vs-nominal redundancy across five correlations × four topologies. (§4.1, §4.2)
+- **timeout monotonicity law** — wasted in-flight work on a timeout is modeled (the retry-storm amplifier), rendered as a shrinking budget with violation markers. (§4.1, §4.2)
+- **Scale Handshake** — the snap (not zoom) by which "each tier's map becomes one icon in the next." (§4.2; `hosting_game.md §1.1`)
+- **Z1–Z4 altitude ladder** — the four camera altitudes *as verbs*, each owning an action set (Pixi substitute for orbit). (§2.2 R-1, §4.7)
+- **two-face back-view law** — the authored front/back sprite sets are **canonical** for rack back-view verbs; a flip-key swap replaces 3D rotation. (§2.2 R-1 #2 / C13)
+- **Terms Card** — the physical card shown on cable release (bandwidth, cost, latency, SLA implication, **new attack surface**); the sim-side acceptance of the connection it describes is the intent door's `connect-ports` verb (`packages/sim-core/src/pipeline/intent-door.ts`; gate-slice usage `docs/PHASE1-PLAN.md` G4). (§4.2 WS-2 R26–R58; cross-ref: **LinkObject**, **policy bead**)
+
+## Simulation core
+
+- **12-step pipeline** — the tick order `Arrival→…→Outcome→Backpressure→State+observed-write`; every mechanic is a modifier on exactly one step. (§4.1; `hosting_game.md §7.13`)
+- **step 12 single writer** — the only step that writes the observed layer; steps 1–11 run ground truth. (§4.1, §3.1)
+- **step 12.5 rule phase** — deterministic policy-evaluation slot after the observed write, before next-tick hand adjudication. (§2.2 R-2, §4.5, C1)
+- **slots (not HP)** — capacity model: "100% and healthy, or 60% and dying of a slow dependency"; failure at ~150% is a state *with a duration*, not death. (§1, §4.1)
+- **ρ / the knee** — utilization; latency bends along `service_time × ρ/(1−ρ)` above ~70%; "the most important curve in the game." (§1, §4.1)
+- **bounce** — silent patience-expiry at step 9; one of four terminals (Served / Bounced / Blocked-false-positive / Landed). (§4.1)
+- **retry storm** — an **emergent** (unscripted) oscillation from occupied-but-blocked slots + link timeouts + backpressure relay. (§1, §4.1)
+- **dependency blocking** — a slot is not released until a downstream call returns; "the single most important coupling." (§4.1)
+- **metastable failure** — a system that stays broken after the trigger is removed; escaping requires actively shedding load. (§4.1)
+- **degradation-not-destruction** — saturation→brownout→partial→cascade; "most of the game is spent in the middle states." (§4.1, §4.5)
+- **dual-clock rule** — an action belongs to exactly one clock; the business clock never pauses mid-incident. (§4.1, §4.4)
+- **simUs / businessMin / wallMs** — the three clocks (ops speed-scaled / never-scaled business / drama-rate wall). (§4.1)
+- **sawtooth** — the difficulty curve: rising floor with troughs ≥45% below peak; the only thing the Difficulty Director may touch is trough depth + entropy budget. (§1, §4.6)
+- **telegraph bands** — the four-band foresight law: **Weather** always visible, **Storms** telegraphed, **Hunters** symptom-only, **Entropy** "foresight is a purchase." (§4.5 O-F2, OD-4b)
+- **Q16.16 fixed-point** — the integer math format inside classification/bounce/queue math (bounce sigmoid = 64-entry LUT). (§4.1, §3.4)
+- **seeded RNG streams** — counter-based, keyed `(run_seed, domain, sim_minute, entity_id)`; director draws live in a `director` domain. (§4.1, §3.4)
+- **Intent Door** — the ONLY legal entry point for external (player or re-fed rule) intents into the deterministic sim: `applyIntentDoor` runs BEFORE step 1 each tick, applies due entries in `(tick, seq)` order, and EXECUTES or REFUSES every one — semantic failures become `intent-refused` events consuming nothing (no RNG anywhere in the door); structural wire garbage throws at the boundary. (§4.2, §7.5, §7.13; `pipeline/intent-door.ts`; API-REFERENCE contract #10)
+- **ExternalIntent** — a `PlayerIntent` stamped with the macro tick the host submitted it; the door's feed unit and the structural twin of replay's `StampedIntent` (types.ts must not import replay, hence the narrower twin). Each entry is fed EXACTLY ONCE (ambient-input contract). (§7.13; cross-ref: **pause-with-orders**)
+- **pause-with-orders** — §7.13 order queueing: intents stamped at the PAUSED tick arrive and apply at the first unfrozen `advance` (stamp ≤ current tick); FUTURE stamps are refused loudly so whole-schedule host patterns fail visible instead of smearing across ticks. (§7.13; `intent-door.ts` header law)
+- **Hands slice / HandToken** — the optional `GameState.hands` embed (`HandState { capacity, tokens }`): the §7.5 action economy as door-mutated ground truth — every executed intent pays `handCost` tokens for `occupancyTicks` in half-open windows `[start, busyUntilTick)`, released once per tick before allocation; refusals spend nothing. Distinct from (and the machine form of) **hands** below. (§7.5; cross-ref: **ghost hand**)
+- **BoardState** — the optional, pipeline-local structural embed of "what CAN happen" (§4.2 graph-is-map): `{ version, edges }` mutated ONLY by the door's connect/disconnect handlers, edges keyed with topology's `defaultEdgeId` convention so hosts correlate it with topology's own mutable MultiGraph — the pipeline NEVER imports topology/ (decoupling law). (§4.2; API-REFERENCE contract #10)
+
+## Ground / observed truth
+
+- **ground truth** — the true world state; its **only** consumer in the entire system is the 12-step pipeline itself. (§3.1 law 1)
+- **observed truth / the observed layer** — per-object twins (value, coverage, freshness, resolution, certainty, confidence, status, unknownExists); *everything else* reads only this. (§3.1, §4.1 R-66…R-72)
+- **observed_view(seat)** — `project(ground_truth, instrumentation_state, consumer_scope)`; the first-class per-consumer projection API. (§3.1, §2.2 R-4)
+- **ObservedCell** — the binding-contract data type; degradation is a property of the binding layer, never bespoke per widget. (§3.1, §4.7)
+- **fog of infrastructure** — per-**property** observation gaps (Unknown / Stale / Live); known-unknowns always visible; "fog costs time, never certainty." (§4.1, §4.5 R42–R43)
+- **bounded-fog contract** — truth is never hidden; cause is always findable with purchasable tools at 4–8× duration. (§4.1, §4.5 R43)
+- **Site Preview Window** / **Pulse Strip** — the two authored **always-truth** channels (ground-truth surfaces the player may act on); "fog is only fair because it exists." (§4.1, §4.7)
+
+## Content as data
+
+- **Ruleset Card** — the six-slot per-type data definition (Unit / Goal / Scarce / Patience-analog / Threat-mix / Look); 34 hosting types are *data, not code*. (§1, §4.1 R-81…R-83, §4.3; `hosting_game.md §0.2`)
+- **type bundle** — the JSON mod-format definition of a hosting type (Appendix A is v0); official types use no privileged code path. (§4.3, Appendix A)
+- **hosting type** — one of the canonical business lines (count settles in OD-14); loaded purely from bundle data. (§4.3, OD-14)
+- **patience mode** — the visitor-patience enum (sigmoid-budget / window-cutoff / value-decay / resident-unshedable / binary-connect / corrupt-not-bounce / none). (§4.3 R25)
+- **duration class** — Instant / Session / BatchJob / Resident — "four capacity games, not four costumes." (§4.3 R26)
+- **Skin Kit / Five-Asset Skin Kit** — the exactly-five presentation assets per line (accent hue pair / costume / hero silhouette / meter widget / catastrophe FX) + eight parameter values. (§4.3 R48–R49, §4.7)
+- **Two-Screenshot Test** — the acceptance test for the variety engine: a 4-hour player names both types from one screenshot each. (§4.3 R57, §7.6)
+- **Ruleset Diff Linter** — CI tool pairwise-diffing every bundle; errors when the change budget / verb shift / bespoke-tally / palette rules fail. (§4.3, §8 RISK-2)
+- **Codex** — the encyclopedia of real threats; the content sink for threats **demoted** from the engine by OD-3's pruning rule (citable, deposit-able, never spawned). (§4.3 R79, §6.1 OD-3)
+- **Level Grammar** — the six scenario-shape columns orthogonal to the Ruleset Card; "produces different play from the same verbs." (§4.3 R13, §7.6)
+- **Rosetta Card / mechanic-alias registry** — the cross-type mapping that lets one concept keep different names per type (drives HUD vocabulary). (§4.3 R11, §7.6)
+
+## Automation & operations
+
+- **Policy Book** — the `when/for/then/unless` card composer; **a composer, never a scripting language**. (§1, §4.5 R1; Appendix B)
+- **Policy Layer view** — the key-toggle that renders automation *intent* (ghosts, rule→object tethers, shed-order tags, scheduled actions). (§4.5 R13)
+- **ghost hand / Ghost Hands** — an automated action rendered as a ghost sprite with **the same walk, animation, and hand cost** as a real hand; automation occupies the action economy, never bypasses it. (§1, §4.5 R10–R14)
+- **The Walk** — the geography rule that repairs require physically reaching the object (ghosts obey it too). (§4.5 R12; `hosting_game.md §7.7`)
+- **hands** — the action-economy slots (T0: 1 … T4: 5 … T6: 2 executive actions/month); difficulty targets peak ≈1.5× hands. (§4.2, §4.5; hands-vs-attention = OD-6)
+- **Triage Window** — replaces "site down ~30 s nobody arriving": arrivals queue *visibly outside*, patience draining, hands freed, **consequences never paused**. (§4.5 O-F1, OD-4a)
+- **Attention Grace** — auto-dedup, held low-severity pages, and (contested) one free "focus" hand for 30 s; the "free focus hand" is the only hand-creation event, gated by OD-4a. (§4.5 O-F1, OD-4a)
+- **delegation bands** — the three-level per-staff/per-rule permission scope inform / consult / execute; widening frees attention and raises variance; the co-op authority model reuses this. (§4.5 R19, §4.8)
+- **Runbook Ladder** — the six-rung automation spine Notice→Runbook→Assisted→Automated→Policy→**Retired**. (§4.5 R27)
+- **batch ladder** — the four-rung multi-select spine ending in standing "keep this true" rules (reconciler paradigm, OD-4c). (§4.5 R28)
+- **Two-Action Rule** — nothing done *during* an incident may take more than two inputs; policy authoring is a **peacetime** activity. (§4.2, §4.5 R66)
+- **The Handoff / Handover** — picking 3 lines from a generated candidate list is mechanically a **filter on the rule/attention space**; the SP mechanic is the co-op netcode spec. (§4.5 R22–R23)
+- **settle/settling window** — 60–180 s post-change window; two overlapping → 1.6× failure probability; can void attribution. (§4.1, §4.5 R32)
+- **Explain This Incident** — a plain-language causal chain generated from actual sim state; the week-one test that "the simulation is coherent." (§4.8; §4.7 "Explain This Number")
+
+## Economy & the Long Save
+
+- **Attack Surface Ledger** — the threat deck derived live from the player's own construction log (P2: threats unspawnable until you build their invitation). (§4.1 R45, §7.2)
+- **suspicion dial / Inspection Depth** — the per-node classify trade (pass-through / sample / inspect / challenge); scored not judged, `C = 1 − Π(1−cᵢ)`. (§4.1 R45…R54, §7.3)
+- **The Bridge** — the one capacity ledger that *both* boards debit (contracts and infra), making oversubscription a shared gamble. (§4.1 R86…R88)
+- **Attribution Ledger** — every delayed consequence **stamped with its cause at creation** (`cause_id`); the lag-survivability mechanic. (§4.4, §4.6 L; unretrofittable — P0 law)
+- **Quarter Close** — the monthly/quarterly sequence (pull-forward / recognize-vs-defer / board-narrative / consecutive-borrow counter). (§4.4, §7.5)
+- **Forecast Commit** — "difficulty as a dial you set with your own mouth," stated at start and reckoned at end. (§4.4, §7.5)
+- **Signed Contract (four sliders)** — the pre-level contract verb with reward `base × (1 + 0.35·avail + 0.2·response + 0.15·scope)`. (§4.4, §7.5)
+- **error budget** — `(1−commitment) × 30d`, spendable **in-combat** as a resource (P18). (§4.1 R59…R65)
+- **THE LONG SAVE** — the single persistent Company **lineage** across generations, collapses, and pivots; "THE product." (§1, §4.6)
+- **lineage tree** — the save model: `CompanyNode[] + InheritanceEdge[]` under one root, each node with an inheritance manifest. (§2.1 R-3, §4.6)
+- **four faces** — Wall / Scrapbook / Almanac / People — **read-views** over ~20 write facets; never a fifth, never written through. (§2.2 R-3, §4.6)
+- **Past Self Is The Boss** — a level generated from your own aged save + recorded habits; "generatable rather than authored." (§4.6 thesis 3, §7.7c)
+- **Second Answer** — no threat has exactly one counter (cheap partial / expensive complete / lateral business); the Versus deck-design invariant. (§4.6 U5, §4.8)
+- **Growth Scar** — a graduated tier's old setup persisting as a clickable liability node on the new board. (§4.2 R-tiers)
+- **The Hardest Lesson** — the once-per-campaign level winnable only by raising prices and losing logos while reliability improves. (§1, §4.4, §7.5)
+
+## Modes, multiplayer & rendering
+
+- **async-Versus / "Deck Duel, Deferred" (B″)** — defender commits board + doctrine (Policy Book autopilot), attacker runs their committed deck offline; approved v-someday mode (ADR-0004). (§4.8, §2.1 R-4)
+- **co-op scenario design law** — every win condition must require cross-seat information one seat holds and another lacks; day-1 lint-able authoring rule. (§2.1 R-4, §2.2 R-4)
+- **Fogged NOC** — the Phase-1 WS-7 render slice proving fog renders from ObservedCell with zero bespoke fog code. (§7.7b)
+- **PixiJS v8 compositor** — the 2.5D world renderer: five hard-bounded layers with non-blending boundaries. (§2.1 R-1, §3.1, §4.7)
+- **Substrate / Flow / Signal / Attachment / Intent / Annotation** — the render layer names (Substrate = muted materials; Flow = additive-emissive; Intent = white dashed; Annotation/Chrome = flat DOM). (§4.7 item 1.1, §3.1)
+- **Hue Ledger** — the compile-time-checkable registry assigning each saturated hue exactly one job. (§2.2 R-1, §4.7 item 1.2)
+- **Two-Channel Law** — every state encoded ≥2 ways so the greyscale pass survives as a sign-off gate. (§2.2 R-1, §4.7 item 1.2)
+- **BudgetManager** — the singleton draw-admission authority; the renderer **refuses** over-budget draws. (§2.2 R-1, §3.1, §4.7 item 1.9)
+- **Screen Budget** — world ≥66% at 1080p; UI-scale reflows panels, never magnifies. (§2.2 R-1, §4.7)
+- **Instrument Design Language** — one bezel × exactly 5 faces (needle/bar/waterline/oscilloscope/counter); "at nominal, instruments are still." (§2.2 R-1, §4.7 item 1.8)
+- **0.5 Hz heartbeat** — the global phase clock syncing all ambient pulses; "desynchronization is the alarm channel." (§2.2 R-1, §4.7)
+- **Panic Layout** — the klaxon-driven HUD auto-simplification (dims non-essential, Big Number flips to incident cost). (§4.7 item 1.4)
+- **Cinema module** — the deferred, offline 3D photo-studio/cutscene renderer built from observed snapshots + seeded replay; **no gameplay-critical render may depend on it**. (§2.2 R-1 / C13)
+- **stats-not-entities** — motes/particles are cosmetic interpolants of lane statistics generated locally; per-request units never cross a boundary. (§2.2 R-1, C10, §4.7)
+- **The Aquarium** — the idle-camera generated-facility boot screen before the menu (also a Sandbox feature). (§4.8, §4.7)
+- **The Interview** — the 10-minute diegetic tutorial where behavior seeds your Doctrine card and opening Codex. (§4.8)
+- **Trade Radio** — the audio channel reporting world events *minutes before* their mechanical consequence. (§4.8)
