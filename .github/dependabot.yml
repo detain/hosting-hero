@@ -1,0 +1,22 @@
+# Dependabot version + security updates.
+#
+# pnpm workspace law (verified 2026-10-06): a pnpm monorepo must declare ONLY
+# the workspace root here. The lockfile lives at the root, so listing member
+# directories (apps/proto, packages/sim-core, tools/headless) makes Dependabot
+# bump member manifests WITHOUT regenerating pnpm-lock.yaml — the exact
+# structural break that made PR #1 unmergeable against strict
+# --frozen-lockfile CI. Root-scoped updates fix manifest and lock in one PR.
+# Ref: dependabot-core#10758 (closed fixed by #10806, Dec 2024) and the
+# ecosystem table in "Dependabot ecosystems" docs — pnpm maps to `npm`.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # One grouped PR per run (mirrors the security-side "npm_and_yarn" group
+    # name), covering every workspace manifest plus the root lockfile.
+    groups:
+      npm_and_yarn:
+        patterns:
+          - "*"
