@@ -1,0 +1,451 @@
+{
+  "schemaVersion": "3.0",
+  "id": "threats/registry-core",
+  "description": "Core threat registry for the two prototype-anchor types (gate G6). Pruning rule R36/§2.12: every entry here is MECHANICAL — it owns balance numbers and changes the player's verb, not just the noun. Demoted codex flavour (stream-sniper, competitor-sponsored attack, hype-cycle-collapse-as-text) attaches to these entries later and does not ship stats. Second Answer rule (§5.1): every threat lists >=2 viable counters at DIFFERENT prices (cheap / expensive / lateral triad). Counters name the 9 defense roles (Absorb, Classify, Meter, Contain, Detect, Recover, Deter, Divert, Negotiate, §2.1). Stats are null + _todo wherever hosting_game.md is qualitative — the loader lint must flag each TODO until the tuning sheet is ratified (owner pick A/B/C pending, OD-2).",
+  "rolesVocabulary": ["Swarm", "Tank", "Sapper", "Stealth", "Splitter", "Healer/Spawner", "Bypass/Flyer", "Siege", "Debuffer", "Mimic", "Parasite", "Boss"],
+  "defenseRolesVocabulary": ["Absorb", "Classify", "Meter", "Contain", "Detect", "Recover", "Deter", "Divert", "Negotiate"],
+  "bandsVocabulary": ["weather", "storm", "hunter", "entropy"],
+  "denominationsVocabulary": ["bandwidth", "concurrency", "hands", "cash", "reputation", "data-integrity"],
+  "threats": [
+    {
+      "id": "scanner-drizzle",
+      "family": "malicious",
+      "band": "weather",
+      "roles": ["Stealth"],
+      "motion": "sweep",
+      "denomination": "data-integrity",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.2 authors behaviour (flags advance telegraph for the next 3 levels' targeted attacks) without stat scalars."
+      },
+      "facts": [
+        "Constant drizzle; renders violet (§2.2).",
+        "Telegraph function: each scanner that lands pre-announces the next three levels' targeted attacks — the attack-surface ledger's teacher (§2.2, gate G1)."
+      ],
+      "counters": [
+        { "name": "default-deny-firewall", "defenseRole": "Contain", "priceTier": "cheap" },
+        { "name": "reduce-exposed-surface", "defenseRole": "Contain", "priceTier": "cheap" },
+        { "name": "attack-surface-scanner", "defenseRole": "Detect", "priceTier": "expensive" }
+      ]
+    },
+    {
+      "id": "wp-login-brute-squad",
+      "family": "malicious",
+      "band": "weather",
+      "roles": ["Swarm"],
+      "motion": "boil",
+      "denomination": "concurrency",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.2 gives damage basis (CPU: full app bootstrap per attempt; log storage cost) but no stat scalars."
+      },
+      "facts": [
+        "Slow, relentless guessing at /wp-login.php; every attempt boots the whole app — damage is CPU plus log storage, not bandwidth (§2.2)."
+      ],
+      "counters": [
+        { "name": "fail2ban", "defenseRole": "Deter", "priceTier": "cheap" },
+        { "name": "login-rate-limit", "defenseRole": "Meter", "priceTier": "cheap" },
+        { "name": "two-factor-enforcement", "defenseRole": "Contain", "priceTier": "expensive" },
+        { "name": "move-login-url", "defenseRole": "Deter", "priceTier": "lateral", "note": "'cheesy fix rewarded early' (§2.2)." }
+      ]
+    },
+    {
+      "id": "xmlrpc-pingback-amplifier",
+      "family": "malicious",
+      "band": "storm",
+      "roles": ["Parasite"],
+      "motion": "match",
+      "denomination": "reputation",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.2 authors the chain (your server attacks someone else -> abuse notice -> null-route threat) without scalars."
+      },
+      "facts": [
+        "Turns your fleet into the weapon: xmlrpc pingback flood launched FROM customer sites; the damage clock is the transit/upstream relationship, not the box (§2.2)."
+      ],
+      "counters": [
+        { "name": "disable-xmlrpc-feature", "defenseRole": "Contain", "priceTier": "cheap" },
+        { "name": "egress-filtering", "defenseRole": "Divert", "priceTier": "cheap" },
+        { "name": "outbound-rate-limits", "defenseRole": "Meter", "priceTier": "lateral" }
+      ]
+    },
+    {
+      "id": "slowloris-sipper",
+      "family": "malicious",
+      "band": "storm",
+      "roles": ["Sapper"],
+      "motion": "hold",
+      "denomination": "concurrency",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.3 authors near-zero bandwidth and thread-hold semantics without scalars."
+      },
+      "facts": [
+        "A handful of visitors sit forever holding worker threads; graphs look fine while the box dies — defeats bandwidth-based detection (§2.3)."
+      ],
+      "counters": [
+        { "name": "connection-timeouts-worker-recycling", "defenseRole": "Contain", "priceTier": "cheap" },
+        { "name": "per-ip-concurrency-cap", "defenseRole": "Meter", "priceTier": "cheap" },
+        { "name": "l7-req-rate-limit", "defenseRole": "Meter", "priceTier": "lateral", "note": "RUDY variant defeats naive request-rate limits (§2.3)." }
+      ]
+    },
+    {
+      "id": "layer7-mimic",
+      "family": "malicious",
+      "band": "hunter",
+      "roles": ["Mimic"],
+      "motion": "match",
+      "denomination": "concurrency",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.4 authors behaviour + counter economics without stat scalars."
+      },
+      "facts": [
+        "Requests the most expensive page at human-plausible rates from thousands of residential IPs — indistinguishable from popularity; rate-limiting it craters conversion (§2.4)."
+      ],
+      "counters": [
+        { "name": "bot-fingerprinter", "defenseRole": "Classify", "priceTier": "expensive", "note": "slow to train; model-poisoning downside (§2.4)." },
+        { "name": "cache-the-expensive-page", "defenseRole": "Absorb", "priceTier": "lateral" },
+        { "name": "cost-per-request-budget", "defenseRole": "Meter", "priceTier": "lateral" }
+      ]
+    },
+    {
+      "id": "vulnerable-plugin-compromise",
+      "family": "malicious",
+      "band": "storm",
+      "roles": ["Bypass/Flyer", "Sapper"],
+      "motion": "walk",
+      "denomination": "data-integrity",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.5 authors the homogeneity multiplier qualitatively."
+      },
+      "facts": [
+        "One outdated CMS plugin popped -> mass defacement on EVERY account on the box + blocklisting of the whole IP range; homogeneity is the multiplier (§2.5, Matrix A signature threat).",
+        "Control-panel RCE is the fatal event: roots every box simultaneously (§0.3)."
+      ],
+      "counters": [
+        { "name": "managed-patching-service", "defenseRole": "Recover", "priceTier": "expensive", "note": "occasionally breaks a customer site — you own the outage either way (§2.5)." },
+        { "name": "waf-virtual-patching", "defenseRole": "Contain", "priceTier": "lateral" },
+        { "name": "per-account-isolation", "defenseRole": "Contain", "priceTier": "cheap" }
+      ]
+    },
+    {
+      "id": "noisy-query-table-scan",
+      "family": "human",
+      "band": "entropy",
+      "roles": ["Debuffer"],
+      "motion": "hold",
+      "denomination": "concurrency",
+      "customerAsThreat": true,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "unindexedScanMs": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§3.1 gives the unindexed-DB latency band 400-4,000ms ('the Noisy Query's weapon'); the per-incident pressure scalar is untuned."
+      },
+      "facts": [
+        "A query that was fine at 10k rows is fatal at 10M — the threat grows with your success (§2.5).",
+        "Signature moment (§1.3): one customer's plugin runs an uncached SELECT * FROM wp_posts on every page load and takes down all 40 tenants; attributable only if the per-account slow-query-log buildable exists."
+      ],
+      "counters": [
+        { "name": "per-tenant-throttling-isolation", "defenseRole": "Contain", "priceTier": "cheap" },
+        { "name": "query-monitoring", "defenseRole": "Meter", "priceTier": "lateral" },
+        { "name": "dba-hire", "defenseRole": "Recover", "priceTier": "expensive" }
+      ]
+    },
+    {
+      "id": "ticket-avalanche-hydra",
+      "family": "human",
+      "band": "storm",
+      "roles": ["Swarm", "Debuffer"],
+      "motion": "boil",
+      "denomination": "hands",
+      "customerAsThreat": true,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.9 gives the formula shape (tickets ∝ severity × customers × communication-quality-lag) without coefficients."
+      },
+      "facts": [
+        "Tickets consume staff, staff-absence extends the incident, the incident breeds tickets — the doom loop; the purest Attention-damage threat (§2.9).",
+        "'The enemy is sometimes a client' — you cannot evict the paying bad customer (§1.3 tutorial twist)."
+      ],
+      "counters": [
+        { "name": "status-page", "defenseRole": "Negotiate", "priceTier": "cheap" },
+        { "name": "proactive-comms", "defenseRole": "Negotiate", "priceTier": "cheap" },
+        { "name": "knowledge-base-deflection", "defenseRole": "Contain", "priceTier": "lateral" },
+        { "name": "support-hire", "defenseRole": "Absorb", "priceTier": "expensive" }
+      ]
+    },
+    {
+      "id": "hoarder-noisy-neighbor",
+      "family": "human",
+      "band": "entropy",
+      "roles": ["Parasite"],
+      "motion": "hold",
+      "denomination": "concurrency",
+      "customerAsThreat": true,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "fairShareMultiple": 40,
+        "ioSharePct": 60,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "40x fair share and 60% of box I/O are doc'd §2.10 verbatim; the churn-curve they drive is untuned."
+      },
+      "facts": [
+        "Customer using 40x fair share — a find / every minute; 60% of the box's I/O degrading 200 neighbours invisibly until churn (§2.10).",
+        "Visual 'The Elbow': one window swells and shoves the neighbours smaller (§2.10).",
+        "One account's find / is everyone's outage (§1.3)."
+      ],
+      "counters": [
+        { "name": "quota-policy-cgroups-lve", "defenseRole": "Contain", "priceTier": "cheap", "note": "POLICY answer, not a box answer (§2.10)." },
+        { "name": "enforce-limits", "defenseRole": "Meter", "priceTier": "lateral", "note": "enforcement breeds angry churn + bad review (§2.10)." },
+        { "name": "polite-upsell-to-vps", "defenseRole": "Negotiate", "priceTier": "expensive", "note": "the profitable resolution (§2.10)." }
+      ]
+    },
+    {
+      "id": "grudge-booter",
+      "family": "malicious",
+      "band": "storm",
+      "roles": ["Siege"],
+      "motion": "advance",
+      "denomination": "bandwidth",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "grudgeCap": 5,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "Grudge per-archetype 0-5 is doc'd (§2.24); booter price-per-hour economics are codex in §2.12."
+      },
+      "facts": [
+        "Aimed at a single player's session over a grudge; collaterally kills the whole server everyone else is on (§2.12).",
+        "Popularity is a targeting beacon — the best server is the one under attack (§1.3).",
+        "Counter costs LATENCY, the thing you sell (§2.12)."
+      ],
+      "counters": [
+        { "name": "per-player-ip-obfuscation-proxy", "defenseRole": "Divert", "priceTier": "lateral", "note": "the named counter (§2.12) — pays in milliseconds of the scarce resource." },
+        { "name": "udp-aware-ddos-scrubbing", "defenseRole": "Absorb", "priceTier": "expensive", "note": "cannot just drop UDP — it IS the game protocol (§1.3)." }
+      ]
+    },
+    {
+      "id": "udp-amplification-barrage",
+      "family": "malicious",
+      "band": "storm",
+      "roles": ["Tank"],
+      "motion": "advance",
+      "denomination": "bandwidth",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "amplificationMultiplier": 50,
+        "telegraphSeconds": 10,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "50x multiplier and ~10s telegraph are doc'd §2.3; pipe-size balance untuned."
+      },
+      "facts": [
+        "50x multiplier; a slow wall that doesn't path — the pipe is the victim; telegraphed ~10s ahead (§2.3).",
+        "Must be DIVERTED upstream: scrubbing retainer, anycast, BGP flowspec, bigger transit; cheap early option RTBH blackhole = sacrifice one address (§2.3)."
+      ],
+      "counters": [
+        { "name": "remotely-triggered-blackhole", "defenseRole": "Divert", "priceTier": "cheap", "note": "sacrifices the address (§2.3)." },
+        { "name": "scrubbing-retainer", "defenseRole": "Divert", "priceTier": "expensive" },
+        { "name": "anycast", "defenseRole": "Absorb", "priceTier": "expensive", "note": "learned in the DNS level (§1.3 returning hook)." },
+        { "name": "bgp-flowspec-bigger-transit", "defenseRole": "Absorb", "priceTier": "lateral" }
+      ]
+    },
+    {
+      "id": "open-resolver-reflection",
+      "family": "malicious",
+      "band": "storm",
+      "roles": ["Parasite"],
+      "motion": "match",
+      "denomination": "reputation",
+      "customerAsThreat": true,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.3/§1.3 author the chain; NTP/DNS/memcached per-protocol gain factors unauthored."
+      },
+      "facts": [
+        "YOUR servers (open NTP/DNS/memcached) are the reflectors against someone else; you take no damage — then the abuse complaint, the transit spike, the null-route threat (§2.3).",
+        "Game flavour (§1.3): UDP amplification reflection where your servers are the reflectors."
+      ],
+      "counters": [
+        { "name": "close-open-resolvers", "defenseRole": "Contain", "priceTier": "cheap" },
+        { "name": "egress-filtering-bcp38", "defenseRole": "Contain", "priceTier": "cheap" },
+        { "name": "response-rate-limiting", "defenseRole": "Meter", "priceTier": "lateral" }
+      ]
+    },
+    {
+      "id": "cheat-client-griefer",
+      "family": "human",
+      "band": "hunter",
+      "roles": ["Mimic", "Bypass/Flyer"],
+      "motion": "walk",
+      "denomination": "reputation",
+      "customerAsThreat": true,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.12 authors the friction trade (anti-cheat costs tick performance and bans innocents) without scalars."
+      },
+      "facts": [
+        "An attack on the game your customer hosts — damages customer happiness, not infrastructure; customers blame YOU (§2.12).",
+        "Visual: a pawn animating the wrong frames; other pawns turn to look, then leave the lobby (§2.12)."
+      ],
+      "counters": [
+        { "name": "anti-cheat-integration", "defenseRole": "Detect", "priceTier": "expensive", "note": "costs tick performance; false bans are friction applied to reputation (§2.12)." },
+        { "name": "community-moderation-tools", "defenseRole": "Negotiate", "priceTier": "lateral", "note": "customer-side admins with ban power (§1.3 Private Shard texture)." }
+      ]
+    },
+    {
+      "id": "mod-update-day",
+      "family": "systemic",
+      "band": "storm",
+      "roles": ["Splitter", "Boss"],
+      "motion": "advance",
+      "denomination": "data-integrity",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "instancesHit": 900,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "'breaks 900 instances at once' (§1.3) is doc'd; the failure-cascade curve is untuned."
+      },
+      "facts": [
+        "A dependency you don't own breaks every instance at a time chosen by someone else (§2.12).",
+        "The modding community is simultaneously your best marketing and your worst attack surface (§2.12, Matrix B game deck)."
+      ],
+      "counters": [
+        { "name": "staged-version-pinning", "defenseRole": "Contain", "priceTier": "cheap", "note": "roll mods to a canary pool first — counters derived provisionally from §1.3 buildables." },
+        { "name": "automated-restart-on-tick-drop", "defenseRole": "Recover", "priceTier": "lateral", "note": "doc'd buildable (§1.3)." },
+        { "name": "mod-team-communication-channel", "defenseRole": "Negotiate", "priceTier": "expensive" }
+      ]
+    },
+    {
+      "id": "empty-server-spiral",
+      "family": "systemic",
+      "band": "entropy",
+      "roles": ["Healer/Spawner"],
+      "motion": "hold",
+      "denomination": "reputation",
+      "customerAsThreat": false,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "populationThresholdPct": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§2.12 KEEP-LIST entry (visitors affecting visitors — the named mechanical exception); the population threshold below which the spiral becomes terminal is untuned."
+      },
+      "facts": [
+        "Below the population threshold a server empties and never recovers: full attracts, empty repels (§2.12, §3.3 herding law).",
+        "Delayed bounce: a bad session doesn't just lose a player, it makes the lobby visibly emptier for the next one (§3.3)."
+      ],
+      "counters": [
+        { "name": "server-browser-listing-placement", "defenseRole": "Deter", "priceTier": "cheap", "note": "buys visibility against the repulsion — counters provisional; doc authors the spiral, not its cures." },
+        { "name": "shard-merge-population-transfer", "defenseRole": "Negotiate", "priceTier": "expensive" },
+        { "name": "launch-event-escort", "defenseRole": "Absorb", "priceTier": "lateral", "note": "the Escort scenario (§3.3 tournament) re-fills the room." }
+      ]
+    },
+    {
+      "id": "chargeback-swarm",
+      "family": "human",
+      "band": "weather",
+      "roles": ["Swarm", "Stealth"],
+      "motion": "match",
+      "denomination": "cash",
+      "customerAsThreat": true,
+      "mechanical": true,
+      "stats": {
+        "sophistication": null,
+        "volume": null,
+        "signature": null,
+        "persistence": null,
+        "ratePctRange": [2, 4],
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "'chargebacks 2-4% of revenue' + stolen-card signups doc'd §1.3/§2.10; fraud-mix scalars untuned."
+      },
+      "facts": [
+        "Fraud is endemic: stolen-card signups, chargebacks at 2-4% of revenue; kids with allowances on card-verifiable terms (§1.3, §2.10).",
+        "Cash denomination pressure that no defense box absorbs — it arrives through the payment rail."
+      ],
+      "counters": [
+        { "name": "prepaid-first-terms", "defenseRole": "Deter", "priceTier": "cheap", "note": "monthly-prepay tempo already biases this way (§6.6 companion A)." },
+        { "name": "signup-fraud-scoring", "defenseRole": "Classify", "priceTier": "expensive" },
+        { "name": "chargeback-dispute-desk", "defenseRole": "Recover", "priceTier": "lateral" }
+      ]
+    }
+  ]
+}

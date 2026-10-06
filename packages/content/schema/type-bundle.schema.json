@@ -1,0 +1,599 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hosting-hero.local/schema/type-bundle.schema.json",
+  "title": "Hosting-Type Ruleset Bundle (Type-Bundle v3.0)",
+  "description": "Faithful JSON Schema encoding of MASTER_REPORT.md Appendix A (WS-3 verbatim type-bundle schema), which itself merges hosting_game.md §9.11 ten-item list, §0.2 six Ruleset-Card slots, §7.8 hook inventory, §8.10 skin kit, §6.6 economics, §5.6 relations, §2.27 matrices. Canonical wire/storage format is JSON (TS types are GENERATED from this schema). Official types ship as data-only bundles with NO privileged code path (§9.11 / owner directive R77). Engine-hook fields are closed enums / strings / numbers — never code references; a value that names an engine capability (meterWidget, resourceId, archetype) is a LOOKUP KEY into registries the engine owns. Material presets are re-read against the ratified PixiJS compositor (MASTER_REPORT §2.3 C12): presets map to shader/blend/tint lookups; layering law = sprite-layer + additive-emissive-layer + tint-swatch swaps. PLACEHOLDER CONVENTION: where hosting_game.md states no number, a numeric field is null and the nearest enclosing object carries \"_todo\": \"<§-cite>\" so the loader lint can flag it. AUTHORING LAWS enforced structurally here: handoverNote is exactly 3 lines (R10); Five-Asset Skin Kit fields all required (R48/R49/R53/R8); guardrails always present (R76). All human-readable strings are i18n KEYS (localisation law) — the literal text lives in the ticketPack file referenced by ticketPack.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "meta",
+    "visitor",
+    "goal",
+    "scarce",
+    "tempo",
+    "threats",
+    "skin",
+    "eras",
+    "economy",
+    "buildables",
+    "control",
+    "mechanics",
+    "verbs",
+    "relations",
+    "ticketPack",
+    "handoverNote",
+    "rosettaCards",
+    "scenarios",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Bundle schema version, per Appendix A ('3.0')."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^([a-z0-9][a-z0-9-]*:)?[a-z0-9][a-z0-9-]*$",
+      "description": "Stable mod-safe namespaced id, e.g. 'game-servers' or 'official:game-servers' (Appendix A)."
+    },
+    "meta": {
+      "type": "object",
+      "required": ["name", "codexSummary", "tone", "official", "publishedAsEditableCard"],
+      "properties": {
+        "name": { "type": "string", "description": "Display name (i18n key or proper noun)." },
+        "codexSummary": { "type": "string", "description": "Codex blurb — i18n key." },
+        "tone": { "type": "string", "enum": ["comedy", "straight"], "description": "R80." },
+        "official": { "type": "boolean", "description": "Official (non-mod) content flag." },
+        "publishedAsEditableCard": { "type": "boolean", "description": "R73: ruleset editor ships in-game; official types publish editable." }
+      }
+    },
+
+    "visitor": {
+      "description": "SLOT 1 · THE UNIT (§0.2, §3.1, §3.3).",
+      "type": "object",
+      "required": ["nullable", "unitTerm", "durationClass", "stats", "patienceModel", "party", "herding", "populationEffect", "retryAmplifies", "cohortSpawn", "costPerInvocation", "trustReadable"],
+      "properties": {
+        "nullable": { "type": "boolean", "description": "No-lane levels (mining=true) →WS1." },
+        "unitTerm": { "type": "string", "description": "What the noun is (i18n key) →WS1." },
+        "durationClass": {
+          "type": "string",
+          "enum": ["Instant", "Session", "BatchJob", "Resident"],
+          "description": "R26 (§3.1 duration classes: Instant eats throughput, Session eats a slot for its duration, BatchJob eats a window, Resident eats committed capacity and cannot be shed)."
+        },
+        "stats": {
+          "type": "object",
+          "description": "Five-stat unit (R24, §3.1/§3.2): Patience/Value/Weight/Loyalty/Fragility.",
+          "required": ["patience", "value", "weight", "loyalty", "fragility"],
+          "properties": {
+            "patience": { "type": ["number", "null"] },
+            "value": { "type": ["number", "null"] },
+            "weight": { "type": ["number", "null"] },
+            "loyalty": { "type": ["number", "null"] },
+            "fragility": { "type": ["number", "null"] },
+            "tuningSheet": { "type": "string", "description": "PROVISIONAL-A|PROVISIONAL-B|PROVISIONAL-C marker (owner has NOT picked the canonical tuning sheet — MASTER_REPORT Appendix D / OD-2)." },
+            "_todo": { "type": "string" }
+          }
+        },
+        "patienceModel": {
+          "type": "object",
+          "required": ["mode", "params"],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["sigmoid-budget", "window", "value-decay", "resident", "binary", "corrupts", "none"],
+              "description": "R25."
+            },
+            "params": {
+              "type": "object",
+              "description": "Mode parameters, data-only. bounceSigmoid is the 3-point LUT anchors [low,x-high,high] of §3.4/WS-1 R-60: 10%@0.6×budget, 50%@1.0×, 95%@1.6×.",
+              "properties": {
+                "budgetMs": { "type": ["number", "null"] },
+                "bounceSigmoid": {
+                  "type": ["array", "null"],
+                  "items": { "type": "number" },
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "description": "[x@10%, x@50%, x@95%] multipliers of the budget."
+                },
+                "tuningSheet": { "type": "string" },
+                "_todo": { "type": "string" }
+              }
+            }
+          }
+        },
+        "party": {
+          "type": "object",
+          "required": ["allOrNothing", "size"],
+          "description": "R29 party arrival (§3.1 generalised all-or-nothing units).",
+          "properties": {
+            "allOrNothing": { "type": "boolean" },
+            "size": {
+              "type": ["array", "null"],
+              "items": { "type": "integer", "minimum": 1 },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[min,max] party size; null when allOrNothing is false."
+            },
+            "_todo": { "type": "string" }
+          }
+        },
+        "herding": {
+          "type": "object",
+          "required": ["enabled", "coefficient"],
+          "description": "Visitors-affect-visitors →WS1.",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "coefficient": { "type": ["number", "null"] },
+            "tuningSheet": { "type": "string" },
+            "_todo": { "type": "string" }
+          }
+        },
+        "populationEffect": { "type": "boolean", "description": "§2.12 shared hook →WS1." },
+        "retryAmplifies": { "type": "boolean", "description": "Reconnect/retry storms →WS1." },
+        "cohortSpawn": {
+          "type": "object",
+          "required": ["fromCustomerCard", "tier"],
+          "description": "R29: at Tier 3+, visitors spawn from a customer card (§3.1 cohort-as-unit).",
+          "properties": {
+            "fromCustomerCard": { "type": "boolean" },
+            "tier": { "type": "integer", "minimum": 0, "maximum": 7 },
+            "_todo": { "type": "string" }
+          }
+        },
+        "costPerInvocation": { "type": "string", "description": "Serverless-style metering basis →WS4." },
+        "trustReadable": { "type": "boolean", "description": "Identity shows trust history →WS1." },
+        "archetypeRefs": { "type": "array", "items": { "type": "string" }, "description": "Visitor archetype ids this type spawns (cross-check against visitors/archetypes-core.json)." }
+      }
+    },
+
+    "goal": {
+      "description": "SLOT 2 · THE GOAL NODE (§0.2) + win/lose (§1.9, §1.3).",
+      "type": "object",
+      "required": ["nodeType", "winCondition", "loseCondition", "loseSlowlyGuard", "bindingConstraintLine"],
+      "properties": {
+        "nodeType": { "type": "string", "description": "What escorts target →WS1/WS2." },
+        "winCondition": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["survive", "hold-metric", "grow-to-N", "cash-intact", "audit-pass", "convert-%"],
+              "description": "→WS4/WS6."
+            },
+            "metric": { "type": "string", "description": "Metric id when kind=hold-metric." },
+            "threshold": { "type": ["number", "null"] },
+            "tuningSheet": { "type": "string" },
+            "_todo": { "type": "string" }
+          }
+        },
+        "loseCondition": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "type": "string", "description": "Lose-state id from the §9.9 catalogue (e.g. reputation-collapse, insolvency)." }
+          }
+        },
+        "loseSlowlyGuard": {
+          "type": "object",
+          "required": ["minWarningMinutes"],
+          "description": "§9.6 law →WS1.",
+          "properties": {
+            "minWarningMinutes": { "type": ["number", "null"] },
+            "_todo": { "type": "string" }
+          }
+        },
+        "bindingConstraintLine": { "type": "string", "description": "One-line briefing (R13, i18n key) →WS7." }
+      }
+    },
+
+    "scarce": {
+      "description": "SLOT 3 · THE SCARCE RESOURCE (§0.2, §7.8a).",
+      "type": "object",
+      "required": ["resourceId", "meterWidget", "meterBoundStat", "commercialSlider", "operationalDials", "windowGrows", "shedOrder", "qosAnswer"],
+      "properties": {
+        "resourceId": { "type": "string", "description": "Engine resource enum key (11+1 non-fungible resources, §7.8a) →WS1." },
+        "meterWidget": { "type": "string", "description": "One of Instrument Design Language faces (R15/R53) →WS7/asset." },
+        "meterBoundStat": { "type": "string", "description": "Stat the meter reads." },
+        "commercialSlider": { "type": "string", "description": "R16 →WS4." },
+        "operationalDials": { "type": "array", "items": { "type": "string" }, "description": "R17 →WS1/WS4." },
+        "windowGrows": { "type": "boolean", "description": "Backup's hallmark (R22 Window module) →WS1." },
+        "shedOrder": { "type": "string", "description": "R23 shed-order policy id →WS1." },
+        "qosAnswer": { "type": "string", "description": "Priority-class policy statement (i18n key) →WS1." }
+      }
+    },
+
+    "tempo": {
+      "description": "SLOT 4 · THE PATIENCE ANALOG (§0.2) at business scale (§7.8d, P11): contract length sets tempo.",
+      "type": "object",
+      "required": ["simTimeScale", "permanentIncidentClock", "contractTerms", "seasonality", "diurnalBaseline"],
+      "properties": {
+        "simTimeScale": { "type": "string", "enum": ["ms", "µs", "s", "hours", "years"], "description": "§7.8d per-type time-unit scale →WS1." },
+        "permanentIncidentClock": { "type": "boolean", "description": "Game/ad-tech/financial colo run permanently at 0.25× incident clock (§7.13) →WS1." },
+        "contractTerms": {
+          "type": "object",
+          "required": ["default", "escalator", "grandfathering"],
+          "properties": {
+            "default": { "type": "string" },
+            "escalator": { "type": "boolean" },
+            "grandfathering": { "type": "boolean" }
+          }
+        },
+        "seasonality": { "type": "array", "items": { "type": "string" }, "description": "R28 season tags →WS1/WS6." },
+        "diurnalBaseline": { "type": "string", "description": "Curve id (§3.1 The Diurnal Curve) →WS1." }
+      }
+    },
+
+    "threats": {
+      "description": "SLOT 5 · THE THREAT MIX (§0.2, §2.27).",
+      "type": "object",
+      "required": ["familyWeights", "activeFamilies", "signatureThreats", "unlockedByBuildables", "twoFrontDraw", "waveTable"],
+      "properties": {
+        "familyWeights": {
+          "type": "object",
+          "description": "Matrix C (§2.27) rough split across families; customerAsThreat is the game-hosting-heavy extra share.",
+          "required": ["malicious", "human", "entropic", "systemic", "customerAsThreat"],
+          "properties": {
+            "malicious": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "human": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "entropic": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "systemic": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "customerAsThreat": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "_todo": { "type": "string" }
+          }
+        },
+        "activeFamilies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Pool cap 8–10 per level (§2.24 active-family pool cap) →WS1."
+        },
+        "signatureThreats": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Pruning rule R36 (WS-3): mechanical flag = owns balance numbers; codexOnly entries are flavour text, no stats.",
+          "items": {
+            "type": "object",
+            "required": ["id", "mechanical"],
+            "properties": {
+              "id": { "type": "string", "description": "Must resolve in threats/registry-core.json (or an installed mod registry)." },
+              "mechanical": { "type": "boolean" },
+              "codexOnly": { "type": "boolean" }
+            }
+          }
+        },
+        "unlockedByBuildables": {
+          "type": "object",
+          "description": "Tech-tree-is-bestiary (P2 / §2.1 attack-surface ledger): building X arms threat ids. Maps buildable id → threat id list →WS1/WS6.",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } }
+        },
+        "twoFrontDraw": {
+          "type": "array",
+          "minItems": 2,
+          "description": "Hard-wave requirement (§2.24): every hard wave draws from two of the six denominations →WS1.",
+          "items": { "type": "string", "enum": ["bandwidth", "concurrency", "hands", "cash", "reputation", "data-integrity"] }
+        },
+        "waveTable": { "type": "string", "description": "authored+seeded wave table ref ('file:waves/x.json', §7.13 determinism) →WS1." }
+      }
+    },
+
+    "skin": {
+      "description": "SLOT 6 · THE LOOK (§0.2, §8.10). Five-Asset Skin Kit is production law: accent hues / visitor costume / hero silhouette / bespoke meter widget / bespoke catastrophe FX — everything else shared. 20% palette budget; hue ledger: magenta reserved for hostile traffic, no décor may use it (§1.3 Visual Identity Kit).",
+      "type": "object",
+      "required": ["palette", "materialPreset", "visitorCostume", "heroSilhouette", "heroObject", "meterFace", "catastropheFx", "ambientSoundPack", "densityMultiplier", "arrivalRhythm", "homeAltitude", "detailAltitude", "commercialArtifactIcon", "signatureMotion", "signatureFrame", "lodContract"],
+      "properties": {
+        "palette": {
+          "type": "object",
+          "required": ["dominant", "accent", "chord"],
+          "properties": {
+            "dominant": { "type": "string", "description": "Named swatch or hex; hex values await the style-guide pass →WS7. Hue ledger law: magenta reserved for hostile traffic (§1.3)." },
+            "accent": { "type": "string", "description": "Named swatch or hex." },
+            "chord": {
+              "type": "array",
+              "minItems": 5,
+              "maxItems": 5,
+              "items": { "type": "string" },
+              "description": "5-colour visual chord (§1.3 Visual Identity Kit). Named swatches allowed where the doc names them (putty, sodium yellow, …); hex where authored."
+            }
+          }
+        },
+        "materialPreset": { "type": "string", "description": "R49: lookup of existing shader/blend/tint presets (Pixi re-read per MASTER_REPORT C12) — no bespoke materials →WS7." },
+        "visitorCostume": {
+          "type": "object",
+          "required": ["hull", "propSlot"],
+          "properties": {
+            "hull": { "type": "string", "description": "Kit asset 2: costume (shape encodes duration class only, §3.1)." },
+            "propSlot": { "type": "string", "description": "Archetype identity moves to the prop slot (§3.1/§8.2)." }
+          }
+        },
+        "heroSilhouette": { "type": "string", "description": "Kit asset 3: ONE bespoke silhouette (R48), 'asset:' ref." },
+        "heroObject": { "type": "string", "description": "R58 →WS7." },
+        "meterFace": { "type": "string", "description": "Kit asset 4: bespoke meter; must exist in Instrument Design Language (R53)." },
+        "catastropheFx": { "type": "string", "description": "Kit asset 5: exactly one new FX (R8)." },
+        "ambientSoundPack": { "type": "string", "description": "Sample-set swap on shared bus." },
+        "densityMultiplier": { "type": ["number", "null"], "description": "Part of the eight parameter values." },
+        "arrivalRhythm": { "type": "string" },
+        "homeAltitude": { "type": ["string", "null"], "enum": ["Z1", "Z2", "Z3", "Z4", null], "description": "WS-7 altitude ladder; null where §8.10 does not name one (with _todo)." },
+        "detailAltitude": { "type": ["string", "null"], "enum": ["Z1", "Z2", "Z3", "Z4", null] },
+        "commercialArtifactIcon": { "type": "string", "description": "R51." },
+        "signatureMotion": { "type": "string", "description": "From the 13-motion shared set or the one new." },
+        "signatureFrame": { "type": "string" },
+        "lodContract": {
+          "type": "object",
+          "description": "R55, enforced by tooling.",
+          "required": ["full", "icon16", "pip", "aggregate", "inspector"],
+          "properties": {
+            "full": { "type": "string" },
+            "icon16": { "type": "string" },
+            "pip": { "type": "string", "description": "Pip = shape+color only." },
+            "aggregate": { "type": "string" },
+            "inspector": { "type": "string", "description": "One line." }
+          }
+        },
+        "tuningSheet": { "type": "string" },
+        "_todo": { "type": "string" }
+      }
+    },
+
+    "eras": {
+      "description": "ERAS (§0.4, §8.10).",
+      "type": "object",
+      "required": ["availableFrom", "obsoleteBy", "eraOverrides"],
+      "properties": {
+        "availableFrom": { "type": ["string", "null"], "description": "R66 era grid (§0.4 named eras: 1994 dial-up, 2001 colo, 2009 shared/cPanel, 2016 cloud, 2024 GPU) →WS6. Null where doc does not date the line (with _todo)." },
+        "obsoleteBy": { "type": ["string", "null"], "description": "Year string where the line is obsoleted; null = never/undocumented." },
+        "eraOverrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "costs": { "type": ["object", "number", "string", "null"] },
+              "threatMix": { "type": ["object", "string", "null"] },
+              "chromeTokens": { "type": "string", "description": "Era = 4 CSS tokens (WS-7 kept law)." }
+            }
+          }
+        }
+      }
+    },
+
+    "economy": {
+      "description": "ECONOMICS (§6.6, §0.3).",
+      "type": "object",
+      "required": ["unitOfSale", "revenueShape", "marginProfile", "cashTiming", "termStructure", "cacProfile", "ticketsPerCustomer", "signatureCost", "badMonth", "fifthAxisScore", "realismToggles"],
+      "properties": {
+        "unitOfSale": { "type": "string", "description": "§0.3/§6.6 revenue-shape table." },
+        "revenueShape": { "type": "string" },
+        "marginProfile": { "type": "string" },
+        "cashTiming": { "type": "string", "description": "negative-CCC | prepaid | net60 … (§6.6 companion table A)." },
+        "termStructure": {
+          "type": "object",
+          "required": ["typical", "churn"],
+          "description": "P11 →WS4: contract length sets tempo.",
+          "properties": {
+            "typical": { "type": "string" },
+            "churn": { "type": "string" }
+          }
+        },
+        "cacProfile": { "type": "string", "description": "Companion B →WS4." },
+        "ticketsPerCustomer": { "type": ["number", "null"], "description": "Companion B tickets/customer/month →WS5/WS4." },
+        "signatureCost": { "type": "string", "description": "§6.6 signature-cost column." },
+        "badMonth": { "type": "string", "description": "Companion C 'what a bad month looks like' (i18n key) — authors know what pressure to write." },
+        "fifthAxisScore": {
+          "type": "object",
+          "required": ["metric", "weight"],
+          "description": "R42 per-type fifth-axis scoring (§0.3) →WS4.",
+          "properties": {
+            "metric": { "type": "string" },
+            "weight": { "type": ["number", "null"] },
+            "tuningSheet": { "type": "string" },
+            "_todo": { "type": "string" }
+          }
+        },
+        "realismToggles": {
+          "type": "object",
+          "required": ["p95billing", "demandCharges"],
+          "description": "R44 →WS4/WS1.",
+          "properties": {
+            "p95billing": { "type": "boolean" },
+            "demandCharges": { "type": "boolean" }
+          }
+        },
+        "tuningSheet": { "type": "string" },
+        "_todo": { "type": "string" }
+      }
+    },
+
+    "buildables": {
+      "description": "BUILD & PLAY SPACE (§4.10, §7.8f/g, §1.9).",
+      "type": "object",
+      "required": ["paletteRef", "archetypeInstances", "distinct", "nonPhysical"],
+      "properties": {
+        "paletteRef": { "type": "string", "description": "R7: 80% shared palette." },
+        "archetypeInstances": {
+          "type": "array",
+          "description": "R61: compose from engine registry, no code.",
+          "items": {
+            "type": "object",
+            "required": ["archetype", "skin"],
+            "properties": {
+              "archetype": { "type": "string" },
+              "skin": { "type": "string" }
+            }
+          }
+        },
+        "distinct": { "type": "array", "items": { "type": "string" }, "description": "Only from the ~15 verb-changers (R61)." },
+        "nonPhysical": { "type": "array", "items": { "type": "string" }, "description": "R62 staff-time economy objects →WS5." }
+      }
+    },
+
+    "control": {
+      "description": "Control granularity pips (R20/R21): how much of each stack the player can touch — §0.2 'progressive loss of control' axis.",
+      "type": "object",
+      "required": ["pips", "keyhole", "unclickableObjects"],
+      "properties": {
+        "pips": {
+          "type": "object",
+          "required": ["hardware", "software", "network", "data"],
+          "properties": {
+            "hardware": { "type": ["integer", "null"], "minimum": 0, "maximum": 1 },
+            "software": { "type": ["integer", "null"], "minimum": 0, "maximum": 1 },
+            "network": { "type": ["integer", "null"], "minimum": 0, "maximum": 1 },
+            "data": { "type": ["integer", "null"], "minimum": 0, "maximum": 1 },
+            "_todo": { "type": "string" }
+          },
+          "description": "Null pips where §0.2 does not author the profile (with _todo). §0.2 authors only shared hosting = 'control everything inside the box' (max pips)."
+        },
+        "keyhole": { "type": "boolean", "description": "§7.8 act-through-a-keyhole mode." },
+        "unclickableObjects": { "type": "boolean", "description": "Objects visible but not actionable (§0.2)." },
+        "_todo": { "type": "string" }
+      }
+    },
+
+    "mechanics": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "R22 module toggles (engine module ids this bundle switches on) →WS1/WS2."
+    },
+
+    "verbs": {
+      "description": "Dominant verb — Verb Shift Rule (R4, §0.2): a type only ships if it changes the most-performed verb. One of the six invariant verbs (§1.9).",
+      "type": "object",
+      "required": ["dominant", "transfers"],
+      "properties": {
+        "dominant": { "type": "string" },
+        "transfers": { "type": "array", "items": { "type": "string" }, "description": "Portable Skill rows (→WS6/WS7 HUD terms): lessons that transfer to other types." }
+      }
+    },
+
+    "relations": {
+      "description": "§0.2/§5.6/§9.6 inter-bundle graph.",
+      "type": "object",
+      "required": ["synergies", "antagonisms", "unlocks", "pivots", "masteryBuff", "distillate"],
+      "properties": {
+        "synergies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["with", "kind"],
+            "properties": {
+              "with": { "type": "string" },
+              "kind": { "type": "string" },
+              "numbers": { "type": ["object", "null"], "additionalProperties": { "type": ["number", "null"] } },
+              "_todo": { "type": "string" }
+            }
+          }
+        },
+        "antagonisms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["with"],
+            "properties": {
+              "with": { "type": "string" },
+              "resource": { "type": "string", "description": "Contested shared resource (e.g. 'power')." },
+              "kind": { "type": "string", "description": "e.g. 'exclusion' (mutual-deployment ban)." },
+              "render": { "type": "string", "description": "How the conflict is surfaced (e.g. 'allocation-slider')." }
+            }
+          }
+        },
+        "unlocks": {
+          "type": "object",
+          "description": "R63 prereq sets: tech/commercial sets (or alt routes) that gate this line.",
+          "required": ["prereqSets"],
+          "properties": {
+            "prereqSets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tech": { "type": "array", "items": { "type": "string" } },
+                  "commercial": { "type": "array", "items": { "type": "string" } },
+                  "alt": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "pivots": {
+          "type": "object",
+          "description": "R65 pivot table: to other type ids with overlap/reuse/transfer/regulatory numbers.",
+          "required": ["to"],
+          "properties": {
+            "to": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "customerOverlap": { "type": ["number", "null"] },
+                  "hardwareReuse": { "type": ["number", "null"] },
+                  "skillTransfer": { "type": ["number", "null"] },
+                  "regulatoryDelta": { "type": ["number", "null"] },
+                  "_todo": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "masteryBuff": { "type": "string", "description": "R68 →WS6." },
+        "distillate": { "type": "string", "description": "R68: what the line distills into for the Playbook →WS6." }
+      }
+    },
+
+    "ticketPack": {
+      "type": "string",
+      "description": "R46: i18n pack ref ('file:packs/x.i18n.json') — swappable, localisable, community-editable. ALL human strings in the bundle are keys resolved through this pack."
+    },
+    "handoverNote": {
+      "type": "object",
+      "description": "R10: exactly 3 lines, the type's thesis rendered as a prop (§1.9 Handover Note). Values are i18n keys.",
+      "required": ["runsOut", "killsYou", "customerWants"],
+      "properties": {
+        "runsOut": { "type": "string" },
+        "killsYou": { "type": "string" },
+        "customerWants": { "type": "string" }
+      },
+      "maxProperties": 3
+    },
+    "rosettaCards": {
+      "type": "array",
+      "description": "R11: Rosetta Card — one canonical engine metric, one player-language alias, one line joining them (i18n key).",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["canonical", "alias", "line"],
+        "properties": {
+          "canonical": { "type": "string" },
+          "alias": { "type": "string" },
+          "line": { "type": "string" }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "description": "TEXT & SCENARIOS (§9.3/9.11, §1.5, §1.9).",
+      "required": ["archetypeApplicability", "analogues"],
+      "properties": {
+        "archetypeApplicability": {
+          "type": "array",
+          "description": "R14: which scenario archetypes (§1.9 eleven-archetype taxonomy) apply to this type.",
+          "items": { "type": "string", "enum": ["Endure", "Convert", "Reach-State", "Escort", "Diagnose", "Build-to-Spec", "Shrink", "Schedule", "Negotiate", "Hold-Without-Hands", "Inherit"] }
+        },
+        "analogues": { "type": "object", "description": "§1.5 type-parametric event tags: world-event id → this type's analogue.", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "description": "R76 (§9.11 production guardrails).",
+      "required": ["depiction", "arcMustEnd"],
+      "properties": {
+        "depiction": { "type": "string", "description": "e.g. 'business-not-technique' — depict the business consequence, never exploit technique." },
+        "arcMustEnd": { "type": "boolean" }
+      }
+    },
+
+    "_todo": { "type": "string", "description": "Top-level TODO marker (sibling convention: any object with a null placeholder carries _todo naming the §-cite)." }
+  },
+  "additionalProperties": true
+}

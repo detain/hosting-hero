@@ -1,0 +1,365 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:game-servers",
+  "_todo": "All human strings are keys into file:packs/game.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. ticketPack file not yet authored.",
+
+  "meta": {
+    "name": "type.game-servers.name",
+    "codexSummary": "type.game-servers.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.player-session",
+    "durationClass": "Session",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§3.2/§3.3 author patience as TWO-PHASE (2,000ms to connect, then ping-bound ~90ms) — no single scalar exists to put here; value = per-slot monthly (§3.3 revenue) is account-level not unit-level; loyalty is 'brutal and instant' (§1.3) with no scalar; fragility = delayed-bounce-angry (§3.3) qualitative."
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": 90,
+        "bounceSigmoid": [0.6, 1.0, 1.6],
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "§3.3 patience ~90ms ping (G6 anchor: 'sigmoid-budget (game, 90ms)'). Join phase 2,000ms (§3.2 game player joining) is modelled as the connection handshake cost, not the session budget. Rage-quit cliff 'above ~80ms sustained' (§1.3) and ping-chip bands green<30/amber<80/red (§3.3) are HUD/readability anchors; jitter-worse-than-latency (§1.3) is engine-side."
+      }
+    },
+    "party": {
+      "allOrNothing": true,
+      "size": [5, 5]
+    },
+    "herding": {
+      "enabled": true,
+      "coefficient": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§3.3 herding law: full attracts, empty repels — coefficient value not authored in doc."
+    },
+    "populationEffect": true,
+    "retryAmplifies": true,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-slot-time",
+    "trustReadable": true,
+    "archetypeRefs": [
+      "game-player-joining",
+      "desktop-regular"
+    ]
+  },
+
+  "goal": {
+    "nodeType": "live-match-session",
+    "winCondition": {
+      "kind": "cash-intact",
+      "threshold": null,
+      "_todo": "§1.3 WIN, verbatim intent: 'end level with cash intact after hype collapses (don't buy 40 servers at the peak)'. Cash threshold amount is level-scoped, not type-scoped."
+    },
+    "loseCondition": {
+      "kind": "sustained-ddos-prime-time"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.game-servers.binding"
+  },
+
+  "scarce": {
+    "resourceId": "tick-budget",
+    "meterWidget": "tick-rate-metronome",
+    "meterBoundStat": "tick-completion-ms",
+    "commercialSlider": "ddos-protection-tier",
+    "operationalDials": [
+      "clock-per-core",
+      "instances-per-box",
+      "region-placement"
+    ],
+    "windowGrows": false,
+    "shedOrder": "standard-p3-p0-ladder",
+    "qosAnswer": "scarce.game-servers.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": true,
+    "contractTerms": {
+      "default": "monthly-or-hourly",
+      "escalator": false,
+      "grandfathering": false
+    },
+    "seasonality": [
+      "launch-window",
+      "title-death",
+      "tournament-weekend",
+      "school-calendar"
+    ],
+    "diurnalBaseline": "evening-peak-18-24-local"
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": null,
+      "human": null,
+      "entropic": null,
+      "systemic": null,
+      "customerAsThreat": null,
+      "_todo": "§2.27 Matrix C: game hosting = malicious + human with an unusually LARGE customer-as-threat share — qualitative skew only; weights await the ratified tuning sheet (OD-2)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "systemic"
+    ],
+    "signatureThreats": [
+      { "id": "grudge-booter", "mechanical": true },
+      { "id": "udp-amplification-barrage", "mechanical": true },
+      { "id": "open-resolver-reflection", "mechanical": true },
+      { "id": "cheat-client-griefer", "mechanical": true },
+      { "id": "mod-update-day", "mechanical": true },
+      { "id": "empty-server-spiral", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "chargeback-swarm", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "public-server-browser-listing": ["scanner-drizzle", "open-resolver-reflection"],
+      "default-udp-game-image": ["udp-amplification-barrage", "open-resolver-reflection"],
+      "open-modding-api": ["mod-update-day", "cheat-client-griefer"]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "concurrency",
+      "cash",
+      "reputation"
+    ],
+    "waveTable": "file:waves/g1-game-servers-first-quarter.json"
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "dark room base",
+      "accent": "hot pink-violet",
+      "chord": [
+        "hot pink-violet",
+        "lime",
+        "dark room base",
+        "chord-slot-4-todo",
+        "chord-slot-5-todo"
+      ],
+      "_todo": "§1.3 palette correction names exactly two chord colours ('hot pink-violet and lime with the MAGENTA BAND EXCLUDED' — hue ledger: magenta reserved for hostile traffic, §8.10) + 'dark room, neon saturated accents' base (§8.10). Swatches 4-5 await the style-guide pass. Saturation lives in lighting, not surfaces (§1.3)."
+    },
+    "materialPreset": "preset:dark-neon-one-accent-emissive",
+    "visitorCostume": {
+      "hull": "pawn",
+      "propSlot": "ping-chip"
+    },
+    "heroSilhouette": "asset:hero.tick-node",
+    "heroObject": "tick-node",
+    "meterFace": "tick-rate-metronome",
+    "catastropheFx": "fx:rubber-band-freeze",
+    "ambientSoundPack": "sound:crowd-noise-particles",
+    "densityMultiplier": null,
+    "arrivalRhythm": "evening-waves",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.community-discord",
+    "signatureMotion": "motion:pawn-stride-and-shake-head",
+    "signatureFrame": "frame:lobby-pawns-with-nameplates",
+    "lodContract": {
+      "full": "asset:lod.pawn.full",
+      "icon16": "asset:lod.pawn.icon16",
+      "pip": "pip:violet-teardrop",
+      "aggregate": "agg:ping-number-cluster",
+      "inspector": "skin.game-servers.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type. Costume note: §8.10 game catalogue says player avatars as TEARDROPS persisting in node; §3.3 visual 'Pawns' = named persistent chunky sprites — hull 'pawn' carries the nameplate+ping-chip prop; the teardrop shape is the Session duration-class shape (§3.1), which the costume law says shape encodes class not identity. Catastrophe FX verbatim §1.3: lag spike = every avatar freezes mid-stride then rubber-bands backward."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4 era grid (1994 dial-up / 2001 colo / 2009 shared-cPanel / 2016 cloud / 2024 GPU) does not date the game-server line; §1.3's community/Discord texture implies the modern band but the doc leaves availableFrom unauthored."
+  },
+
+  "economy": {
+    "unitOfSale": "slot / server-month",
+    "revenueShape": "seasonal-spiky",
+    "marginProfile": "medium",
+    "cashTiming": "monthly-prepay-negative-CCC",
+    "termStructure": {
+      "typical": "monthly-or-hourly",
+      "churn": "6-12-pct-seasonal"
+    },
+    "cacProfile": "cac.game-servers.todo",
+    "ticketsPerCustomer": null,
+    "signatureCost": "ddos-protection-and-latency",
+    "badMonth": "economy.game-servers.bad-month",
+    "fifthAxisScore": {
+      "metric": "tick-stability",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "R42: per-type fifth axis = tick stability (§0.3 scarce 'Latency + tick budget'; meter reads it); score weight not authored."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false
+    },
+    "chargebackRate": {
+      "pctOfRevenue": null,
+      "range": "2-4",
+      "_todo": "§1.3: 'chargebacks 2-4% of revenue' — exact sheet value pending; range is doc'd."
+    },
+    "hypeCycle": {
+      "launchMultiplier": 20,
+      "launchWeeks": 6,
+      "evaporationPct": 85,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§1.3 verbatim: 'demand 20x for 6 weeks, then 85% evaporates' — multipliers doc'd; the §1.3 'Launch Window' variant's 10x-or-0.1x-at-12:01 is the authored event-envelope analogue, not this row."
+    },
+    "_todo": "cacProfile: §6.6 companion B authors CAC only for shared web ($65-150 affiliate CPA); game-servers CAC/TTP unauthored. ticketsPerCustomer: §1.3 'Tickets at 2am from 14-year-olds' attests volume but no rate."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "game-servers" },
+      { "archetype": "two-face-rack", "skin": "game-servers" },
+      { "archetype": "matchmaker", "skin": "game-servers" }
+    ],
+    "distinct": [
+      "per-instance-cpu-pinning",
+      "udp-aware-ddos-scrubbing",
+      "anti-cheat-integration",
+      "automated-restart-on-tick-drop",
+      "regional-pops",
+      "server-browser-listing",
+      "per-player-ip-obfuscation",
+      "anycast"
+    ],
+    "nonPhysical": [
+      "high-clock-low-core-procurement",
+      "ddos-scrubbing-retainer",
+      "moderator-hire"
+    ]
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2 control-granularity authors only the shared-hosting profile ('control everything inside the box', max pips); the game-servers pip row awaits its ruleset-card pass. Never invented."
+    },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+
+  "mechanics": [
+    "tick-budget-enforcement",
+    "permanent-incident-clock-quarter-speed",
+    "population-spiral",
+    "party-admission-all-or-nothing",
+    "herding-full-attracts-empty-repels",
+    "two-face-racks",
+    "matchmaker-projection",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Place & Connect",
+    "transfers": [
+      "verbs.game-servers.transfer.1"
+    ]
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:shared-web",
+        "kind": "opposite-peak-hours",
+        "numbers": null,
+        "_todo": "§0.2: games peak at night vs web midday — night-shift capacity arbitrage; no numbers authored."
+      }
+    ],
+    "antagonisms": [
+      {
+        "with": "official:gpu-power",
+        "resource": "power",
+        "kind": "headroom-contention",
+        "render": "allocation-slider"
+      }
+    ],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["low-latency-peering"],
+          "commercial": ["community-presence"]
+        }
+      ]
+    },
+    "pivots": {
+      "to": {
+        "official:shared-web": {
+          "customerOverlap": null,
+          "hardwareReuse": null,
+          "skillTransfer": null,
+          "regulatoryDelta": 0,
+          "_todo": "§5.6 pivot numbers unauthored for this pair; regulatoryDelta 0 qualitative (neither line is regulated, §2.27 Matrix C)."
+        }
+      }
+    },
+    "masteryBuff": "relations.game-servers.mastery",
+    "distillate": "relations.game-servers.distillate"
+  },
+
+  "ticketPack": "file:packs/game.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.game-servers.runs-out",
+    "killsYou": "handover.game-servers.kills-you",
+    "customerWants": "handover.game-servers.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "tick-budget",
+      "alias": "density-dial-in-ms",
+      "line": "rosetta.game-servers.tick-budget"
+    },
+    {
+      "canonical": "tick-budget",
+      "alias": "latency-budget-harder-cliff",
+      "line": "rosetta.game-servers.harder-cliff"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Endure",
+      "Escort",
+      "Shrink",
+      "Convert"
+    ],
+    "analogues": {
+      "launch-window": "scenarios.game-servers.launch-window",
+      "private-shard-drama": "scenarios.game-servers.private-shard",
+      "tournament-escort": "scenarios.game-servers.tournament"
+    }
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

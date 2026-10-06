@@ -1,0 +1,356 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:shared-web",
+  "_todo": "meta.name/codexSummary literals + handoverNote lines are i18n keys; their authored English lives in the ticketPack (README §Key literals). Pack file not yet authored — pack keys here are the contract it must satisfy.",
+
+  "meta": {
+    "name": "type.shared-web.name",
+    "codexSummary": "type.shared-web.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.page-load",
+    "durationClass": "Instant",
+    "stats": {
+      "patience": 3000,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§3.3 patience ~3s is doc'd; Value/Weight/Loyalty/Fragility scalars not authored — §3.3 gives only qualitative rows (revenue = Indirect (customer's plan); size = Small) and §3.1 examples exist solely for DNS/colo units."
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": 3000,
+        "bounceSigmoid": [0.6, 1.0, 1.6],
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget). §3.3 bounce triggers 'TTFB > threshold, 5xx' — the 5xx-shock subtraction is engine-side, not a bundle scalar."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null
+    },
+    "populationEffect": false,
+    "retryAmplifies": false,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-account",
+    "trustReadable": true,
+    "archetypeRefs": [
+      "skimmer-casual",
+      "mobile-commuter",
+      "desktop-regular",
+      "deep-reader",
+      "impulse-buyer",
+      "power-shopper",
+      "api-client",
+      "crawler"
+    ]
+  },
+
+  "goal": {
+    "nodeType": "customer-site-availability",
+    "winCondition": {
+      "kind": "survive",
+      "threshold": null,
+      "_todo": "§1.3/§6.6: the shared-web thesis is survive-the-quarter at thin margin (profit = utilisation); no numeric survive-target authored in doc. Gate G1 proxy: one quarter on one box."
+    },
+    "loseCondition": {
+      "kind": "mass-compromise"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.shared-web.binding"
+  },
+
+  "scarce": {
+    "resourceId": "concurrency-slots",
+    "meterWidget": "density-comb",
+    "meterBoundStat": "tenant-density",
+    "commercialSlider": "oversell-ratio",
+    "operationalDials": [
+      "tenant-density-dial",
+      "term-mix-dial",
+      "cgroup-caging"
+    ],
+    "windowGrows": false,
+    "shedOrder": "standard-p3-p0-ladder",
+    "qosAnswer": "scarce.shared-web.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "annual-prepay",
+      "escalator": false,
+      "grandfathering": false
+    },
+    "seasonality": [
+      "renewal-cliff"
+    ],
+    "diurnalBaseline": "web-midday"
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": null,
+      "human": null,
+      "entropic": null,
+      "systemic": null,
+      "customerAsThreat": null,
+      "_todo": "§2.27 Matrix C authors the skew qualitatively — shared web & VPS lean malicious + human; §1.3 signature threat is 'your own customers' (large customerAsThreat share). No weights in doc; tuning sheet pending (OD-2)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "systemic"
+    ],
+    "signatureThreats": [
+      { "id": "scanner-drizzle", "mechanical": true },
+      { "id": "wp-login-brute-squad", "mechanical": true },
+      { "id": "xmlrpc-pingback-amplifier", "mechanical": true },
+      { "id": "slowloris-sipper", "mechanical": true },
+      { "id": "layer7-mimic", "mechanical": true },
+      { "id": "vulnerable-plugin-compromise", "mechanical": true },
+      { "id": "noisy-query-table-scan", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "homogeneous-cpanel-image": ["vulnerable-plugin-compromise", "wp-login-brute-squad"],
+      "public-whois-listing": ["scanner-drizzle"],
+      "unmetered-wordpress-default": ["noisy-query-table-scan", "hoarder-noisy-neighbor"]
+    },
+    "twoFrontDraw": [
+      "concurrency",
+      "hands",
+      "cash",
+      "reputation",
+      "data-integrity"
+    ],
+    "waveTable": "file:waves/g1-shared-web-first-quarter.json"
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "municipal beige-and-teal",
+      "accent": "sodium yellow",
+      "chord": [
+        "putty",
+        "sodium yellow",
+        "oxide red",
+        "dishwater grey",
+        "mint"
+      ]
+    },
+    "materialPreset": "preset:plastic-and-fluorescent",
+    "visitorCostume": {
+      "hull": "spark",
+      "propSlot": "customer-marketing-banner"
+    },
+    "heroSilhouette": "asset:hero.control-panel",
+    "heroObject": "control-panel",
+    "meterFace": "density-comb",
+    "catastropheFx": "fx:tenement-wall-fire-spread",
+    "ambientSoundPack": "sound:wall-of-fans",
+    "densityMultiplier": null,
+    "arrivalRhythm": "constant-diurnal",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.coupon-code",
+    "signatureMotion": "motion:dart-rain",
+    "signatureFrame": "frame:cutaway-tenement-lit-windows",
+    "lodContract": {
+      "full": "asset:lod.cabinet14.full",
+      "icon16": "asset:lod.cabinet14.icon16",
+      "pip": "pip:teal-square",
+      "aggregate": "agg:apartment-block-lights",
+      "inspector": "skin.shared-web.inspector"
+    },
+    "_todo": "§8.10: densityMultiplier / homeAltitude / detailAltitude are 'eight parameter values' — the doc states every shared-web param except these three numerics/enum picks. Palette chord verbatim §1.3 'putty · sodium yellow · oxide red · dishwater grey · mint'; 'The Apartment Block' cutaway, one window glowing too bright dimming the floor (§1.3)."
+  },
+
+  "eras": {
+    "availableFrom": "2009",
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4 era grid names 2009 = shared/cPanel era; obsoleteBy null = still an active line in the era grid (never obsoleted on-page)."
+  },
+
+  "economy": {
+    "unitOfSale": "account",
+    "revenueShape": "many-tiny-high-churn",
+    "marginProfile": "thin-volume",
+    "cashTiming": "prepaid-negative-CCC",
+    "termStructure": {
+      "typical": "12-36-mo-prepaid",
+      "churn": "3-6-pct-mo"
+    },
+    "cacProfile": "affiliate-cpa-65-150-ttp-9-18mo",
+    "ticketsPerCustomer": 0.45,
+    "signatureCost": "support-and-licences",
+    "badMonth": "economy.shared-web.bad-month",
+    "fifthAxisScore": {
+      "metric": "density-utilisation",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§6.6 'profit = utilisation; utilisation vs headroom tension' names the fifth axis for this type; R42 score weight not authored."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false
+    },
+    "tuningSheet": "PROVISIONAL-B",
+    "_todo": "ticketsPerCustomer midrange of doc'd 0.3-0.6 tickets/customer/mo (§6.6 companion B) — midpoint provisional until tuning sheet ratified. Payment-fee shape monthly-card ~13% -> annual-prepay ~1.1% of revenue is doc'd (§1.3/§6.6) and lives in the engine fee table, not this bundle."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "shared-web" },
+      { "archetype": "two-face-rack", "skin": "shared-web" },
+      { "archetype": "control-plane", "skin": "cpanel" }
+    ],
+    "distinct": [
+      "per-account-cgroup-caging",
+      "slow-query-log-accounting",
+      "managed-patching-service",
+      "waf-virtual-patching",
+      "status-page",
+      "knowledge-base-deflection",
+      "upsell-desk-to-vps",
+      "egress-filtering",
+      "default-deny-firewall",
+      "attack-surface-scanner",
+      "fail2ban",
+      "two-factor-enforcement"
+    ],
+    "nonPhysical": [
+      "dba-hire",
+      "support-hire",
+      "scrubbing-retainer"
+    ]
+  },
+
+  "control": {
+    "pips": {
+      "hardware": 1,
+      "software": 1,
+      "network": 1,
+      "data": 1
+    },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+
+  "mechanics": [
+    "oversell-ratio",
+    "cgroup-caging",
+    "renewal-cliff",
+    "triage-window",
+    "ticket-queue",
+    "policy-not-hand",
+    "soft-budget-customer-shield",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Triage",
+    "transfers": [
+      "verbs.shared-web.transfer.1"
+    ]
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:game-servers",
+        "kind": "opposite-peak-hours",
+        "numbers": null,
+        "_todo": "§0.2 line synergies: web peaks midday, games peak at night (backup overnight) — no numeric benefit authored."
+      },
+      {
+        "with": "official:backups",
+        "kind": "opposite-peak-hours",
+        "numbers": null,
+        "_todo": "§0.2: backup overnight fills the web trough; numbers not authored."
+      }
+    ],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["cpanel-class-control-plane"],
+          "commercial": ["mass-signup-affiliate-channel"]
+        }
+      ]
+    },
+    "pivots": {
+      "to": {
+        "official:game-servers": {
+          "customerOverlap": null,
+          "hardwareReuse": null,
+          "skillTransfer": null,
+          "regulatoryDelta": 0,
+          "_todo": "§5.6 pivot table row for web->game not authored numerically; regulatoryDelta 0 is qualitative (neither line is a regulated vertical per §2.27 Matrix C)."
+        }
+      }
+    },
+    "masteryBuff": "relations.shared-web.mastery",
+    "distillate": "relations.shared-web.distillate"
+  },
+
+  "ticketPack": "file:packs/shared-web.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.shared-web.runs-out",
+    "killsYou": "handover.shared-web.kills-you",
+    "customerWants": "handover.shared-web.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "oversell-ratio",
+      "alias": "comb-teeth-spacing",
+      "line": "rosetta.shared-web.oversell"
+    },
+    {
+      "canonical": "tenant-density",
+      "alias": "packed-windows",
+      "line": "rosetta.shared-web.density"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Endure",
+      "Diagnose",
+      "Convert",
+      "Hold-Without-Hands"
+    ],
+    "analogues": {
+      "slashdot-teleport": "scenarios.shared-web.slashdot",
+      "wordpress-heartbleed-week": "scenarios.shared-web.mass-patch-week"
+    }
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

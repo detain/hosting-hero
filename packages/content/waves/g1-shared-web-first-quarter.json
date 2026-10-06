@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-shared-web-first-quarter",
+  "type": "official:shared-web",
+  "purpose": "Seeded wave-table slice for prototype gates G1 (bounce loop) and G5 (one quarter). Slice rig per MASTER_REPORT §7 G1: one ingress with diurnal envelope + one scripted spike, app node S=8 slots / 120ms service, stub DB, WAF aggression slider, three outcome counters.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (PROVISIONAL-B pending owner pick, OD-2)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "rules": {
+    "maxThreatEntriesPerWave": 4,
+    "firstWaveMaxParPct": 40,
+    "troughMinDropPctBelowPeak": 45,
+    "maxRolesAbove30PctPerWave": 2,
+    "newRoleEveryNthWave": 4,
+    "twoFrontDenominationsMin": 2,
+    "denominationQuotaPerLevel": 4,
+    "secondIncidentMultiplierDuringIncident": 1.8,
+    "secondIncidentMultiplierDuringRecovery": 2.5,
+    "copycatReservePct": [10, 15],
+    "feints": { "maxPerLevel": 1, "neverTwoLevelsInRow": true, "namedInPostmortem": true },
+    "entropyBudgetPeaksInTroughs": "f(estate age x size x (1 - maintenance spend))",
+    "activeFamilyPoolCap": [8, 10],
+    "cite": "§2.24 + §1.7 (exact)"
+  },
+
+  "baseline": {
+    "curve": "web-midday",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": 12,
+    "_todo": "§1.7/§3.1: baseline continuous, diurnal, never zero; §0.2 web peaks midday. Amplitude scaling is tuning-sheet territory.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "g1-scripted-spike",
+      "kind": "demand",
+      "overWaves": [2],
+      "shape": { "ramp": "fast", "plateau": "short", "decay": "long-tail" },
+      "amplitude": null,
+      "telegraph": "none — G1 slice spec authorises exactly one scripted spike as the surprise-with-composition-not-size exemplar is NOT yet in force at gate G1",
+      "source": "MASTER_REPORT §7 G1 slice: 'one ingress diurnal envelope + one scripted spike'",
+      "twoBeat": "threat wave-2 (brute squad) immediately followed by this demand event — Two-Beat Wave authoring pattern (§1.7)",
+      "_todo": "spike amplitude/ramp durations unauthored in doc; PROVISIONAL-B until sheet ratified."
+    },
+    {
+      "id": "sale-morning-clump",
+      "kind": "demand",
+      "overWaves": [3],
+      "shape": { "ramp": "gentle", "plateau": "diurnal", "decay": "gentle" },
+      "amplitude": null,
+      "telegraph": "customer-marketing-calendar visible on the ticket desk the quarter before",
+      "source": "§3.3: Sparks bursty clumps tied to YOUR CUSTOMER'S marketing — 'rain on a window'",
+      "_todo": "clump multiplier unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "plugin-pocalypse-drill",
+      "kind": "threat",
+      "overWaves": [4, 5],
+      "shape": { "ramp": "stepped", "plateau": "burst", "decay": "recovery-arc" },
+      "amplitude": null,
+      "composition": ["vulnerable-plugin-compromise", "ticket-avalanche-hydra"],
+      "telegraph": "scanner-drizzle advance flags carry it — scanner hits in waves 1-2 pre-announce waves 4-5's targeted composition (§2.2)",
+      "source": "§2.5 mass-CMS-compromise chain + §1.7 Two-Beat (threat event then demand event: defacement -> ticket avalanche)",
+      "compoundWave": "authored so ATTENTION is the scarce resource, not bandwidth (§2.24 compound-wave authoring)",
+      "_todo": "defacement-then-tickets gap duration unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9).",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["data-integrity"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one. Two-Front (§2.24): brute squad spends concurrency AND cash (full app bootstrap per attempt + log storage cost, §2.2) while the hoarder spends concurrency.",
+      "entries": [
+        { "threat": "wp-login-brute-squad", "role": "Swarm", "pressurePct": 55, "band": "weather" },
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 45, "band": "entropy" }
+      ],
+      "denominations": ["concurrency", "cash"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24)."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): caging + status-page window.",
+      "entries": [
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 60, "band": "storm" },
+        { "threat": "xmlrpc-pingback-amplifier", "role": "Parasite", "pressurePct": 40, "band": "storm" }
+      ],
+      "denominations": ["concurrency", "reputation"]
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar: ATTENTION is the scarce resource, not bandwidth (§2.24). The defacement lands (data-integrity) and its ticket avalanche (hands) burns inside the same window — hard wave draws exactly TWO fronts (§2.1 Two-Front Law). Every-4th-wave NEW ROLE beat: Bypass-Flyer (plugin compromise) debuts here — unseen in waves 1-3; the Debuffer role is held back for the finale's signature moment.",
+      "entries": [
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 55, "band": "storm" },
+        { "threat": "vulnerable-plugin-compromise", "role": "Bypass/Flyer", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["hands", "data-integrity"],
+      "secondIncident": "ticket avalanche arrives inside the defacement incident window -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "Hard wave draws TWO fronts — concurrency (mimic + noisy query) x data-integrity (defacement still burning) — per §2.24 two-front requirement. Debuffer (noisy query) debuts here, second fresh role of the slice's cadence; its signature moment fires inside this wave if per-account slow-query-log accounting is unbuilt (§1.3).",
+      "entries": [
+        { "threat": "layer7-mimic", "role": "Mimic", "pressurePct": 40, "band": "hunter" },
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 30, "band": "entropy" },
+        { "threat": "vulnerable-plugin-compromise", "role": "Bypass/Flyer", "pressurePct": 30, "band": "storm" }
+      ],
+      "denominations": ["concurrency", "data-integrity"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}

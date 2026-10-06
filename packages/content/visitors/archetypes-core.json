@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "3.0",
+  "id": "visitors/archetypes-core",
+  "description": "Visitor archetypes spawned by the two prototype-anchor types (shared-web, game-servers), from the §3.2 patience spine. Five-stat unit per §3.1 (Patience/Value/Weight/Loyalty/Fragility); patienceMode per the bundle patienceModel enum; durationClass per §3.1 shapes (Instant=mote circle, Session=dot-with-thread teardrop, BatchJob=square, Resident=hexagon). bounty = expected Value on conversion (§3.1 loop: goal reached with budget left -> convert, pay Value) — doc authors bounty classes only qualitatively ('high value tiny patience'), every scalar is null + _todo until the tuning sheet. Six legibility families (§3.2): Browsers - Buyers - Machines - Amplifiers - Costs - Evaluators.",
+  "familiesVocabulary": ["Browsers", "Buyers", "Machines", "Amplifiers", "Costs", "Evaluators"],
+  "archetypes": [
+    {
+      "id": "skimmer-casual",
+      "family": "Browsers",
+      "durationClass": "Instant",
+      "patienceMode": "sigmoid-budget",
+      "budgetMs": { "min": 800, "max": 1500 },
+      "perHop": false,
+      "bounty": { "class": "low", "value": null, "_todo": "§3.2 calls skimmers 'volume, most fragile' — no revenue scalar." },
+      "facts": ["Bounces between ~500ms and 3s (§3.2).", "Shared-web render: 'Sparks' — tiny fast cyan darts, high count low value, bursty clumps tied to customer marketing, 'rain on a window' (§3.3)."]
+    },
+    {
+      "id": "mobile-commuter",
+      "family": "Browsers",
+      "durationClass": "Instant",
+      "patienceMode": "sigmoid-budget",
+      "budgetMs": { "min": 1000, "max": 1000 },
+      "preDamagedMs": 300,
+      "perHop": false,
+      "bounty": { "class": "low-medium", "value": null, "_todo": "§3.2 authors the pre-damage (300ms) but no bounty scalar." },
+      "facts": ["Budget 1,000ms already docked 300ms for radio latency before your stack spends a millisecond (§3.2)."]
+    },
+    {
+      "id": "desktop-regular",
+      "family": "Browsers",
+      "durationClass": "Instant",
+      "patienceMode": "sigmoid-budget",
+      "budgetMs": { "min": 3000, "max": 3000 },
+      "perHop": false,
+      "trustBufferMs": 1000,
+      "bounty": { "class": "medium", "value": null, "_todo": "§3.2: +1,000ms trust buffer if previously well served; loyalty mechanic per §3.1 trust-per-identity; bounty scalar unauthored." },
+      "facts": ["Trust earns milliseconds: a served-regular arrives with a +1,000ms buffer (§3.2).", "Also the game-lobby browser window-shopper archetype (reads the server-browser listing before joining)."]
+    },
+    {
+      "id": "deep-reader",
+      "family": "Browsers",
+      "durationClass": "Instant",
+      "patienceMode": "sigmoid-budget",
+      "budgetMs": { "min": 4000, "max": 4000 },
+      "perHop": true,
+      "bounty": { "class": "medium-high", "value": null, "_todo": "§3.2: 4,000ms PER HOP across many hops — the tail-compounding exemplar (5 hops x 1% slow ≈ 5% slow, §3.1); bounty scalar unauthored." },
+      "facts": ["Patient per page, punished by your tail: budget refreshes each hop (§3.2, §3.1 tail compounding)."]
+    },
+    {
+      "id": "impulse-buyer",
+      "family": "Buyers",
+      "durationClass": "Instant",
+      "patienceMode": "sigmoid-budget",
+      "budgetMs": { "min": 1200, "max": 1200 },
+      "perHop": false,
+      "bounty": { "class": "high", "value": null, "_todo": "§3.2: 'high value tiny patience (core tension unit)' — the doc names it THE tension unit but sets no bounty scalar." },
+      "facts": ["The core tension unit: richest bounty riding the shortest fuse (§3.2)."]
+    },
+    {
+      "id": "power-shopper",
+      "family": "Buyers",
+      "durationClass": "Instant",
+      "patienceMode": "sigmoid-budget",
+      "budgetMs": { "min": 6000, "max": 6000 },
+      "perHop": false,
+      "bounty": { "class": "high", "value": null, "_todo": "§3.2: 6,000ms across the full funnel; bounty scalar unauthored." },
+      "facts": ["Traverses the whole funnel — every slow node taxes the same budget (§3.2, §3.1 latency ladder)."]
+    },
+    {
+      "id": "api-client",
+      "family": "Machines",
+      "durationClass": "Instant",
+      "patienceMode": "binary",
+      "budgetMs": { "min": 10000, "max": 10000 },
+      "perHop": false,
+      "bounty": { "class": "contractual", "value": null, "_todo": "§3.2: 10,000ms then HARD FAIL — binary, no gradual bounce; retryAmplifies risk lives here. Bounty scalar unauthored." },
+      "facts": ["No sigmoid: past budget it simply fails, and machine clients retry — the emergent retry-storm seed (§3.2, §1.3 sim law)."]
+    },
+    {
+      "id": "crawler",
+      "family": "Machines",
+      "durationClass": "Instant",
+      "patienceMode": "value-decay",
+      "budgetMs": { "min": 8000, "max": 8000 },
+      "perHop": false,
+      "bounty": { "class": "indirect-seo", "value": null, "_todo": "§3.2: 8,000ms; slow responses CUT THE CRAWL BUDGET — your SEO reach decays with your latency, not theirs. Bounty scalar unauthored." },
+      "facts": ["Patience looks huge but the real cost is the truncated crawl budget — invisible reputation bleed (§3.2)."]
+    },
+    {
+      "id": "game-player-joining",
+      "family": "Browsers",
+      "durationClass": "Session",
+      "patienceMode": "sigmoid-budget",
+      "budgetMs": { "min": 2000, "max": 2000 },
+      "sessionPingBudgetMs": 90,
+      "rageQuitSustainedMs": 80,
+      "pingChipBandsMs": { "green": 30, "amber": 80 },
+      "perHop": false,
+      "sessionMinutes": 45,
+      "partySize": 5,
+      "bounty": { "class": "per-slot-monthly", "value": null, "_todo": "§3.2/§3.3 doc all five anchors (2,000ms join, ~90ms ping budget, 80ms rage-quit cliff, 30/80 chip bands, 45-min sessions, parties of five) — no bounty scalar; revenue is per-slot monthly (§3.3)." },
+      "facts": [
+        "Two-phase patience: 2,000ms to connect, then permanently ping-bound — 80ms sustained = rage-quit (§3.2).",
+        "Jitter is worse than latency (§1.3).",
+        "Parties of FIVE, all-or-nothing: can't get in together, all leave (§3.3).",
+        "Delayed bounce: plays badly, leaves angry, and the emptying lobby repels the next player (§3.3 herding).",
+        "Render: 'Pawns' — named persistent chunky sprites with nameplate + ping chip (green <30ms, amber <80, red beyond); a leaver stands, shakes its head, walks out, and the other pawns REACT (§3.3)."
+      ]
+    }
+  ]
+}
