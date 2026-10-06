@@ -1,0 +1,934 @@
+/**
+ * runEconomyTick — the step-12 economic settlement (pipeline slot 12,
+ * MASTER_REPORT §3.2/§4.4 C5: the ledger is SIM STATE computed in-core;
+ * MySQL is the notary).
+ *
+ * Determinism contract (§4.1 R-16, docs/CONVENTIONS.md):
+ *  - every contract is visited in EntityId-sorted order;
+ *  - every stochastic draw is a fresh counter-stream keyed
+ *    (seed, domain, business-minute slot, contractId) — same run replays
+ *    byte-identical (×100 CI gate);
+ *  - money moves ONLY through `post`, whose signature REQUIRES a CauseId
+ *    (P10 attribution is structurally mandatory) and asserts the six-bucket
+ *    invariants (fail loud, Law 4);
+ *  - pure over (prior state, inputs): no module globals, no wall-clock or
+ *    Math.random reads, no floats anywhere in the money path.
+ *
+ * Sub-step order inside one tick (stable across replays):
+ *   1 auto-prime guard for contracts the orchestrator never registered
+ *   2 month rolls — burn close, runway/spiral, voluntary churn cohort,
+ *     error-budget carry/re-grant (may catch up several months of a pause)
+ *   3 MFN reprices fire when their lag delay elapses (§7.15)
+ *   4 renewal pulses — 90 d window (§6.4)
+ *   5 renewal cliffs — fire exactly at the term-end business minute (§6.12);
+ *     BEFORE the calendar, so a renew restarts the grid on the same tick and
+ *     a lapse never writes a zombie invoice
+ *   6 invoice calendar — AR credit at issue (§6.4 "billing 1st")
+ *   7 payment attempts at due — card-failure roll (5–9%/mo, §6.4)
+ *   8 dunning FSM ladder — recovery (lifting a suspension back to active) /
+ *     suspend / write-off+terminate + cancellation refund settlement (§6.4)
+ *   9 error budgets — outage drains, spends with exhaustion locks, clean
+ *     weeks, sla-hit credit readouts (§6.1)
+ *  10 ghosted churn signals / defusals (30–60 d lag, §7.15)
+ *  11 unlock schedules — deferred recognition 1/12 & reserve release (§6.13)
+ *  12 lose-slowly guard — ≥3 real-minutes warning (§9.6)
+ */
+
+import {
+  asCauseId,
+  asEntityId,
+  asMoney,
+  type CauseId,
+  type Contract,
+  type EntityId,
+  type InvoiceSettledEvent,
+  type LedgerEntry,
+  type MoneyBuckets,
+  type MoneyUnit,
+  type RevenueQualityBand,
+  type RunSeed,
+  type SimMinute,
+  type TickContext,
+} from "../types.ts";
+import { compare, fromRatio } from "../kernel/fixed.ts";
+import { streamFor } from "../kernel/rng.ts";
+import { type BudgetSpendAction, type EconomyConfig } from "./config.ts";
+import { postEntry, type Journal } from "./ledger.ts";
+import {
+  cyclePeriodMinutes,
+  issueInvoice,
+  nextUnlockAt,
+  openRecognitionSchedule,
+  openReserveSchedule,
+  planRefund,
+  type Invoice,
+  type InvoiceTerms,
+  type UnlockSchedule,
+} from "./billing.ts";
+import {
+  advanceDunning,
+  assertDunningLadder,
+  type DunningStage,
+} from "./dunning.ts";
+import { bpsOf } from "./money.ts";
+import { floorDiv } from "./intMath.ts";
+import {
+  commitmentBpsOf,
+  drainOutage,
+  initBudget,
+  rollMonth,
+  rollWeek,
+  slaCreditOwedSec,
+  spend,
+  weekIndexOf,
+  RiskyActionLockedError,
+  type ErrorBudgetState,
+} from "./errorBudget.ts";
+import {
+  addChurnSignal,
+  churnRoll,
+  defuseForecasts,
+  effectiveMonthlyChurnBps,
+  paymentFailureRoll,
+  pruneForecasts,
+} from "./churn.ts";
+import {
+  openContractEconomy,
+  queueMfnReprice,
+  renewalPulseOpenMin,
+  resolveRenewalCliff,
+  revenueBar,
+  setPhase,
+  dueMfnReprices,
+  markMfnFired,
+  type ContractEconomy,
+  type MfnRepriceEvent,
+  type RenewalDecision,
+} from "./contract.ts";
+import {
+  businessMinuteOf,
+  defaultTermsFor,
+  monthIndexOf,
+  NEUTRAL_REVENUE_TAGS,
+  sortedEntityIds,
+  type EconomyState,
+} from "./state.ts";
+import { meetsLoseSlowlyGuard, observeRunway, type DeathSpiralState } from "./runway.ts";
+
+/* ────────────────────────────── in / out ──────────────────────────────── */
+
+export interface SpendRequest {
+  readonly contractId: EntityId;
+  readonly action: BudgetSpendAction;
+  /** Override the config flat cost (computed SLA-hit charges); null = table. */
+  readonly seconds: bigint | null;
+}
+
+export interface MfnTrigger {
+  readonly contractId: EntityId;
+  readonly discountBps: bigint;
+}
+
+export interface RenewalDecisionInput {
+  readonly contractId: EntityId;
+  readonly decision: RenewalDecision;
+}
+
+export interface EconomyTickIn {
+  readonly context: TickContext;
+  readonly runSeed: RunSeed;
+  readonly contracts: ReadonlyMap<EntityId, Contract>;
+  readonly prior: EconomyState;
+  readonly cfg: EconomyConfig;
+  /** Ops-side outage seconds per contract since the previous tick. */
+  readonly outageSecs?: ReadonlyMap<EntityId, bigint> | undefined;
+  /** Deliberate mitigation/risk spends queued by rules/player cards. */
+  readonly spends?: readonly SpendRequest[] | undefined;
+  /** Cliff decisions delivered by the rules layer for THIS tick. */
+  readonly renewalDecisions?: readonly RenewalDecisionInput[] | undefined;
+  /** New MFN triggers to queue (they fire later per the lag table, §7.15). */
+  readonly mfnTriggers?: readonly MfnTrigger[] | undefined;
+  /** Unanswered-escalation signals lighting ghosted fuses (§7.15). */
+  readonly churnSignals?: readonly EntityId[] | undefined;
+  /** Save-the-account interventions: defuse that contract's fuses. */
+  readonly churnInterventions?: readonly EntityId[] | undefined;
+  /** Per-contract invoice terms; absent → defaultTermsFor(cycle). */
+  readonly invoiceTerms?: ReadonlyMap<EntityId, InvoiceTerms> | undefined;
+  /** Finance module signals: the credit line was drawn this month (§6.13). */
+  readonly creditLineDrawn?: boolean | undefined;
+  /** Dunning Engine buildable owned → recovery bonus applies (§6.4). */
+  readonly dunningEngineOwned?: boolean | undefined;
+}
+
+export type EconomyNoticeKind =
+  | "contract-unprimed"
+  | "invoice-issued"
+  | "invoice-paid"
+  | "invoice-failed"
+  | "dunning-recovered"
+  | "suspension-lifted"
+  | "dunning-stage"
+  | "suspended"
+  | "written-off"
+  | "prepaid-refunded"
+  | "churned-voluntary"
+  | "renewal-pulse"
+  | "cliff-renewed"
+  | "cliff-lapsed"
+  | "mfn-queued"
+  | "mfn-repriced"
+  | "budget-locked"
+  | "budget-carry"
+  | "clean-week-refund"
+  | "sla-credit-due"
+  | "spiral-flagged"
+  | "lose-slowly-violated";
+
+/** Economy-side observations for HUD/rules (not SimEvents: types.ts owns
+ *  that closed union; the orchestrator maps the ones it wants across). */
+export interface EconomyNotice {
+  readonly kind: EconomyNoticeKind;
+  readonly contractId: EntityId;
+  readonly atBusinessMin: SimMinute;
+  readonly causeId: CauseId;
+  readonly invoiceId?: EntityId;
+  readonly stage?: DunningStage;
+  readonly amount?: MoneyUnit;
+  readonly seconds?: bigint;
+}
+
+export interface EconomyTickOut {
+  readonly state: EconomyState;
+  /** Entries appended THIS tick, in seq order (caller mirrors cash/seq
+   *  into GameState for the notary export). */
+  readonly entries: readonly LedgerEntry[];
+  readonly events: readonly InvoiceSettledEvent[];
+  readonly notices: readonly EconomyNotice[];
+}
+
+/* ─────────────────────────── tick-local store ─────────────────────────── */
+
+interface Working {
+  cash: MoneyBuckets;
+  journal: Journal;
+  econ: Map<EntityId, ContractEconomy>;
+  invoices: Invoice[];
+  schedules: UnlockSchedule[];
+  mfnQueue: MfnRepriceEvent[];
+  forecasts: EconomyState["forecasts"];
+  budgets: Map<EntityId, ErrorBudgetState>;
+  spiral: DeathSpiralState;
+  monthIndex: number;
+  freeAtMonthStart: MoneyUnit;
+  lastClosedBurn: MoneyUnit | null;
+  creditDrawnThisMonth: boolean;
+  loseSlowlyViolated: boolean;
+  warnedAtBusinessMin: SimMinute | null;
+  entries: LedgerEntry[];
+  events: InvoiceSettledEvent[];
+  notices: EconomyNotice[];
+}
+
+type Post = (
+  causeId: CauseId,
+  colour: RevenueQualityBand,
+  delta: Readonly<Partial<Record<keyof MoneyBuckets, MoneyUnit>>>,
+  tag: string,
+) => void;
+
+/* ─────────────────────────────── the tick ─────────────────────────────── */
+
+export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
+  const { cfg, runSeed, context, contracts } = input;
+  // Config-load gate (E-18): an out-of-order ladder is illegal state — halt
+  // before any draw, notice, or posting can encode the bad dial.
+  assertDunningLadder(cfg);
+  const now = businessMinuteOf(context.clocks);
+  guardTickClock(input.prior, now);
+
+  const w: Working = {
+    cash: input.prior.cash,
+    journal: input.prior.journal,
+    econ: new Map(input.prior.contractEconomy),
+    invoices: [...input.prior.invoices],
+    schedules: [...input.prior.unlockSchedules],
+    mfnQueue: [...input.prior.mfnQueue],
+    forecasts: [...input.prior.forecasts],
+    budgets: new Map(input.prior.errorBudgets),
+    spiral: input.prior.spiral,
+    monthIndex: input.prior.monthIndex,
+    freeAtMonthStart: input.prior.freeAtMonthStart,
+    lastClosedBurn: input.prior.lastClosedBurn,
+    creditDrawnThisMonth: input.prior.creditDrawnThisMonth || (input.creditLineDrawn ?? false),
+    loseSlowlyViolated: input.prior.loseSlowlyViolated,
+    warnedAtBusinessMin: input.prior.warnedAtBusinessMin,
+    entries: [],
+    events: [],
+    notices: [],
+  };
+
+  /** THE single money write path — causeId mandatory (P10). */
+  const post: Post = (causeId, colour, delta, tag) => {
+    const posted = postEntry(w.journal, w.cash, { causeId, atBusinessMin: now, moneyColour: colour, delta, context: tag });
+    w.journal = posted.journal;
+    w.cash = posted.cash;
+    w.entries.push(posted.entry);
+  };
+
+  const ids = sortedEntityIds(contracts.keys());
+
+  /* 1 auto-prime guard: un-registered contracts get neutral records so an
+   * orchestrator forgetfulness degrades LOUDLY (notice) but deterministically. */
+  for (const id of ids) {
+    if (w.econ.has(id)) continue;
+    const contract = contracts.get(id)!;
+    w.econ.set(id, openContractEconomy(
+      {
+        contract,
+        atBusinessMin: now,
+        clauseRefs: contract.sla.autoRenew ? ["auto-renew"] : [],
+        grandfather: null,
+        revenueTags: NEUTRAL_REVENUE_TAGS,
+      },
+      cfg,
+    ));
+    w.budgets.set(
+      id,
+      initBudget(contract.id, commitmentBpsOf(contract.sla.uptimeTarget), monthIndexOf(now, cfg), now, cfg),
+    );
+    w.notices.push({ kind: "contract-unprimed", contractId: id, atBusinessMin: now, causeId: asCauseId(`economy:prime:${id}`) });
+  }
+
+  /* 2 month rolls (catch-up loop for paused clocks). */
+  const targetMonth = monthIndexOf(now, cfg);
+  while (w.monthIndex < targetMonth) {
+    rollBusinessMonth(w, ids, contracts, now, cfg, runSeed, post);
+  }
+
+  /* 3 MFN queue: enqueue fresh triggers (lagged now, fired later) + fire due. */
+  for (const trigger of input.mfnTriggers ?? []) {
+    w.mfnQueue.push(
+      queueMfnReprice(trigger.contractId, trigger.discountBps, now, cfg, asCauseId(`economy:mfn-queue:${trigger.contractId}:${now}`)),
+    );
+    w.notices.push({
+      kind: "mfn-queued",
+      contractId: trigger.contractId,
+      atBusinessMin: now,
+      causeId: asCauseId(`economy:mfn-queue:${trigger.contractId}:${now}`),
+    });
+  }
+  for (const due of dueMfnReprices(w.mfnQueue, now)) {
+    w.mfnQueue = [...markMfnFired(w.mfnQueue, due.contractId)];
+    w.notices.push({
+      kind: "mfn-repriced",
+      contractId: due.contractId,
+      atBusinessMin: now,
+      causeId: due.causeId,
+    });
+  }
+
+  /* 4 renewal pulses + 5 cliffs — before the calendar so a renew restarts
+     the grid the same tick and a lapse never writes a zombie invoice. */
+  for (const id of ids) {
+    const econ = w.econ.get(id)!;
+    if (econ.phase === "terminated") continue;
+    if (!econ.renewalPulseOpened && now >= renewalPulseOpenMin(econ.termEndMin, cfg)) {
+      w.econ.set(id, { ...econ, renewalPulseOpened: true });
+      w.notices.push({ kind: "renewal-pulse", contractId: id, atBusinessMin: now, causeId: asCauseId(`economy:pulse:${id}:${econ.termEndMin}`) });
+    }
+  }
+  for (const id of ids) {
+    let econ = w.econ.get(id)!;
+    if (econ.phase !== "active" || econ.cliffFired || now < econ.termEndMin) continue;
+    const contract = contracts.get(id)!;
+    const supplied = input.renewalDecisions?.find((d) => d.contractId === id);
+    const decision = supplied?.decision ?? defaultCliffDecision(contract, econ, runSeed, cfg);
+    const outcome = resolveRenewalCliff(econ, decision, now, cfg);
+    econ = outcome.econ;
+    if (outcome.kind === "escalate-and-renew") {
+      // Price change lands on the SHARED contract — orchestrator re-binds it
+      // from the notice data; economy continues billing from cycleAnchor.
+      w.notices.push({
+        kind: "cliff-renewed",
+        contractId: id,
+        atBusinessMin: now,
+        causeId: decision.causeId,
+        amount: outcome.newMrc,
+      });
+    } else {
+      w.notices.push({
+        kind: outcome.kind === "lapsed" ? "cliff-lapsed" : "cliff-renewed",
+        contractId: id,
+        atBusinessMin: now,
+        causeId: decision.causeId,
+      });
+    }
+    w.econ.set(id, econ);
+    if (outcome.kind === "lapsed") settleCancellationRefunds(w, id, now, post);
+  }
+
+  /* 6 invoice calendar. */
+  generateDueInvoices(w, ids, contracts, input, now, cfg, post);
+
+  /* 7 payment attempts + 8 dunning ladder. */
+  const engineBonus = input.dunningEngineOwned ? cfg.dunning.dunningEngineBonusBps : 0n;
+  for (const invoice of [...w.invoices]) {
+    const current = w.invoices.find((i) => i.id === invoice.id);
+    if (current === undefined) continue;
+    // A terminated contract never pays again: settling post-cancellation would
+    // re-open the deferred schedule that settleCancellationRefunds just closed
+    // (zombie prepay). Billing already skips dead contracts at step 6.
+    const payer = w.econ.get(current.contractId);
+    if (payer !== undefined && payer.phase === "terminated") continue;
+    if (current.state === "issued" && current.dueAtMin <= now) {
+      const declined = paymentFailureRoll(current.dueAtMin, current.contractId, runSeed, cfg);
+      if (!declined) {
+        settleInvoice(w, current, now, context, cfg, post);
+        continue;
+      }
+      replaceInvoice(w, { ...current, state: "failed", dunningStage: "failed", dunningStageAtMin: now });
+      w.notices.push({
+        kind: "invoice-failed",
+        contractId: current.contractId,
+        atBusinessMin: now,
+        causeId: asCauseId(`economy:decline:${current.id}`),
+        invoiceId: current.id,
+      });
+      continue;
+    }
+    if (current.state !== "failed") continue;
+    advanceDunningLadder(w, current, now, runSeed, cfg, engineBonus, context, post);
+  }
+
+  /* 9 error budgets: drains, spends w/ exhaustion locks, clean weeks. */
+  applyBudgets(w, ids, input, now, cfg);
+
+  /* 10 ghosted churn forecasts. */
+  for (const id of input.churnSignals ?? []) {
+    w.forecasts = addChurnSignal(w.forecasts, id, now, runSeed, cfg);
+  }
+  for (const id of input.churnInterventions ?? []) {
+    w.forecasts = defuseForecasts(w.forecasts, id);
+  }
+  w.forecasts = pruneForecasts(w.forecasts, now);
+
+  /* 11 unlock schedules due (recognition / reserve release). */
+  releaseDueSchedules(w, now, post);
+
+  /* 12 lose-slowly guard. */
+  evaluateLoseSlowly(w, now, cfg);
+
+  const state: EconomyState = {
+    cash: w.cash,
+    journal: w.journal,
+    contractEconomy: sortedMap(w.econ),
+    invoices: w.invoices,
+    unlockSchedules: w.schedules,
+    mfnQueue: w.mfnQueue,
+    forecasts: w.forecasts,
+    errorBudgets: sortedMap(w.budgets),
+    spiral: w.spiral,
+    monthIndex: w.monthIndex,
+    freeAtMonthStart: w.freeAtMonthStart,
+    lastClosedBurn: w.lastClosedBurn,
+    creditDrawnThisMonth: w.creditDrawnThisMonth,
+    loseSlowlyViolated: w.loseSlowlyViolated,
+    warnedAtBusinessMin: w.warnedAtBusinessMin,
+    lastBusinessMin: now,
+  };
+  return { state, entries: w.entries, events: w.events, notices: w.notices };
+}
+
+/* ────────────────────────────── guards ────────────────────────────────── */
+
+function guardTickClock(prior: EconomyState, now: SimMinute): void {
+  if (!Number.isSafeInteger(now) || now < 0) {
+    throw new RangeError(`economy/tick: business minute ${now} must be a non-negative safe integer`);
+  }
+  if (prior.lastBusinessMin !== null && now < prior.lastBusinessMin) {
+    throw new Error(
+      `economy/tick: business clock went backwards (${prior.lastBusinessMin} → ${now}) — replay corruption`,
+    );
+  }
+}
+
+/* ─────────────────────────── calendar & settlement ────────────────────── */
+
+function generateDueInvoices(
+  w: Working,
+  ids: readonly EntityId[],
+  contracts: ReadonlyMap<EntityId, Contract>,
+  input: EconomyTickIn,
+  now: SimMinute,
+  cfg: EconomyConfig,
+  post: Post,
+): void {
+  for (const id of ids) {
+    const contract = contracts.get(id)!;
+    const econ = w.econ.get(id)!;
+    if (econ.phase === "terminated") continue;
+    const due = cyclesDueFor(econ, contract, now, cfg);
+    const cap = Math.min(due, cfg.billing.maxCatchUpInvoicesPerTick);
+    if (cap === 0) continue;
+    const terms = input.invoiceTerms?.get(id) ?? defaultTermsFor(contract, cfg);
+    const discount = firedMfnDiscountBps(w.mfnQueue, id);
+    let invoicedCycles = econ.invoicedCycles;
+    for (let n = 0; n < cap; n += 1) {
+      const invoice = issueInvoice(contract, { ...econ, invoicedCycles }, invoicedCycles, now, terms, discount, cfg);
+      post(
+        asCauseId(`economy:invoice:${id}:${invoicedCycles}`),
+        econColour(econ),
+        { accountsReceivable: invoice.gross },
+        `invoice ${invoice.id}`,
+      );
+      w.invoices.push(invoice);
+      w.notices.push({
+        kind: "invoice-issued",
+        contractId: id,
+        atBusinessMin: now,
+        causeId: asCauseId(`economy:invoice:${id}:${invoicedCycles}`),
+        invoiceId: invoice.id,
+        amount: invoice.gross,
+      });
+      invoicedCycles += 1;
+    }
+    w.econ.set(id, { ...econ, invoicedCycles });
+  }
+}
+
+/** Prepaid calendar (§6.4 "billing 1st"): the invoice for the cycle STARTING
+ *  now is issued at the cycle boundary, not after service. */
+function cyclesDueFor(econ: ContractEconomy, contract: Contract, now: SimMinute, cfg: EconomyConfig): number {
+  const period = cyclePeriodMinutes(contract, cfg);
+  if (now < econ.cycleAnchorMin) return 0;
+  // bigint floor (E-12 class): the cycle grid must not float-round an
+  // invoice due a full period early.
+  const cyclesStarted = floorDiv(now - econ.cycleAnchorMin, period) + 1;
+  return Math.max(0, cyclesStarted - econ.invoicedCycles);
+}
+
+function econColour(econ: ContractEconomy): RevenueQualityBand {
+  return revenueBar(econ.revenueTags);
+}
+
+/** MFN entitles the customer to the BEST discount ever written into their
+ *  book (§7.15): take the MAX across all fired reprices. Order-independent,
+ *  so a same-tick double fire can't flip the price by queue luck (E-17). */
+function firedMfnDiscountBps(queue: readonly MfnRepriceEvent[], id: EntityId): bigint {
+  let discount = 0n;
+  for (const e of queue) {
+    if (e.contractId === id && e.fired && e.discountBps > discount) discount = e.discountBps;
+  }
+  return discount;
+}
+
+/** AR −gross; net lands free (card deals) or deferred (+1/12 recognition
+ *  schedule) for prepay; card-processed receipts park the rolling reserve
+ *  free→restricted behind a release schedule (§6.13). The processing fee is
+ *  the gross−net spread — never a second posting, so it can't drift. */
+function settleInvoice(w: Working, invoice: Invoice, now: SimMinute, context: TickContext, cfg: EconomyConfig, post: Post): void {
+  const econ = w.econ.get(invoice.contractId);
+  const colour = econ ? econColour(econ) : "blue";
+  const cause = asCauseId(`economy:settle:${invoice.id}`);
+  const landsFree = !invoice.terms.annualPrepay;
+  post(
+    cause,
+    colour,
+    landsFree ? { accountsReceivable: asMoney(-invoice.gross), free: invoice.net } : { accountsReceivable: asMoney(-invoice.gross), deferred: invoice.net },
+    `settle ${invoice.id}`,
+  );
+
+  if (invoice.terms.netTermsDays === 0) {
+    // Half-away-from-zero bps rounding (E-10), the same money.ts discipline
+    // as every other rate application — truncating `/` under-parked odd µ$.
+    const park = bpsOf(invoice.net, cfg.fees.rollingReserveBps, `reserve '${invoice.id}'`);
+    if (park > 0n) {
+      post(asCauseId(`economy:reserve:${invoice.id}`), "blue", { free: asMoney(-park), restricted: park }, `reserve ${invoice.id}`);
+      w.schedules.push(openReserveSchedule(asEntityId(`${invoice.id}:reserve`), invoice.contractId, park, now, cfg));
+    }
+  }
+  if (!landsFree) {
+    w.schedules.push(
+      openRecognitionSchedule(asEntityId(`${invoice.id}:recognition`), invoice.contractId, invoice.net, now, cfg),
+    );
+  }
+
+  replaceInvoice(w, { ...invoice, state: "paid", settledAtMin: now });
+  w.events.push({
+    kind: "invoice-settled",
+    atUs: context.clocks.businessUs,
+    tick: context.tick,
+    causeId: cause,
+    contractId: invoice.contractId,
+    amount: invoice.net,
+    bucket: landsFree ? "free" : "deferred",
+  });
+  w.notices.push({
+    kind: "invoice-paid",
+    contractId: invoice.contractId,
+    atBusinessMin: now,
+    causeId: cause,
+    invoiceId: invoice.id,
+    amount: invoice.net,
+  });
+}
+
+function replaceInvoice(w: Working, invoice: Invoice): void {
+  const at = w.invoices.findIndex((i) => i.id === invoice.id);
+  if (at === -1) throw new Error(`economy/tick: invoice '${invoice.id}' vanished mid-tick`);
+  w.invoices[at] = invoice;
+}
+
+/* ──────────────────────────── dunning ladder ──────────────────────────── */
+
+/** A long pause can cross several stage boundaries in one tick; each entry
+ *  gets exactly one seeded recovery roll (advanceDunning pins the stream to
+ *  stage+due-minute), so the walk is deterministic and bounded. */
+function advanceDunningLadder(
+  w: Working,
+  invoice: Invoice,
+  now: SimMinute,
+  runSeed: RunSeed,
+  cfg: EconomyConfig,
+  engineBonus: bigint,
+  context: TickContext,
+  post: Post,
+): void {
+  let current = invoice;
+  for (let hop = 0; hop < 6; hop += 1) {
+    const adv = advanceDunning(current, now, runSeed, cfg, engineBonus);
+    if (adv.kind === "held") return;
+    const cause = asCauseId(`economy:dunning:${current.id}:${adv.stageNow}:${context.tick}`);
+    if (adv.kind === "recovered") {
+      const recovered: Invoice = { ...current, dunningStage: adv.stageNow, dunningStageAtMin: now };
+      replaceInvoice(w, recovered);
+      settleInvoice(w, recovered, now, context, cfg, post);
+      w.notices.push({
+        kind: "dunning-recovered",
+        contractId: current.contractId,
+        atBusinessMin: now,
+        causeId: cause,
+        invoiceId: current.id,
+        stage: adv.stageNow,
+      });
+      // Payment recovered AFTER suspension must restore service (E-2): the
+      // suspended→active edge is legal (§6.4 "recover to keep the customer")
+      // and without it a post-suspension recovery strands the contract dark
+      // forever, at the default 200 bps live post-suspension path.
+      const econ = w.econ.get(current.contractId)!;
+      if (econ.phase === "suspended") {
+        w.econ.set(current.contractId, setPhase(econ, "active", now));
+        w.notices.push({
+          kind: "suspension-lifted",
+          contractId: current.contractId,
+          atBusinessMin: now,
+          causeId: asCauseId(`economy:suspension-lifted:${current.id}`),
+        });
+      }
+      return;
+    }
+    if (adv.kind === "terminated") {
+      post(cause, econColour(w.econ.get(current.contractId)!), { accountsReceivable: asMoney(-current.gross) }, `write-off ${current.id}`);
+      replaceInvoice(w, { ...current, state: "written-off", dunningStage: "terminate", dunningStageAtMin: now });
+      const econ = w.econ.get(current.contractId)!;
+      if (econ.phase !== "terminated") w.econ.set(current.contractId, setPhase(econ, "terminated", now));
+      settleCancellationRefunds(w, current.contractId, now, post);
+      w.notices.push({
+        kind: "written-off",
+        contractId: current.contractId,
+        atBusinessMin: now,
+        causeId: cause,
+        invoiceId: current.id,
+        amount: current.gross,
+      });
+      return;
+    }
+    const stepped: Invoice = { ...current, dunningStage: adv.stageNow, dunningStageAtMin: now };
+    replaceInvoice(w, stepped);
+    current = stepped;
+    if (adv.kind === "suspended") {
+      const econ = w.econ.get(current.contractId)!;
+      if (econ.phase === "active") w.econ.set(current.contractId, setPhase(econ, "suspended", now));
+      w.notices.push({ kind: "suspended", contractId: current.contractId, atBusinessMin: now, causeId: cause, invoiceId: current.id });
+      return;
+    }
+    w.notices.push({
+      kind: "dunning-stage",
+      contractId: current.contractId,
+      atBusinessMin: now,
+      causeId: cause,
+      invoiceId: current.id,
+      stage: adv.stageNow,
+    });
+  }
+}
+
+/* ──────────────────────────── month roll internals ────────────────────── */
+
+function rollBusinessMonth(
+  w: Working,
+  ids: readonly EntityId[],
+  contracts: ReadonlyMap<EntityId, Contract>,
+  now: SimMinute,
+  cfg: EconomyConfig,
+  runSeed: RunSeed,
+  post: Post,
+): void {
+  w.monthIndex += 1;
+  const newMonth = w.monthIndex;
+
+  /* Burn close + runway/spiral observation (§6.4/§6.13). */
+  const burn = asMoney(w.freeAtMonthStart - w.cash.free);
+  w.lastClosedBurn = burn > 0n ? burn : asMoney(0n);
+  w.freeAtMonthStart = w.cash.free;
+  const wasFlagged = w.spiral.spiralFlagged;
+  w.spiral = observeRunway(w.spiral, {
+    freeCash: w.cash.free,
+    netBurnPerMonth: w.lastClosedBurn ?? asMoney(0n),
+    creditDrawnThisMonth: w.creditDrawnThisMonth,
+  }, cfg);
+  w.creditDrawnThisMonth = false;
+  if (w.spiral.spiralFlagged && !wasFlagged) {
+    w.notices.push({ kind: "spiral-flagged", contractId: asEntityId("company"), atBusinessMin: now, causeId: asCauseId(`economy:spiral:m${newMonth}`) });
+  }
+
+  /* Voluntary churn cohort roll for the ENTERED month (§6.16:25610). */
+  for (const id of ids) {
+    const econ = w.econ.get(id);
+    if (econ === undefined || econ.phase !== "active") continue;
+    const contract = contracts.get(id);
+    if (contract === undefined) continue;
+    const bps = effectiveMonthlyChurnBps(contract.bundleId, id, w.forecasts, now, cfg);
+    if (churnRoll(id, bps, newMonth, runSeed) === "churned") {
+      w.econ.set(id, setPhase(econ, "terminated", now));
+      settleCancellationRefunds(w, id, now, post);
+      w.notices.push({
+        kind: "churned-voluntary",
+        contractId: id,
+        atBusinessMin: now,
+        causeId: asCauseId(`economy:churn:${id}:m${newMonth}`),
+      });
+    }
+  }
+
+  /* Error-budget month rolls: surplus carry + re-grant (§6.1/§6.14). */
+  for (const id of ids) {
+    const budget = w.budgets.get(id);
+    if (budget === undefined) continue;
+    const rolled = rollMonth(budget, newMonth, now, cfg);
+    w.budgets.set(id, rolled.state);
+    if (rolled.carryOutSec > 0n) {
+      w.notices.push({
+        kind: "budget-carry",
+        contractId: id,
+        atBusinessMin: now,
+        causeId: asCauseId(`economy:budget-carry:${id}:m${newMonth}`),
+        seconds: rolled.carryOutSec,
+      });
+    }
+  }
+}
+
+/* ──────────────────────────── budget internals ────────────────────────── */
+
+function applyBudgets(
+  w: Working,
+  ids: readonly EntityId[],
+  input: EconomyTickIn,
+  now: SimMinute,
+  cfg: EconomyConfig,
+): void {
+  const week = weekIndexOf(now, cfg);
+  for (const id of ids) {
+    let budget = w.budgets.get(id);
+    if (budget === undefined) continue;
+    const outage = input.outageSecs?.get(id) ?? 0n;
+    if (outage > 0n) budget = drainOutage(budget, outage, asCauseId(`economy:sla-hit:${id}:${now}`));
+    const rolledWeek = rollWeek(budget, week, cfg);
+    budget = rolledWeek.state;
+    for (const refund of rolledWeek.refunds) {
+      w.notices.push({
+        kind: "clean-week-refund",
+        contractId: id,
+        atBusinessMin: now,
+        causeId: refund.causeId,
+        seconds: refund.seconds,
+      });
+    }
+    w.budgets.set(id, budget);
+  }
+  for (const request of input.spends ?? []) {
+    const budget = w.budgets.get(request.contractId);
+    if (budget === undefined) {
+      throw new Error(`economy/tick: spend on un-primed contract '${request.contractId}'`);
+    }
+    try {
+      const after = spend(budget, request.action, request.seconds, cfg, asCauseId(`economy:budget:${request.contractId}:${request.action}:${now}`));
+      w.budgets.set(request.contractId, after);
+      const owed = slaCreditOwedSec(after);
+      if (owed > 0n) {
+        w.notices.push({
+          kind: "sla-credit-due",
+          contractId: request.contractId,
+          atBusinessMin: now,
+          causeId: asCauseId(`economy:sla-credit:${request.contractId}:${now}`),
+          seconds: owed,
+        });
+      }
+    } catch (err) {
+      if (err instanceof RiskyActionLockedError) {
+        // The lock IS the modeled behavior (§6.1): surface, don't crash the tick.
+        w.notices.push({
+          kind: "budget-locked",
+          contractId: request.contractId,
+          atBusinessMin: now,
+          causeId: asCauseId(`economy:budget-lock:${request.contractId}:${request.action}:${now}`),
+        });
+        // The budget was already negative when the lock fired — the SLA
+        // credit readout (overrun ⇒ pay credits, §6.1) is due regardless.
+        const stillOwed = slaCreditOwedSec(budget);
+        if (stillOwed > 0n) {
+          w.notices.push({
+            kind: "sla-credit-due",
+            contractId: request.contractId,
+            atBusinessMin: now,
+            causeId: asCauseId(`economy:sla-credit:${request.contractId}:${now}`),
+            seconds: stillOwed,
+          });
+        }
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+/* ──────────────────────── schedule release internals ──────────────────── */
+
+/** §6.13 cancellation settlement ("refund punishes"): when a contract dies
+ *  mid-deferred — voluntary churn, cliff lapse, or dunning write-off — its
+ *  recognition schedule must close HERE, or a dead contract keeps dribbling
+ *  deferred→free forever. Delivered-but-unrecognized periods are earned out
+ *  first, then the unearned remainder is refunded through planRefund: the
+ *  unreleased part pulls back out of deferred, and any already-recognized
+ *  overshoot claws from free — the punishment split the doc names. */
+function settleCancellationRefunds(w: Working, contractId: EntityId, now: SimMinute, post: Post): void {
+  const closing = w.schedules.filter(
+    (s) => s.contractId === contractId && s.reason === "deferred-recognition" && s.released < s.total,
+  );
+  if (closing.length === 0) return;
+  w.schedules = w.schedules.filter((s) => !closing.includes(s));
+  for (const schedule of closing) {
+    let current = schedule;
+    for (let hop = 0; hop < 600; hop += 1) {
+      const release = nextUnlockAt(current, now);
+      if (release === null) break;
+      post(
+        asCauseId(`economy:cancel-earn:${current.id}:${hop}`),
+        "blue",
+        { deferred: asMoney(-release.amount), free: release.amount },
+        `cancel-earn ${current.id}`,
+      );
+      current = release.schedule;
+    }
+    const refund = asMoney(current.total - current.released);
+    if (refund <= 0n) continue;
+    const split = planRefund(current, refund);
+    const cause = asCauseId(`economy:refund:${current.id}`);
+    post(
+      cause,
+      "blue",
+      { deferred: asMoney(-split.fromDeferred), free: asMoney(-split.fromFree) },
+      `refund ${current.id}`,
+    );
+    w.notices.push({
+      kind: "prepaid-refunded",
+      contractId,
+      atBusinessMin: now,
+      causeId: cause,
+      amount: refund,
+    });
+  }
+}
+
+function releaseDueSchedules(w: Working, now: SimMinute, post: Post): void {
+  const kept: UnlockSchedule[] = [];
+  for (const schedule of w.schedules) {
+    let current = schedule;
+    for (let hop = 0; hop < 600; hop += 1) {
+      const release = nextUnlockAt(current, now);
+      if (release === null) break;
+      const from = current.reason === "deferred-recognition" ? "deferred" : "restricted";
+      post(
+        asCauseId(`economy:unlock:${current.id}:${hop}`),
+        "blue",
+        { [from]: asMoney(-release.amount), free: release.amount } as Readonly<Partial<Record<keyof MoneyBuckets, MoneyUnit>>>,
+        `unlock ${current.id}`,
+      );
+      current = release.schedule;
+    }
+    if (current.released < current.total) kept.push(current);
+  }
+  w.schedules = kept;
+}
+
+/* ──────────────────────── lose-slowly guard internals ─────────────────── */
+
+function evaluateLoseSlowly(w: Working, now: SimMinute, cfg: EconomyConfig): void {
+  if (w.loseSlowlyViolated) return;
+  if (w.spiral.tone !== "normal" && w.warnedAtBusinessMin === null) {
+    w.warnedAtBusinessMin = now;
+    return;
+  }
+  if (w.warnedAtBusinessMin === null) return;
+  const burn = w.lastClosedBurn ?? asMoney(0n);
+  if (burn <= 0n || w.spiral.runwayMonths === null) return;
+  if (compare(w.spiral.runwayMonths, fromRatio(BigInt(cfg.runway.criticalMonths), 1n)) >= 0) return;
+  // Projected death minute from remaining runway months (floor: conservative
+  // — favors finding violations, never hiding them). Whole computation in
+  // bigint (E-16): Fixed raw × minutes is exact integer math; the Number
+  // touch happens only at the SimMinute boundary, where the guard above has
+  // already bounded the lead below criticalMonths × minutesPerMonth.
+  const leadBusinessMin = Number((w.spiral.runwayMonths * BigInt(cfg.calendar.minutesPerMonth)) / 65_536n);
+  const verdict = meetsLoseSlowlyGuard(now, now + leadBusinessMin, cfg);
+  if (!verdict.ok) {
+    w.loseSlowlyViolated = true;
+    w.notices.push({
+      kind: "lose-slowly-violated",
+      contractId: asEntityId("company"),
+      atBusinessMin: now,
+      causeId: asCauseId(`economy:lose-slowly:${now}`),
+    });
+  }
+}
+
+/* ────────────────────────── default cliff rule ────────────────────────── */
+
+/** Lapse-by-default law (§6.4): auto-renew contracts renew evergreen;
+ *  otherwise the cohort roll draws the term-matrix retention (§6.12:24772).
+ *  Stream slot = term-end minute ⇒ one pinned draw per (contract, term). */
+function defaultCliffDecision(
+  contract: Contract,
+  econ: ContractEconomy,
+  runSeed: RunSeed,
+  cfg: EconomyConfig,
+): RenewalDecision {
+  const cause = asCauseId(`economy:cliff:${contract.id}:${econ.termEndMin}`);
+  if (contract.sla.autoRenew) {
+    return { choice: "renew", causeId: cause, escalatedMrc: null };
+  }
+  const retention =
+    cfg.churn.renewalRetentionBpsByTermMonths[econ.termMonths] ?? cfg.churn.renewalRetentionFallbackBps;
+  const stream = streamFor(runSeed, "economy/renewal", econ.termEndMin, contract.id);
+  const stays = stream.range(10_000) < Number(retention);
+  return { choice: stays ? "renew" : "lapse", causeId: cause, escalatedMrc: null };
+}
+
+function sortedMap<V>(source: Map<EntityId, V>): ReadonlyMap<EntityId, V> {
+  return new Map([...source.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)));
+}
+
+/** Re-export convenience so callers don't reach past the tick for pure
+ *  reads the HUD performs each frame (§6.13 trays, §6.1 meter). */
+export { arAgingTrays as economyArAging } from "./billing.ts";
+export { remainingSec as errorBudgetRemainingSec } from "./errorBudget.ts";
