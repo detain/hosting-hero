@@ -3,7 +3,12 @@
 // Gates: parse, schema-required keys (via a JSON-Schema-subset interpreter),
 // id uniqueness, cross-registry reference resolution, Second-Answer counters,
 // null=>_todo discipline, PROVISIONAL-[ABC] tuningSheet markers, §1.7 wave
-// authoring rules. Exit non-zero on any failure; prints the _todo inventory.
+// authoring rules, and i18n ticket-pack conformance: packs exist for every
+// file:packs/ ref, cover every bundle-referenced key, obey the decision/flavour
+// namespace wall (§9.3 clause 2), keep README §Key literals verbatim-synced,
+// declare every {slot} they use, and carry zero §9.11 technique vocabulary.
+// Exit non-zero on any failure; prints the _todo inventory (packs get their own
+// separate counter so the bundle inventory stays the number downstream lanes pin).
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +17,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const errors = [];
 const warnings = [];
 const todos = [];
+const packTodos = []; // pack _todo markers counted separately: the bundle inventory is a pinned number
 
 const fail = (where, msg) => errors.push(`${where}: ${msg}`);
 const warn = (where, msg) => warnings.push(`${where}: ${msg}`);
@@ -45,6 +51,33 @@ const PATIENCE_MODES = ["sigmoid-budget","window","value-decay","resident","bina
 const VISITOR_FAMILIES = ["Browsers","Buyers","Machines","Amplifiers","Costs","Evaluators"];
 const TUNING_RE = /^PROVISIONAL-[ABC]$/;
 const ID_RE = /^([a-z0-9][a-z0-9-]*:)?[a-z0-9][a-z0-9-]*$/;
+
+// ---------- i18n pack vocabulary (detailed at the packs section) ----------
+// The wall §9.3 clause 2 demands, made machine-checkable: every namespace root is
+// either decision-surface (read while deciding or losing — written SOBER, never
+// funny at the moment of loss) or flavour (quiet surfaces — recognition comedy).
+// A bundle-referenced key may only ever live in `decision` of ITS OWN pack.
+const DECISION_ROOTS = new Set(["type","visitor","goal","scarce","skin","economy","cac","verbs","relations","scenarios","handover","rosetta","terms","refusal","alert","status","wave"]);
+const FLAVOUR_ROOTS = new Set(["ticket","press","forum","chatter","loading","abuse","canary","intern","sticky","vendor","achievement","codex"]);
+const PACK_KEY_RE = /^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/;
+const SLOT_TOKEN_RE = /\{([^{}]*)\}/g;
+const SLOT_NAME_RE = /^[a-z][A-Za-z0-9]*$/;
+const MIN_TEMPLATES = 25; // quality floor (~25-40 per brief)
+const MAX_TEMPLATE_CHARS = 600;
+// §9.11: depict the business, never the technique. Ban-list lint over every template body.
+const TECHNIQUE_BANS = [
+  [/\brm\s+-[rf]{1,2}\b/i, "shell delete command"],
+  [/\b(chmod|chown)\s+[0-7]{3,4}\b/i, "shell permission invocation"],
+  [/\b(curl|wget|nc)\b/i, "command-line fetch/tunnel tool"],
+  [/\bsudo\b/i, "privilege-escalation command"],
+  [/\bbash\s+-c\b/i, "shell invocation"],
+  [/\bDROP\s+(TABLE|DATABASE)\b/i, "SQL DDL statement"],
+  [/\bSELECT\b[\s\S]{0,80}?\bFROM\b/, "SQL statement shape"],
+  [/\/etc\/(passwd|shadow|hosts|crontab)\b/, "system path disclosure"],
+  [/\bCVE-\d{4}-\d{4,}\b/i, "CVE identifier"],
+  [/:\(\)\s*\{[^}]*\|[^}]*\}/, "fork-bomb shape"],
+  [/\bbase64\s+(-d|--decode)\b/i, "payload-decoding command"],
+];
 
 // ---------- minimal JSON Schema (draft 2020-12 subset) interpreter ----------
 const typeOk = (v, t) =>
@@ -94,8 +127,8 @@ const validateAgainst = (schema, instance, where) => {
 };
 
 // ---------- null => _todo discipline (README exemptions) ----------
-const scanNulls = (node, where) => {
-  if (Array.isArray(node)) { node.forEach((el, i) => scanNulls(el, `${where}[${i}]`)); return; }
+const scanNulls = (node, where, sink = todos) => {
+  if (Array.isArray(node)) { node.forEach((el, i) => scanNulls(el, `${where}[${i}]`, sink)); return; }
   if (node === null || typeof node !== "object") return;
   const nullKeys = Object.entries(node).filter(([, v]) => v === null).map(([k]) => k);
   if (nullKeys.length > 0) {
@@ -109,8 +142,8 @@ const scanNulls = (node, where) => {
   if ("tuningSheet" in node && !TUNING_RE.test(node.tuningSheet)) {
     fail(`${where}.tuningSheet`, `'${node.tuningSheet}' must match PROVISIONAL-[ABC]`);
   }
-  if (typeof node._todo === "string" && node._todo.trim()) todos.push([where, node._todo]);
-  Object.entries(node).forEach(([k, v]) => { if (k !== "_todo") scanNulls(v, `${where}.${k}`); });
+  if (typeof node._todo === "string" && node._todo.trim()) sink.push([where, node._todo]);
+  Object.entries(node).forEach(([k, v]) => { if (k !== "_todo") scanNulls(v, `${where}.${k}`, sink); });
 };
 
 // ---------- load files ----------
@@ -133,6 +166,11 @@ const registry = readJson("threats/registry-core.json");
 const archetypes = readJson("visitors/archetypes-core.json");
 const bundlesRel = dataFiles.filter((f) => f.startsWith("types"));
 const wavesRel = dataFiles.filter((f) => f.startsWith("waves"));
+
+// Parsed bundles + the dotted i18n keys each references anywhere (strings and
+// array elements alike) — the pinned key contract its ticketPack must satisfy.
+const bundles = [];
+const bundleKeyRefs = new Map();
 
 const threatIds = new Set();
 const archetypeIds = new Set();
@@ -186,6 +224,7 @@ const bundleIds = new Set();
 for (const rel of bundlesRel) {
   const b = readJson(rel);
   if (!b) continue;
+  bundles.push({ rel, b });
   validateAgainst(schema, b, rel);
   scanNulls(b, rel);
   if (!ID_RE.test(b.id ?? "")) fail(rel, `bundle id '${b.id}' bad`);
@@ -193,6 +232,9 @@ for (const rel of bundlesRel) {
   bundleIds.add(b.id);
   if (Object.keys(b.handoverNote ?? {}).length !== 3) fail(rel, `handoverNote must be exactly 3 lines (R10)`);
   if (typeof b.ticketPack !== "string" || !b.ticketPack.startsWith("file:packs/")) fail(rel, `ticketPack must be a 'file:packs/…' ref (R46)`);
+  const keyRefs = new Set();
+  collectBundleKeys(b, keyRefs);
+  bundleKeyRefs.set(rel, keyRefs);
   (b.threats?.signatureThreats ?? []).forEach((s, i) => {
     if (!threatIds.has(s.id)) fail(`${rel}.threats.signatureThreats[${i}]`, `'${s.id}' not in threats/registry-core.json`);
   });
@@ -212,6 +254,168 @@ for (const rel of bundlesRel) {
   }
 }
 
+// ---------- i18n ticket packs (R46; README §Key literals; §9.3/§9.11 laws) ----------
+const packSchemaRel = "schema/i18n-pack.schema.json";
+const packSchema = readJson(packSchemaRel);
+if (!packSchema) { console.error("pack schema unreadable; aborting"); process.exit(1); }
+if (packSchema.$schema !== "https://json-schema.org/draft/2020-12/schema") fail(packSchemaRel, "not draft 2020-12");
+
+DECISION_ROOTS.forEach((r) => { if (FLAVOUR_ROOTS.has(r)) fail(packSchemaRel, `namespace root '${r}' declared in BOTH vocabularies`); });
+
+function collectBundleKeys(node, out) {
+  if (typeof node === "string") { if (PACK_KEY_RE.test(node)) out.add(node); return; }
+  if (Array.isArray(node)) { node.forEach((el) => collectBundleKeys(el, out)); return; }
+  if (node && typeof node === "object") Object.values(node).forEach((v) => collectBundleKeys(v, out));
+}
+
+const templateBodies = (tpl) =>
+  typeof tpl === "string" ? [tpl]
+  : tpl && typeof tpl === "object" && typeof tpl.fallback === "string"
+    ? [tpl.fallback, ...Object.values(tpl.eras ?? {}).filter((v) => typeof v === "string")]
+    : null;
+
+const slotsOf = (body) => new Set([...body.matchAll(SLOT_TOKEN_RE)].map((m) => m[1]));
+
+const checkTemplate = (tpl, where, pack, usedSlots) => {
+  const bodies = templateBodies(tpl);
+  if (!bodies) { fail(where, "template must be a string or an {eras, fallback} object"); return; }
+  for (const [i, body] of bodies.entries()) {
+    if (body.length === 0) fail(`${where}[${i}]`, "empty template body");
+    if (body.length > MAX_TEMPLATE_CHARS) fail(`${where}[${i}]`, `template body ${body.length} chars > ${MAX_TEMPLATE_CHARS}`);
+    const tokens = [...body.matchAll(SLOT_TOKEN_RE)];
+    const opens = (body.match(/\{/g) ?? []).length;
+    const closes = (body.match(/\}/g) ?? []).length;
+    if (opens !== tokens.length || closes !== tokens.length) fail(`${where}[${i}]`, "unbalanced braces — slot syntax is {name} only");
+    for (const t of tokens) {
+      if (!SLOT_NAME_RE.test(t[1])) { fail(`${where}[${i}]`, `bad slot token '{${t[1]}}' (lowerCamel identifier, no nesting)`); continue; }
+      if (!pack.slots?.[t[1]]) fail(`${where}[${i}]`, `slot '{${t[1]}}' missing from the pack slots glossary`);
+      else usedSlots.add(t[1]);
+    }
+    for (const [re, what] of TECHNIQUE_BANS) {
+      const hit = body.match(re);
+      if (hit) fail(`${where}[${i}]`, `§9.11 technique ban-list: contains ${what} ('${hit[0]}')`);
+    }
+  }
+  if (typeof tpl === "object" && tpl !== null) {
+    const eraKeys = Object.keys(tpl.eras ?? {});
+    if (eraKeys.length === 0) fail(where, "era variant object needs >=1 era entry and a fallback");
+    for (const ek of eraKeys) {
+      if (!/^\d{4}$/.test(ek)) fail(`${where}.eras.${ek}`, "era code must be a 4-digit year");
+      else if (!(ek in (pack.eraCodes ?? {}))) fail(`${where}.eras.${ek}`, `era '${ek}' not declared in pack eraCodes [${Object.keys(pack.eraCodes ?? {}).join(", ") || "none declared"}]`);
+      if (typeof tpl.eras[ek] !== "string") fail(`${where}.eras.${ek}`, "era variant must be a string");
+    }
+    const extras = Object.keys(tpl).filter((k) => k !== "eras" && k !== "fallback");
+    if (extras.length) fail(where, `unexpected keys in era object [${extras.join(", ")}]`);
+    const base = [...slotsOf(tpl.fallback)].sort().join(",");
+    eraKeys.forEach((ek) => {
+      if (typeof tpl.eras[ek] === "string" && [...slotsOf(tpl.eras[ek])].sort().join(",") !== base)
+        fail(`${where}.eras.${ek}`, "era variant slot set differs from fallback — every variant takes the same {slots}");
+    });
+  }
+};
+
+const packsClaimed = new Set();
+const parsedPacks = []; // { rel, pack }
+for (const { rel, b } of bundles) {
+  if (typeof b.ticketPack !== "string" || !b.ticketPack.startsWith("file:packs/")) continue; // already failed above
+  const packRel = b.ticketPack.slice("file:".length);
+  if (!existsSync(join(ROOT, packRel))) { fail(rel, `ticketPack '${packRel}' does not exist on disk (R46)`); continue; }
+  if (packsClaimed.has(packRel)) { fail(rel, `ticketPack '${packRel}' already claimed by another bundle`); continue; }
+  packsClaimed.add(packRel);
+  const pack = readJson(packRel);
+  if (!pack) continue;
+  validateAgainst(packSchema, pack, packRel);
+  scanNulls(pack, packRel, packTodos);
+  parsedPacks.push({ rel: packRel, pack });
+  if (pack.appliesTo !== undefined && pack.appliesTo !== b.id) fail(packRel, `appliesTo '${pack.appliesTo}' != bundle id '${b.id}'`);
+  for (const ek of Object.keys(pack.eraCodes ?? {})) if (!/^\d{4}$/.test(ek)) fail(`${packRel}.eraCodes.${ek}`, "era code must be a 4-digit year");
+  const decision = pack.decision ?? {};
+  const flavour = pack.flavour ?? {};
+  if (Object.keys(decision).length < 5) fail(packRel, "decision namespace under-populated (<5 templates)");
+  if (Object.keys(flavour).length < 5) fail(packRel, "flavour namespace under-populated (<5 templates)");
+  const usedSlots = new Set();
+  for (const [mapName, map, roots] of [["decision", decision, DECISION_ROOTS], ["flavour", flavour, FLAVOUR_ROOTS]]) {
+    for (const [key, tpl] of Object.entries(map)) {
+      const where = `${packRel}.${mapName}.${key}`;
+      if (!PACK_KEY_RE.test(key)) { fail(where, "not a dotted lower-case key"); continue; }
+      const root = key.split(".")[0];
+      if (!roots.has(root)) fail(where, `root '${root}' is not in the ${mapName} vocabulary — decision/flavour namespaces are partitioned by root (§9.3 separation law)`);
+      if (key in (mapName === "decision" ? flavour : decision)) fail(where, "key present in BOTH decision and flavour");
+      checkTemplate(tpl, where, pack, usedSlots);
+    }
+  }
+  const total = Object.keys(decision).length + Object.keys(flavour).length;
+  if (total < MIN_TEMPLATES) fail(packRel, `only ${total} templates; quality floor is ${MIN_TEMPLATES}`);
+  for (const slot of Object.keys(pack.slots ?? {}))
+    if (!usedSlots.has(slot)) fail(`${packRel}.slots.${slot}`, "glossary slot never used by any template (dead slot)");
+  // Provenance coverage: every template carries a cite (or null + _provenance._todo).
+  const prov = pack._provenance ?? {};
+  for (const key of [...Object.keys(decision), ...Object.keys(flavour)]) {
+    if (!(key in prov)) fail(`${packRel}._provenance`, `no provenance entry for '${key}'`);
+    else if (prov[key] !== null && typeof prov[key] !== "string") fail(`${packRel}._provenance.${key}`, "provenance must be a cite string or null");
+  }
+  for (const pk of Object.keys(prov)) {
+    if (pk === "_todo") continue;
+    if (!(pk in decision) && !(pk in flavour)) fail(`${packRel}._provenance.${pk}`, "provenance entry with no matching template key");
+  }
+}
+
+// Orphan guard: a pack file no bundle claims is drift waiting to happen.
+for (const f of dataFiles.filter((x) => x.startsWith("packs") && x.endsWith(".i18n.json")))
+  if (!packsClaimed.has(f)) fail(f, "pack file referenced by no bundle (orphan)");
+
+// Global flavour wall: no bundle-referenced key may live in ANY pack's flavour map.
+const allBundleKeys = new Set();
+bundleKeyRefs.forEach((set) => set.forEach((k) => allBundleKeys.add(k)));
+for (const { rel: packRel, pack } of parsedPacks)
+  for (const key of Object.keys(pack.flavour ?? {}))
+    if (allBundleKeys.has(key)) fail(`${packRel}.flavour.${key}`, "decision-surface key (referenced by a bundle) found in flavour namespace");
+
+// Pinned ⊇ contract: every key a bundle references resolves in THAT bundle's pack decision map.
+for (const { rel, b } of bundles) {
+  const refs = bundleKeyRefs.get(rel);
+  if (!refs) continue;
+  const packRel = typeof b.ticketPack === "string" && b.ticketPack.startsWith("file:packs/") ? b.ticketPack.slice("file:".length) : null;
+  const pack = packRel ? parsedPacks.find((p) => p.rel === packRel)?.pack : null;
+  if (!pack) continue; // missing pack already failed above
+  for (const key of [...refs].sort()) {
+    if (key in (pack.decision ?? {})) continue;
+    if (key in (pack.flavour ?? {})) fail(`${rel} -> ${packRel}`, `bundle-referenced key '${key}' sits in flavour; decision-surface keys belong in decision (§9.3)`);
+    else fail(`${rel} -> ${packRel}`, `bundle-referenced key '${key}' missing from the pack`);
+  }
+}
+
+// README §Key literals verbatim sync: the table is the pinned seed; the pack must agree.
+let readmeRows = 0;
+{
+  let readme;
+  try {
+    readme = readFileSync(join(ROOT, "README.md"), "utf8");
+  } catch {
+    fail("README.md", "unreadable — literal-sync check inert");
+  }
+  if (readme) {
+    const rowRe = /^\|\s*`([a-z][a-z0-9.-]*)`\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/gm;
+    let m;
+    while ((m = rowRe.exec(readme))) {
+      const [, key, cell] = m;
+      const lit = cell.match(/"([^"]+)"/);
+      if (!lit) { fail(`README.md §Key literals`, `row '${key}': no double-quoted literal to sync against`); continue; }
+      readmeRows++;
+      const owner = parsedPacks.find((p) => p.pack.decision?.[key] !== undefined);
+      const squatter = parsedPacks.find((p) => p.pack.flavour?.[key] !== undefined);
+      if (!owner) {
+        fail(`README.md §Key literals`, `'${key}' pinned by README not found in any pack's decision namespace${squatter ? ` (found in ${squatter.rel} flavour — decision keys may not live in flavour)` : ""}`);
+        continue;
+      }
+      const tpl = owner.pack.decision[key];
+      if (typeof tpl !== "string") { fail(`README.md §Key literals`, `'${key}' is era-varied in ${owner.rel} but README pins a single literal`); continue; }
+      if (tpl !== lit[1]) fail(`README.md §Key literals`, `'${key}' diverged: README says "${lit[1]}" / pack ${owner.rel} says "${tpl}"`);
+    }
+    if (readmeRows === 0) fail("README.md", "§Key literals table parsed to zero rows — sync check inert (liveness guard)");
+  }
+}
+
 // ---------- wave checks (§1.7/§2.24 authoring rules) ----------
 for (const rel of wavesRel) {
   const wf = readJson(rel);
@@ -219,6 +423,11 @@ for (const rel of wavesRel) {
   scanNulls(wf, rel);
   if (wf.par?.growthPerWave !== 1.115) fail(rel, `par growth must be the doc'd 1.115 (WS-1)`);
   const waves = wf.waves ?? [];
+  const unresolvedTitles = waves
+    .map((wv) => wv.title)
+    .filter((t) => typeof t === "string" && PACK_KEY_RE.test(t) && !parsedPacks.some((p) => p.pack.decision?.[t] !== undefined || p.pack.flavour?.[t] !== undefined));
+  if (unresolvedTitles.length)
+    warn(rel, `wave title keys unresolved in any pack [${unresolvedTitles.join(", ")}] — placeholder names awaiting a waves-lane rename (pack contract delta reported; 'wave' root reserved in the decision vocabulary)`);
   const seenRoles = new Set();
   let runningPeak = 0;
   for (const wv of waves) {
@@ -255,12 +464,24 @@ for (const rel of wavesRel) {
 }
 
 // ---------- report ----------
-console.log(`checked: ${[schemaRel, "threats/registry-core.json", "visitors/archetypes-core.json", ...bundlesRel, ...wavesRel].length} files`);
-console.log(`bundles=${bundlesRel.length} threats=${threatIds.size} archetypes=${archetypeIds.size} waves=${wavesRel.length}`);
+console.log(`checked: ${[schemaRel, packSchemaRel, "threats/registry-core.json", "visitors/archetypes-core.json", ...bundlesRel, ...wavesRel, ...packsClaimed].length} files`);
+console.log(`bundles=${bundlesRel.length} threats=${threatIds.size} archetypes=${archetypeIds.size} waves=${wavesRel.length} packs=${parsedPacks.length}`);
+for (const { rel, pack } of parsedPacks) {
+  const d = Object.keys(pack.decision ?? {}).length;
+  const f = Object.keys(pack.flavour ?? {}).length;
+  const ownerRel = bundles.find(({ b }) => b.ticketPack === `file:${rel}`)?.rel;
+  const pinned = ownerRel ? (bundleKeyRefs.get(ownerRel)?.size ?? 0) : 0;
+  console.log(`pack ${rel}: templates=${d + f} decision=${d} flavour=${f} slots=${Object.keys(pack.slots ?? {}).length} pinned-by-bundle=${pinned}`);
+}
+console.log(`README §Key literals: ${readmeRows} rows verbatim-synced against pack decision namespaces`);
 if (warnings.length) { console.log(`\nWARNINGS (${warnings.length}):`); warnings.forEach((x) => console.log(`  ~ ${x}`)); }
 if (todos.length) {
   console.log(`\nTODO INVENTORY (${todos.length} _todo markers — loader-lint fodder):`);
   todos.forEach(([where, note]) => console.log(`  * ${where}\n      ${note}`));
+}
+if (packTodos.length) {
+  console.log(`\nPACK TODO INVENTORY (${packTodos.length} _todo markers — separate counter; bundle inventory above is untouched):`);
+  packTodos.forEach(([where, note]) => console.log(`  # ${where}\n      ${note}`));
 }
 if (errors.length) {
   console.error(`\nFAIL — ${errors.length} error(s):`);

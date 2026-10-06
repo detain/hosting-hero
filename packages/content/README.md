@@ -13,12 +13,15 @@ directory ships JSON.
 
 ```
 schema/type-bundle.schema.json      JSON Schema draft 2020-12, faithful to Appendix A (21 required keys)
+schema/i18n-pack.schema.json        ticket-pack shape (draft 2020-12 subset — deep laws live in the validator)
 types/shared-web.json               anchor type 1 ("The Mass Host" / Cabinet 14) — density game
 types/game-servers.json             anchor type 2 ("Prime Time") — G6 co-anchor: ms scale + permanent incident clock
 waves/g1-shared-web-first-quarter.json  seeded wave slice for gates G1/G5
 waves/g1-game-servers-first-quarter.json  seeded wave slice for gate G6 (same law set, type-specific DATA only)
 threats/registry-core.json          16 mechanical threat entries (exactly the ids the two bundles reference)
 visitors/archetypes-core.json       9 visitor archetypes (exactly the ids the two bundles reference)
+packs/shared-web.i18n.json          ticket pack for official:shared-web — 98 grammar templates, decision 37 / flavour 61
+packs/game.i18n.json                ticket pack for official:game-servers — 75 grammar templates, decision 34 / flavour 41
 script/validate.mjs                 Node-stdlib structural validator (no npm deps)
 ```
 
@@ -38,7 +41,20 @@ matches `PROVISIONAL-[ABC]` · wave files re-check §1.7 authoring rules (≤4
 entries/wave, first wave ≤40% par, trough ≥45% below peak, ≤2 primary roles
 >30%, fresh role every 4th wave, hard waves draw ≥2 denominations, entries sum
 to 100%, envelope `overWaves` resolve) · bundle `waveTable` file refs resolve on
-disk (missing file = warning).
+disk (missing file = warning) · **ticket packs**: every `file:packs/…` ref exists
+and is claimed by exactly one bundle (no orphans) · pack validates against
+`schema/i18n-pack.schema.json` · **every dotted key a bundle references resolves
+in that pack's `decision` namespace** (missing = fail; found in `flavour` = fail)
+· **decision/flavour root vocabularies are disjoint** — the §9.3 separation law is
+machine-checked by namespace root · templates are strings or `{eras, fallback}`
+era-variant objects over the pack's declared `eraCodes`, with identical slot sets
+across variants · every `{slot}` is glossed and every glossary slot is used ≥1× ·
+README §Key literals table is verbatim-synced against pack `decision` values ·
+zero §9.11 technique vocabulary (shell/SQL/CVE/path ban-list over every template
+body) · ≥25 templates per pack · provenance covers every key (cite string, or
+null + `_provenance._todo` — never an invented law-number). Pack `_todo` markers
+print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
+(63) is untouched by pack authoring.
 
 ## The authoring laws this directory obeys
 
@@ -50,7 +66,7 @@ disk (missing file = warning).
 | **3–5 budget** (handover) | R10, §1.9 | `handoverNote` is EXACTLY 3 keys: runsOut / killsYou / customerWants, diegetic sheet-on-desk voice. Schema enforces maxProperties 3. |
 | **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"`). Both anchors compose from the shared `concurrency-pool` + `two-face-rack` archetypes in two costumes (G6). |
 | **Five-Asset Skin Kit** | R48/R49/R53, §8.10 | Exactly: 1 palette (accent+secondary) · 2 visitor costume (hull+prop) · 3 ONE hero silhouette · 4 bespoke meter face · 5 bespoke catastrophe FX (+ ambient sound swap). Everything else = parameters of shared systems ("five assets plus eight parameter values"). Author order: METER FIRST. |
-| **Localisation law** | R46 + owner directive | **ALL human strings are i18n keys** resolved through the bundle's `ticketPack` file. No literal prose, no joke text in bundles. Keys below carry the authored English until `packs/*.i18n.json` exists. |
+| **Localisation law** | R46 + owner directive | **ALL human strings are i18n keys** resolved through the bundle's `ticketPack` file. No literal prose, no joke text in bundles. The packs ARE the authored English: `packs/*.i18n.json` carry every string, split into a sober `decision` namespace (shown while deciding or losing — §9.3 clauses 2–3) and a comedic `flavour` namespace (quiet surfaces only); the validator enforces the wall by root vocabulary and refuses any bundle-referenced key that strays into flavour. |
 | **Pruning rule R36** | WS-3, §2.12 | A threat earns a mechanical slot (stats + counters) only if it CHANGES THE PLAYER'S VERB, not just the noun. Everything else is Codex flavour attached to a mechanical entry. |
 | **Second Answer** | §5.1 | Every registry threat has ≥2 viable counters at DIFFERENT prices (cheap / expensive / lateral triad). Validator enforces. |
 | **Wave rules** | §1.7/§2.24 | Baseline continuous-diurnal-never-zero; events are shaped envelopes over it; ≤4 threat entries/wave; first wave ≤40% par ALWAYS; troughs ≥45% below preceding peak; ≤2 roles >30% per wave; new role every 4th wave; hard waves draw TWO denominations; entropy budget peaks in troughs = f(estate age × size × (1−maintenance spend)); second-incident ×1.8 (incident) / ×2.5 (recovery). |
@@ -83,7 +99,9 @@ treats unmarked tuning numerics as errors.
 ## Key literals (ticketPack seeds)
 
 The English these bundle keys must resolve to (authored from the cited §; the
-game handover trio is Appendix A verbatim):
+game handover trio is Appendix A verbatim). The packs now exist — this table is
+the pinned seed and `script/validate.mjs` fails on any divergence between a row
+here and the pack's `decision` value.
 
 | Key | Literal | Cite |
 |---|---|---|
@@ -122,8 +140,11 @@ game handover trio is Appendix A verbatim):
    R36 (changes the verb, not just the noun) or it is Codex flavour.
 6. Every number the doc doesn't give: `null` + `"_todo": "§-cite"`. Every number
    that exists only for tuning: `"tuningSheet": "PROVISIONAL-B"`.
-7. Every human string: an i18n key. Add the literal to the pack file (or the
-   table above until packs exist).
+7. Every human string: an i18n key. Author it in the type's pack file under
+   `decision` (sober: shown while deciding/losing) or `flavour` (comedy: quiet
+   surfaces only) — never inline in the bundle — add its `_provenance` cite
+   (string or null+`_todo`), and add the new pack to the Key literals table
+   above when the literal needs pinning.
 8. Write the handover note — exactly 3 diegetic lines.
 9. Run `node packages/content/script/validate.mjs`. Green, or it doesn't land.
 10. Register the bundle with the loader (sibling workstream owns

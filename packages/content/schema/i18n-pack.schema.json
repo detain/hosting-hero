@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "i18n ticket pack (R46; §9.3/§9.11)",
+  "description": "Shape of packages/content/packs/*.i18n.json. Only the subset this repo's script/validate.mjs interpreter understands is used here (type, enum, pattern, minimum/maximum, required, properties, additionalProperties, items, maxProperties). The deeper laws — decision/flavour namespace partition, {slot} syntax + glossary coverage, era-variant object shape, README §Key literals verbatim sync, §9.11 technique-vocabulary ban-list — are hand-enforced in the validator, not expressible in this subset.",
+  "type": "object",
+  "required": ["schemaVersion", "packId", "appliesTo", "locale", "slots", "decision", "flavour", "_provenance"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "enum": [1] },
+    "packId": { "type": "string", "pattern": "^pack:[a-z0-9][a-z0-9.-]*$" },
+    "appliesTo": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*$" },
+    "locale": { "type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$" },
+    "note": { "type": "string" },
+    "eraCodes": {
+      "type": "object",
+      "description": "Declared era axis for {eras,...} variant objects, code -> meaning. Keys are 4-digit years.",
+      "additionalProperties": { "type": "string" }
+    },
+    "slots": {
+      "type": "object",
+      "description": "Slot glossary; every {token} in every template must appear here, and every entry must be used at least once.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["entity", "number", "money", "duration", "tick", "pct", "time", "text"] },
+          "desc": { "type": "string" }
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "description": "Sober surface: strings shown while deciding or losing (labels, terms, refusals, alerts, status rungs). §9.3 clauses 2-3. Never funny at the moment of loss.",
+      "additionalProperties": { "type": ["string", "object"] }
+    },
+    "flavour": {
+      "type": "object",
+      "description": "Recognition comedy for quiet surfaces only (tickets, press, forums, chatter, loading tips, stickies, vendor replies, achievements, codex flavour). No bundle-referenced key may live here.",
+      "additionalProperties": { "type": ["string", "object"] }
+    },
+    "_provenance": {
+      "type": "object",
+      "description": "One entry per template key: a §-cite string, or null where the doc gives no line to cite (nulls require _provenance._todo per never-invent law).",
+      "additionalProperties": { "type": ["string", "null"] }
+    },
+    "_todo": { "type": "string" }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "3.0",
   "id": "official:game-servers",
-  "_todo": "All human strings are keys into file:packs/game.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. ticketPack file not yet authored.",
+  "_todo": "All human strings are keys into file:packs/game.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. Pack authored at file:packs/game.i18n.json — cac.game-servers.todo stays a placeholder until §6.6 Companion B prices the game channel.",
 
   "meta": {
     "name": "type.game-servers.name",

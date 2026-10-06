@@ -1,7 +1,7 @@
 {
   "schemaVersion": "3.0",
   "id": "official:shared-web",
-  "_todo": "meta.name/codexSummary literals + handoverNote lines are i18n keys; their authored English lives in the ticketPack (README §Key literals). Pack file not yet authored — pack keys here are the contract it must satisfy.",
+  "_todo": "meta.name/codexSummary literals + handoverNote lines are i18n keys; their authored English lives in the ticketPack (README §Key literals). Pack authored at file:packs/shared-web.i18n.json — README §Key literals stays the pinned seed table; script/validate.mjs fails if pack and README ever disagree.",
 
   "meta": {
     "name": "type.shared-web.name",
