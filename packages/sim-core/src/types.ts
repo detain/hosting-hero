@@ -1480,7 +1480,12 @@ export interface BoardEdgeRecord {
 
 /** Pipeline-local structural embed of "what CAN happen" (§4.2 graph-is-map).
  *  `version` bumps on every mutation (topology's memoization convention).
- *  Map iteration NEVER defines order — consumers sort by id (digest does). */
+ *  Map iteration NEVER defines order — consumers sort by id (digest does).
+ *  `edges` read-onlyness is a TYPE-LEVEL guarantee (`ReadonlyMap` is a
+ *  compile-time view; `Object.freeze` on a Map seals its properties, not its
+ *  contents — `map.set()` still works on a frozen Map). Runtime deep-freeze
+ *  applies to the RECORDS stored in the Map, not to Map contents themselves;
+ *  writers must replace the Map, never mutate it in place (the door does). */
 export interface BoardState {
   readonly version: number;
   readonly edges: ReadonlyMap<EntityId, BoardEdgeRecord>;

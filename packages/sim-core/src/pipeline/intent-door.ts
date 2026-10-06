@@ -10,13 +10,21 @@
  *    (arrival) each tick; entries are applied in (tick, seq) order — a fixed
  *    order over host-fed data, so two runs with the same schedule digest
  *    identically (×100-gated in __tests__/intent-door.test.ts);
- *  - EXECUTE-OR-REFUSE, NEVER CRASH-BUT-ALSO-NEVER-SILENT: semantic failures
- *    (unknown id, slot taken, power cycle, hands exhausted, unknown card
- *    hash…) become deterministic `intent-refused` events — no RNG is consulted
- *    anywhere here, no state changes, nothing is consumed. STRUCTURAL garbage
- *    (wrong wire TYPES where bigint/string belongs) throws `IntentDoorError`
- *    at the boundary (Law 2 parse-don't-validate + Law 4 fail-fast): a host
- *    feeding malformed wire data has a bug to find, not a game state to fork;
+ *  - EXECUTE-OR-REFUSE, NEVER CRASH-BUT-ALSO-NEVER-SILENT: VALUE-DOMAIN
+ *    violations (speed ∉ {1,2,4}, empty-after-parse strings, unknown ids,
+ *    slot taken, power cycle, hands exhausted…) become deterministic
+ *    `intent-refused` events — no RNG is consulted anywhere here, no state
+ *    changes, nothing is consumed. STRUCTURAL wire garbage — a primitive TYPE
+ *    mismatch anywhere on the entry (stamp fields AND, per M2, every per-verb
+ *    arg shape parsed in `parseEntry`) — throws `IntentDoorError` at the
+ *    boundary (Law 2 parse-don't-validate + Law 4 fail-fast): a host feeding
+ *    malformed wire data has a bug to find, not a game state to fork. The
+ *    split is one law, not three handlers: type checks happen ONLY at parse,
+ *    handlers trust their args and own the refusal space alone;
+ *  - FEED UNIQUENESS (M4): a schedule is a SET of (tick, seq) stamps — a
+ *    repeated pair within one `applyIntentDoor` feed is host programming
+ *    garbage (two intents claiming one attribution identity) and throws,
+ *    naming both offending input positions;
  *  - HANDS ARE PHYSICS (§7.5): every executed intent pays `handCost` tokens
  *    for `occupancyTicks` from `GameState.hands`; refusal never spends hands.
  *    Default occupancies follow the §7.5 reference durations (config change
@@ -127,7 +135,19 @@ export interface IntentDoorConfig {
  *  config change 40s → 1 · failover 90s → 2 · cable trace 3 min → 3.
  *  "duration vs attendance" is COLLAPSED to one window in v0 (attendance ==
  *  duration): the unattended-job split (RAID 19h/0 hands) needs a scheduler
- *  the door does not own — reported as a seam for the receipt-engine twist. */
+ *  the door does not own — reported as a seam for the receipt-engine twist.
+ *
+ *  CONFIG ANOMALY (W3 — documented, legal, no behavior gate): a host may
+ *  override `occupancyTicks` to 0 for a verb whose `handCost` is > 0. The
+ *  reservation is then stamped `busyUntilTick == tick + 0n`, and because
+ *  occupancy is HALF-OPEN `[start, busyUntilTick)` that window is empty — the
+ *  token's cause is cleared by the next door pass's release sweep (which runs
+ *  once per pass, before any allocation) at `busyUntilTick <= tick`. Within
+ *  the submitting pass the token still counts as busy (free-hand accounting
+ *  and refusals see the reservation it paid for), so the combination is not
+ *  a spend-free loophole — it is a same-tick-boundary release, exactly what
+ *  the half-open law promises. No DEFAULT verb pairs the two (the only
+ *  occupancy-0 entry, toggle-speed, is also cost-0). */
 export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>> = Object.freeze({
   [PlayerVerb.PlaceDevice]: 3,
   [PlayerVerb.ConnectPorts]: 3,
@@ -253,9 +273,34 @@ function requireInt(value: unknown, where: string): number {
   return value;
 }
 
+function requireNumber(value: unknown, where: string): number {
+  if (typeof value !== "number") fail(where, `expected number, got ${typeof value}`);
+  return value;
+}
+
+/** Per-verb WIRE arg shapes (M2 — one type law at the boundary). A primitive
+ *  TYPE mismatch here (including a missing key, which parses as `undefined`)
+ *  is structural garbage → `IntentDoorError`; value-domain violations stay
+ *  the handlers' refusal space. `string-or-null` fields accept the JSON null
+ *  sentinel ONLY — null in a non-nullable field is a type mismatch, and a
+ *  present-but-wrong type is never silently coerced. The table's field order
+ *  is fixed, so an error naming "the first offender" is deterministic. */
+type ArgWireType = "string" | "string-or-null" | "number";
+const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWireType>>>> = Object.freeze({
+  [PlayerVerb.PlaceDevice]: Object.freeze({ nodeId: "string", deviceKind: "string", template: "string-or-null" }),
+  [PlayerVerb.ConnectPorts]: Object.freeze({ relation: "string", from: "string", to: "string", slot: "string-or-null" }),
+  [PlayerVerb.DisconnectDrain]: Object.freeze({ edgeId: "string" }),
+  [PlayerVerb.ConfigureNode]: Object.freeze({ nodeId: "string", inspectionDepth: "string-or-null", shedOrder: "string-or-null" }),
+  [PlayerVerb.PolicyCardCommit]: Object.freeze({ cardHash: "string" }),
+  [PlayerVerb.ShedLoad]: Object.freeze({ nodeId: "string", qosClassId: "string-or-null" }),
+  [PlayerVerb.Communicate]: Object.freeze({ target: "string-or-null", note: "string" }),
+  [PlayerVerb.ToggleSpeed]: Object.freeze({ speedX: "number" }),
+});
+
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
  *  means the entry is well-formed, NOT that it will execute (semantics are
- *  the handlers' refusal space). */
+ *  the handlers' refusal space). Per M2 this covers the per-verb ARG SHAPES
+ *  too — handlers never re-check primitive types of their args. */
 function parseEntry(entry: unknown, index: number): ExternalIntent {
   const where = `externalIntents[${index}]`;
   const record = requireRecord(entry, where);
@@ -277,6 +322,15 @@ function parseEntry(entry: unknown, index: number): ExternalIntent {
     const args = requireRecord(payload.args, `${where}.intent.payload.args`);
     const verb = requireString(args.verb, `${where}.intent.payload.args.verb`);
     if (!VERB_SET.has(verb)) fail(`${where}.intent.payload.args.verb`, `"${verb}" not a PlayerVerb`);
+    const shape = VERB_ARG_SHAPES[verb as PlayerVerb];
+    for (const field of Object.keys(shape)) {
+      const fieldWhere = `${where}.intent.payload.args.${field}`;
+      const value = args[field];
+      const wireType = shape[field];
+      if (wireType === "string") requireString(value, fieldWhere);
+      else if (wireType === "number") requireNumber(value, fieldWhere);
+      else if (value !== null) requireString(value, fieldWhere);
+    }
   }
   return entry as ExternalIntent;
 }
@@ -374,17 +428,18 @@ function powerCycle(edges: ReadonlyMap<EntityId, BoardEdgeRecord>, from: EntityI
 }
 
 function handlePlaceDevice(draft: Draft, args: PlaceDeviceArgs): HandlerVerdict {
-  const nodeId = requireString(args.nodeId, "place-device.args.nodeId");
+  // args carry TRUSTED wire types (parseEntry parsed every field per M2) —
+  // only value-domain checks remain below.
+  const nodeId = args.nodeId;
   if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
   const devices = draftNodes(draft);
   if (devices.has(nodeId as EntityId)) {
     return { ok: false, reason: `node-exists: "${nodeId}"` };
   }
-  requireString(args.deviceKind, "place-device.args.deviceKind");
   if (args.deviceKind.length === 0) return { ok: false, reason: "empty-device-kind" };
-  if (args.template !== null) requireString(args.template, "place-device.args.template");
   const rejection = draft.config.canPlaceDevice?.({ args, state: snapshotFor(draft), context: draft.context });
   if (rejection !== undefined && rejection !== null) {
+    // host CALLBACK output stays validated (it is not door-wire input):
     return { ok: false, reason: `placement-rejected: ${requireString(rejection.reason, "canPlaceDevice result.reason")}` };
   }
   const node: NodeRecord = Object.freeze({
@@ -406,16 +461,13 @@ function handlePlaceDevice(draft: Draft, args: PlaceDeviceArgs): HandlerVerdict 
 }
 
 function handleConnectPorts(draft: Draft, args: ConnectPortsArgs): HandlerVerdict {
-  const relation = requireString(args.relation, "connect-ports.args.relation");
+  const relation = args.relation; // wire type trusted (parseEntry, M2)
   if (!RELATIONS.includes(relation as BoardRelation)) {
     return { ok: false, reason: `bad-relation: "${relation}" not in {${RELATIONS.join(",")}}` };
   }
-  const from = requireString(args.from, "connect-ports.args.from") as EntityId;
-  const to = requireString(args.to, "connect-ports.args.to") as EntityId;
-  if (args.slot !== null) {
-    requireString(args.slot, "connect-ports.args.slot");
-    if (args.slot.length === 0) return { ok: false, reason: "empty-slot" };
-  }
+  const from = args.from;
+  const to = args.to;
+  if (args.slot !== null && args.slot.length === 0) return { ok: false, reason: "empty-slot" };
   if (relation === "power" && args.slot === null) return { ok: false, reason: "power-needs-slot" };
   if (relation !== "power" && args.slot !== null) return { ok: false, reason: `slot-only-for-power: got "${args.slot}"` };
   const nodes = draftNodes(draft);
@@ -442,7 +494,7 @@ function handleConnectPorts(draft: Draft, args: ConnectPortsArgs): HandlerVerdic
 }
 
 function handleDisconnectDrain(draft: Draft, args: DisconnectDrainArgs): HandlerVerdict {
-  const edgeId = requireString(args.edgeId, "disconnect-drain.args.edgeId") as EntityId;
+  const edgeId = args.edgeId as EntityId; // wire type trusted (parseEntry, M2)
   const board = draft.board ?? draft.origin.board ?? createBoardState();
   if (!board.edges.has(edgeId)) return { ok: false, reason: `unknown-edge: "${edgeId}"` };
   const edges = new Map(board.edges);
@@ -454,7 +506,7 @@ function handleDisconnectDrain(draft: Draft, args: DisconnectDrainArgs): Handler
 }
 
 function handleConfigureNode(draft: Draft, args: ConfigureNodeArgs): HandlerVerdict {
-  const nodeId = requireString(args.nodeId, "configure-node.args.nodeId") as EntityId;
+  const nodeId = args.nodeId as EntityId; // wire type trusted (parseEntry, M2)
   if (args.inspectionDepth === null && args.shedOrder === null) {
     return { ok: false, reason: "no-fields: set inspectionDepth and/or shedOrder" };
   }
@@ -475,8 +527,58 @@ function handleConfigureNode(draft: Draft, args: ConfigureNodeArgs): HandlerVerd
   return { ok: true, detail: detailParts.join(",") };
 }
 
+/* ── ruleBookHash derivation (M3) ─────────────────────────────────────────
+ * FNV-1a-64, the KERNEL's hash family — same offset basis, prime and
+ * codepoint walk as kernel/rng.ts `hashTextFast`. That twin stays private in
+ * the kernel and rng-reference.ts is test-only by its own header law, so the
+ * door keeps a local copy of the SAME family rather than widening any barrel
+ * export (no new hash family is introduced).
+ * The fold runs over the WHOLE book — code-unit-sorted by card id, hence
+ * insertion-order independent — each entry `id␀fingerprint` joined by ␁.
+ * The per-card fingerprint mirrors digest.ts's absorb walk (same fields in
+ * same order) so "same hash" means "same digested book content". Like every
+ * kernel hash this is a deterministic fingerprint, not a cryptographic
+ * digest. */
+const MASK64 = (1n << 64n) - 1n;
+const FNV_OFFSET64 = 0xcbf29ce484222325n;
+const FNV_PRIME64 = 0x100000001b3n;
+
+function fnv1a64Hex(text: string): string {
+  let hash = FNV_OFFSET64;
+  for (const codePoint of text) {
+    hash = ((hash ^ BigInt(codePoint.codePointAt(0) as number)) * FNV_PRIME64) & MASK64;
+  }
+  return hash.toString(16).padStart(16, "0");
+}
+
+function cardFingerprint(card: PolicyCard): string {
+  const parts: string[] = [
+    card.id,
+    card.scope.kind,
+    card.scope.ref ?? "\u2205",
+    card.band,
+    String(card.upkeepMicroUsd),
+  ];
+  for (const predicate of card.when) {
+    const t = predicate.threshold;
+    parts.push(predicate.metric, predicate.comparator, t.kind);
+    if (t.kind === "value") parts.push(String(t.amount), t.unit);
+    else if (t.kind === "class-ref") parts.push(t.classId);
+    else parts.push(t.name);
+  }
+  for (const action of card.then) {
+    parts.push(action.id, action.runbookName ?? "\u2205", String(action.value ?? -1n));
+  }
+  return fnv1a64Hex(parts.join("\u0000"));
+}
+
+function foldRuleBookHash(book: readonly PolicyCard[]): string {
+  const sorted = [...book].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return fnv1a64Hex(sorted.map((card) => `${card.id}\u0000${cardFingerprint(card)}`).join("\u0001"));
+}
+
 function handlePolicyCardCommit(draft: Draft, args: PolicyCardCommitArgs): HandlerVerdict {
-  const cardHash = requireString(args.cardHash, "policy-card-commit.args.cardHash");
+  const cardHash = args.cardHash; // wire type trusted (parseEntry, M2)
   if (cardHash.length === 0) return { ok: false, reason: "empty-card-hash" };
   if (draft.config.lookupPolicyCard === undefined) {
     return { ok: false, reason: "no-card-lookup: host wired no lookupPolicyCard" };
@@ -490,25 +592,26 @@ function handlePolicyCardCommit(draft: Draft, args: PolicyCardCommitArgs): Handl
   }
   book.push(Object.freeze({ ...card }));
   draft.ruleBook = Object.freeze(book);
-  draft.ruleBookHash = cardHash;
+  // M3: the hash describes the WHOLE BOOK (deterministic fold), never just
+  // the last payment — save/ persists ruleBookHash as the book's identity.
+  draft.ruleBookHash = foldRuleBookHash(book);
   return { ok: true, detail: `rule=${card.id}` };
 }
 
 function handleShedLoad(draft: Draft, args: ShedLoadArgs): HandlerVerdict {
-  const nodeId = requireString(args.nodeId, "shed-load.args.nodeId") as EntityId;
+  const nodeId = args.nodeId as EntityId; // wire types trusted (parseEntry, M2)
   const nodes = draft.nodes ?? draft.origin.nodes;
   if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
-  if (args.qosClassId !== null) requireString(args.qosClassId, "shed-load.args.qosClassId");
   // Directive-only verb (contract scope): the actual shedding stays in step
   // 5's shed order / hard-ceiling logic; this records the player ORDER.
   return { ok: true, detail: args.qosClassId === null ? `node=${nodeId},qos=all-unclassified` : `node=${nodeId},qos=${args.qosClassId}` };
 }
 
 function handleCommunicate(draft: Draft, args: CommunicateArgs): HandlerVerdict {
+  // wire types trusted (parseEntry, M2): note is a string, target string|null
   if (args.note.length === 0) return { ok: false, reason: "empty-note" };
-  requireString(args.note, "communicate.args.note");
   if (args.target !== null) {
-    const target = requireString(args.target, "communicate.args.target") as EntityId;
+    const target = args.target as EntityId;
     const nodes = draft.nodes ?? draft.origin.nodes;
     if (!nodes.has(target)) return { ok: false, reason: `unknown-node: "${target}"` };
   }
@@ -516,11 +619,12 @@ function handleCommunicate(draft: Draft, args: CommunicateArgs): HandlerVerdict 
 }
 
 function handleToggleSpeed(_draft: Draft, args: ToggleSpeedArgs): HandlerVerdict {
-  const speed = args.speedX as number;
-  if (typeof speed !== "number" || !Number.isSafeInteger(speed) || !SPEED_VALUES.includes(speed)) {
+  // speedX is a number by parse law (M2); membership in {1,2,4} is the
+  // value-domain question — 2.5, NaN, 0 are refusals, never throws.
+  if (!SPEED_VALUES.includes(args.speedX)) {
     return { ok: false, reason: `bad-speed: ${String(args.speedX)} not in {1,2,4}` };
   }
-  return { ok: true, detail: `speed=${speed}` };
+  return { ok: true, detail: `speed=${args.speedX}` };
 }
 
 /** Read-only view of the draft for the placement validator (it must see
@@ -537,6 +641,12 @@ function buildState(draft: Draft): GameState {
   }
   return Object.freeze({
     ...draft.origin,
+    // W1 — single fresh-context source: the validator's `query.state.context`
+    // must agree with `query.context`. draft.origin carries the PRIOR tick's
+    // context; every state this door hands out (snapshots AND the final
+    // result) is stamped with this pass's TickContext. Nothing mutates it —
+    // the driver still rebuilds its own when it assembles the next state.
+    context: draft.context,
     ...(draft.nodes !== null ? { nodes: draft.nodes } : {}),
     ...(draft.board !== null ? { board: draft.board } : {}),
     ...(draft.hands !== null ? { hands: draft.hands } : {}),
@@ -675,8 +785,23 @@ export function applyIntentDoor(
 
   const due: ExternalIntent[] = [];
   const future: ExternalIntent[] = [];
+  // M4 — FEED UNIQUENESS: (tick, seq) is the attribution identity (causeId
+  // `intent:<seq>` and receipts key on it). Two entries carrying one stamp in
+  // a single feed would execute under ONE causeId — a host programming bug,
+  // structural garbage by the same law as wrong wire types, so it throws and
+  // names both offending input positions rather than silently double-firing.
+  const seenStamp = new Map<string, number>();
   externalIntents.forEach((raw, index) => {
     const entry = parseEntry(raw, index);
+    const stampKey = `${entry.tick}|${entry.intent.seq}`;
+    const firstIndex = seenStamp.get(stampKey);
+    if (firstIndex !== undefined) {
+      fail(
+        "externalIntents",
+        `duplicate (tick, seq) stamp tick=${entry.tick} seq=${entry.intent.seq}: externalIntents[${firstIndex}] and externalIntents[${index}] both carry it — every intent must be fed EXACTLY ONCE per schedule`,
+      );
+    }
+    seenStamp.set(stampKey, index);
     if (entry.tick > context.tick) future.push(entry);
     else due.push(entry);
   });

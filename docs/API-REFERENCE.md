@@ -259,14 +259,14 @@ driver calls `applyIntentDoor` BEFORE step 1 every tick. Import:
 | `ONE_SLOT` | `Fixed` | one-slot cost unit | const |
 | `digestState` | `(state: GameState) => HashHex` | the state-hash tripwire over GameState (feeds replay ring); absorbs `hands` (capacity + per-token occupancy) and `board` (version + edges sorted by id) ONLY WHEN PRESENT — pre-door digests byte-identical | own double-FNV-1a over a sorted-key canonical sink ("hh-state-v1" tag) — pluggable as replay's `StateDigest` override, NOT the replay codec |
 | `applyIntentDoor` | `(state: GameState, context: TickContext, externalIntents: readonly ExternalIntent[], config?: IntentDoorConfig) => IntentDoorResult` | THE intent door (§4.2/§7.5/§7.13, contract #10 below): apply the fed schedule BEFORE step 1 — entries stamped at or before the current tick sort by (tick, seq), future stamps refuse after the due pass in input order; pure over GameState | no RNG, no clock reads, no platform APIs; same schedule ⇒ identical digest chain (×100-gated) |
-| `IntentDoorError` | `class extends Error` | STRUCTURAL wire-type garbage at the boundary throws (Law 2 parse-don't-validate + Law 4 fail-fast) — a host feeding malformed wire data has a bug to find, not a game state to fork; distinct from a semantic refusal (event-logged, nothing thrown) | total-throwing at parse |
-| `IntentDoorConfig` | `interface { handCapacity?; handCost?; occupancyTicks?; canPlaceDevice?; lookupPolicyCard?; deviceSlots?; deviceServiceTimeUs?; deviceInspectionDepth?; deviceShedOrder?; deviceDiscipline? }` | door tuning: per-verb cost/occupancy overrides + the two host callbacks (placement validator, policy-card resolver) + skeleton `NodeRecord` knobs for placed devices | data-in; callbacks must be deterministic |
+| `IntentDoorError` | `class extends Error` | STRUCTURAL wire garbage at the boundary throws (Law 2 parse-don't-validate + Law 4 fail-fast) — ANY primitive TYPE mismatch on the feed: stamp fields AND every per-verb arg shape parsed in `parseEntry` (M2: one type law, not per-handler checks), plus a repeated `(tick, seq)` stamp within one schedule (M4: two entries claiming one attribution identity — offenders' input positions named). A host feeding malformed wire data has a bug to find, not a game state to fork; VALUE-domain violations (out-of-set values, empty strings, unknown ids) stay semantic refusals (event-logged, nothing thrown) | total-throwing at parse |
+| `IntentDoorConfig` | `interface { handCapacity?; handCost?; occupancyTicks?; canPlaceDevice?; lookupPolicyCard?; deviceSlots?; deviceServiceTimeUs?; deviceInspectionDepth?; deviceShedOrder?; deviceDiscipline? }` | door tuning: per-verb cost/occupancy overrides + the two host callbacks (placement validator, policy-card resolver) + skeleton `NodeRecord` knobs for placed devices; cost>0 paired with occupancy 0 is a LEGAL override — the half-open window `[tick, tick+0)` releases the token at the next door pass (the token still counts busy within the submitting pass; no default verb pairs the two) | data-in; callbacks must be deterministic |
 | `PlaceDeviceQuery` | `interface { args: PlaceDeviceArgs; state: GameState; context: TickContext }` | what the host's `canPlaceDevice` validator sees — parsed args plus a READ-ONLY view of the draft (devices placed EARLIER in the same tick are visible, never a stale board); needs/provides, palette membership, U-space, power fit stay HOST-side | read-only snapshot |
 | `PlacementRejection` | `interface { reason: string }` | the validator's "no" — null means accept; the reason lands VERBATIM in the refusal event as `placement-rejected: <reason>` | — |
 | `IntentReceipt` | `interface { submittedTick: SimTick; seq: number; verb: string; outcome: "executed" \| "refused"; reason: string \| null }` | one per fed intent — the door's verdict roll-up (host HUD ticker / test assertion sugar; the events array is the replay-grade record) | canonical application order |
 | `IntentDoorResult` | `interface { state: GameState; events: readonly SimEvent[]; receipts: readonly IntentReceipt[] }` | the door's answer — SAME state object identity when nothing applied (no intents / all refused); executed + refused events in canonical order (future-stamp refusals trail, in input order) | frozen; identity-preserving |
 | `mintHandState` | `(capacity: number) => HandState` | mint all-free hand tokens (indices 0…capacity−1, `busyUntilTick` 0n) — §7.5 T0/T2 default is 1 | deep-frozen; total-throwing unless safe integer ≥ 1 |
-| `createBoardState` | `(edges?: readonly BoardEdgeRecord[]) => BoardState` | empty (or seeded) board slice — edges stored sorted by `EntityId` and each record frozen | order-pinned on insertion; deep-frozen |
+| `createBoardState` | `(edges?: readonly BoardEdgeRecord[]) => BoardState` | empty (or seeded) board slice — edges stored sorted by `EntityId` and each record frozen | order-pinned on insertion; records deep-frozen (`edges` ReadonlyMap is a TYPE-level guarantee — `Object.freeze` on a Map cannot seal its contents; writers replace the Map) |
 | `DEFAULT_INTENT_HAND_COST` | `Readonly<Record<PlayerVerb, number>>` (frozen table) | hand tokens per verb: 1 for every verb EXCEPT toggle-speed = 0 (speed gates observation, never physics) | const table |
 | `DEFAULT_INTENT_OCCUPANCY_TICKS` | `Readonly<Record<PlayerVerb, number>>` (frozen table) | §7.5 reference durations rounded UP to whole sim-minute ticks: place/connect 3 · disconnect/shed/communicate 2 · configure/commit 1 · toggle 0 (config change 40 s→1, failover 90 s→2, cable trace 3 min→3); "duration vs attendance" COLLAPSED to one window in v0 | const table |
 
@@ -837,9 +837,14 @@ These are the load-bearing seams, verified against the code on disk:
    suppressed, rng }` → `RulePhaseOut{ firings, intents }`. The interpreter
    reads ONLY the observed map (ground truth structurally unreachable — fog
    degrades automation, WS-5 G1 ratified), touches NO RNG (the `rng` field is
-   deliberately never read), and emits `PlayerIntent`s for NEXT-tick
-   adjudication — evaluate-and-enqueue, never mutate (`policy/evaluator.ts`
-   header; CONVENTIONS §1.1).
+   deliberately never read), and emits `PlayerIntent`s onto `TickResult.intents`
+   as CANDIDATES the host may re-feed — evaluate-and-enqueue, never mutate
+   (`policy/evaluator.ts` header; CONVENTIONS §1.1). Round-3 correction (was
+   overclaimed as "for NEXT-tick adjudication"): NO engine-side loop adjudicates
+   these in v0 — the driver never re-feeds them, and the shipped `kind:"verb"`
+   carrier is REFUSED by the intent door (`unsupported-verb-carrier`, contract
+   #10) until the policy lane maps rule actions onto `player-verb` args
+   (MODULE-STATUS gap row "Rule-carrier verbs refused").
 
 3. **Step-12 single writer (observed).** `ObservedStore.applyObservedWrites
    (records, tickUs)` is the ONLY mutation path in the lane — three machine
@@ -906,12 +911,18 @@ of it). waves'
     `(tick, seq)` order, future stamps refuse LOUDLY after the due pass, in
     input order — so "the whole schedule at once" host patterns fail visible
     instead of smearing across ticks. Each entry is fed EXACTLY ONCE (ambient-
-    input contract). Laws:
-    - **Execute-or-refuse, never crash-but-also-never-silent** — semantic
-      failures become deterministic `intent-refused` events (no RNG consulted
-      anywhere in the door, no state change, nothing consumed); STRUCTURAL
-      wire garbage (wrong bigint/string TYPES) throws `IntentDoorError` at the
-      boundary (Laws 2+4) — a host bug to find, not a game state to fork.
+    input contract; M4 — a schedule repeating one `(tick, seq)` stamp is
+    structural garbage: `IntentDoorError` naming both offending positions,
+    never a silent double-fire). Laws:
+    - **Execute-or-refuse, never crash-but-also-never-silent** — VALUE-domain
+      violations (out-of-set values, empty-after-parse strings, unknown ids)
+      become deterministic `intent-refused` events (no RNG consulted anywhere
+      in the door, no state change, nothing consumed); STRUCTURAL wire garbage
+      — any primitive TYPE mismatch on the entry, stamp fields AND the
+      per-verb arg shapes parsed in `parseEntry` (M2: the type law lives ONLY
+      at the boundary; handlers trust their args and own the refusal space
+      alone) — throws `IntentDoorError` at the parse boundary (Laws 2+4): a
+      host bug to find, not a game state to fork.
     - **Hands are physics (§7.5)** — every executed intent pays `handCost`
       tokens for `occupancyTicks` from `GameState.hands` (half-open occupancy
       `[start, busyUntilTick)`, tokens released once per tick before any
@@ -922,7 +933,12 @@ of it). waves'
     - **Scope discipline** — handlers mutate ONLY their named slice;
       units/lanes/observed/cash/ledger/contracts are never reachable from the
       door (audit-tested by object reference identity); unchanged sections
-      keep the ORIGIN state's identity in the returned value.
+      keep the ORIGIN state's identity in the returned value. `context` is the
+      one stamped field (W1): every state the door hands out — validator
+      snapshots and final result alike — carries THIS pass's `TickContext`
+      (single fresh source; `query.state.context.tick === query.context.tick`
+      is pinned), never the prior tick's. The driver still assembles its own
+      when building the next state.
 
     Verb → handler → hand-cost table (verified against
     `DEFAULT_INTENT_HAND_COST` / `DEFAULT_INTENT_OCCUPANCY_TICKS`,
@@ -939,9 +955,24 @@ of it). waves'
     | `communicate` | `handleCommunicate` | events-only | 1 | 2 ticks |
     | `toggle-speed` | `handleToggleSpeed` | events-only | 0 | 0 ticks |
 
-    Refusal-reason census — 26 distinct machine codes, each emitted as
-    `"<code>: <detail>"` on an `intent-refused` event (enumerated from
-    `intent-door.ts` source): door-level `unsupported-verb-carrier` (legacy
+    `ruleBookHash` after a commit (M3): a deterministic FNV-1a-64 fold (the
+    kernel's hash family) over the WHOLE book — cards code-unit-sorted by id,
+    each contributing `id␀fingerprint` joined by ␁, the per-card fingerprint
+    mirroring `digest.ts`'s absorb walk. It therefore describes the book, not
+    the last payment: ≠ any single card's payload hash, and identical for the
+    same book committed in any insertion order. `digestState` absorbs
+    `ruleBookHash` (digest.ts), so every post-commit state hash moves with the
+    fold — within a run only (chains never cross runs).
+
+    Refusal-reason census — 26 distinct machine codes, every one refusal-pinned
+    in tests (`pipeline/__tests__/intent-door.test.ts` + `src/__tests__/gate-g4.test.ts`;
+    the four formerly-unpinned guards — `empty-node-id`, `empty-slot`,
+    `bad-shed-order`, `empty-card-hash` — closed by the round-3 "census
+    completeness" test). An `intent-refused` event carries the code with a
+    `": <detail>"` rider EXCEPT the six bare-code guards (`empty-node-id`,
+    `empty-device-kind`, `empty-slot`, `power-needs-slot`, `empty-card-hash`,
+    `empty-note`), which emit the code alone (enumerated from
+    `intent-door.ts` source); door-level `unsupported-verb-carrier` (legacy
     `verb`/`slider` carriers — until the policy lane maps rule actions onto
     door handlers), `hands-exhausted`, `stamped-in-future`; place-device
     `empty-node-id`, `node-exists`, `empty-device-kind`, `placement-rejected`
