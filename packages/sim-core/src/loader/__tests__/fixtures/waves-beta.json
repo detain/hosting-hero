@@ -1,0 +1,16 @@
+{
+  "type": "test:min-beta",
+  "waves": [
+    {
+      "n": 1,
+      "title": "launch night",
+      "parPct": 50,
+      "hardness": 2,
+      "denominations": ["bandwidth"],
+      "entries": [{ "threat": "spam-guests", "pressurePct": 45, "band": "weather" }]
+    }
+  ],
+  "envelopes": [
+    { "id": "env-beta-plateau", "kind": "spike", "overWaves": [1], "shape": "plateau" }
+  ]
+}

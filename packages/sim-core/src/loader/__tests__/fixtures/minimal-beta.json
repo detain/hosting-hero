@@ -1,0 +1,172 @@
+{
+  "schemaVersion": "3.0",
+  "id": "test:min-beta",
+  "meta": {
+    "name": "Minimal Beta",
+    "codexSummary": "fixture type B",
+    "tone": "straight",
+    "official": false,
+    "publishedAsEditableCard": false
+  },
+  "visitor": {
+    "nullable": true,
+    "unitTerm": "session-holder",
+    "durationClass": "Resident",
+    "stats": {
+      "patience": null,
+      "value": 0.4,
+      "weight": 0.1,
+      "loyalty": 0.9,
+      "fragility": null,
+      "_todo": "patience/fragility wait on sheet B (§3.1 R25)"
+    },
+    "patienceModel": {
+      "mode": "resident",
+      "params": { "bounceSigmoid": null }
+    },
+    "party": { "allOrNothing": true, "size": [2, 4] },
+    "herding": { "enabled": true, "coefficient": 0.7 },
+    "populationEffect": true,
+    "retryAmplifies": false,
+    "cohortSpawn": { "fromCustomerCard": true, "tier": 2 },
+    "costPerInvocation": "per-slot",
+    "trustReadable": false,
+    "archetypeRefs": ["browser-guest", "latency-goblin"]
+  },
+  "goal": {
+    "nodeType": "origin-pod-beta",
+    "winCondition": { "kind": "cash-intact" },
+    "loseCondition": { "kind": "player-exodus" },
+    "loseSlowlyGuard": { "minWarningMinutes": 5 },
+    "bindingConstraintLine": "The lobby empties before the invoice arrives."
+  },
+  "scarce": {
+    "resourceId": "ram-slot",
+    "meterWidget": "pulse-ticker",
+    "meterBoundStat": "ticks-dropped",
+    "commercialSlider": "protection-tier",
+    "operationalDials": ["aggression", "inspection-depth"],
+    "windowGrows": false,
+    "shedOrder": "priority-ladder",
+    "qosAnswer": "reserved slots never shed"
+  },
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": { "default": "monthly", "escalator": false, "grandfathering": false },
+    "seasonality": [],
+    "diurnalBaseline": "flat"
+  },
+  "threats": {
+    "familyWeights": {
+      "malicious": null,
+      "human": 0.2,
+      "entropic": null,
+      "systemic": null,
+      "customerAsThreat": 0.3,
+      "_todo": "family split frozen at sheet B (§2.24)"
+    },
+    "activeFamilies": ["malicious", "systemic"],
+    "signatureThreats": [{ "id": "spam-guests", "mechanical": true }],
+    "unlockedByBuildables": { "buildable-b": ["spam-guests"] },
+    "twoFrontDraw": ["bandwidth", "cash"],
+    "waveTable": "file:waves-beta.json"
+  },
+  "skin": {
+    "palette": {
+      "dominant": "#101418",
+      "accent": "#e0442f",
+      "chord": ["chord-1", "chord-2", "chord-3", "chord-4", "chord-5"]
+    },
+    "materialPreset": "preset:matte-shared-80",
+    "visitorCostume": { "hull": "helmet", "propSlot": "banner" },
+    "heroSilhouette": "asset:hero.beta",
+    "heroObject": "lobby-board",
+    "meterFace": "ticker-face",
+    "catastropheFx": "fx:beta-riot",
+    "ambientSoundPack": "sound:arena-roar",
+    "densityMultiplier": 0.1,
+    "arrivalRhythm": "tide:evening",
+    "homeAltitude": "Z2",
+    "detailAltitude": "Z3",
+    "commercialArtifactIcon": "asset:artifact.beta",
+    "signatureMotion": "motion:idle-sway",
+    "signatureFrame": "frame:close",
+    "lodContract": {
+      "full": "asset:lod.beta.full",
+      "icon16": "asset:lod.beta.icon16",
+      "pip": "pip:dot",
+      "aggregate": "agg:cloud",
+      "inspector": "insp:panel"
+    }
+  },
+  "eras": {
+    "availableFrom": "2004",
+    "obsoleteBy": null,
+    "eraOverrides": {}
+  },
+  "economy": {
+    "unitOfSale": "server-slot",
+    "revenueShape": "spiky-launch",
+    "marginProfile": "thick-thin",
+    "cashTiming": "net60",
+    "termStructure": { "typical": "prepaid-season", "churn": "game-lifecycle" },
+    "cacProfile": "community-word",
+    "ticketsPerCustomer": 0.5,
+    "signatureCost": "protection-and-uptime",
+    "badMonth": "the-launch-week",
+    "fifthAxisScore": { "metric": "community-heat", "weight": 0.25 },
+    "realismToggles": { "p95billing": false, "demandCharges": false }
+  },
+  "buildables": {
+    "paletteRef": "palette:test-shared",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "beta-skin" },
+      { "archetype": "lobby-marquee" }
+    ],
+    "distinct": ["marquee-boards"],
+    "nonPhysical": ["mod-team-outreach"]
+  },
+  "control": {
+    "pips": { "hardware": 1, "software": 1, "network": 1, "data": 1 },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+  "mechanics": ["mod-workshop", "tick-scheduler"],
+  "verbs": { "dominant": "Commit", "transfers": ["verbs.min-beta.transfer.1"] },
+  "relations": {
+    "synergies": [
+      { "with": "test:min-alpha", "kind": "shared-rack", "numbers": { "cpuShare": 0.25 } }
+    ],
+    "antagonisms": [
+      { "with": "test:min-alpha", "resource": "ram-slot", "kind": "noisy-neighbour", "render": "tinted-rival-glow" }
+    ],
+    "unlocks": { "prereqSets": [{ "tech": ["tick-scheduler"], "alt": "beta-solo-dev" }] },
+    "pivots": {
+      "to": {
+        "test:min-alpha": {
+          "customerOverlap": 0.3,
+          "hardwareReuse": 0.5,
+          "skillTransfer": 0.4,
+          "regulatoryDelta": 0
+        }
+      }
+    },
+    "masteryBuff": "beta-learns-louder",
+    "distillate": "launch-wisdom"
+  },
+  "ticketPack": "file:packs/min-beta.i18n.json",
+  "handoverNote": {
+    "runsOut": "reserved slots — the lobby grows faster than the rack",
+    "killsYou": "a launch week nobody staffed",
+    "customerWants": "the server, up, before the tournament"
+  },
+  "rosettaCards": [
+    { "canonical": "queue-depth", "alias": "line-length", "line": "rosetta.min-beta.1" }
+  ],
+  "scenarios": {
+    "archetypeApplicability": ["Endure", "Escort"],
+    "analogues": {}
+  },
+  "guardrails": { "depiction": "no real game titles", "arcMustEnd": true }
+}

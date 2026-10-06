@@ -1,0 +1,24 @@
+{
+  "type": "test:min-alpha",
+  "waves": [
+    {
+      "n": 1,
+      "title": "first drizzle",
+      "parPct": 40,
+      "hardness": 1,
+      "denominations": ["concurrency"],
+      "entries": [{ "threat": "flood-bats", "pressurePct": 55, "band": "storm" }]
+    },
+    {
+      "n": 2,
+      "title": "the bats return",
+      "parPct": 60,
+      "hardness": 2,
+      "denominations": ["concurrency", "cash"],
+      "entries": [{ "threat": "spam-guests", "pressurePct": 30, "band": "hunter" }]
+    }
+  ],
+  "envelopes": [
+    { "id": "env-alpha-ramp", "kind": "wave", "overWaves": [1, 2], "shape": { "ramp": "fast", "plateau": "hold", "decay": "slow" } }
+  ]
+}

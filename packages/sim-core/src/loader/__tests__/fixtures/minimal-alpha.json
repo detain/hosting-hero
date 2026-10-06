@@ -1,0 +1,180 @@
+{
+  "schemaVersion": "3.0",
+  "id": "test:min-alpha",
+  "_todo": "fixture cite: hosting_game.md §9.6 twin demo",
+  "meta": {
+    "name": "Minimal Alpha",
+    "codexSummary": "fixture type A",
+    "tone": "comedy",
+    "official": false,
+    "publishedAsEditableCard": false
+  },
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "page-visit",
+    "durationClass": "Session",
+    "stats": {
+      "patience": 3000,
+      "value": 0.1,
+      "weight": 0.1,
+      "loyalty": null,
+      "fragility": 0.5,
+      "_todo": "loyalty per §3.2 R24 tuning sheet A"
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": 90,
+        "bounceSigmoid": [0.6, 1.0, 1.6]
+      }
+    },
+    "party": { "allOrNothing": false, "size": null },
+    "herding": { "enabled": false, "coefficient": null },
+    "populationEffect": false,
+    "retryAmplifies": true,
+    "cohortSpawn": { "fromCustomerCard": false, "tier": 3 },
+    "costPerInvocation": "per-visit",
+    "trustReadable": true,
+    "archetypeRefs": ["browser-guest"]
+  },
+  "goal": {
+    "nodeType": "origin-pod-alpha",
+    "winCondition": { "kind": "survive", "threshold": 0.999, "_todo": "win metric name pending sheet A" },
+    "loseCondition": { "kind": "queue-collapse-spiral" },
+    "loseSlowlyGuard": { "minWarningMinutes": 3 },
+    "bindingConstraintLine": "The comb jams before the wallet does."
+  },
+  "scarce": {
+    "resourceId": "cpu-slice",
+    "meterWidget": "needle-comb",
+    "meterBoundStat": "requests-in-flight",
+    "commercialSlider": "oversell-ratio",
+    "operationalDials": ["aggression", "inspection-depth"],
+    "windowGrows": false,
+    "shedOrder": "priority-ladder",
+    "qosAnswer": "three classes, silver sells best"
+  },
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": { "default": "monthly", "escalator": false, "grandfathering": false },
+    "seasonality": [],
+    "diurnalBaseline": "flat"
+  },
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.5,
+      "human": null,
+      "entropic": null,
+      "systemic": null,
+      "customerAsThreat": null,
+      "_todo": "family split frozen at sheet B (§2.24)"
+    },
+    "activeFamilies": ["malicious", "entropic"],
+    "signatureThreats": [
+      { "id": "flood-bats", "mechanical": true },
+      { "id": "spam-guests", "mechanical": false, "codexOnly": true }
+    ],
+    "unlockedByBuildables": { "buildable-a": ["flood-bats"] },
+    "twoFrontDraw": ["concurrency", "cash"],
+    "waveTable": "file:waves-alpha.json"
+  },
+  "skin": {
+    "palette": {
+      "dominant": "#101418",
+      "accent": "#2fd37f",
+      "chord": ["chord-1", "chord-2", "chord-3", "chord-4", "chord-5"]
+    },
+    "materialPreset": "preset:matte-shared-80",
+    "visitorCostume": { "hull": "capsule", "propSlot": "parasol" },
+    "heroSilhouette": "asset:hero.alpha",
+    "heroObject": "control-panel",
+    "meterFace": "comb-dial",
+    "catastropheFx": "fx:alpha-meltdown",
+    "ambientSoundPack": "sound:server-room-hum",
+    "densityMultiplier": 0.1,
+    "arrivalRhythm": "tide:diurnal",
+    "homeAltitude": "Z2",
+    "detailAltitude": "Z3",
+    "commercialArtifactIcon": "asset:artifact.alpha",
+    "signatureMotion": "motion:idle-sway",
+    "signatureFrame": "frame:close",
+    "lodContract": {
+      "full": "asset:lod.alpha.full",
+      "icon16": "asset:lod.alpha.icon16",
+      "pip": "pip:dot",
+      "aggregate": "agg:cloud",
+      "inspector": "insp:panel"
+    }
+  },
+  "eras": {
+    "availableFrom": "1996",
+    "obsoleteBy": null,
+    "eraOverrides": {
+      "1999": { "chrome": "dial-up-beige", "visitorSpeedCapPct": 56, "_todo": "era tokens §0.4" }
+    }
+  },
+  "economy": {
+    "unitOfSale": "account",
+    "revenueShape": "flat-mrc",
+    "marginProfile": "thin-thick-thin",
+    "cashTiming": "prepaid",
+    "termStructure": { "typical": "12mo", "churn": "seasonal" },
+    "cacProfile": "coupon-funnel",
+    "ticketsPerCustomer": 1.5,
+    "signatureCost": "support-and-licences",
+    "badMonth": "the-pricing-post",
+    "fifthAxisScore": { "metric": "reputation", "weight": 0.25, "_todo": "weight = sheet A holdout" },
+    "realismToggles": { "p95billing": false, "demandCharges": false }
+  },
+  "buildables": {
+    "paletteRef": "palette:test-shared",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "alpha-skin" },
+      { "archetype": "two-face-rack", "skin": "alpha-skin" }
+    ],
+    "distinct": ["comb-gantry"],
+    "nonPhysical": ["support-desk"]
+  },
+  "control": {
+    "pips": { "hardware": 1, "software": 1, "network": 1, "data": 1 },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+  "mechanics": ["cache-tiering", "oversell-throttle"],
+  "verbs": { "dominant": "Triage", "transfers": ["verbs.min-alpha.transfer.1"] },
+  "relations": {
+    "synergies": [
+      { "with": "test:min-beta", "kind": "shared-rack", "numbers": { "cpuShare": 0.25, "_todo": "numbers frozen at sheet C" } }
+    ],
+    "antagonisms": [],
+    "unlocks": { "prereqSets": [{ "tech": ["cache-tiering"], "commercial": ["coupon-funnel"] }] },
+    "pivots": {
+      "to": {
+        "test:min-beta": {
+          "customerOverlap": 0.3,
+          "hardwareReuse": 0.5,
+          "skillTransfer": 0.4,
+          "regulatoryDelta": 0,
+          "_todo": "pivot axes §4.10 R65"
+        }
+      }
+    },
+    "masteryBuff": "alpha-learns-faster",
+    "distillate": "queue-wisdom"
+  },
+  "ticketPack": "file:packs/min-alpha.i18n.json",
+  "handoverNote": {
+    "runsOut": "comb teeth — one core, eight hundred guests",
+    "killsYou": "the queue spiral nobody heard starting",
+    "customerWants": "the page, now, for cheap"
+  },
+  "rosettaCards": [
+    { "canonical": "meter-needle", "alias": "teeth-spacing", "line": "rosetta.min-alpha.1" }
+  ],
+  "scenarios": {
+    "archetypeApplicability": ["Endure", "Convert"],
+    "analogues": {}
+  },
+  "guardrails": { "depiction": "no real brands", "arcMustEnd": true }
+}

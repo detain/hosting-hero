@@ -1,0 +1,7 @@
+{
+  "description": "miniature threat registry fixture — mirrors registry-core.json shape (loader index reads ids only)",
+  "threats": [
+    { "id": "flood-bats", "family": "malicious", "bands": ["storm"], "denominations": ["bandwidth", "concurrency"] },
+    { "id": "spam-guests", "family": "systemic", "bands": ["hunter"], "denominations": ["cash", "reputation"] }
+  ]
+}

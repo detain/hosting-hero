@@ -1,0 +1,7 @@
+{
+  "description": "miniature visitor-archetype registry fixture",
+  "archetypes": [
+    { "id": "browser-guest", "family": "casual" },
+    { "id": "latency-goblin", "family": "hardcore" }
+  ]
+}
