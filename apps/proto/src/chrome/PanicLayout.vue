@@ -72,20 +72,20 @@ const owner = computed(() => bigNumberDecision(level.value));
 .panic-layout { position: relative; font-family: var(--hh-typeface); }
 .headline { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; }
 .headline--quiet { display: none; }
-.headline--incident .kicker { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #ef6a5a; }
+.headline--incident .kicker { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--hh-hue-alarm); }
 .headline--incident .big {
   font-size: clamp(40px, 7vw, 76px); /* THE one large number (§8.15) */
   font-weight: 700;
   line-height: 1;
-  color: #ef6a5a;
+  color: var(--hh-hue-alarm);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 24px color-mix(in srgb, #ef6a5a 40%, transparent);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--hh-hue-alarm) 40%, transparent);
 }
 .headline--incident .sub { font-size: 11px; opacity: .75; font-variant-numeric: tabular-nums; }
 .level-panic { animation: klaxon 1.6s ease-in-out infinite; }
 @keyframes klaxon {
   0%, 100% { background: transparent; }
-  50% { background: color-mix(in srgb, #ef6a5a 5%, transparent); }
+  50% { background: color-mix(in srgb, var(--hh-hue-alarm) 5%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) { .level-panic { animation: none; } }
 /* "Nothing on the HUD the player cannot act on": optional furniture fades. */

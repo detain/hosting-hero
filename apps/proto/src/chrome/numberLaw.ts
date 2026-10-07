@@ -28,15 +28,33 @@ function isDisplayable(value: number | null | undefined): value is number {
   return value !== null && value !== undefined && Number.isFinite(value);
 }
 
+/**
+ * Locale-free grouping (Text Law — chrome/textLaw.ts): `toLocaleString`
+ * smuggles an ICU table into a byte-identity contract; the HUD must print the
+ * same string on every host. `toFixed` supplies the deterministic digit
+ * string (same spec rounding the en-US formatter used); we then stamp a
+ * U+002C every three integer digits. |value| ≥ 1e21 escapes to toFixed's
+ * exponential form — honest, deterministic, and far outside HUD display
+ * range (money arrives as µ$ bigint and divides down long before this).
+ */
+function formatGrouped(value: number, fractionDigits: number): string {
+  const fixed = value.toFixed(fractionDigits);
+  if (fixed.includes("e")) return fixed;
+  const negative = fixed.startsWith("-");
+  const unsigned = negative ? fixed.slice(1) : fixed;
+  const dot = unsigned.indexOf(".");
+  const intPart = dot === -1 ? unsigned : unsigned.slice(0, dot);
+  const fracPart = dot === -1 ? "" : unsigned.slice(dot);
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${negative ? "-" : ""}${grouped}${fracPart}`;
+}
+
 /** Grouped, fixed-fraction digits — the string half of tabular display.
  *  (CSS `font-variant-numeric: tabular-nums` is the other half; every HUD
  *  number element carries it in its class.) */
 export function tabularNumber(value: number | null, fractionDigits = 0): string {
   if (!isDisplayable(value)) return NO_DATA;
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  });
+  return formatGrouped(value, fractionDigits);
 }
 
 /**
@@ -51,7 +69,7 @@ export function formatMoney(microUsd: bigint): string {
   const body =
     abs >= 10_000_000_000n // $10k floor for abbreviation
       ? `${(dollars / 1000).toFixed(1)}k`
-      : dollars.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      : formatGrouped(dollars, 2);
   return `${negative ? "−" : ""}$${body}`;
 }
 

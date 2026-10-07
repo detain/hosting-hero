@@ -45,9 +45,9 @@ defineProps<{
   height: 2px;
   background: transparent;
 }
-.sev-warn::before { background: #f2b133; }
-.sev-alarm::before { background: #e23b3b; }
-.sev-no-data::before { background: repeating-linear-gradient(90deg, #8a929c 0 6px, transparent 6px 12px); }
+.sev-warn::before { background: var(--hh-hue-amber); }
+.sev-alarm::before { background: var(--hh-hue-alarm); } /* the alarm job, one value */
+.sev-no-data::before { background: repeating-linear-gradient(90deg, var(--hh-hue-grey) 0 6px, transparent 6px 12px); }
 .spiking::after { background: color-mix(in srgb, var(--hh-accent) 70%, transparent); animation: lip 2s ease-in-out infinite; }
 @keyframes lip { 0%, 100% { opacity: .35; } 50% { opacity: .9; } }
 @media (prefers-reduced-motion: reduce) {

@@ -145,7 +145,7 @@ h3 { margin: 0; font-size: 13px; letter-spacing: .04em; }
   padding: 0;
 }
 .drill:hover { background: color-mix(in srgb, var(--hh-accent) 12%, transparent); }
-.refusal { font-size: 11px; color: #e8b23c; margin: 6px 0 0; }
+.refusal { font-size: 11px; color: var(--hh-hue-gold); margin: 6px 0 0; }
 footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .depth { font-size: 10px; opacity: .5; letter-spacing: .08em; }
 footer button { border: none; background: transparent; color: inherit; font: inherit; font-size: 11px; cursor: pointer; }

@@ -11,6 +11,8 @@ import HudLabPanel from "./HudLabPanel.vue";
 
 /* ── pure logic ── */
 export * from "./numberLaw";
+export * from "./textLaw";
+export * from "./hueVars";
 export * from "./promotion";
 export * from "./clockRibbon";
 export * from "./explainRegistry";

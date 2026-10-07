@@ -28,10 +28,10 @@ const points = computed(() => {
 
 <style scoped>
 .face { width: 100%; height: auto; display: block; }
-.screen { fill: #05080c; stroke: var(--hh-accent); stroke-opacity: .3; }
+.screen { fill: #05080c; stroke: var(--hh-accent); stroke-opacity: .3; } /* screen-black: hueLaw allowlist neutral */
 .trace { stroke: var(--hh-accent); stroke-width: 1.5; }
 .threshold-mark { stroke: var(--hh-accent); opacity: .5; stroke-dasharray: 2 2; }
 .no-data { fill: var(--hh-accent); font-size: 16px; }
-.state-warn .trace { stroke: #f2b133; }
-.state-alarm .trace { stroke: #e23b3b; }
+.state-warn .trace { stroke: var(--hh-hue-amber); }
+.state-alarm .trace { stroke: var(--hh-hue-alarm); }
 </style>

@@ -6,6 +6,10 @@
  * chrome import names from here; the BudgetManager admits alert draws by hue
  * identity; the ChromaMeter counts distinct hues in play. Adding a hue with a
  * second job requires editing this file — which is the point.
+ *
+ * DOM projection: chrome/hueVars.ts renders every entry as --hh-hue-<name>
+ * custom properties (generated once in main.ts); chrome styles consume the
+ * vars, never a spelled hex — pinned by chrome/__tests__/hueLaw.test.ts.
  */
 
 /** The ledger: hue → its one job. Names are the ledger's, values are display
@@ -24,6 +28,25 @@ export const HUE_LEDGER = {
   "warm-grey-amber": { job: "wear-aging", hex: 0x9b8a6f },
   grey: { job: "neutral-aggregate", hex: 0x8a929c },
   amber: { job: "alert-fill", hex: 0xf2b133 },
+  /* Round-4 hue-law additions — the two hues DOM chrome had been inventing
+   *  inline encode REAL distinct jobs the canvas ledger never owned, so they
+   *  get ledger rows instead of deletion (their inline spellings collapse
+   *  onto these values via chrome/hueVars.ts → var(--hh-hue-*)):
+   *   • alarm — the DOM klaxon channel: instrument worst-state rings
+   *     (BezelHud/instrument faces), AlertStack sev-1 stripe, ClockRibbon
+   *     tone-bad pips, PanicLayout headline, StatusChip tone-danger. This is
+   *     NOT `red`'s final-state job: chrome screams alarm while the thing is
+   *     still LIVE; `red` stays the canvas terminal-state hue. Chrome's two
+   *     divergent alarm reds (invented #ef6a5a + inline-ledger #e23b3b in
+   *     alarm roles) collapse to this ONE value.
+   *   • azure — bounce-notice: a command/order that bounced off the door or
+   *     informational recoil (AlertStack sev-3 stripe, StatusChip tone-info).
+   *     bounce ≠ alarm — informational recoil must never borrow the klaxon's
+   *     hue, or every refusal reads as a breach.
+   *  Neither joins ALERT_HUES: that pool gates CANVAS triad draws through the
+   *  BudgetManager's hue identity, and both jobs are DOM-only channels. */
+  alarm: { job: "chrome-alarm-klaxon", hex: 0xef6a5a },
+  azure: { job: "bounce-notice", hex: 0x6fb6ff },
 } as const satisfies Record<string, { readonly job: string; readonly hex: number }>;
 
 export type LedgerHue = keyof typeof HUE_LEDGER;

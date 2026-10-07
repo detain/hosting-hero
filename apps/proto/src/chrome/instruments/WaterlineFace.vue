@@ -20,7 +20,7 @@ defineProps<FaceProps>();
 .liquid { fill: var(--hh-accent); opacity: .85; transition: all 200ms linear; }
 .threshold-mark { stroke: var(--hh-accent); }
 .no-data { fill: var(--hh-accent); font-size: 20px; }
-.state-warn .liquid { fill: #f2b133; }
-.state-alarm .liquid { fill: #e23b3b; }
+.state-warn .liquid { fill: var(--hh-hue-amber); }
+.state-alarm .liquid { fill: var(--hh-hue-alarm); }
 .still .liquid { transition: none; }
 </style>

@@ -19,6 +19,12 @@
  * Known limitation (documented): regex literals are not parsed — a forbidden
  * name inside a regex literal could slip through; none exist in today's tree
  * and the planted-violation test locks the detection behavior.
+ *
+ * Scope honesty: this scanner's jurisdiction is packages/sim-core/src — the
+ * SIM domain. apps/proto's chrome tier carries the same display-domain
+ * discipline (no locale collation/ICU in sorts and formatters) by
+ * convention + its own pin tests (chrome/textLaw.ts,
+ * chrome/__tests__/hueLaw.test.ts), not by canary enforcement.
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";

@@ -123,21 +123,21 @@ const nowSimUs = computed(() => projection.value?.clocks.simUs);
 .alert-stack.dimmed { opacity: .45; }
 .dimmed:hover { opacity: .85; } /* reachable, never sealed away */
 .snr { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: .08em; }
-.snr-track { flex: 1; height: 3px; background: color-mix(in srgb, #9aa4ad 25%, transparent); border-radius: 2px; overflow: hidden; }
-.snr-fill { display: block; height: 100%; background: #57d38a; transition: width .3s ease; }
+.snr-track { flex: 1; height: 3px; background: color-mix(in srgb, var(--hh-hue-grey) 25%, transparent); border-radius: 2px; overflow: hidden; }
+.snr-fill { display: block; height: 100%; background: var(--hh-hue-green); transition: width .3s ease; }
 @media (prefers-reduced-motion: reduce) { .snr-fill { transition: none; } }
 .snr-value { font-variant-numeric: tabular-nums; }
 .rows, .suppressed-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; border-radius: calc(var(--hh-radius) / 2); padding: 2px 4px; }
 .row.greyed { opacity: .5; } /* silenced/acked: VISIBLE but greyed (§8.8) */
 .row .sev { letter-spacing: -2px; }
-.sev-1 .sev { color: #ef6a5a; }
-.sev-2 .sev { color: #e8b23c; }
-.sev-3 .sev { color: #6fb6ff; }
+.sev-1 .sev { color: var(--hh-hue-alarm); }
+.sev-2 .sev { color: var(--hh-hue-gold); }
+.sev-3 .sev { color: var(--hh-hue-azure); }
 .body { flex: 1; display: flex; gap: 6px; align-items: baseline; }
 .kind { font-weight: 600; }
 .lane, .age { opacity: .55; font-size: 10px; font-style: normal; }
-.count { font-variant-numeric: tabular-nums; color: #e8b23c; font-size: 10px; }
+.count { font-variant-numeric: tabular-nums; color: var(--hh-hue-gold); font-size: 10px; }
 .actions { display: flex; gap: 2px; }
 .actions button { border: 1px solid color-mix(in srgb, var(--hh-accent) 35%, transparent); background: transparent; color: inherit; font: inherit; font-size: 10px; border-radius: 3px; padding: 0 5px; cursor: pointer; }
 .actions button:hover { background: color-mix(in srgb, var(--hh-accent) 18%, transparent); }

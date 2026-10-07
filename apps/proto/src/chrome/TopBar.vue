@@ -98,7 +98,7 @@ const extraRows = computed(() =>
   color: var(--hh-accent);
   border: 1px solid transparent;
 }
-.chip.cash { border-color: #e8b23c; color: #e8b23c; }
+.chip.cash { border-color: var(--hh-hue-gold); color: var(--hh-hue-gold); }
 .chip b { font-variant-numeric: tabular-nums; font-weight: 600; }
 .permanent-row .chip, .permanent-row { color: color-mix(in srgb, var(--hh-accent) 80%, #fff); }
 .permanent-row.is-no-data { opacity: .55; } /* fog: "?", never 0 (§4.1 R-66) */

@@ -253,7 +253,7 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
 }
 .engine-row button:disabled { opacity: .4; cursor: default; }
 .seq, .payroll { opacity: .6; font-variant-numeric: tabular-nums; }
-.pin-notice { margin: 0; font-size: 11px; color: #e8b23c; font-family: var(--hh-typeface); }
+.pin-notice { margin: 0; font-size: 11px; color: var(--hh-hue-gold); font-family: var(--hh-typeface); }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
 .card {
   padding: 10px;

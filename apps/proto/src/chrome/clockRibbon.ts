@@ -17,6 +17,7 @@
  * silently dropped (fatness contract §8.8 — the suppressed stay reachable).
  */
 import type { ClockState, SimTimeUs } from "@hh/sim-core/types";
+import { compareCodeUnits } from "./textLaw";
 
 export type RibbonTrack = "ops" | "business";
 
@@ -150,15 +151,15 @@ export function buildRibbonModel(
 
   positions.sort(
     (a, b) =>
-      a.entry.track.localeCompare(b.entry.track) ||
+      compareCodeUnits(a.entry.track, b.entry.track) ||
       (a.side === b.side ? 0 : a.side === "past" ? -1 : 1) ||
       a.offset - b.offset ||
-      a.entry.id.localeCompare(b.entry.id),
+      compareCodeUnits(a.entry.id, b.entry.id),
   );
 
   const byScore = positions
     .filter((p) => p.side === "future")
-    .sort((a, b) => b.score - a.score || a.offset - b.offset || a.entry.id.localeCompare(b.entry.id))
+    .sort((a, b) => b.score - a.score || a.offset - b.offset || compareCodeUnits(a.entry.id, b.entry.id))
     .slice(0, enlargedMax);
   const enlarged = new Set(byScore.map((p) => p.entry.id));
 

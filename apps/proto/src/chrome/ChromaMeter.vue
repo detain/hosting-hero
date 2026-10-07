@@ -44,16 +44,16 @@ onBeforeUnmount(() => {
   bottom: 64px;
   width: 260px;
   background: rgba(4, 8, 12, 0.88);
-  border: 1px solid #4fc46a;
+  border: 1px solid var(--hh-hue-green);
   padding: 10px 12px;
   font-family: var(--hh-typeface);
-  color: #d7e3ea;
+  color: #d7e3ea; /* neutral chrome ink (not a ledger hue) — hueLaw allowlist */
   font-size: 12px;
   z-index: 40;
 }
-.chroma.breach { border-color: #e23b3b; }
-h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .18em; color: #4fc46a; }
-.breach h3 { color: #e23b3b; }
+.chroma.breach { border-color: var(--hh-hue-alarm); }
+h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .18em; color: var(--hh-hue-green); }
+.breach h3 { color: var(--hh-hue-alarm); }
 dl { margin: 0; display: grid; gap: 3px; }
 dl > div { display: flex; justify-content: space-between; gap: 8px; }
 dt { opacity: .65; }

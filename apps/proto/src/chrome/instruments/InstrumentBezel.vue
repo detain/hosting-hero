@@ -79,7 +79,7 @@ const face = computed(() => faceComponent(props.def.face));
 .readout { font-family: var(--hh-typeface); font-size: 15px; color: var(--hh-accent); margin: 12px 0; }
 .bezel-foot { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; opacity: .55; }
 .nominal { color: var(--hh-accent); }
-.fog { color: #9b8a6f; }
-.state-alarm { border-color: #e23b3b; }
-.state-warn { border-color: #f2b133; }
+.fog { color: var(--hh-hue-warm-grey-amber); } /* fog = wear-aging job */
+.state-alarm { border-color: var(--hh-hue-alarm); }
+.state-warn { border-color: var(--hh-hue-amber); }
 </style>

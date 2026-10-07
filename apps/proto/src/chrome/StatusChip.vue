@@ -48,10 +48,10 @@ const spec = computed(() => {
 .notch path { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
 .label { font-weight: 600; }
 .count { font-variant-numeric: tabular-nums; opacity: .8; }
-.tone-ok { color: #57d38a; }
-.tone-warn { color: #e8b23c; }
-.tone-danger { color: #ef6a5a; }
-.tone-info { color: #6fb6ff; }
+.tone-ok { color: var(--hh-hue-green); }
+.tone-warn { color: var(--hh-hue-gold); }
+.tone-danger { color: var(--hh-hue-alarm); }
+.tone-info { color: var(--hh-hue-azure); }
 .tone-accent { color: var(--hh-accent); }
-.tone-faded { color: #8b949e; }
+.tone-faded { color: var(--hh-hue-grey); } /* the ledger grey, not a re-spelling */
 </style>

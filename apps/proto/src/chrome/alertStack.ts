@@ -12,6 +12,7 @@
  * fairness contract: suppression is visible, never silent).
  */
 import type { EventNotice, NoticeKind } from "../shared/protocol";
+import { compareCodeUnits } from "./textLaw";
 
 export type AlertSeverity = 1 | 2 | 3; // 1 = stops the show
 export type AlertStatus = "new" | "acked" | "snoozed" | "silenced";
@@ -174,10 +175,11 @@ export interface AlertStackLayout {
 export const FATIGUE_DIM_THRESHOLD = 0.4;
 
 /** §8.8 order: severity ascending (1 first), then recency descending,
- *  then key — deterministic, no map-iteration luck. */
+ *  then key — deterministic, no map-iteration luck, no locale collation
+ *  (code-unit tiebreak, the same order the sim canonical sort uses). */
 export function sortAlerts(alerts: readonly StackAlert[]): readonly StackAlert[] {
   return [...alerts].sort(
-    (a, b) => a.severity - b.severity || (b.lastAtUs < a.lastAtUs ? -1 : b.lastAtUs > a.lastAtUs ? 1 : 0) || a.key.localeCompare(b.key),
+    (a, b) => a.severity - b.severity || (b.lastAtUs < a.lastAtUs ? -1 : b.lastAtUs > a.lastAtUs ? 1 : 0) || compareCodeUnits(a.key, b.key),
   );
 }
 

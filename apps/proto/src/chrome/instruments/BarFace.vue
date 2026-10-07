@@ -20,8 +20,8 @@ defineProps<FaceProps>();
 .fill { fill: var(--hh-accent); transition: width 140ms linear; }
 .threshold-mark { stroke: var(--hh-accent); }
 .no-data { fill: var(--hh-accent); font-size: 14px; }
-.state-warn .fill { fill: #f2b133; }
-.state-alarm .fill { fill: #e23b3b; }
-.alarm-glyph { fill: #e23b3b; }
+.state-warn .fill { fill: var(--hh-hue-amber); }
+.state-alarm .fill { fill: var(--hh-hue-alarm); }
+.alarm-glyph { fill: var(--hh-hue-alarm); }
 .still .fill { transition: none; }
 </style>

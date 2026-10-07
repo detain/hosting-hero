@@ -217,7 +217,7 @@ function pipLeft(placement: { side: "past" | "future"; offset: number }): string
 .pip--tick {
   width: 2px;
   height: 10px;
-  background: color-mix(in srgb, #9aa4ad 60%, transparent); /* small grey tick */
+  background: color-mix(in srgb, var(--hh-hue-grey) 60%, transparent); /* small grey tick */
 }
 .pip--past { opacity: .8; }
 .pip--enlarged {
@@ -227,13 +227,13 @@ function pipLeft(placement: { side: "past" | "future"; offset: number }): string
   border: 1px solid currentColor;
   background: color-mix(in srgb, var(--hh-surface) 70%, transparent);
 }
-.tone-good { color: #57d38a; }
-.tone-warn { color: #e8b23c; }
-.tone-bad { color: #ef6a5a; }
+.tone-good { color: var(--hh-hue-green); }
+.tone-warn { color: var(--hh-hue-gold); }
+.tone-bad { color: var(--hh-hue-alarm); }
 .tone-neutral { color: var(--hh-accent); }
-.pip--tick.tone-good { background: #57d38a; }
-.pip--tick.tone-warn { background: #e8b23c; }
-.pip--tick.tone-bad { background: #ef6a5a; }
-.pip--tick.tone-neutral { background: color-mix(in srgb, #9aa4ad 60%, transparent); }
+.pip--tick.tone-good { background: var(--hh-hue-green); }
+.pip--tick.tone-warn { background: var(--hh-hue-gold); }
+.pip--tick.tone-bad { background: var(--hh-hue-alarm); }
+.pip--tick.tone-neutral { background: color-mix(in srgb, var(--hh-hue-grey) 60%, transparent); }
 .offscreen { font-size: 10px; opacity: .6; letter-spacing: .06em; }
 </style>

@@ -40,8 +40,8 @@ const angle = computed(() => {
 .threshold-mark { stroke: var(--hh-accent); opacity: 0.5; stroke-dasharray: 3 3; }
 .hub { fill: var(--hh-accent); }
 .no-data { fill: var(--hh-accent); font-size: 22px; }
-.state-warn .needle { stroke: #f2b133; }
-.state-alarm .needle { stroke: #e23b3b; }
-.state-alarm .hub { fill: #e23b3b; }
+.state-warn .needle { stroke: var(--hh-hue-amber); }
+.state-alarm .needle { stroke: var(--hh-hue-alarm); }
+.state-alarm .hub { fill: var(--hh-hue-alarm); }
 .still .needle { transition: none; }
 </style>
