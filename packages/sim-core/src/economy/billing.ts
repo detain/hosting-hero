@@ -307,3 +307,50 @@ export function arAgingTrays(invoices: readonly Invoice[], atBusinessMin: SimMin
   const dsoDays = total === 0n ? 0n : fromRatio(weightedDays, total);
   return { trays, openCount, dsoDays };
 }
+
+/* ─────────────────── settled-invoice retention (perf audit #3) ─────────────────── */
+
+/** The settlement-schedule id law (Invoice.unlockScheduleId docblock): a
+ *  settle creates schedule ids `invoice.id + suffix` for exactly these two
+ *  suffixes. A live schedule naming an invoice means the money is still
+ *  moving — the invoice is NOT fully resolved. */
+export const SETTLEMENT_SCHEDULE_SUFFIXES = [":reserve", ":recognition"] as const;
+
+/** Invoice ids that still own a live settlement schedule. One pass over the
+ *  schedules (small set), so the prune sweep stays O(invoices + schedules). */
+export function liveScheduleInvoiceRefs(schedules: readonly UnlockSchedule[]): ReadonlySet<EntityId> {
+  const refs = new Set<EntityId>();
+  for (const schedule of schedules) {
+    const at = schedule.id.lastIndexOf(":");
+    if (at <= 0) continue;
+    const suffix = schedule.id.slice(at);
+    for (const settlement of SETTLEMENT_SCHEDULE_SUFFIXES) {
+      if (suffix === settlement) refs.add(asEntityId(schedule.id.slice(0, at)));
+    }
+  }
+  return refs;
+}
+
+/** Terminal-and-settled: paid invoices carry a settlement minute by
+ *  construction (settleInvoice writes both in one replace); written-off is
+ *  terminal at the transition. Neither may still own a live schedule. */
+export function isPrunableInvoice(invoice: Invoice, liveRefs: ReadonlySet<EntityId>): boolean {
+  if (liveRefs.has(invoice.id)) return false;
+  if (invoice.state === "written-off") return true;
+  return invoice.state === "paid" && invoice.settledAtMin !== null;
+}
+
+/** Split a live invoice list into survivors and prunable settled history,
+ *  PRESERVING array order (order is digest- and save-visible content). */
+export function partitionPrunableInvoices(invoices: readonly Invoice[], schedules: readonly UnlockSchedule[]): {
+  readonly keep: readonly Invoice[];
+  readonly pruned: readonly Invoice[];
+} {
+  const liveRefs = liveScheduleInvoiceRefs(schedules);
+  const keep: Invoice[] = [];
+  const pruned: Invoice[] = [];
+  for (const invoice of invoices) {
+    (isPrunableInvoice(invoice, liveRefs) ? pruned : keep).push(invoice);
+  }
+  return { keep, pruned };
+}

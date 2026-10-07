@@ -173,18 +173,60 @@ export function defaultTermsFor(contract: Contract, cfg: EconomyConfig): Invoice
   };
 }
 
-/** Rebuild a Map in EntityId-sorted order after inserting/replacing one. */
+/** Codepoint-ascending key order? One pass, early exit on the first inversion. */
+function isIdSorted(source: ReadonlyMap<EntityId, unknown>): boolean {
+  let previous: EntityId | null = null;
+  for (const id of source.keys()) {
+    if (previous !== null && previous > id) return false;
+    previous = id;
+  }
+  return true;
+}
+
+function sortEntries<V>(rows: Iterable<readonly [EntityId, V]>): Map<EntityId, V> {
+  return new Map([...rows].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)));
+}
+
+/**
+ * Rebuild a Map in EntityId-sorted order after inserting/replacing one.
+ *
+ * PERF LANE: the old body was copy → set → expand-to-array → sort on EVERY
+ * call, so a register loop over N contracts cost O(N² log N) — the profile
+ * on a 1,000-contract setup showed it as the single hottest function in the
+ * process (267ms self, entirely OUTSIDE the measured tick: this is the
+ * orchestrator bootstrap path, not tick behaviour). Result is byte-identical
+ * for EVERY input, sorted or not: on a sorted source the answer is a
+ * position-preserving overwrite, a merge-insert, or a plain clone; only a
+ * detected inversion falls back to the old copy-and-full-sort.
+ */
 export function sortedById<V>(
   source: ReadonlyMap<EntityId, V>,
   replace: { readonly contractId: EntityId } | null,
   value?: V,
 ): ReadonlyMap<EntityId, V> {
-  const next = new Map<EntityId, V>(source);
-  if (replace !== null) {
-    if (value === undefined) throw new RangeError("economy/state: sortedById replace needs a value");
-    next.set(replace.contractId, value);
+  if (!isIdSorted(source)) {
+    const copy = new Map<EntityId, V>(source);
+    if (replace !== null) {
+      if (value === undefined) throw new RangeError("economy/state: sortedById replace needs a value");
+      copy.set(replace.contractId, value);
+    }
+    return sortEntries(copy);
   }
-  return new Map([...next.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)));
+  if (replace === null) return new Map(source);
+  if (value === undefined) throw new RangeError("economy/state: sortedById replace needs a value");
+  const id = replace.contractId;
+  if (source.has(id)) return new Map(source).set(id, value);
+  const next = new Map<EntityId, V>();
+  let merged = false;
+  for (const [existingId, existing] of source) {
+    if (!merged && id < existingId) {
+      next.set(id, value);
+      merged = true;
+    }
+    next.set(existingId, existing);
+  }
+  if (!merged) next.set(id, value);
+  return next;
 }
 
 export function sortedEntityIds(ids: Iterable<EntityId>): readonly EntityId[] {

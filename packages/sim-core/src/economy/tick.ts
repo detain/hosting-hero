@@ -53,13 +53,14 @@ import {
 import { compare, fromRatio } from "../kernel/fixed.ts";
 import { streamFor } from "../kernel/rng.ts";
 import { type BudgetSpendAction, type EconomyConfig } from "./config.ts";
-import { postEntry, type Journal } from "./ledger.ts";
+import { appendJournal, draftEntry, type Journal } from "./ledger.ts";
 import {
   cyclePeriodMinutes,
   issueInvoice,
   nextUnlockAt,
   openRecognitionSchedule,
   openReserveSchedule,
+  partitionPrunableInvoices,
   planRefund,
   type Invoice,
   type InvoiceTerms,
@@ -158,6 +159,23 @@ export interface EconomyTickIn {
   readonly creditLineDrawn?: boolean | undefined;
   /** Dunning Engine buildable owned → recovery bonus applies (§6.4). */
   readonly dunningEngineOwned?: boolean | undefined;
+  /**
+   * LONG-SAVE retention (perf audit #3), OPT-IN default OFF:
+   * settled-and-fully-resolved invoices (paid/written-off with no live
+   * `:reserve`/`:recognition` schedule left) are dropped from
+   * `state.invoices` at the END of the tick. The LEDGER JOURNAL is never
+   * touched here — it remains the full money-truth audit trail, every
+   * settle cause-stamped.
+   *
+   * Why opt-in: EconomyState is NOT absorbed by pipeline/digest.ts (digest
+   * sees cash + ledgerSeq only, neither of which pruning moves), but the
+   * g5 gate's digestQuarter serializes `state.invoices` and its P10
+   * narration counts them — enabling pruning changes THAT digest until the
+   * save format is ratified (owner question, see lane report). Hosts that
+   * want the memory/latency win flip the flag; byte-identity of every
+   * existing digest (g5 included) is pinned by the default staying false.
+   */
+  readonly pruneSettledInvoices?: boolean | undefined;
 }
 
 export type EconomyNoticeKind =
@@ -210,9 +228,36 @@ export interface EconomyTickOut {
 
 interface Working {
   cash: MoneyBuckets;
-  journal: Journal;
+  /** Batch journal lane (perf lane): rows are validated through ledger's
+   *  shared `draftEntry` core and buffered; the incoming journal value is
+   *  appended ONCE at assembly via `appendJournal`. Byte-identical to the
+   *  old post-per-call rebuild (same rows, same seqs, same cash folds) at
+   *  ~1/4 the cost — the profile put per-post accessor materialization at
+   *  ~40ms of the 2k/12-month catch-up tick. */
+  journalBase: Journal;
+  journalSeq: number;
+  journalRows: LedgerEntry[];
   econ: Map<EntityId, ContractEconomy>;
+  /** Live invoice list — ARRAY ORDER is content (digest- and save-visible),
+   *  maintained in issue order; replaceInvoice writes in place, never moves. */
   invoices: Invoice[];
+  /** Tick-local id→positions index over `invoices`, rebuilt from the array at
+   *  the boundary parse (start of each tick) and kept in step with every push
+   *  in this pass. The array stays the single source of truth — the map is
+   *  pure derived state, so it can never disagree with order-by-design.
+   *
+   *  POSITIONAL, not id-keyed, because ids COLLIDE: `inv:<contract>:<cycle>`
+   *  (billing.ts issueInvoice) re-mints after a renewal cliff resets the cycle
+   *  counter, so a twin pair legitimately co-exists in the retained array.
+   *  Read lookups AND replaceInvoice bind FIRST-in-array — byte-identical to
+   *  the old `find()` / `findIndex()` semantics, twins included. That makes a
+   *  post-renewal twin invisible to step 7 (its visits re-observe the settled
+   *  first twin) and lets a dunning write clobber the stale slot: a REAL
+   *  latent bug this index reproduces faithfully rather than silently
+   *  fixing. Reported to the orchestrator as a follow-up semantics decision;
+   *  a perf lane must not smuggle behavior changes (discipline: FSM,
+   *  calendar ordering, money math UNCHANGED). */
+  invoiceAt: Map<EntityId, number[]>;
   schedules: UnlockSchedule[];
   mfnQueue: MfnRepriceEvent[];
   forecasts: EconomyState["forecasts"];
@@ -246,11 +291,28 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   const now = businessMinuteOf(context.clocks);
   guardTickClock(input.prior, now);
 
+  /* Boundary parse: copy the invoice array once and index it in the same
+     pass. Ids may legitimately REPEAT (renewal re-mints `inv:<id>:<cycle>`
+     after the cycle counter resets) — the position lists record every slot,
+     first occurrence leading, so first-twin binding below mirrors the old
+     find()/findIndex() exactly. */
+  const invoices: Invoice[] = [];
+  const invoiceAt = new Map<EntityId, number[]>();
+  for (const invoice of input.prior.invoices) {
+    const seen = invoiceAt.get(invoice.id);
+    if (seen === undefined) invoiceAt.set(invoice.id, [invoices.length]);
+    else seen.push(invoices.length);
+    invoices.push(invoice);
+  }
+
   const w: Working = {
     cash: input.prior.cash,
-    journal: input.prior.journal,
+    journalBase: input.prior.journal,
+    journalSeq: input.prior.journal.nextSeq,
+    journalRows: [],
     econ: new Map(input.prior.contractEconomy),
-    invoices: [...input.prior.invoices],
+    invoices,
+    invoiceAt,
     schedules: [...input.prior.unlockSchedules],
     mfnQueue: [...input.prior.mfnQueue],
     forecasts: [...input.prior.forecasts],
@@ -269,8 +331,9 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
 
   /** THE single money write path — causeId mandatory (P10). */
   const post: Post = (causeId, colour, delta, tag) => {
-    const posted = postEntry(w.journal, w.cash, { causeId, atBusinessMin: now, moneyColour: colour, delta, context: tag });
-    w.journal = posted.journal;
+    const posted = draftEntry(w.cash, { causeId, atBusinessMin: now, moneyColour: colour, delta, context: tag }, w.journalSeq);
+    w.journalRows.push(posted.entry);
+    w.journalSeq = posted.entry.seq + 1;
     w.cash = posted.cash;
     w.entries.push(posted.entry);
   };
@@ -370,11 +433,22 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   /* 6 invoice calendar. */
   generateDueInvoices(w, ids, contracts, input, now, cfg, post);
 
-  /* 7 payment attempts + 8 dunning ladder. */
+  /* 7 payment attempts + 8 dunning ladder.
+   *
+   * PERF (audit fix #2, O(invoices²)/tick): the old loop spread a snapshot
+   * copy AND ran a per-invoice `find()` over the live array — quadratic in
+   * retained history. Nothing is appended to `w.invoices` inside this loop
+   * (issue is step 6; every step-7/8 write goes through replaceInvoice,
+   * which preserves position), so scanning the live array by index and
+   * resolving each visit through the first-twin position reproduces the old
+   * snapshot+find() pass EXACTLY — same mid-loop replacements visible, same
+   * order, same twin shadowing — at O(invoices) instead of O(invoices²). */
   const engineBonus = input.dunningEngineOwned ? cfg.dunning.dunningEngineBonusBps : 0n;
-  for (const invoice of [...w.invoices]) {
-    const current = w.invoices.find((i) => i.id === invoice.id);
-    if (current === undefined) continue;
+  const sweep = w.invoices.length;
+  for (let slot = 0; slot < sweep; slot += 1) {
+    const visiting = w.invoices[slot]!;
+    const first = w.invoiceAt.get(visiting.id)![0]!;
+    const current = w.invoices[first]!;
     // A terminated contract never pays again: settling post-cancellation would
     // re-open the deferred schedule that settleCancellationRefunds just closed
     // (zombie prepay). Billing already skips dead contracts at step 6.
@@ -418,9 +492,18 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   /* 12 lose-slowly guard. */
   evaluateLoseSlowly(w, now, cfg);
 
+  /* 13 OPT-IN retention (perf audit #3, default off — see EconomyTickIn):
+     settled history leaves the WORKING SET only; the journal keeps every
+     money movement. Runs after every consumer of `invoices` (steps 6-8,
+     AR math in the HUD reads the RESULTING state, and arAgingTrays ignores
+     settled records entirely, so the sweep is invisible to AR numbers). */
+  if (input.pruneSettledInvoices === true) {
+    w.invoices = [...partitionPrunableInvoices(w.invoices, w.schedules).keep];
+  }
+
   const state: EconomyState = {
     cash: w.cash,
-    journal: w.journal,
+    journal: appendJournal(w.journalBase, w.journalRows),
     contractEconomy: sortedMap(w.econ),
     invoices: w.invoices,
     unlockSchedules: w.schedules,
@@ -481,6 +564,9 @@ function generateDueInvoices(
         { accountsReceivable: invoice.gross },
         `invoice ${invoice.id}`,
       );
+      const seen = w.invoiceAt.get(invoice.id);
+      if (seen === undefined) w.invoiceAt.set(invoice.id, [w.invoices.length]);
+      else seen.push(w.invoices.length);
       w.invoices.push(invoice);
       w.notices.push({
         kind: "invoice-issued",
@@ -573,9 +659,12 @@ function settleInvoice(w: Working, invoice: Invoice, now: SimMinute, context: Ti
   });
 }
 
+/** Position-preserving write via the tick-local index — O(1), not the old
+ *  O(n) `findIndex`. First-twin binding kept byte-faithful (see Working):
+ *  a duplicate id always writes its earliest slot, as `findIndex` did. */
 function replaceInvoice(w: Working, invoice: Invoice): void {
-  const at = w.invoices.findIndex((i) => i.id === invoice.id);
-  if (at === -1) throw new Error(`economy/tick: invoice '${invoice.id}' vanished mid-tick`);
+  const at = w.invoiceAt.get(invoice.id)?.[0];
+  if (at === undefined) throw new Error(`economy/tick: invoice '${invoice.id}' vanished mid-tick`);
   w.invoices[at] = invoice;
 }
 
@@ -932,3 +1021,17 @@ function sortedMap<V>(source: Map<EntityId, V>): ReadonlyMap<EntityId, V> {
  *  reads the HUD performs each frame (§6.13 trays, §6.1 meter). */
 export { arAgingTrays as economyArAging } from "./billing.ts";
 export { remainingSec as errorBudgetRemainingSec } from "./errorBudget.ts";
+
+/** Standalone LONG-SAVE retention pass (perf audit #3) for hosts holding a
+ *  finished EconomyState — identical predicate to the tick's opt-in step 13:
+ *  settled-and-fully-resolved invoices leave the working set, survivors keep
+ *  their relative order, the journal (and every cash bucket) is untouched.
+ *  Money truth lives in the cause-stamped ledger journal; dropped records
+ *  are returned so the caller can archive them. */
+export function pruneResolvedInvoices(state: EconomyState): {
+  readonly state: EconomyState;
+  readonly pruned: readonly Invoice[];
+} {
+  const { keep, pruned } = partitionPrunableInvoices(state.invoices, state.unlockSchedules);
+  return { state: { ...state, invoices: keep }, pruned };
+}

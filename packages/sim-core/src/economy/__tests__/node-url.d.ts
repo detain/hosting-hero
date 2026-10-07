@@ -18,3 +18,7 @@ interface ImportMeta {
 declare class URL {
   constructor(url: string, base?: string);
 }
+
+/** Monotonic clock surface journal.test.ts's perf pins need (same no-@types
+ *  reason as above; Node + browsers both provide it at runtime). */
+declare const performance: { now(): number };
