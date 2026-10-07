@@ -29,12 +29,13 @@ harvested from the code itself: `grep` for `PROVISIONAL`, `TODO`, `OD-<n>`,
 | acceptance | `src/__tests__/` (gate-g1…g6, g5-mirror-sync, integration-smoke) | — | 8 | **89 passed** | GREEN — all six §9.13 gates pass sim-core-side (see Gate-slice readiness); sums 6+13+7+19+27+9 gates + 3 mirror + 5 smoke |
 | content | `packages/content/` (data-only JSON: 2 bundles, threats+visitors registries, 2 wave slices, 2 i18n packs, 2 schemas) | 10 JSON | — (validated by `loader` `real-content.test.ts`/`packs.test.ts`, `waves` `content.test.ts` inspector, `script/validate.mjs`) | included in the rows above | GREEN — validator PASS: 63 `_todo` inventory + separate 4-pack counter |
 | headless | `tools/headless/` (`headless-tools`) | 11 src | 5 (`test/`) | **53 passed** | GREEN — RISK-1 dual-runtime parity gate; real-slot swap landed (b4481b5), stub engine frozen as regression arm (f753121d/be86ce13) |
-| proto | `apps/proto/` (Vite+Vue+Pixi shell, worker, chrome, gates G1–G6) | — | 39 | **332 passed** (re-pinned +1 @1553702: planted case-mismatch pin in the gates hue-law scanner) | GREEN — shell integrator (1b9b3ba), chrome HUD lane + hue-law enforcement (1e6b306, c8c5a41: ledger hexes → `var(--hh-hue-*)`, text law `compareCodeUnits`), all six gate panels mounted |
+| proto | `apps/proto/` (Vite+Vue+Pixi shell, worker, chrome, gates G1–G6) | — | 39 | **333 passed** (re-pinned 331→333: planted case-mismatch pins in BOTH hue-law scanners — gates @1553702, chrome twin in this wave) | GREEN — shell integrator (1b9b3ba), chrome HUD lane + hue-law enforcement (1e6b306, c8c5a41: ledger hexes → `var(--hh-hue-*)`, text law `compareCodeUnits`), all six gate panels mounted |
 
 **sim-core total: 1,332 tests green / 91 files** (1,243 module + 89
-acceptance — single authoritative `pnpm -r test`, tip a864061;
+acceptance — single authoritative `pnpm -r test`, tip a864061; proto re-run
+after the chrome hue-law twin pin;
 per-directory sums re-verified against the package total) · headless: 53 ·
-proto: 332/39 files · `node docs/api-verify.test.mjs`: PASS 1,270 names.
+proto: 333/39 files · `node docs/api-verify.test.mjs`: PASS 1,270 names.
 Every module dir now carries a scoped `tsconfig.check.json` (14 incl.
 `internal/` and `unattended/`); CI runs `pnpm -r typecheck` + `pnpm -r test`
 + the 5 contract gates in `scripts/ci-verify.mjs`.

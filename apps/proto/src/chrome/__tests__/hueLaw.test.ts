@@ -10,7 +10,12 @@
  *  1. no raw 6-digit hex inside any chrome <style> block — with one tiny,
  *     EXPLICIT neutrals allowlist (colors that carry no semantic job);
  *  2. every var(--hh-hue-<name>) referenced in chrome styles is a real
- *     ledger entry (no invented var names either);
+ *     ledger entry (no invented var names either); CSS custom properties are
+ *     CASE-SENSITIVE and installHueVars emits the lowercase
+ *     --hh-hue-<ledger-name>, so the var scans match [A-Za-z0-9-] precisely —
+ *     a case-differing call site (--hh-hue-RED) is extracted and flagged,
+ *     never skipped as a silent broken var() reference (twin of the gates
+ *     scanner fix);
  *  3. the generated :root block is the ledger verbatim — byte-stable,
  *     code-unit-sorted, and installHueVars is idempotent.
  */
@@ -48,6 +53,14 @@ function styleCss(source: string): string {
   return [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1] ?? "").join("\n");
 }
 
+/** Extract every var(--hh-hue-<name>) call site from a CSS blob.
+ *  [A-Za-z0-9-]: uppercase must be EXTRACTED, not skipped — CSS vars resolve
+ *  exactly as spelled, so --hh-hue-RED is an invented var, not a silent miss
+ *  (the narrow lowercase class made such vars invisible to this scanner). */
+function hueVarNames(css: string): string[] {
+  return [...css.matchAll(/var\(--hh-hue-([A-Za-z0-9-]+)\)/g)].map((m) => m[1] ?? "");
+}
+
 describe("hue law — chrome styles consume the ledger, never a spelled hex", () => {
   const files = chromeSources(CHROME_DIR);
 
@@ -72,12 +85,28 @@ describe("hue law — chrome styles consume the ledger, never a spelled hex", ()
     const ledgerNames = new Set(Object.keys(HUE_LEDGER));
     const unknown: string[] = [];
     for (const file of files) {
-      for (const name of styleCss(readFileSync(file, "utf8")).match(/var\(--hh-hue-([a-z0-9-]+)\)/g) ?? []) {
-        const hue = name.slice("--hh-hue-".length + "var(".length, -1);
-        if (!ledgerNames.has(hue)) unknown.push(`${file.replace(CHROME_DIR, "chrome/")}: ${name}`);
+      for (const hue of hueVarNames(styleCss(readFileSync(file, "utf8")))) {
+        if (!ledgerNames.has(hue)) {
+          const twin = hue.toLowerCase();
+          const hint = ledgerNames.has(twin) ? " (case mismatch — CSS vars resolve exactly as spelled)" : "";
+          unknown.push(`${file.replace(CHROME_DIR, "chrome/")}: --hh-hue-${hue}${hint}`);
+        }
       }
     }
     expect(unknown).toStrictEqual([]);
+  });
+
+  it("flags case-differing var names — --hh-hue-RED resolves to NOTHING in CSS", () => {
+    // The widened [A-Za-z0-9-] scan (twin of the gates fix): before it,
+    // uppercase vars were invisible to the regex and slipped through as
+    // silent broken var() references.
+    const planted = styleCss(
+      `<style scoped>.x { color: var(--hh-hue-RED); border-color: var(--hh-hue-Alarm); background: var(--hh-hue-alarm); }</style>`,
+    );
+    const names = hueVarNames(planted);
+    expect(names).toEqual(["RED", "Alarm", "alarm"]);
+    const ledgerNames = new Set(Object.keys(HUE_LEDGER));
+    expect(names.filter((n) => !ledgerNames.has(n))).toEqual(["RED", "Alarm"]);
   });
 });
 
@@ -89,7 +118,9 @@ describe("hueVars — the ledger's DOM projection", () => {
     }
     // one line per entry + :root braces, no strays
     expect(css.split("\n")).toHaveLength(Object.keys(HUE_LEDGER).length + 2);
-    const names = [...css.matchAll(/--hh-hue-([a-z0-9-]+)/g)].map((m) => m[1] as string);
+    // [A-Za-z0-9-] here too: an uppercase ledger name must never be invisible
+    // to the sortedness walk (same widened class as the call-site scanner).
+    const names = [...css.matchAll(/--hh-hue-([A-Za-z0-9-]+)/g)].map((m) => m[1] as string);
     expect(names).toStrictEqual([...names].sort());
   });
 
