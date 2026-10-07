@@ -193,14 +193,19 @@ const skin = computed(() => ({
 .value { margin-left: auto; font-family: var(--hh-typeface); font-variant-numeric: tabular-nums; font-size: 20px; }
 .unit { font-size: 11px; opacity: .6; }
 .bezel-foot { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; opacity: .55; }
-.state-alarm { border-color: #e23b3b; }
-.state-warn { border-color: #f2b133; }
+/* Hue law (round-4 residue fix): the --g6-* skin chord above the fold is DYNAMIC
+   bundle data (template :style from profile.palette — Five-Asset law, stays).
+   These four are STATIC state channels doing ledger jobs: alarm = live klaxon
+   border (ratified collapse off the re-spelled canvas red #e23b3b, see hues.ts),
+   warn/bad = amber alert-fill (byte-identical swap). */
+.state-alarm { border-color: var(--hh-hue-alarm); }
+.state-warn { border-color: var(--hh-hue-amber); }
 .counters { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; align-content: center; }
 .counters b { font-family: var(--hh-typeface); font-size: 26px; font-variant-numeric: tabular-nums; display: block; line-height: 1; }
 .counters span { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
 .counters .ok b { color: var(--g6-chord-3); }
-.counters .bad b { color: #f2b133; }
-.counters .worse b { color: #e23b3b; }
+.counters .bad b { color: var(--hh-hue-amber); }
+.counters .worse b { color: var(--hh-hue-alarm); }
 .rhythm-strip {
   height: 56px;
   display: flex;

@@ -513,15 +513,29 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 <style scoped>
 /* gate-local chord on the era tokens (--hh-*): copper + cyan patch bay.
    Committed palette per frontend-philosophy — the board is dark metal,
-   cables are bright enamel, refusals are a red dash (never red alone). */
+   cables are bright enamel.
+
+   HUE LAW (round-4 residue fix):
+   - The relation-glyph chord below is PORT-SHAPE DATA (R32 glyph identity),
+     not ledger jobs: #e07b39 is the power GLYPH hue (deliberately distinct
+     from ledger "copper" #c97a45, which carries the canvas power-tree job),
+     #e8e6df control / #9f7be6 trust / #9aa7b8 plate-mix are materials. Kept.
+   - State channels ride ledger vars: alarm klaxon (device danger, pull-to-
+     disconnect, danger manifest), azure bounce-notice (door refusals — the
+     bounce hue was minted round-4 precisely for commands bounced off the
+     intent door; the old red-dash refusal predates it), green served-ok
+     (executed receipts).
+   - Dead hex var() fallbacks dropped: era-tokens.css is global (main.ts),
+     so --hh-surface/--hh-accent always resolve; the #35e0e6 fallback was a
+     near-miss re-spell of ledger cyan riding the era-token accent anyway. */
 .g4 {
-  --g4-hue-data: var(--hh-accent, #35e0e6);
-  --g4-hue-power: #e07b39; /* copper — the one era-independent truth */
+  --g4-hue-data: var(--hh-accent);
+  --g4-hue-power: #e07b39; /* power-glyph identity (data), NOT ledger copper */
   --g4-hue-control: #e8e6df;
   --g4-hue-trust: #9f7be6;
-  --g4-grid: color-mix(in srgb, var(--hh-accent, #35e0e6) 14%, transparent);
-  --g4-plate: color-mix(in srgb, var(--hh-surface, #0d131c) 82%, #9aa7b8);
-  --g4-ink: var(--hh-accent, #35e0e6);
+  --g4-grid: color-mix(in srgb, var(--hh-accent) 14%, transparent);
+  --g4-plate: color-mix(in srgb, var(--hh-surface) 82%, #9aa7b8);
+  --g4-ink: var(--hh-accent);
   font-family: var(--hh-typeface, "Space Grotesk", monospace);
   color: var(--g4-ink);
   display: flex;
@@ -550,11 +564,11 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 .g4-btn small { opacity: 0.65; margin-left: 4px; }
 .g4-btn kbd { border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; font-size: 10px; }
 .g4-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.g4-btn--on { background: var(--g4-ink); color: var(--hh-surface, #0d131c); }
+.g4-btn--on { background: var(--g4-ink); color: var(--hh-surface); }
 
 .g4-stage { position: relative; display: grid; grid-template-columns: 1fr 230px; gap: 12px; }
 
-.g4-board { width: 100%; background: radial-gradient(120% 90% at 50% 8%, color-mix(in srgb, var(--g4-ink) 8%, transparent), transparent), var(--hh-surface, #0d131c); border: 1px solid color-mix(in srgb, var(--g4-ink) 45%, transparent); border-radius: var(--hh-radius, 12px); touch-action: none; }
+.g4-board { width: 100%; background: radial-gradient(120% 90% at 50% 8%, color-mix(in srgb, var(--g4-ink) 8%, transparent), transparent), var(--hh-surface); border: 1px solid color-mix(in srgb, var(--g4-ink) 45%, transparent); border-radius: var(--hh-radius, 12px); touch-action: none; }
 
 .g4-world { transition: filter 350ms ease, opacity 350ms ease; }
 .g4-world--dim { filter: saturate(0.28) brightness(0.8); opacity: 0.55; }
@@ -562,7 +576,7 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 .g4-device-plate { fill: var(--g4-plate); stroke: color-mix(in srgb, var(--g4-ink) 60%, transparent); stroke-width: 1; rx: 6; }
 .g4-device-id { fill: var(--g4-ink); font-size: 15px; font-weight: 700; letter-spacing: 0.05em; }
 .g4-device-kind, .g4-device-meta { fill: var(--g4-ink); font-size: 10.5px; opacity: 0.7; }
-.g4-device-alarm { fill: #ff5c5c; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
+.g4-device-alarm { fill: var(--hh-hue-alarm); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
 
 .g4-edge { fill: none; }
 .g4-edge--data { stroke: var(--g4-hue-data); }
@@ -585,12 +599,12 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 
 .g4-drag-cable { fill: none; stroke: #fff; stroke-width: 2; stroke-dasharray: 7 5; pointer-events: none; filter: drop-shadow(0 0 5px rgba(255,255,255,0.7)); }
 
-.g4-edge-pull circle { fill: #200d0d; stroke: #ff5c5c; stroke-width: 1.2; }
-.g4-pull-x { fill: #ff5c5c; font-size: 12px; font-weight: 700; }
+.g4-edge-pull circle { fill: color-mix(in srgb, var(--hh-hue-alarm) 12%, black); stroke: var(--hh-hue-alarm); stroke-width: 1.2; }
+.g4-pull-x { fill: var(--hh-hue-alarm); font-size: 12px; font-weight: 700; }
 
 .g4-ladder {
   position: absolute; left: 8px; bottom: 8px; width: 320px;
-  background: color-mix(in srgb, var(--hh-surface, #0d131c) 88%, black);
+  background: color-mix(in srgb, var(--hh-surface) 88%, black);
   border: 1px solid var(--g4-hue-data); border-radius: var(--hh-radius, 12px);
   padding: 8px 12px; font-size: 11.5px;
 }
@@ -603,7 +617,7 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 
 .g4-terms {
   position: absolute; right: 246px; top: 30px; width: 330px;
-  background: var(--hh-surface, #0d131c);
+  background: var(--hh-surface);
   border: 2px solid var(--g4-ink);
   border-radius: var(--hh-radius, 12px);
   box-shadow: 0 0 0 1px black, 14px 18px 44px rgba(0, 0, 0, 0.65);
@@ -619,7 +633,7 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 .g4-terms dd { margin: 0; }
 .g4-terms dd small { display: block; opacity: 0.6; font-size: 10.5px; }
 .g4-surface { margin: 10px 0 0; padding: 0 0 0 4px; list-style: none; font-size: 11.5px; }
-.g4-surface li { border-left: 3px dashed #ff5c5c; padding: 2px 8px; margin: 4px 0; }
+.g4-surface li { border-left: 3px dashed var(--hh-hue-alarm); padding: 2px 8px; margin: 4px 0; }
 .g4-commit-note { font-size: 11px; opacity: 0.75; margin: 10px 0 8px; }
 .g4-terms-actions { display: flex; gap: 8px; flex-direction: column; }
 .g4-btn--commit { border-width: 2px; font-weight: 700; }
@@ -631,13 +645,13 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 @keyframes g4-tick { 50% { opacity: 0.55; } }
 .g4-hand small { opacity: 0.8; margin-left: 4px; }
 
-.g4-refusal { margin: 0; padding: 6px 10px; border: 2px dashed #ff5c5c; border-radius: var(--hh-radius, 12px); color: #ff9d9d; font-size: 11.5px; animation: g4-bounce 320ms; }
+.g4-refusal { margin: 0; padding: 6px 10px; border: 2px dashed var(--hh-hue-azure); border-radius: var(--hh-radius, 12px); color: color-mix(in srgb, var(--hh-hue-azure) 65%, white); font-size: 11.5px; animation: g4-bounce 320ms; }
 @keyframes g4-bounce { 0% { transform: translateY(-10px) } 55% { transform: translateY(3px) } 100% { transform: none } }
 
 .g4-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; opacity: 0.88; }
 .g4-log li { font-size: 10.5px; border-bottom: 1px dotted color-mix(in srgb, var(--g4-ink) 30%, transparent); padding-bottom: 2px; }
 .g4-log small { display: block; opacity: 0.6; }
-.g4-log em { color: #ff9d9d; font-style: normal; }
-.g4-receipt--refused b { color: #ff5c5c; }
-.g4-receipt--executed b { color: #6ce28a; }
+.g4-log em { color: color-mix(in srgb, var(--hh-hue-azure) 65%, white); font-style: normal; }
+.g4-receipt--refused b { color: var(--hh-hue-azure); }
+.g4-receipt--executed b { color: var(--hh-hue-green); }
 </style>

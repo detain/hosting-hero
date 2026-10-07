@@ -193,9 +193,14 @@ const tick = computed(() => (projection.value === null ? "—" : String(projecti
   gap: 14px;
   padding: 16px;
   border-radius: var(--hh-radius, 8px);
-  background: var(--hh-surface, #101418);
+  /* era-tokens.css is imported globally (main.ts), so hex var() fallbacks here were
+     dead weight — and the #e8ecf1 "ink" fallback rode a nonexistent --hh-ink token.
+     Gate-local neutral ink lives in the chord below; semantic hues come from the ledger. */
+  background: var(--hh-surface);
   font-family: var(--hh-typeface, monospace);
-  color: var(--hh-ink, #e8ecf1);
+  /* Gate-local chord: neutral reading ink only — no HUE_LEDGER job, hence no var. */
+  --g1-ink: #e8ecf1;
+  color: var(--g1-ink);
 }
 .g1-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .g1-head h2 { margin: 0; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -208,17 +213,19 @@ const tick = computed(() => (projection.value === null ? "—" : String(projecti
   gap: 6px;
   min-height: 34px;
   padding: 6px 10px;
-  border-left: 3px solid var(--hh-accent, #35e0c8);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--hh-accent, #35e0c8) 12%, transparent), transparent);
+  border-left: 3px solid var(--hh-accent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--hh-accent) 12%, transparent), transparent);
 }
 .g1-bead {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--hh-accent, #35e0c8);
+  background: var(--hh-accent);
   animation: g1-pulse 1.6s ease-in-out infinite;
 }
-.g1-bead--hot { background: #ff5d5d; }
+/* Live hot-lane klaxon → ledger "alarm" job (was inline #ff5d5d, a near-miss red;
+   ratified collapse onto the single chrome alarm value, see hues.ts alarm entry). */
+.g1-bead--hot { background: var(--hh-hue-alarm); }
 .g1-overflow { font-size: 11px; opacity: 0.7; }
 .g1-idle { font-size: 11px; opacity: 0.45; }
 @keyframes g1-pulse {
@@ -241,7 +248,7 @@ const tick = computed(() => (projection.value === null ? "—" : String(projecti
   font-size: 12px;
   cursor: pointer;
 }
-.g1-btn--armed { border-color: var(--hh-accent, #35e0c8); color: var(--hh-accent, #35e0c8); }
+.g1-btn--armed { border-color: var(--hh-accent); color: var(--hh-accent); }
 
 .g1-triad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0; }
 .g1-triad-item {

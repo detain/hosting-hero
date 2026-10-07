@@ -178,9 +178,14 @@ const totalSplit = computed(() => Math.max(1, split.value.routedExpressFresh + s
   gap: 14px;
   padding: 16px;
   border-radius: var(--hh-radius, 8px);
-  background: var(--hh-surface, #101418);
+  /* Hue-law (round-4 residue fix): dead hex var() fallbacks dropped (era-tokens is
+     global); deep-lane bar + triangle pips are the amber alert-fill job (the canvas
+     twin fills lane alerts with ledger amber); suspect outline/dot is the live alarm
+     klaxon. --g3-ink is a gate-local neutral with no ledger job. */
+  background: var(--hh-surface);
   font-family: var(--hh-typeface, monospace);
-  color: var(--hh-ink, #e8ecf1);
+  --g3-ink: #e8ecf1;
+  color: var(--g3-ink);
 }
 .g3-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
 .g3-head h2 { margin: 0; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -198,30 +203,30 @@ const totalSplit = computed(() => Math.max(1, split.value.routedExpressFresh + s
   font-size: 12px;
   cursor: pointer;
 }
-.g3-btn--armed { border-color: var(--hh-accent, #35e0c8); color: var(--hh-accent, #35e0c8); }
+.g3-btn--armed { border-color: var(--hh-accent); color: var(--hh-accent); }
 
 .g3-lanes { display: flex; flex-direction: column; gap: 8px; }
 .g3-lane { display: grid; grid-template-columns: 140px 1fr auto; align-items: center; gap: 10px; font-size: 11px; }
 .g3-lane-name { letter-spacing: 0.08em; opacity: 0.8; }
 .g3-bar { height: 14px; border-radius: 3px; transition: width 400ms ease; }
-.g3-lane--express .g3-bar { background: color-mix(in srgb, var(--hh-accent, #35e0c8) 70%, transparent); }
-.g3-lane--deep .g3-bar { background: color-mix(in srgb, #ffb454 70%, transparent); }
+.g3-lane--express .g3-bar { background: color-mix(in srgb, var(--hh-accent) 70%, transparent); }
+.g3-lane--deep .g3-bar { background: color-mix(in srgb, var(--hh-hue-amber) 70%, transparent); }
 .g3-lane-num { opacity: 0.7; }
 
 .g3-pips { display: flex; align-items: center; gap: 8px; min-height: 26px; flex-wrap: wrap; }
 .g3-pip { position: relative; width: 16px; height: 16px; display: inline-block; }
-.g3-pip--circle { border-radius: 50%; background: var(--hh-accent, #35e0c8); }
+.g3-pip--circle { border-radius: 50%; background: var(--hh-accent); }
 .g3-pip--tri {
-  background: #ffb454;
+  background: var(--hh-hue-amber);
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
   border-radius: 0;
 }
-.g3-pip--suspect { outline: 1px dashed #ff5d5d; outline-offset: 2px; }
+.g3-pip--suspect { outline: 1px dashed var(--hh-hue-alarm); outline-offset: 2px; }
 .g3-pip-dot {
   position: absolute;
   inset: 38%;
   border-radius: 50%;
-  background: #ff5d5d;
+  background: var(--hh-hue-alarm);
 }
 .g3-pips-empty { font-size: 11px; opacity: 0.45; }
 .g3-legend { margin: 0; font-size: 10px; opacity: 0.55; }

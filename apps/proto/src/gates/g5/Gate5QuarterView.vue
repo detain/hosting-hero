@@ -172,7 +172,14 @@ const incidentBanner = computed(() => {
 <style>
 /* Skin: the shared-web bundle's own chord (§ skin.palette: municipal
    beige-and-teal, sodium yellow, oxide red, dishwater grey, mint), bound as
-   local tokens so the slice stands alone in tests and inside any era shell. */
+   local tokens so the slice stands alone in tests and inside any era shell.
+
+   hue-law:bundle-data — this whole --g5-* chord is CONTENT, not chrome
+   semantics: per the Five-Asset law the skin palette ships inside the
+   shared-web bundle, so these hexes legitimately bypass HUE_LEDGER. Note
+   --g5-sodium #f2b133 merely coincides with the ledger "amber" alert-fill
+   value; it is the bundle's sodium-yellow skin token (gates/__tests__/
+   hueLawGates.test.ts allowlists exactly this file+value against this marker). */
 .g5-root {
   --g5-typeface: "Space Grotesk", "Avenir Next", "Segoe UI Variable", sans-serif;
   --g5-bg: #0f1817;

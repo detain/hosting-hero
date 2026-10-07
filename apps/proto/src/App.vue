@@ -216,8 +216,13 @@ const speed = ref<1 | 2 | 4>(1);
   top: 60px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(226, 59, 59, 0.16);
-  border: 1px dashed #e23b3b;
+  /* Hue law (round-4 residue fix): the connection-fault banner is a LIVE klaxon,
+     so it rides the ledger "alarm" job (--hh-hue-alarm). The old inline #e23b3b /
+     rgba(226,59,59,.16) were the ledger "red" canvas final-state value re-spelled;
+     collapsing them onto alarm is the ratified divergence named in hues.ts
+     (chrome alarm reds unify on one value; red stays reserved for canvas state). */
+  background: color-mix(in srgb, var(--hh-hue-alarm) 16%, transparent);
+  border: 1px dashed var(--hh-hue-alarm);
   padding: 4px 12px;
   border-radius: var(--hh-radius);
   font-size: 12px;

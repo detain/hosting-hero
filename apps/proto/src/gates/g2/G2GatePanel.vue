@@ -210,11 +210,25 @@ const exists = computed(() => new Set(currentIds()));
    One committed palette — surface steel + accent amber/cyan via era tokens;
    family hues are the ONLY chromatic vocabulary, each carrying one job. */
 .g2 {
+  /* Hue-law chord (round-4 residue fix). Two families of color live here:
+     - Ledger-semantic channels ride --hh-hue-* vars: human-triggered chips are
+       the amber alert-fill job, systemic (auto-classified infra) chips are the
+       cyan identity job — both byte-identical swaps, zero visual change.
+     - Threat-family / wave-band taxonomy hues are classification DATA (registry
+       families, not ledger jobs) — centralized below as gate-local --g2-* tokens
+       instead of scattering hexes through the sheet. */
+  --g2-ink: #e8ecf1; /* gate-local neutral reading ink, no ledger job */
+  --g2-hue-malicious: #ff5d7a;
+  --g2-hue-entropic: #9d8cff;
+  --g2-hue-customer: #7ee081;
+  --g2-band-weather: #8fd6ff;
+  --g2-band-storm: #c9a2ff;
+  --g2-band-hunter: #ff9d5c;
   font-family: var(--hh-typeface);
-  color: color-mix(in srgb, var(--hh-surface) 12%, #e8ecf1);
+  color: color-mix(in srgb, var(--hh-surface) 12%, var(--g2-ink));
   background:
     radial-gradient(120% 90% at 12% -10%, color-mix(in srgb, var(--hh-accent) 7%, transparent), transparent 55%),
-    repeating-linear-gradient(0deg, transparent 0 31px, color-mix(in srgb, #e8ecf1 3%, transparent) 31px 32px),
+    repeating-linear-gradient(0deg, transparent 0 31px, color-mix(in srgb, var(--g2-ink) 3%, transparent) 31px 32px),
     color-mix(in srgb, var(--hh-surface) 94%, #000);
   border-radius: var(--hh-radius);
   padding: 18px 20px 22px;
@@ -237,17 +251,17 @@ h2 { margin: 0; font-size: 21px; letter-spacing: 0.5px; }
 .motto em { color: var(--hh-accent); font-style: normal; }
 
 .controls { display: flex; gap: 14px; align-items: center; }
-.bundles { display: flex; gap: 0; border: 1px solid color-mix(in srgb, #e8ecf1 22%, transparent); border-radius: var(--hh-radius); overflow: hidden; }
+.bundles { display: flex; gap: 0; border: 1px solid color-mix(in srgb, var(--g2-ink) 22%, transparent); border-radius: var(--hh-radius); overflow: hidden; }
 .bundle-tab {
   all: unset; cursor: pointer; padding: 6px 12px; font-size: 13px;
-  color: color-mix(in srgb, #e8ecf1 70%, transparent);
+  color: color-mix(in srgb, var(--g2-ink) 70%, transparent);
 }
 .bundle-tab.on { background: var(--hh-accent); color: var(--hh-surface); font-weight: 700; }
 .clockbox { display: flex; gap: 6px; align-items: center; }
 .tick { font-size: 15px; min-width: 5ch; color: var(--hh-accent); }
 .step {
   all: unset; cursor: pointer; padding: 4px 9px; font-size: 13px;
-  border: 1px solid color-mix(in srgb, #e8ecf1 30%, transparent); border-radius: var(--hh-radius);
+  border: 1px solid color-mix(in srgb, var(--g2-ink) 30%, transparent); border-radius: var(--hh-radius);
 }
 .step:hover { border-color: var(--hh-accent); color: var(--hh-accent); }
 .step.ghost { opacity: 0.6; }
@@ -260,8 +274,8 @@ h2 { margin: 0; font-size: 21px; letter-spacing: 0.5px; }
 
 .col-title {
   margin: 0 0 10px; font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase;
-  color: color-mix(in srgb, #e8ecf1 55%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, #e8ecf1 14%, transparent);
+  color: color-mix(in srgb, var(--g2-ink) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--g2-ink) 14%, transparent);
   padding-bottom: 6px;
 }
 .col-title .hint { text-transform: none; letter-spacing: 0; font-size: 11px; opacity: 0.7; }
@@ -269,25 +283,25 @@ h2 { margin: 0; font-size: 21px; letter-spacing: 0.5px; }
 
 /* — tiles — */
 .tile {
-  border: 1px solid color-mix(in srgb, #e8ecf1 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--g2-ink) 16%, transparent);
   border-left: 3px solid color-mix(in srgb, var(--hh-accent) 60%, transparent);
   border-radius: var(--hh-radius);
   padding: 10px 12px 12px;
   margin-bottom: 12px;
-  background: color-mix(in srgb, #e8ecf1 3%, transparent);
+  background: color-mix(in srgb, var(--g2-ink) 3%, transparent);
 }
-.tile.built { border-left-color: color-mix(in srgb, #e8ecf1 25%, transparent); opacity: 0.85; }
+.tile.built { border-left-color: color-mix(in srgb, var(--g2-ink) 25%, transparent); opacity: 0.85; }
 .tile-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 h4 { margin: 0; font-size: 15px; }
-.cost { font-size: 11px; color: #ff5d7a; white-space: nowrap; }
-.cost.zero { color: color-mix(in srgb, #e8ecf1 45%, transparent); }
+.cost { font-size: 11px; color: var(--g2-hue-malicious); white-space: nowrap; }
+.cost.zero { color: color-mix(in srgb, var(--g2-ink) 45%, transparent); }
 .capability { margin: 4px 0 8px; font-size: 12px; opacity: 0.72; }
 
 .invites { display: flex; flex-wrap: wrap; gap: 6px; min-height: 22px; }
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 11.5px; padding: 2px 8px;
-  border: 1px solid color-mix(in srgb, #e8ecf1 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--g2-ink) 20%, transparent);
   border-radius: 999px;
 }
 .chip em { opacity: 0.6; font-style: normal; font-size: 10px; }
@@ -295,11 +309,11 @@ h4 { margin: 0; font-size: 15px; }
 .chip.at-risk { opacity: 0.55; }
 .chip.none { opacity: 0.5; }
 .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: currentColor; }
-.chip.malicious, .dot.malicious { color: #ff5d7a; }
-.chip.human, .dot.human { color: #f2b133; }
-.chip.systemic, .dot.systemic { color: #35e0e6; }
-.chip.entropic, .dot.entropic { color: #9d8cff; }
-.chip.customerAsThreat, .dot.customerAsThreat { color: #7ee081; }
+.chip.malicious, .dot.malicious { color: var(--g2-hue-malicious); }
+.chip.human, .dot.human { color: var(--hh-hue-amber); }
+.chip.systemic, .dot.systemic { color: var(--hh-hue-cyan); }
+.chip.entropic, .dot.entropic { color: var(--g2-hue-entropic); }
+.chip.customerAsThreat, .dot.customerAsThreat { color: var(--g2-hue-customer); }
 
 .tile-actions { margin-top: 9px; }
 .buy, .retire {
@@ -309,8 +323,8 @@ h4 { margin: 0; font-size: 15px; }
   transition: background 140ms ease, color 140ms ease;
 }
 .buy:hover { background: var(--hh-accent); color: var(--hh-surface); }
-.retire { border-color: color-mix(in srgb, #ff5d7a 70%, transparent); color: #ff5d7a; }
-.retire:hover { background: #ff5d7a; color: var(--hh-surface); }
+.retire { border-color: color-mix(in srgb, var(--g2-hue-malicious) 70%, transparent); color: var(--g2-hue-malicious); }
+.retire:hover { background: var(--g2-hue-malicious); color: var(--hh-surface); }
 
 /* — ledger — */
 .family { margin-bottom: 8px; }
@@ -324,7 +338,7 @@ h4 { margin: 0; font-size: 15px; }
 .family ul { list-style: none; margin: 2px 0 0; padding: 0 0 0 6px; }
 .pool-row {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  padding: 4px 0; border-top: 1px dashed color-mix(in srgb, #e8ecf1 10%, transparent);
+  padding: 4px 0; border-top: 1px dashed color-mix(in srgb, var(--g2-ink) 10%, transparent);
   font-size: 12.5px;
 }
 .threat-label { min-width: 34%; }
@@ -332,17 +346,17 @@ h4 { margin: 0; font-size: 15px; }
   font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 1px 7px;
   border-radius: 3px; border: 1px solid currentColor;
 }
-.band.weather { color: #8fd6ff; }
-.band.storm { color: #c9a2ff; }
-.band.hunter { color: #ff9d5c; }
-.band.entropy { color: #9d8cff; }
+.band.weather { color: var(--g2-band-weather); }
+.band.storm { color: var(--g2-band-storm); }
+.band.hunter { color: var(--g2-band-hunter); }
+.band.entropy { color: var(--g2-hue-entropic); }
 .mastered {
   font-size: 10px; letter-spacing: 1px; color: var(--hh-accent);
   border-bottom: 1px dotted var(--hh-accent);
 }
 .countered {
   all: unset; cursor: pointer; font-size: 11px; padding: 1px 8px;
-  border: 1px solid color-mix(in srgb, #e8ecf1 22%, transparent); border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--g2-ink) 22%, transparent); border-radius: 999px;
 }
 .countered:hover { border-color: var(--hh-accent); }
 .why { font-size: 10.5px; opacity: 0.55; margin-left: auto; }
@@ -350,15 +364,15 @@ h4 { margin: 0; font-size: 15px; }
 .ghost-row {
   display: flex; justify-content: space-between; gap: 8px;
   font-size: 11.5px; font-style: italic; opacity: 0.66;
-  border-left: 2px solid color-mix(in srgb, #ff5d7a 45%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--g2-hue-malicious) 45%, transparent);
   padding: 3px 8px; margin-bottom: 4px;
   animation: ghost-flicker 2.4s ease-in-out infinite;
 }
-.memo { color: #ff5d7a; font-style: normal; white-space: nowrap; }
+.memo { color: var(--g2-hue-malicious); font-style: normal; white-space: nowrap; }
 .empty { font-size: 12.5px; opacity: 0.6; font-style: italic; }
 
 /* — log — */
-.log { list-style: none; margin: 0; padding: 0; border-left: 1px solid color-mix(in srgb, #e8ecf1 18%, transparent); }
+.log { list-style: none; margin: 0; padding: 0; border-left: 1px solid color-mix(in srgb, var(--g2-ink) 18%, transparent); }
 .log-row {
   position: relative; display: flex; gap: 8px; align-items: baseline;
   padding: 5px 0 5px 12px; font-size: 12.5px;
@@ -368,16 +382,16 @@ h4 { margin: 0; font-size: 15px; }
   content: ""; position: absolute; left: -4px; top: 12px;
   width: 7px; height: 7px; border-radius: 50%; background: var(--hh-accent);
 }
-.log-row.remove::before { background: #ff5d7a; }
+.log-row.remove::before { background: var(--g2-hue-malicious); }
 .log-row.empty { opacity: 0.55; font-style: italic; }
 .log-row.empty::before { display: none; }
 .log-tick { opacity: 0.55; font-size: 11px; min-width: 5ch; }
 .log-op { color: var(--hh-accent); }
-.log-row.remove .log-op { color: #ff5d7a; }
+.log-row.remove .log-op { color: var(--g2-hue-malicious); }
 
 @keyframes surface-flash {
-  0% { background: color-mix(in srgb, #ff5d7a 55%, transparent); transform: translateY(-3px); }
-  60% { background: color-mix(in srgb, #ff5d7a 22%, transparent); }
+  0% { background: color-mix(in srgb, var(--g2-hue-malicious) 55%, transparent); transform: translateY(-3px); }
+  60% { background: color-mix(in srgb, var(--g2-hue-malicious) 22%, transparent); }
   100% { background: transparent; transform: none; }
 }
 @keyframes ghost-flicker { 0%, 100% { opacity: 0.66; } 50% { opacity: 0.38; } }
