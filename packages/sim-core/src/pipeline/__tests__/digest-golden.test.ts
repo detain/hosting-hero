@@ -14,6 +14,16 @@
  * src/pipeline/__tests__/digest-golden.test.ts` rewrites the JSON from the
  * live implementation and fails the run (rewriting during a green run would
  * smuggle a digest change past the tripwire).
+ *
+ * PROVENANCE CONVENTION: the fixture carries `capturedSha` — the FULL git
+ * SHA of the checkout whose sink implementation produced the hexes. It is
+ * never computed at runtime (no child_process in tests, and the capture must
+ * describe the code that RAN, which the lever alone cannot know mid-port);
+ * the human ritual is: check out / note the base SHA, update CAPTURED_SHA
+ * below, THEN run the lever — capture stamps the constant into the fixture,
+ * and the pin test below keeps the two honest. The current hexes were
+ * captured from the pre-port bigint sink as of c8c5a41 (the parent of the
+ * limbs-port commit 3466bdc that shipped this fixture).
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -33,8 +43,14 @@ if (nodeProcess === undefined) throw new Error("digest goldens require the Node 
 
 interface GoldenDoc {
   readonly capturedFrom: string;
+  readonly capturedSha: string;
   readonly cases: Readonly<Record<string, readonly string[]>>;
 }
+
+/** Human-maintained capture provenance — see PROVENANCE CONVENTION in the
+ *  header. Update this BEFORE running the lever; capture stamps it into the
+ *  fixture, and the pin test fails if the two ever disagree. */
+const CAPTURED_SHA = "c8c5a41d67c6d9c5332c450d4a6f9850243afb99";
 
 /** Shape pins so a silent builder drift reads as itself, not as a mystery hex. */
 const EXPECTED_STATE_COUNTS: Readonly<Record<string, number>> = Object.freeze({
@@ -61,12 +77,25 @@ describe("digestState golden battery (limb-port byte-identity)", () => {
 
   if (nodeProcess.env.HH_GOLDEN_CAPTURE === "1") {
     it("CAPTURE MODE: rewrite the fixture and fail (deliberate-domain-change lever)", () => {
-      const doc: GoldenDoc = { capturedFrom: "HH_GOLDEN_CAPTURE=1", cases: actual };
+      const doc: GoldenDoc = {
+        capturedFrom: "HH_GOLDEN_CAPTURE=1 @ pipeline lane",
+        capturedSha: CAPTURED_SHA,
+        cases: actual,
+      };
       writeFileSync(GOLDEN_PATH, `${JSON.stringify(doc, null, 2)}\n`, "utf8");
       throw new Error("capture mode ran — fixture rewritten from the LIVE implementation; unset the env var to verify");
     });
     return;
   }
+
+  it("capture provenance — fixture names the lever and pins the base SHA", () => {
+    // Additive provenance record (findings lane); verification semantics of
+    // the hex tests below are untouched.
+    const doc = JSON.parse(readFileSync(GOLDEN_PATH, "utf8")) as GoldenDoc;
+    expect(doc.capturedFrom).toMatch(/^HH_GOLDEN_CAPTURE=1/); // pre-provenance captures lacked the lane suffix
+    expect(doc.capturedSha, "fixture must carry the full base git SHA").toMatch(/^[0-9a-f]{40}$/);
+    expect(doc.capturedSha, "fixture and CAPTURED_SHA disagree — follow the header ritual").toBe(CAPTURED_SHA);
+  });
 
   it("the fat recipe still has the audited shape (192/200/901/1000)", () => {
     const fat = cases.find((entry) => entry.name === "fat-run");

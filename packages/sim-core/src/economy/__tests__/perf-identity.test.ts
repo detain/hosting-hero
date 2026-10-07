@@ -140,6 +140,44 @@ describe("invoice array order is content (perf audit #2 pin)", () => {
     expect(again.state.invoices.length).toBe(r.state.invoices.length + 1);
     expect(again.state.invoices[ids.lastIndexOf(asEntityId("inv:R:0"))]!.state).toBe("issued");
   });
+
+  it("three renewal-cliff copies of one id stay first-slot bound (review-5 watchlist 2)", () => {
+    // Renewing at BOTH cliffs (2×MONTH and, after the 2-month extension,
+    // 4×MONTH) re-mints cycle 0 twice — three legitimate `inv:R:0` records.
+    // Pins that the analytic first-slot binding extends past the twin PAIR to
+    // a triple: the settle money moved exactly once and both shadowed copies
+    // remain due-but-issued, byte-faithful to the old find() semantics.
+    const R = contractOf("R", { termEndMin: 2 * MONTH });
+    const map = new Map<EntityId, Contract>([[R.id, R]]);
+    const renew: NonNullable<EconomyTickIn["renewalDecisions"]> = [
+      { contractId: R.id, decision: { choice: "renew", causeId: asCauseId("economy:test:renew"), escalatedMrc: null } },
+    ];
+    let s = harness([R], CASH0);
+    s = tick(s, 0, map).state; // copy 1 minted + paid
+    s = tick(s, MONTH, map).state; // inv:R:1 paid
+    s = tick(s, 2 * MONTH, map, { renewalDecisions: renew }).state; // cliff 1 → copy 2
+    s = tick(s, 3 * MONTH, map).state; // cycle 1 re-mint (shadowed twin, unchanged law)
+    const t = tick(s, 4 * MONTH, map, { renewalDecisions: renew }); // cliff 2 → copy 3
+    const copies = t.state.invoices
+      .map((invoice, slot) => ({ slot }))
+      .filter(({ slot }) => t.state.invoices[slot]!.id === asEntityId("inv:R:0"));
+    expect(copies.length).toBe(3);
+    expect(copies.map(({ slot }) => t.state.invoices[slot]!.state)).toEqual(["paid", "issued", "issued"]);
+    // The newest copy is due the moment it mints (prepaid, net-0 terms)...
+    expect(t.state.invoices[copies[2]!.slot]!.dueAtMin).toBeLessThanOrEqual(4 * MONTH);
+    // ...yet it never settles: all three step-7 visits resolve to the FIRST
+    // position, find it paid, and skip. Any other binding would post a second
+    // `economy:settle:inv:R:0` journal cause.
+    const settleCauses = t.state.journal.entries.filter(
+      (entry) => entry.causeId === asCauseId("economy:settle:inv:R:0"),
+    );
+    expect(settleCauses.length).toBe(1);
+    // Next tick: new cycle still appends cleanly; the triple stays in place.
+    const again = tick(t.state, 5 * MONTH, map);
+    expect(again.state.invoices.length).toBe(t.state.invoices.length + 1);
+    expect(again.state.invoices.map((invoice) => invoice.id).filter((id) => id === asEntityId("inv:R:0")).length).toBe(3);
+    expect(copies.map(({ slot }) => again.state.invoices[slot]!.state)).toEqual(["paid", "issued", "issued"]);
+  });
 });
 
 describe("chunked journal is digest-invisible (perf audit #3 pin)", () => {

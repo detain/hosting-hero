@@ -86,7 +86,19 @@ describe("grep-pin — data-input decoupling + determinism hygiene", () => {
   ].map((name) => ({ name, text: readFileSync(join(process.cwd(), "src", "coverage", name), "utf8") }));
 
   it.each(sources)("$name imports no sibling domain module", ({ name, text }) => {
-    for (const forbidden of ["../economy", "../policy", "../topology", "../observed", "../save"]) {
+    // Waves: only the TABLE grammar (../waves/table) is legal data input —
+    // the generator (envelope/generate) is the engine's job, never here.
+    for (
+      const forbidden of [
+        "../economy",
+        "../policy",
+        "../topology",
+        "../observed",
+        "../save",
+        "../waves/generate",
+        "../waves/envelope",
+      ]
+    ) {
       expect(text, name).not.toContain(`from "${forbidden}`);
     }
   });

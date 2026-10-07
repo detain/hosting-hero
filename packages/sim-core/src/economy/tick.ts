@@ -499,6 +499,11 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
      settled records entirely, so the sweep is invisible to AR numbers). */
   if (input.pruneSettledInvoices === true) {
     w.invoices = [...partitionPrunableInvoices(w.invoices, w.schedules).keep];
+    // The id→slot index still points at PRE-prune positions — every later
+    // read would be silently wrong. Nothing consumes it after step 13 in this
+    // pass (the next tick re-parses the index at the boundary), so empty it:
+    // a stray read now fails loud via replaceInvoice's "vanished mid-tick".
+    w.invoiceAt.clear();
   }
 
   const state: EconomyState = {

@@ -19,7 +19,10 @@
  * post — O(entries²) across a long run (measured 2.1ms/append at 100k).
  * A bare-literal journal — what spreads, JSON.parse, and hand-written
  * fixtures produce — remains legal input to every function: `readSpine`
- * boundary-parses it into chunks once, on demand.
+ * boundary-parses it on demand. The parse is deliberately NOT written back
+ * onto the caller's literal — a bare input re-chunks on every access until a
+ * write promotes it (postEntry/appendJournal return built journals that carry
+ * their spine forward, where the flat `entries` view memoizes on first read).
  *
  * SERIALIZATION IDENTITY: the spine hangs off a symbol key (invisible to
  * Object.keys / JSON.stringify / the canonical replay walker) and `entries`
@@ -147,7 +150,8 @@ function spineFromRows(rows: readonly LedgerEntry[]): JournalSpine {
   return freshSpine(head, null, 0, rows.length, 0);
 }
 
-/** Trusted internal spine; bare literals are parsed once at the boundary. */
+/** Trusted internal spine; bare literals are re-chunked at every boundary
+ *  read — nothing is promoted in place onto the caller's object (Law 3). */
 function readSpine(journal: Journal): JournalSpine {
   const internal = (journal as Partial<SpinedJournal>)[SPINE];
   if (internal !== undefined) return internal;
@@ -253,7 +257,14 @@ export function draftEntry(
     if (!Object.prototype.hasOwnProperty.call(draft.delta, key)) continue;
     const bucket = key as BucketId;
     const amount = draft.delta[bucket];
-    if (amount === undefined || amount === 0n) continue;
+    if (amount === undefined) {
+      // Fail loud (Law 4): a present key with an undefined value is corrupt
+      // input, not a zero — skipping it silently dropped money. Omit the key.
+      throw new TypeError(
+        `economy/ledger: bucket '${bucket}' delta is undefined (${context}) — omit the key instead of assigning undefined`,
+      );
+    }
+    if (amount === 0n) continue;
     next = applyBucketDelta(next, { bucket, amount }, context);
     clean[bucket] = amount;
     touched += 1;

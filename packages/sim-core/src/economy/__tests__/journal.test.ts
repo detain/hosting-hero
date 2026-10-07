@@ -20,6 +20,7 @@ import {
   journalFromEntries,
   lastEntry,
   postEntry,
+  type EntryDraft,
   type Journal,
 } from "../ledger.ts";
 import { encodeCanonicalBinary } from "../../replay/canonical.ts";
@@ -115,6 +116,44 @@ describe("bare-literal boundary parse", () => {
     expect(() =>
       postEntry(forged, CASH, { causeId: asCauseId("economy:test:x"), atBusinessMin: 0, moneyColour: "blue", delta: { free: asMoney(1n) } }),
     ).toThrow(RangeError);
+  });
+
+  it("draftEntry fails loud on an undefined-valued bucket, naming it (review-5 LOW #1)", () => {
+    // Pre-perf-audit loudness: undefined reached applyBucketDelta and blew up
+    // mixing BigInt with undefined. The `|| amount === 0n` merge had quietly
+    // DROPPED such money — a present key is never treated as absent again.
+    const delta = { free: undefined, deferred: asMoney(5n) } as unknown as EntryDraft["delta"];
+    expect(() =>
+      draftEntry(CASH, { causeId: asCauseId("economy:test:undefined-bucket"), atBusinessMin: 0, moneyColour: "blue", delta }, 0),
+    ).toThrow(/bucket 'free' delta is undefined/);
+    // The context tag rides the message when the caller supplied one:
+    const tagged = { backlog: undefined } as unknown as EntryDraft["delta"];
+    expect(() =>
+      draftEntry(CASH, { causeId: asCauseId("economy:test:ctx"), atBusinessMin: 0, moneyColour: "blue", delta: tagged, context: "payroll lane" }, 0),
+    ).toThrow("economy/ledger: bucket 'backlog' delta is undefined (payroll lane)");
+  });
+
+  it("a bare literal is never promoted in place — repeated reads re-parse, identically, silently (review-5 LOW #5)", () => {
+    // The honest 'parse on demand' claim pinned: postEntry on the SAME bare
+    // literal twice must agree, and the input object must gain NOTHING —
+    // no spine symbol, no touched array (Law 3, and why write-back caching
+    // onto a possibly-frozen caller object is the wrong trade).
+    const rows = [...appendN(emptyJournal, 3).entries];
+    const bare: Journal = { nextSeq: 3, entries: rows };
+    const draft = {
+      causeId: asCauseId("economy:test:bare-twice"),
+      atBusinessMin: 9,
+      moneyColour: "blue" as const,
+      delta: { free: asMoney(1n) },
+    };
+    const first = postEntry(bare, CASH, draft);
+    const second = postEntry(bare, CASH, draft);
+    expect(stringify(first.journal)).toBe(stringify(second.journal));
+    expect(stringify(first.cash)).toBe(stringify(second.cash));
+    expect(Object.getOwnPropertySymbols(bare)).toEqual([]);
+    expect(Object.keys(bare)).toEqual(["nextSeq", "entries"]);
+    expect(bare.entries).toBe(rows); // the caller's array itself untouched
+    expect(rows.length).toBe(3);
   });
 });
 

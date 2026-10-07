@@ -16,7 +16,18 @@
  *     doing ledger jobs; the collision test is what keeps them honest.
  *  2. every var(--hh-hue-<name>) used outside chrome/ must name a real ledger
  *     entry — invented vars fail the build exactly like invented hexes.
+ *     CSS custom properties are CASE-SENSITIVE and installHueVars emits the
+ *     lowercase --hh-hue-<ledger-name>, so a case-differing call site
+ *     (--hh-hue-RED) resolves to nothing; the var scan matches [A-Za-z0-9-]
+ *     precisely so such vars are extracted and flagged, never skipped.
  *  3. planted-violation self-checks keep the scanner red-on-drift.
+ *
+ * Known blind spots (documented, accepted): rule 1 is a VALUE collision test
+ * — a ledger-coincident bundle chord must buy its allowance with the marker
+ * even when it does no ledger job, and the mirror image means a gate-local
+ * ink that merely LOOKS like a ledger hue (near-miss value, e.g. #ef6a59 vs
+ * alarm #ef6a5a) passes unflagged. The law guards exact semantic re-spelling,
+ * not visual similarity.
  *
  * Vitest roots at apps/proto; process.cwd() law as in the chrome twin.
  */
@@ -93,7 +104,9 @@ function allowedHexesFor(relPath: string): ReadonlySet<string> {
 }
 
 function hueVarNames(css: string): string[] {
-  return [...stripCssComments(css).matchAll(/var\(--hh-hue-([a-z0-9-]+)[,)]/g)].map(
+  // [A-Za-z0-9-]: uppercase must be EXTRACTED, not skipped — CSS vars are
+  // case-sensitive, so --hh-hue-RED is an invented var, not a silent miss.
+  return [...stripCssComments(css).matchAll(/var\(--hh-hue-([A-Za-z0-9-]+)[,)]/g)].map(
     (m) => m[1] ?? "",
   );
 }
@@ -124,7 +137,11 @@ describe("hue law — non-chrome styles never re-spell a ledger hue inline", () 
     for (const file of files) {
       const rel = file.slice(SRC_DIR.length + 1);
       for (const name of hueVarNames(styleCss(readFileSync(file, "utf8")))) {
-        if (!(name in HUE_LEDGER)) invented.push(`${rel}: --hh-hue-${name}`);
+        if (!(name in HUE_LEDGER)) {
+          const twin = name.toLowerCase();
+          const hint = twin in HUE_LEDGER ? " (case mismatch — CSS vars resolve exactly as spelled)" : "";
+          invented.push(`${rel}: --hh-hue-${name}${hint}`);
+        }
       }
     }
     expect(invented).toEqual([]);
@@ -162,6 +179,17 @@ describe("hue law gates — planted violations prove the scanner is red-on-drift
     );
     expect(scanLedgerHexes(clean)).toEqual([]);
     expect(hueVarNames(clean)).toEqual(["alarm"]);
+  });
+
+  it("flags case-differing var names — --hh-hue-RED resolves to NOTHING in CSS", () => {
+    // The widened [A-Za-z0-9-] scan: before it, uppercase vars were invisible
+    // to the regex and slipped through as a silent broken var() reference.
+    const planted = styleCss(
+      `<style scoped>.g9-w { color: var(--hh-hue-RED); border-color: var(--hh-hue-Alarm); background: var(--hh-hue-alarm); }</style>`,
+    );
+    const names = hueVarNames(planted);
+    expect(names).toEqual(["RED", "Alarm", "alarm"]);
+    expect(names.filter((n) => !(n in HUE_LEDGER))).toEqual(["RED", "Alarm"]);
   });
 
   it("g5's bundle-skin sodium rides the allowance only where the marker binds it", () => {
