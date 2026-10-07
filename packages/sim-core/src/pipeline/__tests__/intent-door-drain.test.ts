@@ -22,6 +22,7 @@ import type {
   IntentExecutedEvent,
   PlayerVerbArgs,
   RunSeed,
+  SimEvent,
   SimTick,
   TickContext,
 } from "../../types";
@@ -40,6 +41,7 @@ import {
   IntentDoorError,
   mintHandState,
   type IntentDoorConfig,
+  type IntentDoorResult,
 } from "../intent-door";
 import { IDS, envelope, node, retryPolicy, testConfig, tickInputs } from "./helpers";
 
@@ -106,6 +108,30 @@ function refusalOf(result: ReturnType<typeof applyIntentDoor>, seq: number): str
     throw new Error(`expected a refusal for seq ${seq}`);
   }
   return receipt.reason;
+}
+
+/** One EXECUTED narration line: what the replay tape will carry for the
+ *  watchlist pins (causeId namespace, sentinel seq, token split, detail). */
+interface ExecRow {
+  readonly causeId: string;
+  readonly intentSeq: number;
+  readonly handIndexes: readonly number[];
+  readonly detail: string;
+}
+
+function execRows(result: IntentDoorResult): ExecRow[] {
+  const rows: ExecRow[] = [];
+  for (const event of result.events) {
+    if (event.kind === "intent-executed") {
+      rows.push({
+        causeId: event.causeId,
+        intentSeq: event.intentSeq,
+        handIndexes: [...event.handIndexes],
+        detail: event.detail ?? "",
+      });
+    }
+  }
+  return rows;
 }
 
 /* ═══════════════════ 1 · POLICY-OFF GOLDEN — byte-identity §4 pin 1 ═══════════════════
@@ -598,9 +624,36 @@ describe("drain policy parsing — malformed host config throws at the boundary"
   });
 
   it("a throw leaves the fed state UNTOUCHED (fail-fast never forks a half-run)", () => {
-    const state = seeded();
-    expect(() => feed({ enabled: true, drainTicks: 0 })).toThrow(IntentDoorError);
-    expect(digestState(state)).toBe(digestState(state)); // pure read: the state was never fed to anything
+    // A REAL throw fed with a REAL state, fired AFTER the draft already did
+    // work: the rail is mid-drain and gets fed at its MATURITY tick, so
+    // processMaturedDrains pulls the edge IN THE DRAFT — then the second
+    // entry (a fractional seq, violating the safe-integer wire law M2) throws
+    // at the parse boundary before ANY entry executes. The abandoned draft
+    // must have consumed nothing from the fed state.
+    const state = applyIntentDoor(seeded(), ctx(1n), [ext(1n, 1, disconnectOf(DATA_EDGE))], DRAIN_ON).state;
+    const before = digestState(state);
+    const edgesBefore = state.board?.edges;
+    const tokensBefore = state.hands?.tokens;
+    const wellFormedFirst = ext(3n, 2, disconnectOf(CTRL_EDGE));
+    const fractionalSeq: ExternalIntent = Object.freeze({
+      tick: 3n,
+      intent: Object.freeze({
+        seq: 1.5, // a number by TYPE, illegal by the requireInt wire law
+        clock: "sim" as const,
+        atUs: 3n * MIN,
+        origin: "player" as const,
+        payload: Object.freeze({ kind: "player-verb" as const, args: disconnectOf(CTRL_EDGE) }),
+      }),
+    });
+    expect(() => applyIntentDoor(state, ctx(3n), [wellFormedFirst, fractionalSeq], DRAIN_ON)).toThrow(
+      /externalIntents\[1\]\.intent\.seq/,
+    );
+    expect(digestState(state)).toBe(before); // the half-run never surfaced…
+    expect(state.board?.edges).toBe(edgesBefore); // …not even as a deep mutation…
+    expect(state.hands?.tokens).toBe(tokensBefore); // …of the fed object
+    // …and the drafted work is honestly still PENDING, not silently applied:
+    expect(state.board?.edges.has(asEntityId(DATA_EDGE))).toBe(true);
+    expect(state.hands?.tokens[0]?.busyCauseId).toBe(asCauseId(`drain:${DATA_EDGE}`));
   });
 });
 
@@ -650,6 +703,117 @@ describe("the drain is digest-visible and survives state round-trips", () => {
     const pass = applyIntentDoor(preDoor, ctx(1n), [], DRAIN_ON);
     expect(pass.state).toBe(preDoor); // no hands → no records → the scan never even looks
     expect(digestState(pass.state)).toBe(digestState(preDoor));
+  });
+});
+
+/* ═══════════════════ 8 · watchlist pins — ratified drain frictions ═══════════════════
+ * The behaviors below were reviewed and RATIFIED as correct; they are odd
+ * enough that a future "cleanup" could silently change them. Each test pins
+ * the exact narration tape, the board-version arithmetic, and (where the
+ * friction touches state) run-to-run digest determinism. PIN, don't redesign. */
+
+describe("watchlist pin — flip-off mid-drain + same-edge plain pull (the double narration)", () => {
+  it("drain-started → pulled → drained seq -1: one version bump, narrated twice, deterministically", () => {
+    const OFF: IntentDoorConfig = Object.freeze({}); // host flipped the policy off
+    const run = (): {
+      readonly rows: readonly ExecRow[];
+      readonly digests: readonly string[];
+      readonly version: number;
+      readonly lateReceipts: number;
+    } => {
+      const rows: ExecRow[] = [];
+      const digests: string[] = [];
+      // tick 1 · phase 1 UNDER the policy: the promise books on token 0.
+      const started = applyIntentDoor(seeded(), ctx(1n), [ext(1n, 1, disconnectOf(DATA_EDGE))], DRAIN_ON);
+      rows.push(...execRows(started));
+      digests.push(digestState(started.state));
+      // tick 2 · policy OFF: the same-edge disconnect is a v0 PLAIN pull —
+      // the handler never consults the still-live drain reservation.
+      const pulled = applyIntentDoor(started.state, ctx(2n), [ext(2n, 2, disconnectOf(DATA_EDGE))], OFF);
+      rows.push(...execRows(pulled));
+      digests.push(digestState(pulled.state));
+      // tick 3 · the abandoned promise matures anyway (state is the promise):
+      // its edge is already gone, so the forged-edge law applies — narrate,
+      // retire the token, bump NOTHING.
+      const retired = applyIntentDoor(pulled.state, ctx(3n), [], OFF);
+      rows.push(...execRows(retired));
+      digests.push(digestState(retired.state));
+      return { rows, digests, version: retired.state.board?.version ?? -1, lateReceipts: retired.receipts.length };
+    };
+    const first = run();
+    expect(first.rows).toStrictEqual([
+      { causeId: "intent:1", intentSeq: 1, handIndexes: [0], detail: `drain-started:${DATA_EDGE}` },
+      { causeId: "intent:2", intentSeq: 2, handIndexes: [1], detail: `pulled:${DATA_EDGE}` },
+      { causeId: `drain:${DATA_EDGE}`, intentSeq: -1, handIndexes: [0], detail: `drained:${DATA_EDGE}` },
+    ]);
+    expect(first.version).toBe(1); // ONE mutation bump for ONE real removal…
+    expect(first.lateReceipts).toBe(0); // …and the phantom second narration mints no receipt
+    // The double-narration is a DETERMINISTIC friction, not a coin flip:
+    const second = run();
+    expect(second.digests).toStrictEqual([...first.digests]);
+    expect(second.rows).toStrictEqual([...first.rows]);
+  });
+});
+
+describe("watchlist pin — handCost 2 books the drain on two tokens (the twin continuation)", () => {
+  it("maturity mints TWO identical-cause drained events, ONE version bump, receipts stay fed-only", () => {
+    const config: IntentDoorConfig = Object.freeze({
+      drainPolicy: Object.freeze({ enabled: true }), // default drainTicks 2
+      handCost: Object.freeze({ [PlayerVerb.DisconnectDrain]: 2 }),
+    });
+    const started = applyIntentDoor(seeded(), ctx(1n), [ext(1n, 1, disconnectOf(DATA_EDGE))], config);
+    // the reservation duplicates across BOTH paid tokens — same cause, same
+    // maturity; the rail (not a Map) is the schedule.
+    const busy = (started.state.hands?.tokens ?? []).filter((t) => t.busyCauseId !== null);
+    expect(busy.map((t) => t.index)).toStrictEqual([0, 1]);
+    for (const token of busy) {
+      expect(token.busyCauseId).toBe(asCauseId(`drain:${DATA_EDGE}`));
+      expect(token.busyUntilTick).toBe(3n);
+    }
+    expect(started.state.board?.version).toBe(0); // phase 1 never touches the board
+    expect(started.receipts).toHaveLength(1); // the FED intent got its receipt…
+    expect(execRows(started)).toStrictEqual([
+      { causeId: "intent:1", intentSeq: 1, handIndexes: [0, 1], detail: `drain-started:${DATA_EDGE}` },
+    ]);
+    const done = applyIntentDoor(started.state, ctx(3n), [], config);
+    // two due tokens ⇒ two due entries ⇒ two events under the SAME causeId;
+    // only the handIndexes split the twins.
+    expect(execRows(done)).toStrictEqual([
+      { causeId: `drain:${DATA_EDGE}`, intentSeq: -1, handIndexes: [0], detail: `drained:${DATA_EDGE}` },
+      { causeId: `drain:${DATA_EDGE}`, intentSeq: -1, handIndexes: [1], detail: `drained:${DATA_EDGE}` },
+    ]);
+    expect(done.state.board?.version).toBe(1); // one real removal bumps exactly once…
+    expect(done.state.board?.edges.has(asEntityId(DATA_EDGE))).toBe(false); // …and the edge is gone
+    expect(done.receipts).toHaveLength(0); // continuations NEVER mint receipts
+    for (const token of done.state.hands?.tokens ?? []) {
+      expect(token.busyCauseId).toBeNull(); // both reservations retired…
+      expect(token.busyUntilTick).toBe(3n); // …stamps kept (release law)
+    }
+  });
+});
+
+describe("watchlist pin — sentinel seq -1 vs a host-fed seq -1 (the causeId disambiguation)", () => {
+  it("both parse, the continuation leads, `intent:-1` ≠ `drain:<edge>`, -1 sorts first among entries", () => {
+    const state = applyIntentDoor(seeded(), ctx(1n), [ext(1n, 1, disconnectOf(DATA_EDGE))], DRAIN_ON).state;
+    const toggle = (seq: number, speedX: 1 | 2 | 4): ExternalIntent =>
+      ext(3n, seq, { verb: PlayerVerb.ToggleSpeed, speedX });
+    // seq law is INTEGER only — a fed -1 is legal wire. Input order is
+    // deliberately unsorted (0 before -1) to prove the sort, not the array.
+    const pass = applyIntentDoor(state, ctx(3n), [toggle(0, 2), toggle(-1, 4)], DRAIN_ON);
+    expect(execRows(pass)).toStrictEqual([
+      // 1 · due-queue law: the sentinel continuation leads EVERY entry…
+      { causeId: `drain:${DATA_EDGE}`, intentSeq: -1, handIndexes: [0], detail: `drained:${DATA_EDGE}` },
+      // 2 · …then (tick, seq) order — -1 sorts first among same-tick entries…
+      { causeId: "intent:-1", intentSeq: -1, handIndexes: [], detail: "speed=4" },
+      // 3 · …and both -1 carriers coexist, disambiguated by causeId namespace.
+      { causeId: "intent:0", intentSeq: 0, handIndexes: [], detail: "speed=2" },
+    ]);
+    const sentinel = pass.events.filter((e) => e.kind === "intent-executed" && e.intentSeq === -1);
+    expect(sentinel.map((e) => e.causeId)).toStrictEqual([`drain:${DATA_EDGE}`, "intent:-1"]);
+    // receipts stay one-per-FED: the host's -1 gets one, the sentinel never.
+    expect(pass.receipts.map((r) => r.seq)).toStrictEqual([-1, 0]);
+    expect((pass.receipts[0] as { readonly seq: number; readonly outcome: string }).seq).toBe(-1);
+    expect(pass.receipts.every((r) => r.outcome === "executed")).toBe(true);
   });
 });
 

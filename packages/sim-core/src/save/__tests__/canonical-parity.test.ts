@@ -1,11 +1,13 @@
 /**
  * S-3 — THE cross-lane canonical-codec tripwire.
  *
- * save/canonical.ts is a hand-maintained fork of replay/canonical.ts
- * (workstream boundary: src in save/ may not import replay/). The forks are
- * semantically equivalent TODAY; this file pins that so ANY future divergence
- * between the two hand-maintained copies fails red HERE, in the lane that
- * owns the duplicate.
+ * Since commit 34acf18 the canonical machinery is SHARED: save/canonical.ts
+ * and replay/canonical.ts are two wrapper encoders over ONE shared walker in
+ * src/internal/canonical.ts (workstream boundary: src in save/ may not import
+ * replay/, so each lane keeps its own thin wrapper). This file pins the
+ * WRAPPER contracts — reporter wording, depth policy, digest domains — of the
+ * two encoders, so ANY future divergence between them fails red HERE, in the
+ * lane that owns the wrapper.
  *
  * Tests may consume sibling public APIs — both lanes are imported via their
  * package subpaths (`@hh/sim-core/save`, `@hh/sim-core/replay`), i.e. exactly
