@@ -28,6 +28,11 @@ import { HUE_VARS_STYLE_ID, hueVarsCss, installHueVars } from "../hueVars";
 // vitest roots at apps/proto (same resolution law as gates/g2 corpus tests;
 // import.meta.url is NOT file:-sourced under the jsdom environment).
 const CHROME_DIR = join(process.cwd(), "src", "chrome");
+/** Sim Lab lane joined the scan (sanctioned extension, 2026-10-07): lab/ is
+ *  service-bench chrome and obeys the SAME law as chrome/. Stricter, in one
+ *  way — lab gets NO neutral-hex allowance: its styles speak era tokens and
+ *  ledger vars only (see UnattendedLabPanel header for the hue-job ledger). */
+const LAB_DIR = join(process.cwd(), "src", "lab");
 
 /** Hexes with NO semantic job (pure display neutrals). Grow this list only
  *  by decision — every entry must earn its row here or it belongs in the
@@ -37,13 +42,26 @@ const NEUTRAL_ALLOWLIST: ReadonlySet<string> = new Set([
   "#05080c", // ScopeFace CRT screen black
 ]);
 
-/** Walk chrome/ sources, skipping __tests__ (this file quotes hexes itself). */
-function chromeSources(dir: string): string[] {
+interface ScanTarget {
+  readonly dir: string;
+  readonly label: string;
+  readonly allow: ReadonlySet<string>;
+  /** Roster floor — the test may never silently vacate its dir. */
+  readonly floor: number;
+}
+
+const SCAN_TARGETS: readonly ScanTarget[] = Object.freeze([
+  Object.freeze({ dir: CHROME_DIR, label: "chrome", allow: NEUTRAL_ALLOWLIST, floor: 14 }),
+  Object.freeze({ dir: LAB_DIR, label: "lab", allow: new Set<string>(), floor: 3 }),
+]);
+
+/** Walk a source dir, skipping __tests__ (this file quotes hexes itself). */
+function vueSources(dir: string): string[] {
   const found: string[] = [];
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     if (name === "__tests__") continue;
-    if (statSync(full).isDirectory()) found.push(...chromeSources(full));
+    if (statSync(full).isDirectory()) found.push(...vueSources(full));
     else if (name.endsWith(".vue")) found.push(full);
   }
   return found.sort();
@@ -61,39 +79,60 @@ function hueVarNames(css: string): string[] {
   return [...css.matchAll(/var\(--hh-hue-([A-Za-z0-9-]+)\)/g)].map((m) => m[1] ?? "");
 }
 
-describe("hue law — chrome styles consume the ledger, never a spelled hex", () => {
-  const files = chromeSources(CHROME_DIR);
+describe("hue law — chrome + lab styles consume the ledger, never a spelled hex", () => {
+  const rosters = SCAN_TARGETS.map((target) => Object.freeze({ target, files: vueSources(target.dir) }));
 
-  it("scans a non-trivial chrome roster (test cannot silently vacate)", () => {
-    expect(files.length).toBeGreaterThanOrEqual(14);
+  it("scans a non-trivial roster in every targeted dir (test cannot silently vacate)", () => {
+    for (const { target, files } of rosters) {
+      expect(files.length, `${target.label}/ roster`).toBeGreaterThanOrEqual(target.floor);
+    }
   });
 
-  it("no raw 6-digit hex in any chrome <style> block outside the neutral allowlist", () => {
+  it("no raw 6-digit hex in any targeted <style> block outside that dir's allowance", () => {
     const violations: string[] = [];
-    for (const file of files) {
-      const hexes = styleCss(readFileSync(file, "utf8")).match(/#[0-9a-fA-F]{6}(?![0-9a-fA-F])/g) ?? [];
-      for (const hex of hexes) {
-        if (!NEUTRAL_ALLOWLIST.has(hex.toLowerCase())) {
-          violations.push(`${file.replace(CHROME_DIR, "chrome/")}: ${hex}`);
+    for (const { target, files } of rosters) {
+      for (const file of files) {
+        const hexes = styleCss(readFileSync(file, "utf8")).match(/#[0-9a-fA-F]{6}(?![0-9a-fA-F])/g) ?? [];
+        for (const hex of hexes) {
+          if (!target.allow.has(hex.toLowerCase())) {
+            violations.push(`${file.replace(target.dir, `${target.label}/`)}: ${hex}`);
+          }
         }
       }
     }
     expect(violations).toStrictEqual([]);
   });
 
-  it("every var(--hh-hue-*) used in chrome is a real ledger entry", () => {
+  it("every var(--hh-hue-*) used in chrome/ or lab/ is a real ledger entry", () => {
     const ledgerNames = new Set(Object.keys(HUE_LEDGER));
     const unknown: string[] = [];
-    for (const file of files) {
-      for (const hue of hueVarNames(styleCss(readFileSync(file, "utf8")))) {
-        if (!ledgerNames.has(hue)) {
-          const twin = hue.toLowerCase();
-          const hint = ledgerNames.has(twin) ? " (case mismatch — CSS vars resolve exactly as spelled)" : "";
-          unknown.push(`${file.replace(CHROME_DIR, "chrome/")}: --hh-hue-${hue}${hint}`);
+    for (const { target, files } of rosters) {
+      for (const file of files) {
+        for (const hue of hueVarNames(styleCss(readFileSync(file, "utf8")))) {
+          if (!ledgerNames.has(hue)) {
+            const twin = hue.toLowerCase();
+            const hint = ledgerNames.has(twin) ? " (case mismatch — CSS vars resolve exactly as spelled)" : "";
+            unknown.push(`${file.replace(target.dir, `${target.label}/`)}: --hh-hue-${hue}${hint}`);
+          }
         }
       }
     }
     expect(unknown).toStrictEqual([]);
+  });
+
+  it("the lab arm is ARMED — a planted ledger hex in lab styling is reported", () => {
+    // Self-check (brief: "planted lab hex fails"): the same scan the walk
+    // runs, applied to a synthetic lab-style payload with lab's EMPTY
+    // allowance — the scanner must catch BOTH a spelled hex and an invented
+    // var, or the extension above would be decoration.
+    const planted = styleCss(
+      `<style scoped>.x { border-color: #ef6a5a; color: var(--hh-hue-hot-pink); background: var(--hh-hue-alarm); }</style>`,
+    );
+    const hexes = planted.match(/#[0-9a-fA-F]{6}(?![0-9a-fA-F])/g) ?? [];
+    const labAllow: ReadonlySet<string> = new Set();
+    expect(hexes.filter((h) => !labAllow.has(h.toLowerCase()))).toEqual(["#ef6a5a"]);
+    const ledgerNames = new Set(Object.keys(HUE_LEDGER));
+    expect(hueVarNames(planted).filter((n) => !ledgerNames.has(n))).toEqual(["hot-pink"]);
   });
 
   it("flags case-differing var names — --hh-hue-RED resolves to NOTHING in CSS", () => {

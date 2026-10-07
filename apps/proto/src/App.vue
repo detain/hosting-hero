@@ -23,6 +23,7 @@ import ChromaMeter from "./chrome/ChromaMeter.vue";
 import WorldStage from "./chrome/WorldStage.vue";
 import GateRail, { type RailEntry } from "./chrome/GateRail.vue";
 import InstrumentBezel from "./chrome/instruments/InstrumentBezel.vue";
+import SimLabPanel from "./lab/SimLabPanel.vue";
 import { G1_INSTRUMENTS } from "./chrome/instruments/registry";
 import { ALL_GATE_MOUNTS, type GateMount } from "./gates";
 import { buildCandidates, formatMicroUsd, formatRunClock, isSpiking, worstState, rhoDisplayOf } from "./chrome/metrics";
@@ -32,6 +33,11 @@ import { globalBudget } from "./render/budget";
 
 /** The sandbox view id — never collides with a "G<n>" gateId. */
 const SANDBOX_ID = "sandbox";
+
+/** The Sim Lab view id — rail entry #8, mounted by the SAME non-gate
+ *  mechanic as the sandbox (App.vue owns it; gates/index.ts is untouched —
+ *  the §9.13 six are frozen). */
+const SIMLAB_ID = "sim-lab";
 
 const era = ref<"1998" | "2026">("2026");
 const readout = ref(false);
@@ -47,12 +53,14 @@ const railEntries = computed<readonly RailEntry[]>(() => [
     subtitle: mount.subtitle,
   })),
   { id: SANDBOX_ID, badge: "00", title: "Sandbox — mock runner", subtitle: "The original g1-smoke canvas, instruments and bezel chrome (no gate engine)." },
+  { id: SIMLAB_ID, badge: "LAB", title: "Sim Lab — unattended + coverage", subtitle: "Service benches, not gates: run a whole weekend head-full-stop through @hh/sim-core/unattended, and paint the §2.1 coverage grid with the shared-web roster." },
 ]);
 
 const activeMount = computed<GateMount | null>(
   () => ALL_GATE_MOUNTS.find((mount) => mount.gateId === view.value) ?? null,
 );
-const isSandbox = computed(() => activeMount.value === null);
+const isSimLab = computed(() => activeMount.value === null && view.value === SIMLAB_ID);
+const isSandbox = computed(() => activeMount.value === null && !isSimLab.value);
 
 const projection = computed(() => projectionRef.value);
 const candidates = computed(() => (projection.value === null ? [] : buildCandidates(projection.value)));
@@ -154,7 +162,8 @@ const speed = ref<1 | 2 | 4>(1);
     <GateRail v-model="view" :entries="railEntries" />
 
     <!-- Stage slot: the selected gate panel mounts here (self-contained — it
-         drives its own runner), or the sandbox WorldStage chrome returns. -->
+         drives its own runner), the Sim Lab bench mounts on its own view, or
+         the sandbox WorldStage chrome returns. -->
     <section
       v-if="activeMount !== null"
       class="gate-stage"
@@ -163,6 +172,16 @@ const speed = ref<1 | 2 | 4>(1);
       :data-test-id="`gate-stage-${activeMount.gateId}`"
     >
       <component :is="activeMount.component" />
+    </section>
+
+    <section
+      v-else-if="isSimLab"
+      class="gate-stage"
+      role="tabpanel"
+      aria-label="sim-lab — Sim Lab"
+      data-test-id="gate-stage-sim-lab"
+    >
+      <SimLabPanel />
     </section>
 
     <template v-else>
