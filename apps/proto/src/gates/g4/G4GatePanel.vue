@@ -17,10 +17,11 @@
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { G4Session, type CablePreview, type G4Snapshot } from "./g4Session.ts";
+import { G4Session, type CablePreview, type G4Snapshot, type ReceiptView } from "./g4Session.ts";
 import { PORT_GLYPHS } from "./portShapes.ts";
 import type { PortSpec } from "./portShapes.ts";
 import { latencyLadderRows, type HopLoad } from "./latencyDelta.ts";
+import { describeRefusal } from "../../i18n/refusalCopy.ts";
 import type { Fixed } from "@hh/sim-core/types";
 
 const props = withDefaults(defineProps<{ readonly seed?: number }>(), { seed: 904 });
@@ -35,6 +36,10 @@ const dragPos = ref<{ x: number; y: number } | null>(null);
 const livePreview = ref<CablePreview | null>(null); // ladder during drag
 const termsCard = ref<{ preview: CablePreview; origin: "drag" | "click" } | null>(null);
 const refusalFlash = ref<string | null>(null);
+/** Provenance of the flash copy — "pack" = i18n grammar pack prose,
+ *  "wire" = raw door reason (code the pack doesn't voice yet),
+ *  "preview" = pre-door host verdict (previewCable), null = not a refusal. */
+const refusalSource = ref<"pack" | "wire" | "preview" | null>(null);
 const lastReceiptCount = ref(0);
 
 const PALETTE = Object.freeze([
@@ -171,6 +176,7 @@ function updateLivePreview(targetSpec: PortSpec | null): void {
   const verdict = session.previewCable(armed.portId, targetSpec.portId);
   livePreview.value = verdict.ok ? verdict.preview : null;
   refusalFlash.value = verdict.ok ? null : verdict.reason;
+  refusalSource.value = verdict.ok ? null : "preview";
 }
 
 /** Keyboard click-to-link: Enter arms a source; Enter on a second port is
@@ -181,11 +187,13 @@ function onPortActivate(spec: PortSpec): void {
   if (armed === null) {
     armedPort.value = spec;
     refusalFlash.value = `source armed: ${spec.nodeId} · ${spec.label} — Tab to a target, Enter to see terms`;
+    refusalSource.value = null;
     return;
   }
   armedPort.value = null;
   if (armed.portId === spec.portId) {
     refusalFlash.value = null;
+    refusalSource.value = null;
     return;
   }
   openTerms(armed, spec, "click");
@@ -195,9 +203,11 @@ function openTerms(source: PortSpec, dest: PortSpec, origin: "drag" | "click"): 
   const verdict = session.previewCable(source.portId, dest.portId);
   if (!verdict.ok) {
     refusalFlash.value = verdict.reason; // bounce, name the reason, spend nothing
+    refusalSource.value = "preview";
     return;
   }
   refusalFlash.value = null;
+  refusalSource.value = null;
   if (session.isMemoized(verdict.preview.memoKey)) {
     session.commitCable(verdict.preview, origin); // same action, same consequence ⇒ no prompt
     step();
@@ -217,6 +227,7 @@ function confirmTerms(event?: { shiftKey?: boolean }): void {
 function cancelTerms(): void {
   termsCard.value = null;
   refusalFlash.value = null;
+  refusalSource.value = null;
 }
 
 function pullCable(edgeId: string): void {
@@ -236,8 +247,27 @@ function step(): void {
     const latest = receipts.slice(lastReceiptCount.value);
     lastReceiptCount.value = receipts.length;
     const refused = latest.find((r) => r.outcome === "refused");
-    if (refused !== undefined) refusalFlash.value = refused.reason;
+    if (refused !== undefined) {
+      const line = refusalLineFor(refused);
+      refusalFlash.value = line.text;
+      refusalSource.value = line.fromPack ? "pack" : "wire";
+    }
   }
+}
+
+/** One door refusal → pack prose when the pack voices the code, raw wire
+ *  reason otherwise (i18n/refusalCopy.ts — the session data itself never
+ *  changes; this is render-time copy only). */
+function refusalLineFor(receipt: ReceiptView): ReturnType<typeof describeRefusal> {
+  return describeRefusal(receipt.reason ?? "", {
+    verb: receipt.verb,
+    tick: String(snap.value.tick),
+    hands: snap.value.hands,
+  });
+}
+
+function refusalText(receipt: ReceiptView): string {
+  return refusalLineFor(receipt).text;
 }
 
 /* ── global keys (W = wiring mode; TAB stays with focus per the a11y law) ─ */
@@ -493,7 +523,7 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
           </span>
         </div>
 
-        <p v-if="refusalFlash !== null" class="g4-refusal" data-test="refuse-flash" role="alert">
+        <p v-if="refusalFlash !== null" class="g4-refusal" data-test="refuse-flash" :data-refusal-source="refusalSource" role="alert">
           ⤺ {{ refusalFlash }}
         </p>
 
@@ -502,7 +532,7 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
             <b>[{{ r.outcome === "executed" ? "✓" : "✗" }}]</b>
             t{{ r.tick }} #{{ r.seq }} {{ r.verb }}
             <small v-if="r.clientLabel">{{ r.clientLabel }}</small>
-            <em v-if="r.reason">— {{ r.reason }}</em>
+            <em v-if="r.reason" :data-refusal-source="refusalLineFor(r).fromPack ? 'pack' : 'wire'">— {{ refusalText(r) }}</em>
           </li>
         </ol>
       </aside>

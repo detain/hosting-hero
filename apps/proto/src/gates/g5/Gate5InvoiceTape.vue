@@ -1,9 +1,16 @@
 <script setup lang="ts">
 /** GATE-G5 · invoice tape — which money landed, which is deferred/AR.
- *  Ledger-tape aesthetic: right-aligned tabular money, one row per event. */
-import type { ExplainPayload, TapeRow } from "./projection.ts";
+ *  Ledger-tape aesthetic: right-aligned tabular money, one row per event.
+ *
+ *  COPY LAYER (i18n lane): an ISSUE row on an ANNUAL-prepay deal carries a
+ *  pack-spoken note row — decision `terms.prepay-lock` with the intro price
+ *  and term from GATE5_SCRIPT. Money columns stay ledger truth; the note is
+ *  additive copy, never a re-format of the tape itself. */
+import { computed } from "vue";
+import { signingsById, type ExplainPayload, type TapeRow } from "./projection.ts";
+import { prepayLockCopy } from "../../i18n/noticeCopy.ts";
 
-defineProps<{ rows: readonly TapeRow[] }>();
+const props = defineProps<{ rows: readonly TapeRow[] }>();
 const emit = defineEmits<{ explain: [payload: ExplainPayload] }>();
 
 const EVENT_LABEL: Record<TapeRow["event"], string> = {
@@ -12,6 +19,19 @@ const EVENT_LABEL: Record<TapeRow["event"], string> = {
   declined: "DECL ",
   "written-off": "W/OFF",
 };
+
+/** Tape row → prepay-lock note (null unless this is an annual ISSUE). */
+const prepayNoteByKey = computed(
+  () =>
+    new Map(
+      props.rows.map((row) => {
+        if (row.event !== "issued") return [row.key, null] as const;
+        const signing = signingsById.get(row.contractId);
+        if (signing === undefined || signing.cycle !== "annual") return [row.key, null] as const;
+        return [row.key, prepayLockCopy(row.grossText, signing.termMonths)] as const;
+      }),
+    ),
+);
 </script>
 
 <template>
@@ -22,21 +42,26 @@ const EVENT_LABEL: Record<TapeRow["event"], string> = {
         <tr><th>stamp</th><th>deal</th><th>event</th><th class="num">gross</th><th class="num">net</th><th>where the money is</th></tr>
       </thead>
       <tbody>
-        <tr
-          v-for="row in rows"
-          :key="row.key"
-          class="g5-tape-row"
-          :class="`g5-ev--${row.event}`"
-          :data-test="`g5-tape-row-${row.event}`"
-          @click="emit('explain', row.explain)"
-        >
-          <td class="g5-stamp">{{ row.stamp }}</td>
-          <td>{{ row.contractId }}</td>
-          <td class="g5-ev">{{ EVENT_LABEL[row.event] }}</td>
-          <td class="num">{{ row.grossText }}</td>
-          <td class="num">{{ row.netText }}</td>
-          <td class="g5-landing">{{ row.landing }}</td>
-        </tr>
+        <template v-for="row in rows" :key="row.key">
+          <tr
+            class="g5-tape-row"
+            :class="`g5-ev--${row.event}`"
+            :data-test="`g5-tape-row-${row.event}`"
+            @click="emit('explain', row.explain)"
+          >
+            <td class="g5-stamp">{{ row.stamp }}</td>
+            <td>{{ row.contractId }}</td>
+            <td class="g5-ev">{{ EVENT_LABEL[row.event] }}</td>
+            <td class="num">{{ row.grossText }}</td>
+            <td class="num">{{ row.netText }}</td>
+            <td class="g5-landing">{{ row.landing }}</td>
+          </tr>
+          <tr v-if="prepayNoteByKey.get(row.key) !== null" class="g5-tape-note-row">
+            <td colspan="6" class="g5-tape-note" data-test="g5-tape-prepay-note">
+              {{ prepayNoteByKey.get(row.key) }}
+            </td>
+          </tr>
+        </template>
         <tr v-if="rows.length === 0"><td colspan="6" class="g5-empty">nothing on the tape yet</td></tr>
       </tbody>
     </table>
@@ -63,5 +88,7 @@ const EVENT_LABEL: Record<TapeRow["event"], string> = {
 .g5-ev--landed .g5-ev { color: var(--g5-mint); }
 .g5-ev--declined .g5-ev, .g5-ev--written-off .g5-ev { color: var(--g5-oxide); }
 .g5-landing { color: var(--g5-ink-dim); font-size: 10.5px; }
+.g5-tape-note-row td { border-bottom: 1px dotted var(--g5-rule); }
+.g5-tape-note { color: var(--g5-ink-dim); font-style: italic; font-size: 10px; white-space: normal; }
 .g5-empty { color: var(--g5-ink-dim); font-style: italic; }
 </style>

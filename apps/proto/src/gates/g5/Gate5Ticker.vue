@@ -1,9 +1,28 @@
 <script setup lang="ts">
 /** GATE-G5 · economy notice ticker — the quarter's live wire. Newest notice
- *  STAMPS in (the one orchestrated animation of this slice). */
-import type { TickerRow } from "./projection.ts";
+ *  STAMPS in (the one orchestrated animation of this slice).
+ *
+ *  COPY LAYER (i18n lane): a cliff-lapse row gains a pack-spoken second line
+ *  — decision `alert.churn-fuse` filled with the signer's customer label from
+ *  GATE5_SCRIPT. The wire's own kind/detail/cause columns stay VERBATIM
+ *  ledger truth; pack prose supplements, never replaces, the data. Kinds
+ *  without a pack key render exactly as before (see i18n/noticeCopy.ts). */
+import { computed } from "vue";
+import { signingsById, type TickerRow } from "./projection.ts";
+import { noticeWireCopy } from "../../i18n/noticeCopy.ts";
 
-defineProps<{ rows: readonly TickerRow[] }>();
+const props = defineProps<{ rows: readonly TickerRow[] }>();
+
+/** Row → pack prose line (null = no honest key, chrome keeps its silence). */
+const copyByRowKey = computed(
+  () =>
+    new Map(
+      props.rows.map((row) => [
+        row.key,
+        noticeWireCopy(row.kind, signingsById.get(row.contractId)?.customerLabel ?? null),
+      ]),
+    ),
+);
 </script>
 
 <template>
@@ -21,6 +40,9 @@ defineProps<{ rows: readonly TickerRow[] }>();
         <span class="g5-wid">{{ row.contractId }}</span>
         <span class="g5-wdetail">{{ row.detail }}</span>
         <span class="g5-wcause" :title="row.causeId">{{ row.causeId }}</span>
+        <span v-if="copyByRowKey.get(row.key) !== null" class="g5-wcopy" data-test="g5-ticker-copy">
+          {{ copyByRowKey.get(row.key) }}
+        </span>
       </li>
       <li v-if="rows.length === 0" class="g5-silent">the wire is quiet.</li>
     </ul>
@@ -42,6 +64,7 @@ defineProps<{ rows: readonly TickerRow[] }>();
 .g5-wid { color: var(--g5-teal); font-weight: 700; }
 .g5-wdetail { color: var(--g5-mint); font-variant-numeric: tabular-nums; text-align: right; }
 .g5-wcause { overflow: hidden; text-overflow: ellipsis; color: var(--g5-ink-dim); font-size: 10px; }
+.g5-wcopy { grid-column: 1 / -1; white-space: normal; color: var(--g5-ink-dim); font-style: italic; font-size: 10px; }
 .g5-silent { color: var(--g5-ink-dim); font-style: italic; }
 /* the one orchestrated motion: a new notice SLAMS onto the wire */
 .g5-stamp { animation: g5-slam 320ms cubic-bezier(0.2, 1.4, 0.4, 1) both; background: var(--g5-sodium-soft); }
