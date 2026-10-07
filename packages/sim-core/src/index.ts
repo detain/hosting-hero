@@ -34,6 +34,10 @@ export * from "./versus/index.ts";
  * (grid summary type is CoverageGridSummary, avoiding observed's
  * CoverageSummary by naming, not aliasing). */
 export * from "./coverage/index.ts";
+/* unattended (2026-10-07): explicit-named barrel (WS-8 Long Weekend); the
+ * star ride is proven collision-free by tsc — all names stay native on the
+ * root. */
+export * from "./unattended/index.ts";
 
 /**
  * Disambiguation (integrator): `stableSerialize` exists in BOTH observed

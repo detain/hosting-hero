@@ -20,7 +20,8 @@
     "./loader": "./src/loader/index.ts",
     "./save": "./src/save/index.ts",
     "./versus": "./src/versus/index.ts",
-    "./coverage": "./src/coverage/index.ts"
+    "./coverage": "./src/coverage/index.ts",
+    "./unattended": "./src/unattended/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

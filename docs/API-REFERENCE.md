@@ -6,7 +6,8 @@
 2026-10-07 (`## coverage` section + import row, +28 names); ECONOMY-PERF-LANE
 pass 2026-10-07 (chunked journal + settled-invoice retention rows, +13 names;
 pipeline digest sink port shipped ZERO surface change — `digest-limbs.ts` is
-internal, not barrel-exported).** Ground truth = source
+internal, not barrel-exported); UNATTENDED-LANE pass 2026-10-07
+(`## unattended` section + import row, +69 names).** Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
 `docs/api-verify.test.mjs` (run `node docs/api-verify.test.mjs` — it fails if
@@ -30,7 +31,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 
 | Subpath specifier | Resolves to | Ships |
 |---|---|---|
-| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 11 module barrels **incl. `save` (2026-10-06), `versus` (2026-10-07) and `coverage` (2026-10-07), zero name collisions — native names ride the star** |
+| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 12 module barrels **incl. `save` (2026-10-06), `versus` + `coverage` + `unattended` (2026-10-07), zero name collisions — native names ride the star** |
 | `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (167 exports; intent-door arm landed 2026-10-06, +20) |
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
 | `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (55 exports incl. the 11-name intent-door surface; `internal.ts` private) |
@@ -44,6 +45,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/save` | `src/save/index.ts` | ✅ 183 exports — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
 | `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 69 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names |
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
+| `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 69 exports — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -969,6 +971,122 @@ per-ROW via `secondAnswerGaps`, §2.1). Import: `@hh/sim-core/coverage`.
 | `ThreatRoleCensus` | `ReadonlyMap<string, readonly ThreatRole[]>` | threatId → roles (ARRAY values: the real registry is multi-role — one threat teaches every role it plays) | — |
 | `DarkCellRow` | `interface { threatRole; state; weakestDefenses; sampleThreatIds; invitedThreatIds }` | One teaching row: exposure state = row's BEST cell; weakest-first columns (Fixed, ties code-unit); spawnable samples; P2 invite flags | frozen |
 | `darkCellReport` | `(profile, spawnableThreatIds, threatRoleOf, recentInvites?) => readonly DarkCellRow[]` | THE teaching payload: which unblocked threats exploit which dark/thin rows; covered rows and unhurt holes are omitted; unknown threats/invites fail loud | pure · order-pinned · total-throwing |
+
+---
+
+## unattended
+
+Purpose: the **unattended-sim engine service** — hg §9.2 "The Long Weekend"
+(WS-8's second highest-leverage service): the company runs on YOUR policies for
+≤48h while you are offline, and the HARD RULE is that nothing catastrophic may
+happen (a lot may drift). This module is that law made executable: a
+deterministic fast-forward of the full pipeline + policy autopilot + economy,
+watched by a CLOSED vocabulary of declarative catastrophe guards that HALT the
+run between ticks (never mid-tick) and hand back a digest-stable report. Same
+engine powers the What-Would-Break forward sim (hg §9.2:33875 — kill any object,
+watch the consequence, rewind: a thought experiment, not a chaos monkey — the
+delta is applied to a COPY, the live world is untouched), the Analyst's
+3-minute-post-close sim, Succession's 90-days-without-you, and async-Versus
+defender autopilot seeding. Guards are ROWS NOT CODE (hg §7.14:2187
+"automation executes your mistakes at machine speed" is exactly what
+`ruleRunaway` watches): config accepts no functions, metric names come from a
+closed vocabulary, and every threshold omitted falls back to a PROVISIONAL
+§-grounded builtin (owner taste pending). Running with `guards: []` is legal —
+the report then carries the honest `NO-GUARDS` warning (honesty, not
+enforcement). Composition mirrors `versus/match.ts` (REUSE of that recipe, zero
+imports from it): wave traffic via `planWave` + `directorPropose`, rule phase
+via `createRulePhaseStep`, gauge via `ObservedStore`, optional money lane via
+`runEconomyTick`. What-Would-Break divergence uses the replay bisection pattern
+(`replay/verify.ts`) over checkpoint digests. Import: `@hh/sim-core/unattended`.
+
+### Guardrail model (rows-not-code catastrophes)
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `GUARD_METRICS` | `readonly GuardMetric[]` (5) | CLOSED observation vocabulary: `cash.free`, `servedRate`, `nodesDegradedPct`, `ruleFiringsPerMin`, `errorBudgetSec` — custom guards may ride these names only | frozen · order-pinned |
+| `GuardMetric` | `"cash.free" \| "servedRate" \| "nodesDegradedPct" \| "ruleFiringsPerMin" \| "errorBudgetSec"` | Metric-name type (derived from `GUARD_METRICS`) | closed union |
+| `GUARD_KINDS` | `readonly GuardKind[]` (6) | The catastrophe census: 5 builtins + `threshold` | frozen · order-pinned |
+| `GuardKind` | `"freeCashDepleted" \| "totalOutage" \| "cascadeCollapse" \| "ruleRunaway" \| "errorBudgetGone" \| "threshold"` | Guard predicate family | closed union |
+| `GUARD_COMPARATORS` | `readonly GuardComparator[]` (4) | `lt`/`lte`/`gt`/`gte` — the only verdict arithmetic custom guards may ask for | frozen |
+| `GuardComparator` | `"lt" \| "lte" \| "gt" \| "gte"` | Comparator type | closed union |
+| `FreeCashDepletedDef` | `interface { type: "freeCashDepleted"; sustainedMin? }` | cash.free ≤ 0 sustained N min (hg §9.2 bankruptcy = catastrophic) | — |
+| `TotalOutageDef` | `interface { type: "totalOutage"; sustainedMin? }` | servedRate == 0 across the fleet sustained N min | — |
+| `CascadeCollapseDef` | `interface { type: "cascadeCollapse"; degradedPctGt?; sustainedMin? }` | >X% nodes at ρ ≥ NODE_DEGRADED_RHO_GTE simultaneously (degradedPctGt is a PERCENT number, `50` or `50n` both parse) | — |
+| `RuleRunawayDef` | `interface { type: "ruleRunaway"; firingsPerMinGt?; sustainedMin? }` | rule firings/min > threshold — the machine-speed mistake (§7.14:2187) | — |
+| `ErrorBudgetGoneDef` | `interface { type: "errorBudgetGone"; remainingSecLte?; sustainedMin? }` | min remaining SLA error budget ≤ N seconds sustained (needs the money lane) | — |
+| `ThresholdGuardDef` | `interface { type: "threshold"; metric: GuardMetric; comparator: GuardComparator; value: Fixed; sustainedMin? }` | The custom-guard escape hatch — still rows: closed metric, four comparators, Fixed value | — |
+| `CatastropheDef` | `FreeCashDepletedDef \| … \| ThresholdGuardDef` (6-arm union) | The whole declarative guard vocabulary | closed union |
+| `BUILTIN_CATASTROPHE_DEFS` | `Readonly<Record<builtin GuardKind, CatastropheDef>>` | The PROVISIONAL §-grounded defaults: freeCashDepleted sustain 10, totalOutage 30, cascadeCollapse 50%/10, ruleRunaway 30/min/5, errorBudgetGone ≤0s/10 — omitted def fields fall back to these | deep-frozen |
+| `UnattendedErrorCode` | `"GUARD_PARSE" \| "TICK_BOUNDS" \| "NO_TRAFFIC" \| "REPLAY_STATE" \| "WHATIF_PATCH" \| "CHECKPOINT_CADENCE"` | Machine-readable failure classes | closed union |
+| `UnattendedError` | `class extends Error { code: UnattendedErrorCode; path: string }` | Boundary error; message grammar `unattended[CODE] at 'path': detail` | pure · total-throwing by design |
+| `guardFixedFromInt` | `(whole: number) => Fixed` | Whole-number → Fixed for guard values (safe-int range checked both ends — fail loud before Q16.16 wrap) | pure · total-throwing |
+| `ParsedGuard` | `interface { def; kind; reason; sustainedMin }` | Trusted post-parse guard (`reason` == `guardReasonCode(kind)`; the HALT reason string) | deep-frozen |
+| `parseCatastropheDef` | `(raw: unknown, path?: string) => ParsedGuard` | THE parse-don't-validate boundary (Laws 2/4): unknown type/metric/comparator, non-integer sustainedMin, out-of-range values, NaN/Infinity, arrays and ANY function value all throw `GUARD_PARSE`; bigint-or-number percents normalise through `percentToFixed` | pure · total-throwing |
+| `guardReasonCode` | `(kind: GuardKind) => string` | Halt-reason grammar `guard:<kind>` | pure |
+| `parseGuardList` | `(raw: readonly unknown[]) => readonly ParsedGuard[]` | List boundary: duplicates (same encoded fingerprint) throw; CALLER ORDER is KEPT — the first-listed trigger wins the stop reason | pure · order-pinned · total-throwing |
+| `percentToFixed` | `(pct: number) => Fixed` | Percent-as-Fixed carrier conversion (50 → 50×65536 = 3276800n; rounds hundredths exactly) | pure |
+| `GuardrailSample` | `interface { tick; minute; clocks; businessMinute; metrics: ReadonlyMap<GuardMetric, Fixed>; economyAvailable; errorBudgetAvailable }` | One tick's closed-vocabulary readings + availability flags (unknown metric = ABSENT from the map, never 0 — the never-fires-on-ignorance law) | — |
+| `GuardVerdict` | `"ok" \| "armed" \| "triggered" \| "unavailable"` | Four-rung verdict ladder; `armed` = breach running, under the sustained floor | closed union |
+| `GuardEvaluation` | `interface { reason; verdict; runMin }` | Verdict row (what `UnattendedStop.triggered` carries) | frozen |
+| `evaluateGuardrail` | `(guard: ParsedGuard, sample: GuardrailSample, priorRun: number) => { evaluation: GuardEvaluation; nextRun: number }` | Atomic sustained-run counter fold (Law 3): breach → run+1, trigger at `>= sustainedMin`; clear/unavailable RESET the chain — the predicate, never the clock, decides | pure · total on parsed input |
+| `guardKindCensus` | `(guards: readonly ParsedGuard[]) => ReadonlyMap<GuardKind, number>` | Kind → count, sorted for digest-stable reporting | pure · order-pinned |
+| `ruleRunawayDefaultPerMin` | `() => number` | The PROVISIONAL machine-speed default (30 firings/min) as a plain readout | pure |
+
+### Fast-forward runner (the Long Weekend engine)
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `DEFAULT_CHECKPOINT_EVERY` | `60` | Digest cadence default (perf-lane guidance: one `digestState` per simulated hour) | constant |
+| `LONG_WEEKEND_MAX_TICKS` | `2880` | 48h in 1-min ticks (hg §9.2); beyond it the report warns `LONG-WEEKEND-EXCEEDED` | constant |
+| `GUARD_TRAILING_WINDOW_MIN` | `5` | Rate metrics (servedRate, ruleFiringsPerMin) are exact means over the trailing 5 sim-minutes — a single quiet tick can't fake an outage | constant |
+| `UNATTENDED_CLASSES` | `readonly QosClassDef[]` (gold+bronze) | The versus traffic-shape pair (60/40 weight, inspect vs pass-through) | deep-frozen |
+| `UNATTENDED_RETRY` | `RetryPolicy` | maxRetries 2, backoff 2 min, no jitter purchase (versus twin) | frozen |
+| `UNATTENDED_BASELINE_RATE_PER_MIN` | `40` | Default organic plateau rate when no wave table is configured | constant |
+| `UNATTENDED_AGGRESSION` | `Fixed` (0.7) | Default wave aggression knob (versus twin) | constant |
+| `UNATTENDED_EXPRESS_MAX_CONFIDENCE` | `Fixed` (0.6) | Default express-triage confidence (versus twin) | constant |
+| `NODE_DEGRADED_RHO_GTE` | `Fixed` (0.9) | A node at ρ ≥ 0.9 counts "degraded" for `cascadeCollapse` | constant |
+| `UNATTENDED_DEFAULT_PATIENCE_MIN` | `120` | Default queue patience in sim-minutes | constant |
+| `budgetMinRemainingSec` | `(econ: EconomyState) => bigint` | WORST remaining error-budget seconds across all budgeted contracts (the `errorBudgetGone` carrier) | pure · sorted contract order fold |
+| `mintNodeRecords` | `(cast: readonly UnattendedNodeSpec[]) => readonly NodeRecord[]` | Board cast → fresh NodeRecords (versus mkNode shape: slots-not-HP, hockey-stick, qos-weighted) | pure · cast order |
+| `mintBoardEdges` | `(edges: readonly UnattendedEdgeSpec[] \| undefined) => readonly BoardEdgeRecord[]` | Edge specs → fresh BoardEdgeRecords | pure |
+| `mintInitialState` | `(config, nodes, edges) => GameState` | Fresh `createInitialState` with unattended content-hash envelope (`sheetsHash: "unattended-sheets-v0"`) + hands/board — every run mints ALL mutable state inside the call (replay-state purity) | pure per call · seeded |
+| `buildPipelineConfig` | `(config, nodes) => DefaultPipelineConfig` | Steps 1–11 config (versus twin): 9/10 detection, 1/10 FP, no referral/return; empty express path throws `NO_TRAFFIC` | pure · total-throwing |
+| `runUnattended` | `(config: RunUnattendedConfig) => UnattendedReport` | THE engine: per tick planWave-window envelopes (or baseline plateau, plus whatIf surge) → driver.advance with rulePhase wired → gauge fold → optional money lane (contracts/opex/outage-drain) → checkpoints at cadence → guard evaluation → HALT between ticks on first trigger. Warnings (sorted, deduped): `NO-GUARDS`, `LONG-WEEKEND-EXCEEDED`, `MONEY-GUARD-WITHOUT-ECONOMY`, `NO-TRAFFIC`, `OPEX-REFUSED` | deterministic ×100-pinned · seeded · order-pinned report |
+
+### Report records
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `RunUnattendedConfig` | `interface { runSeed; ticks?; maxSimMinutes?; board; ruleBook; ruleBookHash; guards; traffic?; money?; checkpointEvery?; door?; handCapacity?; expressPath?; deepPath?; expressMaxConfidence?; aggression?; defaultPatienceMin?; gaugeMetric?; engineVersion? }` | The full weekend setup as data (guards arrive RAW and are parsed at the boundary) | — |
+| `UnattendedTrafficConfig` | `interface { tableId?; baselineRatePerMin?; table?; waveStartMinute?; pressureParams? }` | Traffic: flat plateau and/or a waves-corpus table replayed via the versus offline planWave recipe | — |
+| `UnattendedMoneyConfig` | `interface { contracts; initialFreeMicroUsd?; opex?; cfg?; commitmentBps?; dunningEngineOwned?; revenueTags? }` | Money lane wiring (absent ⇒ cash guards stay `unavailable`, honestly) | — |
+| `UnattendedOpexDraft` | `interface { atMinute; amountMicroUsd; memo }` | One host-scheduled burn posted through the ledger at its sim-minute (payroll-like; refused, not overdrafted, when cash is short) | — |
+| `UnattendedNodeSpec` | `interface { id; kind?; slots; serviceTimeUs; dependencyNodeId?; inspectionDepth? }` | Board cast member — slots are capacity (R-32); `disableDefense` what-ifs patch inspectionDepth to `pass-through` | — |
+| `UnattendedEdgeSpec` | `interface { id; relation; from; to; slot? }` | Board cable spec | — |
+| `UnattendedBoardCast` | `interface { nodes; edges? }` | The whole topology as plain data | — |
+| `UnattendedStop` | `interface { reason; atTick; atMinute; snapshotDigest; triggered: readonly GuardEvaluation[] }` | The halt witness: `snapshotDigest` is byte-equal to the finalDigest a clean run ending at `atTick` would print (never-mid-tick law, pinned) | — |
+| `UnattendedCheckpoint` | `interface { tick; digest }` | One cadence digest row (bisection fuel for whatIf) | — |
+| `UnattendedSummary` | `interface { served; blocked; falsePositive; landed; ruleFirings; intentsExecuted; intentsRefused; cashDeltaMicroUsd; cashStartMicroUsd; cashEndMicroUsd; invoiceEvents }` | The Monday-morning totals (µ$ stays in the bigint domain; `invoiceEvents` is the economy-notice census sorted by kind) | — |
+| `UnattendedHourBucket` | `interface { hour; startMinute; endMinuteExclusive; served; blocked; landed; falsePositive; ruleFirings; arrivals; meanArrivalRatePerMin; meanRho; peakRho; degradedTicks; meanFreeCashMicroUsd }` | Per-sim-hour Fixed/bigint aggregates (floor((minute+1)/60) buckets) | — |
+| `UnattendedReport` | `interface { runSeed; ticksRun; stop; finalDigest; perCheckpoint; summary; hourlyBuckets; warns; guardsParsed }` | THE deliverable — digest-stable end-to-end (encodeTaggedTree over the whole report is what the ×100 gate pins) | deep-referenced state |
+
+### What-Would-Break forward sim
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `WHATIF_DELTA_KINDS` | `readonly WhatIfDeltaKind[]` (3) | The enumerable experiment vocabulary (scaleEvent DECLINED for v0 — trafficSurge is its inverse; owner question logged) | frozen |
+| `WhatIfDeltaKind` | `"removeNode" \| "disableDefense" \| "trafficSurge"` | Delta family type | closed union |
+| `RemoveNodeDelta` | `interface { type: "removeNode"; id: string }` | Kill any object (hg §9.2 thought experiment): node + touching cables dropped; dangling deps/express/deep refs patched as DATA; removing the last express carrier fail-louds `WHATIF_PATCH` via the runner | — |
+| `DisableDefenseDelta` | `interface { type: "disableDefense"; id: string }` | One node's inspectionDepth → `pass-through` (defense is per-node in v0; whole-venue death is `removeNode`) | — |
+| `TrafficSurgeDelta` | `interface { type: "trafficSurge"; multiplier: Fixed; minutes; startMinute? }` | Every envelope's ratePerMin × multiplier inside the window (baseline AND wave plans) | — |
+| `WhatIfDelta` | `RemoveNodeDelta \| DisableDefenseDelta \| TrafficSurgeDelta` | The closed delta union | closed union |
+| `RunWhatIfConfig` | `interface { config; delta; horizon?; checkpointEvery? }` | Experiment wiring: one config + one data delta + a horizon (default `min(config.ticks, LONG_WEEKEND_MAX_TICKS)`; both worlds run it) | — |
+| `applyWhatIfDelta` | `(config: RunUnattendedConfig, delta: WhatIfDelta) => { config: RunUnattendedConfig; applied: readonly string[]; surge: SurgeWindow \| null }` | Pure structural patch (Laws 2/3): frozen copies, never mutation; unknown ids throw; `applied` narrates every edit for the report | pure · total-throwing |
+| `runWhatIf` | `(input: RunWhatIfConfig) => WhatIfResult` | THE experiment: baseline and variant fast-forwarded IDENTICALLY (same seeds, same cadence), checkpoint rows aligned, first divergent checkpoint window then tick-by-tick refine (replay bisection pattern) | deterministic ×100 · seeded |
+| `WhatIfDeltaSummary` | `interface { deltaType; applied; baselineTicksRun; variantTicksRun; baselineStop; variantStop; horizon }` | What the delta did (stops included — a variant that HALTS is the most legible divergence of all) | — |
+| `WhatIfResult` | `interface { divergent; firstDivergentTick; divergentWindow; deltaSummary; baseline: UnattendedReport; variant: UnattendedReport }` | The rewindable answer: both full reports + first-divergence tick (`null` when the worlds never split — ×1 surge genuinely proves it) | — |
+| `DEFAULT_WHATIF_CHECKPOINT_EVERY` | `60` | Experiment cadence default (coarse pass), refine always runs cadence 1 inside the winning window | constant |
+| `guardsInConfig` | `(config: RunUnattendedConfig) => readonly ParsedGuard[]` | Boundary passthrough so hosts can preview which guards a weekend will carry | pure |
 
 ---
 
