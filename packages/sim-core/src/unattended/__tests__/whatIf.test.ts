@@ -156,7 +156,7 @@ describe("runWhatIf — bisection finds the minute a change bites", () => {
     // Routing makes the consequence honest: organic baseline rides spare-1
     // (express) while web-1 waits on the deep lane. Remove the one node
     // every visitor actually crosses and the engine REFUSES the world
-    // (empty express path ⇒ NO_TRAFFIC fail-fast) — the loudest possible
+    // (empty express path ⇒ BOARD_EMPTY fail-fast) — the loudest possible
     // answer to "what would break?". Remove the idle one and both worlds
     // run out the horizon, differing only in what the state contains.
     const satBoard = Object.freeze({
@@ -172,7 +172,7 @@ describe("runWhatIf — bisection finds the minute a change bites", () => {
       deepPath: ["web-1"],
       guards: [{ type: "totalOutage", sustainedMin: 5 }],
     });
-    expect(() => runWhatIf({ config, delta: { type: "removeNode", id: "spare-1" } })).toThrow(/NO_TRAFFIC|no express path/);
+    expect(() => runWhatIf({ config, delta: { type: "removeNode", id: "spare-1" } })).toThrow(/BOARD_EMPTY|no express path/);
     const killDeadweight = runWhatIf({ config, delta: { type: "removeNode", id: "web-1" } });
     expect(killDeadweight.divergent).toBe(true); // board census is hashed from tick 1
     expect(killDeadweight.baseline.stop).toBeNull();

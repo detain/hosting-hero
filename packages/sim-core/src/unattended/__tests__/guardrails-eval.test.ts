@@ -25,7 +25,12 @@ function cashFixed(microUsd: bigint): bigint {
 function sampleAt(
   minute: number,
   metrics: Readonly<Partial<Record<string, bigint>>>,
-  opts: { economyAvailable?: boolean; errorBudgetAvailable?: boolean } = {},
+  opts: {
+    economyAvailable?: boolean;
+    errorBudgetAvailable?: boolean;
+    windowArrivals?: number;
+    refusedBurns?: number;
+  } = {},
 ): GuardrailSample {
   const map = new Map<string, bigint>();
   for (const [k, v] of Object.entries(metrics)) {
@@ -39,6 +44,10 @@ function sampleAt(
     metrics: map,
     economyAvailable: opts.economyAvailable ?? true,
     errorBudgetAvailable: opts.errorBudgetAvailable ?? true,
+    // Demand defaults ON: the F2 gate means zero-arrival samples CLEAR the
+    // outage chain, so the pre-F2 ladders keep their meaning at the default.
+    windowArrivals: opts.windowArrivals ?? 1,
+    refusedBurns: opts.refusedBurns ?? 0,
   }) as GuardrailSample;
 }
 

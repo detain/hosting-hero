@@ -81,7 +81,8 @@ export interface RunWhatIfConfig {
   readonly config: RunUnattendedConfig;
   /** The one enumerable change — variant world. */
   readonly delta: WhatIfDelta;
-  /** Horizon in ticks; default min(config.ticks, config.maxSimMinutes). */
+  /** Horizon in ticks; default min(config.ticks, config.maxSimMinutes). An
+   *  EXPLICIT horizon OVERRIDES the config's maxSimMinutes cap (review F7). */
   readonly horizon?: SimTick;
   /** Checkpoint cadence for the coarse pass (default 60; refinement is
    *  always tick-exact inside the located window). */
@@ -258,8 +259,16 @@ function runToHorizon(
   every: number,
   surge: SurgeWindow | null,
 ): UnattendedReport {
+  // The whatIf horizon is the AUTHORITATIVE window for every phase (coarse
+  // AND refine, review F7): strip config.maxSimMinutes so the runner's
+  // min() can never silently shorten it — an explicit horizon of 20 under
+  // a 10-minute config cap asked for 20 ticks and got 10, and the refine
+  // re-play inside a window past the cap would corrupt the bisection.
+  // When the horizon was DERIVED from the config the strip is a no-op
+  // (resolveHorizon already took the same minimum).
+  const { maxSimMinutes: _cappedByConfig, ...rest } = config;
   const scoped: RunUnattendedConfig = Object.freeze({
-    ...config,
+    ...rest,
     ticks: horizon,
     checkpointEvery: every,
   });

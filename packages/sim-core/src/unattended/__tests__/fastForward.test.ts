@@ -88,7 +88,7 @@ describe("calm weekend baseline", () => {
     expect(() => runUnattended(noHorizon)).toThrow(/TICK_BOUNDS/);
     expect(() => runUnattended(uaConfig({ ticks: 0n }))).toThrow(/TICK_BOUNDS/);
     expect(() => runUnattended(uaConfig({ ticks: 5n, checkpointEvery: 0 }))).toThrow(/CHECKPOINT_CADENCE/);
-    expect(() => runUnattended(uaConfig({ ticks: 5n, board: { nodes: [] } }))).toThrow(/NO_TRAFFIC/);
+    expect(() => runUnattended(uaConfig({ ticks: 5n, board: { nodes: [] } }))).toThrow(/BOARD_EMPTY/);
   });
 
   it("a disabled baseline without waves honestly says the pipe is empty", () => {

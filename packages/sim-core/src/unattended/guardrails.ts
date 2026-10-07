@@ -13,11 +13,13 @@
  * Functions are ILLEGAL in a guard record — a config that could compute
  * arbitrary logic would smuggle nondeterminism into the offline session.
  *
- * §-grounding for the built-in shapes:
+ *  §-grounding for the built-in shapes:
  *  • freeCashDepleted  — insolvency ends the company (economy/ledger
- *    six-bucket cash; the weekend must not end broke).
- *  • totalOutage       — every ingress lane serving nothing (§6.2 lanes;
- *    the player returns to a dead company).
+ *    six-bucket cash; the weekend must not end broke — and a refused burn
+ *    IS inability to pay, chain-armed even while cash rides above zero).
+ *  • totalOutage       — every ingress lane serving nothing UNDER DEMAND
+ *    (§6.2 lanes; the player returns to a dead company; a quiet world is
+ *    idle, not dead, and never breaches).
  *  • cascadeCollapse   — a critical mass of nodes degraded at once
  *    (TopologyGraph blast-radius story; §6.13 health cells).
  *  • ruleRunaway       — "automation executes your mistakes at machine
@@ -67,13 +69,21 @@ export type GuardComparator = (typeof GUARD_COMPARATORS)[number];
 
 /* ═══════════════════════════ the rule records ═══════════════════════════ */
 
-/** Free cash ≤ 0 sustained (sim minutes) — insolvency. */
+/** Free cash ≤ 0 sustained (sim minutes) — insolvency. A ledger REFUSAL on
+ *  this tick (a burn that could not be covered, an invoice settle routed
+ *  around the negative-bucket law) also arms the chain: inability to PAY is
+ *  the catastrophe the cash number alone hides while pennies sit stuck
+ *  above zero (review F5). */
 export interface FreeCashDepletedDef {
   readonly type: "freeCashDepleted";
   readonly sustainedMin: SimMinute;
 }
 
-/** Served rate exactly 0 across every lane for N minutes — total darkness. */
+/** Served rate exactly 0 across every lane for N minutes while DEMAND
+ *  existed — total darkness. The demand gate (review F2): zero served with
+ *  zero arrivals in the trailing window is an IDLE world, and idle is
+ *  CLEAR (not "unavailable": the world is fully observed, merely quiet —
+ *  the sustain chain resets), never a breach. Dead-under-load still halts. */
 export interface TotalOutageDef {
   readonly type: "totalOutage";
   readonly sustainedMin: SimMinute;
@@ -135,12 +145,17 @@ export const BUILTIN_CATASTROPHE_DEFS = Object.freeze({
 
 /* ═══════════════════════════ error family + parse ═══════════════════════════ */
 
-/** All unattended-lane failures carry this code family (fail-fast, named). */
+/** All unattended-lane failures carry this code family (fail-fast, named).
+ *  CLOSED union — every code has a live throw site (the review sweep
+ *  deleted the never-minted REPLAY_STATE and renamed NO_TRAFFIC, whose one
+ *  site refuses an EMPTY BOARD, not empty traffic — traffic emptiness is
+ *  the NO-TRAFFIC warn's job). Grammar follows the versus/deck.ts family
+ *  and docs/API-REFERENCE.md: `unattended[CODE] at 'path': detail`. */
 export type UnattendedErrorCode =
   | "GUARD_PARSE"
+  | "CONFIG_PARSE"
   | "TICK_BOUNDS"
-  | "NO_TRAFFIC"
-  | "REPLAY_STATE"
+  | "BOARD_EMPTY"
   | "WHATIF_PATCH"
   | "CHECKPOINT_CADENCE";
 
@@ -149,19 +164,27 @@ export class UnattendedError extends Error {
   readonly path: string;
 
   constructor(code: UnattendedErrorCode, path: string, message: string) {
-    super(`${code} at ${path}: ${message}`);
+    super(`unattended[${code}] at '${path}': ${message}`);
     this.name = "UnattendedError";
     this.code = code;
     this.path = path;
   }
 }
 
+/** GUARD_PARSE is reserved STRICTLY for guard-record parse failures —
+ *  aggregate math that overflows the Fixed CARRIER is not a parse error
+ *  (review F1: mislabeled GUARD_PARSE sent hosts hunting for a bad config
+ *  row while their busy weekend's DATA was simply large). */
 function bad(path: string, message: string): never {
   throw new UnattendedError("GUARD_PARSE", path, message);
 }
 
 /** Q16.16 from a safe plain integer (fixed.ts fromInt has a ±32768 raw range
- *  designed for protocol values; guard thresholds ride the same law). */
+ *  designed for protocol values; guard thresholds ride the same law).
+ *  LEGAL USE: authoring THRESHOLD constants (they name human decisions that
+ *  fit the carrier). ILLEGAL USE: converting run-time SUMS/AGGREGATES — a
+ *  busy weekend banks 60 000 arrivals an hour; route those through the raw
+ *  bigint domain and a single `fromRatio` (review F1). */
 export function guardFixedFromInt(whole: number): Fixed {
   if (!Number.isSafeInteger(whole)) bad("guardrails/guardFixedFromInt", `needs a safe integer, got ${String(whole)}`);
   if (whole > 32767 || whole < -32768) bad("guardrails/guardFixedFromInt", `${whole} overflows the Q16.16 raw range`);
@@ -343,6 +366,17 @@ export interface GuardrailSample {
   readonly economyAvailable: boolean;
   /** True when at least one contract error budget is readable. */
   readonly errorBudgetAvailable: boolean;
+  /** Arrivals observed inside the guard's trailing window — DEMAND
+   *  evidence (review F2). totalOutage breaches only under demand: an
+   *  idle world (zero served AND zero asked) is fully observed and fine,
+   *  so its verdict is "clear" — the sustain chain resets, it does not
+   *  bank quiet minutes. */
+  readonly windowArrivals: number;
+  /** Ledger refusals counted on THIS tick (opex burns that could not be
+   *  covered + invoice settles voided by the negative-bucket law). A
+   *  refusal IS inability to pay: it arms the freeCashDepleted chain even
+   *  while the cash number rides above zero (review F5). */
+  readonly refusedBurns: number;
 }
 
 export type GuardVerdict = "ok" | "armed" | "triggered" | "unavailable";
@@ -381,14 +415,26 @@ type Breach = "breach" | "clear" | "unavailable";
 
 function breachOf(def: CatastropheDef, sample: GuardrailSample): Breach {
   switch (def.type) {
-    case "freeCashDepleted":
+    case "freeCashDepleted": {
       // Never fires on ignorance: without a threaded economy the mirrored
       // cash is mint-zero, and a zero that means "unobserved" must not
       // masquerade as a zero that means "broke".
       if (!sample.economyAvailable) return "unavailable";
+      // Inability-to-pay arms the chain (review F5): cash stuck at a small
+      // positive while every burn bounces reads "above zero" to the metric
+      // alone — the refusals are the catastrophe, one chain step per tick
+      // no matter how many burns bounced inside it (no double-fire).
+      if (sample.refusedBurns > 0) return "breach";
       return compareMetric(sample, "cash.free", (v) => compare(v, FIXED_ZERO) <= 0);
-    case "totalOutage":
+    }
+    case "totalOutage": {
+      // Demand gate (review F2): idle ≠ dead ≠ ignorant. Zero arrivals in
+      // the window means NOTHING was denied service — the honest verdict
+      // is CLEAR (the chain resets), not a banked breach and not an
+      // "unavailable" dodge. Traffic present and nothing served is death.
+      if (sample.windowArrivals <= 0) return "clear";
       return compareMetric(sample, "servedRate", (v) => v === FIXED_ZERO);
+    }
     case "cascadeCollapse":
       return compareMetric(sample, "nodesDegradedPct", (v) => compare(v, percentToFixed(def.degradedPctGt)) > 0);
     case "ruleRunaway":
