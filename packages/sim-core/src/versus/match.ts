@@ -27,9 +27,16 @@
  *
  * Determinism: no clocks, no Math.random, no floats. The harness contract
  * is met by construction — createVersusRunner mints EVERY mutable object
- * (driver, rule-phase closure, observed store, maps) inside the runner
- * call, so same-request ⇒ same-answer and replayDigests(×100) of
- * digestState lands on one byte-identical value.
+ * (driver, rule-phase closure, observed store, maps) inside one resumable
+ * VersusEngine per runner instance, so same-request ⇒ same-answer and
+ * replayDigests(×100) of digestState lands on one byte-identical value.
+ * The default runner MEMOIZES: a single monotone forward pass with dense
+ * per-tick state snapshots replaces the per-probe re-simulation (capture
+ * was O(n²) in requested ticks; it is now O(total ticks + requests)). The
+ * purity contract survives because GameState is an immutable-by-convention
+ * VALUE at every tick (law cited on createVersusEngine) and the late-intent
+ * guard rebuilds the engine instead of answering from a poisoned cursor.
+ * `{ memoize: false }` opts back into the monolithic per-request re-sim.
  *
  * Scoring law (OD-1/OD-2 UNCHOSEN): match score folds ONLY the explicit
  * MatchScoringWeights record handed in as data. This file never calls the
@@ -668,12 +675,64 @@ function scheduleOptionsFrom(config: VersusMatchConfig): DeckScheduleOptions {
   };
 }
 
-/** Everything mutable is minted HERE — purity by construction. */
-function simulateVersus(
-  config: VersusMatchConfig,
-  targetTick: number,
-  stampedIntents: readonly ExternalIntent[],
-): VersusRun {
+/**
+ * The canonical loop and every mutable object it closes over, in resumable
+ * form. ONE engine per consumer: `advanceTo` replays the tick body verbatim
+ * from the current cursor; `finish` seals the run into the full VersusRun.
+ * `simulateVersus` is a thin monolithic wrapper (enqueue → advance → finish)
+ * and the memoized runner drives the SAME methods — both paths execute one
+ * shared line of sim code, so their byte-identity is structural, not a hope.
+ *
+ * SNAPSHOT SAFETY (why a stored per-tick state needs no clone) — the
+ * pipeline's immutable-by-convention law:
+ *  • driver.ts "rebuild GameState (immutable-by-convention)": every advance
+ *    mints fresh frozen `units`/`nodes`/`lanes`/`observed` values, and
+ *    pipeline/internal.ts `withUnit` is copy-on-write;
+ *  • observed/store.ts `canonicalizeCellAtGate` freezes every cell at the
+ *    write gate and later ticks REPLACE map entries (`#cells.set`) — stored
+ *    cell objects are never mutated in place;
+ *  • the intent door writes hands/board/ruleBook as fresh frozen slices and
+ *    leaves the origin untouched on refusal — pinned by
+ *    pipeline/__tests__/intent-door.test.ts:602 ("execution never mutates
+ *    units/lanes/observed/cash/contracts") and :652 (edge-map identity).
+ * A GameState observed at tick t is therefore an immutable value: the memo
+ * stores the REFERENCE. The versus loop's own per-tick wrapper
+ * (`Object.freeze({ ...game, observed })`) is likewise minted fresh per tick.
+ *
+ * Intent-log law (mirrors replay/verify.ts's runner licence — "a runner may
+ * be a full re-sim ... or wrap an incremental engine — determinism only
+ * requires that (initialState, seed, intents≤tick) → stateAtTick is a pure
+ * function"): each request's `intentsUpToTick` must be the tick-filtered
+ * prefix of ONE stamped log (the harness/capture filter a single stamped log
+ * by tick, so every shorter request is a prefix of every longer one — by
+ * object IDENTITY, which `filter` preserves). createVersusRunner validates
+ * the law per request and degrades LOUDLY-CORRECT on breach: a late reveal
+ * rebuilds the engine, a rival prefix turns memoization off for good — the
+ * caller pays time, never a wrong answer.
+ */
+interface VersusEngine {
+  /** Highest tick the forward pass has completed (0 = the committed start). */
+  cursorTick(): number;
+  /** Queue every not-yet-seen intent (bucketed by tick, arrival order —
+   *  structurally identical to the monolithic pre-loop queue build; identity
+   *  dedup makes repeated prefixes of one log a no-op). */
+  enqueueIntents(intents: readonly ExternalIntent[]): void;
+  /** Run the tick body from cursor+1 through `targetTick`, calling
+   *  `onTick(tick, snapshot)` after each completed tick. */
+  advanceTo(
+    targetTick: number,
+    onTick?: (tick: number, state: VersusRunState) => void,
+  ): void;
+  /** Fresh frozen runner-visible state at the current cursor. */
+  stateSnapshot(): VersusRunState;
+  /** Seal the run (terminal: the event log freezes with it). */
+  finish(): VersusRun;
+}
+
+/** Everything mutable is minted HERE — purity by construction (once per
+ *  engine; the runner's memo reuses one engine across requests, which the
+ *  VersusEngine docblock proves keeps same-request ⇒ same-answer exact). */
+function createVersusEngine(config: VersusMatchConfig): VersusEngine {
   const schedule = deckToWaveTable(config.deck, scheduleOptionsFrom(config));
 
   const seed = config.seed;
@@ -769,11 +828,7 @@ function simulateVersus(
   const store = new ObservedStore();
 
   const intentQueue = new Map<string, readonly ExternalIntent[]>();
-  for (const intent of stampedIntents) {
-    const key = String(intent.tick);
-    const bucket = intentQueue.get(key);
-    intentQueue.set(key, bucket === undefined ? [intent] : [...bucket, intent]);
-  }
+  const seenIntents = new Set<ExternalIntent>();
 
   const counters = new Map<string, MutableCounters>();
   const bump = (label: string, terminal: OutcomeTerminal): void => {
@@ -796,11 +851,14 @@ function simulateVersus(
   let game = game0;
   let ruleFirings = 0;
   let arrivalsSeen = 0;
+  let cursor = 0;
+  let finished = false;
   const events: SimEvent[] = [];
   const gaugeNode = asEntityId(defender.doctrineGauge?.nodeId ?? (defender.nodes[0]?.id ?? "versus-gauge"));
   const gaugeMetric = asMetricId(defender.doctrineGauge?.metric ?? "incoming");
 
-  for (let t = 1; t <= targetTick; t += 1) {
+  const tickOnce = (): void => {
+    const t = cursor + 1;
     const minute = game.context.minute + 1;
     const active: WaveEnvelope[] = [];
     const labels: string[] = [];
@@ -865,24 +923,81 @@ function simulateVersus(
     const merged = new Map(game.observed);
     for (const [key, cell] of store.toObservedMap()) merged.set(key, cell);
     game = Object.freeze({ ...game, observed: Object.freeze(merged) });
-  }
+  };
 
-  const frozenCounters = new Map<string, OutcomeCounters>();
-  for (const [label, row] of counters) frozenCounters.set(label, Object.freeze({ ...row }));
-
-  return Object.freeze({
-    state: Object.freeze({
-      game,
-      totals: totalsOf(frozenCounters),
-      ruleFirings,
-    }),
-    events: Object.freeze(events),
-    counters: Object.freeze(frozenCounters),
-    unitLabel,
-    arrivalCauseByUnit,
-    retryParent,
-    schedule,
+  const stateSnapshot = (): VersusRunState => Object.freeze({
+    game,
+    totals: totalsOf(counters),
+    ruleFirings,
   });
+
+  return {
+    cursorTick: () => cursor,
+
+    enqueueIntents: (intents: readonly ExternalIntent[]): void => {
+      for (const intent of intents) {
+        if (seenIntents.has(intent)) continue;
+        seenIntents.add(intent);
+        const key = String(intent.tick);
+        const bucket = intentQueue.get(key);
+        intentQueue.set(key, bucket === undefined ? [intent] : [...bucket, intent]);
+      }
+    },
+
+    advanceTo: (
+      targetTick: number,
+      onTick?: (tick: number, state: VersusRunState) => void,
+    ): void => {
+      if (finished) {
+        throw new VersusError("OUT_OF_RANGE", "match.advanceTo", "engine already finished — finish() seals the event log");
+      }
+      if (!Number.isSafeInteger(targetTick) || targetTick < cursor) {
+        throw new VersusError("OUT_OF_RANGE", "match.advanceTo", `targetTick ${targetTick} is not a safe integer ≥ cursor ${cursor}`);
+      }
+      for (; cursor < targetTick; ) {
+        tickOnce();
+        cursor += 1;
+        onTick?.(cursor, stateSnapshot());
+      }
+    },
+
+    stateSnapshot,
+
+    finish: (): VersusRun => {
+      finished = true;
+      const frozenCounters = new Map<string, OutcomeCounters>();
+      for (const [label, row] of counters) frozenCounters.set(label, Object.freeze({ ...row }));
+
+      return Object.freeze({
+        state: Object.freeze({
+          game,
+          totals: totalsOf(frozenCounters),
+          ruleFirings,
+        }),
+        events: Object.freeze(events),
+        counters: Object.freeze(frozenCounters),
+        unitLabel,
+        arrivalCauseByUnit,
+        retryParent,
+        schedule,
+      });
+    },
+  };
+}
+
+/** Monolithic re-simulation: one fresh engine, one forward pass, full
+ *  VersusRun. This is the naive reference path — the memoized runner must
+ *  answer byte-identically to `.state` here at every tick (proven by
+ *  __tests__/match-memo.test.ts). */
+function simulateVersus(
+  config: VersusMatchConfig,
+  targetTick: number,
+  stampedIntents: readonly ExternalIntent[],
+): VersusRun {
+  const engine = createVersusEngine(config);
+  engine.enqueueIntents(stampedIntents);
+  engine.advanceTo(targetTick);
+  return engine.finish();
 }
 
 /** Outcome-side resolution: terminal units may be pruned from state.units
@@ -1112,21 +1227,114 @@ function explainDecisive(config: VersusMatchConfig, run: VersusRun, decisive: Pe
 /* ═══════════════════════════ public entry points ═══════════════════════════ */
 
 /**
- * Harness-ready SimRunner: re-simulates from the committed config to the
- * requested tick. The tick-0 state is a pure function of the config, so
- * `request.initialState` may be ANY legal tick-0 VersusRunState; the
- * defender reserve travels as the replay bundle's stamped wire values
- * (StampedIntent is structurally the door's ExternalIntent) — capture it
- * with `intents: stampReserveIntents(defender.reserveIntents ?? [])`.
- * All mutable machinery is minted per call — same request, same answer,
- * byte for byte.
+ * Harness-ready SimRunner over ONE resumable engine (see createVersusEngine
+ * for the loop and the immutability law). The tick-0 state is a pure
+ * function of the config, so `request.initialState` may be ANY legal tick-0
+ * VersusRunState; the defender reserve travels as the replay bundle's
+ * stamped wire values (StampedIntent is structurally the door's
+ * ExternalIntent) — capture it with
+ * `intents: stampReserveIntents(defender.reserveIntents ?? [])`.
+ *
+ * MEMOIZATION (perf lane, audit rec #4): a naive runner re-simulates from
+ * tick 1 for every probe, so captureRun's ascending ring walk costs O(n²)
+ * (reviewer: 44ms → 1370ms for 35 → 280 ticks). The default (`memoize`
+ * unset or true) advances ONE engine monotonically to the furthest tick
+ * ever requested and keeps a DENSE per-tick map of the frozen
+ * VersusRunState snapshots: ascending requests amortize to O(total ticks),
+ * and arbitrary-order probes (verify bisection hits ring ticks mid-range)
+ * are O(1) snapshot reads. Snapshots store REFERENCES, never clones —
+ * legal because every tick's GameState is an immutable-by-convention value
+ * (full law citation on VersusEngine). Memory cost is therefore "the run
+ * keeps every intermediate GameState alive": linear in ticks requested,
+ * each state already exists as a fresh mint during the pass anyway (see
+ * the bench test for the measured 280-tick figure).
+ *
+ * Purity is byte-identical to the naive path by construction: both drive
+ * the same tick body; a per-tick snapshot taken at cursor t is the exact
+ * value `simulateVersus(config, t, ·).state` returns, PROVIDED the request
+ * stream respects the intent-log law on VersusEngine. The watermark check
+ * below enforces it: a LATE REVEAL (new intent stamped at or before the
+ * cursor — its tick can no longer fire) rebuilds the engine once; a RIVAL
+ * PREFIX (the engine already consumed an intent the request denies, at or
+ * before the requested tick) switches this runner to naive for its lifetime.
+ * Either way the answer equals the naive re-sim; only the clock differs.
+ * `{ memoize: false }` opts out entirely: the same mint-per-call behavior
+ * as before the perf lane.
  */
-export function createVersusRunner(config: VersusMatchConfig): SimRunner<VersusRunState> {
-  return (request) => simulateVersus(
+export function createVersusRunner(
+  config: VersusMatchConfig,
+  options?: { readonly memoize?: boolean },
+): SimRunner<VersusRunState> {
+  const naive: SimRunner<VersusRunState> = (request) => simulateVersus(
     config,
     Number(request.targetTick),
     request.intentsUpToTick as readonly ExternalIntent[],
   ).state;
+
+  if (options?.memoize === false) return naive;
+
+  let engine = createVersusEngine(config);
+  let watermark: readonly ExternalIntent[] = [];
+  let snapshots = new Map<number, VersusRunState>();
+  const primeSnapshots = (): void => {
+    snapshots = new Map<number, VersusRunState>();
+    snapshots.set(0, engine.stateSnapshot());
+  };
+  primeSnapshots();
+  let memoEnabled = true;
+
+  return (request) => {
+    if (!memoEnabled) return naive(request);
+    const targetTick = Number(request.targetTick);
+    const intents = request.intentsUpToTick as readonly ExternalIntent[];
+
+    // Law check 1 — one log: the shared head must agree entry-for-entry
+    // (identity is preserved by the harness's `filter`). A mismatch means
+    // the caller swapped logs mid-run: memo can no longer tell which past
+    // is the truth, so this runner goes naive for good.
+    const shared = Math.min(intents.length, watermark.length);
+    for (let i = 0; i < shared; i += 1) {
+      if (intents[i] !== (watermark[i] as ExternalIntent)) {
+        memoEnabled = false;
+        return naive(request);
+      }
+    }
+
+    if (intents.length > watermark.length) {
+      // Law check 2 — late reveal: a newly visible intent stamped at or
+      // before the cursor missed its tick in this engine's past. Rebuild
+      // from tick 0 with the full truth (one honest re-sim, memo stays on).
+      const cursor = engine.cursorTick();
+      for (let i = shared; i < intents.length; i += 1) {
+        if (Number((intents[i] as ExternalIntent).tick) <= cursor) {
+          engine = createVersusEngine(config);
+          primeSnapshots();
+          break;
+        }
+      }
+      engine.enqueueIntents(intents);
+      watermark = intents;
+    } else if (intents.length < watermark.length) {
+      // Law check 3 — rival prefix: the engine passed T already knowing an
+      // intent this request denies (tick ≤ T). Snapshot(T) would answer a
+      // different request than naive(T, intents) — same naive-for-life
+      // degrade as check 1 (the caller is cycling contradictory prefixes).
+      for (let i = intents.length; i < watermark.length; i += 1) {
+        if (Number((watermark[i] as ExternalIntent).tick) <= targetTick) {
+          memoEnabled = false;
+          return naive(request);
+        }
+      }
+    }
+
+    if (targetTick > engine.cursorTick()) {
+      engine.advanceTo(targetTick, (tick, state) => snapshots.set(tick, state));
+    }
+    const served = snapshots.get(targetTick);
+    // Dense capture makes every 0 ≤ targetTick ≤ cursor a hit; anything
+    // else (a negative probe) is the contract's edge — answer it honestly.
+    return served ?? naive(request);
+  };
 }
 
 /** Tick-0 run state — the harness `initialState` for capture. Pure

@@ -11,6 +11,6 @@ declare module "node:path" {
   export function join(...parts: string[]): string;
 }
 
-declare const process: { cwd(): string };
+declare const process: { cwd(): string; memoryUsage(): { heapUsed: number } };
 
 declare function structuredClone<T>(value: T): T;
