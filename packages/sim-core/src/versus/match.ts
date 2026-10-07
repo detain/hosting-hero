@@ -95,7 +95,7 @@ import type { BoardEdgeRecord, PlayerVerbPayload } from "../types.ts";
 import { createRulePhaseStep } from "../policy/index.ts";
 import { ObservedStore } from "../observed/index.ts";
 import { compareCodeUnits, encodeTaggedTree, fnv1a64OverBytes, utf8Bytes } from "../internal/canonical.ts";
-import type { SimRunner } from "../replay/verify.ts";
+import type { SimRunner, SimRunnerRequest } from "../replay/verify.ts";
 import {
   buildCauseIndex,
   causeRecordsFromEvents,
@@ -708,7 +708,9 @@ function scheduleOptionsFrom(config: VersusMatchConfig): DeckScheduleOptions {
  * object IDENTITY, which `filter` preserves). createVersusRunner validates
  * the law per request and degrades LOUDLY-CORRECT on breach: a late reveal
  * rebuilds the engine, a rival prefix turns memoization off for good — the
- * caller pays time, never a wrong answer.
+ * caller pays time, never a wrong answer. "Loudly" is literal since the
+ * R6 watchlist fix: every breach is observable on `runner.memoStats()`
+ * (`rebuilds` / `degraded` / `enabled`).
  */
 interface VersusEngine {
   /** Highest tick the forward pass has completed (0 = the committed start). */
@@ -1227,6 +1229,32 @@ function explainDecisive(config: VersusMatchConfig, run: VersusRun, decisive: Pe
 /* ═══════════════════════════ public entry points ═══════════════════════════ */
 
 /**
+ * Read-only memo observability (R6 watchlist: a degrade must never be
+ * silent). Returned FRESH-FROZEN per call by `createVersusRunner(...)`
+ * `.memoStats()` — a snapshot, never a live handle into the runner.
+ *
+ *  • `enabled` — false when `{ memoize: false }` was chosen up front OR
+ *    after a permanent degrade flip (shared-head mismatch / rival prefix);
+ *    a false here means the caller is paying naive per-request cost.
+ *  • `ticksAdvanced` — total engine ticks executed on the memo path so
+ *    far, INCLUDING ticks a late-reveal rebuild re-simulated from tick 0.
+ *  • `snapshotCount` — per-tick snapshots currently retained (dense: the
+ *    furthest served tick + 1; resets to 1 on each rebuild; frozen at the
+ *    last retained size once degraded, since the map is no longer served).
+ *  • `rebuilds` — late-reveal rebuilds (law check 2): each is ONE honest
+ *    re-simulation and leaves the memo ENABLED.
+ *  • `degraded` — the shared-head (check 1) or rival-prefix (check 3)
+ *    flip fired: memoization is off for this runner's lifetime.
+ */
+export interface VersusMemoStats {
+  readonly enabled: boolean;
+  readonly ticksAdvanced: number;
+  readonly snapshotCount: number;
+  readonly rebuilds: number;
+  readonly degraded: boolean;
+}
+
+/**
  * Harness-ready SimRunner over ONE resumable engine (see createVersusEngine
  * for the loop and the immutability law). The tick-0 state is a pure
  * function of the config, so `request.initialState` may be ANY legal tick-0
@@ -1257,21 +1285,36 @@ function explainDecisive(config: VersusMatchConfig, run: VersusRun, decisive: Pe
  * cursor — its tick can no longer fire) rebuilds the engine once; a RIVAL
  * PREFIX (the engine already consumed an intent the request denies, at or
  * before the requested tick) switches this runner to naive for its lifetime.
- * Either way the answer equals the naive re-sim; only the clock differs.
- * `{ memoize: false }` opts out entirely: the same mint-per-call behavior
- * as before the perf lane.
+ * Either way the answer equals the naive re-sim; only the clock differs —
+ * and the clock difference is now OBSERVABLE: the returned runner carries
+ * a `memoStats()` probe (see VersusMemoStats) so `enabled:false`, a
+ * `degraded` flip, and every `rebuilds` event are visible to the caller
+ * without a behavior change to any simulated byte. Naive mode reports
+ * `enabled: false` honestly (the memo was never on to lose).
  */
 export function createVersusRunner(
   config: VersusMatchConfig,
   options?: { readonly memoize?: boolean },
-): SimRunner<VersusRunState> {
+): SimRunner<VersusRunState> & { readonly memoStats: () => VersusMemoStats } {
   const naive: SimRunner<VersusRunState> = (request) => simulateVersus(
     config,
     Number(request.targetTick),
     request.intentsUpToTick as readonly ExternalIntent[],
   ).state;
 
-  if (options?.memoize === false) return naive;
+  if (options?.memoize === false) {
+    // Opted out up front: nothing was ever memoized, so every counter
+    // reads its honest zero and `enabled` is false from birth.
+    return Object.assign(naive, {
+      memoStats: (): VersusMemoStats => Object.freeze({
+        enabled: false,
+        ticksAdvanced: 0,
+        snapshotCount: 0,
+        rebuilds: 0,
+        degraded: false,
+      }),
+    });
+  }
 
   let engine = createVersusEngine(config);
   let watermark: readonly ExternalIntent[] = [];
@@ -1282,8 +1325,11 @@ export function createVersusRunner(
   };
   primeSnapshots();
   let memoEnabled = true;
+  let ticksAdvanced = 0;
+  let rebuilds = 0;
+  let degraded = false;
 
-  return (request) => {
+  const runner = (request: SimRunnerRequest<VersusRunState>): VersusRunState => {
     if (!memoEnabled) return naive(request);
     const targetTick = Number(request.targetTick);
     const intents = request.intentsUpToTick as readonly ExternalIntent[];
@@ -1296,6 +1342,7 @@ export function createVersusRunner(
     for (let i = 0; i < shared; i += 1) {
       if (intents[i] !== (watermark[i] as ExternalIntent)) {
         memoEnabled = false;
+        degraded = true;
         return naive(request);
       }
     }
@@ -1309,6 +1356,7 @@ export function createVersusRunner(
         if (Number((intents[i] as ExternalIntent).tick) <= cursor) {
           engine = createVersusEngine(config);
           primeSnapshots();
+          rebuilds += 1;
           break;
         }
       }
@@ -1322,19 +1370,32 @@ export function createVersusRunner(
       for (let i = intents.length; i < watermark.length; i += 1) {
         if (Number((watermark[i] as ExternalIntent).tick) <= targetTick) {
           memoEnabled = false;
+          degraded = true;
           return naive(request);
         }
       }
     }
 
     if (targetTick > engine.cursorTick()) {
+      const before = engine.cursorTick();
       engine.advanceTo(targetTick, (tick, state) => snapshots.set(tick, state));
+      ticksAdvanced += engine.cursorTick() - before;
     }
     const served = snapshots.get(targetTick);
     // Dense capture makes every 0 ≤ targetTick ≤ cursor a hit; anything
     // else (a negative probe) is the contract's edge — answer it honestly.
     return served ?? naive(request);
   };
+
+  return Object.assign(runner, {
+    memoStats: (): VersusMemoStats => Object.freeze({
+      enabled: memoEnabled,
+      ticksAdvanced,
+      snapshotCount: snapshots.size,
+      rebuilds,
+      degraded,
+    }),
+  });
 }
 
 /** Tick-0 run state — the harness `initialState` for capture. Pure

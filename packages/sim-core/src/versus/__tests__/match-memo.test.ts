@@ -25,6 +25,9 @@
  *  6. BENCH — measured naive vs memoized capture+verify wall time with a
  *     contention-adaptive ≥2× floor (repo pattern, policy/perf-hotpath).
  *  7. MEMORY — measured retained-snapshot cost (the trade the memo buys).
+ *  8. OBSERVABILITY — memoStats() surfaces every degrade/rebuild so the
+ *     "degrade LOUDLY" promise is literally checkable by the caller
+ *     (R6 watchlist fix).
  */
 import { describe, expect, it } from "vitest";
 import type { ExternalIntent, ReplayContentHashes } from "../../types.ts";
@@ -436,4 +439,102 @@ describe("versus memo — measured cost: speed + memory (audit rec #4 bench pin)
     );
     expect(retainedCeilingBytes).toBeLessThan(64 * 1048576);
   }, 180_000);
+});
+
+/* ═══════════════════════ 8. memoStats() observability (R6 watchlist) ═══════════════════════ */
+
+describe("versus memo — memoStats() makes every degrade observable", () => {
+  /** Identity-breaking clone of a stamped prefix — what a caller shipping
+   *  intents through structuredClone/JSON hands the runner: content equal,
+   *  object identity new. The memo's law check 1 compares by IDENTITY, so a
+   *  fresh clone of an already-consumed head reads as a swapped log. */
+  const cloneIntents = (intents: readonly StampedIntent[]): readonly StampedIntent[] =>
+    intents.map((entry) => ({ ...entry, intent: { ...entry.intent } }));
+
+  it(
+    "clean ascending caller: enabled, zero rebuilds, zero degrade, dense accounting",
+    () => {
+      const memo = memoRunner();
+      for (let tick = 0; tick <= TICKS; tick += 4) memo(requestAt(tick));
+      const stats = memo.memoStats();
+      expect(stats.enabled).toBe(true);
+      expect(stats.rebuilds).toBe(0);
+      expect(stats.degraded).toBe(false);
+      expect(stats.ticksAdvanced).toBe(TICKS); // one monotone pass, no re-sim
+      expect(stats.snapshotCount).toBe(TICKS + 1); // dense 0..280 retained
+      expect(Object.isFrozen(stats)).toBe(true);
+      // Fresh object per call — the probe is a snapshot, not a live handle.
+      expect(memo.memoStats()).not.toBe(stats);
+      expect(memo.memoStats()).toEqual(stats);
+    },
+    180_000,
+  );
+
+  it(
+    "structuredClone stream: degraded flips true, enabled false, answers stay byte-identical to naive",
+    () => {
+      const memo = memoRunner();
+      const naive = naiveRunner();
+      memo(requestAt(140)); // honest head: watermark holds original identities
+      expect(memo.memoStats().degraded).toBe(false);
+
+      const cloned = cloneIntents(LOG.filter((e) => e.tick <= 200n));
+      const degradedAnswer = memo(requestAt(200, cloned));
+      const stats = memo.memoStats();
+      expect(stats.degraded).toBe(true);
+      expect(stats.enabled).toBe(false); // naive-for-life is visible, not silent
+      expect(stats.rebuilds).toBe(0); // a degrade is not a rebuild
+      // The clock changed, never the truth: memo-after-degrade ≡ naive.
+      expect(digestState(degradedAnswer.game))
+        .toBe(digestState(naive(requestAt(200, cloned)).game));
+      // Pin the existing differential law survives the flip: the pre-degrade
+      // accounting froze (the memo engine stops advancing once degraded).
+      expect(stats.ticksAdvanced).toBe(140);
+      expect(stats.snapshotCount).toBe(141);
+      const later = memo.memoStats();
+      expect(later.ticksAdvanced).toBe(140); // repeat requests change nothing
+      expect(digestState(memo(requestAt(280)).game))
+        .toBe(digestState(naive(requestAt(280)).game));
+    },
+    180_000,
+  );
+
+  it(
+    "late reveal bumps rebuilds exactly once per law; the memo stays enabled",
+    () => {
+      const memo = memoRunner();
+      const naive = naiveRunner();
+      memo(requestAt(100, [])); // cursor 100 without e5 (tick 5)
+      expect(memo.memoStats().rebuilds).toBe(0);
+      const e5 = [LOG[0] as StampedIntent];
+      expect(digestState(memo(requestAt(150, e5)).game))
+        .toBe(digestState(naive(requestAt(150, e5)).game)); // rebuild answers honestly
+      const once = memo.memoStats();
+      expect(once.rebuilds).toBe(1);
+      expect(once.enabled).toBe(true); // a rebuild is NOT a degrade
+      expect(once.degraded).toBe(false);
+      // Cumulative accounting: 100 original ticks + 150 re-simulated.
+      expect(once.ticksAdvanced).toBe(250);
+      expect(once.snapshotCount).toBe(151); // fresh dense map after re-prime
+      // Same request again: watermark already carries e5 — the law was
+      // respected, so no second rebuild fires.
+      memo(requestAt(150, e5));
+      expect(memo.memoStats().rebuilds).toBe(1);
+    },
+    180_000,
+  );
+
+  it("memoize:false arm reports enabled:false honestly with all-zero counters", () => {
+    const naive = naiveRunner();
+    naive(requestAt(140));
+    const stats = naive.memoStats();
+    expect(stats).toEqual({
+      enabled: false,
+      ticksAdvanced: 0,
+      snapshotCount: 0,
+      rebuilds: 0,
+      degraded: false,
+    });
+    expect(Object.isFrozen(stats)).toBe(true);
+  });
 });
