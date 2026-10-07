@@ -1,0 +1,56 @@
+{
+  "capturedFrom": "HH_GOLDEN_CAPTURE=1",
+  "cases": {
+    "empty": [
+      "77fc133d12447d10d4407aa5613a4510"
+    ],
+    "lanes-cards": [
+      "cf9f02bf8ebc890bfbbacb552295efb0"
+    ],
+    "observed-composites": [
+      "08feb522dcf1a0481468368843571410"
+    ],
+    "bigint-extremes": [
+      "fa9484133cda9cfafc1b53fb07ef7f4e",
+      "b45926f996acc3e1e3d5770436035a30"
+    ],
+    "astral-text": [
+      "578fa4511e57afb08771f5141363e0ea"
+    ],
+    "hands-board": [
+      "727d0788f7716bdb183898a357f524b5",
+      "90bb72ccdbf95f1b9492fddb48823ddd",
+      "90bb72ccdbf95f1b9492fddb48823ddd",
+      "2919cd9cb4e4befc8ca3f3e7347a41e7"
+    ],
+    "door-run-off": [
+      "2e1b550cd28d0540acea47389f509830",
+      "0cb2dec5a4081f1a87c008c6554554f0",
+      "8e45d8d76e826692b5bd8feacc4b6a70",
+      "9323599fe32fe084b12f4442c3f54470",
+      "8b5a47755b2656f3b12f4442c3f54470",
+      "8ff03d3505d3669bf08ec5049eb82050",
+      "f1b38cc50a1f8a92d0fc8502c3cc8950",
+      "81e76546ad1424adb12f4442c3f54470"
+    ],
+    "door-run-drain": [
+      "2e1b550cd28d0540acea47389f509830",
+      "0cb2dec5a4081f1a87c008c6554554f0",
+      "8e45d8d76e826692b5bd8feacc4b6a70",
+      "0d8bdb4a0ff4f8a3cfde01e17e3cecd0",
+      "c65cac515c9d9d22cfde01e17e3cecd0",
+      "8ff03d3505d3669bf08ec5049eb82050",
+      "f1b38cc50a1f8a92d0fc8502c3cc8950",
+      "a80dd4fa664a8718e5cc4aa85f453150"
+    ],
+    "queue-active": [
+      "93ddf5ecbe4608459c5df27f12ac8a61"
+    ],
+    "thin-run": [
+      "41c646235b91232668560ac80ac38ad0"
+    ],
+    "fat-run": [
+      "a7e0430af5a1bcb269e2b79c316b505b"
+    ]
+  }
+}

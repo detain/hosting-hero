@@ -9,55 +9,18 @@
  * the pinned id order; every bigint absorbed as exact decimal; every nested
  * list in its structural order). Collisions are irrelevant at the scale of a
  * CI equality tripwire — equality of digests across replays is the property.
+ *
+ * LIMB FAST PATH (perf audit rec #1): the sink's 64-bit lanes run as
+ * `Math.imul` 32-bit limb pairs (./digest-limbs.ts) instead of bigint — the
+ * per-codepoint bigint mul was 68% of the CPU profile. Byte-identity is
+ * pinned by `__tests__/digest-golden.json` (captured from the pre-port bigint
+ * sink) and the differential oracle in `__tests__/digest-perf.test.ts`; if a
+ * golden hex mismatches, the PORT is wrong — never the fixture.
  */
 
 import type { GameState, HashHex, NodeRecord, ObservedCell, Unit } from "../types.ts";
 import { stableSerialize } from "../observed/store.ts";
-
-const MASK64 = (1n << 64n) - 1n;
-const FNV_OFFSET = 0xcbf29ce484222325n;
-const FNV_PRIME = 0x100000001b3n;
-const SALT_B = 0x9e3779b97f4a7c15n;
-
-class Sink {
-  private a = FNV_OFFSET;
-  private b = (FNV_OFFSET ^ SALT_B) & MASK64;
-
-  private feed(value: bigint): void {
-    this.a = ((this.a ^ (value & MASK64)) * FNV_PRIME) & MASK64;
-    // signed shift for the high lane so negatives spread too (>> keeps sign).
-    this.b = ((this.b ^ ((value >> 40n) & MASK64)) * FNV_PRIME) & MASK64;
-  }
-
-  text(value: string): this {
-    for (const ch of value) {
-      this.feed(BigInt(ch.codePointAt(0) as number));
-    }
-    this.feed(0n); // terminator so "ab"+"c" ≠ "a"+"bc"
-    return this;
-  }
-
-  int(value: bigint | number): this {
-    this.feed(35n); // "#" type tag — numbers never collide with text streams
-    this.feed(BigInt(value));
-    return this;
-  }
-
-  bool(value: boolean): this {
-    return this.int(value ? 1n : 0n);
-  }
-
-  nullableText(value: string | null | undefined): this {
-    if (value === null || value === undefined) return this.text("∅");
-    return this.text(value);
-  }
-
-  hex(): HashHex {
-    const hi = this.a.toString(16).padStart(16, "0");
-    const lo = this.b.toString(16).padStart(16, "0");
-    return `${hi}${lo}`;
-  }
-}
+import { Sink } from "./digest-limbs.ts";
 
 function absorbUnit(sink: Sink, unit: Unit): void {
   sink
@@ -250,5 +213,5 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
-  return sink.hex();
+  return sink.hex() as HashHex;
 }
