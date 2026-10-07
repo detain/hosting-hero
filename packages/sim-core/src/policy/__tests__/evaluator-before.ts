@@ -8,7 +8,9 @@
  *
  * This is a FROZEN performance reference, NOT live code: do not edit, do not
  * export from any barrel (it would mint duplicate names), do not import it
- * outside perf-hotpath.test.ts. If a future refactor legitimately re-shapes
+ * outside its two sanctioned differential consumers — perf-hotpath.test.ts
+ * (perf floor) and mixed-predicate.test.ts (R6 mixed-predicate pin). If a
+ * future refactor legitimately re-shapes
  * the hot path, the floor test stays green while this file's own behavior
  * digest diverges — that is the signal to re-cut the reference from the
  * then-HEAD (same `git show` recipe) and re-verify digests equal.
