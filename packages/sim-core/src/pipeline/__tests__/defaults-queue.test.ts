@@ -19,14 +19,15 @@
 
 import { describe, expect, it } from "vitest";
 import { asEntityId, asRunSeed, observedKey } from "../../types";
-import type { GameState, NodeRecord } from "../../types";
+import type { EntityId, GameState, NodeRecord } from "../../types";
 import { FIXED_ZERO, fromInt, fromRatio } from "../../kernel/fixed";
 import { initialClocks, MICROS_PER_MIN } from "../../kernel/time";
 import { streamFor } from "../../kernel/rng";
-import { createDefaultSlots } from "../defaults";
+import { createDefaultSlots, defaultServeStep } from "../defaults";
 import { createInitialState, createTickDriver } from "../driver";
 import type { DefaultPipelineConfig } from "../defaults";
 import type { TickInputs } from "../driver";
+import { utilization } from "../queue";
 import { IDS, MIN, envelope, node, retryPolicy, testConfig, tickInputs } from "./helpers";
 
 /** Patience so deep nothing can bounce — isolates the queue mechanics from
@@ -197,5 +198,130 @@ describe("queue-ghost guard (FIX-8): benign quiet board is untouched", () => {
       const state = h.step({ envelopes: Object.freeze([envelope("g8", fromInt(2))]) });
       expect((state.nodes.get(IDS.edge) as NodeRecord).queue.length).toBe(0);
     }
+  });
+});
+
+describe("legit re-join on a loop route (edge→origin→edge): the guard kills ghosts, not revisits", () => {
+  // R7-F3: the FIX-8 set is MEMBERSHIP-only — a unit that left a node's
+  // queue is a fresh joiner when its route brings it back. A "sticky"
+  // dedup (remembering every unit the node ever saw) would suppress the
+  // return trip entirely: the unit would idle outside every queue, never
+  // re-admit, and silently leak.
+  const A = asEntityId("g8@1#0.0");
+  const B = asEntityId("g8@2#0.0");
+  const C = asEntityId("g8@3#0.0");
+  const ONE_PER_MIN = Object.freeze([envelope("g8", fromInt(1))]);
+  const LOOP = Object.freeze({
+    expressPath: Object.freeze([IDS.edge, IDS.origin, IDS.edge]),
+    deepPath: Object.freeze([IDS.edge, IDS.origin, IDS.edge]),
+  });
+
+  it("a unit that completed edge, served origin, and returns joins the edge queue again — behind the sitting waiter", () => {
+    // 1-slot edge (9-minute service) + 1-slot origin (1 minute): A holds
+    // edge t1–t9, B and C queue; A advances t10–t12, and must RE-QUEUE at
+    // edge on t13 — appended behind C, who has been waiting since t3.
+    const h = harness(
+      [node(IDS.edge, { slots: 1, serviceUs: 9n * MIN }), node(IDS.origin, { slots: 1, serviceUs: 1n * MIN })],
+      LOOP,
+    );
+    const edgeQueue = (state: GameState): readonly EntityId[] =>
+      (state.nodes.get(IDS.edge) as NodeRecord).queue;
+
+    for (let tick = 1; tick <= 3; tick += 1) {
+      const state = h.step({ envelopes: ONE_PER_MIN });
+      expect(duplicateCount(state)).toBe(0);
+    }
+    expect(edgeQueue(h.state())).toEqual([B, C]);
+
+    // A's long service keeps the waiters in place while A advances toward
+    // its final edge hop (release t10, origin t11, released t12).
+    for (let tick = 4; tick <= 12; tick += 1) {
+      const state = h.step({ envelopes: [] });
+      expect(duplicateCount(state)).toBe(0);
+    }
+    // Away from every queue (B was admitted when A left edge), C still
+    // waiting — A is absent, not a ghost, not a member:
+    expect(edgeQueue(h.state())).toEqual([C]);
+
+    // The return tick: A joins edge's queue AGAIN (not suppressed), and the
+    // append lands AFTER the sitting waiter — FIFO order by join time.
+    const rejoin = h.step({ envelopes: [] });
+    expect(edgeQueue(rejoin)).toEqual([C, A]);
+    expect(duplicateCount(rejoin)).toBe(0);
+    let boardWide = 0;
+    for (const n of rejoin.nodes.values()) {
+      for (const id of n.queue) if (id === A) boardWide += 1;
+    }
+    expect(boardWide).toBe(1); // exactly one copy: a sticky dedup gives 0, a ghost 2+
+    // every queued unit waits AT its current hop — even the second-visit one
+    for (const n of rejoin.nodes.values()) {
+      for (const unitId of n.queue) {
+        expect(rejoin.units.get(unitId)?.routeHops[0], `queued ${unitId}`).toBe(n.id);
+      }
+    }
+
+    // The waiter rides on honestly — no per-tick self-append for the
+    // returning unit either (the original ghost signature).
+    for (let tick = 14; tick <= 15; tick += 1) {
+      const state = h.step({ envelopes: [] });
+      expect(edgeQueue(state)).toEqual([C, A]);
+      expect(duplicateCount(state)).toBe(0);
+    }
+  });
+});
+
+describe("rec#2 copy-on-write reuse — both branches, direct serve step", () => {
+  it("foreign stale stamps are repaired; an honest untouched node returns identity-equal", () => {
+    const honest = node(IDS.origin, { slots: 2 });
+    const base = node(IDS.edge, { slots: 2 });
+    const seed = createInitialState({
+      runSeed: asRunSeed(7n),
+      engineVersion: "test-fix8-cow",
+      contentHashes: { rulesetCardHashes: {}, sheetsHash: "s", ruleBookHash: "r" },
+      clocks: initialClocks(),
+      nodes: [honest, base],
+    });
+    // Same node, otherwise untouched: honest arrays, LYING derived stamps.
+    // The ghost holder's deadline sits a far future minute out, so the
+    // release walk touches nothing and the tick takes the unchanged-node
+    // reuse branch — where the stamp re-verify (not trust) must fire.
+    const stale = Object.freeze({
+      ...base,
+      slots: Object.freeze([
+        Object.freeze({
+          occupied: true,
+          unitId: asEntityId("far-future-holder"),
+          waitingOn: null,
+          releasedAtUs: 1_000_000n * MIN,
+        }),
+        Object.freeze({ occupied: false, unitId: null, waitingOn: null, releasedAtUs: null }),
+      ]),
+      utilizationRho: FIXED_ZERO, // lie: one of two slots is occupied
+      queueDepth: 7, // lie: the queue is empty
+    });
+    const out = defaultServeStep({
+      context: seed.context,
+      units: [],
+      nodes: new Map([
+        [stale.id, stale],
+        [honest.id, honest],
+      ]),
+    });
+    // Repaired branch: a fresh record whose stamps match the arrays again…
+    const repaired = out.nodes.get(stale.id) as NodeRecord;
+    expect(repaired).not.toBe(stale);
+    expect(repaired.utilizationRho).toBe(utilization(stale)); // 1/2, not the 0n lie
+    expect(repaired.utilizationRho).not.toBe(FIXED_ZERO);
+    expect(repaired.queueDepth).toBe(stale.queue.length); // 7 → 0
+    // …while the untouched frozen arrays ride along — the only saving is
+    // allocation identity for the CONTENT, exactly as rec#2 promises.
+    expect(repaired.slots).toBe(stale.slots);
+    expect(repaired.queue).toBe(stale.queue);
+    // Reuse branch: the honest node comes back as the SAME frozen object.
+    expect(out.nodes.get(honest.id)).toBe(honest);
+    // Quiet tick: the far-future holder released nothing.
+    expect(out.assignments).toEqual([]);
+    expect(out.waiting).toEqual([]);
+    expect(out.shed).toEqual([]);
   });
 });

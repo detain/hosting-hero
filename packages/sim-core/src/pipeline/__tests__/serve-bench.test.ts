@@ -12,18 +12,22 @@
  *     scales with it (contention-adaptive);
  *  2. the floor itself is set at 5× the GHOST-era rate, so the test is red on
  *     the pre-fix behaviour and has ~7× headroom over the fixed behaviour;
- *  3. determinism witnesses (fresh instances, byte-equal digests) pin that the
- *     copy-on-write reuse rec#2 relies on is invisible in the digest.
+ *  3. the digest pins below vendor the wave-9 audit's fixed-code literals
+ *     (fresh-run-vs-PINNED-digest) — a fresh-vs-fresh pair alone would only
+ *     prove determinism, never that rec#2/rec#3 left observable state
+ *     untouched.
  */
 
 import { describe, expect, it } from "vitest";
-import type { GameState, NodeRecord } from "../../types";
-import { asEntityId, asRunSeed } from "../../types";
-import { fromInt, fromRatio } from "../../kernel/fixed";
+import type { GameState, NodeRecord, QosClassDef } from "../../types";
+import { asEntityId, asRunSeed, observedKey } from "../../types";
+import { FIXED_ONE, FIXED_ZERO, fromInt, fromRatio } from "../../kernel/fixed";
 import { streamFor } from "../../kernel/rng";
 import { createInitialState } from "../driver";
 import type { TickInputs } from "../driver";
+import type { DefaultPipelineConfig } from "../defaults";
 import { createDefaultSlots, createTickDriver, digestState } from "../index";
+import { utilization } from "../queue";
 import { DEFAULT_CLASSES, MIN, freshClocks, node, testConfig } from "./helpers";
 
 /** Ghost-era congested throughput (t/s) on the authoring machine, from the
@@ -183,28 +187,165 @@ describe("serve throughput floor (FIX-8 dedup + rec#2/#3 churn savings)", () => 
   );
 });
 
-describe("copy-on-write reuse is digest-invisible", () => {
-  it("two fresh congested runs land on identical state digests", () => {
-    const a = runCongested(120);
-    const b = runCongested(120);
-    expect(a.digest).toBe(b.digest);
-    expect(a.dups).toBe(0);
-    expect(b.dups).toBe(0);
+/* ───────────────── Vendored digest-neutrality proof (R7 F1/F2) ─────────────────
+ * The runner below ports the 2026-10-07 FIX-8 audit harness
+ * (/tmp/opencode/bench8/bench8.ts) shape-for-shape: seed 4242, the single
+ * gold QoS class, the 10s/20s edge→origin pair (plus 198 idle 2-slot nodes
+ * on the grid variants), the 5s three-retry backoff, and the plateau
+ * envelopes the audit used. The three literals are that audit's expected
+ * digests for the FIXED code (FIX-8 dedup + rec#2 serve COW + rec#3
+ * publish-on-change):
+ *
+ *   congested 13a6ace754ff430872e4c081769a75f4   run(2, 2/min, never-bounce, 300 ticks)
+ *   grid200   7e8a0aeb2edae5e84c61abc0c549d302   run(200, 6/min, 180s patience, 400 ticks)
+ *   idle200   f7f548ef284afd23c8c7128e966655a6   run(200, 0/min, 180s patience, 400 ticks)
+ *
+ * Provenance: the audit's per-arm JSON reports no longer exist on disk, so
+ * the literals were RE-DERIVED 2026-10-07 by running that very harness
+ * against the shipped tree — congested and grid200 byte-matched the values
+ * quoted in the FIX-8 commit body, and the idle200 literal recovered whole
+ * from the same run (prefix f7f548ef284a per the wave-9 notes). The current
+ * tree reproducing the pre-rec#5 "full"-arm digests is itself the proof that
+ * rec#5's targeted purge is digest-neutral on the audited boards.
+ *
+ * This is a FRESH-RUN-VS-PINNED-DIGEST gate: fresh-vs-fresh agreement alone
+ * proves determinism, never that a reuse/publish optimization left the
+ * observable state untouched — only the vendored literal closes that gap.
+ * If a number here moves, re-audit against the pre-change tree; never
+ * casually re-pin.
+ */
+const AUDIT_SEED = asRunSeed(4242n);
+const AUDIT_CLASSES: readonly QosClassDef[] = Object.freeze([
+  Object.freeze({
+    id: "gold",
+    label: "gold",
+    weight: fromInt(3),
+    shedPriority: 3,
+    budgetUs: 200_000n,
+    inspectionDepth: "inspect" as const,
+  }),
+]);
+
+interface AuditRun {
+  readonly digest: string;
+  readonly state: GameState;
+  readonly entries: number;
+  readonly dups: number;
+}
+
+function runAuditBoard(
+  nodeCount: number,
+  ratePerMin: number,
+  pathSlots: number,
+  patienceUs: bigint,
+  ticks: number,
+): AuditRun {
+  const config: DefaultPipelineConfig = Object.freeze({
+    runSeed: AUDIT_SEED,
+    dnsNodeId: null,
+    expressPath: Object.freeze([asEntityId("edge"), asEntityId("origin")]),
+    deepPath: Object.freeze([asEntityId("edge"), asEntityId("origin")]),
+    defaultPatienceUs: patienceUs,
+    defaultSizeCost: FIXED_ONE,
+    patienceJitterPct: 0,
+    inspectionCostUs: Object.freeze({
+      "pass-through": 0n,
+      "sample-1-in-20": 50_000n,
+      inspect: 50_000n,
+      challenge: 100_000n,
+    }),
+    detectionRatio: fromRatio(9n, 10n),
+    falsePositiveRatio: fromRatio(10n, 100n),
+    referralProbability: FIXED_ZERO,
+    returnProbability: FIXED_ZERO,
+  });
+  const nodes = [
+    node(asEntityId("edge"), { slots: pathSlots, serviceUs: 10_000_000n }),
+    node(asEntityId("origin"), { slots: pathSlots, serviceUs: 20_000_000n, depth: "inspect" }),
+  ];
+  for (let i = 2; i < nodeCount; i += 1) {
+    nodes.push(node(asEntityId(`idle-${String(i).padStart(4, "0")}`), { slots: 2, serviceUs: 30_000_000n }));
+  }
+  const driver = createTickDriver(
+    createDefaultSlots(config),
+    streamFor(AUDIT_SEED, "root", 0),
+    freshClocks(),
+  );
+  let game: GameState = createInitialState({
+    runSeed: AUDIT_SEED,
+    engineVersion: "bench8",
+    contentHashes: { rulesetCardHashes: {}, sheetsHash: "b8", ruleBookHash: "" },
+    clocks: freshClocks(),
+    nodes,
+  });
+  const inputs: TickInputs = Object.freeze({
+    envelopes: Object.freeze([
+      Object.freeze({
+        tableId: "bench:baseline",
+        role: "baseline" as const,
+        shape: "plateau" as const,
+        ratePerMin: fromInt(ratePerMin),
+        telegraphed: false,
+        dominantFamily: "organic" as const,
+      }),
+    ]),
+    evidence: Object.freeze([]),
+    classes: AUDIT_CLASSES,
+    dependencyEdges: Object.freeze([]),
+    retryPolicy: Object.freeze({ maxRetries: 3, backoffBaseUs: 5_000_000n, jitterPurchased: true }),
+    aggression: fromRatio(3n, 10n),
+    expressMaxConfidence: fromRatio(5n, 10n),
+  });
+  for (let t = 0; t < ticks; t += 1) game = driver.advance(game, inputs).state;
+  let entries = 0;
+  let dups = 0;
+  for (const record of game.nodes.values()) {
+    entries += record.queue.length;
+    dups += record.queue.length - new Set(record.queue).size;
+  }
+  return { digest: digestState(game), state: game, entries, dups };
+}
+
+/**
+ * R7-F2 — what rec#2's reuse branch guarantees per node: the queueDepth stamp
+ * mirrors the queue array's length, the ρ stamp mirrors `utilization()` (the
+ * step re-verifies BOTH before handing back an unchanged record), and the
+ * observed cells the HUD reads via rec#3's publish-on-change channel carry
+ * exactly those honest numbers. Replaces the old vacuous "differs from tick
+ * 1 / tps > 0" idle-board check.
+ */
+function assertNodeStampsAndCells(state: GameState): void {
+  expect(state.nodes.size).toBe(200);
+  for (const record of state.nodes.values()) {
+    expect(record.queueDepth, `queueDepth stamp on ${record.id}`).toBe(record.queue.length);
+    expect(record.utilizationRho, `rho stamp on ${record.id}`).toBe(utilization(record));
+    const depthCell = state.observed.get(observedKey(record.id, "queueDepth"));
+    expect(depthCell, `queueDepth cell on ${record.id}`).toBeDefined();
+    expect(depthCell?.value, `queueDepth cell value on ${record.id}`).toBe(record.queue.length);
+    const rhoCell = state.observed.get(observedKey(record.id, "utilizationRho"));
+    expect(rhoCell, `rho cell on ${record.id}`).toBeDefined();
+    expect(rhoCell?.value, `rho cell value on ${record.id}`).toBe(utilization(record));
+  }
+}
+
+describe("copy-on-write reuse is digest-invisible (fresh-run-vs-pinned-digest)", () => {
+  it("fresh congested audit run lands on the vendored fixed-code digest", () => {
+    const run = runAuditBoard(2, 2, 1, 10_000_000_000_000n, 300);
+    expect(run.entries).toBe(300); // the audit's real never-bounce backlog
+    expect(run.dups).toBe(0); // FIX-8 dedup holds on the audit board too
+    expect(run.digest).toBe("13a6ace754ff430872e4c081769a75f4");
   });
 
-  it("two fresh idle-200 runs (pure untouched nodes every tick) agree", () => {
-    const a = runGrid(80, 0);
-    const b = runGrid(80, 0);
-    expect(a.digest).toBe(b.digest);
+  it("fresh grid200 audit run lands on the vendored fixed-code digest", () => {
+    const run = runAuditBoard(200, 6, 64, 180_000_000n, 400);
+    expect(run.entries).toBe(0); // queue-free board — the audit's zero-ghost witness
+    expect(run.digest).toBe("7e8a0aeb2edae5e84c61abc0c549d302");
+    assertNodeStampsAndCells(run.state);
   });
 
-  it("queue-free boards digest the same as the pre-rec#2 era shape (no reflow)", () => {
-    // The congested board at tick 0 has produced nothing yet; the grid with
-    // rate 0 never queues — its per-node records ride reused identities from
-    // tick 1. Both must still carry the honest stamps.
-    const idle = runGrid(40, 0);
-    const firstTick = runGrid(1, 0);
-    expect(idle.digest).not.toBe(firstTick.digest); // clocks differ
-    expect(idle.tps).toBeGreaterThan(0);
+  it("fresh idle200 audit run lands on the vendored fixed-code digest", () => {
+    const run = runAuditBoard(200, 0, 64, 180_000_000n, 400);
+    expect(run.digest).toBe("f7f548ef284afd23c8c7128e966655a6");
+    assertNodeStampsAndCells(run.state); // pure identity-reuse board: stamps stay honest
   });
 });
