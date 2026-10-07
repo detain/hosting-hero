@@ -70,6 +70,7 @@ import type {
   UnitDraft,
   CauseId,
   ObservedCell,
+  ObservedKey,
   ObservedWrite,
 } from "../types.ts";
 import { asCauseId, asEntityId, observedKey, ResolutionBand } from "../types.ts";
@@ -320,10 +321,27 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
     }
   }
 
+  // FIX-8 (queue-ghost guard): a unit ALREADY riding a queue is a waiter, not
+  // a joiner. Without this, every multi-tick waiter re-appended a duplicate of
+  // itself each surviving tick — ghosts stole free slots, re-triggered
+  // admission-time inspection rolls, and inflated the digest-visible queueDepth
+  // (measured 99.1% ghost entries on a congested bench, 21× tick cost). The
+  // set is membership-only: node Map order can never leak into it, and the
+  // survivor's FIFO position (its existing queue index) is preserved exactly —
+  // joins only ever append after releases, never re-sort. A queue entry whose
+  // unit's hop no longer names that node cannot be produced by these defaults
+  // (admission shifts the entry out before the hop can advance); foreign steps
+  // that forge one keep the unit in its recorded queue — the same pre-fix
+  // behaviour, minus the self-multiplication.
+  const alreadyQueued = new Set<EntityId>();
+  for (const node of nodes.values()) {
+    for (const unitId of node.queue) alreadyQueued.add(unitId);
+  }
+
   const pendingJoins = new Map<EntityId, EntityId[]>();
   for (const unit of input.units) {
     const hop = unit.routeHops[0];
-    if (hop === undefined || holderOf.has(unit.id)) continue;
+    if (hop === undefined || holderOf.has(unit.id) || alreadyQueued.has(unit.id)) continue;
     if (!nodes.has(hop)) {
       // FIX-7 fail-loud at join: silently idling an unroutable unit created
       // zombies that never queue, never age and never terminate. A route onto
@@ -345,13 +363,23 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
   for (const nodeId of sortedIds(nodes.keys())) {
     const node = nodes.get(nodeId);
     if (node === undefined) continue;
-    const queue: EntityId[] = [...node.queue, ...(pendingJoins.get(nodeId) ?? [])];
-    const slots: MutableSlot[] = node.slots.map((slot) => ({ ...slot }));
+    // rec#2 (copy-on-write discipline): queue/slot arrays materialize ONLY
+    // when this tick has something to change on this node. An untouched node
+    // flows through with its frozen arrays and its own record identity —
+    // the +301µs/tick board churn of re-spreading every NodeRecord and
+    // re-cloning every slot on a 200-node grid is what this skips.
+    const joins = pendingJoins.get(nodeId);
+    let queue: EntityId[] | null =
+      node.queue.length > 0 || (joins !== undefined && joins.length > 0) ? [...node.queue, ...(joins ?? [])] : null;
+    let queueDirty = joins !== undefined && joins.length > 0;
+    let slots: MutableSlot[] | null = null;
+    const mutableSlots = (): MutableSlot[] => (slots ??= node.slots.map((slot) => ({ ...slot })));
 
     const freeIndices = (): number[] => {
+      const live = slots ?? node.slots;
       const free: number[] = [];
-      for (let i = 0; i < slots.length; i += 1) {
-        const slot = slots[i];
+      for (let i = 0; i < live.length; i += 1) {
+        const slot = live[i];
         if (slot !== undefined && !slot.occupied) free.push(i);
       }
       return free;
@@ -363,9 +391,12 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
       downstream.slots.length > 0 &&
       downstream.slots.every((slot) => slot.occupied);
 
-    // (b) releases / dependency holds
-    for (let i = 0; i < slots.length; i += 1) {
-      const slot = slots[i];
+    // (b) releases / dependency holds — read-only inspection walks the
+    // FROZEN source slots; the first branch that actually mutates pays for
+    // the copy (mutableSlots).
+    const slotCount = node.slots.length;
+    for (let i = 0; i < slotCount; i += 1) {
+      const slot = (slots ?? node.slots)[i];
       if (slot === undefined || !slot.occupied) continue;
       const expired = slot.releasedAtUs !== null && slot.releasedAtUs <= simNow;
       const held = slot.waitingOn !== null;
@@ -376,16 +407,19 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
         // Defensive: an occupied slot must carry a deadline + owner. A torn
         // slot (foreign step artifact) is force-freed rather than crash the
         // run — the board invariant scanner (topology wave) owns detection.
-        slot.occupied = false;
-        slot.unitId = null;
-        slot.waitingOn = null;
-        slot.releasedAtUs = null;
+        const live = mutableSlots()[i];
+        if (live === undefined) continue;
+        live.occupied = false;
+        live.unitId = null;
+        live.waitingOn = null;
+        live.releasedAtUs = null;
         continue;
       }
       if (!held && downstreamId !== null && downstreamFull()) {
         // Fresh hold: service finished but the dependency cannot admit —
         // the slot STAYS occupied (retry-storm prerequisite, Q4).
-        slot.waitingOn = downstreamId;
+        const live = mutableSlots()[i];
+        if (live !== undefined) live.waitingOn = downstreamId;
         UNIT_HOLD.set(unitId, downstreamId);
         assignments.push(
           Object.freeze({
@@ -414,10 +448,13 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
         );
         continue;
       }
-      slot.occupied = false;
-      slot.unitId = null;
-      slot.waitingOn = null;
-      slot.releasedAtUs = null;
+      const freed = mutableSlots()[i];
+      if (freed !== undefined) {
+        freed.occupied = false;
+        freed.unitId = null;
+        freed.waitingOn = null;
+        freed.releasedAtUs = null;
+      }
       UNIT_HOLD.delete(unitId);
       assignments.push(
         Object.freeze({
@@ -432,22 +469,24 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
     }
 
     // (c) FIFO admissions into the lowest free slots
-    while (queue.length > 0) {
+    while (queue !== null && queue.length > 0) {
       const head = queue[0];
       if (head === undefined) break;
       const unit = unitById.get(head);
       if (unit === undefined) {
         queue.shift(); // phantom entry (unit terminal earlier this tick)
+        queueDirty = true;
         continue;
       }
       const need = slotsNeeded(unit.sizeCost);
       const free = freeIndices();
       if (free.length < need) break;
       queue.shift();
+      queueDirty = true;
       const taken = free.slice(0, need);
       const serviceEnd = simNow + node.serviceTimeUs;
       for (const slotIndex of taken) {
-        const slot = slots[slotIndex];
+        const slot = mutableSlots()[slotIndex];
         if (slot !== undefined) {
           slot.occupied = true;
           slot.unitId = head;
@@ -468,20 +507,37 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
     }
 
     // (d) discipline: hard-ceiling sheds the residual queue instantly
-    if (node.discipline === "hard-ceiling") {
+    if (node.discipline === "hard-ceiling" && queue !== null && queue.length > 0) {
       for (const unitId of queue) shed.push(unitId);
       queue.length = 0;
+      queueDirty = true;
     }
-    waiting.push(...queue);
+    if (queue !== null) waiting.push(...queue);
 
     // FIX-6: ONE shared ρ writer — queue.utilization is the single helper
     // (round-half-away fromRatio + RHO_CEILING clamp) that every step and the
     // driver's purge path now agree on.
+    //
+    // rec#2 unchanged-node reuse: when nothing was written this tick (no
+    // join/shift/shed, no slot mutation) the node's CONTENT is provably the
+    // same array the pre-reuse code would rebuild — so we re-verify the two
+    // derived stamps (ρ via the shared helper, and the queueDepth↔queue
+    // honesty the FIX-6 era relies on) and, on a match, hand back the SAME
+    // frozen record. Re-checking instead of trusting keeps foreign stamps
+    // repaired exactly like before; the only saving is allocation identity,
+    // which no digest, event, or HUD can observe.
+    if (slots === null && !queueDirty) {
+      const rho = utilization(node);
+      const stampsHonest =
+        rho === node.utilizationRho && node.queueDepth === node.queue.length;
+      nextNodes.set(nodeId, stampsHonest ? node : Object.freeze({ ...node, utilizationRho: rho, queueDepth: node.queue.length }));
+      continue;
+    }
     const nodeAfter = Object.freeze({
       ...node,
-      slots: Object.freeze(slots),
-      queue: Object.freeze(queue),
-      queueDepth: queue.length,
+      slots: Object.freeze(slots ?? node.slots),
+      queue: Object.freeze(queue ?? node.queue),
+      queueDepth: queue === null ? node.queue.length : queue.length,
     });
     nextNodes.set(nodeId, Object.freeze({ ...nodeAfter, utilizationRho: utilization(nodeAfter) }));
   }
@@ -854,26 +910,51 @@ export function createStateEconomicsStep(estateAnchor: EntityId): TickStep<State
       certainty: FIXED_UNIT,
       status: "live" as const,
     });
+  // rec#3 (publish-on-change discipline): these cells are constant-shaped
+  // snapshots (freshnessUs is a literal 0n here, never a wall stamp), so a
+  // re-publish of an identical value produces a byte-equivalent cell under
+  // the same key — the driver's Map copy keeps insertion order for existing
+  // keys, hence skipping is unobservable in the digest. The staleness-flip
+  // law ("aged cells progress even when no batch writes") lives in the
+  // observed/ STORE's read-side re-derivation, not in write cadence: an
+  // already-published unchanged cell carries the exact same freshnessUs the
+  // skipped rewrite would have carried, so empty-batch ageing proceeds
+  // identically. A foreign cell under the same key (any field differs) is
+  // NOT matched, so restatements still flow through.
+  const alreadyPublished = (
+    observed: ReadonlyMap<ObservedKey, ObservedCell<unknown>>,
+    key: ObservedKey,
+    value: number | bigint,
+  ): boolean => {
+    const prior = observed.get(key);
+    return (
+      prior !== undefined &&
+      prior.value === value &&
+      prior.fidelity === ResolutionBand.Exact &&
+      prior.freshnessUs === 0n &&
+      prior.coverage === FIXED_UNIT &&
+      prior.certainty === FIXED_UNIT &&
+      prior.status === "live"
+    );
+  };
   return (input) => {
     const writes: ObservedWrite[] = [];
+    const published = input.prior.observed;
     const cause = (what: string): CauseId => asCauseId(`observe:${input.context.tick}:${what}`);
+    const publish = (key: ObservedKey, value: number | bigint, what: string): void => {
+      if (alreadyPublished(published, key, value)) return;
+      writes.push(Object.freeze({ key, cell: exactCell(value), causeId: cause(what) }));
+    };
     for (const nodeId of sortedIds(input.nodes.keys())) {
       const node = input.nodes.get(nodeId);
       if (node === undefined) continue;
-      writes.push(
-        Object.freeze({ key: observedKey(nodeId, "queueDepth"), cell: exactCell(node.queueDepth), causeId: cause(`${nodeId}:queueDepth`) }),
-        Object.freeze({ key: observedKey(nodeId, "utilizationRho"), cell: exactCell(node.utilizationRho), causeId: cause(`${nodeId}:utilizationRho`) }),
-      );
+      publish(observedKey(nodeId, "queueDepth"), node.queueDepth, `${nodeId}:queueDepth`);
+      publish(observedKey(nodeId, "utilizationRho"), node.utilizationRho, `${nodeId}:utilizationRho`);
     }
     const pressureNumerator = input.reentries.length;
     const pressureDenominator = Math.max(1, input.outcomes.length);
-    writes.push(
-      Object.freeze({
-        key: observedKey(estateAnchor, "retryPressure"),
-        cell: exactCell(clampUnit(fromRatio(BigInt(pressureNumerator), BigInt(pressureDenominator)))),
-        causeId: cause("retryPressure"),
-      }),
-    );
+    const pressureKey = observedKey(estateAnchor, "retryPressure");
+    publish(pressureKey, clampUnit(fromRatio(BigInt(pressureNumerator), BigInt(pressureDenominator))), "retryPressure");
     return Object.freeze({
       cash: input.prior.cash,
       ledgerEntry: null,
