@@ -3,7 +3,10 @@
 **Compiled 2026-10-06 by the API-docs lane; DOCS-SYNC-2 pass same day
 (intent-door contract + sibling export-count refresh); VERSUS-LANE pass
 2026-10-07 (`## versus` section + import row, +69 names); COVERAGE-LANE pass
-2026-10-07 (`## coverage` section + import row, +28 names).** Ground truth = source
+2026-10-07 (`## coverage` section + import row, +28 names); ECONOMY-PERF-LANE
+pass 2026-10-07 (chunked journal + settled-invoice retention rows, +13 names;
+pipeline digest sink port shipped ZERO surface change — `digest-limbs.ts` is
+internal, not barrel-exported).** Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
 `docs/api-verify.test.mjs` (run `node docs/api-verify.test.mjs` — it fails if
@@ -32,7 +35,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
 | `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (55 exports incl. the 11-name intent-door surface; `internal.ts` private) |
 | `@hh/sim-core/policy` | `src/policy/index.ts` | ✅ 90 exports (P1/P3/P4/P7 fixer-lane additions) |
-| `@hh/sim-core/economy` | `src/economy/index.ts` | ✅ 182 exports |
+| `@hh/sim-core/economy` | `src/economy/index.ts` | ✅ 195 exports (journal chunking + invoice retention landed 2026-10-07, +13) |
 | `@hh/sim-core/observed` | `src/observed/index.ts` | ✅ 49 exports (composite-cell fold family) |
 | `@hh/sim-core/topology` | `src/topology/index.ts` | ✅ 99 exports (round-2 fixes incl. `domains.projectionVersion`) |
 | `@hh/sim-core/waves` | `src/waves/index.ts` | ✅ 74 exports |
@@ -441,6 +444,11 @@ PROVISIONAL in `config.ts` pending the OD-2 tuning pass.
 | `EntryDraft` `PostedEntry` `postEntry` | `interface`s; `(journal, cash, draft) => PostedEntry` | THE money mutation: draft + cash ⇒ posted, cause-stamped, invariants asserted | cause REQUIRED (P10) |
 | `entriesWithoutCause` | `(journal) => readonly LedgerEntry[]` | attribution audit probe | pure |
 | `lastEntry` | `(journal) => LedgerEntry \| null` | tip read | pure |
+| `JournalChunk` `JOURNAL_CHUNK_ROWS` | interface `{ rows; count; previous }`; `16` | sealed batch node of the journal spine (mirror of FireLogChunk's shape law) — O(1) amortized appends push into a shared bounded tail accumulator, zero row copies on the linear path; 16 bounds every fallback at a 16-element slice | value immutability kept (branched siblings bounded by their own `openCount`) |
+| `journalFromEntries` | `(entries, nextSeq?) => Journal` | boundary constructor: re-chunk a plain row list (JSON round-trips, fixtures) into a spined journal; `nextSeq` defaults to `entries.length` | total-throwing on bad nextSeq |
+| `draftEntry` | `(cash, draft, seq) => { cash; entry }` | THE shared validation core of `postEntry` AND the tick's batch lane: sanitize + apply-fuse + stamp the row without touching any journal — every guard, message and check ORDER lives here so both lanes fail identically | pure; cause REQUIRED (P10) |
+| `appendJournal` | `(journal, rows: readonly LedgerEntry[]) => Journal` | batch lane: append an ordered run of already-`draftEntry`'d rows in ONE journal construction — a batched tick and a sequential `postEntry` tick are byte-identical in `entries`, `nextSeq` and every cash mirror at ~1/4 the cost | boundary-validated: seq-gap/minute throws; order pinned |
+| `JournalCompaction` `compactJournal` `journalCompactedCount` | `{ journal; archived }`; `(journal, keepLast) => JournalCompaction`; `(journal) => number` | ring/compaction hook mirroring `compactFireLog`/`dropSupersededStates`: keep the LAST `keepLast` rows, dropped rows come back as `archived` (never silent) and count toward `journalCompactedCount`; `nextSeq` PRESERVED — the monotonic-seq law keeps the counter past the working set | pure, total-throwing on bad keepLast |
 | `InvoiceState` `InvoiceTerms` `Invoice` | union/interfaces | issued/paid/failed/written-off lifecycle + terms | — |
 | `daysPastDue` | `(invoice, atBusinessMin, cfg) => number` | dunning clock | business-minute only |
 | `cyclePeriodMinutes` `invoiceDueAtMin` `cyclePeriodStart` | cycle math | calendar arithmetic through BusinessCalendarConfig | pure int |
@@ -448,6 +456,10 @@ PROVISIONAL in `config.ts` pending the OD-2 tuning pass.
 | `UnlockSchedule` `openRecognitionSchedule` `openReserveSchedule` `UnlockRelease` `nextUnlockAt` | deferred-revenue engine | straight-line recognition + parked reserves (§6.4) | pure int |
 | `planRefund` | `(schedule, refundAmount) => { fromDeferred; fromFree }` | refund waterfall: unreleased first, cash after | pure, throws on negative |
 | `ArAging` `arAgingTrays` | `(invoices, atBusinessMin, cfg) => ArAging` | 0-30/31-60/61-90/90+ trays + DSO approximation (midpoints PROVISIONAL) | pure |
+| `SETTLEMENT_SCHEDULE_SUFFIXES` | `readonly [":reserve", ":recognition"]` | the settlement-schedule id law (Invoice.unlockScheduleId): a settle mints `invoice.id + suffix` for exactly these — a live schedule naming an invoice means money is still moving | closed |
+| `liveScheduleInvoiceRefs` | `(schedules) => ReadonlySet<EntityId>` | invoice ids still owning a settlement schedule — one pass, keeps the prune sweep O(invoices + schedules) | pure |
+| `isPrunableInvoice` | `(invoice, liveRefs) => boolean` | terminal-and-settled probe: written-off is terminal at transition; paid must carry its settlement minute; either way no live schedule may reference it | pure |
+| `partitionPrunableInvoices` | `(invoices, schedules) => { keep; pruned }` | split the live list into survivors and prunable settled history, PRESERVING array order (order is digest- and save-visible content) | pure, order-pinned |
 | `economyArAging` | alias of `arAgingTrays` | HUD per-frame convenience (tick.ts re-export) | — |
 | `TuningSheet` | `"A" \| "B" \| "C"` union | sheet SELECTOR (clashes with waves' `TuningSheet` DATA type — root ships this as `EconomyTuningSheetId`; economy lane to rename) | type |
 | `BusinessCalendarConfig` `TransactionFeeConfig` `BillingConfig` `DunningConfig` `ChurnConfig` `BudgetSpendAction` `ErrorBudgetConfig` `ContractEconomyConfig` `ArAgingConfig` `DeferredRevenueConfig` `RunwayConfig` `EconomyConfig` | interfaces | the whole tuning surface — LIVE doc figures vs PROVISIONAL placeholders annotated per-field in config.ts | — |
@@ -497,10 +509,11 @@ PROVISIONAL in `config.ts` pending the OD-2 tuning pass.
 | `RegisterContractInput` `registerContractEconomy` | `(state, input, cfg) => EconomyState` | prime a contract (MUST before first tick; auto-priming guard exists) | pure |
 | `pulseOpenMinFor` `defaultTermsFor` | `(termEndMin, cfg) => SimMinute`; `(contract, cfg) => InvoiceTerms` | renewal pulse open minute (90-day cliff window) / default net terms (PROVISIONAL 30d) | pure |
 | `sortedById` `sortedEntityIds` | map/id sort utilities | the sorted-insertion idiom every lane shares | pinned |
-| `SpendRequest` `MfnTrigger` `RenewalDecisionInput` `EconomyTickIn` | interfaces | the settlement input bag (contracts map + prior + cfg + optional outage/spend/cliff/MFN/signal inputs) | — |
+| `SpendRequest` `MfnTrigger` `RenewalDecisionInput` `EconomyTickIn` | interfaces | the settlement input bag (contracts map + prior + cfg + optional outage/spend/cliff/MFN/signal inputs); `EconomyTickIn.pruneSettledInvoices?: boolean` is the step-13 retention opt-in — DEFAULT OFF (unset/false never touches the working set; g5's digestQuarter reads the un-pruned shape) | — |
 | `EconomyNoticeKind` `EconomyNotice` | 20-kind union + interface | human-readable settlement notices (HUD toast fodder) | deterministic |
 | `EconomyTickOut` | `interface { state; entries; events; notices }` | the settlement answer — caller mirrors cash/seq into GameState | seq order |
-| `runEconomyTick` | `(input: EconomyTickIn) => EconomyTickOut` | THE slot-12 settlement: month rolls → MFN → pulses → billing → dunning → budgets, contracts in EntityId-sorted order | seeded draws keyed (seed, domain, business-min, contractId); no floats, no wall clock, ×100-stable |
+| `runEconomyTick` | `(input: EconomyTickIn) => EconomyTickOut` | THE slot-12 settlement: month rolls → MFN → pulses → billing → dunning → budgets (→ step-13 opt-in settled-invoice prune when `pruneSettledInvoices === true`), contracts in EntityId-sorted order | seeded draws keyed (seed, domain, business-min, contractId); no floats, no wall clock, ×100-stable |
+| `pruneResolvedInvoices` | `(state: EconomyState) => { state; pruned }` | standalone LONG-SAVE retention pass for hosts holding a finished EconomyState — identical predicate to the tick's opt-in step 13: settled-and-fully-resolved invoices leave the working set, survivors keep relative order, journal and every cash bucket untouched (money truth lives in the cause-stamped ledger; dropped records returned for caller archiving) | pure |
 
 ---
 

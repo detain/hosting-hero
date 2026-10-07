@@ -14,7 +14,7 @@ Gaps are harvested from the code itself: `grep` for `PROVISIONAL`, `TODO`, `OD-<
 | pipeline | `src/pipeline/` (8 incl. barrel + `intent-door.ts`; `internal.ts` private) | 8 | 11 | **87 passed** | GREEN — INTENT-DOOR contract landed 2026-10-06 (door + hands/board slices, digest-composite absorption, ×100 schedule determinism); see API-REFERENCE contract #10 |
 | observed | `src/observed/` (4 incl. barrel) | 4 | 5 | **113 passed** | GREEN — FIX-4 composite-cell fold shipped (CANONICAL_CELL_PREFIX family) |
 | policy | `src/policy/` (7 incl. barrel) | 7 | 6 | **54 passed** | GREEN — P1/P3/P4/P7 fixer-lane additions landed (FireLog cons-journal, deferred consults, bounded cycle scan, strict key parse) |
-| economy | `src/economy/` (15 incl. barrel) | 15 | 10 | **134 passed** | GREEN — E-9 WeekRefund anchoring landed |
+| economy | `src/economy/` (15 incl. barrel) | 15 | 12 | **166 passed** (re-pinned 2026-10-07, economy-perf lane) | GREEN — chunked-spine journal + batch append + invoice-index + opt-in retention landed; renewal-twin zombie latent bug FOUND-preserved (owner ticket) |
 | topology | `src/topology/` (9 incl. barrel) | 9 | 1 | **45 passed** | GREEN (thin test-file count vs 99-export surface; `projectionVersion` T-1 stamp landed; round-2 fixes: total-order feeds, path caps, sorted MIS) |
 | waves | `src/waves/` (11 incl. barrel) | 11 | 9 | **110 passed** | GREEN — fix wave landed (duplicate-threatId parse pin, `mulDivRound` par% spend, exact zero-findings pins on g1 slices) |
 | replay | `src/replay/` (8 incl. barrel) | 8 | 6 | **69 passed** | GREEN — fix wave landed (canonical depth cap 512, −0 normalization at encode, snapshot⊆ring hash inclusion, stateEncoding preservation) |
