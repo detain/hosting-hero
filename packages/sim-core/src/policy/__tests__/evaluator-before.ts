@@ -1,4 +1,20 @@
 /**
+ * PRISTINE PRE-OPTIMIZATION EVALUATOR — byte-faithful copy of
+ * `src/policy/evaluator.ts` at commit c8a3606 (imports re-rooted two levels
+ * down into __tests__/). Landed by the PERF LANE (audit rec #5) so
+ * perf-hotpath.test.ts can benchmark OLD vs NEW INTERLEAVED in one process:
+ * paired samples cancel sibling-lane load spikes — an absolute ms budget on
+ * a shared box proved flaky at the honest 2× line (592 vs 589 ms).
+ *
+ * This is a FROZEN performance reference, NOT live code: do not edit, do not
+ * export from any barrel (it would mint duplicate names), do not import it
+ * outside perf-hotpath.test.ts. If a future refactor legitimately re-shapes
+ * the hot path, the floor test stays green while this file's own behavior
+ * digest diverges — that is the signal to re-cut the reference from the
+ * then-HEAD (same `git show` recipe) and re-verify digests equal.
+ */
+
+/**
  * Policy interpreter — the step-12.5 rule phase (MASTER_REPORT §4.5 stack
  * architecture, Appendix B §2.2/§2.4, types.ts RulePhaseIn/Out).
  *
@@ -31,7 +47,6 @@
 
 import type {
   CauseId,
-  Comparator,
   DelegationBand,
   EntityId,
   ObservedCell,
@@ -47,14 +62,14 @@ import type {
   ScopeSelector,
   SimTick,
   SimTimeUs,
-} from "../types.ts";
-import { asCauseId, asEntityId, observedKey } from "../types.ts";
-import { minutesToSimUs } from "../kernel/time.ts";
+} from "../../types.ts";
+import { asCauseId, asEntityId, observedKey } from "../../types.ts";
+import { minutesToSimUs } from "../../kernel/time.ts";
 import {
   observedValueToCellRaw,
   thresholdAmountToCellRaw,
   validatePolicyCard,
-} from "./grammar.ts";
+} from "../grammar.ts";
 
 export class PolicyEvalError extends Error {
   constructor(message: string) {
@@ -273,33 +288,6 @@ export const shadowEvaluationConfig: PolicyEvaluationConfig = {
 
 /* ═══════════════════════ Mutable scratch (one run only) ═══════════════ */
 
-/** One readable observed cell, indexed two ways (perf lane, audit rec #5):
- *  `entity`/`key` are the strings ALREADY living in the observed map, so the
- *  per-(rule × entity) hot path never re-mints `observedKey(...)` — the old
- *  string concatenation per pair was 50.8% self time in the profile. */
-interface ObservedEntry {
-  readonly entity: EntityId;
-  readonly key: ObservedKey;
-  readonly cell: ObservedCell<unknown>;
-  readonly value: unknown;
-}
-
-/** Per-run index over the observed map, built in ONE pass (the pass
- *  `allObservedEntities` used to own — fused, same strict parse, same throw
- *  position). Two views of the same `ObservedEntry` objects:
- *  - `metricBuckets`: property → readable cells sorted by entity (ascending
- *    codepoint, the same total order `sortEntities` gives). A rule whose
- *    scope IS the whole estate walks its metric's bucket directly: exactly
- *    the (entity, cell) pairs the flat `observedKey` lookup used to probe —
- *    in the same visit order — with zero hashing on the way in;
- *  - `cellsByEntity`: entity → property → cell, for narrow scopes, where the
- *    scope's own (already-sorted) entity list drives the walk. */
-interface ObservedView {
-  readonly allEntities: readonly EntityId[];
-  readonly metricBuckets: ReadonlyMap<string, readonly ObservedEntry[]>;
-  readonly cellsByEntity: ReadonlyMap<EntityId, ReadonlyMap<string, ObservedEntry>>;
-}
-
 interface RunScratch {
   readonly sustained: Map<RuleId, SimTimeUs>;
   readonly latched: Set<RuleId>;
@@ -314,15 +302,8 @@ interface RunScratch {
   intentSeq: number;
   readonly entries: PolicyFireEntry[];
   readonly consultExpiry: SimTimeUs;
-  readonly view: ObservedView;
+  readonly observed: ReadonlyMap<ObservedKey, ObservedCell<unknown>>;
   readonly allEntities: readonly EntityId[];
-  /** Scope resolution memo (perf lane): selector object → its sorted entity
-   *  list, computed once per run. The resolver is a pure function of
-   *  (scope, allEntities) by the `ScopeResolver` contract, and both inputs
-   *  are fixed for the run, so WHEN and UNLESS of one card (and every card
-   *  sharing a selector object) see identical lists — the old code copied
-   *  AND re-sorted the full entity array on EVERY conjunction. */
-  readonly scopeCache: Map<ScopeSelector, readonly EntityId[]>;
 }
 
 interface PredicateOutcome {
@@ -339,175 +320,46 @@ function isCellReadable(cell: ObservedCell<unknown> | undefined): boolean {
   return cell.status === "live" || cell.status === "stale";
 }
 
-/**
- * Evaluate one predicate across its scope. PERF LANE (audit rec #5): the
- * pre-optimization loop minted `observedKey(entity, metric)` AND a fresh
- * `${ruleId}\u0000…` snap-key per (rule × entity) pair and probed the flat
- * observed map every time — that concatenation was 50.8% self in the profile.
- * The per-run `ObservedView` now holds every readable cell's entity/key/cell
- * pre-sorted, so the estate walk reads them straight out of the bucket (zero
- * key minting, zero observed-map probe, zero re-readability check), and the
- * narrow walk probes `cellsByEntity` by the scope's own sorted list. Both
- * visit the SAME readable cells in the SAME ascending-entity order the flat
- * loop did, so the lowest-sorted target and every fireLog byte are identical.
- *
- * The two comparator families get their own tight loop (numeric arms skip
- * the `snapshots.get` the old code paid and discarded; counter arms keep
- * the read and skip no-op writes), dispatched once per predicate — not per
- * cell. The snap-key mint (`snapPrefix + entry.key`) is the one string the
- * public flat `snapshots` map still requires per written cell.
- */
-function evaluatePredicate(
-  predicate: Predicate,
-  entities: readonly EntityId[],
-  ruleId: RuleId,
-  scratch: RunScratch,
-  directWrite: boolean,
-): PredicateOutcome {
+function evaluatePredicate(predicate: Predicate, entities: readonly EntityId[], ruleId: RuleId, scratch: RunScratch): PredicateOutcome {
   const metricName = String(predicate.metric);
-  const comparator = predicate.comparator;
-  const numeric = comparator === ">" || comparator === "<";
+  const numericThreshold =
+    predicate.threshold.kind === "value"
+      ? thresholdAmountToCellRaw(predicate.threshold.unit, predicate.threshold.amount)
+      : null;
 
-  // Faithful to the old first-iteration `observedKey(entity, "")` throw: an
-  // empty metric property is rejected at mint time, so the flat loop raised
-  // the instant it touched a non-empty scope. Reproduce it before any lookup.
-  if (metricName.length === 0) {
-    if (entities.length > 0) observedKey(entities[0] as EntityId, metricName);
-    return { satisfied: false, target: null };
-  }
+  for (const entity of entities) {
+    const key = observedKey(entity, metricName);
+    const cell = scratch.observed.get(key);
+    if (!isCellReadable(cell)) continue;
+    const current = observedValueToCellRaw(cell?.value, ruleId, metricName);
+    const snapKey = `${ruleId}\u0000${key}`;
+    const previous = scratch.snapshots.get(snapKey);
+    scratch.snapWrites.set(snapKey, current); // P2: committed only after the rule finishes reading
 
-  const estate = entities === scratch.allEntities;
-  const bucket = estate ? scratch.view.metricBuckets.get(metricName) : undefined;
-  if (estate && bucket === undefined) return { satisfied: false, target: null };
-
-  const snapPrefix = `${ruleId}\u0000`;
-  const snapWrites = scratch.snapWrites;
-
-  if (numeric) {
-    const threshold =
-      predicate.threshold.kind === "value"
-        ? thresholdAmountToCellRaw(predicate.threshold.unit, predicate.threshold.amount)
-        : null;
-    const above = comparator === ">";
-    // P2 staging exists ONLY so a card's later counter clause cannot see its
-    // earlier write. A card whose clauses are all numeric never reads
-    // `snapshots` at all, so its writes can land directly in the run map —
-    // byte-identical content, and the whole per-card merge loop disappears
-    // for the dominant (threshold-alert) rule family.
-    const targets = directWrite ? scratch.snapshots : scratch.snapWrites;
-    if (estate) {
-      // Manually inlined per-entry work for the dominant (estate × numeric)
-      // walk — the profile showed the helper call itself cost measurable
-      // time at 16k calls/tick.
-      const entries = bucket as readonly ObservedEntry[];
-      if (threshold !== null) {
-        for (let i = 0; i < entries.length; i += 1) {
-          const entry = entries[i] as ObservedEntry;
-          const cellValue = entry.value;
-          const current =
-            typeof cellValue === "bigint" ? cellValue : observedValueToCellRaw(cellValue, ruleId, metricName);
-          targets.set(snapPrefix + entry.key, current);
-          if (above ? current > threshold : current < threshold) {
-            return { satisfied: true, target: entry.entity };
-          }
-        }
-      } else {
-        for (let i = 0; i < entries.length; i += 1) {
-          const entry = entries[i] as ObservedEntry;
-          const cellValue = entry.value;
-          const current =
-            typeof cellValue === "bigint" ? cellValue : observedValueToCellRaw(cellValue, ruleId, metricName);
-          targets.set(snapPrefix + entry.key, current);
-        }
-      }
-    } else {
-      const byEntity = scratch.view.cellsByEntity;
-      for (const entity of entities) {
-        const props = byEntity.get(entity);
-        if (props === undefined) continue;
-        const entry = props.get(metricName);
-        if (entry === undefined) continue; // missing / null-value / unknown → FALSE (D-6)
-        if (considerNumeric(entry, threshold, above, ruleId, metricName, snapPrefix, targets)) {
-          return { satisfied: true, target: entity };
-        }
-      }
+    let satisfied: boolean;
+    switch (predicate.comparator) {
+      case ">":
+        satisfied = numericThreshold !== null && current > numericThreshold;
+        break;
+      case "<":
+        satisfied = numericThreshold !== null && current < numericThreshold;
+        break;
+      case "changed":
+        satisfied = previous !== undefined && previous !== current;
+        break;
+      case "fails":
+      case "completes":
+        // Engine-maintained event counters surfaced as nouns (D-3): the
+        // property carries a monotone count; fails/completes = it advanced.
+        satisfied = previous !== undefined && current > previous;
+        break;
+      default:
+        throw new PolicyEvalError(`${ruleId}: comparator "${String(predicate.comparator)}" escaped validation`);
     }
-    return { satisfied: false, target: null };
-  }
-
-  // Counter family: changed / fails / completes read the pre-run snapshot.
-  const snapshots = scratch.snapshots;
-  if (estate) {
-    for (const entry of bucket as readonly ObservedEntry[]) {
-      if (considerCounter(entry, comparator, ruleId, metricName, snapPrefix, snapshots, snapWrites)) {
-        return { satisfied: true, target: entry.entity };
-      }
-    }
-  } else {
-    const byEntity = scratch.view.cellsByEntity;
-    for (const entity of entities) {
-      const props = byEntity.get(entity);
-      if (props === undefined) continue;
-      const entry = props.get(metricName);
-      if (entry === undefined) continue;
-      if (considerCounter(entry, comparator, ruleId, metricName, snapPrefix, snapshots, snapWrites)) {
-        return { satisfied: true, target: entity };
-      }
-    }
+    if (satisfied) return { satisfied: true, target: entity };
   }
   return { satisfied: false, target: null };
 }
-
-/** Numeric arm: snapshot write (always, like the old code) + threshold
- *  compare. Returns true on satisfaction. */
-function considerNumeric(
-  entry: ObservedEntry,
-  threshold: bigint | null,
-  above: boolean,
-  ruleId: RuleId,
-  metricName: string,
-  snapPrefix: string,
-  targets: Map<string, bigint>,
-): boolean {
-  const cellValue = entry.value;
-  const current = typeof cellValue === "bigint" ? cellValue : observedValueToCellRaw(cellValue, ruleId, metricName);
-  targets.set(snapPrefix + entry.key, current);
-  if (threshold === null) return false;
-  return above ? current > threshold : current < threshold;
-}
-
-function considerCounter(
-  entry: ObservedEntry,
-  comparator: Comparator,
-  ruleId: RuleId,
-  metricName: string,
-  snapPrefix: string,
-  snapshots: Map<string, bigint>,
-  snapWrites: Map<string, bigint>,
-): boolean {
-  const cellValue = entry.value;
-  const current = typeof cellValue === "bigint" ? cellValue : observedValueToCellRaw(cellValue, ruleId, metricName);
-  const snapKey = snapPrefix + entry.key;
-  const previous = snapshots.get(snapKey);
-  // Skip no-op writes: `previous === current` (bigint equality) means the
-  // committed snapshot already holds this value, so the merge would set
-  // exactly what is there. New keys (previous undefined) never equal a
-  // bigint, so first sight always writes — snapshotted content is identical.
-  if (previous !== current) snapWrites.set(snapKey, current);
-  if (previous === undefined) return false; // first observation is not "changed" (D-6b)
-  switch (comparator) {
-    case "changed":
-      return previous !== current;
-    case "fails":
-    case "completes":
-      // Engine-maintained event counters surfaced as nouns (D-3): the
-      // property carries a monotone count; fails/completes = it advanced.
-      return current > previous;
-    default:
-      throw new PolicyEvalError(`${ruleId}: comparator "${String(comparator)}" escaped validation`);
-  }
-}
-
 
 /** Evaluates EVERY predicate (no short-circuit — changed/fails snapshots
  *  must advance even when an earlier conjunct is false). AND-only per §B 2.3.5. */
@@ -517,54 +369,16 @@ function evaluateConjunction(
   ruleId: RuleId,
   scratch: RunScratch,
   resolver: ScopeResolver,
-  directWrite: boolean,
 ): PredicateOutcome {
-  const entities = resolveScopeEntities(scope, scratch, resolver);
+  const entities = sortEntities(resolver(scope, scratch.allEntities));
   let firstTarget: EntityId | null = null;
   let satisfied = true;
   for (const predicate of predicates) {
-    const outcome = evaluatePredicate(predicate, entities, ruleId, scratch, directWrite);
+    const outcome = evaluatePredicate(predicate, entities, ruleId, scratch);
     if (!outcome.satisfied) satisfied = false;
     else if (firstTarget === null) firstTarget = outcome.target;
   }
   return { satisfied, target: firstTarget };
-}
-
-/** Perf lane: does any clause of this card READ the snapshot store (the
- *  changed/fails/completes family)? Only such cards need P2 staging — a
- *  purely numeric card never consults `previous`, so writing its observations
- *  straight into the run's snapshot map is content-identical (validation has
- *  already rejected every other comparator spelling, which conservatively
- *  stage anyway). */
-function cardReadsSnapshots(card: PolicyCard): boolean {
-  for (const predicate of card.when) {
-    if (predicate.comparator !== ">" && predicate.comparator !== "<") return true;
-  }
-  if (card.unless !== undefined) {
-    for (const predicate of card.unless) {
-      if (predicate.comparator !== ">" && predicate.comparator !== "<") return true;
-    }
-  }
-  return false;
-}
-
-/** Perf lane: one resolver call + at most one sort per scope OBJECT per run
- *  (WHEN and UNLESS of a card share the selector object). When the resolver
- *  hands back `allEntities` itself — the estate path through
- *  `defaultScopeResolver` — the copy-and-re-sort is skipped outright:
- *  `allEntities` is already in the same codepoint order `sortEntities`
- *  produces. A resolver that builds its own list keeps the old sort. */
-function resolveScopeEntities(
-  scope: ScopeSelector,
-  scratch: RunScratch,
-  resolver: ScopeResolver,
-): readonly EntityId[] {
-  const cached = scratch.scopeCache.get(scope);
-  if (cached !== undefined) return cached;
-  const resolved = resolver(scope, scratch.allEntities);
-  const entities = resolved === scratch.allEntities ? resolved : sortEntities(resolved);
-  scratch.scopeCache.set(scope, entities);
-  return entities;
 }
 
 /** Locale-free total order (§3.4): codepoint `<`/`>` only. */
@@ -573,10 +387,8 @@ function sortEntities(entities: readonly EntityId[]): readonly EntityId[] {
 }
 
 /** P2 merge point: called once per card after EVERY clause it owns has read
- *  the pre-run snapshot world. Perf lane: early-exit when the card wrote
- *  nothing (the common case for a metric with no readable cells in scope). */
+ *  the pre-run snapshot world. */
 function commitSnapWrites(scratch: RunScratch): void {
-  if (scratch.snapWrites.size === 0) return;
   for (const [snapKey, value] of scratch.snapWrites) scratch.snapshots.set(snapKey, value);
   scratch.snapWrites.clear();
 }
@@ -596,7 +408,7 @@ const KEY_SEPARATOR = "::";
  * exactly-one-separator keys and fails loud on every other shape (Law 4) —
  * never a quiet truncation.
  */
-function splitObservedKey(key: ObservedKey): readonly [EntityId, string] {
+export function parseKeyEntityStrict(key: ObservedKey): EntityId {
   const raw = String(key);
   const first = raw.indexOf(KEY_SEPARATOR);
   if (first <= 0) {
@@ -610,40 +422,15 @@ function splitObservedKey(key: ObservedKey): readonly [EntityId, string] {
         `foundation contract request: add escaping or an entitySegmentOfKey accessor to types.ts (policy/evaluator.parseKeyEntityStrict stands in)`,
     );
   }
-  return [asEntityId(raw.slice(0, first)), raw.slice(first + KEY_SEPARATOR.length)] as const;
+  return asEntityId(raw.slice(0, first));
 }
 
-export function parseKeyEntityStrict(key: ObservedKey): EntityId {
-  return splitObservedKey(key)[0];
-}
-
-/** One strict pass over the observed map (perf lane, audit rec #5): parses
- *  every key ONCE — the exact throw semantics `allObservedEntities` had, in
- *  the same iteration order — and produces the deduped sorted entity list
- *  plus the two read views `evaluatePredicate` walks instead of re-minting
- *  `observedKey(entity, metric)` per (rule × entity) pair. */
-function buildObservedView(observed: ReadonlyMap<ObservedKey, ObservedCell<unknown>>): ObservedView {
+function allObservedEntities(observed: ReadonlyMap<ObservedKey, ObservedCell<unknown>>): readonly EntityId[] {
   const seen = new Set<EntityId>();
-  const buckets = new Map<string, ObservedEntry[]>();
-  const byEntity = new Map<EntityId, Map<string, ObservedEntry>>();
-  for (const [key, cell] of observed) {
-    const [entity, property] = splitObservedKey(key);
-    seen.add(entity);
-    if (!isCellReadable(cell)) continue; // fog cells index nothing; predicates see FALSE (D-6)
-    const entry: ObservedEntry = { entity, key, cell, value: cell.value };
-    const bucket = buckets.get(property);
-    if (bucket === undefined) buckets.set(property, [entry]);
-    else bucket.push(entry);
-    const props = byEntity.get(entity);
-    if (props === undefined) byEntity.set(entity, new Map([[property, entry]]));
-    else props.set(property, entry);
+  for (const key of observed.keys()) {
+    seen.add(parseKeyEntityStrict(key));
   }
-  // Same codepoint total order (§3.4) the old per-predicate `sortEntities`
-  // produced, so "first (lowest-sorted) satisfying entity" is unchanged.
-  for (const bucket of buckets.values()) {
-    bucket.sort((a, b) => (a.entity < b.entity ? -1 : a.entity > b.entity ? 1 : 0));
-  }
-  return { allEntities: sortEntities([...seen]), metricBuckets: buckets, cellsByEntity: byEntity };
+  return sortEntities([...seen]);
 }
 
 /* ═══════════════════════ Intent building & band dispatch ═══════════════ */
@@ -746,9 +533,6 @@ export function runRulePhase(
   // domain error the store raises — never a TypeError deep inside evaluation.
   for (const card of input.book) validatePolicyCard(card);
 
-  // One strict parse pass over the observed map per run (see buildObservedView)
-  // — same throw position as the old allObservedEntities call in the literal.
-  const view = buildObservedView(input.observed);
   const scratch: RunScratch = {
     sustained: new Map(state.sustainedSinceUs),
     latched: new Set(state.latched),
@@ -759,9 +543,8 @@ export function runRulePhase(
     intentSeq: state.nextIntentSeq,
     entries: [],
     consultExpiry: config.consultExpiryUs,
-    view,
-    allEntities: view.allEntities,
-    scopeCache: new Map(),
+    observed: input.observed,
+    allEntities: allObservedEntities(input.observed),
   };
   const intents: PlayerIntent[] = [];
   const firings: RuleFiring[] = [];
@@ -789,9 +572,8 @@ export function runRulePhase(
 
   for (const card of input.book) {
     if (suppressed.has(card.id)) continue;
-    const directWrite = !cardReadsSnapshots(card);
 
-    const trigger = evaluateConjunction(card.when, card.scope, card.id, scratch, config.scopeResolver, directWrite);
+    const trigger = evaluateConjunction(card.when, card.scope, card.id, scratch, config.scopeResolver);
 
     if (!trigger.satisfied) {
       scratch.sustained.delete(card.id);
@@ -817,7 +599,7 @@ export function runRulePhase(
       }
     }
 
-    adjudicate(scratch, intents, firings, card, trigger.target, tick, nowUs, config, directWrite);
+    adjudicate(scratch, intents, firings, card, trigger.target, tick, nowUs, config);
     commitSnapWrites(scratch); // P2: WHEN+UNLESS read the PRE-run world; publish now
   }
 
@@ -863,12 +645,11 @@ function adjudicate(
   tick: SimTick,
   nowUs: SimTimeUs,
   config: PolicyEvaluationConfig,
-  directWrite: boolean,
 ): void {
   const mode = config.mode;
 
   if (card.unless !== undefined) {
-    const guard = evaluateConjunction(card.unless, card.scope, card.id, scratch, config.scopeResolver, directWrite);
+    const guard = evaluateConjunction(card.unless, card.scope, card.id, scratch, config.scopeResolver);
     if (guard.satisfied) {
       if (card.else === undefined) {
         log(scratch, card, mode, "guard-blocked", 0, tick, nowUs);
@@ -1039,9 +820,8 @@ export function resolveConsultation(
     intentSeq: state.nextIntentSeq,
     entries: [],
     consultExpiry: DEFAULT_CONSULT_EXPIRY_US,
-    view: buildObservedView(new Map()),
+    observed: new Map(),
     allEntities: [],
-    scopeCache: new Map(),
   };
   if (frozen) {
     scratch.deferred.push({
