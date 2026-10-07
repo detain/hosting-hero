@@ -19,7 +19,17 @@
  *    export/import hooks let the replay wave checkpoint it (§3.3) until
  *    types.ts grows a GameState slot for it (friction reported);
  *  - UNIT_HOLD (defaults module) is cleared before every tick so no hold
- *    smuggles across ticks through the side-table.
+ *    smuggles across ticks through the side-table;
+ *  - rec#5 targeted purge: the driver indexes queue/slot membership from
+ *    the serve step's own outputs — assignments for slots, per-node queue
+ *    SIGNATURES (count+head ⇒ tail-join/admit-shift arithmetic) for queues,
+ *    a WAITING/SHED full rebuild every `purgeVerifyTicks` as the drift
+ *    backstop — and purges only the nodes its terminals were attributed to.
+ *    Results are byte-identical to the old full-board sweep for every state
+ *    the step contract can produce; the sweep remains as a counted, loud
+ *    fallback on probe overflow, attribution contradiction, cold-boot
+ *    rosters, or `purgeProbeCap: 0`. The index is driver-memory only (never
+ *    in state/events/digest) and self-heals after checkpoint restore.
  */
 
 import type {
@@ -151,6 +161,27 @@ export interface TickDriverOptions {
   /** Intent-door wiring (hand costs/occupancy, placement validator, policy
    *  card lookup). Omitted = defaults; door still runs for any fed schedule. */
   readonly intents?: IntentDoorConfig;
+  /** rec#5 · TARGETED-PURGE probe cap. When the set of queue/slot nodes
+   *  attributed to this tick's terminals exceeds it, the driver falls back
+   *  to the full-board sweep (counted as `overflowFallbacks`, never silent).
+   *  Default 64; `0` = always sweep (the pre-rec#5 behaviour — the
+   *  byte-identity equivalence witness for tests). Non-integer/negative →
+   *  throws at `createTickDriver` (fail fast). */
+  readonly purgeProbeCap?: number;
+  /** rec#5 · cadence of the WAITING/SHED verification sweep that rebuilds
+   *  queue attribution from the serve step's truth channels (counted as
+   *  `verifyRuns`). Between verifications the fast path indexes queue
+   *  membership incrementally (append-tail + admit-shift arithmetic) and
+   *  self-heals to a full node rescan the moment the arithmetic disagrees
+   *  (`resyncScans`). Default 8; `1` = rescan every tick, `0` = trust the
+   *  incremental path alone (debug ladder only). Same validation shape as
+   *  `purgeProbeCap`. */
+  readonly purgeVerifyTicks?: number;
+  /** rec#5 · smallest board the attribution index runs on. Below it the
+   *  full-board sweep is already sub-microsecond and paying the per-tick
+   *  indexing tax is a NET LOSS — small boards skip indexing altogether
+   *  (counted as `smallBoardSweeps`). Default 8; `0` = always index. */
+  readonly purgeTargetedMinNodes?: number;
 }
 
 export interface TickDriver {
@@ -161,6 +192,22 @@ export interface TickDriver {
   exportPending(): readonly PendingReentry[];
   importPending(pending: readonly PendingReentry[], mintCounter: number): void;
   currentMintCounter(): number;
+  /** rec#5 · cumulative targeted-purge diagnostics (host telemetry only —
+   *  never enters GameState, events, or any digest). Frozen snapshot; the
+   *  fallback counters must stay 0 in healthy default-step runs, and every
+   *  non-zero `attributedUnits` leak check reads this, not internals. */
+  purgeStats(): {
+    readonly targetPurges: number;
+    readonly overflowFallbacks: number;
+    readonly contradictionFallbacks: number;
+    readonly forcedFallbacks: number;
+    readonly bootFallbacks: number;
+    readonly smallBoardSweeps: number;
+    readonly verifyRuns: number;
+    readonly resyncScans: number;
+    readonly maxProbeNodes: number;
+    readonly attributedUnits: number;
+  };
 }
 
 /** Mint the initial GameState. Map INSERTION order is part of the
@@ -244,11 +291,62 @@ export function createTickDriver(
   const rootSeed: RunSeed = rng.key.runSeed;
   const originClocks: ClockState = clocks; // validated identity anchor for the run
   const doorConfig: IntentDoorConfig = options.intents ?? {};
+  const purgeProbeCap = options.purgeProbeCap ?? PURGE_PROBE_CAP_DEFAULT;
+  if (!Number.isInteger(purgeProbeCap) || purgeProbeCap < 0) {
+    throw new Error(
+      `createTickDriver: purgeProbeCap ${purgeProbeCap} must be a non-negative integer (0 = always full sweep)`,
+    );
+  }
+  const purgeVerifyTicks = options.purgeVerifyTicks ?? PURGE_VERIFY_TICKS_DEFAULT;
+  if (!Number.isInteger(purgeVerifyTicks) || purgeVerifyTicks < 0) {
+    throw new Error(
+      `createTickDriver: purgeVerifyTicks ${purgeVerifyTicks} must be a non-negative integer (0 = never rescan, 1 = every tick)`,
+    );
+  }
+  const purgeTargetedMinNodes = options.purgeTargetedMinNodes ?? PURGE_TARGETED_MIN_NODES_DEFAULT;
+  if (!Number.isInteger(purgeTargetedMinNodes) || purgeTargetedMinNodes < 0) {
+    throw new Error(
+      `createTickDriver: purgeTargetedMinNodes ${purgeTargetedMinNodes} must be a non-negative integer (0 = always index)`,
+    );
+  }
 
   let pending: PendingReentry[] = [];
   let mintCounter = 0;
   const retryDepthById = new Map<EntityId, number>();
   let intentSeq = 0;
+  /* rec#5 · cross-tick membership index (driver-internal, like
+   * retryDepthById): unit → node ids whose queue/slot we have SEEN the unit
+   * in via the serve step's own output channels. Cleared per terminal, never
+   * enters state/events/digest, and needs no export/import hook — after a
+   * checkpoint restore the same-tick serve signals rebuild every live
+   * attribution before the terminal that consumes it can fire. */
+  // Scalar EntityId = the common single-node attribution; a Set only exists
+  // for the rare unit touching several nodes — zero Set allocation per join.
+  const memberNodeOf = new Map<EntityId, EntityId | Set<EntityId>>();
+  /* Per-node queue signature from the last tick we indexed: entry COUNT plus
+   * head identity is enough to detect the only membership moves defaults
+   * make (tail appends, head admit-shifts). A mismatch the arithmetic cannot
+   * explain triggers a full rescan of that queue (loud, `resyncScans`). */
+  const queueSigById = new Map<EntityId, QueueSignature>();
+  /* Until the first advance we cannot know whether the handed state carried
+   * pre-admitted slot occupants our assignment pass never saw occupy for —
+   * the first purge on such a run takes one full sweep (`bootFallbacks`). */
+  let bootSweep = false;
+  let firstAdvanceSeen = false;
+  let indexingWasActive = true;
+  let purgeTicks = 0;
+  const purgeCounters = {
+    targetPurges: 0,
+    overflowFallbacks: 0,
+    contradictionFallbacks: 0,
+    forcedFallbacks: 0,
+    bootFallbacks: 0,
+    smallBoardSweeps: 0,
+    verifyRuns: 0,
+    resyncScans: 0,
+    maxProbeNodes: 0,
+  };
+  let attributionContradiction = false;
 
   function advance(state: GameState, inputs: TickInputs): TickResult {
     if (state.runSeed !== rootSeed) {
@@ -277,6 +375,12 @@ export function createTickDriver(
        No RNG stream is opened here — the door is pure insert. */
     const door = applyIntentDoor(state, context, inputs.externalIntents ?? [], doorConfig);
     const worked: GameState = door.state;
+    if (!firstAdvanceSeen) {
+      firstAdvanceSeen = true;
+      if (worked.units.size > 0) {
+        bootSweep = true; // pre-admitted occupants: our eyes never saw their occupy
+      }
+    }
 
     /* ── cross-tick memory: mature pending re-entries ─────────────────── */
     const matured: Unit[] = [];
@@ -321,6 +425,129 @@ export function createTickDriver(
     /* ── step 5 · serve (slot-occupancy queueing core) ────────────────── */
     const serveOut = steps.serve({ context, units, nodes: worked.nodes });
     let nodes = serveOut.nodes;
+
+    /* ── rec#5 · targeted-purge attribution ─────────────────────────────
+       Index which node queues/slots could hold each unit, derived from the
+       serve step's own output channels at near-zero steady-state cost:
+       - assignments → slot occupy/release (a unit admitted while attributed
+         to another node without releasing it is a contradiction);
+       - per-node queue signature (entry COUNT + head identity): defaults
+         only ever move queue membership by TAIL appends (joins) and HEAD
+         admit-shifts, so the joiner increment `newLen − oldLen + admits` is
+         attributed straight off the tail — no full-queue scan on healthy
+         ticks. Arithmetic that cannot explain the queue (negative increment,
+         head swap with no admits, unseen node) rescans that whole queue
+         (loud `resyncScans`);
+       - every `purgeVerifyTicks` the WAITING/SHED channels rebuild the index
+         in full (`verifyRuns`) — a queued unit's hop IS its queue node (the
+         FIX-8 invariant in defaults.ts), so shape-preserving drift (hop no
+         longer naming the queue node, phantom waiters) trips the
+         contradiction latch there.
+       MUST run BEFORE the completion-slicing loop below mutates unitsById —
+       the verify pass reads pre-slice routeHops. Contract for foreign
+       steps: membership is only visible through these channels; anything
+       else trips the contradiction latch into a loud full-sweep fallback. */
+    attributionContradiction = false;
+    const indexingActive = nodes.size >= purgeTargetedMinNodes;
+    if (indexingActive && !indexingWasActive) bootSweep = true; // cold re-entry
+    indexingWasActive = indexingActive;
+    if (indexingActive) {
+      purgeTicks += 1;
+      const admitUnitsByNode = new Map<EntityId, Set<EntityId>>();
+      for (const assignment of serveOut.assignments) {
+        if (!assignment.blocked && assignment.serviceStartUs === simNow) {
+          let admits = admitUnitsByNode.get(assignment.nodeId);
+          if (admits === undefined) {
+            admits = new Set<EntityId>();
+            admitUnitsByNode.set(assignment.nodeId, admits);
+          }
+          admits.add(assignment.unitId); // a multi-slot admit shifts the queue exactly once
+        }
+        const releases = !assignment.blocked && assignment.serviceStartUs < simNow;
+        if (
+          attributeMembership(
+            memberNodeOf,
+            assignment.unitId,
+            assignment.nodeId,
+            releases ? "release" : "occupy",
+          )
+        ) {
+          attributionContradiction = true;
+        }
+      }
+      const verifyThisTick = purgeVerifyTicks > 0 && purgeTicks % purgeVerifyTicks === 0;
+      if (verifyThisTick) purgeCounters.verifyRuns += 1;
+      for (const record of nodes.values()) {
+        // values() not entries(): no per-node pair allocation on the hot loop
+        const nodeId = record.id;
+        const queue = record.queue;
+        const signature = queueSigById.get(nodeId);
+        if (signature === undefined) {
+          for (const unitId of queue) {
+            if (attributeMembership(memberNodeOf, unitId, nodeId, "occupy")) {
+              attributionContradiction = true;
+            }
+          }
+          queueSigById.set(nodeId, { len: queue.length, head: queue[0] });
+          continue;
+        }
+        // Idle-quiet node: still empty, nothing joined, nothing moved. This is
+        // the overwhelming majority on a large board — read two numbers, skip.
+        if (queue.length === 0 && signature.len === 0) continue;
+        const admits = admitUnitsByNode.get(nodeId)?.size ?? 0;
+        const joins = queue.length - signature.len + admits;
+        const headSwapped =
+          admits === 0 && signature.len > 0 && queue.length > 0 && queue[0] !== signature.head;
+        if (joins < 0 || headSwapped) {
+          purgeCounters.resyncScans += 1;
+          for (const unitId of queue) {
+            if (attributeMembership(memberNodeOf, unitId, nodeId, "occupy")) {
+              attributionContradiction = true;
+            }
+          }
+        } else {
+          for (let i = queue.length - joins; i < queue.length; i += 1) {
+            const unitId = queue[i];
+            if (unitId === undefined) continue; // unreachable: i < queue.length
+            if (attributeMembership(memberNodeOf, unitId, nodeId, "occupy")) {
+              attributionContradiction = true;
+            }
+          }
+        }
+        signature.len = queue.length; // in-place: the map never churns records
+        signature.head = queue[0];
+      }
+      if (queueSigById.size > nodes.size) {
+        // Retired nodes: prune so the auxiliary map cannot grow unbounded. A
+        // re-added node rescans its queue as unseen — safe, attribution is
+        // additive-only until a purge consumes it.
+        for (const nodeId of [...queueSigById.keys()]) {
+          if (!nodes.has(nodeId)) queueSigById.delete(nodeId);
+        }
+      }
+      if (verifyThisTick) {
+        for (const unitId of serveOut.waiting) {
+          const hop = unitsById.get(unitId)?.routeHops[0];
+          if (hop === undefined) {
+            attributionContradiction = true; // queued unit unknown to the roster / no hop
+            continue;
+          }
+          if (attributeMembership(memberNodeOf, unitId, hop, "occupy")) {
+            attributionContradiction = true;
+          }
+        }
+        for (const unitId of serveOut.shed) {
+          const hop = unitsById.get(unitId)?.routeHops[0];
+          if (hop === undefined) {
+            attributionContradiction = true;
+            continue;
+          }
+          if (attributeMembership(memberNodeOf, unitId, hop, "occupy")) {
+            attributionContradiction = true;
+          }
+        }
+      }
+    }
 
     // Derive hop progress from the assignment ledger (ServeOut has no units
     // channel — contract friction, documented in defaults.ts):
@@ -500,7 +727,50 @@ export function createTickDriver(
     for (const outcome of outcomeOut.outcomes) terminalById.set(outcome.unitId, outcome);
 
     // Purge terminals from slots/queues BEFORE economics observes the nodes.
-    if (terminalById.size > 0) nodes = purgeTerminals(nodes, terminalById.keys());
+    // rec#5: walk ONLY the nodes attributed to this tick's terminals; the
+    // full-board sweep survives as a LOUD fallback (each branch counts —
+    // a silent fallback would hide a mis-maintained index until a digest
+    // moves, which is exactly the debugging pain the ladder refuses).
+    if (terminalById.size > 0) {
+      const doomed = new Set<EntityId>(terminalById.keys());
+      const probe = collectProbeNodes(memberNodeOf, doomed);
+      if (!indexingActive) {
+        purgeCounters.smallBoardSweeps += 1;
+        nodes = purgeSweep(nodes, doomed);
+        syncQueueSignatures(queueSigById, nodes);
+      } else if (
+        purgeProbeCap === 0 ||
+        bootSweep ||
+        attributionContradiction ||
+        probe.size > purgeProbeCap
+      ) {
+        bootSweep = false;
+        if (purgeProbeCap === 0) purgeCounters.forcedFallbacks += 1;
+        else if (attributionContradiction) purgeCounters.contradictionFallbacks += 1;
+        else if (probe.size > purgeProbeCap) purgeCounters.overflowFallbacks += 1;
+        else purgeCounters.bootFallbacks += 1;
+        nodes = purgeSweep(nodes, doomed);
+        syncQueueSignatures(queueSigById, nodes);
+      } else {
+        purgeCounters.targetPurges += 1;
+        if (probe.size > purgeCounters.maxProbeNodes) {
+          purgeCounters.maxProbeNodes = probe.size;
+        }
+        nodes = purgeTargeted(nodes, doomed, probe);
+        // The purge shrinks queues AFTER the attribution pass recorded its
+        // signatures — refresh the touched ones so next tick's serve input
+        // is what the arithmetic predicts (else every post-purge tick would
+        // read a phantom contraction and rescan).
+        for (const nodeId of probe) {
+          const record = nodes.get(nodeId);
+          const signature = record === undefined ? undefined : queueSigById.get(nodeId);
+          if (record !== undefined && signature !== undefined) {
+            signature.len = record.queue.length;
+            signature.head = record.queue[0];
+          }
+        }
+      }
+    }
 
     /* ── step 11 · backpressure (storm engine, R-12) ──────────────────── */
     const backpressureInput: BackpressureInputSafe = {
@@ -612,6 +882,19 @@ export function createTickDriver(
       mintCounter = mintCounterValue;
     },
     currentMintCounter: () => mintCounter,
+    purgeStats: () =>
+      Object.freeze({
+        targetPurges: purgeCounters.targetPurges,
+        overflowFallbacks: purgeCounters.overflowFallbacks,
+        contradictionFallbacks: purgeCounters.contradictionFallbacks,
+        forcedFallbacks: purgeCounters.forcedFallbacks,
+        bootFallbacks: purgeCounters.bootFallbacks,
+        smallBoardSweeps: purgeCounters.smallBoardSweeps,
+        verifyRuns: purgeCounters.verifyRuns,
+        resyncScans: purgeCounters.resyncScans,
+        maxProbeNodes: purgeCounters.maxProbeNodes,
+        attributedUnits: memberNodeOf.size,
+      }),
   });
 }
 
@@ -656,46 +939,191 @@ function nodeServiceTime(nodes: ReadonlyMap<EntityId, NodeRecord>, nodeId: Entit
   return nodes.get(nodeId)?.serviceTimeUs ?? 0n;
 }
 
-/** Remove terminal units from every queue and free every slot they hold.
- *  Nodes iterated in pinned sorted order; ρ refreshed with the ONE shared
- *  helper (queue.utilization — same rounding + ceiling the serve step uses,
- *  FIX-6). */
-function purgeTerminals(
+/** rec#5 default probe cap: a tick whose terminals are attributed to more
+ *  distinct nodes than this falls back to the full sweep. Comfortably above
+ *  any terminal burst the default step set produces (outcome terminals are
+ *  per-unit; even a full hard-ceiling drain touches ONE node per shed
+ *  queue). */
+const PURGE_PROBE_CAP_DEFAULT = 64;
+
+/** rec#5 default WAITING/SHED rebuild cadence: every 8th tick pays the
+ *  full waiter scan; between them the incremental tail/shift index plus its
+ *  anomaly rescan governs. 8 keeps the amortised cost under a microsecond
+ *  per tick on fat-queue boards while bounding the drift-detection window
+ *  far below the patience time-out any terminal in that window would need. */
+const PURGE_VERIFY_TICKS_DEFAULT = 8;
+
+/** rec#5 · below this board size the sweep costs under a microsecond while
+ *  the per-tick index maintenance is a comparable constant — targeted purge
+ *  simply is not worth switching on until the board has somewhere to hide
+ *  the walk. 8 keeps 2–3-node test/audit boards (they pin `0` explicitly)
+ *  on the legacy path by default while every production grid indexes. */
+const PURGE_TARGETED_MIN_NODES_DEFAULT = 8;
+
+/** rec#5 · one membership write on the attribution index. Returns TRUE when
+ *  the write contradicted the recorded attribution — a unit occupying a node
+ *  it was never released from, or a release while still attributed
+ *  elsewhere. Contradictions are recorded CONSERVATIVELY (the node is still
+ *  added), so the probe stays a superset of true membership even after the
+ *  fallback tick; the latch only makes the next purge walk the whole board.
+ *  A release for a unit with no attribution at all is benign: a checkpoint
+ *  restore starts the index cold and the serve slot was already freed by
+ *  the release itself. */
+function attributeMembership(
+  memberNodeOf: Map<EntityId, EntityId | Set<EntityId>>,
+  unitId: EntityId,
+  nodeId: EntityId,
+  mode: "occupy" | "release",
+): boolean {
+  const attributed = memberNodeOf.get(unitId);
+  if (mode === "occupy") {
+    if (attributed === undefined) {
+      memberNodeOf.set(unitId, nodeId); // scalar fast path
+      return false;
+    }
+    if (typeof attributed === "string") {
+      if (attributed === nodeId) return false;
+      memberNodeOf.set(unitId, new Set<EntityId>([attributed, nodeId])); // promote
+      return true; // attributed to another node without ever releasing it
+    }
+    if (attributed.has(nodeId)) return false;
+    attributed.add(nodeId); // conservative superset
+    return true;
+  }
+  if (attributed === undefined) return false;
+  if (typeof attributed === "string") {
+    if (attributed === nodeId) {
+      memberNodeOf.delete(unitId);
+      return false;
+    }
+    return true; // releasing a node we never indexed while held elsewhere
+  }
+  attributed.delete(nodeId);
+  if (attributed.size === 0) {
+    memberNodeOf.delete(unitId);
+    return false;
+  }
+  if (attributed.size === 1) {
+    const [remaining] = attributed;
+    memberNodeOf.set(unitId, remaining as EntityId); // demote back to scalar
+  }
+  return true; // still a member somewhere else
+}
+
+/** rec#5 · union of the nodes attributed to the doomed units; consumption
+ *  clears their index entries (a terminal is no longer anyone's member). */
+function collectProbeNodes(
+  memberNodeOf: Map<EntityId, EntityId | Set<EntityId>>,
+  doomed: ReadonlySet<EntityId>,
+): Set<EntityId> {
+  const probe = new Set<EntityId>();
+  for (const unitId of doomed) {
+    const attributed = memberNodeOf.get(unitId);
+    if (attributed === undefined) continue;
+    if (typeof attributed === "string") probe.add(attributed);
+    else for (const nodeId of attributed) probe.add(nodeId);
+    memberNodeOf.delete(unitId);
+  }
+  return probe;
+}
+
+/** rec#5 · re-record every queue signature from the post-purge board: the
+ *  sweep removed doomed units from queues the attribution pass had just
+ *  indexed pre-purge, and the arithmetic must describe the NEXT serve input. */
+/** rec#5 · per-node queue signature (count + head identity), driver-internal,
+ *  mutated in place — never leaves the driver closure. */
+interface QueueSignature {
+  len: number;
+  head: EntityId | undefined;
+}
+
+function syncQueueSignatures(
+  queueSigById: Map<EntityId, QueueSignature>,
   nodes: ReadonlyMap<EntityId, NodeRecord>,
-  unitIds: Iterable<EntityId>,
+): void {
+  for (const record of nodes.values()) {
+    const nodeId = record.id;
+    const signature = queueSigById.get(nodeId);
+    if (signature === undefined) {
+      queueSigById.set(nodeId, { len: record.queue.length, head: record.queue[0] });
+    } else {
+      signature.len = record.queue.length;
+      signature.head = record.queue[0];
+    }
+  }
+}
+
+/** Remove terminal units from ONE node record: same identity when the node
+ *  holds none of them, else a fresh frozen record. ρ refreshed with the ONE
+ *  shared helper (queue.utilization — same rounding + ceiling the serve step
+ *  uses, FIX-6). */
+function purgeNodeTerminals(
+  node: NodeRecord,
+  doomed: ReadonlySet<EntityId>,
+): NodeRecord {
+  const queue = node.queue.filter((id) => !doomed.has(id));
+  let changed = queue.length !== node.queue.length;
+  const slots = node.slots.map((slot) => {
+    if (slot.occupied && slot.unitId !== null && doomed.has(slot.unitId)) {
+      changed = true;
+      return Object.freeze({
+        occupied: false,
+        unitId: null,
+        waitingOn: null,
+        releasedAtUs: null,
+      }) satisfies NodeSlotRecord;
+    }
+    return slot;
+  });
+  return changed
+    ? Object.freeze({
+        ...node,
+        slots: Object.freeze(slots),
+        queue: Object.freeze(queue),
+        queueDepth: queue.length,
+        utilizationRho: utilization({ ...node, slots }),
+      })
+    : node;
+}
+
+/** Full-board sweep: every node visited in pinned sorted order into a fresh
+ *  map. The pre-rec#5 path, kept as the loud fallback. */
+function purgeSweep(
+  nodes: ReadonlyMap<EntityId, NodeRecord>,
+  doomed: ReadonlySet<EntityId>,
 ): ReadonlyMap<EntityId, NodeRecord> {
-  const doomed = new Set<EntityId>(unitIds);
-  if (doomed.size === 0) return nodes;
   const next = new Map<EntityId, NodeRecord>();
   for (const nodeId of sortedIds(nodes.keys())) {
     const node = nodes.get(nodeId);
     if (node === undefined) continue;
-    const queue = node.queue.filter((id) => !doomed.has(id));
-    let changed = queue.length !== node.queue.length;
-    const slots = node.slots.map((slot) => {
-      if (slot.occupied && slot.unitId !== null && doomed.has(slot.unitId)) {
-        changed = true;
-        return Object.freeze({
-          occupied: false,
-          unitId: null,
-          waitingOn: null,
-          releasedAtUs: null,
-        }) satisfies NodeSlotRecord;
-      }
-      return slot;
-    });
-    const updated = changed
-      ? Object.freeze({
-          ...node,
-          slots: Object.freeze(slots),
-          queue: Object.freeze(queue),
-          queueDepth: queue.length,
-          utilizationRho: utilization({ ...node, slots }),
-        })
-      : node;
-    next.set(nodeId, updated);
+    next.set(nodeId, purgeNodeTerminals(node, doomed));
   }
   return next;
+}
+
+/** rec#5 · targeted purge: walk ONLY the probe-attributed nodes (in pinned
+ *  sorted order for a deterministic visit sequence), cloning the map
+ *  copy-on-write on first change. Returning the input identity when nothing
+ *  changed is legal — allocation identity is unobservable (rec#2 law) and
+ *  digestState sorts node keys. Unknown probe nodes are skipped (a forged
+ *  board that queues at a node absent from `nodes` is outside the contract;
+ *  the queue-hop attribution pass above already latched a contradiction for
+ *  its roster ghost, and the fallback sweep covers the purge itself). */
+function purgeTargeted(
+  nodes: ReadonlyMap<EntityId, NodeRecord>,
+  doomed: ReadonlySet<EntityId>,
+  probe: ReadonlySet<EntityId>,
+): ReadonlyMap<EntityId, NodeRecord> {
+  let next: Map<EntityId, NodeRecord> | undefined;
+  for (const nodeId of sortedIds(probe)) {
+    const node = nodes.get(nodeId);
+    if (node === undefined) continue;
+    const purged = purgeNodeTerminals(node, doomed);
+    if (purged === node) continue;
+    if (next === undefined) next = new Map(nodes);
+    next.set(nodeId, purged); // existing key: insertion position preserved
+  }
+  return next ?? nodes;
 }
 
 /** Release orphaned (step-8-unvalidated) holds: clear waitingOn so the slot
