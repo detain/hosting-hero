@@ -27,12 +27,14 @@
  * Determinism laws: no Math.random, no Date, no Intl, no localeCompare.
  * Every dynamic-key map is built from code-unit-SORTED entries (era maps by
  * numeric year) and exposed as a sealed read-only view; iteration is therefore
- * pinned. `compareCodeUnits` below is a deliberate byte-fork of
- * replay/canonical.ts's §3.4 util — the loader imports only ../types and
- * ../kernel (owner directive in index.ts), so the one-liner is duplicated
- * instead of crossing the module-isolation line.
+ * pinned. `compareCodeUnits` comes from src/internal/canonical.ts — the
+ * shared home that retired the former byte-fork (the one-liner used to be
+ * duplicated here to honor the loader's ../types+../kernel-only isolation
+ * note; the refactor task supersedes that with the internal primitive, which
+ * keeps the sort byte-identical while deleting the drift surface).
  */
 
+import { compareCodeUnits } from "../internal/canonical.ts";
 import { LoaderError } from "./boundary.ts";
 
 /* ═════════════════════ vocabularies (law source cited) ═════════════════════ */
@@ -99,12 +101,6 @@ const LOCALE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
 const PACK_KEY_RE = /^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/;
 const ERA_YEAR_RE = /^\d{4}$/;
 const SLOT_NAME_RE = /^[a-z][A-Za-z0-9]*$/;
-
-/** Code-unit comparison (§3.4: pinned order, never locale). Fork of
- *  replay/canonical.ts — see module header for the isolation rationale. */
-function compareCodeUnits(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
 
 /* ═════════════════════ loaded (trusted) shapes ═════════════════════ */
 

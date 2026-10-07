@@ -80,6 +80,7 @@ import {
   PlayerVerb,
 } from "../types.ts";
 import { MICROS_PER_MIN } from "../kernel/time.ts";
+import { compareCodeUnits, fnv1a64OverCodePoints } from "../internal/canonical.ts";
 import { compareEntityId } from "./internal.ts";
 import { makeSlots } from "./queue.ts";
 
@@ -529,27 +530,16 @@ function handleConfigureNode(draft: Draft, args: ConfigureNodeArgs): HandlerVerd
 
 /* ── ruleBookHash derivation (M3) ─────────────────────────────────────────
  * FNV-1a-64, the KERNEL's hash family — same offset basis, prime and
- * codepoint walk as kernel/rng.ts `hashTextFast`. That twin stays private in
- * the kernel and rng-reference.ts is test-only by its own header law, so the
- * door keeps a local copy of the SAME family rather than widening any barrel
- * export (no new hash family is introduced).
+ * codepoint walk as kernel/rng.ts `hashTextFast`, now shared through
+ * src/internal/canonical.ts (`fnv1a64OverCodePoints`) instead of a local
+ * transcription; that twin stays private in the kernel and rng-reference.ts
+ * is test-only by its own header law (no new hash family is introduced).
  * The fold runs over the WHOLE book — code-unit-sorted by card id, hence
  * insertion-order independent — each entry `id␀fingerprint` joined by ␁.
  * The per-card fingerprint mirrors digest.ts's absorb walk (same fields in
  * same order) so "same hash" means "same digested book content". Like every
  * kernel hash this is a deterministic fingerprint, not a cryptographic
  * digest. */
-const MASK64 = (1n << 64n) - 1n;
-const FNV_OFFSET64 = 0xcbf29ce484222325n;
-const FNV_PRIME64 = 0x100000001b3n;
-
-function fnv1a64Hex(text: string): string {
-  let hash = FNV_OFFSET64;
-  for (const codePoint of text) {
-    hash = ((hash ^ BigInt(codePoint.codePointAt(0) as number)) * FNV_PRIME64) & MASK64;
-  }
-  return hash.toString(16).padStart(16, "0");
-}
 
 function cardFingerprint(card: PolicyCard): string {
   const parts: string[] = [
@@ -569,12 +559,12 @@ function cardFingerprint(card: PolicyCard): string {
   for (const action of card.then) {
     parts.push(action.id, action.runbookName ?? "\u2205", String(action.value ?? -1n));
   }
-  return fnv1a64Hex(parts.join("\u0000"));
+  return fnv1a64OverCodePoints(parts.join("\u0000"));
 }
 
 function foldRuleBookHash(book: readonly PolicyCard[]): string {
-  const sorted = [...book].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return fnv1a64Hex(sorted.map((card) => `${card.id}\u0000${cardFingerprint(card)}`).join("\u0001"));
+  const sorted = [...book].sort((a, b) => compareCodeUnits(a.id, b.id));
+  return fnv1a64OverCodePoints(sorted.map((card) => `${card.id}\u0000${cardFingerprint(card)}`).join("\u0001"));
 }
 
 function handlePolicyCardCommit(draft: Draft, args: PolicyCardCommitArgs): HandlerVerdict {

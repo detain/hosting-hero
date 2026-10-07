@@ -49,6 +49,7 @@ import {
   type InstrumentBinding,
   type LadderPoint,
 } from "./instrument.ts";
+import { compareCodeUnits, fnv1a64OverCodePoints } from "../internal/canonical.ts";
 
 /* ═══════════════════ Step-12 record shapes ═══════════════════
  * The contract type `ObservedWrite` (types.ts) is pre-Computed-cell traffic:
@@ -243,7 +244,7 @@ export class ObservedStore {
   knownEntities(): readonly EntityId[] {
     const entities = new Set<EntityId>();
     for (const key of this.#allKeys()) entities.add(parseKeyEntity(key));
-    return [...entities].sort(compareCodeUnit);
+    return [...entities].sort(compareCodeUnits);
   }
 
   /** Properties known for one entity — the known-unknowns list the HUD draws
@@ -253,7 +254,7 @@ export class ObservedStore {
     for (const key of this.#allKeys()) {
       if (parseKeyEntity(key) === entity) properties.push(parseKeyProperty(key));
     }
-    return [...new Set(properties)].sort(compareCodeUnit);
+    return [...new Set(properties)].sort(compareCodeUnits);
   }
 
   /** Keys that are KNOWN but not currently seen (status unknown) — the
@@ -264,7 +265,7 @@ export class ObservedStore {
       const cell = this.#cells.get(key);
       if (cell === undefined || cell.status === "unknown") out.push(key);
     }
-    return out.sort(compareCodeUnit);
+    return out.sort(compareCodeUnits);
   }
 
   coverageSummary(): CoverageSummary {
@@ -379,7 +380,7 @@ export class ObservedStore {
       `w=${this.#watermarkUs}`,
       `b=${this.#appliedBatches}`,
     ];
-    for (const key of [...this.#allKeys()].sort(compareCodeUnit)) {
+    for (const key of [...this.#allKeys()].sort(compareCodeUnits)) {
       const cell = this.#cells.get(key);
       const cellPart =
         cell === undefined
@@ -413,7 +414,7 @@ export class ObservedStore {
         .join(",");
       parts.push(`${key}|${cellPart}|${groundPart}|${bindingPart}|${ladderPart}`);
     }
-    return fnv1aHex(parts.join("\n"));
+    return fnv1a64OverCodePoints(parts.join("\n"));
   }
 }
 
@@ -441,13 +442,6 @@ function isFairnessChannel(value: string): value is FairnessChannel {
   return value === "site-preview" || value === "pulse-strip";
 }
 
-/** Code-unit ordering: total, locale-free, engine-stable (§3.4). */
-function compareCodeUnit(a: string, b: string): -1 | 0 | 1 {
-  if (a < b) return -1;
-  if (a > b) return 1;
-  return 0;
-}
-
 /** Prefix marking a composite cell value that was folded to its canonical
  *  hash text at the write gate (FIX-4). */
 export const CANONICAL_CELL_PREFIX = "hh-canon-v1:";
@@ -468,7 +462,7 @@ export function isCompositeCellValue(value: unknown): boolean {
  */
 export function foldCompositeCellValue(value: unknown): unknown {
   if (!isCompositeCellValue(value)) return value;
-  return `${CANONICAL_CELL_PREFIX}${fnv1aHex(stableSerialize(value, 0))}`;
+  return `${CANONICAL_CELL_PREFIX}${fnv1a64OverCodePoints(stableSerialize(value, 0))}`;
 }
 
 /** Gate normalization: fold composites and guarantee the stored cell object
@@ -502,28 +496,11 @@ export function stableSerialize(value: unknown, depth: number): string {
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
-    const keys = Object.keys(record).sort(compareCodeUnit);
+    const keys = Object.keys(record).sort(compareCodeUnits);
     const body = keys.map((k) => `${JSON.stringify(k)}:${stableSerialize(record[k], depth + 1)}`).join(",");
     return `{${body}}`;
   }
   throw new Error(`observed: unsupported cell value type ${typeof value}`);
-}
-
-const FNV_OFFSET64 = 0xcbf29ce484222325n;
-const FNV_PRIME64 = 0x100000001b3n;
-const MASK64 = (1n << 64n) - 1n;
-
-/** FNV-1a 64-bit over code points, hex — same discipline as kernel/rng
- *  (locale-free, bit-reproducible browser ↔ Node). Collisions are acceptable
- *  for a tripwire digest; the replay module's sha-256 stateHash stays
- *  authoritative for signatures. */
-function fnv1aHex(text: string): string {
-  let hash = FNV_OFFSET64;
-  for (const codePoint of text) {
-    hash ^= BigInt(codePoint.codePointAt(0) as number);
-    hash = (hash * FNV_PRIME64) & MASK64;
-  }
-  return hash.toString(16).padStart(16, "0");
 }
 
 /** Default by-hand probe cadence when a fogged property has no instrument to

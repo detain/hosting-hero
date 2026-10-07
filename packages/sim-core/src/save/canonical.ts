@@ -1,10 +1,13 @@
 /**
  * Deterministic stable serialization for save artifacts.
  *
- * ORDERING RULES ARE A LOCAL DUPLICATE of replay/canonical.ts (the save
- * workstream may not import ../replay — workstream boundary; the replay lane
- * owns that file). If those rules ever change, BOTH copies change — the
- * tripwire tests here pin the same properties:
+ * The canonical machinery is SHARED with replay via src/internal/canonical.ts
+ * (the former hand-maintained duplicate — kept honest only by the S-3 parity
+ * tripwire — is retired). The save workstream boundary still holds at the
+ * public surface: save exports its own names, its own error wording, and its
+ * own decode policy (no depth cap — a save file is the player's own sealed
+ * artifact, not a shared untrusted replay buffer). The pinned properties,
+ * unchanged:
  *
  *  - object keys emitted in code-unit sorted order → key-insertion shuffles
  *    never change bytes (never `localeCompare`, §3.4 runtime-neutral);
@@ -24,37 +27,60 @@
  * (state hash vs save-file hash) and are never compared against each other.
  */
 
+import {
+  decodeTaggedTree,
+  encodeTaggedTree,
+  fnv1a64OverBytes,
+  NO_DEPTH_LIMIT,
+  utf8Bytes as sharedUtf8Bytes,
+  type CanonicalProblem,
+  type CanonicalProblemReporter,
+} from "../internal/canonical.ts";
 import { fail } from "./errors.ts";
 
-/* ═══════════════════════ tiny utilities (duplicated, see header) ═══════════════════════ */
-
-const UNSAFE_OBJECT_KEYS: readonly string[] = ["__proto__", "constructor", "prototype"];
-
-function isUnsafeKey(key: string): boolean {
-  return UNSAFE_OBJECT_KEYS.includes(key);
-}
-
-/** Code-unit comparison (§3.4: pinned order, never locale). */
-export function compareCodeUnits(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-function isPlainObject(value: object): value is Record<string, unknown> {
-  const proto: unknown = Object.getPrototypeOf(value);
-  return proto === Object.prototype || proto === null;
-}
+export { compareCodeUnits } from "../internal/canonical.ts";
 
 /* ═══════════════════════ canonical JSON text ═══════════════════════ */
 
-const TAG_INT = "$i";
-const TAG_UNDEF = "$u";
-const TAG_MAP = "$m";
-const TAG_SET = "$s";
+/** Save's wording of the shared walker's rejections (SaveError via ./errors). */
+const reportEncode: CanonicalProblemReporter = (problem: CanonicalProblem): never => {
+  switch (problem.kind) {
+    case "non-finite-number":
+      return fail(`canonicalJson: non-finite number ${String(problem.value)} is banned from save state (CONVENTIONS §4)`);
+    case "unsafe-object-key":
+      return fail(`canonicalJson: unsafe object key "${problem.key}"`);
+    case "cyclic-structure":
+      return fail("canonicalJson: cyclic structure is not serializable");
+    case "unsupported-value":
+      return fail(`canonicalJson: unsupported value of type ${typeof problem.value}`);
+    case "malformed-map-entry":
+      return fail("canonicalJson: malformed $m entry"); // encode never emits a tag tree to re-read
+    case "depth-cap-exceeded":
+      return fail("canonicalJson: nesting exceeds depth cap"); // save encodes uncapped — unreachable
+  }
+};
+
+const reportDecode: CanonicalProblemReporter = (problem: CanonicalProblem): never => {
+  switch (problem.kind) {
+    case "unsafe-object-key":
+      return fail(`fromCanonicalJson: unsafe object key "${problem.key}"`);
+    case "malformed-map-entry":
+      return fail("fromCanonicalJson: malformed $m entry");
+    case "depth-cap-exceeded":
+      return fail(`fromCanonicalJson: nesting exceeds depth cap ${problem.cap}`); // save decodes uncapped — unreachable
+    case "non-finite-number":
+      return fail(`fromCanonicalJson: non-finite number ${String(problem.value)}`); // JSON text can never carry one
+    case "cyclic-structure":
+      return fail("canonicalJson: cyclic structure is not serializable");
+    case "unsupported-value":
+      return fail(`canonicalJson: unsupported value of type ${typeof problem.value}`);
+  }
+};
 
 /** Deterministic JSON text: sorted keys, bigint `{"$i":"123"}`,
  *  Map `{"$m":[[k,v]…]}` (insertion order), Set `{"$s":[…]}`. */
 export function canonicalJson(value: unknown): string {
-  const encoded = encodeTagged(value, new Set<object>());
+  const encoded = encodeTaggedTree(value, reportEncode);
   return JSON.stringify(encoded) ?? fail("canonicalJson: stringify returned undefined");
 }
 
@@ -66,127 +92,21 @@ export function fromCanonicalJson(text: string): unknown {
   } catch (cause) {
     return fail(`fromCanonicalJson: invalid JSON (${String(cause)})`);
   }
-  return decodeTagged(parsed);
+  return decodeTaggedTree(parsed, reportDecode, NO_DEPTH_LIMIT);
 }
 
-function encodeTagged(value: unknown, seen: Set<object>): unknown {
-  if (value === null) return null;
-  if (value === undefined) return { [TAG_UNDEF]: 1 };
-  if (typeof value === "boolean") return value;
-  if (typeof value === "bigint") return { [TAG_INT]: value.toString(10) };
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
-      fail(`canonicalJson: non-finite number ${String(value)} is banned from save state (CONVENTIONS §4)`);
-    }
-    return value;
-  }
-  if (typeof value === "string") return value.startsWith("$") ? `$${value}` : value;
-  if (Array.isArray(value)) {
-    guardCycle(seen, value);
-    const items = value.map((item) => encodeTagged(item, seen));
-    seen.delete(value);
-    return items;
-  }
-  if (value instanceof Map) {
-    guardCycle(seen, value);
-    const pairs: unknown[] = [];
-    for (const [k, v] of value) pairs.push([encodeTagged(k, seen), encodeTagged(v, seen)]);
-    seen.delete(value);
-    return { [TAG_MAP]: pairs };
-  }
-  if (value instanceof Set) {
-    guardCycle(seen, value);
-    const items = [...value].map((item) => encodeTagged(item, seen));
-    seen.delete(value);
-    return { [TAG_SET]: items };
-  }
-  if (typeof value === "object" && isPlainObject(value)) {
-    guardCycle(seen, value);
-    const keys = Object.keys(value).sort(compareCodeUnits);
-    for (const key of keys) {
-      if (isUnsafeKey(key)) fail(`canonicalJson: unsafe object key "${key}"`);
-    }
-    const out: Record<string, unknown> = {};
-    for (const key of keys) {
-      out[key.startsWith("$") ? `$${key}` : key] = encodeTagged(value[key], seen);
-    }
-    seen.delete(value);
-    return out;
-  }
-  return fail(`canonicalJson: unsupported value of type ${typeof value}`);
-}
-
-function guardCycle(seen: Set<object>, value: object): void {
-  if (seen.has(value)) fail("canonicalJson: cyclic structure is not serializable");
-  seen.add(value);
-}
-
-function decodeTagged(value: unknown): unknown {
-  if (value === null) return null;
-  if (Array.isArray(value)) return value.map(decodeTagged);
-  if (typeof value === "object") {
-    const dict = value as Record<string, unknown>;
-    const keys = Object.keys(dict);
-    if (keys.length === 1) {
-      const key = keys[0] as string;
-      const inner = dict[key] as unknown;
-      if (key === TAG_INT && typeof inner === "string" && /^-?\d+$/.test(inner)) return BigInt(inner);
-      if (key === TAG_UNDEF) return undefined;
-      if (key === TAG_MAP && Array.isArray(inner)) {
-        return new Map(
-          inner.map((pair) => {
-            if (!Array.isArray(pair) || pair.length !== 2) fail("fromCanonicalJson: malformed $m entry");
-            return [decodeTagged(pair[0]), decodeTagged(pair[1])];
-          }),
-        );
-      }
-      if (key === TAG_SET && Array.isArray(inner)) return new Set(inner.map(decodeTagged));
-    }
-    const out: Record<string, unknown> = {};
-    for (const key of keys) {
-      if (isUnsafeKey(key)) fail(`fromCanonicalJson: unsafe object key "${key}"`);
-      out[key.startsWith("$$") ? key.slice(1) : key] = decodeTagged(dict[key]);
-    }
-    return out;
-  }
-  if (typeof value === "string") return value.startsWith("$$") ? value.slice(1) : value;
-  return value;
-}
-
-/* ═══════════════════════ pure-TS FNV-1a-64 digest (duplicated) ═══════════════════════ */
-
-const MASK64 = (1n << 64n) - 1n;
-const FNV_OFFSET64 = 0xcbf29ce484222325n;
-const FNV_PRIME64 = 0x100000001b3n;
+/* ═══════════════════════ pure-TS FNV-1a-64 digest ═══════════════════════ */
 
 /** Hand-rolled UTF-8 (code-point based) — runtime-identical bytes browser⇄Node. */
 export function utf8Bytes(text: string): Uint8Array {
-  const out: number[] = [];
-  for (const ch of text) {
-    const cp = ch.codePointAt(0) as number;
-    if (cp < 0x80) out.push(cp);
-    else if (cp < 0x800) out.push(0xc0 | (cp >> 6), 0x80 | (cp & 0x3f));
-    else if (cp < 0x10000) out.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
-    else out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
-  }
-  return new Uint8Array(out);
+  return sharedUtf8Bytes(text);
 }
 
-/** FNV-1a 64-bit over bytes + splitmix-style avalanche. 16 lowercase hex. */
+/** FNV-1a 64-bit over bytes + splitmix-style avalanche. 16 lowercase hex.
+ *  (Mechanism shared via src/internal/canonical.ts; the byte constants are
+ *  identical to replay's — the S-3 tripwire keeps that lockstep pinned.) */
 export function fnv1a64Hex(bytes: Uint8Array): string {
-  let h = FNV_OFFSET64;
-  for (let i = 0; i < bytes.length; i += 1) {
-    h = ((h ^ BigInt(bytes[i] as number)) * FNV_PRIME64) & MASK64;
-  }
-  h = avalanche(h);
-  return h.toString(16).padStart(16, "0");
-}
-
-function avalanche(z0: bigint): bigint {
-  let z = z0 & MASK64;
-  z = ((z ^ (z >> 30n)) * 0xbf58476d1ce4e5b9n) & MASK64;
-  z = ((z ^ (z >> 27n)) * 0x94d049bb133111ebn) & MASK64;
-  return (z ^ (z >> 31n)) & MASK64;
+  return fnv1a64OverBytes(bytes);
 }
 
 /** Digest of any save artifact value: FNV-1a-64 over its canonical JSON.
