@@ -1,7 +1,8 @@
 # API REFERENCE — `@hh/sim-core` (as actually shipped)
 
 **Compiled 2026-10-06 by the API-docs lane; DOCS-SYNC-2 pass same day
-(intent-door contract + sibling export-count refresh).** Ground truth = source
+(intent-door contract + sibling export-count refresh); VERSUS-LANE pass
+2026-10-07 (`## versus` section + import row, +69 names).** Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
 `docs/api-verify.test.mjs` (run `node docs/api-verify.test.mjs` — it fails if
@@ -25,7 +26,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 
 | Subpath specifier | Resolves to | Ships |
 |---|---|---|
-| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 10 module barrels **incl. `save`** (landed mid-audit 2026-10-06) |
+| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 11 module barrels **incl. `save` (2026-10-06) and `versus` (2026-10-07, zero name collisions — native names ride the star)** |
 | `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (167 exports; intent-door arm landed 2026-10-06, +20) |
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
 | `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (55 exports incl. the 11-name intent-door surface; `internal.ts` private) |
@@ -37,6 +38,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/replay` | `src/replay/index.ts` | ✅ 59 exports (barrel is an EXPLICIT name list) |
 | `@hh/sim-core/loader` | `src/loader/index.ts` | ✅ 89 exports |
 | `@hh/sim-core/save` | `src/save/index.ts` | ✅ 183 exports — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
+| `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 69 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -815,6 +817,96 @@ as OPAQUE data.
 | `WallView` `readWall` `ScrapbookView` `readScrapbook` `AlmanacView` `readAlmanac` `PeopleView` `readPeople` | view interfaces + readers `(node, [streaks/globalRecords]) => view` | each face rendered from node facts | pure projections |
 | `FaceView` `FaceReadContext` `readFace` | union; interface; `(nodeId, graph, face, ctx) => FaceView` | one entry point for all faces | pure |
 | `MuseumTourView` `readMuseum` | interface; `(node, ctx) => MuseumTourView` | exhibit-guided tour read | pure |
+
+---
+
+## versus
+
+Purpose: the ratified async Red-vs-Blue deck format (docs/adr/0004 —
+defender commits board + doctrine, attacker runs a committed deck offline
+against it; the defender's live reserve is played by small hands through
+the real intent door and the Policy-Book autopilot). Pure data + pure
+logic: no UI, no netcode, no economy import — OD-1/OD-2 are unchosen, so
+match score folds ONLY caller-supplied weights-as-data (`getActiveScorecard`
+/ `resolveActiveSheet` are never called; pinned absent by test). Boundary
+parsers mirror `loader/boundary.ts` style with a local `VersusError`. The
+deck→WaveTable converter honors the §2.24 authoring laws by construction
+and self-checks against `waves/enforcer` (a non-empty verdict throws
+`DECK_UNPACKABLE`, it never ships). Census/counter data enters as
+parameters — this module never reads `packages/content` itself.
+Import: `@hh/sim-core/versus`.
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `VersusError` | `class extends Error { code: VersusErrorCode; path: string }` | Boundary error for every versus parser/verdict; message grammar `versus[CODE] at 'path': detail` | pure · total-throwing by design |
+| `VersusErrorCode` | `"MISSING_FIELD" \| "UNKNOWN_FIELD" \| ... \| "DUPLICATE_ENTRY" \| "DECK_UNPACKABLE"` (14 codes) | Machine-readable versus failure classes (mirrors LoaderErrorCode + deck/commit codes); `DUPLICATE_ENTRY` fires on repeated buildables/policy-card hashes in a defense deck | closed union |
+| `AFFIX_VOCABULARY` | `readonly ThreatAffix[]` (16) | §2.13 affix mix-in slugs (core eight + second eight) | frozen |
+| `ThreatAffix` | `"low-slow" \| "distributed" \| ... \| "bounded"` | One affix slug (closed enum — v0 deck law) | closed union |
+| `MAX_DECK_THREATS` | `10` | §2.24 active-family pool cap ceiling for decks | constant |
+| `MAX_DECK_ENTRIES` | `32` | Structural entries-per-deck cap (wire-garbage guard) | constant |
+| `MIN_DISTINCT_ROLES` | `3` | Converter floor: under this the wave-4/8 fresh-role cadence is unsatisfiable | constant |
+| `MAX_THREATS_PER_DENOMINATION` | `4` | Deck-side re-anchor of the waves per-denomination quota (law sources kept equal by value) | constant |
+| `ThreatCensusEntry` | `interface { roles, denomination, family, band }` | What deck machinery needs about one threat id — supplied as DATA (no fs reads) | deep-frozen values |
+| `buildRegistryCensus` | `(raw: unknown) => Map<string, ThreatCensusEntry>` | Parse a registry-core-shaped doc into the census map (roles normalized: `Healer/Spawner`→healer, `Bypass/Flyer`→bypass; `customerAsThreat:true` flips family) | pure · order-pinned (threats array order) · total-throwing |
+| `buildCounterMap` | `(raw: unknown) => Map<string, readonly string[]>` | threatId → counter names from the same registry shape (R-15 fairness input) | pure · order-pinned · total-throwing |
+| `ThreatDeckEntry` | `interface { threatId; weightBps: number; affix?: ThreatAffix }` | One deck slot; weightBps is BOTH weight and cost (exact-int bps) | — |
+| `ThreatDeck` | `interface { kind:"threat"; id; budgetBps; entries }` | The attacker's committed draft | deep-frozen at parse |
+| `ThreatDeckParseOptions` | `interface { census: ReadonlyMap<string, ThreatCensusEntry> }` | Threat universe for the parse gate | — |
+| `parseThreatDeck` | `(raw: unknown, options) => ThreatDeck` | Strict boundary parse: floats/booleans die (`NOT_A_SAFE_INTEGER`), unknown threats die (`UNKNOWN_THREAT`), budget must sum EXACTLY (`BUDGET_MISMATCH`), ids colon-free | pure · total-throwing · no clock |
+| `DefenseDeck` | `interface { kind:"defense"; id; buildables; policyCardHashes; doctrineRef; handCapacity }` | The defender's committed build (cards by HASH only — never embedded) | deep-frozen at parse |
+| `DefenseDeckParseOptions` | `interface { buildableUniverse: ReadonlySet<string> }` | Palette universe (door `canPlaceDevice` decoupling pattern) | — |
+| `parseDefenseDeck` | `(raw: unknown, options) => DefenseDeck` | Strict parse; unknown buildable → `UNKNOWN_BUILDABLE`; duplicate buildable/policy-card hash → `DUPLICATE_ENTRY`; handCapacity 1..8 | pure · total-throwing |
+| `DECK_LEGALITY_CODES` | `readonly ["POOL_CAP_EXCEEDED", ...]` (5) | Closed code list for deck-legality rows | frozen |
+| `DeckLegalityCode` | union of the five | One legality code | closed union |
+| `DeckLegalityViolation` | `interface { code; detail }` | One legality finding (data, not exception) | — |
+| `deckLegalityViolations` | `(deck, census) => readonly DeckLegalityViolation[]` | Pure §2.24-style census: pool cap, ≤4/denomination, ≥3 roles, ≤2 roles >30% weight (hot = weight×100 > 30×budget, integer-exact) | pure · order-pinned (code-unit) · never throws |
+| `VERSUS_HASH_DOMAIN` | `"hh-versus-deck-v1"` | Commit-hash version tag (format change = new tag, never silent rebinding) | constant |
+| `CommittableDeck` | `ThreatDeck \| DefenseDeck` | Anything the commit envelope binds | — |
+| `DeckCommitment` | `interface { kind; deckHash; canonicalJson }` | Blind-commit envelope: hash + the exact canonical bytes it bound | frozen |
+| `deckCanonicalJson` | `(deck: unknown) => string` | Canonical JSON (sorted keys, tagged bigints) via the shared `internal/canonical` encoder — reveal/audit material | pure · order-pinned |
+| `commitDeck` | `(deck: CommittableDeck) => DeckCommitment` | `hh-versus-deck-v1:<16hex>` FNV-1a-64 avalanche fold over the canonical bytes (whole-doc fold family of the door's M3 ruleBookHash, canonical-JSON construction) | pure · no RNG · no clock |
+| `RevealVerdict` | `interface { ok: true; deckHash }` | Typed pass of reveal-verify | — |
+| `revealAndVerify` | `(envelope: DeckCommitment, revealed: unknown) => RevealVerdict` | Re-hash the revealed doc; mismatch THROWS `COMMIT_MISMATCH` naming the first diverging canonical path (`$.entries[0].weightBps` style). Reveal binds BYTES, not legality — the verified document is returned unparsed; callers must run `parseThreatDeck`/`parseDefenseDeck` on it for the legality gate | pure · total-throwing |
+| `DraftCandidate` | `interface { threatId; weightBps; affix? }` | One offered card | frozen |
+| `DraftPresentation` | `interface { pickIndex; slotWeightBps; candidates; taken }` | One 1-of-N stop: offers + the pick | frozen |
+| `DraftOptions` | `interface { seed; deckId; budgetBps; pool; slotWeightBps; affixPool?; affixChanceBps?; offerSize?; census?; scriptedPicks? }` | Draft request; last slot absorbs the budget remainder (sum law by construction); `census` validates pool ids at DRAFT time (unknown → `UNKNOWN_THREAT`); `scriptedPicks` scripts each choice — dice still roll, stream positions unchanged | — |
+| `DraftOutcome` | `interface { deck: ThreatDeck; presentations }` | The drafted deck + the full audit trail of presentations | frozen |
+| `draftThreatDeck` | `(options: DraftOptions) => DraftOutcome` | Deterministic 1-of-3 draft on `streamFor(seed, "versus/draft", 0)` forks; randomness decides WHICH cards/affixes, NEVER legality | seeded · pure-per-seed · order-pinned |
+| `DRAFT_VIOLATION_CODES` | `readonly string[]` (6) | Closed code list incl. `COUNTER_ABSENT` | frozen |
+| `DraftViolationCode` | union | One draft-violation code | closed union |
+| `DraftViolation` | `interface { code; threatId?; detail }` | One validation finding | — |
+| `DraftValidationInput` | `interface { census; counters }` | Legality universe + R-15 counter map (data) | — |
+| `validateDraftedDeck` | `(deck, input) => readonly DraftViolation[]` | Deck legality + every drafted threat has ≥1 counter (Second Answer); reports, never throws | pure · order-pinned |
+| `VERSUS_WAVE_COUNT` | `8` | §9.x versus round length | constant |
+| `VERSUS_PAR_LADDER_PCT` | `readonly [40,22,52,28,62,34,70,38]` | Sawtooth par ladder — every trough ≥45% below running peak, integer-exact | frozen |
+| `VERSUS_SHARE_LADDERS` | `readonly { 1:[100]; 2:[60,40]; 3:[50,30,20]; 4:[40,30,20,10] }` | Share split by wave size; role >30% quota unreachable inside a wave | frozen |
+| `VERSUS_DEFAULT_WINDOW_MINUTES` | `12` | Default wave window | constant |
+| `VERSUS_DEFAULT_RAMP_MINUTES` | `4` | Default envelope ramp | constant |
+| `VERSUS_DEFAULT_PLATEAU_MINUTES` | `4` | Default envelope plateau | constant |
+| `VERSUS_DEFAULT_DECAY_MINUTES` | `4` | Default envelope decay | constant |
+| `DeckScheduleOptions` | `interface { census; tableId; typeBundleId; tuningSheet?; unitsPerPressurePoint?; windowMinutes?; ramp/plateau/decayMinutes?; targets? }` | Conversion inputs; tableId colon-free AND `~`-free (unitId grammar) | — |
+| `ScheduledWaveRow` | `interface { n; threatIds; roles }` | Per-wave placement record | frozen |
+| `DeckSchedule` | `interface { table: WaveTable; waves }` | Law-clean table + placement audit | frozen |
+| `deckToWaveTable` | `(deck: ThreatDeck, options) => DeckSchedule` | Deck → 8-wave WaveTable: weight-ordered first-fit with forced role anchors (w1 heaviest/ρ0, w4 ρ1, w8 ρ2; ρ1 barred from 1–3, ρ2 from 5–7); self-check via `parseWaveTable` + `enforceWaveTable` — violations throw, never ship | pure · no RNG · deterministic DFS |
+| `VersusNodeCommit` | `interface { id; slots; serviceTimeUs; inspectionDepth; dependencyId }` | Node blueprint minted into NodeRecords per run | — |
+| `VersusEdgeCommit` | `interface { relation; from; to; slot? }` | Initial board edge (door-grammar id derived) | — |
+| `ReserveIntentCommit` | union of 4 verb commits | One defender reserve order (place-device / connect-ports / policy-card-commit / configure-node) | closed union |
+| `VersusReserveIntent` | `interface { tick: number; intent: ReserveIntentCommit }` | Reserve order + execution tick (pause-with-orders; fed exactly once) | — |
+| `DefenderCommit` | `interface { engineVersion; sheetsHash; ruleBook; policyCardsByHash?; nodes; edges?; routing; buildables; handCapacity; reserveIntents?; detectionRatio?; falsePositiveRatio?; doctrineGauge? }` | The committed board + doctrine (autopilot ruleBook, canPlaceDevice universe, small hands) | — |
+| `stampReserveIntents` | `(intents: readonly VersusReserveIntent[]) => readonly ExternalIntent[]` | Reserve → door wire (seq = queue order, atUs = tick×minute); pass as harness `intents` option | pure · order-pinned |
+| `versusRuleBookHash` | `(ruleBook: readonly PolicyCard[]) => string` | `hh-versus-book-v1:` canonical fold of the doctrine (same family as deck commit) | pure · order-pinned |
+| `MatchScoringWeights` | `interface { landedValue; blockedValue; servedValue; falsePositivePenalty: bigint }` | Weights-as-DATA (OD-1/OD-2 unchosen — the module never resolves a scorecard) | — |
+| `DEFAULT_MATCH_WEIGHTS` | frozen `MatchScoringWeights` | Neutral-money defaults (−50M landed, +2M blocked, +1M served, −20M FP µ$) — pure data, replaceable | frozen |
+| `OutcomeCounters` | `interface { served; blocked; falsePositive; landed: number }` | Harvested terminals for one label (from REAL outcome events) | — |
+| `PerWaveOutcome` | `interface OutcomeCounters + { label: "wave-n"|"baseline"|"unattributed"; waveN: number|null }` | One results row; baseline row when enabled, unattributed only when >0 | frozen |
+| `OutcomeTotals` | `= OutcomeCounters` | Whole-match sum | — |
+| `VersusMatchConfig` | `interface { seed; deck; census; tableId; typeBundleId; defender; scoring?; pressure; unitsPerPressurePoint?; tuningSheet?; matchTicks; waveStartMinute?; waveWindowMinutes?; customerBaseline?; aggression?; expressMaxConfidence?; patienceMinutes? }` | Full async-match inputs — everything the resolution needs is committed data | — |
+| `VersusRunState` | `interface { game: GameState; totals; ruleFirings: number }` | Harness-visible run state (digest is `digestState(state.game)`) | deep-frozen |
+| `initialVersusRunState` | `(config: VersusMatchConfig) => VersusRunState` | Legal tick-0 run state for `createHarness` (pure tick-0 fold of the config) | pure |
+| `createVersusRunner` | `(config: VersusMatchConfig) => SimRunner<VersusRunState>` | Harness runner: mints driver/rule-phase/observed-store/maps INSIDE each call, re-simulates to `request.targetTick` feeding `request.intentsUpToTick` through the real door | pure-per-request · ×100 replay byte-ident |
+| `resolveVersusMatch` | `(config: VersusMatchConfig) => MatchResult` | Full resolution: compose 8 timed waves + baseline, run ticks (planWave → driver.advance, gate-G1 recipe), harvest counters, score, attribute the decisive wave via replay/causality over real events | seeded · no clock · deterministic |
+| `MatchResult` | `interface { tableId; deckId; seed; schedule; perWaveOutcomes; totals; ruleFirings; finalDigest; matchScore: bigint; decisiveWaveN; attribution; attributionCauseId }` | The verdict: per-wave counters, 32-hex `digestState` final digest, weights-folded µ$ score, one-sentence causal attribution (decisive = most landed → most blocked → lowest n) | frozen |
+| `scoreVersusMatch` | `(totals: OutcomeTotals, weights: MatchScoringWeights) => bigint` | Pure Σ counters × weights in µ-units — re-price any result | pure |
 
 ---
 

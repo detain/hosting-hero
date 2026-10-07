@@ -26,6 +26,9 @@ export * from "./waves/index.ts";
 export * from "./replay/index.ts";
 export * from "./loader/index.ts";
 export * from "./save/index.ts";
+/* versus (2026-10-07): explicit-named barrel; the star ride is proven
+ * collision-free by tsc — all 69 versus names stay native on the root. */
+export * from "./versus/index.ts";
 
 /**
  * Disambiguation (integrator): `stableSerialize` exists in BOTH observed

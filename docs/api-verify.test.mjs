@@ -92,6 +92,7 @@ const real = {
   replay: resolveBarrel(join(SRC, "replay/index.ts")),
   loader: resolveBarrel(join(SRC, "loader/index.ts")),
   save: resolveBarrel(join(SRC, "save/index.ts")),
+  versus: resolveBarrel(join(SRC, "versus/index.ts")),
 };
 
 /* ───────────────────────── markdown extraction ───────────────────────── */

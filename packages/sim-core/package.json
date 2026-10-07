@@ -18,7 +18,8 @@
     "./waves": "./src/waves/index.ts",
     "./replay": "./src/replay/index.ts",
     "./loader": "./src/loader/index.ts",
-    "./save": "./src/save/index.ts"
+    "./save": "./src/save/index.ts",
+    "./versus": "./src/versus/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
