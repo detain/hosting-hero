@@ -1,0 +1,69 @@
+# ADR-0008 — PixiJS v8 addon adoption: per-package verdicts under the wrapper law
+
+## Status
+**PROPOSED (awaiting owner ratification)** — 2026-10-07. This ADR *requests* an owner decision; it records none. Every verdict below was ecosystem-verified on 2026-10-07 against the npm registry and each package's GitHub repository (versions, peer dependencies, license terms, last-release dates). ADR-0001's PixiJS ratification is accepted law; nothing here re-opens it — it decides only which **addons** may enter the perimeter the ratification drew.
+
+## Context
+ADR-0001 adopted PixiJS v8 as a 2.5D multi-layer compositor and accepted its costs: hit-testing, focus, and ARIA must be *engineered* inside the stack, and `docs/ARCHITECTURE.md §2` binds every pixel above the sim behind law — five hard non-blending layers (`Substrate → Flow/Signal + Attachment → Intent → Annotation/Chrome`, §2.1), the **Hue Ledger** as the only color authority, the **Two-Channel Law** (greyscale pass survives as a sign-off gate), the ≤2% emissive-screen-area mask law, and **BudgetManager as the singleton admission authority**: the renderer REFUSES over-budget draws, with caps including `overlay: 1` and `modal: 1` (`apps/proto/src/render/budget.ts`). The app itself pins `pixi.js ^8.22.0` and ships **zero addons today** — every render behavior (atlas sampler flags, grain, smoke, camera, confidence blur) is hand-rolled behind those laws.
+
+Three forces now push toward selective adoption:
+
+1. **An unfinished law.** The pixel-perfect atlas law (nearest filtering, no image padding, roundPixels) is asserted headlessly in `apps/proto/src/render/atlas.ts`, but the compositor's global defaults path is a documented wart: `void options; // (atlas options are asserted headlessly; applied per-texture below)` at `apps/proto/src/render/compositor.ts:46`. The law exists at runtime call sites but has no compile-time carrier for authored skin-kit assets.
+2. **Known-cost gaps.** Grain, haze, Confidence Blur, and vignettes want standard post-chain shaders; the Substrate floor wants bulk-quad batching; CI wants a real framebuffer to audit the emissive and greyscale laws against — none of which the current hand-rolled layer provides without new bespoke surface area.
+3. **A trap-laced ecosystem.** The v7→v8 transition left a fossil record of abandoned, mislabeled, and license-encumbered packages (see the traps census under Decision). Deciding *now*, while the addon count is zero, is cheaper than retrofitting the wrapper law onto adopted dependencies later.
+
+Alternatives considered: adopt nothing (every gap stays hand-rolled, forever ours to maintain); adopt wholesale from the awesome-pixijs list (rejected — that list is unmaintained); adopt ad hoc per need (rejected — an unmediated addon bypasses `admit()`, the ticker, and the budget singleton the moment it calls `app.ticker.add` or writes `.filters`).
+
+## Decision
+Adopt per the verdict table below, **conditionally on the universal wrapper law holding for every addon, present and future**. A verdict of ADOPT is not a license to import carelessly: any addon usage that breaks a wrapper-law clause is itself the rejection reason, no exception process.
+
+### Candidate verdicts
+
+| Candidate | Version | Verdict | Receipt / binding conditions |
+|---|---|---|---|
+| `@assetpack/core` | 1.7.0 | **ADOPT** | Build-time skin-kit compiler: one `assetpack.config` per Five-Asset Kit → packed atlas + manifest our loader reads. Closes the `compositor.ts:46` `void options` wart by carrying the nearest/noip/roundPixels law **packer-side, end-to-end**, in the manifest's sampler flags instead of only in runtime call sites. (CLI/plugins entry points lag at 0.8.0 — resolve the entry from core's docs.) |
+| `pixi-filters` | 6.1.5 | **ADOPT-WITH-CAUTION** | Post-chain only: Noise = film grain, Adjustment = atmosphere haze (**never as a luma-desat shortcut** — the Two-Channel greyscale sign-off must survive every effect), KawaseBlur = Confidence Blur driven by a **shader uniform fed from `ObservedCell.confidence`**, never per-unit filter chains, ColorOverlay = vignettes. Hard condition: `container.filters =` assignment bypasses `admit()` and the budget singleton, so filter writes are **compositor-only code behind `render/post*.ts`**, wired to the existing `overlay: 1` / `modal: 1` budget categories. Per-object filter passes are refused **as a class**. |
+| `@pixi/node` | 8.0.0 | **ADOPT — CI-ONLY** | Headless framebuffer audits of laws we currently only assert structurally: the ≤2% emissive screen-area cap and ChromaMeter counts against real pixels. Native gl/canvas dependencies make it a machine-room tool, never a shipped dependency; host it on the **Node 22.x contract arm** only. |
+| `pixijs/devtools` | — | **ADOPT — dev-only** | Browser extension. Law-neutral; touches no project code. Listed for completeness so it is never mistaken for a dependency decision. |
+| `@pixi/tilemap` | 5.0.2 | **ADOPT-WITH-CAUTION** | `CompositeTilemap` for the **Substrate layer only** — flooring, wall materials, dead racks (the muted-materials stratum, `ARCHITECTURE.md §2.1`). Budget shape: one **whole-layer holder per region** (`tilemap:substrate:<region>`), metered against the zoom-stage label/draw budgets — not per-tile admission. Hard condition: substrate-only allowlist enforced in the container factory; tiles never carry `Intent`, `Attachment`, or `Annotation` concepts ("never let a concept live in two layers", §2.1). |
+| `@pixi/sound` | 6.0.1 | **CAUTION** | Frozen for ~2 years, and verified to have **no buses, groups, or ducking** — our three-bus audio graph (GainNode/Panner/Compressor) therefore remains **ours**, built on the Web Audio API directly. Sound may serve only behind an injected **AudioBus façade**: presentation-only, the sim never touches audio, and the façade keeps the library swappable (or deletable) without touching a single audio-routing decision. Its Equalizer effect is usable for per-line band budgets. |
+| `@pixi/layout` | 3.2.1 | **DEFER** | The one open question is the Fold's *layout-morph* half (ADR-0001: shader crossfade + layout morph). Revisit solely as a spike if the morph is found to need a declarative arrangement engine. Even in the best case it **arranges admitted nodes; it never admits** — layout output must still pass through `admit()` and the budget manager. |
+
+### Rejections, with receipts
+
+- **`@pixi/ui` 2.4.1 — REJECT.** Canvas-drawn widgets with **zero ARIA**. Chrome is DOM by law: `ARCHITECTURE.md §2` makes real DOM a legal requirement of the screen-reader/ARIA mandates, a cost ADR-0001 explicitly accepted and scheduled. `@pixi/ui` breaches the Chrome-is-DOM accessibility law at its foundation; no wrapper fixes a wrong substrate.
+- **`pixi-viewport` — REJECT.** It is a second camera authority. `camera.ts`'s `CameraRig` owns the Z1–Z4 altitude ladder, the log-interp animation, and selection screen-invariance (ADR-0001 consequence 1). Two owners of one transform is how LOD swap points and attachment compensation start lying.
+- **`@storybook/pixijs-renderer` (storybook-renderer) — REJECT.** Dormant ~27 months, and solves a problem we already own differently: the six gate panels plus the Vite dev server **are** our component gallery (ADR-0007's artifacts pre-date and out-rank any storybook).
+- **`@pixi/react` 8.0.5 — REJECT, with a useful receipt.** React-only, so unusable in a Vue app — but its existence proves the inverse: **no official Vue reconciler for Pixi exists or is planned**. That retroactively vindicates the ratified architecture — imperative canvas world + Vue-DOM chrome as two disciplined halves (ADR-0001, `ARCHITECTURE.md §2`).
+- **`spine-pixi` (4.3.13) — REJECT.** License first: the Spine Runtimes License requires a **named editor seat for every user of the product**, mesh/IK features require **Pro ($379/seat)**, and Enterprise ($2,499+, with audits) applies above $500k revenue — an unbudgeted royalty-shaped tax on gameplay. Then the law: the **two-face iso-pixel sprite law** (ADR-0001, C13) makes authored front/back sprite pairs canonical; skeletal animation was never on the requirements list. Wrong tool, wrong license, for a need we do not have.
+
+### The universal wrapper law (applies to every adopted addon, and to any future candidate)
+
+1. **No addon self-subscribes to `app.ticker`.** The compositor calls each addon's `update()` from our frame loop. The 0.5 Hz heartbeat phase (`heartbeat.ts`) is the *alarm channel* — desync is the signal, and an addon driving its own clock would corrupt the one instrument that reports the renderer's health.
+2. **No invented colors.** Every hue reaching a pixel is injected from the Hue Ledger (`hues.ts`); `admit()` throws on off-ledger alert hues, and an addon is wrapped so it physically cannot call `.filters`/tint paths outside that gate.
+3. **Renderer-admission discipline.** Anything that allocates render passes or bulk quads goes through `globalBudget` or a **named whole-layer budget holder** (e.g. `tilemap:substrate:<region>`). An unmetered draw is a law breach, regardless of which package draws it.
+
+### Ecosystem traps (verified census — do not re-litigate from stale lists)
+
+`@pixi/particle-emitter` 5.0.10 shipped a **2026 release that still peer-declares `pixi.js <8`** — a version mirage on the v7 line; keep the custom `SmokeField` interpolants. The npm scope `@pixijs` is **empty**: v8 addons live under `@pixi/*`, `pixi-filters`, and `@assetpack/*`, while loose `@pixi/core`-style standalone packages are the v7 LTS (7.4.x) line entirely. `awesome-pixijs` is an unmaintained fossil record — every entry there must be re-verified against registry metadata before it can appear in any future candidate table. And **"pixi-blip" does not exist on npm** — it was referenced in a past ticket; do not search for it again.
+
+## Consequences
+
+**If ratified**, implementation proceeds strictly in this order, each step its own lane with its own budget-meter tests — and each step individually reversible because the wrapper law keeps every addon behind a seam we own:
+
+1. **AssetPack config skeleton** — per-kit `assetpack.config` + manifest reader; retires the `void options` wart and moves the atlas sampler law from headless assertion to build-time fact.
+2. **`render/post*.ts` wrapper + filters spike** — the only new writer of `.filters` in the repo; grain/haze/confidence-blur/vignette behind `admit()`, metered against `overlay: 1` / `modal: 1`; a canary/ESLint rule keeps `.filters =` writes out of every other file.
+3. **Tilemap substrate spike** — one region tilemap under a whole-layer holder, factory allowlist proven against the layer-boundary tests.
+4. **AudioBus façade** (audio lane) — our Web Audio graph stays authoritative; `@pixi/sound` becomes an optional backing behind the façade or is skipped entirely.
+5. **`@pixi/node` CI arm** — real-framebuffer emissive ≤2% and ChromaMeter audits on the Node 22.x contract arm (CI lane).
+
+**What becomes easy:** authored assets obey the pixel-perfect law by construction; post-chain effects gain a tested, budgeted home; two render laws become pixel-auditable in CI instead of structurally asserted; the substrate gains bulk-quad batching without new bespoke surface area.
+
+**What becomes hard (deliberately):** every addon now has a conformance tax — ticker, colors, and admissions must be re-plumbed through our seams before first use, and the `REJECT`/`CAUTION` rows above are binding precedents: a future candidate with the same receipt gets the same verdict without a new debate.
+
+**What is traded away:** the convenience of `@pixi/ui`'s ready-made widgets (paid back by our DOM chrome), viewport pan/zoom gestures (owned by `CameraRig`), and skeletal animation expressiveness (unused by the two-face law). **Kept unchanged:** ADR-0001 in full, the layer stack, the Hue Ledger, BudgetManager, and the heartbeat — this ADR wraps addons *around* them and moves none of them.
+
+**Blocked/deferred decisions:** the `@pixi/layout` Fold-morph spike may not start until the Fold itself is in build; audio-bus semantics are an audio-lane spec that does not depend on this ADR's outcome. **Zero code in this ADR** — no package.json changes until the owner ratifies.
+
+## Source
+`docs/adr/0001-render-engine-pixijs-v8.md` (PixiJS ratification R-1, C13, accepted SVG-replacement cost, Chrome-is-DOM a11y program). `docs/ARCHITECTURE.md §2` (layer stack, Chrome-real-DOM boundary law), `§2.1` (render-layer detail, Hue Ledger, Two-Channel Law, BudgetManager admission authority). `docs/adr/0000-template.md` (status grammar — this record is `Proposed`; ratified decisions carry **Accepted 2026-10-06**, owner decisions are never flipped by lane agents). Ecosystem verification 2026-10-07: npm registry metadata (versions, peer ranges, last-publish, deprecation) and GitHub repo/license pages for every candidate tabled above. Code anchors: `apps/proto/src/render/compositor.ts:46`, `apps/proto/src/render/atlas.ts`, `apps/proto/src/render/budget.ts`, `apps/proto/src/render/heartbeat.ts`, `apps/proto/src/render/hues.ts`, `apps/proto/src/render/camera.ts`.
