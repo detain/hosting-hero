@@ -2,7 +2,8 @@
 
 **Compiled 2026-10-06 by the API-docs lane; DOCS-SYNC-2 pass same day
 (intent-door contract + sibling export-count refresh); VERSUS-LANE pass
-2026-10-07 (`## versus` section + import row, +69 names).** Ground truth = source
+2026-10-07 (`## versus` section + import row, +69 names); COVERAGE-LANE pass
+2026-10-07 (`## coverage` section + import row, +28 names).** Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
 `docs/api-verify.test.mjs` (run `node docs/api-verify.test.mjs` — it fails if
@@ -26,7 +27,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 
 | Subpath specifier | Resolves to | Ships |
 |---|---|---|
-| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 11 module barrels **incl. `save` (2026-10-06) and `versus` (2026-10-07, zero name collisions — native names ride the star)** |
+| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 11 module barrels **incl. `save` (2026-10-06), `versus` (2026-10-07) and `coverage` (2026-10-07), zero name collisions — native names ride the star** |
 | `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (167 exports; intent-door arm landed 2026-10-06, +20) |
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
 | `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (55 exports incl. the 11-name intent-door surface; `internal.ts` private) |
@@ -39,6 +40,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/loader` | `src/loader/index.ts` | ✅ 89 exports |
 | `@hh/sim-core/save` | `src/save/index.ts` | ✅ 183 exports — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
 | `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 69 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names |
+| `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -907,6 +909,53 @@ Import: `@hh/sim-core/versus`.
 | `resolveVersusMatch` | `(config: VersusMatchConfig) => MatchResult` | Full resolution: compose 8 timed waves + baseline, run ticks (planWave → driver.advance, gate-G1 recipe), harvest counters, score, attribute the decisive wave via replay/causality over real events | seeded · no clock · deterministic |
 | `MatchResult` | `interface { tableId; deckId; seed; schedule; perWaveOutcomes; totals; ruleFirings; finalDigest; matchScore: bigint; decisiveWaveN; attribution; attributionCauseId }` | The verdict: per-wave counters, 32-hex `digestState` final digest, weights-folded µ$ score, one-sentence causal attribution (decisive = most landed → most blocked → lowest n) | frozen |
 | `scoreVersusMatch` | `(totals: OutcomeTotals, weights: MatchScoringWeights) => bigint` | Pure Σ counters × weights in µ-units — re-price any result | pure |
+
+---
+
+## coverage
+
+Purpose: the Coverage Grid (hg §2.1 "The Nine Defense Roles and the Coverage
+Grid", P17) — a 12-threat-role × 9-defense-role matrix that makes DARK CELLS
+(constraints you lack) visible before they hurt you. Threat roles are REUSED
+from `waves/THREAT_ROLES` (never re-invented); defense roles ship verbatim
+against `packages/content/threats/registry-core.json` `defenseRolesVocabulary`
+(pinned by test). Pure data + pure logic: buildables, spawnable pools and role
+censuses arrive as PLAIN DATA (door `canPlaceDevice` decoupling — no economy /
+policy / topology imports, grep-pinned; no ledger import — the G2 bridge takes
+`spawnableThreatIds` from the caller). Cell combine law: MAX, not sum (two
+WAFs do not double-cover everything one covers; Second Answer depth is
+per-ROW via `secondAnswerGaps`, §2.1). Import: `@hh/sim-core/coverage`.
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `DEFENSE_ROLES` | `readonly DefenseRole[]` (9) | The §2.1 defense-role table: id, display label, "what it acts on", examples | deep-frozen · table order |
+| `DefenseRole` | `interface { id; label; actsOn; examples }` | One defense role as data (plain-language tooltip text) | — |
+| `DefenseRoleId` | `"absorb" \| "classify" \| ... \| "negotiate"` (9 slugs) | Closed defense-column vocabulary | closed union |
+| `DEFENSE_ROLE_IDS` | `readonly DefenseRoleId[]` (9) | Column order for the grid (§2.1 table order) | frozen |
+| `isDefenseRoleId` | `(value: string) => value is DefenseRoleId` | Boundary guard for role tags in content data | pure |
+| `CoverageError` | `class extends Error { code: CoverageErrorCode; path: string }` | Boundary error; message grammar `coverage[CODE] at 'path': detail` | pure · total-throwing by design |
+| `CoverageErrorCode` | `"BAD_THREAT_ROLE" \| "BAD_DEFENSE_ROLE" \| "BAD_STRENGTH" \| "OUT_OF_RANGE" \| "EMPTY_ROLES" \| "UNKNOWN_THREAT"` | Machine-readable coverage failure classes | closed union |
+| `CoverageCellState` | `"dark" \| "thin" \| "ok" \| "strong"` | The four teaching rungs (P17: lit cells vs conspicuous holes) | closed union |
+| `COVERAGE_LADDER` | `Readonly<{ darkBelow; thinBelow; okBelow: Fixed }>` | Fixed-exact rung thresholds 6554n/26214n/55706n (≈0.1/0.4/0.85, half-away rounding); a cell sits in the first rung its strength is strictly below | frozen · raw values pinned by test |
+| `coverageCellState` | `(strength: Fixed) => CoverageCellState` | Ladder classifier (non-bigint dies `BAD_STRENGTH`) | pure · total-throwing |
+| `DEFAULT_UNCALIBRATED_STRENGTH` | `Fixed` (0.5 = 32768n) | What a buildable without per-role calibration contributes — "ok", never "strong": kind-of-answer reads as a real answer, perfection needs calibration | constant |
+| `COVERAGE_CELL_COUNT` | `108` | Grid size law 12×9, recomputed from the vocabularies | constant |
+| `BuildableCoverage` | `interface { roles: readonly DefenseRoleId[]; strengths?: Partial<Record<ThreatRole, Fixed>> }` | What ONE buildable brings: its columns + optional per-threat-role calibration | — |
+| `CoverageProfile` | `ReadonlyMap<string, BuildableCoverage>` | buildableId → coverage; the player's build as plain data (content packs / versus DefenseDeck feed this) | — |
+| `ResolvedBuildable` | `interface { buildableId; roles; strengths: ReadonlyMap }` | Parsed+validated buildable (obtain via `resolveCoverageProfile`) | deep-frozen |
+| `resolveCoverageProfile` | `(profile: CoverageProfile) => readonly ResolvedBuildable[]` | Boundary parse (Law 2/4): empty id/roles, unknown roles, non-Fixed or out-of-range strengths all throw; result sorted code-unit by id | pure · total-throwing · order-pinned |
+| `combineCoverageStrength` | `(current: Fixed, contribution: Fixed) => Fixed` | THE combine law: max, never sum (docblock notes where redundancy revisits) | pure |
+| `deriveCoverageCell` | `(resolved, threatRole, defenseRole) => CoverageCell` | One cell: max over contributors declaring the column (calibrated value or generic default), with sorted contributor list | pure · order-pinned |
+| `CoverageCell` | `interface { threatRole; defenseRole; strength: Fixed; state; contributors }` | The answer to "how much does what I built blunt THIS role via THIS kind of defense" | deep-frozen |
+| `coverageCellKey` | `(threatRole, defenseRole) => string` | Cell key grammar `<threatRole>\|<defenseRole>` (slugs are pipe-free by vocabulary) | pure |
+| `CoverageGrid` | `interface { rows; cols; cells: ReadonlyMap<string, CoverageCell>; summary }` | The whole render-agnostic 12×9 projection; cells inserted code-unit-sorted so canonical Map walks digest byte-stably | deep-frozen · order-pinned |
+| `CoverageGridInput` | `interface { profile: CoverageProfile }` | Grid build input | — |
+| `CoverageGridSummary` | `interface { darkCount; thinCount; okCount; strongCount; bestCoverage: Fixed; holePairs }` | Panel header: hole census + `holePairs` = dark-cell keys sorted code-unit (named like the §2.1 plain-language row) | frozen |
+| `buildCoverageGrid` | `(input: CoverageGridInput) => CoverageGrid` | Full matrix computation (empty board ⇒ 108 dark cells, bestCoverage 0) | pure · no rng/clock · digest-stable (encodeTaggedTree ×100 pinned) |
+| `secondAnswerGaps` | `(grid: CoverageGrid) => readonly ThreatRole[]` | §2.1 Second Answer law: rows with <2 columns at "ok"-or-better ("a tax, not a decision") | pure · vocabulary order |
+| `ThreatRoleCensus` | `ReadonlyMap<string, readonly ThreatRole[]>` | threatId → roles (ARRAY values: the real registry is multi-role — one threat teaches every role it plays) | — |
+| `DarkCellRow` | `interface { threatRole; state; weakestDefenses; sampleThreatIds; invitedThreatIds }` | One teaching row: exposure state = row's BEST cell; weakest-first columns (Fixed, ties code-unit); spawnable samples; P2 invite flags | frozen |
+| `darkCellReport` | `(profile, spawnableThreatIds, threatRoleOf, recentInvites?) => readonly DarkCellRow[]` | THE teaching payload: which unblocked threats exploit which dark/thin rows; covered rows and unhurt holes are omitted; unknown threats/invites fail loud | pure · order-pinned · total-throwing |
 
 ---
 

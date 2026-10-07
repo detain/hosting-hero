@@ -29,6 +29,11 @@ export * from "./save/index.ts";
 /* versus (2026-10-07): explicit-named barrel; the star ride is proven
  * collision-free by tsc — all 69 versus names stay native on the root. */
 export * from "./versus/index.ts";
+/* coverage (2026-10-07): explicit-named barrel; the star ride is proven
+ * collision-free by tsc — all 28 coverage names stay native on the root
+ * (grid summary type is CoverageGridSummary, avoiding observed's
+ * CoverageSummary by naming, not aliasing). */
+export * from "./coverage/index.ts";
 
 /**
  * Disambiguation (integrator): `stableSerialize` exists in BOTH observed
