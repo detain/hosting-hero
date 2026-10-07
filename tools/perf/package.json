@@ -1,0 +1,23 @@
+{
+  "name": "perf-tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Permanent perf harness for @hh/sim-core: board-size × arrival-rate throughput grid, two-tree A/B bench (path or git-ref variants, worktrees strictly under /tmp), CPU-profile pair driver + cpuprofile summarizer. Adopted from the 2026-10-07 perf audit scratch (/tmp/opencode/perf{,6}). READ-ONLY against the repo — never checks out, never writes outside /tmp.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "grid": "node --experimental-transform-types src/grid.ts",
+    "ab": "node --experimental-transform-types src/ab.ts",
+    "profile": "node --experimental-transform-types src/profile-pair.ts",
+    "summarize": "node src/summarize.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
+  }
+}
