@@ -1,0 +1,101 @@
+{
+  "$schema-note": "Per-model presets for the video prompt library in this directory. 'video' section tunes the two text-to-video tracks used in manifest.json; 'image' section is wrapping guidance for applying the EXISTING model-agnostic prompts in media/prompts/*.md to each local image model — it adds phrasing/knob advice, it does not rewrite those prompts. Sources verified 2026-10-07; see videos/README.md SOURCES for URLs.",
+  "generated": "2026-10-07",
+  "video": {
+    "ltxv": {
+      "full_name": "Lightricks LTX-Video (0.9.x class, ltx-video-2b / 13b variants)",
+      "encoder": "T5 (PixArt lineage) — plain English sentences; tag-soup hurts",
+      "prompt_style": {
+        "dialect": "Chronological shot-list: START DIRECTLY WITH THE ACTION, then movements/gestures, appearances, background, camera angle/movement, lighting/colors, events. One flowing paragraph, literal and precise, <=200 words (shorter is safer).",
+        "enhancement": "Official pipelines offer auto prompt enhancement (enhance_prompt=True) — these library prompts are written to be used RAW; disable enhancement or your no-text discipline may be re-lit by the rewriter."
+      },
+      "grid": {
+        "resolution_rules": "both sides divisible by 32; stay under 720x1280 for reliability",
+        "resolutions": { "landscape_16_9": "1216x704", "portrait_9_16": "704x1216", "square_1_1": "512x512" },
+        "frame_rules": "frame count must be 8n+1",
+        "frame_counts": { "121": "4.8s @25fps", "161": "6.4s @25fps", "193": "7.7s @25fps", "257": "10.3s @25fps (near the practical ceiling)" },
+        "fps": "25 in this library; 0.9.6+ shipped configs default 30 — keep 8n+1 frames and durations rescale",
+        "duration_ceiling_note": "0.9.x practical 5-10s per shot; 0.9.8 13B long-shot workflows advertise more but this library caps at ~10s"
+      },
+      "knobs": {
+        "cfg": "3.0-3.5 guidance (library ships 3.0). Distilled fp8 checkpoints (0.9.7/0.9.8): ~8 steps, CFG/STG disabled.",
+        "steps": "20-30 draft, 40+ final quality",
+        "motion_strength": "no official global knob; 1-5 advisory tiers used in this library are realized via prompt energy; community LTXV sampler nodes expose motion-strength sliders when you prefer direct control — tune per model card",
+        "seed": "fix and record per variation (manifest seed_hint); LTX docs explicitly advise saving seed values to recreate results"
+      },
+      "negative": {
+        "starter_official": "worst quality, inconsistent motion, blurry, jittery, distorted",
+        "library_base": "worst quality, inconsistent motion, blurry, jittery, distorted, watermarks, text, letters, numbers, captions, logos, flickering, morphing shapes",
+        "note": "add per-shot domain negatives (photorealistic for in-register pixel shots; sparks/explosion for undramatic beats; camera cuts wherever motion must be continuous)"
+      },
+      "camera_vocabulary": ["static camera", "locked-off", "slow push-in", "slow pull-back", "left-to-right track", "crane up/down", "orbit around", "macro close-up", "over-the-shoulder", "high-angle wide"],
+      "known_weaknesses": ["text/glyphs in frame", "dense fine grids (cable forests) — suggest, don't enumerate", "hands/faces — library uses silhouettes and back-of-head only", "morphing when two state changes are requested per clip"]
+    },
+    "wan22": {
+      "full_name": "Wan-AI Wan 2.2 (TI2V-5B consumer tier + T2V/I2V-A14B MoE tier)",
+      "encoder": "umt5_xxl (bilingual EN/zh) — full natural-language cinematography briefs; official tooling supports LLM prompt extension",
+      "prompt_style": {
+        "dialect": "OVER-SPECIFY (vague prompts collapse into 'cinematic chaos'). Order: subject + explicit counts -> action/motion -> NAMED camera move -> scene/lighting/atmosphere -> motion boundaries ('nothing else moves'). 80-120 words. Wan's training carried lighting/composition/color-tone labels, so cinematography vocabulary pays off.",
+        "one_move_rule": "one camera move per clip — mixed moves destabilize motion"
+      },
+      "grid": {
+        "ti2v_5b": { "resolution_rules": "16-aligned presets", "resolutions": { "landscape_16_9": "1216x704", "portrait_9_16": "704x1216", "square_1_1": "1024x1024" }, "fps": 24, "frame_rules": "4n+1", "sweet_spot": "121 frames = 5.0s @ 720P on RTX-4090-class hardware" },
+        "t2v_a14b": { "resolutions": { "landscape_16_9": "1280x720 (720P) / 480p tier available" }, "fps": "24 (some pipelines sample 16 — render native, conform in post)", "note": "longer/slower: 8-10s clips (193-241 frames) practical; used by this library only for TT-2 V1 full-move scout" },
+        "flf2v": "Wan 2.2 FLF2V (first-last-frame) exists in ComfyUI native workflows — the recommended route for TT-1 era morph and all TT-2 arms: generate stills, feed both endpoints"
+      },
+      "knobs": {
+        "cfg": "3.0-5.0 dev models (library ships 4.0). ⚠️ Distilled 4-8-step Lightning/Rapid setups run CFG=1 where the NEGATIVE PROMPT IS IGNORED — bake bans into the positive or raise CFG.",
+        "steps": "20-40 dev; 4-8 distilled",
+        "motion_strength": "no native knob — energy words ('static camera', 'slow steady', 'rapid') carry it; wrappers exposing shift/scale are advanced tuning, per model card",
+        "seed": "fix per variation (manifest seed_hint); Wan is seed-sensitive on crowd density"
+      },
+      "negative": {
+        "repo_template_verbatim": "Bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, misshapen limbs, fused fingers, still picture, messy background, three legs, many people in the background, walking backwards",
+        "library_base": "worst quality, low quality, JPEG compression residue, blurry details, subtitles, text, letters, numbers, captions, watermark, logos, deformed, disfigured, extra fingers, poorly drawn hands, poorly drawn faces, fused fingers, messy background, many people in the background, walking backwards",
+        "caveat": "repo template includes 'static/still picture' bans — omitted from the library base because half this library is held-camera loops; re-add manually if your shot wants perpetual motion"
+      },
+      "camera_vocabulary": ["static camera", "no cuts", "slow push-in", "slow pull-back", "left-to-right tracking shot", "crane-up", "single continuous shot", "locked off", "slow orbit", "macro"],
+      "known_weaknesses": ["invents people/kissing when prompts are vague — cast counts are mandatory ('exactly one…', 'no people')", "text/letters", "wall clipping on complex camera moves (TT-2)", "physics on dense cable grids"]
+    }
+  },
+  "image": {
+    "how_to_use": "The 49 existing .md prompt files are model-agnostic prose. Wrapping = pick the model's suffix style tokens + knob preset below, keep the POSITIVE text, and route the NEGATIVE field per the model's capability. No rewrites needed.",
+    "sd3.5-large": {
+      "full_name": "Stability AI Stable Diffusion 3.5 Large",
+      "encoders": "triple text encoder: CLIP-L + CLIP-G + T5-XXL — T5 carries long-prompt semantics, so comma-separated natural language parses well; short declarative clauses beat essay paragraphs",
+      "wrapping": "append: 'clean vector illustration' (SIGNAL), 'isometric pixel-art game diorama' (WORLD), or 'diegetic terminal instrument' (CHROME) depending on register; keep the file's NEGATIVE line in the negative field — true CFG means negatives work",
+      "knobs": { "cfg": "4.5-7.0 (Large non-distilled); Large Turbo: ~1.5", "steps": "28-40 (Turbo: 4-8)", "sizes": "1024-class buckets: 1024x1024, 1152x896, 1216x832, 1344x768" },
+      "suited_categories": ["signal/ (flat-vector sheets)", "identity/ (logo construction)", "fx/ (sprite studies)"],
+      "sources": ["https://huggingface.co/stabilityai/stable-diffusion-3.5-large", "https://stability.ai/news/introducing-stable-diffusion-3-5"]
+    },
+    "flux1-dev": {
+      "full_name": "Black Forest Labs FLUX.1 dev",
+      "encoders": "T5 + CLIP hybrid, tuned for flowing natural language — the house POSITIVE paragraphs paste in UNMODIFIED; this is the best zero-friction model for this repo's prose style",
+      "wrapping": "no suffix needed; the existing bans ('no text, no watermark…') are already inside the positives — FLUX has NO negative field, leave it empty, never tag-stuff it",
+      "knobs": { "guidance": "embedded FluxGuidance ~3.5 (ComfyUI FluxGuidance node)", "steps": "20-50 (28-36 sweet spot for dev)", "sizes": "~1MP buckets: 1024x1024, 1344x768, 832x1216" },
+      "suited_categories": ["docs-hero/ (long narrative scenes)", "promo/ (lighting/atmosphere prose)", "world/ (iso diorama plates)"],
+      "sources": ["https://github.com/black-forest-labs/flux", "https://bfl.ai/blog/flux-2 (context)"]
+    },
+    "flux2-dev": {
+      "full_name": "Black Forest Labs FLUX.2 dev",
+      "encoders": "flow-based next-gen; natural language like FLUX.1, but with MULTI-REFERENCE image conditioning — feed two or more reference stills to hold identity across a family (era-crossfade pairs, two-face sprite consistency, brand plates)",
+      "wrapping": "positives paste unmodified; still no negative field (driver must use mode=drop for this group — matches generate.mjs handling); references supplied as separate images, not prose",
+      "knobs": { "guidance": "~4-5 (ComfyUI native template default ~5; some launchers embed ~1.0 — trust the preview)", "steps": "20-50, Euler", "sizes": "multi-megapixel up to ~4MP; use big canvases for print/hero banners (store keys, convention banners)" },
+      "suited_categories": ["docs-hero pairs needing cross-frame consistency", "branding/ large-format plates", "identity/ multi-view"],
+      "sources": ["https://bfl.ai/blog/flux-2", "https://andreaskuhr.com/en/blog/flux-2-comfyui-guide/", "https://www.botmonster.com/blog/flux-2"]
+    },
+    "qwen-image": {
+      "full_name": "Qwen-Image (20B MMDiT)",
+      "encoders": "Qwen-VL lineage — strongest SPATIAL/INSTRUCTION adherence of the four: split-frame and position-anchored layouts ('left half X, right half Y') land more reliably than anywhere else in this stack",
+      "wrapping": "keep positives; negatives DO work (standard CFG) — route file NEGATIVE lines normally; be explicit about 'no text, no letters, no numbers' because this model is famously tempted to render legible signage — the repo no-text law overrides its party trick",
+      "knobs": { "cfg": "3.5-5.0", "steps": "20-30", "sizes": "1024-class; portrait 896x1152 / landscape 1344x768 work well" },
+      "suited_categories": ["split-frame concepts (two-face law sheets, era comparisons)", "comparison/grid plates", "anything position-worded"],
+      "sources": ["https://qwenlm.github.io/blog/qwen-image/", "https://huggingface.co/Qwen/Qwen-Image"]
+    }
+  },
+  "manifest_mapping": {
+    "ltx_track": "manifest.json model.ltx -> ltxv preset; payload model id served by the ltxvideo group (see media/prompts/README.md transport law)",
+    "wan_track": "manifest.json model.wan -> wan22 ti2v_5b preset by default; switch to t2v_a14b only where duration_s > 8",
+    "negative_modes": "ltxv/wan22/sd35/qwen accept a negative field; flux1/flux2 have none (append/drop modes per generate.mjs)"
+  }
+}

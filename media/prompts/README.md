@@ -120,10 +120,55 @@ These are baked into every block; they come from the Style Allocation Table and 
 | `fx/catastrophe-fx-lines.md` | FX | per-line disasters: rubber-band, flood tide, dark cascade | 4 | yes |
 | `fx/feedback-fx-bounce-haze-heartbeat.md` | FX | bounce puff, amber FP haze, heartbeat glow language | 3 | yes |
 | `docs-hero/*.md` (13 files) | EDITORIAL | large 16:9/3:2 section-header art per major concept | 3 each | no (full scenes) |
+| `promo/key-art-hero.md` | PROMO | §8.17 money-shot pullback (aisle→glass→door→campus), 4 lighting moods, 16:9 | 4 | no (full scenes) |
+| `promo/title-screens.md` | PROMO | 2:3 title posters w/ reserved typeset zones (operator/cathedral, one-road-two-tides, era crossfade, mastery-is-boredom) | 4 | no |
+| `promo/loss-catalog.md` | PROMO | eight losses as 3:2 plates: Fail-Forward Fade, metastable storm, split-brain, hollow slot, whale walks out, front-door regulator, deplatformed, paint-over | 8 | no |
+| `promo/win-promo.md` | PROMO | five quiet victories, 3:2: restore-that-works 04:00, failover nobody noticed, quarter-close green tape, 100% stamp slam, century museum wall | 5 | no |
+| `promo/hype-shots.md` | PROMO | ten trailer frames: paying tide, whale's rack-sized gold bar, referral dandelions, bounty rain, WAF seawall tsunami, two boards one pool, blast-radius hover, ghost-hands night shift, advisor's paper cuts, 03:00 pager triage | 10 | no |
+| `promo/store-banners.md` | PROMO | five commerce shapes (Steam header/capsule/library vertical, mobile strip, convention billboard) with crop-safe + typeset zones | 5 | no |
+| `branding/game-logos.md` | BRANDING | abstract emblems for the 4 title candidates (UPTIME / Five Nines / HOSTILE TRAFFIC / Bare Metal) × flat/iso/engraved — no-letters marks, typeset-after law | 12 | no (studio plates) |
+| `branding/company-marks.md` | BRANDING | the in-game Company Mark at its 5 reputation fidelity tiers (hand-stamped paper → clip-art → real logotype → embossed rack door → etched+lit) | 5 | mixed (tiers 1–3 keyed) |
+| `branding/icon-app-tiles.md` | BRANDING | app-icon master, store tile, 16/32/48 silhouette die-plate, favicon/knockout set — 80% safe-zone law | 4 | no |
+| `branding/emblem-family.md` | BRANDING | seven business-line heraldry stickers (shared-web, game servers, colo, backup, email, DNS, CDN) — §9.3 asset-tag/achievement aesthetic | 7 | yes |
+| `videos/concepts/gameplay-loop.md` | VIDEO | one minute of play compressed: beads arrive, WAF filters, latency ladder, bounce wince, coins arc — LTX-Video + Wan 2.2 tracks | 20 | no (scenes) |
+| `videos/concepts/threat-parade.md` | VIDEO | bestiary in motion: tsunami vs seawall, mimic flip, drive-click death, insider walk, chargeback swarm | 20 | no (scenes) |
+| `videos/concepts/hosting-types.md` | VIDEO | variety engine: shared-web hive, game-server neon spike, tape cathedral, envelope fleet at the gate | 16 | no (scenes) |
+| `videos/concepts/network-anatomy.md` | VIDEO | cables as living system: magnetic snap, beads-in-tube queue, copper circulatory pulse, red-tide trip | 16 | no (scenes) |
+| `videos/concepts/incident-cinema.md` | VIDEO | drama beats: self-eating retry storm, degradation ladder, 4am restore, ghost-hands kill switch, suppression | 20 | no (scenes) |
+| `videos/concepts/economy-book.md` | VIDEO | commercial board: contracts dock like cables, whale cliff walk-off, dunning triptych, cash-vs-profit pull-apart | 16 | no (scenes) |
+| `videos/concepts/title-teasers.md` | VIDEO | marketing heroes: era crossfade (FLF2V route), §8.17 Pullback (image-to-video segmented), mastery-is-boredom loops | 12 | no (scenes) |
+| `videos/README.md` + `MODELS.json` + `manifest.json` + `check_parity.py` | META | video how-to, per-model presets (ltxv/wan22/sd3.5/flux.1/flux.2/qwen-image), machine manifest 1:1 with blocks | — | — |
 
 (Per-concept file list: the-bounce-loop, hockey-stick-landscape, drag-a-cable, two-boards,
 blast-radius-flood, retry-storm-collapse, long-save-museum, policy-book-ghost-hands,
 four-topologies, suspicion-dial-roc, economy-quarter-close, era-crossfade.)
+
+## PROMO collection usage
+
+These are full-scene illustrations — concept/key art at store and trailer scale (2048–4096px,
+16:9 / 3:2 / 2:3) — **no magenta keying** (every block ships `background: scene`) and they carry
+**text zones for typesetting**: title plates and banners deliberately keep a quiet upper region or
+low-luminance field where a real logotype gets set afterward in design software. The image models
+never letter anything; the GLOBAL no-text law stays on every block. They keep the game's
+iso-diorama DNA and Hue Ledger palette (§8.1/§8.2/§8.17), including the era pair's exactly two
+token sets (1998 amber-square / 2026 cyan-rounded, §8.10). The BRANDING siblings
+(`branding/*.md`) extend the same discipline to identity surfaces: marks are generated as abstract
+geometry only (image models garble lettering — typeset in software), and only the in-game artifact
+sets (company-marks tiers 1–3, emblem-family stickers) use the technical key. Tone law for the
+whole family is §0.5: recognition comedy, never parody — money frames stay warm, loss frames play
+straight (§9.3: never funny at the moment of loss).
+
+## VIDEO collection usage
+
+The `videos/` family is text-to-video, not stills: every variation block ships **two
+model tracks** (LTX-Video and Wan 2.2) phrased in each model's own prompting dialect —
+read `videos/README.md` before generating. Prompts never render text (the no-text law
+binds doubly in motion), humans appear only as distant silhouettes or from behind, and
+`[CINEMATIC-REALISM]`-tagged arms are the only photoreal exceptions. Manifest parity is
+machine-checked with `python3 videos/check_parity.py`. `videos/MODELS.json` also carries
+wrapping presets for the four local image models — those tell you how to feed the 49
+existing still-image prompt files to sd3.5-large / flux.1-dev / flux.2-dev / qwen-image
+without rewriting them.
 
 ## Picking discipline (from the acceptance roster, §8.16)
 
