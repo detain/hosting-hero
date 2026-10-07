@@ -42,7 +42,25 @@
  *    at the first unfrozen `advance` and applies then (tick <= current);
  *    future stamps are refused loudly, so "the whole schedule at once" host
  *    patterns fail visible instead of smearing across ticks. Each intent is
- *    fed EXACTLY ONCE (ambient-input contract, same as envelopes/evidence).
+ *    fed EXACTLY ONCE (ambient-input contract, same as envelopes/evidence);
+ *  - DRAIN BEFORE DISCONNECT (§7.2 R54, OPT-IN): with
+ *    `config.drainPolicy.enabled` (DEFAULT OFF — v0 plain pull stays law),
+ *    `disconnect-drain` becomes a two-phase choreography carried ENTIRELY by
+ *    the EXISTING occupancy law, so the ratified BoardState/HandState wire
+ *    shapes stay untouched: phase 1 reserves hands with
+ *    `busyCauseId = drain:<edgeId>` for `drainTicks` (edge still present,
+ *    still routable — in-flight is not dropped); when the reservation comes
+ *    due, a DOOR-INTERNAL continuation (never a fed input) executes the pull
+ *    as a due-queue entry BEFORE that tick's external intents, minting its
+ *    own `intent-executed` event under the same `drain:<edgeId>` cause with
+ *    detail `drained:<edgeId>` (v0's executed-pull detail is `pulled:<edgeId>`).
+ *    The hand token IS the pending-disconnect record — the digest already
+ *    absorbs cause + stamp, replays re-fire the continuation identically, and
+ *    a started drain COMPLETES even if the host flips the policy off mid-drain
+ *    (the promise lives in state, not config). `drain:<edgeId>` is the door's
+ *    RESERVED continuation namespace; while enabled, occupancyTicks for
+ *    disconnect-drain is superseded by drainTicks (the drain hold covers the
+ *    whole choreography, and the pull lands exactly as the hand frees).
  */
 
 import type {
@@ -76,6 +94,7 @@ import type {
 } from "../types.ts";
 import {
   asCauseId,
+  asEntityId,
   PLAYER_VERBS,
   PlayerVerb,
 } from "../types.ts";
@@ -130,6 +149,21 @@ export interface IntentDoorConfig {
   readonly deviceInspectionDepth?: InspectionDepth;
   readonly deviceShedOrder?: ShedOrder;
   readonly deviceDiscipline?: NodeDiscipline;
+  /** GRACEFUL DRAIN (§7.2 R54), opt-in. `enabled` defaults FALSE — hosts
+   *  without this field keep the v0 plain-pull law byte-identically. When
+   *  true, `disconnect-drain` executes phase 1 (stop new, edge stays live,
+   *  hands reserved `drain:<edgeId>` for `drainTicks`) and the pull executes
+   *  as a door-internal continuation when the reservation matures.
+   *  `drainTicks` default 2; must be a safe integer >= 1 (0-length drain ==
+   *  plain pull — use the flag off for that). A malformed policy object is
+   *  host programming garbage and THROWS `IntentDoorError` (Laws 2+4), and
+   *  enabling with `handCost[disconnect-drain]` overridden to 0 throws too:
+   *  the pending-drain record lives on a hand token, a free verb would leave
+   *  the continuation unrecordable. */
+  readonly drainPolicy?: {
+    readonly enabled?: boolean;
+    readonly drainTicks?: number;
+  };
 }
 
 /** §7.5 reference durations, rounded UP to whole sim-minute ticks:
@@ -170,6 +204,70 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   [PlayerVerb.Communicate]: 1,
   [PlayerVerb.ToggleSpeed]: 0,
 });
+
+/* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
+
+const DEFAULT_DRAIN_TICKS = 2;
+
+/** RESERVED continuation namespace on `HandToken.busyCauseId`: a token whose
+ *  cause is `drain:<edgeId>` IS the pending-disconnect record (the whole
+ *  reason BoardState/HandState shapes never changed). The maturity scan reads
+ *  this prefix from state — it runs WHETHER OR NOT the policy is currently
+ *  enabled, because a drain that was started is a promise kept in state. */
+const DRAIN_CAUSE_PREFIX = "drain:";
+
+/** `intent-executed` events minted by the drain continuation carry this
+ *  sentinel seq: a continuation is never a fed schedule entry, so it owns no
+ *  player seq — attribution lives in its `drain:<edgeId>` causeId. */
+const DRAIN_CONTINUATION_SEQ = -1;
+
+interface ResolvedDrainPolicy {
+  readonly enabled: boolean;
+  readonly drainTicks: number;
+}
+
+const IDLE_DRAIN_POLICY: ResolvedDrainPolicy = Object.freeze({ enabled: false, drainTicks: DEFAULT_DRAIN_TICKS });
+
+/** Parse the host-supplied drain policy at the door boundary (Laws 2+4):
+ *  absent = the frozen idle constant (byte-identical v0 path), malformed =
+ *  throw naming the field, exactly like the wire-parse law for entries. */
+function resolveDrainPolicy(config: IntentDoorConfig): ResolvedDrainPolicy {
+  const policy = config.drainPolicy;
+  if (policy === undefined) return IDLE_DRAIN_POLICY;
+  if (policy.enabled !== undefined && typeof policy.enabled !== "boolean") {
+    fail("config.drainPolicy.enabled", `expected boolean, got ${typeof policy.enabled}`);
+  }
+  let drainTicks = DEFAULT_DRAIN_TICKS;
+  if (policy.drainTicks !== undefined) {
+    requireInt(policy.drainTicks, "config.drainPolicy.drainTicks");
+    if (policy.drainTicks < 1) {
+      fail("config.drainPolicy.drainTicks", `expected >= 1 (a 0-length drain IS the plain pull — leave the policy off for that), got ${String(policy.drainTicks)}`);
+    }
+    drainTicks = policy.drainTicks;
+  }
+  const enabled = policy.enabled === true;
+  if (enabled) {
+    const disconnectCost = config.handCost?.[PlayerVerb.DisconnectDrain] ?? DEFAULT_INTENT_HAND_COST[PlayerVerb.DisconnectDrain];
+    if (!(Number.isSafeInteger(disconnectCost) && disconnectCost >= 1)) {
+      fail(
+        "config.drainPolicy",
+        `enabled requires handCost[disconnect-drain] >= 1 (got ${String(disconnectCost)}) — the pending drain lives on a hand token (busyCauseId \`${DRAIN_CAUSE_PREFIX}<edgeId>\`); a cost-0 disconnect would leave no continuation record`,
+      );
+    }
+  }
+  return Object.freeze({ enabled, drainTicks });
+}
+
+function drainCause(edgeId: EntityId): CauseId {
+  return asCauseId(`${DRAIN_CAUSE_PREFIX}${edgeId}`);
+}
+
+/** Decode a hand cause back to its pending edge id — null for every other
+ *  namespace (a plain `intent:<seq>` release, a forged unrelated cause). */
+function drainEdgeOf(cause: CauseId | null): EntityId | null {
+  if (cause === null || !cause.startsWith(DRAIN_CAUSE_PREFIX)) return null;
+  return asEntityId(cause.slice(DRAIN_CAUSE_PREFIX.length));
+}
 
 /* ═══════════════════════════ Result surface ═══════════════════════════ */
 
@@ -221,6 +319,7 @@ interface Draft {
   readonly origin: GameState;
   readonly context: TickContext;
   readonly config: IntentDoorConfig;
+  readonly drain: ResolvedDrainPolicy;
   nodes: ReadonlyMap<EntityId, NodeRecord> | null;
   board: BoardState | null;
   hands: HandState | null;
@@ -386,6 +485,63 @@ function freeHandCount(hands: HandState): number {
   return free;
 }
 
+/**
+ * DRAIN CONTINUATION — the due-queue half of the two-phase disconnect.
+ * Called ONCE at the top of every door pass, BEFORE the external entries of
+ * the tick (deterministic ordering law, pinned in tests: a pull maturing at
+ * tick T makes its edge safe-to-touch for entries also stamped at T).
+ *
+ * Reads the pending-disconnect records straight off the ORIGIN hand rail
+ * (tokens whose cause is `drain:<edgeId>` and whose reservation has come due,
+ * `busyUntilTick <= tick` — the same half-open release law every occupancy
+ * obeys) and executes the actual pulls: edge deleted (board version bumps
+ * once PER removal, the mutation-count convention), one `intent-executed`
+ * event per pull carrying causeId `drain:<edgeId>`, detail `drained:<edgeId>`
+ * and the sentinel continuation seq. Then the ordinary release sweep runs
+ * (cause nulled, busyUntilTick stamp kept) so the continuation can never
+ * re-fire. Runs regardless of the CURRENT policy — a drain started is a
+ * drain finished; flipping the flag mid-drain cannot strand a promised pull.
+ */
+function processMaturedDrains(draft: Draft): void {
+  const hands = draft.origin.hands;
+  if (hands === undefined) return;
+  const tick = draft.context.tick;
+  const due: { readonly index: number; readonly edgeId: EntityId; readonly busyUntilTick: SimTick }[] = [];
+  for (const token of hands.tokens) {
+    // pinned token-index order — the rail is the schedule, never a Map.
+    const edgeId = drainEdgeOf(token.busyCauseId);
+    if (edgeId !== null && token.busyUntilTick <= tick) {
+      due.push(Object.freeze({ index: token.index, edgeId, busyUntilTick: token.busyUntilTick }));
+    }
+  }
+  if (due.length === 0) return;
+  const board = draft.board ?? draft.origin.board ?? createBoardState();
+  const edges = new Map(board.edges);
+  let version = board.version;
+  for (const drain of due) {
+    if (edges.delete(drain.edgeId)) version += 1; // already gone (forged state) → no phantom bump
+    draft.events.push(
+      Object.freeze({
+        kind: "intent-executed" as const,
+        atUs: draft.context.clocks.simUs,
+        tick,
+        causeId: drainCause(drain.edgeId),
+        verb: PlayerVerb.DisconnectDrain,
+        intentSeq: DRAIN_CONTINUATION_SEQ,
+        handIndexes: Object.freeze([drain.index]),
+        busyUntilTick: drain.busyUntilTick,
+        detail: `drained:${drain.edgeId}`,
+      }),
+    );
+  }
+  if (version !== board.version) {
+    draft.board = Object.freeze({ version, edges: Object.freeze(edges) });
+  }
+  // Materialize the release sweep so the matured drains free their tokens in
+  // the built state (identity-preserving when nothing else is due).
+  draftHands(draft, tick);
+}
+
 /* ═══════════════════════════ Handlers (execute-or-refuse) ═══════════════ */
 
 type HandlerVerdict = { readonly ok: true; readonly detail: string | null } | { readonly ok: false; readonly reason: string };
@@ -498,10 +654,19 @@ function handleDisconnectDrain(draft: Draft, args: DisconnectDrainArgs): Handler
   const edgeId = args.edgeId as EntityId; // wire type trusted (parseEntry, M2)
   const board = draft.board ?? draft.origin.board ?? createBoardState();
   if (!board.edges.has(edgeId)) return { ok: false, reason: `unknown-edge: "${edgeId}"` };
+  if (draft.drain.enabled) {
+    // PHASE 1 of the §7.2 R54 choreography — stop new, let finish. The board
+    // is NOT touched here: the edge stays present (and the socket stays
+    // occupied — `edge-exists` / `slot-occupied` refuse re-plugs for free,
+    // the existing-code reuse decision) until the continuation pulls it when
+    // the reservation matures. The pending-disconnect record IS the hand
+    // reservation executeEntry minted with cause `drain:<edgeId>` — no
+    // BoardState/HandState field was invented to carry it.
+    return { ok: true, detail: `drain-started:${edgeId}` };
+  }
   const edges = new Map(board.edges);
   edges.delete(edgeId);
-  // v0 = plain pull; graceful drain (evacuate in-flight before unlink) binds
-  // to the serve step's slot ledger — reported seam, never implicit.
+  // v0 plain pull (policy OFF — the default law).
   draft.board = Object.freeze({ version: board.version + 1, edges: Object.freeze(edges) });
   return { ok: true, detail: `pulled:${edgeId}` };
 }
@@ -686,6 +851,15 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
   // unaffordable action is refused before its payload is even interpreted.
   const cost = draft.config.handCost?.[verb] ?? DEFAULT_INTENT_HAND_COST[verb];
   const occupancy = draft.config.occupancyTicks?.[verb] ?? DEFAULT_INTENT_OCCUPANCY_TICKS[verb];
+  // DRAIN MODE (§7.2 R54): the hand's CAUSE becomes the pending-disconnect
+  // record (`drain:<edgeId>` instead of `intent:<seq>`) and the hold covers
+  // the drain window (drainTicks SUPERSEDES occupancyTicks for this verb —
+  // the pull lands exactly as the token frees; resolveDrainPolicy has already
+  // thrown if the host zeroed this verb's cost, so a drain always books a
+  // hand). The EVENT keeps its `intent:<seq>` attribution; only the token
+  // namespace differs.
+  const drainMode = draft.drain.enabled && verb === PlayerVerb.DisconnectDrain;
+  const tokenCause: CauseId = drainMode ? drainCause((args as DisconnectDrainArgs).edgeId) : cause;
   let handIndexes: readonly number[] = Object.freeze([]);
   let busyUntilTick = tick;
   let handsSnapshot: HandState | null = null; // pre-occupy draft value for undo
@@ -696,9 +870,17 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
       reject(label, `hands-exhausted: need ${cost}, free ${free} of ${hands.capacity}`);
       return;
     }
+    if (drainMode && hands.tokens.some((token) => token.busyCauseId === tokenCause)) {
+      // A live drain on this edge holds a token (matured ones were just
+      // swept by the due-queue pass). Refused BEFORE any spend — the half of
+      // "stop new" that says stop NEW disconnects too: one choreography per
+      // cable, the second pull order is redundant input.
+      reject(label, `edge-draining: "${(args as DisconnectDrainArgs).edgeId}" is already draining — the safe-to-touch pull lands when its reservation frees`);
+      return;
+    }
     handsSnapshot = draft.hands;
-    busyUntilTick = tick + BigInt(occupancy);
-    handIndexes = Object.freeze(occupyHands(draft, tick, cost, cause, busyUntilTick));
+    busyUntilTick = tick + BigInt(drainMode ? draft.drain.drainTicks : occupancy);
+    handIndexes = Object.freeze(occupyHands(draft, tick, cost, tokenCause, busyUntilTick));
   }
 
   const verdict: HandlerVerdict = (() => {
@@ -764,6 +946,7 @@ export function applyIntentDoor(
     origin: state,
     context,
     config,
+    drain: resolveDrainPolicy(config),
     nodes: null,
     board: null,
     hands: null,
@@ -772,6 +955,12 @@ export function applyIntentDoor(
     events: [],
     receipts: [],
   };
+
+  // Due-queue BEFORE entries (§7.13 ordering law for the two-phase pull): a
+  // drain maturing at this tick pulls its cable FIRST, so entries stamped at
+  // the same tick already see the edge safe-to-touch (gone). Continuations
+  // mint events, never receipts — receipts stay "one per FED intent".
+  processMaturedDrains(draft);
 
   const due: ExternalIntent[] = [];
   const future: ExternalIntent[] = [];

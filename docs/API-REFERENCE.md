@@ -135,7 +135,7 @@ and `GameState` (§4.1). Data + one law each; zero behavior. Import:
 | `ToggleSpeedArgs` | `{ verb; speedX: 1 \| 2 \| 4 }` | speed gates OBSERVATION, never physics (§7.5) — no hand cost by default; the door records the request for HUD/projection (host clock-scaling seam) | events-only verb |
 | `ExternalIntent` | `interface { tick: SimTick; intent: PlayerIntent }` | a player intent stamped with the macro tick the host submitted it — the door's feed unit; structurally twin-compatible with replay/bundle `StampedIntent` (its optional `extras` sidecar is tolerated) so any fed schedule survives `stampIntents` unchanged — types.ts must not import replay, hence the narrower twin | canonical order (tick, seq); pause-with-orders: a PAUSED-tick stamp applies at the first unfrozen advance |
 | `BoardRelation` | `"data" \| "power" \| "control" \| "trust"` | id-space twin of topology's `EdgeKind` — mirror, NO import (decoupling law) | closed |
-| `IntentExecutedEvent` | `interface { …base; kind: "intent-executed"; verb: PlayerVerb; intentSeq: number; handIndexes: readonly number[]; busyUntilTick: SimTick; detail: string \| null }` | the door executed an intent and its handler mutated state (or an event-only verb recorded its directive): tokens occupied (`handIndexes` empty = free verb), occupancy end exclusive, canonical short rendering ("speed=2", "qos=bronze", "depth=inspect") | `causeId` is `intent:<seq>` — replay-visible attribution for every applied order (§7.0) |
+| `IntentExecutedEvent` | `interface { …base; kind: "intent-executed"; verb: PlayerVerb; intentSeq: number; handIndexes: readonly number[]; busyUntilTick: SimTick; detail: string \| null }` | the door executed an intent and its handler mutated state (or an event-only verb recorded its directive): tokens occupied (`handIndexes` empty = free verb), occupancy end exclusive, canonical short rendering ("speed=2", "qos=bronze", "depth=inspect"); disconnect details: `pulled:<edge>` (v0 plain pull), `drain-started:<edge>` / `drained:<edge>` (drain mode, contract #10) | `causeId` is `intent:<seq>` — replay-visible attribution for every applied order (§7.0); drain continuations carry causeId `drain:<edge>` with sentinel `intentSeq` −1 (never a fed intent, never receipted) |
 | `IntentRefusedEvent` | `interface { …base; kind: "intent-refused"; verb: string; intentSeq: number; reason: string }` | the door REFUSED — machine-prefixed `"<code>: <detail>"` (e.g. `"hands-exhausted: need 1, free 0 of 2"`); `verb` is the PlayerVerb string or a legacy carrier label ("verb:scale-out") | nothing consumed, RNG never consulted; refusals replay identically — as replay-logged as executions |
 | `DirectorDraw` | `interface { atTick; subject; value }` | seeded difficulty-director draw, replay-logged (§4.1) | logged input |
 | `Checkpoint` `ReplayContentHashes` `ReplayBundle` | `interface`s | ring checkpoint, content-hash identity triple, replay artifact (§3.3) | — |
@@ -260,10 +260,10 @@ driver calls `applyIntentDoor` BEFORE step 1 every tick. Import:
 | `digestState` | `(state: GameState) => HashHex` | the state-hash tripwire over GameState (feeds replay ring); absorbs `hands` (capacity + per-token occupancy) and `board` (version + edges sorted by id) ONLY WHEN PRESENT — pre-door digests byte-identical | own double-FNV-1a over a sorted-key canonical sink ("hh-state-v1" tag) — pluggable as replay's `StateDigest` override, NOT the replay codec |
 | `applyIntentDoor` | `(state: GameState, context: TickContext, externalIntents: readonly ExternalIntent[], config?: IntentDoorConfig) => IntentDoorResult` | THE intent door (§4.2/§7.5/§7.13, contract #10 below): apply the fed schedule BEFORE step 1 — entries stamped at or before the current tick sort by (tick, seq), future stamps refuse after the due pass in input order; pure over GameState | no RNG, no clock reads, no platform APIs; same schedule ⇒ identical digest chain (×100-gated) |
 | `IntentDoorError` | `class extends Error` | STRUCTURAL wire garbage at the boundary throws (Law 2 parse-don't-validate + Law 4 fail-fast) — ANY primitive TYPE mismatch on the feed: stamp fields AND every per-verb arg shape parsed in `parseEntry` (M2: one type law, not per-handler checks), plus a repeated `(tick, seq)` stamp within one schedule (M4: two entries claiming one attribution identity — offenders' input positions named). A host feeding malformed wire data has a bug to find, not a game state to fork; VALUE-domain violations (out-of-set values, empty strings, unknown ids) stay semantic refusals (event-logged, nothing thrown) | total-throwing at parse |
-| `IntentDoorConfig` | `interface { handCapacity?; handCost?; occupancyTicks?; canPlaceDevice?; lookupPolicyCard?; deviceSlots?; deviceServiceTimeUs?; deviceInspectionDepth?; deviceShedOrder?; deviceDiscipline? }` | door tuning: per-verb cost/occupancy overrides + the two host callbacks (placement validator, policy-card resolver) + skeleton `NodeRecord` knobs for placed devices; cost>0 paired with occupancy 0 is a LEGAL override — the half-open window `[tick, tick+0)` releases the token at the next door pass (the token still counts busy within the submitting pass; no default verb pairs the two) | data-in; callbacks must be deterministic |
+| `IntentDoorConfig` | `interface { handCapacity?; handCost?; occupancyTicks?; canPlaceDevice?; lookupPolicyCard?; deviceSlots?; deviceServiceTimeUs?; deviceInspectionDepth?; deviceShedOrder?; deviceDiscipline?; drainPolicy? }` | door tuning: per-verb cost/occupancy overrides + the two host callbacks (placement validator, policy-card resolver) + skeleton `NodeRecord` knobs for placed devices + `drainPolicy?: { enabled?: boolean (DEFAULT false — v0 plain pull stays law); drainTicks?: number (default 2) }` opting `disconnect-drain` into the two-phase drain choreography (contract #10); cost>0 paired with occupancy 0 is a LEGAL override — the half-open window `[tick, tick+0)` releases the token at the next door pass (the token still counts busy within the submitting pass; no default verb pairs the two) | data-in; callbacks must be deterministic; a malformed `drainPolicy` (non-boolean `enabled`, non-safe-int/`<1` `drainTicks`, or `enabled` paired with `handCost[disconnect-drain]` 0 — the reservation record would be uncarriable) throws `IntentDoorError` at the boundary |
 | `PlaceDeviceQuery` | `interface { args: PlaceDeviceArgs; state: GameState; context: TickContext }` | what the host's `canPlaceDevice` validator sees — parsed args plus a READ-ONLY view of the draft (devices placed EARLIER in the same tick are visible, never a stale board); needs/provides, palette membership, U-space, power fit stay HOST-side | read-only snapshot |
 | `PlacementRejection` | `interface { reason: string }` | the validator's "no" — null means accept; the reason lands VERBATIM in the refusal event as `placement-rejected: <reason>` | — |
-| `IntentReceipt` | `interface { submittedTick: SimTick; seq: number; verb: string; outcome: "executed" \| "refused"; reason: string \| null }` | one per fed intent — the door's verdict roll-up (host HUD ticker / test assertion sugar; the events array is the replay-grade record) | canonical application order |
+| `IntentReceipt` | `interface { submittedTick: SimTick; seq: number; verb: string; outcome: "executed" \| "refused"; reason: string \| null }` | one per FED intent — the door's verdict roll-up (host HUD ticker / test assertion sugar; the events array is the replay-grade record); door-internal drain continuations (contract #10) NEVER mint receipts — they are not fed inputs, their record is the event alone | canonical application order |
 | `IntentDoorResult` | `interface { state: GameState; events: readonly SimEvent[]; receipts: readonly IntentReceipt[] }` | the door's answer — SAME state object identity when nothing applied (no intents / all refused); executed + refused events in canonical order (future-stamp refusals trail, in input order) | frozen; identity-preserving |
 | `mintHandState` | `(capacity: number) => HandState` | mint all-free hand tokens (indices 0…capacity−1, `busyUntilTick` 0n) — §7.5 T0/T2 default is 1 | deep-frozen; total-throwing unless safe integer ≥ 1 |
 | `createBoardState` | `(edges?: readonly BoardEdgeRecord[]) => BoardState` | empty (or seeded) board slice — edges stored sorted by `EntityId` and each record frozen | order-pinned on insertion; records deep-frozen (`edges` ReadonlyMap is a TYPE-level guarantee — `Object.freeze` on a Map cannot seal its contents; writers replace the Map) |
@@ -942,13 +942,13 @@ of it). waves'
 
     Verb → handler → hand-cost table (verified against
     `DEFAULT_INTENT_HAND_COST` / `DEFAULT_INTENT_OCCUPANCY_TICKS`,
-    `intent-door.ts:126-151`; 1 tick = 1 sim-minute; §7.5 durations rounded UP):
+    `intent-door.ts:186-206`; 1 tick = 1 sim-minute; §7.5 durations rounded UP):
 
     | Verb (`PlayerVerb`) | Handler | Mutates | Cost | Occupancy |
     |---|---|---|---|---|
     | `place-device` | `handlePlaceDevice` | `nodes` (skeleton `NodeRecord`) | 1 | 3 ticks |
     | `connect-ports` | `handleConnectPorts` | `board` (edge add, version++) | 1 | 3 ticks |
-    | `disconnect-drain` | `handleDisconnectDrain` | `board` (edge delete, version++) | 1 | 2 ticks |
+    | `disconnect-drain` | `handleDisconnectDrain` | `board` (edge delete, version++) — OR, under `drainPolicy.enabled`, a deferred delete by the continuation (below) | 1 | 2 ticks (drain mode: `drainTicks` supersedes) |
     | `configure-node` | `handleConfigureNode` | `nodes` (inspectionDepth / shedOrder) | 1 | 1 tick |
     | `policy-card-commit` | `handlePolicyCardCommit` | `ruleBook` + `ruleBookHash` | 1 | 1 tick |
     | `shed-load` | `handleShedLoad` | events-only (DIRECTIVE) | 1 | 2 ticks |
@@ -964,8 +964,41 @@ of it). waves'
     `ruleBookHash` (digest.ts), so every post-commit state hash moves with the
     fold — within a run only (chains never cross runs).
 
-    Refusal-reason census — 26 distinct machine codes, every one refusal-pinned
-    in tests (`pipeline/__tests__/intent-door.test.ts` + `src/__tests__/gate-g4.test.ts`;
+    **Drain before disconnect (§7.2 R54 — `config.drainPolicy`, opt-in).**
+    Yanking a live link drops in-flight; draining means stop-new, let-finish,
+    then safe-to-touch. OFF (the DEFAULT — plain pull stays law unless a host
+    opts in, and policy-off runs digest byte-identically to the pre-drain
+    engine, pinned by a 17-intent golden chain in
+    `pipeline/__tests__/intent-door-drain.test.ts`) `disconnect-drain` deletes
+    immediately, detail `pulled:<edge>`. ON, the verb executes in TWO phases
+    with ZERO new state fields: phase 1 books the wire through the EXISTING
+    occupancy law — the HAND TOKEN IS the pending-disconnect record
+    (`busyCauseId` `drain:<edgeId>`, `busyUntilTick` = start + `drainTicks`,
+    default 2; the BoardState/HandState wire shapes are a ratified contract and
+    `digestState` already absorbs cause + stamp, so the promise is
+    replay-visible for free); the edge stays PRESENT and routable mid-drain
+    (in-flight is not dropped), the phase-1 event carries detail
+    `drain-started:<edge>`, and re-use of the existing codes covers
+    point-of-use collision: a second disconnect on the same cable refuses
+    `edge-draining`, while re-plugs hit the ordinary `edge-exists` /
+    `slot-occupied` law (a draining cable is NOT safe-to-touch until the pull
+    lands). Phase 2 is a DOOR-INTERNAL continuation, never a fed input: at the
+    top of every pass — BEFORE the entry schedule and BEFORE the release sweep
+    that would erase the evidence — matured `drain:*` reservations pull their
+    edge (board version++ per removal), emit an `intent-executed` event with
+    causeId `drain:<edgeId>`, sentinel `intentSeq` −1 and detail
+    `drained:<edgeId>`, and mint NO receipt; continuations therefore precede
+    that tick's external intents in the due order (a same-tick re-connect sees
+    the cable already free; a same-tick duplicate disconnect sees
+    `unknown-edge`, not `edge-draining`). The scan reads STATE, not config: a
+    drain that was started always completes even if the host flips the policy
+    off mid-flight (the reservation is the promise). `occupancyTicks` for the
+    verb is SUPERSEDED by `drainTicks` in drain mode; the hand frees exactly
+    as the pull lands (no double hold).
+
+    Refusal-reason census — 27 distinct machine codes, every one refusal-pinned
+    in tests (`pipeline/__tests__/intent-door.test.ts` +
+    `pipeline/__tests__/intent-door-drain.test.ts` + `src/__tests__/gate-g4.test.ts`;
     the four formerly-unpinned guards — `empty-node-id`, `empty-slot`,
     `bad-shed-order`, `empty-card-hash` — closed by the round-3 "census
     completeness" test). An `intent-refused` event carries the code with a
@@ -981,7 +1014,8 @@ of it). waves'
     `edge-exists`, `slot-occupied` (one supplier per socket), `power-cycle`
     (upstream-supplier walk — the feed graph is a TREE; a different-slot feed
     the other way is legal multi-PSU, never a cycle); disconnect-drain
-    `unknown-edge`; configure-node `no-fields`, `bad-inspection-depth`,
+    `unknown-edge`, `edge-draining` (drain mode — the cable already carries a
+    live `drain:<edge>` reservation, §7.2 R54 above); configure-node `no-fields`, `bad-inspection-depth`,
     `bad-shed-order`, `unknown-node`; policy-card-commit `empty-card-hash`,
     `no-card-lookup`, `unknown-card-hash`, `card-id-collision`; shed-load
     `unknown-node`; communicate `empty-note`, `unknown-node` (target);
@@ -1016,9 +1050,13 @@ of it). waves'
     — payloads reference ids and plain strings, embedded objects are illegal
     (Law 2).
 
-    v0 seams (reported, deliberate): `disconnect-drain` is a PLAIN PULL —
-    graceful drain (evacuate in-flight before unlink) binds to the serve
-    step's slot ledger, which the door does not own; shed-load and
+    v0 seams (reported, deliberate): `disconnect-drain`'s PLAIN PULL remains the
+    DEFAULT law — graceful drain (§7.2 R54) now SHIPS as the opt-in
+    `config.drainPolicy` two-phase choreography above (stop-new via the hand
+    reservation, safe-to-touch pull via the door-internal continuation), still
+    without touching the serve step's slot ledger, which the door does not own;
+    the full in-flight evacuation of live requests awaits that ledger's seam.
+    shed-load and
     toggle-speed are ADVISORY-ONLY (the door records the directive as an
     `intent-executed` event — step 5's shed logic and the host clock scaler
     are the actors); §7.5 "duration vs attendance" is COLLAPSED to one
