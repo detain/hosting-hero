@@ -92,7 +92,7 @@ pnpm -F @hh/assetpack cli -- verify            # skin-kit law check (also: make-
   plus the five contract gates (api-verify, content validate, canary, proto
   build, g5 mirror-sync) on the 22.x arm.
 
-## Where the build stands (2026-10-08, tip `28f638e` = AudioBus façade; base `b6b03b0`)
+## Where the build stands (2026-10-08, tip `4c71e6f` = substrate spike + arrival honesty; base `80f5e75`)
 
 All six §9.13 Phase-1 prototype gates are GREEN headless and mounted in the
 proto app; the sim core ships fourteen module directories (1,434 tests /
@@ -113,12 +113,21 @@ hue-law-gated, test-enforced repo-wide, law-first (nothing mounts a chain yet,
 zero runtime delta); and the AudioBus façade (ADR-0008 step 4, release lane 3)
 ships the §8.11 three-bus duck graph + `hh-audio-pack@1` parser with ZERO deps
 — `@pixi/sound` skipped-by-decision, signals-never-ducks triply enforced,
-law-first as well (nothing mounts the bus, zero audio symbols in dist).
+law-first as well (nothing mounts the bus, zero audio symbols in dist); and
+the tilemap substrate SPIKE (ADR-0008 step 3) lands the whole-layer budget
+seam law-shaped — `apps/proto/src/render/substrate/` behind `@pixi/tilemap`
+5.0.2 (second runtime addon, sole-import-site law-scanned), mount HOLD on
+three owner decisions (category+cap, taste rows, first-mount kit), zero dist
+symbols until then — while the runner's lane arrival counts read HONEST under
+retry storms (F2 consumer fix: `ratePerMin` now counts the driver's
+between-steps re-entry mints, with a new additive `reentryRatePerMin` cell
+isolating the storm; wire back-compat pinned).
 Battery:
-sim-core 1,434/100 · proto 548/57 · headless 53/5 · perf-tools 20/1 · assetpack 48/5 · api-verify PASS 1,270 names · canary PASS
+sim-core 1,434/100 · proto 610/60 · headless 53/5 · perf-tools 20/1 · assetpack 48/5 · api-verify PASS 1,270 names · canary PASS
 105 files · ci-verify 5/5 · typecheck 5/5. What remains is owner decisions,
 not engine work: the gap register in `docs/MODULE-STATUS.md` and
 `docs/DECISIONS-PENDING.md` list them (OD-1/OD-2/OD-8, T-9, Q-P3-1, coverage
 taste rows, the ratification batch; ADR-0008 ratified — steps 1, 2 and 4 of 5
-DONE, tilemap + `@pixi/node` audit arms pending, audio vendor
+DONE + step 3 SPIKE LANDED (RECOMMEND adoption / HOLD mount on the substrate
+owner decisions), `@pixi/node` audit arm pending, audio vendor
 skipped-by-decision).
