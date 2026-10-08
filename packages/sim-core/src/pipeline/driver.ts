@@ -452,7 +452,13 @@ export function createTickDriver(
         head unchanged slips past every per-tick check) trips it no later
         than the next delayed verify sweep, within `purgeVerifyTicks`
         (default 8) ticks. The latch is the belt, the verify sweep the
-        suspenders: no drift shape escapes both for longer than one window. */
+        suspenders: no drift shape escapes both for longer than one window
+        FOR STEPS PRESERVING THE QUEUE-MEMBER-IMPLIES-HOP INVARIANT (the
+        FIX-8 defaults guarantee) — a foreign step that breaks that invariant
+        itself (a queue member whose hop lies about its node) is exactly the
+        hop-lie class this ladder does NOT cover: verify re-attributes such a
+        member to the lied-to hop, so the contradiction rides on the tail/
+        admit arithmetic alone. */
     attributionContradiction = false;
     const indexingActive = nodes.size >= purgeTargetedMinNodes;
     if (indexingActive && !indexingWasActive) bootSweep = true; // cold re-entry
@@ -695,6 +701,18 @@ export function createTickDriver(
         }),
       );
     };
+    for (const unitId of serveOut.shed) {
+      // R8 F-2 · R-06 hard-ceiling shed: terminal like a bounce (SILENT — no
+      // explosion, no alarm), pushed BEFORE the roster loop so the "bounced"
+      // preset wins `candidateSeen`. The roster loop's null-preset push used
+      // to land first and the preset was dropped — shed units resolved to no
+      // terminal, survived the purge, re-joined and were shed again: every
+      // hard ceiling was an immortal-unit factory. Same observable shape as a
+      // patience bounce (the preset branch of resolveTerminal: cause
+      // `outcome:<unitId>`, event kind "bounced" naming the shedding node);
+      // backpressure R-12 already lists shed outcomes as storm re-entry feed.
+      pushCandidate(unitId, "bounced");
+    }
     for (const unit of units) {
       if (unit.routeHops.length === 0 && !completedNodes.has(unit.id)) {
         // Parked zombie (FIX-7): empty route, completed nothing — it can
@@ -709,11 +727,6 @@ export function createTickDriver(
       pushCandidate(unit.id, null);
     }
     for (const unitId of bouncedSet) pushCandidate(unitId, "bounced");
-    for (const unitId of serveOut.shed) {
-      // hard-ceiling shed: terminal like a bounce (R-06 silent); preset keeps
-      // it out of the inspection/patience resolution branches.
-      pushCandidate(unitId, "bounced");
-    }
     for (const unitId of blockedByInspection.keys()) pushCandidate(unitId, null);
 
     const outcomeInput: OutcomeInputSafe = {
