@@ -27,11 +27,14 @@
  *    exists. Until the owner widens BUDGET_CAPS the probe is false and the
  *    ledger REFUSES every claim with `substrate[category-pending]` — even a
  *    ledger wired straight to globalBudget — because wrapper law 3 is "an
- *    unmetered draw is a law breach, regardless of which package draws it"
- *    (and today's manager admits unknown categories UNMETERED at runtime, a
- *    fail-open hole substrateLaw pins as a spike finding). The moment
- *    budget.ts grows the category the seam self-activates: no flag to flip,
- *    no silent widening anywhere.
+ *    unmetered draw is a law breach, regardless of which package draws it".
+ *    The probe still earns its place after budget.ts hardened its door
+ *    (`budget[unknown-category]` now throws on any unmetered claim): the
+ *    two layers carry DIFFERENT meanings — `category-pending` = a PENDING
+ *    OWNER DECISION told with the full wiring story, the generic throw = an
+ *    authoring BUG. A seam claim is the former and must never surface as
+ *    the latter. The moment budget.ts grows the category the seam
+ *    self-activates: no flag to flip, no silent widening anywhere.
  *
  * 4. QUAD CAPS METER TO THE LABEL BUDGET. "Metered against the zoom-stage
  *    label/draw budgets" (ADR-0008) is modelled as: every label slot an
@@ -361,8 +364,11 @@ export interface SubstrateBudgetPort {
 
 /** The seam's live probe: does this budget manager actually have a cap for
  *  `substrate`? Today budget.ts says NO — so wiring globalBudget here throws
- *  `category-pending` instead of riding its unknown-category fail-open (see
- *  substrateField.test.ts, "fail-open hazard"). The day budget.ts adds
+ *  the owner-intent `category-pending` BEFORE the manager's own
+ *  `budget[unknown-category]` authoring-bug guard can fire. (The fail-open
+ *  this probe once fenced has since been hardened inside budget.ts; the
+ *  probe stays as the OWNER-INTENT layer — see substrateField.test.ts,
+ *  "the probe answers before the budget guard can".) The day budget.ts adds
  *  `substrate: N` to BUDGET_CAPS, admit() meters correctly by its own
  *  existing logic and this probe flips true on its own — nothing to rename,
  *  nothing to re-wire, no flag to flip. */
@@ -413,9 +419,10 @@ interface LiveRegion {
  *
  * A ledger with NO port, or a port whose caps table lacks `substrate`,
  * refuses claims with `substrate[category-pending]` — never a silent local
- * counter: wrapper law 3 forbids unmetered draws, and the fail-open shape of
- * today's BudgetManager on unknown categories (spike finding) is exactly
- * what the probe fences. The first-mount commit wires the real manager the
+ * counter: wrapper law 3 forbids unmetered draws, and the probe keeps the
+ * owner-pending story in front of BudgetManager's hardened generic
+ * `budget[unknown-category]` authoring-bug throw (layers, not duplicates).
+ * The first-mount commit wires the real manager the
  * day budget.ts carries the owner's cap.
  */
 export class SubstrateLedger {

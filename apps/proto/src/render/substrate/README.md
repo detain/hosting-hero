@@ -103,14 +103,18 @@ enforces it at admission, per altitude, with a named refusal.
    flags set at texture creation via atlas.ts"): atlas.ts flags ride the
    TextureStyle of the sources we hand the tilemap; tilemap itself offers
    no sampler surface.**
-3. **`BudgetManager.admit()` fails OPEN on unknown categories at runtime.**
-   `BUDGET_CAPS[unknown]` → `undefined` → the cap check can't fire →
-   admitted uncapped, and `snapshot().used` grows a `NaN` slot invisible to
-   `breach`. The closed `BudgetCategory` union is the only guard today.
-   Pinned as-is in `substrateField.test.ts` (deliberate cast) because our
-   seam must never ride the hole — and because it is a HARDENING OPTION for
-   the owner in budget.ts itself (fail-loud unknown-category throw; owner
-   question #4).
+3. **`BudgetManager.admit()` failed OPEN on unknown categories at runtime —
+   SINCE HARDENED (fail-loud amendment).** `BUDGET_CAPS[unknown]` →
+   `undefined` → the cap check can't fire → admitted uncapped, and
+   `snapshot().used` grew a `NaN` slot invisible to `breach`. The closed
+   `BudgetCategory` union used to be the only guard. admit() now guards the
+   caps table and throws `budget[unknown-category]` naming the offender
+   (`budget.test.ts`, "unknown-category law"; the seam's former fail-open
+   pin in `substrateField.test.ts` is re-pinned to the throw). The probe
+   layers IN FRONT of it for seam claims: `category-pending` speaks of a
+   pending OWNER decision, the generic throw of an authoring BUG. The
+   hardening option this finding offered is CLOSED; the category + cap
+   question below is NOT.
 4. **Import side effects are real.** `@pixi/tilemap` calls
    `extensions.add(TilemapPipe)` + the GL and GPU adaptors AT MODULE SCOPE.
    Merely importing registers three renderer extensions globally and pulls

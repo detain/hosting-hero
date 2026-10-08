@@ -3,7 +3,7 @@
  * Every cap from the §1.9 roster, refusal → "+N" cluster, preemption, pins.
  */
 import { beforeEach, describe, expect, it } from "vitest";
-import { BudgetManager, LABEL_CAP_BY_ALTITUDE, type AdmitRequest } from "../budget";
+import { BudgetError, BudgetManager, LABEL_CAP_BY_ALTITUDE, type AdmitRequest, type BudgetCategory } from "../budget";
 
 let budget: BudgetManager;
 beforeEach(() => {
@@ -156,5 +156,54 @@ describe("snapshot for the ChromaMeter", () => {
     const snap = budget.snapshot();
     expect(snap.breach).toBe(false);
     expect(snap.holders).toEqual([]);
+  });
+});
+
+describe("unknown-category law — fail loud, never a silent admission", () => {
+  it("admit() throws budget[unknown-category] naming the forged category", () => {
+    const forged = () =>
+      budget.admit({ id: "forged", category: "substrate" as BudgetCategory, priority: 50 });
+    expect(forged).toThrow(BudgetError);
+    expect(forged).toThrowError(
+      /budget\[unknown-category\]: 'substrate' not in BUDGET_CAPS — widen the closed union or use an existing category/,
+    );
+    // The throw is atomic: the request never reaches the ledger.
+    expect(budget.snapshot().holders).toEqual([]);
+    const used = budget.snapshot().used as Readonly<Record<string, number | undefined>>;
+    expect(used.substrate).toBeUndefined(); // the old NaN slot can no longer form
+    expect(budget.clusterCount("substrate:global")).toBe(0); // refusal clustering never engages
+  });
+
+  it("the guard stands at the door, before every other check", () => {
+    // A forged category with an off-ledger hue names the CATEGORY as the
+    // offence — the guard precedes hue validation and the refresh shortcut.
+    expect(() =>
+      budget.admit({ id: "x", category: "glow" as BudgetCategory, priority: 0, hue: "chartreuse" }),
+    ).toThrowError(/budget\[unknown-category\]: 'glow'/);
+  });
+
+  it("a prototype key is not a category either — hasOwn, not `in`", () => {
+    // `"constructor" in BUDGET_CAPS` is true for ANY object; the guard uses
+    // Object.hasOwn so inherited-prototype names cannot sneak an unmetered
+    // claim through the runtime fence.
+    expect(() =>
+      budget.admit({ id: "proto", category: "constructor" as BudgetCategory, priority: 50 }),
+    ).toThrowError(/budget\[unknown-category\]: 'constructor' not in BUDGET_CAPS/);
+    expect(budget.snapshot().holders).toEqual([]);
+  });
+
+  it("known categories keep refresh/refuse behaviour (no regression)", () => {
+    // Fresh claim earns the single overlay slot…
+    expect(budget.admit({ id: "o1", category: "overlay", priority: 5 }).admitted).toBe(true);
+    // …so the identical re-admit below is provably the REFRESH path, not a second draw.
+    expect(budget.admit({ id: "o1", category: "overlay", priority: 5 })).toEqual({
+      admitted: true,
+      evicted: [],
+    });
+    const overflow = budget.admit({ id: "o2", category: "overlay", priority: 5 });
+    expect(overflow.admitted).toBe(false); // cap 1 still enforced
+    if (overflow.admitted) return;
+    expect(overflow.reason).toBe("category-budget");
+    expect(budget.clusterCount(overflow.clusterId)).toBe(1);
   });
 });

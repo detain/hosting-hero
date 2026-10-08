@@ -70,6 +70,15 @@ export type RefusalReason =
   | "label-budget" // altitude label cap reached
   | "no-preemption"; // refused and nothing evictable (pinned floor)
 
+/** Admission-law violations — the render family's error shape
+ *  (`family[CODE]: detail`, cf. PostChainError, SubstrateFieldError). */
+export class BudgetError extends Error {
+  constructor(code: string, detail: string) {
+    super(`budget[${code}]: ${detail}`);
+    this.name = "BudgetError";
+  }
+}
+
 interface Claim {
   readonly request: AdmitRequest;
   readonly insertion: number;
@@ -92,8 +101,24 @@ export class BudgetManager {
   private readonly clusters = new Map<string, number>();
   private insertion = 0;
 
-  /** THE question every renderer asks before drawing. */
+  /** THE question every renderer asks before drawing.
+   *
+   *  Fail-loud law: a category outside `BUDGET_CAPS` is an AUTHORING BUG,
+   *  never a silent admission. The closed `BudgetCategory` union is the
+   *  compile-time fence; the guard below is its runtime twin — forged JSON
+   *  strings, deliberate casts, or a JS consumer must not slip an unmetered
+   *  draw through. (Before the guard: `count >= undefined` refused nothing
+   *  and `snapshot().used` grew a NaN slot — the substrate spike's
+   *  finding #3, since hardened.) */
   admit(request: AdmitRequest): AdmitResult {
+    // Object.hasOwn, not `in` — a prototype key like "constructor" is not a
+    // metered category either.
+    if (!Object.hasOwn(BUDGET_CAPS, request.category)) {
+      throw new BudgetError(
+        "unknown-category",
+        `'${request.category}' not in BUDGET_CAPS — widen the closed union or use an existing category`,
+      );
+    }
     if (this.claims.has(request.id)) {
       // Re-admitting a live claim is a refresh, never a second draw.
       return { admitted: true, evicted: [] };

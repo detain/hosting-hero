@@ -377,7 +377,11 @@ describe("the category seam — owner question modelled, not answered (law 3)", 
     expect(ledger.liveRegions()).toEqual([]); // nothing half-admitted
   });
 
-  it("wiring globalBudget straight in ALSO refuses — the probe fences its fail-open shape", () => {
+  it("wiring globalBudget straight in refuses with the OWNER message — the probe answers before the budget guard can", () => {
+    // Layers, kept deliberately: `substrate[category-pending]` = a PENDING
+    // OWNER DECISION with the full wiring story; `budget[unknown-category]`
+    // = an authoring BUG. A region claim is the former, so the seam must
+    // never let it fall through to the generic throw.
     const manager = new BudgetManager();
     const ledger = new SubstrateLedger({ budget: manager });
     expect(substrateCategoryMetered(manager)).toBe(false);
@@ -385,22 +389,24 @@ describe("the category seam — owner question modelled, not answered (law 3)", 
     expect(manager.snapshot().holders).toHaveLength(0); // no claim was even made
   });
 
-  it("SPIKE FINDING (fail-open hazard, pinned as-is): BudgetManager.admit meters NO unknown category", () => {
-    // BUDGET_CAPS[unknown] is undefined → `count >= undefined` is false →
-    // admitted, and snapshot().used grows a NON-BUDGETED key as NaN (the
-    // += 1 hits an uninitialised slot). TypeScript's closed union is the
-    // only guard today. Our seam never rides this hole:
-    // substrateCategoryMetered probes the caps table BEFORE admitting.
+  it("FORMER SPIKE FINDING, SINCE HARDENED: BudgetManager.admit throws on unknown categories", () => {
+    // The fail-open hole (BUDGET_CAPS[unknown] undefined → `count >= undefined`
+    // false → admitted uncapped, snapshot().used growing a NaN slot) is CLOSED:
+    // admit() now guards the caps table and throws `budget[unknown-category]`
+    // naming the offender. Our seam still never rides that throw —
+    // substrateCategoryMetered probes the caps table BEFORE admitting (test
+    // above); this pin holds the runtime twin of the closed TS union.
     const manager = new BudgetManager();
-    const result = manager.admit({
-      id: "forged",
-      category: "substrate" as BudgetCategory, // deliberate cast to expose the runtime shape
-      priority: 0,
-    });
-    expect(result.admitted).toBe(true);
+    expect(() =>
+      manager.admit({
+        id: "forged",
+        category: "substrate" as BudgetCategory, // deliberate cast to expose the runtime shape
+        priority: 0,
+      }),
+    ).toThrowError(/budget\[unknown-category\]: 'substrate' not in BUDGET_CAPS/);
+    expect(manager.snapshot().holders).toHaveLength(0); // nothing half-claimed
     const used = manager.snapshot().used as Readonly<Record<string, number | undefined>>;
-    expect(used.substrate).toBeNaN(); // un-capped, un-clustered, invisible to `breach`
-    manager.release("forged");
+    expect(used.substrate).toBeUndefined(); // the NaN symptom is gone
   });
 
   it("the seam self-activates when the caps table carries 'substrate' — no flag to flip", () => {
