@@ -47,8 +47,8 @@ export function occupiedSlots(node: NodeRecord): number {
   return busy;
 }
 
-/** ρ = occupied / S as Fixed (clamped to RHO_CEILING·4 headroom for queue
- *  pressure visibility; a hard-ceiling node pegs at the ceiling). */
+/** ρ = occupied / S as Fixed (clamped flat to RHO_CEILING; a hard-ceiling
+ *  node pegs at the ceiling). */
 export function utilization(node: NodeRecord): Fixed {
   const capacity = node.slots.length;
   if (capacity === 0) {

@@ -28,7 +28,9 @@
  *    Results are byte-identical to the old full-board sweep for every state
  *    the step contract can produce; the sweep remains as a counted, loud
  *    fallback on probe overflow, attribution contradiction, cold-boot
- *    rosters, or `purgeProbeCap: 0`. The index is driver-memory only (never
+ *    rosters, `purgeProbeCap: 0`, or a board below `purgeTargetedMinNodes`
+ *    (the by-design cheap-sweep path for tiny grids, counted as
+ *    `smallBoardSweeps`). The index is driver-memory only (never
  *    in state/events/digest) and self-heals after checkpoint restore.
  */
 
@@ -188,14 +190,35 @@ export interface TickDriver {
   /** Advance `state` one canonical tick. Pure w.r.t. GameState; the driver's
    *  internal schedule mutates exactly like the run it belongs to. */
   advance(state: GameState, inputs: TickInputs): TickResult;
-  /** Export/import the re-entry schedule for save/replay checkpoints (§3.3). */
-  exportPending(): readonly PendingReentry[];
-  importPending(pending: readonly PendingReentry[], mintCounter: number): void;
+  /** Export/import the re-entry schedule for save/replay checkpoints (§3.3).
+   *  F6 — the payload is a checkpoint PAIR, not just the schedule: `pending`
+   *  (each entry self-carries its `retryDepth`) plus `depths` — the LIVE
+   *  roster units' storm depths sorted byId for a byte-stable serialization.
+   *  A checkpoint that dropped depths would silently zero the retry history
+   *  of every unit in flight: backpressure's maxRetries gate reads the map
+   *  per live unit, so a restored run would re-issue storm after storm past
+   *  the cap for the rest of THE LONG SAVE. */
+  exportPending(): {
+    readonly pending: readonly PendingReentry[];
+    readonly depths: ReadonlyArray<readonly [EntityId, number]>;
+  };
+  importPending(
+    checkpoint: {
+      readonly pending: readonly PendingReentry[];
+      readonly depths: ReadonlyArray<readonly [EntityId, number]>;
+    },
+    mintCounter: number,
+  ): void;
   currentMintCounter(): number;
   /** rec#5 · cumulative targeted-purge diagnostics (host telemetry only —
    *  never enters GameState, events, or any digest). Frozen snapshot; the
-   *  fallback counters must stay 0 in healthy default-step runs, and every
-   *  non-zero `attributedUnits` leak check reads this, not internals. */
+   *  fallback counters must stay 0 in healthy default-step runs — with two
+   *  by-design exceptions: `smallBoardSweeps` ticks on every purge of a
+   *  sub-threshold board (indexing is off there intentionally), and
+   *  `bootFallbacks` is legitimately 1 when a run is handed a state whose
+   *  roster already carries admitted units (the first purge cannot attribute
+   *  what it never watched serve). Every non-zero `attributedUnits` leak
+   *  check reads this, not internals. */
   purgeStats(): {
     readonly targetPurges: number;
     readonly overflowFallbacks: number;
@@ -710,7 +733,8 @@ export function createTickDriver(
       // hard ceiling was an immortal-unit factory. Same observable shape as a
       // patience bounce (the preset branch of resolveTerminal: cause
       // `outcome:<unitId>`, event kind "bounced" naming the shedding node);
-      // backpressure R-12 already lists shed outcomes as storm re-entry feed.
+      // backpressure R-12 takes shed through that same "bounced" branch — its
+      // benign gate admits the whole bounced/FP list, and sheds are benign.
       pushCandidate(unitId, "bounced");
     }
     for (const unit of units) {
@@ -894,10 +918,27 @@ export function createTickDriver(
 
   return Object.freeze({
     advance,
-    exportPending: (): readonly PendingReentry[] =>
-      Object.freeze(pending.map((entry) => Object.freeze({ ...entry }))),
-    importPending(nextPending: readonly PendingReentry[], mintCounterValue: number): void {
-      pending = nextPending.map((entry) => Object.freeze({ ...entry }));
+    exportPending: () =>
+      Object.freeze({
+        pending: Object.freeze(pending.map((entry) => Object.freeze({ ...entry }))),
+        /* F6 · live units' storm depths ride the checkpoint: pending entries
+         * carry their own `retryDepth`, but a unit already in the roster must
+         * remember its depth so its NEXT bounce increments from truth and the
+         * maxRetries gate keeps binding post-restore. `sortedIds` — this array
+         * is a serialization payload (save/replay), never a Map snapshot. */
+        depths: Object.freeze(
+          sortedIds(retryDepthById.keys()).map((id) =>
+            Object.freeze([id, retryDepthById.get(id) ?? 0] as [EntityId, number]),
+          ),
+        ),
+      }),
+    importPending(
+      checkpoint: Parameters<TickDriver["importPending"]>[0],
+      mintCounterValue: number,
+    ): void {
+      pending = checkpoint.pending.map((entry) => Object.freeze({ ...entry }));
+      retryDepthById.clear();
+      for (const [unitId, depth] of checkpoint.depths) retryDepthById.set(unitId, depth);
       mintCounter = mintCounterValue;
     },
     currentMintCounter: () => mintCounter,
@@ -960,9 +1001,11 @@ function nodeServiceTime(nodes: ReadonlyMap<EntityId, NodeRecord>, nodeId: Entit
 
 /** rec#5 default probe cap: a tick whose terminals are attributed to more
  *  distinct nodes than this falls back to the full sweep. Comfortably above
- *  any terminal burst the default step set produces (outcome terminals are
- *  per-unit; even a full hard-ceiling drain touches ONE node per shed
- *  queue). */
+ *  typical terminal bursts the default step set produces (outcome terminals
+ *  are per-unit; a hard-ceiling drain touches ONE node per shed queue). A
+ *  pathological cross-board bounce wave CAN exceed it — that is not a fault,
+ *  it costs one counted full sweep; the cap trades rare extra sweeps against
+ *  per-tick index bookkeeping. */
 const PURGE_PROBE_CAP_DEFAULT = 64;
 
 /** rec#5 default WAITING/SHED rebuild cadence: every 8th tick pays the
@@ -975,8 +1018,10 @@ const PURGE_VERIFY_TICKS_DEFAULT = 8;
 /** rec#5 · below this board size the sweep costs under a microsecond while
  *  the per-tick index maintenance is a comparable constant — targeted purge
  *  simply is not worth switching on until the board has somewhere to hide
- *  the walk. 8 keeps 2–3-node test/audit boards (they pin `0` explicitly)
- *  on the legacy path by default while every production grid indexes. */
+ *  the walk. 8 keeps 2–3-node test/audit boards on the sweep path by default;
+ *  the index-focused tests pin `purgeTargetedMinNodes: 0` precisely because
+ *  0 means ALWAYS index — forcing the indexed arm on tiny fixtures — while
+ *  the default gate itself is pinned by the no-override small-board test. */
 const PURGE_TARGETED_MIN_NODES_DEFAULT = 8;
 
 /** rec#5 · one membership write on the attribution index. Returns TRUE when

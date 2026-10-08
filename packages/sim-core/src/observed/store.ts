@@ -16,16 +16,21 @@
  *
  * THE ONLY WRITE PATH is `applyObservedWrites(records, tickUs)`, invoked at
  * pipeline step 12 ("steps 1–11 operate on ground truth; step 12 writes the
- * observed layer" — §7.13). The gate is machine-enforced three ways:
+ * observed layer" — §7.13). The WRITE gate is machine-enforced two ways (the
+ * third bullet below is a read-side property, listed for completeness):
  *  1. No other public mutator exists on the class (parse-at-the-boundary:
  *     instrumentation state arrives as records INSIDE the step-12 batch);
  *  2. a batch stamped at a tick older than the watermark throws — the store
  *     refuses out-of-order truth edits from anywhere but the forward pipeline;
- *  3. ground values are only ever readable back as fog-filtered cells
- *     (`deriveCell`), so even the store's own output channels cannot be used
- *     to exfiltrate un-instrumented truth.
+ *  3. READ side: ground values come back only as fog-filtered cells
+ *     (`deriveCell`) through the ordinary channels — `read()` never yields
+ *     raw ground. One declared exception: the §7.6 fairness channels
+ *     (`sitePreview`/`pulseStrip`) intentionally hand back raw ground values
+ *     for host-side fairness math; they are the only sanctioned truth
+ *     readers on the observed side, and they are named as such here.
  *
- * Reading ground truth from the observed side is TYPE-IMPOSSIBLE: `#ground`
+ * Outside the two declared fairness channels above, reading ground truth from
+ * the observed side is TYPE-IMPOSSIBLE: `#ground`
  * is an ECMAScript private field (not enumerable, not reachable via
  * `Object.*`, not on the prototype), `read()` returns `ObservedCell` — the
  * degraded envelope — and nothing in the public signature accepts or yields a

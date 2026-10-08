@@ -138,9 +138,14 @@ export interface DefaultPipelineConfig {
 /** Envelope rate → whole + fractional units this sim-minute; the fraction is
  *  one Bernoulli on the "arrival" stream (exact Fixed comparison). Ids are
  *  minted `${tableId}@${tick}#${envelopeIndex}.${unitIndex}` — unique across
- *  the run because the tick embeds. Retry/referral drafts materialize through
- *  the SAME step next tick (R-12: storms re-enter as arrivals); their ids are
- *  minted by the driver. */
+ *  the run because the tick embeds.
+ *
+ *  ⚠ CONSUMER NOTE (F2): retry/referral re-entries do NOT flow through this
+ *  step. The driver mints their ids (`re<n>@${tick}`) and appends matured
+ *  drafts straight into the roster BETWEEN steps — no arrival envelope, no
+ *  arrival events, and the re-entry delay is the backoff schedule (≥1 tick,
+ *  arbitrary multiples). Arrival-counting consumers therefore miss retry
+ *  storms; count `SimEvent` arrivals or roster growth, not this step alone. */
 export function createArrivalStep(
   config: Pick<DefaultPipelineConfig, "defaultPatienceUs" | "defaultSizeCost" | "patienceJitterPct">,
 ): TickStep<ArrivalIn, ArrivalOut> {
@@ -205,9 +210,13 @@ export function createArrivalStep(
  *  NOTE (FIX-3): exact-multiplication commutativity does NOT survive Q16.16
  *  round-half-away — Fixed `mul` is not associative, so the fold's ORDER is
  *  part of the result. Evidence is therefore sorted into the canonical total
- *  order (unitId, metric) before folding: whatever permutation a producer
- *  hands over, the product per unit is identical, which is what makes the
- *  "evidence order cannot affect the result" claim actually true. */
+ *  order (unitId, metric, value) before folding: whatever permutation a
+ *  producer hands over — even one carrying DUPLICATE (unitId, metric) pairs,
+ *  O1 — the product per unit is identical. value is the last field of a
+ *  contribution, so pairs tied on the first two keys still fall into a
+ *  content-determined order, and contributions identical in every field are
+ *  interchangeable under the fold. That is what makes the "evidence order
+ *  cannot affect the result" claim actually true. */
 export const defaultScoringStep: TickStep<ScoringIn, ScoringOut> = (input) => {
   const productByUnit = new Map<EntityId, Fixed>();
   for (const evidence of canonicalEvidenceOrder(input.evidence)) {
@@ -224,14 +233,18 @@ export const defaultScoringStep: TickStep<ScoringIn, ScoringOut> = (input) => {
 };
 
 /** Copy of the evidence list in its canonical fold order: unitId, then
- *  metric, both code-unit (locale-free total order, §3.4). */
+ *  metric (both code-unit, locale-free total order, §3.4), then value —
+ *  O1's total tie-break. Only byte-identical contributions can still tie,
+ *  and those commute through the fold, so the result is permutation-
+ *  invariant for ANY input, duplicate (unitId, metric) pairs included. */
 function canonicalEvidenceOrder(
   evidence: readonly ConfidenceContribution[],
 ): readonly ConfidenceContribution[] {
   return [...evidence].sort(
     (a, b) =>
       (a.unitId < b.unitId ? -1 : a.unitId > b.unitId ? 1 : 0) ||
-      (a.metric < b.metric ? -1 : a.metric > b.metric ? 1 : 0),
+      (a.metric < b.metric ? -1 : a.metric > b.metric ? 1 : 0) ||
+      (a.value < b.value ? -1 : a.value > b.value ? 1 : 0),
   );
 }
 
@@ -474,7 +487,10 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
       if (head === undefined) break;
       const unit = unitById.get(head);
       if (unit === undefined) {
-        queue.shift(); // phantom entry (unit terminal earlier this tick)
+        queue.shift(); // phantom entry — queue member missing from the
+        // roster: only reachable on restored/foreign-authored boards (the
+        // default steps purge terminals out of queues the same tick they
+        // terminate, and serve runs before the outcome step).
         queueDirty = true;
         continue;
       }
@@ -588,10 +604,13 @@ export const defaultQueueWaitStep: TickStep<QueueWaitIn, QueueWaitOut> = (input)
  *  - pass-through: no verdict, no cost;
  *  - sample-1-in-20: one in twenty units (per-unit forked stream) pays a
  *    5 %-weighted sampling stamp;
- *  - inspect: every unit pays the full stamp;
+ *  - inspect: every unit pays the full stamp — and adversarial units roll
+ *    their block HERE too (the block roll fires at every non-pass-through,
+ *    non-sample depth);
  *  - challenge: full stamp AND the block roll — P(block) = aggression ×
  *    detectionRatio for adversarial intent, aggression × falsePositiveRatio
- *    for benign. A blocked benign unit is a *candidate* false positive
+ *    for benign (the benign FP roll is challenge-ONLY; adversarial blocking
+ *    is not). A blocked benign unit is a *candidate* false positive
  *    (resolved at step 10); a blocked adversarial unit is neutralized there.
  * The driver calls this with units ADMITTED this tick, so every unit-hop is
  * inspected exactly once (no re-rolls per waiting tick).
@@ -798,10 +817,12 @@ function terminalEvent(
 /* ═══════════════════════════ Step 11 · Backpressure ═══════════════════════════ */
 
 /**
- * The storm engine (R-12): benign bounced / false-positive / shed outcomes
- * re-enter step 1 next tick as NEW arrivals carrying `retryOf` lineage — the
- * storm EMERGES, unscripted: retries raise ρ, ρ raises the hockey stick, the
- * stick raises bounces. Adversarial neutralizations never retry (fairness
+ * The storm engine (R-12): benign bounced / false-positive outcomes re-enter
+ * the roster when their backoff matures as NEW retry units carrying `retryOf`
+ * lineage — the storm EMERGES, unscripted: retries raise ρ, ρ raises the
+ * hockey stick, the stick raises bounces. "Benign" gates the whole admitted
+ * list (both event kinds alike; hard-ceiling SHEDS ride the "bounced" branch,
+ * they arrive as bounced terminals, not a distinct kind). Adversarial neutralizations never retry (fairness
  * guard, §4.1 Q4). Served customers seed the viral loop on the same re-entry
  * channel: referral drafts (new source identity, prospect intent) and
  * return-visit drafts (same source). Retry depth caps at
@@ -916,7 +937,9 @@ export function createStateEconomicsStep(estateAnchor: EntityId): TickStep<State
   // the same key — the driver's Map copy keeps insertion order for existing
   // keys, hence skipping is unobservable in the digest. The staleness-flip
   // law ("aged cells progress even when no batch writes") lives in the
-  // observed/ STORE's read-side re-derivation, not in write cadence: an
+  // observed/ STORE's apply-side re-derivation (applyObservedWrites re-runs
+  // deriveCell per binding on every batch; `read()` only returns stored
+  // cells), not in write cadence: an
   // already-published unchanged cell carries the exact same freshnessUs the
   // skipped rewrite would have carried, so empty-batch ageing proceeds
   // identically. A foreign cell under the same key (any field differs) is

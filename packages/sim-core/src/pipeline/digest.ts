@@ -6,9 +6,15 @@
  * No platform crypto: `node:crypto`/WebCrypto would break browser⇄Node parity
  * guarantees (§3.4 "no direct platform access"), so this is a pure 128-bit
  * double-FNV-1a over a CANONICAL serialization (every map sorted by key with
- * the pinned id order; every bigint absorbed as exact decimal; every nested
- * list in its structural order). Collisions are irrelevant at the scale of a
- * CI equality tripwire — equality of digests across replays is the property.
+ * the pinned id order; every bigint fed as its exact decimal digits; every
+ * nested list in its structural order). The FOLD itself is fixed-width, not
+ * exact-integer: two independent 64-bit lanes whose products wrap (the limb
+ * fast path below emulates each lane as 32-bit `Math.imul` pairs, mod 2^32
+ * per limb). FNV is not a cryptographic family — collisions are adversarially
+ * constructible. The tripwire leans on the practical collision horizon of two
+ * independent 64-bit lanes (≥2^104 for non-adversarial state churn), which is
+ * ample for "×100 replay equality of CI-generated runs" and NOT a claim of
+ * integrity against hostile bytes.
  *
  * LIMB FAST PATH (perf audit rec #1): the sink's 64-bit lanes run as
  * `Math.imul` 32-bit limb pairs (./digest-limbs.ts) instead of bigint — the

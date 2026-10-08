@@ -590,8 +590,10 @@ export interface BackpressureIn {
   readonly rng: RngStream;
 }
 export interface BackpressureOut {
-  /** Retry drafts re-entering step 1 next tick — storms EMERGE here,
-   *  unscripted (R-12). */
+  /** Retry drafts the driver re-admits as units once their backoff matures —
+   *  storms EMERGE here, unscripted (R-12). NOTE (F2): they join the roster
+   *  between steps, NOT through step 1's arrival machinery — no arrival
+   *  events are minted for them. */
   readonly reentries: readonly UnitDraft[];
   /** 0..1 measured retry-storm pressure (metastability indicator). */
   readonly pressure: Fixed;

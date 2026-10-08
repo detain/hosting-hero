@@ -171,7 +171,9 @@ describe("tick determinism (×100 hard gate)", () => {
     const a = collectPending(42n);
     const b = collectPending(42n);
     expect(a.mint).toBe(b.mint);
-    expect(a.pending.length).toBe(b.pending.length);
+    // F6 shape: the export is a checkpoint PAIR — both arms pinned
+    expect(a.pending.pending.length).toBe(b.pending.pending.length);
+    expect(a.pending.depths.length).toBe(b.pending.depths.length);
     const ser = (v: unknown) =>
       JSON.stringify(v, (_k, val) => (typeof val === "bigint" ? `${val}n` : val));
     expect(ser(a.pending)).toBe(ser(b.pending));

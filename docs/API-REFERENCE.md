@@ -228,7 +228,7 @@ driver calls `applyIntentDoor` BEFORE step 1 every tick. Import:
 | `TickResult` | `interface { state; events; outcomes; ruleFirings; intents; pressure; pendingReentries; doorReceipts }` | one tick's complete answer; events concatenated in canonical step order — door events LEAD (the door runs before step 1); `doorReceipts` = per-intent door verdicts in (tick, seq) application order | order-pinned |
 | `PendingReentry` | `interface { draft; readyAtTick; retryDepth; lineageRoot }` | checkpointable cross-tick driver memory (replay hand-off §3.3) | — |
 | `TickDriverOptions` | `interface { tickAdvance?: ClockAdvance; tickUs?: SimTimeUs; intents?: IntentDoorConfig }` | fixed per-advance delta (default 1 real s @1× ⇒ exactly 1 tick); `intents` wires the door (hand costs/occupancy, placement validator, card lookup) — omitted = defaults, door still runs for any fed schedule | no wall clock |
-| `TickDriver` | `interface { advance(state, inputs): TickResult; exportPending(): readonly PendingReentry[]; importPending(pending, mintCounter): void; currentMintCounter(): number }` | the stateful scheduler object around pure steps — advance is pure w.r.t. GameState (the door runs FIRST inside every advance) | same (state,inputs) ⇒ same result |
+| `TickDriver` | `interface { advance(state, inputs): TickResult; exportPending(): { readonly pending: readonly PendingReentry[]; readonly depths: readonly (readonly [EntityId, number])[] } (frozen; `depths` carries the LIVE roster units' retry depths sorted byId — pre-F6 checkpoints dropped them and restored runs silently re-fuelled storm budgets); importPending(checkpoint, mintCounter): void; currentMintCounter(): number }` | the stateful scheduler object around pure steps — advance is pure w.r.t. GameState (the door runs FIRST inside every advance) | same (state,inputs) ⇒ same result |
 | `createInitialState` | `(options: { runSeed; engineVersion; contentHashes; clocks; nodes?; lanes?; contracts?; ruleBook?; ruleBookHash?; hands?; handCapacity?; board? }) => GameState` | mint state 0 — pass nodes/lanes/contracts SORTED: Map insertion order is part of deterministic identity (§3.4); `hands` (a `mintHandState` product) or `handCapacity` to mint a full hand, `board` to seed edges — all OPTIONAL, pre-door callers digest byte-identically | order-pinned |
 | `createTickDriver` | `(steps: PipelineSlots, rng: RngStream, clocks: ClockState, options?: TickDriverOptions) => TickDriver` | wire the 13 slots + root stream into the shell | seeded |
 | `DefaultPipelineConfig` | `interface { runSeed; dnsNodeId; expressPath; deepPath; defaultPatienceUs; defaultSizeCost; patienceJitterPct; inspectionCostUs; detectionRatio; falsePositiveRatio; referralProbability; returnProbability }` | closed-over-run config for every default step | — |
@@ -273,7 +273,7 @@ driver calls `applyIntentDoor` BEFORE step 1 every tick. Import:
 | `PlaceDeviceQuery` | `interface { args: PlaceDeviceArgs; state: GameState; context: TickContext }` | what the host's `canPlaceDevice` validator sees — parsed args plus a READ-ONLY view of the draft (devices placed EARLIER in the same tick are visible, never a stale board); needs/provides, palette membership, U-space, power fit stay HOST-side | read-only snapshot |
 | `PlacementRejection` | `interface { reason: string }` | the validator's "no" — null means accept; the reason lands VERBATIM in the refusal event as `placement-rejected: <reason>` | — |
 | `IntentReceipt` | `interface { submittedTick: SimTick; seq: number; verb: string; outcome: "executed" \| "refused"; reason: string \| null }` | one per FED intent — the door's verdict roll-up (host HUD ticker / test assertion sugar; the events array is the replay-grade record); door-internal drain continuations (contract #10) NEVER mint receipts — they are not fed inputs, their record is the event alone | canonical application order |
-| `IntentDoorResult` | `interface { state: GameState; events: readonly SimEvent[]; receipts: readonly IntentReceipt[] }` | the door's answer — SAME state object identity when nothing applied (no intents / all refused); executed + refused events in canonical order (future-stamp refusals trail, in input order) | frozen; identity-preserving |
+| `IntentDoorResult` | `interface { state: GameState; events: readonly SimEvent[]; receipts: readonly IntentReceipt[] }` | the door's answer — SAME state object identity when nothing applied (no intents / all refused) AND no hand token was due for release (a refused pass that still touches the rail materializes the released-hands slice — a state change, not an identity violation); executed + refused events in canonical order (future-stamp refusals trail, in input order) | frozen; identity-preserving |
 | `mintHandState` | `(capacity: number) => HandState` | mint all-free hand tokens (indices 0…capacity−1, `busyUntilTick` 0n) — §7.5 T0/T2 default is 1 | deep-frozen; total-throwing unless safe integer ≥ 1 |
 | `createBoardState` | `(edges?: readonly BoardEdgeRecord[]) => BoardState` | empty (or seeded) board slice — edges stored sorted by `EntityId` and each record frozen | order-pinned on insertion; records deep-frozen (`edges` ReadonlyMap is a TYPE-level guarantee — `Object.freeze` on a Map cannot seal its contents; writers replace the Map) |
 | `DEFAULT_INTENT_HAND_COST` | `Readonly<Record<PlayerVerb, number>>` (frozen table) | hand tokens per verb: 1 for every verb EXCEPT toggle-speed = 0 (speed gates observation, never physics) | const table |
@@ -1195,10 +1195,13 @@ of it). waves'
       at the boundary; handlers trust their args and own the refusal space
       alone) — throws `IntentDoorError` at the parse boundary (Laws 2+4): a
       host bug to find, not a game state to fork.
-    - **Hands are physics (§7.5)** — every executed intent pays `handCost`
-      tokens for `occupancyTicks` from `GameState.hands` (half-open occupancy
-      `[start, busyUntilTick)`, tokens released once per tick before any
-      allocation); a refusal spends nothing — the reservation is snapshot-
+    - **Hands are physics (§7.5)** — every executed intent pays its verb's
+      `handCost` tokens for `occupancyTicks` from `GameState.hands`; a verb
+      whose cost is 0 (toggle-speed by default, or any host override) books
+      nothing at all — the rail is never touched (half-open occupancy
+      `[start, busyUntilTick)`, tokens released on each door pass that
+      touches the rail, before any allocation); a refusal spends nothing —
+      the reservation is snapshot-
       undone, which even keeps a refused-only pass `hands`-identity-stable.
       Payment order is canonical: HANDS first (an unaffordable action refuses
       before its payload is interpreted), then handler semantics.

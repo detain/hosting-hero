@@ -25,8 +25,11 @@
  *    repeated pair within one `applyIntentDoor` feed is host programming
  *    garbage (two intents claiming one attribution identity) and throws,
  *    naming both offending input positions;
- *  - HANDS ARE PHYSICS (§7.5): every executed intent pays `handCost` tokens
- *    for `occupancyTicks` from `GameState.hands`; refusal never spends hands.
+ *  - HANDS ARE PHYSICS (§7.5): every executed intent pays its verb's
+ *    `handCost` tokens for `occupancyTicks` from `GameState.hands` — and a
+ *    verb whose cost is 0 (toggle-speed by default, or any host override)
+ *    books NOTHING: the rail is never touched (`if (cost > 0)` gates the
+ *    whole allocation). Refusal never spends hands.
  *    Default occupancies follow the §7.5 reference durations (config change
  *    40s→1 tick, failover 90s→2, cable trace 3min→3; 1 tick = 1 sim-minute);
  *  - SCOPE DISCIPLINE: handlers mutate ONLY their named slice — nodes (place/
@@ -37,7 +40,10 @@
  *  - GROUND-TRUTH TOPOLOGY STAYS GROUND: `BoardState` is the pipeline-local
  *    structural embed (this module never imports topology/ — the topology
  *    lane's mutable MultiGraph keeps owning blast/domain math; edge ids
- *    follow topology's `defaultEdgeId` convention so hosts correlate views);
+ *    follow topology's `defaultEdgeId` FORMAT for data and power edges only
+ *    so hosts correlate those two views — control/trust suffix topology
+ *    hangs on `domain`/`via` fields this slice does not carry, so their ids
+ *    are door-local and not 1:1 correlatable);
  *  - pause-with-orders (§7.13): an entry stamped at the PAUSED tick arrives
  *    at the first unfrozen `advance` and applies then (tick <= current);
  *    future stamps are refused loudly, so "the whole schedule at once" host
@@ -176,8 +182,10 @@ export interface IntentDoorConfig {
  *  override `occupancyTicks` to 0 for a verb whose `handCost` is > 0. The
  *  reservation is then stamped `busyUntilTick == tick + 0n`, and because
  *  occupancy is HALF-OPEN `[start, busyUntilTick)` that window is empty — the
- *  token's cause is cleared by the next door pass's release sweep (which runs
- *  once per pass, before any allocation) at `busyUntilTick <= tick`. Within
+ *  token's cause is cleared by the next door pass that TOUCHES the rail —
+ *  the release sweep runs once per `draftHands` invocation (before any
+ *  allocation), and a pass that never allocates never invokes it — firing at
+ *  `busyUntilTick <= tick`. Within
  *  the submitting pass the token still counts as busy (free-hand accounting
  *  and refusals see the reservation it paid for), so the combination is not
  *  a spend-free loophole — it is a same-tick-boundary release, exactly what
@@ -284,7 +292,10 @@ export interface IntentReceipt {
 }
 
 export interface IntentDoorResult {
-  /** Same object identity when NOTHING applied (no intents / all refused). */
+  /** Same object identity when NOTHING applied (no intents / all refused)
+   *  AND no hand token was due for release — a refused pass that still
+   *  touches the rail materializes the released-hands slice (F4/P3-proven),
+   *  which is a state change, not an identity violation. */
   readonly state: GameState;
   /** Executed + refused events in canonical application order (future-stamp
    *  refusals trail, in input order). */
@@ -783,16 +794,24 @@ function handleToggleSpeed(_draft: Draft, args: ToggleSpeedArgs): HandlerVerdict
 }
 
 /** Read-only view of the draft for the placement validator (it must see
- *  devices placed EARLIER in the same tick, never a stale board). */
+ *  devices placed EARLIER in the same tick, never a stale board — and,
+ *  F5, never a stale TickContext either: snapshots take the stamped build). */
 function snapshotFor(draft: Draft): GameState {
-  return buildState(draft);
+  return buildState(draft, true);
 }
 
 /** Freeze the draft into a GameState — unchanged sections keep the ORIGIN's
- *  object identity (the ground-truth audit test relies on it). */
-function buildState(draft: Draft): GameState {
+ *  object identity (the ground-truth audit test relies on it).
+ *  `forSnapshot` (F5): the validator's view ALWAYS carries this pass's
+ *  context stamp, even when nothing else materialized — with a zero-cost
+ *  verb first, the old early-return handed `draft.origin` (PRIOR tick's
+ *  context) straight to `query.state`, contradicting W1. Snapshots are
+ *  throwaway frozen copies the validator cannot poison; the FINAL door
+ *  state still keeps origin identity when nothing applied (identity law). */
+function buildState(draft: Draft, forSnapshot = false): GameState {
   if (draft.nodes === null && draft.board === null && draft.hands === null && draft.ruleBook === null && draft.ruleBookHash === null) {
-    return draft.origin;
+    if (!forSnapshot) return draft.origin;
+    return Object.freeze({ ...draft.origin, context: draft.context });
   }
   return Object.freeze({
     ...draft.origin,
