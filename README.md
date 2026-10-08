@@ -92,12 +92,14 @@ pnpm -F @hh/assetpack cli -- verify            # skin-kit law check (also: make-
   plus the five contract gates (api-verify, content validate, canary, proto
   build, g5 mirror-sync) on the 22.x arm.
 
-## Where the build stands (2026-10-08, tip `c503d2d` = filters law; base `b6b03b0`)
+## Where the build stands (2026-10-08, tip `28f638e` = AudioBus façade; base `b6b03b0`)
 
 All six §9.13 Phase-1 prototype gates are GREEN headless and mounted in the
-proto app; the sim core ships fourteen module directories (1,427 tests /
-99 files in one serial battery — pipeline 196 incl. the FIX-8 ghost-dedup,
-serve COW and the rec#5 targeted-purge graduation pin, versus 116 incl. the
+proto app; the sim core ships fourteen module directories (1,434 tests /
+100 files in one serial battery — pipeline 203 incl. the FIX-8 ghost-dedup,
+the rec#5 targeted-purge graduation and the comment-vs-code audit fixes
+(F6: checkpoint-carried retry depths keep the maxRetries gate binding across
+THE LONG SAVE restore), versus 116 incl. the
 observable memo-degradation stats, unattended 108 with its review closeout);
 the chrome HUD, Sim Lab bench rail, and i18n pack voices (door refusals and
 quarter copy speak the content packs, era-tracked end-to-end) are live; the
@@ -108,11 +110,15 @@ as data into the proto renderer (placeholder kit only; no real pixel art yet);
 and the post-chain filters law (ADR-0008 lane 2) wraps `pixi-filters` behind
 `apps/proto/src/render/post/` — the repo's only `.filters` writer, budget- and
 hue-law-gated, test-enforced repo-wide, law-first (nothing mounts a chain yet,
-zero runtime delta).
+zero runtime delta); and the AudioBus façade (ADR-0008 step 4, release lane 3)
+ships the §8.11 three-bus duck graph + `hh-audio-pack@1` parser with ZERO deps
+— `@pixi/sound` skipped-by-decision, signals-never-ducks triply enforced,
+law-first as well (nothing mounts the bus, zero audio symbols in dist).
 Battery:
-sim-core 1,427/99 · proto 482/53 · headless 53/5 · perf-tools 20/1 · assetpack 48/5 · api-verify PASS 1,270 names · canary PASS
+sim-core 1,434/100 · proto 548/57 · headless 53/5 · perf-tools 20/1 · assetpack 48/5 · api-verify PASS 1,270 names · canary PASS
 105 files · ci-verify 5/5 · typecheck 5/5. What remains is owner decisions,
 not engine work: the gap register in `docs/MODULE-STATUS.md` and
 `docs/DECISIONS-PENDING.md` list them (OD-1/OD-2/OD-8, T-9, Q-P3-1, coverage
-taste rows, the ratification batch; ADR-0008 ratified — lanes 1–2 of 5 DONE,
-remaining addon installs pending).
+taste rows, the ratification batch; ADR-0008 ratified — steps 1, 2 and 4 of 5
+DONE, tilemap + `@pixi/node` audit arms pending, audio vendor
+skipped-by-decision).
