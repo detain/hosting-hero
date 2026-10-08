@@ -1,0 +1,128 @@
+{
+  "schema": "hh-assetpack-manifest@1",
+  "kit": "seed-shared-web",
+  "emitter": "hand-emitted",
+  "defaults": {
+    "scaleMode": "nearest",
+    "mipmapFilter": "nearest-noip",
+    "addressMode": "clamp-to-edge",
+    "roundPixels": true,
+    "buildMipmaps": false
+  },
+  "textures": [
+    {
+      "alias": "shared-web.meter",
+      "src": "meter/signature-meter.png",
+      "sampler": {
+        "scaleMode": "nearest",
+        "mipmapFilter": "nearest-noip",
+        "addressMode": "clamp-to-edge",
+        "roundPixels": true,
+        "buildMipmaps": false
+      }
+    },
+    {
+      "alias": "shared-web.visitor",
+      "src": "visitor/visitor-form.png",
+      "sampler": {
+        "scaleMode": "nearest",
+        "mipmapFilter": "nearest-noip",
+        "addressMode": "clamp-to-edge",
+        "roundPixels": true,
+        "buildMipmaps": false
+      }
+    },
+    {
+      "alias": "shared-web.hero",
+      "src": "hero/hero-buildable.png",
+      "sampler": {
+        "scaleMode": "nearest",
+        "mipmapFilter": "nearest-noip",
+        "addressMode": "clamp-to-edge",
+        "roundPixels": true,
+        "buildMipmaps": false
+      }
+    },
+    {
+      "alias": "shared-web.palette",
+      "src": "palette.png",
+      "sampler": {
+        "scaleMode": "nearest",
+        "mipmapFilter": "nearest-noip",
+        "addressMode": "clamp-to-edge",
+        "roundPixels": true,
+        "buildMipmaps": false
+      }
+    },
+    {
+      "alias": "shared-web.fx",
+      "src": "fx/catastrophe-fx.png",
+      "sampler": {
+        "scaleMode": "nearest",
+        "mipmapFilter": "nearest-noip",
+        "addressMode": "clamp-to-edge",
+        "roundPixels": true,
+        "buildMipmaps": false
+      }
+    }
+  ],
+  "pixiManifest": {
+    "bundles": [
+      {
+        "name": "shared-web",
+        "assets": [
+          {
+            "alias": "shared-web.meter",
+            "src": "meter/signature-meter.png",
+            "data": {
+              "tags": [
+                "tps",
+                "nomip"
+              ]
+            }
+          },
+          {
+            "alias": "shared-web.visitor",
+            "src": "visitor/visitor-form.png",
+            "data": {
+              "tags": [
+                "tps",
+                "nomip"
+              ]
+            }
+          },
+          {
+            "alias": "shared-web.hero",
+            "src": "hero/hero-buildable.png",
+            "data": {
+              "tags": [
+                "tps",
+                "nomip"
+              ]
+            }
+          },
+          {
+            "alias": "shared-web.palette",
+            "src": "palette.png",
+            "data": {
+              "tags": [
+                "tps",
+                "nomip"
+              ]
+            }
+          },
+          {
+            "alias": "shared-web.fx",
+            "src": "fx/catastrophe-fx.png",
+            "data": {
+              "tags": [
+                "tps",
+                "nomip"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

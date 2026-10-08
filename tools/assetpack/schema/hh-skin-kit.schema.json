@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hh-skin-kit@1",
+  "title": "Five-Asset Skin Kit metadata",
+  "description": "kit.json for one business-line skin kit (hosting_game.md §0.2/§8.10): EXACTLY five bespoke assets — meter (authored FIRST, must be NAMED), visitor, hero, palette, fx. Enforcement authority: parseHhSkinKit in tools/assetpack/src/kit.ts; this document mirrors it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "name", "lineage", "status", "note", "fiveAsset"],
+  "properties": {
+    "schema": { "const": "hh-skin-kit@1" },
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "lineage": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "status": { "enum": ["PLACEHOLDER", "AUTHORED"] },
+    "note": { "type": "string", "minLength": 1 },
+    "bleed": {
+      "type": "object",
+      "description": "Informational mirror of the BLEED_CORNERS code constant (tools/assetpack/src/kit.ts) — the authority lives in code; this block exists so external tooling can read it.",
+      "additionalProperties": false,
+      "properties": {
+        "cornerSizePx": { "type": "integer", "minimum": 1 },
+        "topLeft": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "topRight": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "bottomLeft": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "bottomRight": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      }
+    },
+    "fiveAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meter", "visitor", "hero", "palette", "fx"],
+      "properties": {
+        "meter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "meterName", "authoredFirst", "fill"],
+          "properties": {
+            "file": { "type": "string" },
+            "meterName": { "type": "string", "minLength": 1 },
+            "authoredFirst": { "const": true },
+            "fill": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+          }
+        },
+        "visitor": { "$ref": "#/$defs/filledAsset" },
+        "hero": { "$ref": "#/$defs/filledAsset" },
+        "fx": { "$ref": "#/$defs/filledAsset" },
+        "palette": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "dominant", "accents"],
+          "properties": {
+            "file": { "type": "string" },
+            "dominant": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "accents": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "filledAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "fill"],
+      "properties": {
+        "file": { "type": "string" },
+        "fill": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      }
+    }
+  }
+}

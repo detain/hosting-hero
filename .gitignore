@@ -36,3 +36,8 @@ scripts/.hosting_game_import/
 # batch runs (owner-gen artifacts, node_modules-class: regenerable, stays on
 # disk untracked — never stage, never delete)
 media/prompts/media/output/
+
+# AssetPack vendor build output + cache (regenerable: pnpm -F @hh/assetpack
+# build-kit — the committed contract artifacts live in the kit's manifest/ dir)
+assets/skin-kits/.build/
+.assetpack/

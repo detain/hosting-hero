@@ -7,3 +7,12 @@ packages:
 # vitest); pnpm only runs build scripts for explicitly trusted deps.
 allowBuilds:
   esbuild: true
+  # @assetpack/core transitives — deliberately NOT trusted (ADR-0008 lane 1,
+  # verified live 2026-10-08): sharp works via prebuilt @img/* platform pkgs
+  # with no postinstall (webp encode succeeded in vendor runs); the ffmpeg
+  # installer and ssh2's cpu-features serve pipes our kits never invoke
+  # (no audio/video assets, compression:false). Pinning false keeps
+  # `pnpm install --frozen-lockfile` warning-free in CI.
+  '@ffmpeg-installer/linux-x64': false
+  cpu-features: false
+  sharp: false

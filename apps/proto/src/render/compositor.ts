@@ -6,14 +6,14 @@
  * attachment layer stays at scale 1 while its CHILDREN apply the per-anchor
  * 1/zoom compensation, annotation is pinned to screen space (§1.1/§1.3).
  */
-import { Application, Container } from "pixi.js";
+import { Application, Container, TextureStyle } from "pixi.js";
 import {
   LAYER_BLEND,
   LAYER_ORDER,
   type LayerName,
 } from "./layerSpec";
 import { zoomCompensation, type WorldTransform } from "./screenSpace";
-import { pixelPerfectAtlasOptions } from "./atlas";
+import { atlasRendererInitExtras, installSamplerLaw, pixelPerfectAtlasOptions } from "./atlas";
 import type { CameraFrame } from "./camera";
 
 export interface Compositor {
@@ -31,19 +31,23 @@ export interface Compositor {
 
 export async function createCompositor(host: HTMLElement): Promise<Compositor> {
   const app = new Application();
+
+  // Pixel-perfect law for every texture created from here on (§4.7, ADR-0008
+  // lane 1): the atlas options are no longer merely asserted — nearest lands
+  // in TextureStyle.defaultOptions (every TextureStyle ctor spreads them) and
+  // roundPixels lands in the renderer init options.
+  const atlas = pixelPerfectAtlasOptions();
+  installSamplerLaw(TextureStyle.defaultOptions, atlas);
+
   await app.init({
     background: "#0b0f16",
     antialias: false, // pixel-perfect iso: nearest filtering, no MSAA mush
     resolution: Math.min(2, globalThis.devicePixelRatio ?? 1),
     autoDensity: true,
     resizeTo: host,
+    ...atlasRendererInitExtras(atlas), // roundPixels: true
   });
   host.appendChild(app.canvas);
-
-  // Pixel-perfect law for every texture created after this line (§4.7).
-  const options = pixelPerfectAtlasOptions();
-  // Pixi v8 global default: nearest scale-mode for programmatic textures.
-  void options; // (atlas options are asserted headlessly; applied per-texture below)
 
   const root = new Container();
   app.stage.addChild(root);

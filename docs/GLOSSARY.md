@@ -112,6 +112,7 @@
 - **co-op scenario design law** — every win condition must require cross-seat information one seat holds and another lacks; day-1 lint-able authoring rule. (§2.1 R-4, §2.2 R-4)
 - **Fogged NOC** — the Phase-1 WS-7 render slice proving fog renders from ObservedCell with zero bespoke fog code. (§7.7b)
 - **PixiJS v8 compositor** — the 2.5D world renderer: five hard-bounded layers with non-blending boundaries. (§2.1 R-1, §3.1, §4.7)
+- **"nearest-noip" law label** — the manifest token for the §4.7 no-interpolated-mipmap-blur law: pixi v8 has no "noip" constant, so it MATERIALIZES as SCALE_MODE `nearest` on mag/min/mipmap (`TextureStyle.defaultOptions`, installed before `app.init`); the "no mip chain at all" half is packer-side (`buildMipmaps:false` ⇒ `'nomip'` AssetPack tag), and `roundPixels` is a RENDERER init option, never per-texture. (ADR-0008 lane 1; §4.7)
 - **Substrate / Flow / Signal / Attachment / Intent / Annotation** — the render layer names (Substrate = muted materials; Flow = additive-emissive; Intent = white dashed; Annotation/Chrome = flat DOM). (§4.7 item 1.1, §3.1)
 - **Hue Ledger** — the compile-time-checkable registry assigning each saturated hue exactly one job. (§2.2 R-1, §4.7 item 1.2)
 - **Two-Channel Law** — every state encoded ≥2 ways so the greyscale pass survives as a sign-off gate. (§2.2 R-1, §4.7 item 1.2)

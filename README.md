@@ -49,13 +49,23 @@ tools/
                  /tmp), CPU-profile pair + summarizer. Plain Node, zero deps.
                  READ-ONLY against the repo; its contention law lives in
                  tools/perf/README.md — quote any number WITH its load avg.
+  assetpack/     @hh/assetpack — ADR-0008 lane 1: build-time skin-kit PIPELINE
+                 CONTRACT (no real art yet): Five-Asset Kit layout, the
+                 hh-assetpack-manifest@1 sampler-law wrapper AssetPack itself
+                 does not emit, deterministic placeholder PNGs, vendor runner
+                 over @assetpack/core. CLI: make-kit | emit | build | verify.
+assets/
+  skin-kits/     skin kits on disk. seed-shared-web/ is a labeled PLACEHOLDER
+                 (kit.json + five 64×64 solid-hue PNGs + the hand-emitted
+                 canonical manifest/). .build/ + .assetpack/ vendor caches are
+                 gitignored — regenerable via the assetpack CLI.
 ```
 
 ## Commands
 
 ```bash
 pnpm install                      # workspace install
-pnpm -r typecheck                 # tsc --noEmit in every package (4)
+pnpm -r typecheck                 # tsc --noEmit in every package (5)
 pnpm -r test                      # vitest in every package
 pnpm -F @hh/sim-core test         # single package (add -- --no-file-parallelism
                                   # when timing gates matter — contention law)
@@ -65,6 +75,7 @@ pnpm -F headless-tools canary     # forbidden-API scan of sim-core sources
 pnpm -F perf-tools grid -- --reps 3            # board×rate throughput grid
 pnpm -F perf-tools ab -- --variant-a HEAD~1 --variant-b HEAD   # A/B bench
 pnpm -F perf-tools profile -- --area engine    # CPU-profile pair (+ summarize)
+pnpm -F @hh/assetpack cli -- verify            # skin-kit law check (also: make-kit | emit | build)
 ```
 
 ## Determinism laws (bind every package)
@@ -82,15 +93,20 @@ pnpm -F perf-tools profile -- --area engine    # CPU-profile pair (+ summarize)
 ## Where the build stands (2026-10-08, tip `b6b03b0`)
 
 All six §9.13 Phase-1 prototype gates are GREEN headless and mounted in the
-proto app; the sim core ships fourteen module directories (1,420 tests /
-98 files in one serial battery — pipeline 189 incl. the FIX-8 ghost-dedup,
+proto app; the sim core ships fourteen module directories (1,427 tests /
+99 files in one serial battery — pipeline 196 incl. the FIX-8 ghost-dedup,
 serve COW and the rec#5 targeted-purge graduation pin, versus 116 incl. the
 observable memo-degradation stats, unattended 108 with its review closeout);
 the chrome HUD, Sim Lab bench rail, and i18n pack voices (door refusals and
 quarter copy speak the content packs, era-tracked end-to-end) are live; the
-2026-10-07 perf audit is institutionalized as `tools/perf`. Battery:
-sim-core 1,420/98 · proto 431/49 · headless 53/5 · perf-tools 20/1 · api-verify PASS 1,270 names · canary PASS
-105 files · ci-verify 5/5 · typecheck 4/4. What remains is owner decisions,
+2026-10-07 perf audit is institutionalized as `tools/perf`; and the AssetPack
+skeleton (ADR-0008 lane 1) ships the skin-kit pipeline contract —
+`tools/assetpack` compiles Five-Asset Kits and carries the §4.7 sampler law
+as data into the proto renderer (placeholder kit only; no real pixel art yet).
+Battery:
+sim-core 1,427/99 · proto 444/50 · headless 53/5 · perf-tools 20/1 · assetpack 48/5 · api-verify PASS 1,270 names · canary PASS
+105 files · ci-verify 5/5 · typecheck 5/5. What remains is owner decisions,
 not engine work: the gap register in `docs/MODULE-STATUS.md` and
 `docs/DECISIONS-PENDING.md` list them (OD-1/OD-2/OD-8, T-9, Q-P3-1, coverage
-taste rows, the ratification batch, ADR-0008 — proposed, nothing installed).
+taste rows, the ratification batch; ADR-0008 ratified — lane 1 of 5 DONE,
+addon installs pending).

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hh-assetpack-manifest@1",
+  "title": "Hosting Hero AssetPack manifest",
+  "description": "Law wrapper around an AssetPack pixi-format bundle manifest. AssetPack 1.7.0 carries NO sampler flags; this schema is the §4.7 pixel-perfect law carrier the runtime loader consumes (ADR-0008 lane 1). Enforcement authority: parseHhAssetManifest in tools/assetpack/src/manifest.ts — this document mirrors it for humans and third-party tooling.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "kit", "emitter", "defaults", "textures", "pixiManifest"],
+  "properties": {
+    "schema": { "const": "hh-assetpack-manifest@1" },
+    "kit": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "emitter": { "enum": ["assetpack-core", "hand-emitted"] },
+    "defaults": { "$ref": "#/$defs/samplerLaw" },
+    "textures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["alias", "src", "sampler"],
+        "properties": {
+          "alias": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+          "src": { "type": "string", "minLength": 1, "pattern": "^(?![/\\\\])(?!.*\\.\\.)*$" },
+          "sampler": { "$ref": "#/$defs/samplerOverride" }
+        }
+      }
+    },
+    "pixiManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundles"],
+      "properties": {
+        "bundles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "assets"],
+            "properties": {
+              "name": { "type": "string" },
+              "assets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["alias", "src"],
+                  "properties": {
+                    "alias": { "type": "string" },
+                    "src": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "tags": {
+                          "type": "array",
+                          "items": { "enum": ["manifest", "mIgnore", "tps", "fix", "jpg", "nomip"] }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "samplerLaw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scaleMode", "mipmapFilter", "addressMode", "roundPixels", "buildMipmaps"],
+      "properties": {
+        "scaleMode": { "const": "nearest" },
+        "mipmapFilter": { "enum": ["nearest-noip", "nearest"] },
+        "addressMode": { "enum": ["clamp-to-edge", "repeat", "mirror-repeat"] },
+        "roundPixels": { "type": "boolean" },
+        "buildMipmaps": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "buildMipmaps": { "const": true } } },
+          "then": { "properties": { "mipmapFilter": { "const": "nearest" } } }
+        }
+      ]
+    },
+    "samplerOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Any subset of samplerLaw keys; absent keys inherit manifest defaults. Parser resolves to a full law before consumers see it.",
+      "properties": {
+        "scaleMode": { "const": "nearest" },
+        "mipmapFilter": { "enum": ["nearest-noip", "nearest"] },
+        "addressMode": { "enum": ["clamp-to-edge", "repeat", "mirror-repeat"] },
+        "roundPixels": { "type": "boolean" },
+        "buildMipmaps": { "type": "boolean" }
+      }
+    }
+  }
+}
