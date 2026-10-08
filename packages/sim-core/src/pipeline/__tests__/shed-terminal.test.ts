@@ -165,11 +165,21 @@ describe("hard-ceiling shed terminals (R8 F-2, red-first on c06aa9b)", () => {
     // attribution and the fixture must be re-isolated.
     const run = runShed(PLAIN_NODES, 42n);
     expect(run.events.filter((event) => event.kind === "bounced")).toHaveLength(0);
-    // And it leaks the OTHER way: hockey-stick holds its queue — roster is
-    // strictly larger than the hard-ceiling roster at the same tick. This
-    // is the discipline contrast the fix must keep.
-    const hard = runShed(SHED_NODES, 42n);
-    expect(run.final.units.size).toBeGreaterThanOrEqual(hard.final.units.size);
+    // The REAL discipline contrast pin (R10: the old `>= hard.final` was
+    // vacuous — hard.final==0 is pinned in test 1 and a roster size can
+    // never dip below zero, so the clause could not fail). Exact census
+    // measured 2026-10-08 at tree b501e53 on the CURRENT driver: the plain
+    // twin retains 3 live units at run end (37 of the 40 mints served, 0
+    // bounced — the 4/min × 10-tick burst outlives the 30-tick drain at
+    // one edge-completion per tick, so 3 units are still mid two-hop path).
+    // The fixed hard-ceiling twin drains to ZERO (pinned in test 1 + the
+    // vendored digests): that is the real contrast — plain holds a live
+    // tail of 3 where the ceiling board terminalizes 30 sheds. This pin is
+    // falsifiable on the plain side: any retention drift trips the exact
+    // number. (Cross-witness: the plain arrival-phase roster is 33, the
+    // very figure the c06aa9b leak produced on the ceiling board — pre-fix,
+    // hard behaved exactly like plain: no terminations.)
+    expect(run.final.units.size).toBe(3);
   });
 });
 
