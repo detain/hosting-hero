@@ -258,6 +258,37 @@ function toProtoCell(key: ObservedKey, cell: ObservedCell<unknown>): ProtoCell {
   });
 }
 
+/** Honest arrival accounting (F2): the driver mints retry/referral/return
+ *  re-entries BETWEEN steps — they join the roster directly and mint NO
+ *  arrival event, so counting step-1 events alone reads a retry storm as a
+ *  calm lane. "Units that entered this tick" = arrival events (organic) plus
+ *  every unit NEW to the roster without an arrival event (re-entered); the
+ *  outcome stream is unioned in so a unit that enters and terminates within
+ *  one tick is still seen. Pure over id sets — real ticks and synthetic
+ *  fixtures alike flow through the same law. CAVEAT: this is a LANE-BLIND
+ *  placeholder aggregate (the runner owns exactly one lane); multi-lane
+ *  boards need per-node attribution before reuse. */
+export function partitionLaneEntries(input: {
+  readonly priorUnitIds: ReadonlySet<EntityId>;
+  readonly arrivalUnitIds: ReadonlySet<EntityId>;
+  readonly currentUnitIds: ReadonlySet<EntityId>;
+  readonly outcomeUnitIds: ReadonlySet<EntityId>;
+}): { readonly organic: number; readonly reentered: number } {
+  let reentered = 0;
+  for (const id of input.currentUnitIds) {
+    if (input.priorUnitIds.has(id)) continue;
+    if (input.arrivalUnitIds.has(id)) continue;
+    reentered += 1;
+  }
+  for (const id of input.outcomeUnitIds) {
+    if (input.priorUnitIds.has(id)) continue;
+    if (input.arrivalUnitIds.has(id)) continue;
+    if (input.currentUnitIds.has(id)) continue; // counted above
+    reentered += 1;
+  }
+  return Object.freeze({ organic: input.arrivalUnitIds.size, reentered });
+}
+
 function derivedCell(value: Fixed): ObservedCell<Fixed> {
   // Derived (not metered) truth: Fine band, 80% coverage/certainty — the
   // renderer must be able to SEE that these are computed aggregates.
@@ -285,6 +316,14 @@ export interface SimCoreRunnerOptions {
   readonly seed: number;
   /** Emission cadence divisor at 1× — 100ms = 10Hz protocol cap (§7.0). */
   readonly tickRealMs?: number;
+  /** TEST SEAM (F2 arrival honesty): re-family the placeholder wave so benign
+   *  bounces can form real retry storms. Shipped content is 100% malicious —
+   *  adversarial units are neutralized, never re-entered — so without this
+   *  knob the driver's between-steps re-entry mint is unobservable in tests.
+   *  Unset keeps the sim numbers byte-identical to the shipped placeholder;
+   *  the wire itself gains one always-zero additive cell (`reentryRatePerMin`)
+   *  from the F2 split, which every pre-F2 consumer reads as absent-0. */
+  readonly familyOverride?: WaveEnvelope["dominantFamily"];
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -350,7 +389,10 @@ export class SimCoreRunner implements SimRunner {
       entropyForecastPurchased: false,
       pressureParams: PRESSURE,
     });
-    this.envelope = this.plan.waveEnvelope;
+    this.envelope =
+      options.familyOverride === undefined
+        ? this.plan.waveEnvelope
+        : Object.freeze({ ...this.plan.waveEnvelope, dominantFamily: options.familyOverride });
   }
 
   start(emit: (projection: SimProjection) => void): void {
@@ -420,17 +462,25 @@ export class SimCoreRunner implements SimRunner {
       ...(due.length > 0 ? { externalIntents: Object.freeze(due) } : {}),
     });
 
+    const priorUnitIds = new Set<EntityId>(this.game.units.keys());
     const result = this.driver.advance(this.game, inputs);
     this.game = result.state;
 
     /* step-12 observed layer: renderer-facing lane cells DERIVED FROM REAL
-       driver outputs (arrival pressure of the event stream, worst node ρ,
-       live QoS mix), sealed through the store's single-writer gate. */
-    let arrivalsThisTick = 0;
+       driver outputs (honest entry accounting — arrival events PLUS the F2
+       re-entries the driver mints between steps, worst node ρ, live QoS
+       mix), sealed through the store's single-writer gate. */
+    const arrivalUnitIds = new Set<EntityId>();
     for (const event of result.events) {
-      if (event.kind === "arrival") arrivalsThisTick += 1;
+      if (event.kind === "arrival") arrivalUnitIds.add(event.unitId);
     }
-    const ratePerMin = fromInt(arrivalsThisTick);
+    const entries = partitionLaneEntries({
+      priorUnitIds,
+      arrivalUnitIds,
+      currentUnitIds: new Set<EntityId>(this.game.units.keys()),
+      outcomeUnitIds: new Set<EntityId>(result.outcomes.map((outcome) => outcome.unitId)),
+    });
+    const ratePerMin = fromInt(entries.organic + entries.reentered);
     const health = this.laneHealthFromNodes(this.game);
     const tickUs = this.game.context.clocks.simUs;
     this.store.applyObservedWrites(
@@ -439,6 +489,14 @@ export class SimCoreRunner implements SimRunner {
           key: observedKey(LANE_ID, "ratePerMin"),
           cell: derivedCell(ratePerMin),
           causeId: asCauseId(`adapter:lane-rate:${this.game.context.tick}`),
+        }),
+        Object.freeze({
+          // Explicit organic-vs-retry split (§7.13 story): a retry storm must
+          // READ differently from a traffic spike. ratePerMin above is the
+          // honest total; this cell isolates the between-steps re-entry mint.
+          key: observedKey(LANE_ID, "reentryRatePerMin"),
+          cell: derivedCell(fromInt(entries.reentered)),
+          causeId: asCauseId(`adapter:lane-reentry:${this.game.context.tick}`),
         }),
         Object.freeze({
           key: observedKey(LANE_ID, "health"),
@@ -452,9 +510,11 @@ export class SimCoreRunner implements SimRunner {
     for (const [key, cell] of this.store.toObservedMap()) merged.set(key, cell);
     this.game = Object.freeze({ ...this.game, observed: Object.freeze(merged) });
 
-    /* counters + notices from the REAL outcome stream. */
+    /* counters + notices from the REAL outcome stream. Surge reads the HONEST
+       entry total (organic + re-entries): a retry storm flooding the lane IS a
+       surge — that blindness was the F2 bug this fix retires. */
     const notices: EventNotice[] = [];
-    if (arrivalsThisTick >= 3) {
+    if (entries.organic + entries.reentered >= 3) {
       notices.push({ kind: "arrival-surge", laneId: LANE_ID, atUs: tickUs });
     }
     /* door verdicts ride the same seam (contract #10 receipts): one notice

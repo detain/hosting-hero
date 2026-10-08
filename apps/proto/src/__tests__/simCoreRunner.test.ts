@@ -10,8 +10,16 @@
 import { describe, expect, it } from "vitest";
 import { canonicalDigest } from "@hh/sim-core/replay";
 import { type PlayerIntent, type PlayerVerbArgs } from "@hh/sim-core";
-import { encodeProjection, type SimProjection } from "../shared/protocol";
+import {
+  asEntityId,
+  observedKey,
+  type EntityId,
+  type ObservedKey,
+} from "@hh/sim-core/types";
+import { fromInt } from "@hh/sim-core/kernel";
+import { decodeProjection, encodeProjection, type SimProjection } from "../shared/protocol";
 import { createRunner, SimCoreRunner } from "../runner/index";
+import { partitionLaneEntries } from "../runner/simCoreRunner";
 
 const TICKS = 100;
 
@@ -214,5 +222,142 @@ describe("runner factory returns the wired real driver", () => {
     const projection = runner.headlessStep(10);
     expect(projection.seq).toBe(1);
     runner.stop();
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * F2 — LANE ARRIVAL HONESTY. The driver mints retry/re-entry units
+ * (`re<n>@<tick>`) BETWEEN steps: no arrival envelope, no arrival event
+ * (pipeline/defaults.ts createArrivalStep ⚠ consumer note). Counting
+ * step-1 events alone read a retry storm as a calm lane. The adapter now
+ * partitions every tick into organic + re-entered entries, sums both into
+ * the lane aggregate, and exposes the split as its own observed cell.
+ * ------------------------------------------------------------------ */
+
+const LANE = asEntityId("lane/ingress-1");
+const KEY_RATE = observedKey(LANE, "ratePerMin");
+const KEY_REENTRY = observedKey(LANE, "reentryRatePerMin");
+
+/** The placeholder wave admits arrivals for WAVE_WINDOW minutes from
+ *  WAVE_START_MINUTE (simCoreRunner scenario consts) — after this minute the
+ *  envelope array is empty, so any lane entry is by construction a re-entry. */
+const WAVE_END_MINUTE = 2 + 12;
+
+function fixedCell(projection: SimProjection, key: ObservedKey): bigint {
+  const value = projection.observed.get(key)?.value;
+  if (typeof value !== "bigint") {
+    throw new Error(`observed cell "${key}" missing or not a fixed value`);
+  }
+  return value;
+}
+
+/** Drive a fresh (optionally overridden-family) runner, return every frame. */
+function driveFrames(seed: number, familyOverride?: "organic", ticks = 40): SimProjection[] {
+  const runner = new SimCoreRunner(
+    familyOverride === undefined ? { seed } : { seed, familyOverride },
+  );
+  const frames: SimProjection[] = [];
+  for (let i = 0; i < ticks; i += 1) frames.push(runner.headlessStep(10));
+  runner.stop();
+  return frames;
+}
+
+describe("lane arrival honesty (F2: retry re-entries bypass step-1 events)", () => {
+  it("partitionLaneEntries splits organic arrivals from silent re-entries", () => {
+    // The red-first shape: NO arrival events this tick, yet a unit entered.
+    expect(
+      partitionLaneEntries({
+        priorUnitIds: new Set<EntityId>([asEntityId("old-1")]),
+        arrivalUnitIds: new Set<EntityId>(),
+        currentUnitIds: new Set<EntityId>([asEntityId("old-1"), asEntityId("re3@16")]),
+        outcomeUnitIds: new Set<EntityId>(),
+      }),
+    ).toEqual({ organic: 0, reentered: 1 });
+
+    // Enter AND terminate within one tick: visible only through outcomes.
+    expect(
+      partitionLaneEntries({
+        priorUnitIds: new Set<EntityId>(),
+        arrivalUnitIds: new Set<EntityId>(),
+        currentUnitIds: new Set<EntityId>(),
+        outcomeUnitIds: new Set<EntityId>([asEntityId("re4@18")]),
+      }),
+    ).toEqual({ organic: 0, reentered: 1 });
+
+    // Old units, arrivals, and same-tick exits of PRIOR units are not entries.
+    expect(
+      partitionLaneEntries({
+        priorUnitIds: new Set<EntityId>([asEntityId("old-1")]),
+        arrivalUnitIds: new Set<EntityId>([asEntityId("g1-adapter@40#0.0")]),
+        currentUnitIds: new Set<EntityId>([asEntityId("g1-adapter@40#0.0")]),
+        outcomeUnitIds: new Set<EntityId>([asEntityId("old-1")]),
+      }),
+    ).toEqual({ organic: 1, reentered: 0 });
+  });
+
+  it("a benign retry storm READS on the lane after the wave ends — event-counting saw zero", () => {
+    // Placeholder content is 100% malicious (adversarial → never re-enters),
+    // so the storm needs the familyOverride test seam: organic traffic that
+    // bounces re-enters via the driver's between-steps mint.
+    const frames = driveFrames(7, "organic");
+    const stormFrames = frames.filter(
+      (f) => Number(f.minute) > WAVE_END_MINUTE && fixedCell(f, KEY_REENTRY) > 0n,
+    );
+    expect(stormFrames.length).toBeGreaterThan(0); // probe-pinned: seeds 7/42/904 all storm
+    for (const frame of stormFrames) {
+      // Post-window there are NO arrival envelopes ⇒ organic is structurally 0.
+      // The old arrivalsThisTick event count read 0 here while units entered.
+      expect(fixedCell(frame, KEY_RATE)).toBe(fixedCell(frame, KEY_REENTRY));
+      expect(fixedCell(frame, KEY_RATE)).toBeGreaterThan(0n);
+      // LaneStats aggregate is honest too (what the HUD instruments consume).
+      expect(frame.lanes[0]?.ratePerMin).toBe(fixedCell(frame, KEY_RATE));
+    }
+  });
+
+  it("in-window frames carry the explicit split: total = organic + reentries", () => {
+    // Seed 7, organic override: tick 13 mixes one organic arrival with one
+    // re-entry (probe-pinned) — the (c) requirement: storms read DIFFERENTLY.
+    const mixed = driveFrames(7, "organic").find((f) => f.tick === 13n);
+    if (mixed === undefined) throw new Error("expected a tick-13 frame");
+    const reentry = fixedCell(mixed, KEY_REENTRY);
+    const total = fixedCell(mixed, KEY_RATE);
+    expect(reentry).toBe(fromInt(1)); // one silent re-entry
+    expect(total).toBe(fromInt(2)); // one organic arrival + that re-entry
+    expect(total - reentry).toBe(fromInt(1)); // organic component stays visible by subtraction
+  });
+
+  it("the shipped malicious placeholder never re-enters: honest zeros on every frame", () => {
+    const frames = driveFrames(42, undefined, TICKS);
+    for (const frame of frames) {
+      expect(fixedCell(frame, KEY_REENTRY)).toBe(0n); // cell present, value honest
+    }
+  });
+
+  it("storm scenario is deterministic: two fresh instances replay byte-identically", () => {
+    const digests = (): string[] => driveFrames(7, "organic").map((f) => canonicalDigest(encodeProjection(f)));
+    const a = digests();
+    const b = digests();
+    expect(a).toHaveLength(40);
+    expect(a).toEqual(b);
+    expect(new Set(a).size).toBeGreaterThan(1);
+  });
+
+  it("wire back-compat: new cell round-trips; old 2-cell frames still decode", () => {
+    const frame = driveFrames(7, "organic").find((f) => fixedCell(f, KEY_REENTRY) > 0n);
+    if (frame === undefined) throw new Error("expected a storm frame");
+    const decoded = decodeProjection(JSON.parse(JSON.stringify(encodeProjection(frame))));
+    expect(decoded.observed.get(KEY_REENTRY)?.value).toBe(fixedCell(frame, KEY_REENTRY));
+
+    // A legacy frame (observed array WITHOUT the new key) must decode unchanged.
+    const legacyWire = encodeProjection(frame) as unknown as Record<string, unknown>;
+    const observedRaw = legacyWire["observed"];
+    if (!Array.isArray(observedRaw)) throw new Error("expected observed array");
+    legacyWire["observed"] = observedRaw.filter(
+      (cell) => (cell as { key: string }).key !== "lane/ingress-1::reentryRatePerMin",
+    );
+    const legacy = decodeProjection(legacyWire);
+    expect(legacy.observed.has(KEY_REENTRY)).toBe(false);
+    expect(legacy.observed.get(KEY_RATE)?.value).toBe(fixedCell(frame, KEY_RATE));
+    expect(legacy.lanes[0]?.ratePerMin).toBe(frame.lanes[0]?.ratePerMin);
   });
 });
