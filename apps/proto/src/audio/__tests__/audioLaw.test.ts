@@ -24,9 +24,9 @@
  *     calls from existing screens (the lane-2 "nothing mounts yet" pin).
  *  7. src/audio/ roster is closed: audioBus, busGraph, index, packs.
  *
- * stripComments is line-count-approximate: violations spanning block-comment
- * boundaries are reported with file-accurate NAMES but approximate LINE
- * numbers — detection itself is unaffected (the match always fires).
+ * stripComments is line-accurate: block-comment text is blanked but its
+ * newlines are kept, so file:line reports name the true source line of
+ * every violation.
  */
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -43,7 +43,9 @@ const HTML_AUDIO_CONSTRUCT = /new\s+Audio\s*\(/;
 const TIMER_CALL = /\b(setTimeout|setInterval|requestAnimationFrame)\b/;
 
 function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ""))
+    .replace(/\/\/[^\n]*/g, "");
 }
 
 function listSources(dir: string): string[] {

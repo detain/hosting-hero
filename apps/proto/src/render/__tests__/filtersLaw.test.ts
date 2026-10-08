@@ -28,7 +28,9 @@ const TICKER_SUBSCRIBE = /ticker\.add\b/;
 /** Strip comments so the scan judges CODE, not prose (our own docblocks
  *  name the patterns they forbid; the armed probe covers both forms). */
 function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ""))
+    .replace(/\/\/[^\n]*/g, "");
 }
 
 function listSources(dir: string): string[] {
