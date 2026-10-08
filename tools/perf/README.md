@@ -69,6 +69,13 @@ throw before any spawn, worktree targets must live under `/tmp`, and
 lost uncommitted work to an in-tree `git checkout -- .` — that can never come
 from this tool.
 
+**Stale-worktree note:** an interrupted `ab.ts` run (Ctrl-C, crash, timeout)
+can die before its exit cleanup and leave its detached worktrees registered
+under `/tmp/hh-perf-worktrees/` (default; `--worktree-root` relocates them).
+This is harmless bookkeeping — later runs proceed normally — but to reclaim
+the disk and clear the registrations run `git worktree prune` (whitelisted;
+same remedy `removeWorktree` prints when a removal itself fails).
+
 Instrumented trees: if the loaded tree's pipeline barrel exports an `ACC`
 Map (the segment-instrumentation pattern, see §Techniques), the A/B and grid
 runners print its µs/tick breakdown per scenario automatically.
