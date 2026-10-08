@@ -18,15 +18,16 @@
  * a plain integer year, sorting (when consumers need it) rides chrome's
  * textLaw.compareCodeUnits. The loader already pins pack-internal order.
  *
- * Era seam: App.vue owns the era toggle as a LOCAL ref (`era = ref("2026")`,
- * not provided/injected — lifting it is App.vue surgery outside this lane's
- * ownership). Until the shell exposes it, `t()` defaults to
- * DEFAULT_ERA_YEAR = 2026 and every consumer may pass an explicit year;
- * when the toggle is lifted, callers thread `Number(era.value)` through with
- * zero changes to this store.
+ * Era seam: the shell's toggle lives in `eraState.ts` (lifted from App.vue's
+ * former local ref — same module-singleton pattern as chrome's observedStore).
+ * `t()` defaults its `eraYear` to `getEra()`, so a caller inside a computed/
+ * render effect tracks the ref and era-variant copy re-derives on a flip; an
+ * explicit year still wins. DEFAULT_ERA_YEAR is the ref's INITIAL value and
+ * stays re-exported here for importers that pin the constant by name.
  */
 import sharedWebWire from "../../../../packages/content/packs/shared-web.i18n.json?raw";
 import gameWire from "../../../../packages/content/packs/game.i18n.json?raw";
+import { getEra } from "./eraState.ts";
 import {
   fillTemplateBody,
   loadI18nPack,
@@ -41,8 +42,8 @@ export type PackId = "shared-web" | "game";
 
 export const PACK_IDS: readonly PackId[] = Object.freeze(["shared-web", "game"] as const);
 
-/** Fallback era until App.vue's toggle is liftable (see header note). */
-export const DEFAULT_ERA_YEAR = 2026;
+/** The shared toggle's initial era (single home: eraState.ts). */
+export { DEFAULT_ERA_YEAR } from "./eraState.ts";
 
 /** Fail-loud boundary parse (LoaderError names the exact path if content
  *  ever ships a pack CI rejected). JSON.parse of a ?raw string cannot fail
@@ -77,7 +78,9 @@ export function templateOf(packId: PackId, key: string): I18nTemplate {
 /**
  * Resolve pack prose: the template for `key` (decision OR flavour — keys are
  * globally unique by parse), era-selected when the template is an
- * era-variant, then exact-set slot-filled. Throws LoaderError (naming the
+ * era-variant, then exact-set slot-filled. The default `eraYear` reads the
+ * SHARED era ref (eraState.getEra) at call time — inside a computed that
+ * means the resolution tracks the toggle. Throws LoaderError (naming the
  * key + pack) when the key is absent or the slot set is wrong — copy paths
  * that tolerate absence call `hasKey` first.
  */
@@ -85,7 +88,7 @@ export function t(
   packId: PackId,
   key: string,
   slots: Readonly<Record<string, string | number>> = {},
-  eraYear: number = DEFAULT_ERA_YEAR,
+  eraYear: number = getEra(),
 ): string {
   const pack = packOf(packId);
   const template = resolveTemplate(pack, key);

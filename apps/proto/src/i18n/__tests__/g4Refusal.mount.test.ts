@@ -6,8 +6,10 @@
  * rendering host copy tagged "preview" — the UI now shows its copy source.
  */
 import { describe, expect, it } from "vitest";
+import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import G4GatePanel from "../../gates/g4/G4GatePanel.vue";
+import { DEFAULT_ERA_YEAR, setEra } from "../eraState.ts";
 
 const PACK_PROSE =
   "Both hands are committed. The place-device intent is queued and presents when a hand frees at tick 4.";
@@ -28,6 +30,28 @@ describe("i18n × G4 mount · a door bounce speaks in pack prose", () => {
     const log = wrapper.find('[data-test="receipt-log"]').text();
     expect(log).toContain("Both hands are committed.");
     expect(wrapper.find('[data-refusal-source="pack"]').exists()).toBe(true);
+  });
+
+  it("era flip re-renders the pack prose without churning it (refusal keys are flat)", async () => {
+    const wrapper = mount(G4GatePanel, { props: { seed: 904 } });
+    await wrapper.find('[data-test-id="palette-web-1"]').trigger("click");
+    await wrapper.find('[data-test-id="palette-sw-1"]').trigger("click");
+    await wrapper.find('[data-test-id="palette-web-2"]').trigger("click");
+
+    const logBefore = wrapper.find('[data-test="receipt-log"]').text();
+    expect(logBefore).toContain("Both hands are committed.");
+
+    // The render effect read getEra() through describeRefusal → the panel
+    // depends on the shared toggle; a flip schedules a real re-render…
+    setEra(1998);
+    await nextTick();
+    // …and the bytes survive it (no accidental coupling), still pack-spoken.
+    expect(wrapper.find('[data-test="receipt-log"]').text()).toBe(logBefore);
+    expect(wrapper.find('[data-refusal-source="pack"]').exists()).toBe(true);
+
+    setEra(DEFAULT_ERA_YEAR);
+    await nextTick();
+    expect(wrapper.find('[data-test="receipt-log"]').text()).toBe(logBefore);
   });
 
   it("pre-door preview bounce stays host copy, honestly tagged 'preview'", async () => {

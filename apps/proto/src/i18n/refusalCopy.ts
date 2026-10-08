@@ -15,16 +15,20 @@
  * `reason` (wire bytes + receiptsDigest untouched), and the panel paints
  * prose over it.
  */
+import { getEra } from "./eraState.ts";
 import { hasKey, t, type PackId } from "./packStore.ts";
 
 /** What the renderer knows around a refused receipt: the receipt's own
  *  verb/tick plus the CURRENT hands view (for the "presents when a hand
- *  frees" slot) — never anything the sim would have to re-derive. */
+ *  frees" slot) — never anything the sim would have to re-derive.
+ *  `eraYear` overrides the shared era toggle (eraState.getEra) for callers
+ *  that must pin a year; omit it and the render tracks the live toggle. */
 export interface RefusalContext {
   readonly verb: string;
   readonly tick: string;
   readonly hands: readonly { readonly busyUntilTick: string; readonly busyCauseId: string | null }[];
   readonly packId?: PackId;
+  readonly eraYear?: number;
 }
 
 export interface RefusalLine {
@@ -89,16 +93,20 @@ function slotsFor(code: string, reason: string, ctx: RefusalContext): Record<str
 const RAW = (code: string, reason: string): RefusalLine => ({ code, text: reason, fromPack: false });
 
 /** Render one door refusal as pack prose when the pack carries the key AND
- *  the detail parses into the template's slots; raw reason otherwise. */
+ *  the detail parses into the template's slots; raw reason otherwise.
+ *  Era flows through from the shared toggle (ctx.eraYear overrides) — the
+ *  five voiced refusal keys are flat today, so a flip re-derives identical
+ *  prose; the plumbing lights up the moment authoring era-varies a refusal. */
 export function describeRefusal(reason: string, ctx: RefusalContext): RefusalLine {
   const code = doorCode(reason);
   const packId: PackId = ctx.packId ?? "shared-web";
+  const eraYear: number = ctx.eraYear ?? getEra();
   const key = `refusal.${code}`;
   if (!hasKey(packId, key)) return RAW(code, reason);
   const slots = slotsFor(code, reason, ctx);
   if (slots === null) return RAW(code, reason);
   try {
-    return { code, text: t(packId, key, slots), fromPack: true };
+    return { code, text: t(packId, key, slots, eraYear), fromPack: true };
   } catch {
     // Slot-set drift (authoring changed a {token}): the raw wire reason stays
     // visible, and corpusDrift.test.ts turns the mismatch red by name.

@@ -28,6 +28,7 @@ import { G1_INSTRUMENTS } from "./chrome/instruments/registry";
 import { ALL_GATE_MOUNTS, type GateMount } from "./gates";
 import { buildCandidates, formatMicroUsd, formatRunClock, isSpiking, worstState, rhoDisplayOf } from "./chrome/metrics";
 import { connectionState, ingestProjection, fault, projection as projectionRef } from "./state/observedStore";
+import { era, setEra } from "./i18n/eraState";
 import { SimClient, asWorkerLike, type WorkerLike } from "./bridge/simClient";
 import { globalBudget } from "./render/budget";
 
@@ -39,7 +40,7 @@ const SANDBOX_ID = "sandbox";
  *  the §9.13 six are frozen). */
 const SIMLAB_ID = "sim-lab";
 
-const era = ref<"1998" | "2026">("2026");
+// Era toggle lifted to i18n/eraState (shared ref) — pack copy tracks it too.
 const readout = ref(false);
 const chromaVisible = ref(false);
 const clientRef = shallowRef<SimClient | null>(null);
@@ -120,11 +121,11 @@ function onGlobalKey(event: KeyboardEvent): void {
 }
 
 function applyEra(): void {
-  document.documentElement.dataset["era"] = era.value;
+  document.documentElement.dataset["era"] = String(era.value);
 }
 
 function toggleEra(): void {
-  era.value = era.value === "1998" ? "2026" : "1998";
+  setEra(era.value === 1998 ? 2026 : 1998);
   applyEra();
 }
 
