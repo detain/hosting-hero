@@ -1,7 +1,7 @@
 # ADR-0008 — PixiJS v8 addon adoption: per-package verdicts under the wrapper law
 
 ## Status
-**PROPOSED (awaiting owner ratification)** — 2026-10-07. This ADR *requests* an owner decision; it records none. Every verdict below was ecosystem-verified on 2026-10-07 against the npm registry and each package's GitHub repository (versions, peer dependencies, license terms, last-release dates). ADR-0001's PixiJS ratification is accepted law; nothing here re-opens it — it decides only which **addons** may enter the perimeter the ratification drew.
+**Accepted 2026-10-08.** Ratified owner decision relayed through the orchestrator 2026-10-08 ("ok on the new addons"); the verdicts below are adopted as written. Not re-openable without owner action (§0 legend). Every verdict below was ecosystem-verified on 2026-10-07 against the npm registry and each package's GitHub repository (versions, peer dependencies, license terms, last-release dates). ADR-0001's PixiJS ratification is accepted law; nothing here re-opens it — it decides only which **addons** may enter the perimeter the ratification drew.
 
 ## Context
 ADR-0001 adopted PixiJS v8 as a 2.5D multi-layer compositor and accepted its costs: hit-testing, focus, and ARIA must be *engineered* inside the stack, and `docs/ARCHITECTURE.md §2` binds every pixel above the sim behind law — five hard non-blending layers (`Substrate → Flow/Signal + Attachment → Intent → Annotation/Chrome`, §2.1), the **Hue Ledger** as the only color authority, the **Two-Channel Law** (greyscale pass survives as a sign-off gate), the ≤2% emissive-screen-area mask law, and **BudgetManager as the singleton admission authority**: the renderer REFUSES over-budget draws, with caps including `overlay: 1` and `modal: 1` (`apps/proto/src/render/budget.ts`). The app itself pins `pixi.js ^8.22.0` and ships **zero addons today** — every render behavior (atlas sampler flags, grain, smoke, camera, confidence blur) is hand-rolled behind those laws.
@@ -56,6 +56,8 @@ Adopt per the verdict table below, **conditionally on the universal wrapper law 
 3. **Tilemap substrate spike** — one region tilemap under a whole-layer holder, factory allowlist proven against the layer-boundary tests.
 4. **AudioBus façade** (audio lane) — our Web Audio graph stays authoritative; `@pixi/sound` becomes an optional backing behind the façade or is skipped entirely.
 5. **`@pixi/node` CI arm** — real-framebuffer emissive ≤2% and ChromaMeter audits on the Node 22.x contract arm (CI lane).
+
+**Ratified 2026-10-08 — sequencing note:** implementation lands as separately-metered lanes starting with step 1, the build-time AssetPack skeleton; the step 5 `@pixi/node` pixel-audit arm is DEFERRED until real sprite atlases exist — honest: there are no pixels to audit yet.
 
 **What becomes easy:** authored assets obey the pixel-perfect law by construction; post-chain effects gain a tested, budgeted home; two render laws become pixel-auditable in CI instead of structurally asserted; the substrate gains bulk-quad batching without new bespoke surface area.
 
