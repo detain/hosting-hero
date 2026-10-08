@@ -443,10 +443,16 @@ export function createTickDriver(
          FIX-8 invariant in defaults.ts), so shape-preserving drift (hop no
          longer naming the queue node, phantom waiters) trips the
          contradiction latch there.
-       MUST run BEFORE the completion-slicing loop below mutates unitsById —
-       the verify pass reads pre-slice routeHops. Contract for foreign
-       steps: membership is only visible through these channels; anything
-       else trips the contradiction latch into a loud full-sweep fallback. */
+        MUST run BEFORE the completion-slicing loop below mutates unitsById —
+        the verify pass reads pre-slice routeHops. Contract for foreign
+        steps: membership is only visible through these channels; drift
+        lands in a loud full-sweep fallback EITHER way — the contradiction
+        latch trips when an incremental signal sees it, and a same-tick
+        reorder the tail-join/admit-shift arithmetic masks (queue count and
+        head unchanged slips past every per-tick check) trips it no later
+        than the next delayed verify sweep, within `purgeVerifyTicks`
+        (default 8) ticks. The latch is the belt, the verify sweep the
+        suspenders: no drift shape escapes both for longer than one window. */
     attributionContradiction = false;
     const indexingActive = nodes.size >= purgeTargetedMinNodes;
     if (indexingActive && !indexingWasActive) bootSweep = true; // cold re-entry

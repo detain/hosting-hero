@@ -610,3 +610,57 @@ describe("targeted purge — node hygiene after heavy runs", () => {
     });
   }
 });
+
+/* ═══════════ 5 · production-gate graduation (shipped defaults only) ═══════════ */
+
+describe("targeted purge — production gate graduates (≥8-node queued board)", () => {
+  it("default driver on a queued 9-node board: indexes, twins the sweep, pinned final digest", () => {
+    // The graduation pin: NOTHING is overridden here — the board clears the
+    // shipped `purgeTargetedMinNodes: 8` gate, the probe cap (64) and verify
+    // cadence (8) ride their production defaults. Tight slots (1 per path
+    // node) × 5-min services × 6 arrivals/min put ρ far above 1, so real
+    // queues form on BOTH path nodes and short patience makes every tick a
+    // terminal tick — the QUEUED-workload shape the bench-only pins missed.
+    const nodes = [
+      node(IDS.edge, { slots: 1, serviceUs: 5n * MIN }),
+      node(IDS.origin, { slots: 1, serviceUs: 5n * MIN }),
+    ];
+    for (let i = 2; i < 9; i += 1) {
+      nodes.push(node(asEntityId(`idle-${String(i).padStart(4, "0")}`), { slots: 2 }));
+    }
+    const spec = {
+      config: congestedConfig({ defaultPatienceUs: 6n * MIN }),
+      nodes: Object.freeze(nodes),
+      inputs: backlogInputs(6),
+      ticks: 120,
+      keepDefaultGate: true,
+    } satisfies Omit<RunSpec, "driverOptions">;
+    const targeted = runTicks({ ...spec, driverOptions: {} });
+    const stats = targeted.driver.purgeStats();
+    // Gate OPENED (the small-board pin's mirror): zero small-board sweeps,
+    // the verify backstop ran on its production cadence, and the queues were
+    // genuinely attributed — while the run stayed fully healthy (no ladder).
+    expect(stats.smallBoardSweeps).toBe(0);
+    expect(stats.targetPurges).toBeGreaterThan(0);
+    expect(stats.attributedUnits).toBeGreaterThan(0); // real queued work present
+    expect(stats.verifyRuns).toBe(15); // 120 indexed ticks ÷ cadence 8
+    expect(stats.overflowFallbacks).toBe(0);
+    expect(stats.contradictionFallbacks).toBe(0);
+    expect(stats.bootFallbacks).toBe(0);
+    expect(stats.forcedFallbacks).toBe(0);
+    expect(stats.resyncScans).toBe(0);
+    expect(stats.maxProbeNodes).toBeLessThanOrEqual(4); // never board-sized
+    // Twin law on the production shape: the forced full sweep (cap 0) and
+    // the targeted walk produce byte-identical per-tick digest chains.
+    const swept = runTicks({ ...spec, driverOptions: { purgeProbeCap: 0 } });
+    expect(targeted.chain).toStrictEqual(swept.chain);
+    // VENDORED final digest (fresh-run-vs-pinned): derived 2026-10-08 by
+    // running exactly this spec (seed 42 via congestedConfig, 9-node board,
+    // 6/min plateau backlog, 120 ticks, default driver options) against the
+    // shipped tree; the twin clause above is what makes the literal mean
+    // "targeted purge == full sweep", not merely "deterministic". If it
+    // moves, the index or the purge changed observable state — re-audit,
+    // never casually re-pin.
+    expect(targeted.chain[119]).toBe("2cfd12cd593675dae2f1a61418b9b350");
+  });
+});

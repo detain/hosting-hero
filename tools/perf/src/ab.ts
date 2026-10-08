@@ -6,7 +6,8 @@
  *
  *  READ-ONLY LAW (why): a sibling lane once lost uncommitted work to
  *  `git checkout -- .` inside the main tree. This tool never checks anything
- *  out in the main tree and never writes inside it — tree.ts#assertGitCommandSafe
+ *  out in the main tree and never writes into the working tree (git admin
+ *  metadata under .git/worktrees/ is created and removed/pruned) — tree.ts#assertGitCommandSafe
  *  rejects every git verb except `worktree add --detach|remove|prune` and
  *  `rev-parse`, and worktree targets must live under /tmp.
  *
@@ -176,12 +177,21 @@ export async function main(argv: readonly string[]): Promise<number> {
     return 0;
   }
 
-  // Load both trees (boundary-verified; sibling mid-edit trees fail loud here).
-  const [treeA, treeB] = await Promise.all([loadTree(a.simSrcRoot), loadTree(b.simSrcRoot)]);
-  process.stdout.write(`ab A=${a.label} (${treeA.srcRoot})\n   B=${b.label} (${treeB.srcRoot})\nreps=${String(reps)} digest=${String(digest)} load1=${envMeta().loadAvg1} — interleaved A,B,A,B\n`);
-
   const reports: ScenarioReport[] = [];
+  // Normalised roots: `tree.srcRoot` once loaded (the resolveSimSrcRoot
+  // locator root is the honest pre-load value; a mid-load throw never
+  // reaches the report below anyway).
+  let srcRootA = a.simSrcRoot;
+  let srcRootB = b.simSrcRoot;
   try {
+    // Load both trees (boundary-verified; sibling mid-edit trees fail loud
+    // here) INSIDE the try: ref worktrees already exist by this point, so a
+    // mid-load throw must still run the `finally` cleanup — the pre-R8
+    // placement leaked every /tmp worktree a failed load had created.
+    const [treeA, treeB] = await Promise.all([loadTree(a.simSrcRoot), loadTree(b.simSrcRoot)]);
+    srcRootA = treeA.srcRoot;
+    srcRootB = treeB.srcRoot;
+    process.stdout.write(`ab A=${a.label} (${srcRootA})\n   B=${b.label} (${srcRootB})\nreps=${String(reps)} digest=${String(digest)} load1=${envMeta().loadAvg1} — interleaved A,B,A,B\n`);
     for (const { name, spec: makeSpec } of suite) {
       const spec = makeSpec();
       const resultsA: BenchResult[] = [];
@@ -217,8 +227,8 @@ export async function main(argv: readonly string[]): Promise<number> {
     meta: envMeta(),
     variantA: a.locator,
     variantB: b.locator,
-    simSrcRootA: treeA.srcRoot,
-    simSrcRootB: treeB.srcRoot,
+    simSrcRootA: srcRootA,
+    simSrcRootB: srcRootB,
     reps,
     scenarios: reports,
   };

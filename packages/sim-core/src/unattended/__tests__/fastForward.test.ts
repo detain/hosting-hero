@@ -53,11 +53,19 @@ declare const console: { log(...data: unknown[]): void };
 /* ═══════════════ Contention calibration (serve-bench precedent) ═══════════════ */
 
 /** The ratified §9 wall budget for a calm 2000-tick weekend — the ABSOLUTE
- *  floor below. It only widens when THIS box's own references (the pure-CPU
- *  ladder AND the workload-shaped 200-tick twin) lag the authoring machine:
- *  an engine regression moves BOTH references and the elapsed run TOGETHER,
- *  never the budget alone, so the ratified 2 s still bites on any box whose
- *  engine (not merely co-tenants) has slowed. */
+ *  floor below. It widens from THIS box's own references (the pure-CPU
+ *  ladder AND the workload-shaped 200-tick twin), and the honest regime is
+ *  SELF-SCALING, not absolute-bites-everywhere: a UNIFORM slowdown moves
+ *  twin and elapsed together, so once the twin proves the box runs 200
+ *  calm ticks slower than 133 ms the 15×twin term leads and absorbs the
+ *  slowdown (~5.5× headroom over the worst observed shared-box run before
+ *  the 5× CAL_SCALE_CAP pins the budget at 10 s). The ratified 2 s absolute
+ *  therefore bites only on QUIET boxes, where the references prove author-
+ *  class speed. Uniform regressions beyond the absorption band still die on
+ *  the 10 s cap plus the twin-ratio clause (elapsed < 10×twin+1500); cost
+ *  growth that only shows up at long-run scale — super-linear work, ghost
+ *  queues — under-prices its twin by construction and is caught at ANY box
+ *  speed by both clauses. */
 const RATIFIED_WALL_BUDGET_MS = 2000;
 /** Machine-speed reference = the serve-bench bigint ladder (400_000
  *  mod-fibonacci adds); measured on that file's authoring idle box at 45 ms
