@@ -6,7 +6,7 @@
  * rendering host copy tagged "preview" — the UI now shows its copy source.
  */
 import { describe, expect, it } from "vitest";
-import { nextTick } from "vue";
+import { effect, nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import G4GatePanel from "../../gates/g4/G4GatePanel.vue";
 import { DEFAULT_ERA_YEAR, setEra } from "../eraState.ts";
@@ -52,6 +52,50 @@ describe("i18n × G4 mount · a door bounce speaks in pack prose", () => {
     setEra(DEFAULT_ERA_YEAR);
     await nextTick();
     expect(wrapper.find('[data-test="receipt-log"]').text()).toBe(logBefore);
+  });
+
+  it("R9 F-1: the flash chip stores the RAW wire reason and voices it at read time (era-tracked)", async () => {
+    const wrapper = mount(G4GatePanel, { props: { seed: 904 } });
+    await wrapper.find('[data-test-id="palette-web-1"]').trigger("click");
+    await wrapper.find('[data-test-id="palette-sw-1"]').trigger("click");
+    await wrapper.find('[data-test-id="palette-web-2"]').trigger("click");
+
+    // Storage shape (dev-mode setup access): the raw door wire + event-time
+    // slot context — never the rendered sentence (an event-time snapshot
+    // could not carry this shape).
+    const vm = wrapper.vm as unknown as {
+      readonly refusalFlash: { readonly kind: string; readonly reason?: string } | null;
+      readonly refusalDisplay: { readonly text: string; readonly source: string | null } | null;
+    };
+    const stored = vm.refusalFlash;
+    expect(stored).not.toBeNull();
+    expect(stored?.kind).toBe("receipt");
+    expect(stored?.reason).toContain("hands-exhausted");
+    expect(stored?.reason).not.toContain("Both hands are committed.");
+    // The DISPLAYED sentence is derived from that raw reason via describeRefusal.
+    expect(vm.refusalDisplay?.text).toContain(PACK_PROSE);
+    expect(wrapper.find('[data-test="refuse-flash"]').text()).toContain(PACK_PROSE);
+
+    // Read-time voicing is inside a computed that ran getEra() during its
+    // evaluation — flipping the shared era re-runs the voice (a bare sync
+    // reactivity effect on the display proves the re-evaluation; a frozen
+    // string could not depend on era at all). Flat refusal keys ⇒ the bytes
+    // survive the flip.
+    let voices = 0;
+    const stop = effect(() => {
+      const display = vm.refusalDisplay;
+      if (display !== null) void display.text;
+      voices += 1;
+    });
+    const before = voices;
+    setEra(1998);
+    expect(voices).toBeGreaterThan(before);
+    await nextTick();
+    const flash = wrapper.find('[data-test="refuse-flash"]');
+    expect(flash.text()).toContain(PACK_PROSE);
+    expect(flash.attributes("data-refusal-source")).toBe("pack");
+    setEra(DEFAULT_ERA_YEAR);
+    stop();
   });
 
   it("pre-door preview bounce stays host copy, honestly tagged 'preview'", async () => {

@@ -19,10 +19,10 @@ seed-stability: same seed ⇒ same director draw / deferral — not a ×100 dige
 loop, but the layer every replay gate rides on; 1.2 s) and `src/__tests__`
 (the G1–G6 acceptance gates, each re-simulating its scenario ×100 through
 `replay.createHarness`). `src/internal/` is excluded: zero test files.
-Budget: measured 37 s wall file-parallel (98 files / 1420 tests) — even the
-fully-serial ceiling (~2 min, dominated by versus 34 s, policy 30 s,
-unattended 23 s) sits far under the ~5 min pre-merge target, so nothing was
-pruned by risk-weight.
+Budget: worst-case fully-serial ceiling ≈3 min (measured 3m03s serial;
+file-parallel ≈40 s; 98 files / 1420 tests; dominated serially by versus 34 s,
+policy 30 s, unattended 23 s) sits far under the ~5 min pre-merge target, so
+nothing was pruned by risk-weight.
 Timing-test decision: the contention-adaptive floors (fastForward 2000-tick
 calibrated wall, perf-hotpath paired ≥2× ratio, serve-bench clamped tps floor)
 are deliberately INCLUDED here, not left to the matrix Test step alone — each

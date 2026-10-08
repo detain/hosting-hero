@@ -19,9 +19,9 @@ jobs:
   # suites (G1–G6, each re-runs its scenario ×100 through replay.createHarness)
   # and waves (unit-level seed-stability: same seed ⇒ same draw/deferral —
   # the layer every ×100 gate rides on; 1.2 s). src/internal/ has no tests.
-  # Measured 37 s wall file-parallel (98 files / 1420 tests); worst-case
-  # serial ceiling ≈ 2 min — far under the ~5 min pre-merge budget, so no
-  # risk-weighted pruning was needed. No typecheck, no builds, no apps.
+  # Worst-case serial ceiling ≈3 min (measured 3m03s serial; file-parallel
+  # ≈40 s; 98 files / 1420 tests) — far under the ~5 min pre-merge budget,
+  # so no risk-weighted pruning was needed. No typecheck, no builds, no apps.
   #
   # Timing tests INCLUDED by decision: the three contention-adaptive floors
   # (unattended fastForward 2000-tick calibrated wall, policy perf-hotpath

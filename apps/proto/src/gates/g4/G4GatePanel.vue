@@ -21,7 +21,7 @@ import { G4Session, type CablePreview, type G4Snapshot, type ReceiptView } from 
 import { PORT_GLYPHS } from "./portShapes.ts";
 import type { PortSpec } from "./portShapes.ts";
 import { latencyLadderRows, type HopLoad } from "./latencyDelta.ts";
-import { describeRefusal } from "../../i18n/refusalCopy.ts";
+import { describeRefusal, type RefusalContext } from "../../i18n/refusalCopy.ts";
 import type { Fixed } from "@hh/sim-core/types";
 
 const props = withDefaults(defineProps<{ readonly seed?: number }>(), { seed: 904 });
@@ -35,11 +35,33 @@ const armedPort = ref<PortSpec | null>(null); // click-to-link source / drag sta
 const dragPos = ref<{ x: number; y: number } | null>(null);
 const livePreview = ref<CablePreview | null>(null); // ladder during drag
 const termsCard = ref<{ preview: CablePreview; origin: "drag" | "click" } | null>(null);
-const refusalFlash = ref<string | null>(null);
-/** Provenance of the flash copy — "pack" = i18n grammar pack prose,
- *  "wire" = raw door reason (code the pack doesn't voice yet),
- *  "preview" = pre-door host verdict (previewCable), null = not a refusal. */
-const refusalSource = ref<"pack" | "wire" | "preview" | null>(null);
+/** A pending bounce chip (R9 F-1). A door-receipt flash stores the RAW wire
+ *  reason + the event-time slot context — never the voiced sentence — so the
+ *  display text is derived at READ time in `refusalDisplay` below and tracks
+ *  the shared era. Raw flashes carry host copy directly (pre-door preview
+ *  verdicts, the arm notice): they never pass through the pack. */
+type Flash =
+  | {
+      readonly kind: "receipt";
+      readonly reason: string;
+      readonly verb: string;
+      readonly tick: string;
+      readonly hands: RefusalContext["hands"];
+    }
+  | { readonly kind: "raw"; readonly text: string; readonly source: "preview" | null };
+const refusalFlash = ref<Flash | null>(null);
+
+/** Render-time voicing of the chip: text + provenance tag ("pack" = i18n
+ *  grammar pack prose, "wire" = raw door reason the pack doesn't voice yet,
+ *  "preview" = pre-door host verdict, null = informational notice).
+ *  describeRefusal runs per read, so the shared `era` ref is a tracked dep. */
+const refusalDisplay = computed<{ readonly text: string; readonly source: "pack" | "wire" | "preview" | null } | null>(() => {
+  const flash = refusalFlash.value;
+  if (flash === null) return null;
+  if (flash.kind === "raw") return { text: flash.text, source: flash.source };
+  const line = describeRefusal(flash.reason, { verb: flash.verb, tick: flash.tick, hands: flash.hands });
+  return { text: line.text, source: line.fromPack ? "pack" : "wire" };
+});
 const lastReceiptCount = ref(0);
 
 const PALETTE = Object.freeze([
@@ -175,8 +197,7 @@ function updateLivePreview(targetSpec: PortSpec | null): void {
   }
   const verdict = session.previewCable(armed.portId, targetSpec.portId);
   livePreview.value = verdict.ok ? verdict.preview : null;
-  refusalFlash.value = verdict.ok ? null : verdict.reason;
-  refusalSource.value = verdict.ok ? null : "preview";
+  refusalFlash.value = verdict.ok ? null : { kind: "raw", text: verdict.reason, source: "preview" };
 }
 
 /** Keyboard click-to-link: Enter arms a source; Enter on a second port is
@@ -186,14 +207,12 @@ function onPortActivate(spec: PortSpec): void {
   const armed = armedPort.value;
   if (armed === null) {
     armedPort.value = spec;
-    refusalFlash.value = `source armed: ${spec.nodeId} · ${spec.label} — Tab to a target, Enter to see terms`;
-    refusalSource.value = null;
+    refusalFlash.value = { kind: "raw", text: `source armed: ${spec.nodeId} · ${spec.label} — Tab to a target, Enter to see terms`, source: null };
     return;
   }
   armedPort.value = null;
   if (armed.portId === spec.portId) {
     refusalFlash.value = null;
-    refusalSource.value = null;
     return;
   }
   openTerms(armed, spec, "click");
@@ -202,12 +221,10 @@ function onPortActivate(spec: PortSpec): void {
 function openTerms(source: PortSpec, dest: PortSpec, origin: "drag" | "click"): void {
   const verdict = session.previewCable(source.portId, dest.portId);
   if (!verdict.ok) {
-    refusalFlash.value = verdict.reason; // bounce, name the reason, spend nothing
-    refusalSource.value = "preview";
+    refusalFlash.value = { kind: "raw", text: verdict.reason, source: "preview" }; // bounce, name the reason, spend nothing
     return;
   }
   refusalFlash.value = null;
-  refusalSource.value = null;
   if (session.isMemoized(verdict.preview.memoKey)) {
     session.commitCable(verdict.preview, origin); // same action, same consequence ⇒ no prompt
     step();
@@ -227,7 +244,6 @@ function confirmTerms(event?: { shiftKey?: boolean }): void {
 function cancelTerms(): void {
   termsCard.value = null;
   refusalFlash.value = null;
-  refusalSource.value = null;
 }
 
 function pullCable(edgeId: string): void {
@@ -248,9 +264,15 @@ function step(): void {
     lastReceiptCount.value = receipts.length;
     const refused = latest.find((r) => r.outcome === "refused");
     if (refused !== undefined) {
-      const line = refusalLineFor(refused);
-      refusalFlash.value = line.text;
-      refusalSource.value = line.fromPack ? "pack" : "wire";
+      // Store the RAW receipt (reason + event-time slot context), voice at
+      // read time — the chip re-derives with the era, never freezes it.
+      refusalFlash.value = {
+        kind: "receipt",
+        reason: refused.reason ?? "",
+        verb: refused.verb,
+        tick: String(snap.value.tick),
+        hands: snap.value.hands,
+      };
     }
   }
 }
@@ -523,8 +545,8 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
           </span>
         </div>
 
-        <p v-if="refusalFlash !== null" class="g4-refusal" data-test="refuse-flash" :data-refusal-source="refusalSource" role="alert">
-          ⤺ {{ refusalFlash }}
+        <p v-if="refusalDisplay !== null" class="g4-refusal" data-test="refuse-flash" :data-refusal-source="refusalDisplay.source" role="alert">
+          ⤺ {{ refusalDisplay.text }}
         </p>
 
         <ol class="g4-log" data-test="receipt-log">

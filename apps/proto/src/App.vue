@@ -15,7 +15,7 @@
  * Chrome never scales with the camera; era re-skins via exactly 4 tokens;
  * Readout Mode and ChromaMeter are always one key away (§1.10).
  */
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import TopBar from "./chrome/TopBar.vue";
 import Drawer from "./chrome/Drawer.vue";
 import BezelHud from "./chrome/BezelHud.vue";
@@ -123,6 +123,10 @@ function onGlobalKey(event: KeyboardEvent): void {
 function applyEra(): void {
   document.documentElement.dataset["era"] = String(era.value);
 }
+
+// Any era change re-skins — programmatic setEra() can't drift the skin from
+// the copy (the toggle below stays synchronous for its own click path).
+watch(era, applyEra);
 
 function toggleEra(): void {
   setEra(era.value === 1998 ? 2026 : 1998);
