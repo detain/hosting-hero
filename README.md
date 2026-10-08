@@ -92,7 +92,7 @@ pnpm -F @hh/assetpack cli -- verify            # skin-kit law check (also: make-
   plus the five contract gates (api-verify, content validate, canary, proto
   build, g5 mirror-sync) on the 22.x arm.
 
-## Where the build stands (2026-10-08, tip `4c71e6f` = substrate spike + arrival honesty; base `80f5e75`)
+## Where the build stands (2026-10-08, tip `28d8b6b` = budget fail-loud hardening; base `c850383`)
 
 All six §9.13 Phase-1 prototype gates are GREEN headless and mounted in the
 proto app; the sim core ships fourteen module directories (1,434 tests /
@@ -121,9 +121,13 @@ three owner decisions (category+cap, taste rows, first-mount kit), zero dist
 symbols until then — while the runner's lane arrival counts read HONEST under
 retry storms (F2 consumer fix: `ratePerMin` now counts the driver's
 between-steps re-entry mints, with a new additive `reentryRatePerMin` cell
-isolating the storm; wire back-compat pinned).
+isolating the storm; wire back-compat pinned). BudgetManager now fails LOUD on
+unknown categories (`28d8b6b`) — `admit()`'s first-statement guard throws
+`budget[unknown-category]` where an unmetered draw once slipped through
+undetected, closing substrate spike finding #3's authoring-bug half while the
+seam's `substrate[category-pending]` owner-intent layer keeps answering first.
 Battery:
-sim-core 1,434/100 · proto 610/60 · headless 53/5 · perf-tools 20/1 · assetpack 48/5 · api-verify PASS 1,270 names · canary PASS
+sim-core 1,434/100 · proto 614/60 · headless 53/5 · perf-tools 20/1 · assetpack 48/5 · api-verify PASS 1,270 names · canary PASS
 105 files · ci-verify 5/5 · typecheck 5/5. What remains is owner decisions,
 not engine work: the gap register in `docs/MODULE-STATUS.md` and
 `docs/DECISIONS-PENDING.md` list them (OD-1/OD-2/OD-8, T-9, Q-P3-1, coverage
