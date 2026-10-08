@@ -12,10 +12,27 @@ concurrency:
 
 jobs:
   # ── Fast pre-merge signal ────────────────────────────────────────────
-  # Only the determinism core of sim-core (kernel oracle/golden tests, the
-  # pipeline determinism suite, the replay ×100 digest gate). No typecheck,
-  # no builds — green in minutes so regressions surface before the full
-  # matrix finishes. See .github/workflows/README.md.
+  # The FULL deterministic surface of sim-core: every src dir that carries a
+  # ×100 byte-identity replay gate (kernel oracle/golden, pipeline determinism
+  # + intent-door ×100, replay harness, policy, economy, observed, topology,
+  # save, coverage, versus, unattended, loader) plus the root __tests__ gate
+  # suites (G1–G6, each re-runs its scenario ×100 through replay.createHarness)
+  # and waves (unit-level seed-stability: same seed ⇒ same draw/deferral —
+  # the layer every ×100 gate rides on; 1.2 s). src/internal/ has no tests.
+  # Measured 37 s wall file-parallel (98 files / 1420 tests); worst-case
+  # serial ceiling ≈ 2 min — far under the ~5 min pre-merge budget, so no
+  # risk-weighted pruning was needed. No typecheck, no builds, no apps.
+  #
+  # Timing tests INCLUDED by decision: the three contention-adaptive floors
+  # (unattended fastForward 2000-tick calibrated wall, policy perf-hotpath
+  # paired-calibration ≥2× ratio, pipeline serve-bench clamped tps floor) run
+  # here too. Rationale: each self-calibrates against in-test machine speed
+  # (serve-bench precedent), so runner contention shrinks the budget WITH the
+  # measurement instead of producing false reds — and they are determinism-
+  # adjacent witnesses (ghost-regression queue shapes, memo-vs-naive digest
+  # twins, limb-path byte identity). They additionally ride the matrix Test
+  # step; a red here still names the same failing file.
+  # See .github/workflows/README.md for the gate census.
   determinism:
     name: Determinism gates (×100)
     runs-on: ubuntu-latest
@@ -33,8 +50,13 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: sim-core determinism (kernel + pipeline + replay)
-        run: pnpm -F @hh/sim-core exec vitest run src/kernel src/pipeline src/replay
+      - name: sim-core determinism (all ×100-gated dirs, one invocation)
+        run: >
+          pnpm -F @hh/sim-core exec vitest run
+          src/kernel src/pipeline src/replay
+          src/policy src/economy src/observed src/topology
+          src/save src/coverage src/versus src/unattended
+          src/loader src/waves src/__tests__
 
   # ── Full verify matrix ───────────────────────────────────────────────
   verify:

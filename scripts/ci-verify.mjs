@@ -19,8 +19,13 @@
  * Passing gate ids runs only those gates — CI invokes the mirror gate
  * standalone this way (`node scripts/ci-verify.mjs g5-mirror-diff`).
  * Not covered here (fast locally, mirrored in CI): pnpm -r typecheck &&
- * pnpm -r test, and the determinism subset
- * `pnpm -F @hh/sim-core exec vitest run src/kernel src/pipeline src/replay`.
+ * pnpm -r test, and the determinism job — a single explicit-dir vitest run
+ * over every ×100-gated sim-core dir (kernel/pipeline/replay/policy/economy/
+ * observed/topology/save/coverage/versus/unattended/loader/waves/__tests__;
+ * the authoritative list lives in .github/workflows/ci.yml). It is NOT
+ * mirrored as a sixth gate on purpose: the set is a strict subset of
+ * `pnpm -r test`, and duplicating the dir enumeration here would give one
+ * command two drift-prone sources of truth. See workflows README.
  */
 
 import { spawnSync } from "node:child_process";

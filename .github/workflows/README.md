@@ -7,11 +7,35 @@ pre-merge signal) and `verify` (Node 20.x + 22.x matrix + contract gates).
 
 ## Gates and the contract each one proves
 
-**determinism job — `vitest run src/kernel src/pipeline src/replay` (sim-core, Node 22.x).**
-Contract: the sim core is bit-reproducible. Kernel oracle/golden tests pin
-fixed-point and RNG streams; the pipeline suite pins the 13-step deterministic
-queueing loop; the replay harness re-runs captured states ×100 and requires
-byte-identical canonical digests. Runs alone, no builds — the earliest red flag.
+**determinism job — one `vitest run` over every deterministic sim-core dir (Node 22.x).**
+Contract: the sim core is bit-reproducible. The command lists, explicitly and
+in one invocation: `src/kernel` (oracle/golden fixed-point + RNG streams),
+`src/pipeline` (13-step queueing loop, intent-door ×100, serve-bench shapes),
+`src/replay` (harness re-runs captured states ×100 → byte-identical canonical
+digests), then the module dirs that grew their own ×100 gates — `src/policy`,
+`src/economy`, `src/observed`, `src/topology`, `src/save`, `src/coverage`,
+`src/versus`, `src/unattended`, `src/loader` — plus `src/waves` (unit-level
+seed-stability: same seed ⇒ same director draw / deferral — not a ×100 digest
+loop, but the layer every replay gate rides on; 1.2 s) and `src/__tests__`
+(the G1–G6 acceptance gates, each re-simulating its scenario ×100 through
+`replay.createHarness`). `src/internal/` is excluded: zero test files.
+Budget: measured 37 s wall file-parallel (98 files / 1420 tests) — even the
+fully-serial ceiling (~2 min, dominated by versus 34 s, policy 30 s,
+unattended 23 s) sits far under the ~5 min pre-merge target, so nothing was
+pruned by risk-weight.
+Timing-test decision: the contention-adaptive floors (fastForward 2000-tick
+calibrated wall, perf-hotpath paired ≥2× ratio, serve-bench clamped tps floor)
+are deliberately INCLUDED here, not left to the matrix Test step alone — each
+self-calibrates against in-test machine speed, so a loaded runner scales the
+budget with the measurement instead of going falsely red, and their subject
+matter is determinism-adjacent (queue-ghost regression shapes, memo-vs-naive
+digest twins). They also run in the matrix; failure output names the file.
+Asymmetry note: `scripts/ci-verify.mjs` stays at its five contract gates. The
+determinism set is a strict subset of `pnpm -r test`, which the pre-push
+workflow already prescribes for everyone, and duplicating the dir enumeration
+in a sixth gate would create two drift-prone sources of truth for one command
+(CI owns the list). To mirror this job locally:
+`pnpm -F @hh/sim-core exec vitest run src` (or copy the exact step below).
 
 **verify matrix — install → `pnpm -r typecheck` → tests (Node 20.x + 22.x).**
 Contract: every workspace package compiles under strict TS on both matrix
