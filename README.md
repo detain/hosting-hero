@@ -65,6 +65,11 @@ assets/
 
 ## Commands
 
+Requires Node `>=22` (root `engines`); the headless-tools suites and canary
+need `>=22.18` — their parity/cli scripts spawn
+`node --experimental-transform-types` (a Node ≥22.7 flag). CI validates the
+22.x (baseline) and 24.x (next-LTS probe) arms.
+
 ```bash
 pnpm install                      # workspace install
 pnpm -r typecheck                 # tsc --noEmit in every package (5)
@@ -88,9 +93,10 @@ pnpm -F @hh/assetpack cli -- verify            # skin-kit law check (also: make-
   Map-insertion-order iteration only (MASTER_REPORT §3.4).
 - All randomness via keyed counter-based streams `(runSeed, domain, simMinute,
   entityId)` — MASTER_REPORT §4.1 R-16.
-- CI (`.github/workflows/ci.yml`) runs typecheck + tests across the workspace
-  plus the five contract gates (api-verify, content validate, canary, proto
-  build, g5 mirror-sync) on the 22.x arm.
+- CI (`.github/workflows/ci.yml`) validates Node 22.x + 24.x: the ×100
+  determinism job on 22.x, full typecheck + tests across the workspace on both
+  arms, and the five contract gates (api-verify, content validate, canary,
+  proto build, g5 mirror-sync) once on the 22.x baseline arm.
 
 ## Where the build stands (2026-10-08, tip `28d8b6b` = budget fail-loud hardening; base `c850383`)
 

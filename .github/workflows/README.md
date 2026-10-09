@@ -3,7 +3,7 @@
 One workflow, `ci.yml`, triggered on push, pull_request, and `workflow_dispatch`
 (manual runs). PR runs cancel superseded commits (`cancel-in-progress` on
 pull_request only — main pushes always complete). Two jobs: `determinism` (fast
-pre-merge signal) and `verify` (Node 20.x + 22.x matrix + contract gates).
+pre-merge signal) and `verify` (Node 22.x + 24.x matrix + contract gates).
 
 ## Gates and the contract each one proves
 
@@ -37,16 +37,20 @@ in a sixth gate would create two drift-prone sources of truth for one command
 (CI owns the list). To mirror this job locally:
 `pnpm -F @hh/sim-core exec vitest run src` (or copy the exact step below).
 
-**verify matrix — install → `pnpm -r typecheck` → tests (Node 20.x + 22.x).**
-Contract: every workspace package compiles under strict TS on both matrix
-runtimes. Tests run fully on 22.x; the 20.x arm certifies the portability
-claim that matters — `@hh/sim-core` (the library the Node port embeds) — by
-running its complete deterministic suite (`--filter '@hh/sim-core'`). The
-apps stay off 20.x by their own contracts: `headless-tools` declares
-`engines.node >=22.18` and spawns `--experimental-transform-types`
-sub-processes (Node ≥22.7), and `proto`'s jsdom component tests need the
-structuredClone `markAsUncloneable` hook (Node ≥22). Root `engines.node`
-remains `>=22`; if the owner ever ratifies true 20.x support, widen this arm.
+**verify matrix — install → `pnpm -r typecheck` → `pnpm -r test` (Node 22.x + 24.x).**
+Contract: every workspace package compiles under strict TS and passes its full
+test suite on both matrix runtimes — no per-arm filtering on either. `22.x` is
+the baseline arm: it matches the root `engines.node` floor (`>=22`) and also
+runs the five contract gates below. `24.x` is the next-LTS forward-compat probe:
+it certifies the toolchain (vitest, vite, jsdom, and headless-tools'
+`--experimental-transform-types` sub-processes — a Node ≥22.7 flag, hence that
+package's `engines.node >=22.18`) holds on the newer major. Both arms satisfy
+every package's engines contract, which is exactly why the old carve-outs are
+gone: Node 20.x was dropped by owner ratification 2026-10-09 (ADR-0009) — it
+never certified a real support claim, only a `--filter '@hh/sim-core'` test
+subset while root engines already demanded `>=22`. If true 20.x support were
+ever re-ratified, that would be an engines change first and a matrix change
+second.
 
 **Contract: API-reference drift — `node docs/api-verify.test.mjs`.**
 Contract: `docs/API-REFERENCE.md` lists exactly the names `@hh/sim-core`

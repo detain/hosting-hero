@@ -59,6 +59,12 @@ jobs:
           src/loader src/waves src/__tests__
 
   # ── Full verify matrix ───────────────────────────────────────────────
+  # Arms: 22.x = baseline (matches root engines floor ">=22"; also hosts the
+  # contract gates below) · 24.x = next-LTS forward-compat probe. Node 20.x was
+  # dropped by owner ratification 2026-10-09 (ADR-0009) — it was never a real
+  # support claim: root engines says >=22 and headless-tools >=22.18, so the
+  # old 20.x arm only ever certified a --filtered sim-core subset. Both arms
+  # now satisfy every package's engines contract, so both run the FULL suite.
   verify:
     name: Verify · Node ${{ matrix.node }}
     runs-on: ubuntu-latest
@@ -66,7 +72,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20.x, 22.x]
+        node: ["22.x", "24.x"]
     steps:
       - uses: actions/checkout@v7
 
@@ -85,24 +91,14 @@ jobs:
         run: pnpm -r typecheck
 
       - name: Test
-        if: matrix.node != '20.x'
         run: pnpm -r test
-
-      # headless-tools declares engines >=22.18 (its parity/cli suites spawn
-      # `node --experimental-transform-types`, a Node >=22.7 flag) and proto's
-      # jsdom component tests need jsdom's structuredClone markAsUncloneable
-      # hook (Node >=22). The 20.x arm therefore certifies the portability
-      # claim that matters — @hh/sim-core (the library the Node port embeds)
-      # typechecks and runs its full deterministic suite on Node 20 — while
-      # apps are tested on 22.x per their own engines contracts.
-      - name: Test (Node-20-compatible packages)
-        if: matrix.node == '20.x'
-        run: pnpm -r --filter '@hh/sim-core' test
 
       # ── Contract gates ───────────────────────────────────────────────
       # Project-wide invariants (docs currency, content schema, runtime
       # neutrality, bundling) — runtime-version independent, so they run
-      # once, on the 22.x arm. Devs mirror them with:
+      # ONCE, anchored to the 22.x baseline arm: re-executing the identical
+      # checks on 24.x would spend minutes for zero new signal (the 24.x
+      # arm's value is the full Test step above). Devs mirror them with:
       #   node scripts/ci-verify.mjs
       - name: "Contract: API-reference drift tripwire"
         if: matrix.node == '22.x'
