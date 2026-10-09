@@ -89,7 +89,7 @@ import {
 } from "../kernel/time.ts";
 import { streamFor } from "../kernel/rng.ts";
 import { orderShedForTick, TICK_US, sortedIds, withUnit } from "./internal.ts";
-import { UNIT_HOLD } from "./defaults.ts";
+import { type ArrivalInExt, UNIT_HOLD } from "./defaults.ts";
 import { DEFAULT_KNEE_RHO, utilization } from "./queue.ts";
 import { applyIntentDoor, mintHandState, type IntentDoorConfig, type IntentReceipt } from "./intent-door.ts";
 
@@ -490,7 +490,18 @@ export function createTickDriver(
 
     /* ── step 1 · arrival (re-entries arrive THROUGH the same roster as
        fresh spawns — R-12: storms re-enter as new arrivals) ────────────── */
-    const arrivalOut = steps.arrival({ context, envelopes: inputs.envelopes, rng: open("arrival") });
+    /* population channel (audit g09 repel loop): the count of units already
+       in the system when this tick's arrivals judge it — last tick's roster
+       plus the re-entries that just matured. Stamped ALWAYS (one number;
+       foreign steps ignore it, the default step reads it only when the host
+       authored populationEffects — presence gate keeps every golden). */
+    const arrivalIn: ArrivalInExt = {
+      context,
+      envelopes: inputs.envelopes,
+      inFlightUnits: worked.units.size + matured.length,
+      rng: open("arrival"),
+    };
+    const arrivalOut = steps.arrival(arrivalIn);
 
     // Tick roster: in-flight (GameState insertion order) → fresh arrivals →
     // matured re-entries (schedule order). All orders deterministic.

@@ -44,6 +44,7 @@ import type {
   OutcomeTerminal,
   PatienceCheckIn,
   PatienceCheckOut,
+  PatienceMode,
   PipelineSlots,
   QosClassifyIn,
   QosClassifyOut,
@@ -74,7 +75,7 @@ import type {
   ObservedWrite,
 } from "../types.ts";
 import { asCauseId, asEntityId, observedKey, ResolutionBand } from "../types.ts";
-import { FIXED_UNIT, FIXED_ZERO, clampUnit, fromRatio, mul, sub } from "../kernel/fixed.ts";
+import { FIXED_SCALE, FIXED_UNIT, FIXED_ZERO, clampUnit, fromRatio, mul, sub } from "../kernel/fixed.ts";
 import { streamFor } from "../kernel/rng.ts";
 import {
   familyToIntent,
@@ -141,6 +142,21 @@ export interface DefaultPipelineConfig {
    *  bundle's contract, not just the envelope's single dominantFamily label.
    *  Absent ⇒ no roll, no stream-shape change, byte-identical arrivals. */
   readonly familyMix?: readonly FamilyMixEntry[];
+  /** AUDIT FIX (g09/g11: "loader closes a 7-mode patience enum… engine
+   *  implements only sigmoid-budget"): R25 per-type patience MODES, keyed by
+   *  `Unit.type` (the bundle tableId the arrival step stamps). Presence-
+   *  gated like the batch-B rules: absent/empty ⇒ every type keeps today's
+   *  LUT path, byte-identical. Semantics per mode in the step-9 docstring. */
+  readonly patienceModeByType?: Readonly<Record<string, PatienceMode>>;
+  /** AUDIT FIX (g09 TOP-PROBLEM #2: "populationEffect is a lying field"):
+   *  the Empty Server Spiral repel loop (§2.13 "The Population Effect" /
+   *  Herding), keyed by `Unit.type`. The host derives each row from
+   *  LoadedVisitor when `populationEffect && herdingEnabled`
+   *  (coefficient = herdingCoefficient; floor = authored capacity anchor).
+   *  Absent/empty ⇒ zero draws, byte-identical arrivals. */
+  readonly populationEffects?: Readonly<
+    Record<string, { readonly coefficient: Fixed; readonly floor: number }>
+  >;
 }
 
 /* ═══════════════════════════ Step 1 · Arrival ═══════════════════════════ */
@@ -156,17 +172,57 @@ export interface DefaultPipelineConfig {
  *  arrival events, and the re-entry delay is the backoff schedule (≥1 tick,
  *  arbitrary multiples). Arrival-counting consumers therefore miss retry
  *  storms; count `SimEvent` arrivals or roster growth, not this step alone. */
+/** Driver-stamped extension of the frozen ArrivalIn: the count of units
+ *  ALREADY in the system when this tick's arrivals are drawn (pre-tick
+ *  roster + matured re-entries). Invisible to foreign steps; read ONLY when
+ *  the host configured `populationEffects` (presence gate). */
+export interface ArrivalInExt extends ArrivalIn {
+  readonly inFlightUnits?: number;
+}
+
+/** Boundary parse (Laws 2/4): closed-key Map with every row validated once
+ *  — coefficient a 0..1 Fixed, floor a positive safe integer. An empty/
+ *  absent table returns an empty Map: the step then never reads
+ *  `inFlightUnits` and never rolls. */
+function parsePopulationEffects(
+  table: DefaultPipelineConfig["populationEffects"],
+): ReadonlyMap<string, { readonly coefficient: Fixed; readonly floor: number }> {
+  const out = new Map<string, { readonly coefficient: Fixed; readonly floor: number }>();
+  if (table === undefined) return out;
+  for (const type of Object.keys(table).sort()) {
+    const row = table[type] as { readonly coefficient: Fixed; readonly floor: number };
+    if (typeof row.coefficient !== "bigint" || row.coefficient < FIXED_ZERO || row.coefficient > FIXED_UNIT) {
+      throw new Error(`arrival: populationEffects["${type}"].coefficient must be a 0..1 Fixed, got ${String(row.coefficient)}`);
+    }
+    if (!Number.isSafeInteger(row.floor) || row.floor < 1) {
+      throw new Error(`arrival: populationEffects["${type}"].floor must be a positive safe integer (the herd anchor population), got ${String(row.floor)}`);
+    }
+    out.set(type, Object.freeze({ coefficient: row.coefficient, floor: row.floor }));
+  }
+  return out;
+}
+
 export function createArrivalStep(
-  config: Pick<DefaultPipelineConfig, "defaultPatienceUs" | "defaultSizeCost" | "patienceJitterPct" | "familyMix">,
+  config: Pick<
+    DefaultPipelineConfig,
+    "defaultPatienceUs" | "defaultSizeCost" | "patienceJitterPct" | "familyMix" | "populationEffects"
+  >,
 ): TickStep<ArrivalIn, ArrivalOut> {
   if (config.patienceJitterPct < 0 || config.patienceJitterPct > 50) {
     throw new Error(`arrival: patienceJitterPct must be 0..50, got ${config.patienceJitterPct}`);
   }
   const mix = config.familyMix;
   if (mix !== undefined) validateFamilyMix(mix);
+  const population = parsePopulationEffects(config.populationEffects);
   const jitterSpread = 2 * config.patienceJitterPct + 1;
   return (input: ArrivalIn): ArrivalOut => {
     const { context, envelopes, rng } = input;
+    const inFlight = (input as ArrivalInExt).inFlightUnits;
+    if (population.size > 0 && inFlight === undefined) {
+      throw new Error(
+        "arrival: populationEffects configured but the input carries no inFlightUnits — run through createTickDriver (it stamps the channel) or feed the step a stamped window",
+      );
+    }
     const units: Unit[] = [];
     const events: SimEvent[] = [];
     for (let e = 0; e < envelopes.length; e += 1) {
@@ -176,6 +232,25 @@ export function createArrivalStep(
       const frac = fracRawOfUnit(envelope.ratePerMin);
       if (frac > 0n && rollUnder(frac, rng.nextU32())) count += 1;
       for (let i = 0; i < count; i += 1) {
+        /* THE REPEL LOOP (§2.13 "The Population Effect" / Herding, audit
+           g09 TOP-PROBLEM #2): a herding population judges the server
+           BEFORE visiting. Below the authored floor, P(skip) grows linearly
+           with the shortfall — a half-empty game server repels half its
+           would-be players, and every repelled arrival deepens the spiral.
+           Above the floor p = 0: the v0 consumer implements the spiral's
+           REPULSE half only (the attract half would mint units the envelope
+           never authored — conservation-law territory, reported). The draw
+           rides the "arrival" stream FIRST for the candidate, before its
+           jitter/source rolls; repelled visitors simply never come — no
+           unit, no event (diegetically honest: you cannot observe someone
+           who stayed home). Retries/re-entries skip this step entirely
+           (⚠ consumer note above). */
+        const effect = population.get(envelope.tableId);
+        if (effect !== undefined && inFlight !== undefined && inFlight < effect.floor) {
+          const shortfall = BigInt(effect.floor - inFlight);
+          const repelP = (effect.coefficient * shortfall) / BigInt(effect.floor);
+          if (repelP > FIXED_ZERO && rollUnder(repelP, rng.nextU32())) continue;
+        }
         const unitId = asEntityId(`${envelope.tableId}@${context.tick}#${e}.${i}`);
         const jitterPct = jitterSpread === 1 ? 100 : 100 - config.patienceJitterPct + rng.range(jitterSpread);
         const sourceBucket = rng.range(1024);
@@ -712,16 +787,108 @@ export const defaultDependencyBlockStep: TickStep<DependencyBlockIn, DependencyB
 
 /* ═══════════════════════════ Step 9 · Patience check ═══════════════════════════ */
 
+/** R25 closed vocabulary — runtime mirror of the types.ts `PatienceMode`
+ *  union (the same boundary-parse shape as the loader's private array; a
+ *  typo'd authored mode fails loud at step CREATION, never mid-run). */
+export const PATIENCE_MODE_VOCAB: readonly PatienceMode[] = Object.freeze([
+  "sigmoid-budget",
+  "window",
+  "value-decay",
+  "resident",
+  "binary",
+  "corrupts",
+  "none",
+]);
+
+/** Parse-don't-validate (Laws 2/4): sorted-key Map, every mode checked
+ *  against the closed set once; the per-unit loop then trusts the table. */
+function parsePatienceModeByType(
+  table: Readonly<Record<string, PatienceMode>> | undefined,
+): ReadonlyMap<string, PatienceMode> {
+  const out = new Map<string, PatienceMode>();
+  if (table === undefined) return out;
+  for (const type of Object.keys(table).sort()) {
+    const mode = table[type] as PatienceMode;
+    if (!PATIENCE_MODE_VOCAB.includes(mode)) {
+      throw new Error(
+        `patienceCheck: unknown patience mode ${String(mode)} for type "${type}" (R25 vocabulary: ${PATIENCE_MODE_VOCAB.join(" | ")})`,
+      );
+    }
+    out.set(type, mode);
+  }
+  return out;
+}
+
+/**
+ * This tick's bounce probability for ONE queued unit under its type's R25
+ * mode (MASTER_REPORT §4.1 R25 census — "patience as MODE enum"). The
+ * probability rides the SAME roll gate as sigmoid-budget, so modes never
+ * need their own branch at the roll site; zero-probability and certainty
+ * answers skip the "bounce" stream draw entirely (per-unit-key streams ⇒
+ * zero blast radius on other units either way).
+ *
+ *  - sigmoid-budget — TODAY'S LAW (R-60 LUT through 10%@0.6× / 50%@1.0× /
+ *    95%@1.6×). The default for every unlisted type.
+ *  - window — hard cutoff (backup's "window module"): no gradient at all.
+ *    The unit makes its window or it is gone: p = 1 once
+ *    elapsed + predicted ≥ budget, else 0.
+ *  - value-decay — the budget doubles as the value meter: p grows LINEARLY
+ *    with elapsed/patience (truncated Fixed ratio), saturating at certainty
+ *    at 1× — the slow bleed the sigmoid approximates with three anchors.
+ *  - binary — connect-now-or-leave (R25 "binary-connect"): ANY predicted
+ *    wait repels, regardless of budget (p = 1 iff predicted > 0).
+ *  - none — infinite patience: never abandons the queue.
+ *  - resident — the sticky session (§App A durationClass Resident): once it
+ *    has joined a queue it WAITS — capacity is held, not abandoned. The
+ *    other half of resident-UNSHEDABLE binds in the serve/shed ladder
+ *    (qos-class shedOrder already owns order; class-level immunity remains
+ *    an open content question, reported).
+ *  - corrupts — "corrupt-not-bounce": the unit stays (p = 0 here); the
+ *    DAMAGE-instead-of-departure half needs a terminal/evidence channel the
+ *    frozen 4-terminal Outcome set does not carry — reported for batch-E,
+ *    never silently invented.
+ */
+function patienceProbabilityFor(
+  mode: PatienceMode,
+  elapsedUs: SimTimeUs,
+  predictedUs: SimTimeUs,
+  patienceUs: SimTimeUs,
+): Fixed {
+  switch (mode) {
+    case "sigmoid-budget":
+      return bounceProbability(patienceRatioBps(elapsedUs + predictedUs, patienceUs));
+    case "window":
+      return elapsedUs + predictedUs >= patienceUs ? FIXED_UNIT : FIXED_ZERO;
+    case "value-decay": {
+      if (patienceUs <= 0n || elapsedUs + predictedUs >= patienceUs) return FIXED_UNIT;
+      if (elapsedUs + predictedUs <= 0n) return FIXED_ZERO;
+      return ((elapsedUs + predictedUs) * FIXED_SCALE) / patienceUs; // bigint-truncated, monotone
+    }
+    case "binary":
+      return predictedUs > 0n ? FIXED_UNIT : FIXED_ZERO;
+    case "none":
+    case "resident":
+    case "corrupts":
+      return FIXED_ZERO;
+  }
+}
+
 /**
  * Silent bounce (R-10): queued units compare elapsed-so-far + the PREDICTED
- * hockey-stick wait against their patience budget; the ratio hits the R-60
- * LUT for a bounce probability; one roll on the per-unit "bounce" stream
- * decides. Units in service or dependency-held never bounce here — they are
- * committed; their pain surfaces as latency, not departure.
+ * hockey-stick wait against their patience budget under their type's R25
+ * MODE (see patienceProbabilityFor); the resulting probability gates one
+ * roll on the per-unit "bounce" stream. Units in service or dependency-held
+ * never bounce here — they are committed; their pain surfaces as latency,
+ * not departure.
+ *
+ * PRESENCE GATE: with `patienceModeByType` unset (every shipped run today)
+ * every unit resolves to sigmoid-budget and the step is byte-identical to
+ * its pre-fix self — pinned by the paired default-vs-empty-table test.
  */
 export function createPatienceCheckStep(
-  config: Pick<DefaultPipelineConfig, "runSeed">,
+  config: Pick<DefaultPipelineConfig, "runSeed" | "patienceModeByType">,
 ): TickStep<PatienceCheckIn, PatienceCheckOut> {
+  const modeByType = parsePatienceModeByType(config.patienceModeByType);
   return (input) => {
     const waitByUnit = new Map<EntityId, SimTimeUs>();
     for (const wait of input.waits) waitByUnit.set(wait.unitId, wait.queueWaitUs);
@@ -731,7 +898,12 @@ export function createPatienceCheckStep(
       if (predicted === undefined) continue; // only queued units bounce from patience
       if (unit.waitingOn !== null || unit.routeHops.length === 0) continue;
       const elapsed = unit.accumulatedLatencyUs + unit.inspectionCostUs;
-      const probability = bounceProbability(patienceRatioBps(elapsed + predicted, unit.patienceUs));
+      const probability = patienceProbabilityFor(
+        modeByType.get(unit.type) ?? "sigmoid-budget",
+        elapsed,
+        predicted,
+        unit.patienceUs,
+      );
       if (probability <= FIXED_ZERO) continue;
       const certain = probability >= FIXED_UNIT;
       if (
