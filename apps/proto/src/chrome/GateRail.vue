@@ -124,6 +124,10 @@ watch(
   border-left-color: var(--hh-accent);
   background: color-mix(in srgb, var(--hh-accent) 14%, transparent);
 }
+/* §8.14 reduced-motion law — hover/border easing goes instant when requested. */
+@media (prefers-reduced-motion: reduce) {
+  .gate-rail__item { transition: none; }
+}
 .gate-rail__badge {
   align-self: center;
   min-width: 34px;

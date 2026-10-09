@@ -23,4 +23,6 @@ defineProps<FaceProps>();
 .state-warn .liquid { fill: var(--hh-hue-amber); }
 .state-alarm .liquid { fill: var(--hh-hue-alarm); }
 .still .liquid { transition: none; }
+/* §8.14 reduced-motion law — OS preference independent of the .still arm. */
+@media (prefers-reduced-motion: reduce) { .liquid { transition: none; } }
 </style>

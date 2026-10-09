@@ -24,4 +24,6 @@ defineProps<FaceProps>();
 .state-alarm .fill { fill: var(--hh-hue-alarm); }
 .alarm-glyph { fill: var(--hh-hue-alarm); }
 .still .fill { transition: none; }
+/* §8.14 reduced-motion law — OS preference independent of the .still arm. */
+@media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
 </style>

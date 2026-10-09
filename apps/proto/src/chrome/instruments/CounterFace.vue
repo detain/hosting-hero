@@ -26,4 +26,7 @@ const digits = computed(() => {
 .digit[data-rolling="yes"] { animation: roll 320ms ease-out; }
 @keyframes roll { from { transform: translateY(-40%); opacity: .2; } to { transform: none; opacity: 1; } }
 .still .digit { animation: none; }
+/* §8.14 reduced-motion law: the OS preference must work without the .still
+   (Readout) arm — additive guard, pinned by chrome/a11y/motionAudit scan. */
+@media (prefers-reduced-motion: reduce) { .digit[data-rolling="yes"] { animation: none; } }
 </style>

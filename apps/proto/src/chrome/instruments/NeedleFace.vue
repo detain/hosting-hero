@@ -44,4 +44,6 @@ const angle = computed(() => {
 .state-alarm .needle { stroke: var(--hh-hue-alarm); }
 .state-alarm .hub { fill: var(--hh-hue-alarm); }
 .still .needle { transition: none; }
+/* §8.14 reduced-motion law — OS preference independent of the .still arm. */
+@media (prefers-reduced-motion: reduce) { .needle { transition: none; } }
 </style>
