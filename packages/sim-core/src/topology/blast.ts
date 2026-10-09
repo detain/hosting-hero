@@ -16,7 +16,10 @@
  *    this is how "two redundant services, one circuit" reads as ONE set);
  *  - `degraded` = the amber set — co-residents in every shared domain the
  *    flood touches whose anchor did NOT explode: "db is down" cannot prove
- *    the PDU beside it is fine, so its neighbors shade amber;
+ *    the PDU beside it is fine, so its neighbors shade amber. DEGRADE_ALL
+ *    domains (racks, switches — T-9 ratified 2026-10-09: power kills RED,
+ *    racks degrade AMBER) never take tier 2, so even a killed rack anchor
+ *    only shades its co-residents amber;
  *  - `customers` / `mrrMicroUsd` aggregate the affected set's maintained
  *    fields — INSTANT-ANSWER contract: the hover tooltip must never make
  *    the caller walk the graph afterwards.

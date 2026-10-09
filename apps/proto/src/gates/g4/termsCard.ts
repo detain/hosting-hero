@@ -60,7 +60,7 @@ const ATTACK_SURFACE: Readonly<Record<BoardRelation, readonly AttackSurfaceDelta
     Object.freeze({ family: "software", note: "the provider's exposed service joins this device's attack profile" }),
   ]),
   power: Object.freeze([
-    Object.freeze({ family: "physical", note: "a shared feed: the supplier's rack is now a single point of failure" }),
+    Object.freeze({ family: "physical", note: "a shared feed: the supplier's circuit is now a single point of failure — power kills red; a shared rack only degrades amber" }),
   ]),
   control: Object.freeze([
     Object.freeze({ family: "actuation", note: "a control path is a remote-hands grant — compromise executes, not just reads" }),

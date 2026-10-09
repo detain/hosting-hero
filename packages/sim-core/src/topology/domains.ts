@@ -7,15 +7,18 @@
  *
  *  - same PDU      : every device whose feed chain touches this PDU (§7.3
  *                    "single best placement trap" — the shared circuit),
- *  - same rack     : nested-grid co-residents,
+ *                    KILL_ALL — power kills, RED,
+ *  - same rack     : nested-grid co-residents, DEGRADE_ALL — racks degrade,
+ *                    AMBER (T-9 ratified 2026-10-09),
  *  - same switch   : devices sharing a data-plane upstream switch,
+ *                    DEGRADE_ALL (the rack's amber precedent),
  *  - same template : one artifact, one bug, one blast (software correlation).
  *
- * deathModel follows the Board architecture (WS-2 gap G-1): KILL_ALL for
- * hard domains (the circuit trips ⇒ everything on it dies), DEGRADE_ALL for
- * shared-capacity (the rack's cooling sags ⇒ members wobble, they don't
- * die). SHARED_CAPACITY is folded into DEGRADE_ALL + `capacityMW` here —
- * the pipeline agent can re-shape if G-1 ratifies a third mode.
+ * deathModel is the RATIFIED two-color law (T-9, owner decision 2026-10-09,
+ * docs/adr/0009): power kills RED, racks degrade AMBER. KILL_ALL for the
+ * power domains (the circuit trips ⇒ everything on it dies), DEGRADE_ALL for
+ * racks and switches (the rack's cooling sags ⇒ members wobble, they don't
+ * die). SHARED_CAPACITY is folded into DEGRADE_ALL + `capacityMW` here.
  *
  * Everything here is a PURE PROJECTION: rebuilt on demand from graph +
  * index, never stored as authority. That is why mutating the graph needs no
@@ -84,33 +87,26 @@ export function rackDomains(graph: TopologyGraph, index: PhysicalIndex): readonl
     byRack.set(placement.rack, bucket);
   }
   const domains: FailureDomain[] = [];
-  for (const [rack, members] of byRack) {
+  for (const [rack, placements] of byRack) {
     domains.push({
       id: domainId("rack", rack),
       kind: "rack",
       anchor: rack,
-      /* ═══ OWNER-DECISION REQUESTED (T-9) ═══
-       * deathModel here is "kill-all", yet this file's header exemplar for
-       * shared capacity ("the rack's cooling sags ⇒ members wobble, they
-       * don't die") describes DEGRADE_ALL. Both readings are defensible;
-       * the owner must pick one:
-       *  (a) KEEP kill-all — a rack-level event (fire, flood, forklift)
-       *      genuinely takes every U; tier-2 chain-kill stays available for
-       *      the case where a placed member dies AND the rack anchor is in
-       *      the killed set by some other route.
-       *  (b) FLIP to degrade-all — racks join switches as amber-only
-       *      shared capacity: co-residents always shade `degraded`, never
-       *      `affected`; HUD reds turn ambers and blast tests re-pin.
-       * Related sub-question the decision must answer: rack ANCHORS are not
-       * members here (members come from placements only), so killing the
-       * rack node directly currently enumerates no rack domain — neither
-       * (a) nor (b) explodes co-residents through a directly-killed anchor
-       * until the anchor joins `members`. Pinned by the test "PINS rack
-       * deathModel = kill-all and its exact blast reading today".
-       * Current code ships (a). Do not silently flip. */
-      deathModel: "kill-all",
+      /* RATIFIED (T-9, owner decision 2026-10-09, docs/adr/0009): racks
+       * DEGRADE-ALL and the anchor JOINS members. The two-color split of
+       * the Board stands — a power-domain kill is RED (kills residents),
+       * a rack domain is AMBER (degrades residents). Consequences, all
+       * read off the existing blast tiers: killing the rack node dies the
+       * rack itself (tier 1) and shades every co-resident amber (tier 3)
+       * — no tier-2 explosion, ever; killing a co-resident shades the
+       * rack node amber like any other member (the switch precedent).
+       * The anchor lives INSIDE `members` (the interface contract, "members
+       * INCLUDING the anchor"), sorted over the WHOLE array — T-8 discipline,
+       * Set-dedup like pduDomains. Blast goldens and the rack-pin tests were
+       * re-cut DELIBERATELY at ratification, never as drift. */
+      deathModel: "degrade-all",
       reasonToken: "shared-rack",
-      members: [...members].sort(compareIds),
+      members: [...new Set([rack, ...placements])].sort(compareIds),
     });
   }
   return domains;

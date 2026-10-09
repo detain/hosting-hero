@@ -657,9 +657,15 @@ describe("domain member order contract (T-8)", () => {
   });
 });
 
-/* T-9 · PINS current rack semantics while the OWNER-DECISION is open */
-describe("rack deathModel pin (T-9 — pending OWNER-DECISION)", () => {
-  it("PINS rack deathModel = kill-all and its exact blast reading today", () => {
+/* T-9 · RATIFIED 2026-10-09 (owner decision, docs/adr/0009-owner-ratifications-
+   calibration.md): rack deathModel = degrade-all AND the anchor joins members.
+   Two-color law: power kills RED, racks degrade AMBER. The old pins ("PINS rack
+   deathModel = kill-all and its exact blast reading today", pending decision)
+   are re-cut DELIBERATELY below — audited events, not drift. */
+describe("rack deathModel (T-9 — ratified: degrade-all, anchor joins members)", () => {
+  /** rack-a holds srv-1 and srv-2 (bare co-residency; tests that want the
+   *  power circuit add pdu-x on top). */
+  function rackScene() {
     const g = createGraph();
     g.addNode({ id: e("srv-1"), kind: "server" });
     g.addNode({ id: e("srv-2"), kind: "server" });
@@ -669,20 +675,53 @@ describe("rack deathModel pin (T-9 — pending OWNER-DECISION)", () => {
     index.registerRack(rackA);
     index.placeDevice(placement(e("srv-1"), rackA.id, 1));
     index.placeDevice(placement(e("srv-2"), rackA.id, 2));
-    const rack = buildDomainSet(g, index).domains.find((d) => d.id === e("domain:rack:rack-a"));
-    expect(rack?.deathModel).toBe("kill-all");
-    // observable reading TODAY: a co-resident death finds the domain, the
-    // un-exploded anchor keeps it amber (tier 3), never kill-all.
-    const srvDeath = computeBlast(g, buildDomainSet(g, index), e("srv-1"));
-    expect(srvDeath.affected).toEqual([e("srv-1")]);
-    expect(srvDeath.degraded).toEqual([e("srv-2")]);
-    // anchor-not-member reality (placements fill members): killing the rack
-    // NODE enumerates no rack domain at all — neither option (a) nor (b)
-    // currently explodes co-residents through a directly-killed anchor.
-    // The OWNER-DECISION must also say whether the anchor joins members.
+    return { g, index };
+  }
+
+  it("PINS rack deathModel = degrade-all, anchor inside a sorted members set", () => {
+    const { g, index } = rackScene();
+    const domains = buildDomainSet(g, index);
+    const rack = domains.domains.find((d) => d.id === e("domain:rack:rack-a"));
+    expect(rack?.deathModel).toBe("degrade-all"); // re-cut @T-9 ratification 2026-10-09 — old pin "kill-all"
+    // the anchor-joins-members flip: the rack node is a MEMBER of its own domain
+    expect(rack?.members).toEqual([e("rack-a"), e("srv-1"), e("srv-2")]);
+    // every domain keeps the T-8 ascending-codepoint members contract
+    for (const domain of domains.domains) {
+      expect(domain.members).toEqual([...domain.members].sort(compareIds));
+    }
+  });
+
+  it("killing the rack anchor kills the rack (red) and shades every co-resident amber — never chain-kills", () => {
+    const { g, index } = rackScene();
     const rackDeath = computeBlast(g, buildDomainSet(g, index), e("rack-a"));
-    expect(rackDeath.affected).toEqual([e("rack-a")]);
-    expect(rackDeath.degraded).toHaveLength(0);
+    expect(rackDeath.affected).toEqual([e("rack-a")]); // the rack node ITSELF died — unchanged reading
+    // re-cut @T-9 ratification 2026-10-09 — old pin: degraded [] (the un-membered
+    // anchor enumerated no rack domain at all). Now tier 3 floods the amber set,
+    // and tier 2 never explodes a degrade-all domain, anchor-dead or not.
+    expect(rackDeath.degraded).toEqual([e("srv-1"), e("srv-2")]);
+    expect(rackDeath.viaDomains).toEqual([e("domain:rack:rack-a")]);
+  });
+
+  it("killing a co-resident alone explodes nothing — sibling AND the rack node shade amber", () => {
+    const { g, index } = rackScene();
+    const srvDeath = computeBlast(g, buildDomainSet(g, index), e("srv-1"));
+    expect(srvDeath.affected).toEqual([e("srv-1")]); // amber-only: a member death cannot explode the rack
+    // re-cut @T-9 ratification 2026-10-09 — old pin [srv-2]; the rack node joins
+    // the amber set now that the anchor is a member (the switch precedent).
+    expect(srvDeath.degraded).toEqual([e("rack-a"), e("srv-2")]);
+    expect(srvDeath.viaDomains).toEqual([e("domain:rack:rack-a")]);
+  });
+
+  it("power stays RED: killing the shared PDU still chain-kills both rack co-residents", () => {
+    const { g, index } = rackScene();
+    g.addNode({ id: e("pdu-x"), kind: "pdu" });
+    g.addEdge({ kind: "power", from: e("pdu-x"), to: e("srv-1"), slot: e("o1") });
+    g.addEdge({ kind: "power", from: e("pdu-x"), to: e("srv-2"), slot: e("o2") });
+    const pduDeath = computeBlast(g, buildDomainSet(g, index), e("pdu-x"));
+    expect(pduDeath.affected).toEqual([e("pdu-x"), e("srv-1"), e("srv-2")]); // kill-all explodes the circuit
+    // the rack shades amber beside its killed tenants; it never joins `affected`
+    expect(pduDeath.degraded).toEqual([e("rack-a")]);
+    expect(pduDeath.viaDomains).toEqual([e("domain:pdu:pdu-x"), e("domain:rack:rack-a")]);
   });
 });
 
