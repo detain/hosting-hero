@@ -83,10 +83,11 @@ describe("roster ledger — exactly the §8.16 table, honestly counted", () => {
     expect(ACCEPTANCE_ROSTER).toHaveLength(11);
   });
 
-  it("the ledger is 3 of 11 live — shape-first pips and readout ride a SEPARATE surface ledger", () => {
-    expect(liveGateCount()).toBe(3);
+  it("the ledger is 4 of 11 live — shape-first pips and readout ride a SEPARATE surface ledger", () => {
+    expect(liveGateCount()).toBe(4);
     expect(ACCEPTANCE_ROSTER.filter((r) => r.status === "live").map((r) => r.id)).toStrictEqual([
       "greyscale-pass",
+      "greyscale-motion",
       "chroma-meter",
       "strobe-budget-check",
     ]);
@@ -108,7 +109,7 @@ describe("roster ledger — exactly the §8.16 table, honestly counted", () => {
 
 /* ------------------------------------------------ 2. live rows are REAL now */
 
-describe("roster ledger — the three live rows survive inspection", () => {
+describe("roster ledger — the four live rows survive inspection", () => {
   it("chroma-meter: budget authority + player-visible view + shell mount all exist", () => {
     const budget = readFileSync(join(SRC_DIR, "render", "budget.ts"), "utf8");
     const meter = readFileSync(join(SRC_DIR, "chrome", "ChromaMeter.vue"), "utf8");
@@ -126,6 +127,28 @@ describe("roster ledger — the three live rows survive inspection", () => {
       parseEraTokens({ era: "2026", surface: "#0d131c", accent: "#35e0e6" }),
     ];
     expect(findAaViolations(buildChromeInventory(eras))).toStrictEqual([]);
+  });
+
+  it("greyscale-pass: the runtime half is REAL — mode file + shell key + both halves named", () => {
+    const mode = readFileSync(join(SRC_DIR, "chrome", "a11y", "contrastAuditMode.ts"), "utf8");
+    const app = readFileSync(join(SRC_DIR, "App.vue"), "utf8");
+    expect(mode).toContain("backdrop-filter: grayscale(1)"); // luminance-only render
+    expect(mode).toContain("export function toggleContrastAuditMode");
+    expect(mode).toContain("prefers-reduced-motion"); // the mode obeys its own guard law
+    expect(app).toContain('event.key === "a"');
+    const row = rosterRow("greyscale-pass");
+    expect(row.where ?? "").toContain("contrastAudit.ts");
+    expect(row.where ?? "").toContain("contrastAuditMode.ts");
+    expect(row.where ?? "").not.toMatch(/unbuilt/); // the old clause must stay dead
+  });
+
+  it("greyscale-motion: the colour-muted mechanism exists and the motion census stands under it", () => {
+    const mode = readFileSync(join(SRC_DIR, "chrome", "a11y", "contrastAuditMode.ts"), "utf8");
+    expect(mode).toContain("grayscale(1)");
+    expect(findStrobeViolations(CHROME_MOTION_SPECS)).toStrictEqual([]); // motion half is law-audited
+    const row = rosterRow("greyscale-motion");
+    expect(row.status).toBe("live");
+    expect(row.where ?? "").toContain("motionAudit.ts");
   });
 
   it("strobe-budget-check: the motion census is populated and violation-free", () => {
@@ -191,7 +214,7 @@ function probeHits(probe: string, files: readonly ScannedFile[]): string[] {
 describe("roster ledger — absent gates cannot be silently built", () => {
   it("every absent row has a probe, and every probe is currently quiet", () => {
     const absent = ACCEPTANCE_ROSTER.filter((r) => r.status === "absent").map((r) => r.id);
-    expect(absent).toHaveLength(8);
+    expect(absent).toHaveLength(7);
     expect(Object.keys(ABSENT_GATE_PROBES).sort()).toStrictEqual([...absent].sort());
     const files = walkSrc();
     expect(files.length).toBeGreaterThanOrEqual(100); // anti-vacuity: the walk really walks

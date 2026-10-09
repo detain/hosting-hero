@@ -3,13 +3,13 @@
  * acceptance harness row) — the CI half of the greyscale pass.
  *
  * The spec promotes Contrast Audit Mode from a nice-to-have to a production
- * gate: "it is the mechanism by which the law is checked". The runtime
- * luminance-only RENDER mode (§8.14 heading "Contrast Audit Mode") is still
- * unbuilt — this module ships the PROGRAMMATIC gate: pure WCAG 2.x sRGB
- * relative-luminance math (no deps, no DOM) over a declarative census of
- * every colour pairing chrome actually ships. A pairing that cannot survive
- * here cannot survive greyscale, because WCAG contrast IS a luminance-only
- * measure.
+ * gate: "it is the mechanism by which the law is checked". This module is
+ * the PROGRAMMATIC gate: pure WCAG 2.x sRGB relative-luminance math (no
+ * deps, no DOM) over a declarative census of every colour pairing chrome
+ * actually ships. A pairing that cannot survive here cannot survive
+ * greyscale, because WCAG contrast IS a luminance-only measure. The runtime
+ * luminance-only RENDER mode (§8.14 "Contrast Audit Mode") lives beside it
+ * in contrastAuditMode.ts and re-runs this exact math against the live DOM.
  *
  * Laws this module lives by:
  *  1. PARSE, DON'T VALIDATE — hex strings, roles, weights and era tokens are

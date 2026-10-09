@@ -10,9 +10,9 @@
  * it later (chrome/__tests__/a11yRoster.test.ts walks the probes).
  *
  * Statuses are deliberately coarse (live|absent). A live row's `where` states
- * EXACTLY which half is live — e.g. greyscale-pass ships its programmatic CI
- * half (contrastAudit); the runtime luminance-only render mode remains a
- * separate unbuilt §8.14 heading and is named as such in that row's `where`.
+ * EXACTLY which mechanism answers the gate — e.g. greyscale-pass now names
+ * BOTH of its halves live: the CI census (contrastAudit) and the runtime
+ * luminance-only render mode (contrastAuditMode, the 'a' key).
  */
 
 export type RosterStatus = "live" | "absent";
@@ -79,14 +79,15 @@ const ROSTER_SPECS: readonly AcceptanceGateRow[] = [
     spec: "§8.14",
     status: "live",
     where:
-      "chrome/a11y/contrastAudit.ts — CI census of every shipped chrome pairing against WCAG AA luminance math (a11yRoster + contrastAudit tests). Programmatic half ONLY: the runtime luminance-only render mode + greyscale screen dumps (§8.14 'Contrast Audit Mode' heading) are still unbuilt.",
+      "chrome/a11y/contrastAudit.ts — CI census of every shipped chrome pairing against WCAG AA luminance math (a11yRoster + contrastAudit tests). Plus the runtime half: chrome/a11y/contrastAuditMode.ts — the 'a'-key mode renders the live screen luminance-only (grayscale backdrop overlay), re-checks every self-painted text pairing against computed styles, marks failures with white outlines and prints a report strip; the 40-row census re-resolves against the live era tokens inside the same mode.",
   },
   {
     id: "greyscale-motion",
     asks: "can a tester name the problem with colour muted and motion only?",
     spec: "§8.2",
-    status: "absent",
-    where: null,
+    status: "live",
+    where:
+      "chrome/a11y/contrastAuditMode.ts — the runtime mode supplies the COLOUR-MUTED half of the question at the press of 'a' (grayscale everything below the HUD, motion untouched, markers white-luminance); the MOTION half it must stand on is the census-audited vocabulary of chrome/a11y/motionAudit.ts (bezel lip, klaxon wash, heartbeat — strobe-lawed, reduced-motion-guarded). The tester-side verdict itself stays human, as §8.2 intends — what was missing was a way to mute colour without muting motion, and that now ships.",
   },
   {
     id: "two-second-rule",
@@ -156,7 +157,6 @@ export const ABSENT_GATE_PROBES: Readonly<Record<string, string>> = Object.freez
   "two-screenshot": "TwoScreenshot|two-screenshot",
   "silhouette-sheet": "Silhouette|silhouette",
   "silhouette-first-authoring": "SilhouetteFirst|silhouette-first",
-  "greyscale-motion": "GreyscaleMotion|greyscale-motion|greyscaleDump",
   "two-second-rule": "TwoSecond|two-second",
 });
 

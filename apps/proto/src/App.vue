@@ -32,6 +32,7 @@ import { era, setEra } from "./i18n/eraState";
 import { SimClient, asWorkerLike, type WorkerLike } from "./bridge/simClient";
 import { globalBudget } from "./render/budget";
 import DecisionRail from "./decision/DecisionRail.vue"; // §7.6 marked-decision rail
+import { toggleContrastAuditMode } from "./chrome/a11y/contrastAuditMode"; // §8.14 Contrast Audit Mode
 
 /** The sandbox view id — never collides with a "G<n>" gateId. */
 const SANDBOX_ID = "sandbox";
@@ -119,6 +120,7 @@ function onGlobalKey(event: KeyboardEvent): void {
   if (event.target instanceof HTMLInputElement) return;
   if (event.key === "c") chromaVisible.value = !chromaVisible.value;
   if (event.key === "r") readout.value = !readout.value;
+  if (event.key === "a") toggleContrastAuditMode(); // 'a' = Eyes: luminance-only audit (§8.14)
 }
 
 function applyEra(): void {

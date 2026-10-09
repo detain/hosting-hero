@@ -1,8 +1,9 @@
 /**
  * a11y audit surface (§8.14/§8.16) — explicit barrel, house pattern:
  * contrastAudit (WCAG AA census), motionAudit (strobe budget + reduced-motion
- * scanner), roster (the honest §8.16 ledger). Pure law modules: no DOM, no
- * fs — the tests in chrome/__tests__ feed them parsed reality.
+ * scanner), roster (the honest §8.16 ledger), contrastAuditMode (the RUNTIME
+ * Contrast Audit Mode — 'a' key: luminance-only render + live re-check; the
+ * DOM half, deliberately the barrel's only impure export).
  */
 export {
   AA_MINIMUM_RATIO,
@@ -49,3 +50,40 @@ export {
   SHIPPED_A11Y_SURFACES,
 } from "./roster";
 export type { AcceptanceGateRow, RosterStatus, ShippedA11ySurface } from "./roster";
+
+export {
+  applyDomMarkers,
+  auditDomPairings,
+  AUDIT_EXEMPT_ATTR,
+  AUDIT_FAIL_ATTR,
+  buildReportNodes,
+  compositeOver,
+  CONTRAST_AUDIT_REPORT_ID,
+  CONTRAST_AUDIT_SCREEN_ID,
+  CONTRAST_AUDIT_STYLE_ID,
+  ContrastAuditModeError,
+  installModeStyle,
+  isContrastAuditModeActive,
+  LARGE_TEXT_FLOOR_RATIO,
+  modeStyleHueVars,
+  MODE_STYLE_CSS,
+  mountContrastAuditMode,
+  ownVisibleText,
+  parseComputedColor,
+  pairVerdict,
+  readEraTokens,
+  readReducedMotion,
+  resolvePaintStack,
+  TEXT_FLOOR_RATIO,
+  textFloorFor,
+  toggleContrastAuditMode,
+} from "./contrastAuditMode";
+export type {
+  ContrastAuditModeHandle,
+  DomAuditReport,
+  DomPairing,
+  ModeReport,
+  ParsedColor,
+  PairVerdict,
+  UnresolvedPairing,
+} from "./contrastAuditMode";
