@@ -207,10 +207,13 @@ describe("versus memo — degrade paths answer exactly like naive", () => {
   );
 
   it("a swapped log (same length, different entry) degrades to naive, never lies", () => {
-    // A rival that GENUINELY changes digested state: with a policyCardsByHash
-    // lookup holding a card absent from the ruleBook, the swapped tick-7 slot
-    // commits the decoy (EXECUTES → ruleBook grows to 2) while the base
-    // commits its own book card (card-id-collision refusal). Refusals refund
+    // A rival that GENUINELY changes digested state. This host map is keyed by
+    // card ID (the deliberate pre-flip shape — the door treats any host map's
+    // key space as its own). The BASE tick-7 commit carries GAUGE_CARD's
+    // CONTENT FINGERPRINT, which is not a key in this id-keyed map → lookup
+    // misses → `unknown-card-hash` refusal (state-inert, ruleBook stays 1);
+    // the SWAPPED commit carries the decoy's ID, which HITS → the off-book
+    // decoy EXECUTES (ruleBook grows to 2). Refusals refund
     // and expire, so only this executed-append kind of swap can witness a
     // memoized lie — a place-device or timing swap digests identically here.
     const decoy = { ...GAUGE_CARD, id: "r-versus-decoy" as typeof GAUGE_CARD["id"] };

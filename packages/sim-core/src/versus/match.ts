@@ -400,8 +400,12 @@ export interface DefenderCommit {
    *  tick (the autopilot). Hash-bound into contentHashes via a canonical
    *  fold (same family as the deck commitment, `hh-versus-book-v1` tag). */
   readonly ruleBook: readonly PolicyCard[];
-  /** Optional explicit hash→card binding for policy-card-commit verbs;
-   *  defaults to indexing ruleBook by card.id (v0 seam, OWNER-QUESTION). */
+  /** Optional explicit hash→card binding for policy-card-commit verbs.
+   *  Keys MUST be `hh-card-v1` content fingerprints (`cardContentFingerprint`)
+   *  — owner-ratified 2026-10-09 flip: the default indexes ruleBook by
+   *  CONTENT FINGERPRINT, never by card.id (which is display metadata only).
+   *  The door treats the callback as opaque, so a host wiring its own map
+   *  controls its own key space — fingerprint keys are the lane law. */
   readonly policyCardsByHash?: ReadonlyMap<string, PolicyCard>;
   readonly nodes: readonly VersusNodeCommit[];
   readonly edges?: readonly VersusEdgeCommit[];
@@ -603,6 +607,58 @@ export function versusRuleBookHash(ruleBook: readonly PolicyCard[]): string {
   return `hh-versus-book-v1:${fnv1a64OverBytes(utf8Bytes(json))}`;
 }
 
+/**
+ * THE card identity law (owner-ratified 2026-10-09, ADR-0009 versus row):
+ * a versus policy-card reference is keyed by CONTENT FINGERPRINT, never by
+ * `card.id`. Same family as the deck commitment and the doctrine fold:
+ * canonical tagged-JSON (code-unit-sorted keys by construction, bigints
+ * tagged) + FNV-1a-64 avalanche over UTF-8 bytes, domain tag `hh-card-v1`.
+ *
+ * IDENTITY = BYTES OF CONTENT: `card.id` is stripped before the fold — it
+ * stays display metadata only (the door's `card-id-collision` refusal still
+ * speaks ids, which is exactly the point: ids are labels, the fingerprint is
+ * the thing). Consequences the tests pin:
+ *  • same content under different ids → SAME fingerprint (keying is content);
+ *  • re-authored content under the old id → DIFFERENT fingerprint, so an
+ *    old commitment hash resolves to the old bytes or to nothing — a card
+ *    cannot be swapped under its own name (the reveal-binds-bytes precedent
+ *    of commit.ts, applied to per-card lookup);
+ *  • `policyCardHashes` (defense deck) and the default `policyCardsByHash`
+ *    index are `hh-card-v1` fingerprints from here on.
+ *
+ * Like every hash in this family this is a deterministic fingerprint, not a
+ * cryptographic digest; the version tag means a future format change gets a
+ * NEW tag rather than silently re-binding old references.
+ */
+export function cardContentFingerprint(card: PolicyCard): string {
+  const { id: _displayIdOnly, ...content } = card;
+  const json = JSON.stringify(encodeTaggedTree(content, (problem) => {
+    throw new VersusError("WRONG_TYPE", "match.cardContentFingerprint", `canonical fold refused (${problem.kind})`);
+  }));
+  return `hh-card-v1:${fnv1a64OverBytes(utf8Bytes(json))}`;
+}
+
+/**
+ * Build the DEFAULT `policyCardsByHash` index the door consults for
+ * `policy-card-commit` verbs — keyed by CONTENT FINGERPRINT (`hh-card-v1`),
+ * NEVER by `card.id` (owner-ratified 2026-10-09). `createVersusEngine` falls
+ * back to this only when the host supplies no explicit map; the fingerprint
+ * identity law (`cardContentFingerprint`) is what makes an id-shaped commit
+ * hash resolve to nothing (→ `unknown-card-hash`). Extracted from the inline
+ * Map literal so the key space is a NAMED, TESTABLE law: re-keying it back to
+ * `card.id` is a one-line edit that the `defaultPolicyCardIndex` pin in
+ * match.test.ts goes red on — the ONLY place the default map's key space is
+ * exercised (every door-wiring test injects its own explicit map).
+ *
+ * Collision law (pinned by test): two content-identical cards under different
+ * ids fold to the SAME fingerprint, so they collapse to ONE entry — the fold
+ * drops `id`, therefore the later card wins the shared key slot (Map insert
+ * order: last write overwrites).
+ */
+export function defaultPolicyCardIndex(cards: readonly PolicyCard[]): ReadonlyMap<string, PolicyCard> {
+  return new Map<string, PolicyCard>(cards.map((card) => [cardContentFingerprint(card), card]));
+}
+
 const VERB_BY_COMMIT: Readonly<Record<ReserveIntentCommit["verb"], PlayerVerb>> = Object.freeze({
   "place-device": PlayerVerb.PlaceDevice,
   "connect-ports": PlayerVerb.ConnectPorts,
@@ -779,8 +835,12 @@ function createVersusEngine(config: VersusMatchConfig): VersusEngine {
   });
 
   const buildableSet = new Set<string>(defender.buildables);
+  // CONTENT-fingerprint keying (owner-ratified 2026-10-09): the default index
+  // folds each ruleBook card through `defaultPolicyCardIndex` (fingerprint
+  // keys, never card.id — see that function's law). A host wiring its own map
+  // controls its own key space; the door treats the callback as opaque.
   const cardsByHash: ReadonlyMap<string, PolicyCard> = defender.policyCardsByHash
-    ?? new Map<string, PolicyCard>(defender.ruleBook.map((card) => [card.id as string, card]));
+    ?? defaultPolicyCardIndex(defender.ruleBook);
   const doorConfig: IntentDoorConfig = Object.freeze({
     handCapacity: defender.handCapacity,
     canPlaceDevice: (query: PlaceDeviceQuery) => (buildableSet.has(query.args.deviceKind)

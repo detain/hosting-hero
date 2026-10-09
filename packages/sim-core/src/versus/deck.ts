@@ -236,13 +236,23 @@ export interface ThreatDeck {
 
 /** Defender's committed build of the match: what may be placed (ids
  *  resolved against a palette universe at PARSE time — the door's
- *  canPlaceDevice decoupling), policy cards by HASH only (the cards
- *  themselves ride the ruleBook, never the deck), a doctrine ref string,
- *  and the reserve hand capacity. */
+ *  canPlaceDevice decoupling), policy cards by CONTENT FINGERPRINT only
+ *  (the cards themselves ride the ruleBook, never the deck), a doctrine
+ *  ref string, and the reserve hand capacity.
+ *
+ *  FINGERPRINT LAW (owner-ratified 2026-10-09, ADR-0009 versus row):
+ *  `policyCardHashes` entries MUST be `hh-card-v1` content fingerprints
+ *  produced by `cardContentFingerprint` (match.ts) — NOT card ids. Identity
+ *  is bytes of content: a re-authored card is a different key, so a deck
+ *  committed against old bytes can never resolve to new ones (the
+ *  reveal-binds-bytes precedent). The parser stays content-agnostic (opaque
+ *  non-empty strings, dup-gated) — key validity is the door's question:
+ *  a hash the host's fingerprint index misses bounces as `unknown-card-hash`. */
 export interface DefenseDeck {
   readonly kind: "defense";
   readonly id: string;
   readonly buildables: readonly string[];
+  /** `hh-card-v1` content fingerprints (cardContentFingerprint), never card ids. */
   readonly policyCardHashes: readonly string[];
   readonly doctrineRef: string;
   readonly handCapacity: number;

@@ -11,7 +11,7 @@ import { asMetricId, asMoney, asRunSeed, asRuleId } from "../../types.ts";
 import { FIXED_ZERO, fromInt, fromRatio } from "../../kernel/fixed.ts";
 import { MICROS_PER_MIN } from "../../kernel/time.ts";
 import { buildCounterMap, buildRegistryCensus, parseThreatDeck, type ThreatCensusEntry, type ThreatDeck } from "../deck.ts";
-import type { DefenderCommit, VersusMatchConfig } from "../match.ts";
+import { cardContentFingerprint, type DefenderCommit, type VersusMatchConfig } from "../match.ts";
 import type { PressureParams } from "../../waves/pressure.ts";
 
 export const REGISTRY_RAW: unknown = JSON.parse(
@@ -174,9 +174,13 @@ export const VERSUS_DEFENDER: DefenderCommit = Object.freeze({
   }),
   buildables: Object.freeze(["waf", "cache"]),
   handCapacity: 2,
+  // hh-card-v1 keying (owner-ratified 2026-10-09): the tick-7 commit carries
+  // the card's CONTENT FINGERPRINT, not its id. GAUGE_CARD is already in the
+  // ruleBook, so the lookup HITS and the commit refuses as card-id-collision
+  // — the same verdict the id-keyed v0 seam produced, byte-for-byte.
   reserveIntents: Object.freeze([
     Object.freeze({ tick: 5, intent: Object.freeze({ verb: "place-device" as const, nodeId: "edge", deviceKind: "waf", template: null }) }),
-    Object.freeze({ tick: 7, intent: Object.freeze({ verb: "policy-card-commit" as const, cardHash: "r-versus-gauge" }) }),
+    Object.freeze({ tick: 7, intent: Object.freeze({ verb: "policy-card-commit" as const, cardHash: cardContentFingerprint(GAUGE_CARD) }) }),
     Object.freeze({ tick: 9, intent: Object.freeze({ verb: "place-device" as const, nodeId: "edge", deviceKind: "flux-capacitor", template: null }) }),
   ]),
   detectionRatio: fromRatio(9n, 10n),

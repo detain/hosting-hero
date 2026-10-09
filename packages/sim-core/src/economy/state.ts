@@ -124,16 +124,15 @@ export interface RegisterContractInput {
   readonly commitmentBps: bigint;
 }
 
-/** Orchestrator-side priming: creates the ContractEconomy + error-budget
- *  records for a shared Contract BEFORE the tick auto-primes defaults. */
-export function registerContractEconomy(
-  state: EconomyState,
+/** The single choke-point every registration folds through: per-entry side
+ *  effects are EXACTLY these two constructions in this order (open validates
+ *  the term, initBudget validates the commitment) — single and batch share
+ *  the body so their error families, messages, and record bytes can never
+ *  drift apart. */
+function buildRegistration(
   input: RegisterContractInput,
   cfg: EconomyConfig,
-): EconomyState {
-  if (state.contractEconomy.has(input.contract.id)) {
-    throw new Error(`economy/state: '${input.contract.id}' already registered`);
-  }
+): { readonly econ: ContractEconomy; readonly budget: ErrorBudgetState } {
   const econ = openContractEconomy(
     {
       contract: input.contract,
@@ -151,10 +150,76 @@ export function registerContractEconomy(
     input.atBusinessMin,
     cfg,
   );
+  return { econ, budget };
+}
+
+function alreadyRegistered(id: EntityId): Error {
+  return new Error(`economy/state: '${id}' already registered`);
+}
+
+/** Orchestrator-side priming: creates the ContractEconomy + error-budget
+ *  records for a shared Contract BEFORE the tick auto-primes defaults. */
+export function registerContractEconomy(
+  state: EconomyState,
+  input: RegisterContractInput,
+  cfg: EconomyConfig,
+): EconomyState {
+  if (state.contractEconomy.has(input.contract.id)) {
+    throw alreadyRegistered(input.contract.id);
+  }
+  const { econ, budget } = buildRegistration(input, cfg);
   return {
     ...state,
     contractEconomy: sortedById(state.contractEconomy, { contractId: econ.contractId }, econ),
     errorBudgets: sortedById(state.errorBudgets, { contractId: budget.contractId }, budget),
+  };
+}
+
+/**
+ * BATCH PRIME (owner-ratified 2026-10-09, ADR-0009): register every input
+ * atomically — the output is BYTE-IDENTICAL to folding `registerContractEconomy`
+ * over the same sequence in the same order, at O(n + m log m) instead of the
+ * chained merge-inserts' O(n·m). A 1,000-contract bootstrap was the audit's
+ * hottest orchestrator path; this is its fix.
+ *
+ * Laws (pinned by __tests__/batch-register.test.ts):
+ * - Validate-then-build per entry IN ORDER (duplicate check first, exactly
+ *   as the single path orders it), so a failing batch throws the SAME error
+ *   the chain would have thrown at the same position, with the input state
+ *   untouched (nothing mutates; the fold's result simply never forms).
+ * - Duplicate ids — against `state.contractEconomy` or within `inputs` —
+ *   throw the single path's `economy/state: '<id>' already registered`.
+ * - Empty batch returns `state` by identity (===), the fold's neutral element.
+ * - The merge replaces an id that already sits in `errorBudgets` while absent
+ *   from `contractEconomy` (twin-map skew is legal — the dup wall guards only
+ *   the econ map) position-preserving with the new value, mirroring
+ *   `sortedById`'s in-place arm.
+ */
+export function registerContractsEconomy(
+  state: EconomyState,
+  inputs: readonly RegisterContractInput[],
+  cfg: EconomyConfig,
+): EconomyState {
+  if (inputs.length === 0) return state;
+  const econRows: [EntityId, ContractEconomy][] = [];
+  const budgetRows: [EntityId, ErrorBudgetState][] = [];
+  const planned = new Set<EntityId>();
+  for (const input of inputs) {
+    const id = input.contract.id;
+    if (state.contractEconomy.has(id) || planned.has(id)) throw alreadyRegistered(id);
+    planned.add(id);
+    const { econ, budget } = buildRegistration(input, cfg);
+    econRows.push([id, econ]);
+    budgetRows.push([id, budget]);
+  }
+  const byIdAsc = (a: readonly [EntityId, unknown], b: readonly [EntityId, unknown]): number =>
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0;
+  econRows.sort(byIdAsc);
+  budgetRows.sort(byIdAsc);
+  return {
+    ...state,
+    contractEconomy: mergeSortedById(state.contractEconomy, econRows),
+    errorBudgets: mergeSortedById(state.errorBudgets, budgetRows),
   };
 }
 
@@ -226,6 +291,38 @@ export function sortedById<V>(
     next.set(existingId, existing);
   }
   if (!merged) next.set(id, value);
+  return next;
+}
+
+/**
+ * Fold `newcomers` (ALREADY EntityId-ascending, ids deduped by the caller)
+ * into `source` in one O(n + m) merge pass — the batch half of
+ * {@link registerContractsEconomy}, replacing m chained {@link sortedById}
+ * shift-inserts. Insertion order of the result is strictly ascending, so the
+ * Map's iteration order equals any chain of single inserts (digests see Map
+ * order). A newcomer whose id already sits in `source` lands at SOURCE's
+ * position with the NEWCOMER's value — `Map.set` keeps first-insert position
+ * and the trailing overwrite carries the new value, exactly the in-place arm
+ * of {@link sortedById}. An unsorted `source` falls back to the full sort,
+ * the same recovery {@link sortedById} performs per call.
+ */
+function mergeSortedById<V>(
+  source: ReadonlyMap<EntityId, V>,
+  newcomers: readonly (readonly [EntityId, V])[],
+): ReadonlyMap<EntityId, V> {
+  if (!isIdSorted(source)) {
+    return sortEntries(new Map<EntityId, V>([...source, ...newcomers]));
+  }
+  const next = new Map<EntityId, V>();
+  let at = 0;
+  for (const [existingId, existing] of source) {
+    while (at < newcomers.length && newcomers[at]![0] < existingId) {
+      next.set(newcomers[at]![0], newcomers[at]![1]);
+      at += 1;
+    }
+    next.set(existingId, existing);
+  }
+  for (; at < newcomers.length; at += 1) next.set(newcomers[at]![0], newcomers[at]![1]);
   return next;
 }
 

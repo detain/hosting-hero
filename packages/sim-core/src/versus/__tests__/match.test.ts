@@ -8,13 +8,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { asRunSeed, type ExternalIntent } from "../../types.ts";
+import { asMoney, asRunSeed, asRuleId, type ExternalIntent, type PolicyCard } from "../../types.ts";
 import { digestState } from "../../pipeline/index.ts";
 import { createHarness } from "../../replay/index.ts";
 import type { StampedIntent } from "../../replay/index.ts";
 import type { ReplayContentHashes } from "../../types.ts";
-import { createVersusRunner, initialVersusRunState, type VersusMatchConfig, type VersusRunState } from "../match.ts";
-import { fromRatio } from "../../kernel/fixed.ts";
+import { cardContentFingerprint, createVersusRunner, defaultPolicyCardIndex, initialVersusRunState, versusRuleBookHash, type VersusMatchConfig, type VersusReserveIntent, type VersusRunState } from "../match.ts";
+import { fromInt, fromRatio } from "../../kernel/fixed.ts";
 import { deckToWaveTable, resolveVersusMatch, scoreVersusMatch, stampReserveIntents } from "../match.ts";
 import { parseDefenseDeck } from "../deck.ts";
 import type { MatchScoringWeights } from "../match.ts";
@@ -23,7 +23,8 @@ import {
   CENSUS,
   GAUGE_CARD,
   RAW_DECK_MAIN,
- VERSUS_PRESSURE,
+ VERSUS_DEFENDER,
+  VERSUS_PRESSURE,
   matchConfig,
   parseDeck,
   versusSeed,
@@ -288,12 +289,191 @@ describe("review pins — affixes are inert in the sim, live on the wire", () =>
 
 describe("door decoupling through the defense parser", () => {
   test("parseDefenseDeck + deckToWaveTable agree on a real registry deck", () => {
+    // hh-card-v1 law (owner-ratified 2026-10-09): policyCardHashes entries
+    // are CONTENT FINGERPRINTS, not card ids.
     const defense = parseDefenseDeck(
-      { id: "keep", buildables: ["waf", "cache"], policyCardHashes: [GAUGE_CARD.id], doctrineRef: "defense:absorb", handCapacity: 2 },
+      { id: "keep", buildables: ["waf", "cache"], policyCardHashes: [cardContentFingerprint(GAUGE_CARD)], doctrineRef: "defense:absorb", handCapacity: 2 },
       { buildableUniverse: new Set(["waf", "cache", "meter"]) },
     );
-    expect(defense.policyCardHashes).toEqual([GAUGE_CARD.id]);
+    expect(defense.policyCardHashes).toEqual([cardContentFingerprint(GAUGE_CARD)]);
     const { table } = deckToWaveTable(parseDeck(RAW_DECK_MAIN), { census: CENSUS, tableId: "versus-paired", typeBundleId: "shared-web" });
     expect(table.waves).toHaveLength(8);
+  });
+});
+
+/* ═══════════ card content fingerprint — hh-card-v1 keying (ADR-0009 ratification 2026-10-09) ═══════════ */
+
+describe("cardContentFingerprint — identity is bytes of content, ids are labels", () => {
+  test("scheme stamp + determinism across repeated and freshly-built encodes", () => {
+    const fp = cardContentFingerprint(GAUGE_CARD);
+    expect(fp).toMatch(/^hh-card-v1:[0-9a-f]{16}$/);
+    expect(cardContentFingerprint(GAUGE_CARD)).toBe(fp);
+    // Reordered insertion + unfrozen twin: the canonical fold sorts keys by
+    // code unit, so the encoding cannot depend on how the card was written.
+    const rebuilt: PolicyCard = {
+      upkeepMicroUsd: GAUGE_CARD.upkeepMicroUsd,
+      then: GAUGE_CARD.then,
+      ...(GAUGE_CARD.for !== undefined ? { for: GAUGE_CARD.for } : {}),
+      band: GAUGE_CARD.band,
+      when: GAUGE_CARD.when,
+      scope: GAUGE_CARD.scope,
+      id: GAUGE_CARD.id,
+    };
+    expect(cardContentFingerprint(rebuilt)).toBe(fp);
+  });
+
+  test("GOLDEN: GAUGE_CARD folds to the captured fingerprint", () => {
+    // captured @fingerprint-flip (2026-10-09) — the scheme's byte contract;
+    // a drift here means the fold changed, which needs a NEW version tag.
+    expect(cardContentFingerprint(GAUGE_CARD)).toBe("hh-card-v1:cd1296c54df0e9c6");
+  });
+
+  test("(a) same content, different id → SAME fingerprint", () => {
+    const renamed = { ...GAUGE_CARD, id: asRuleId("r-versus-renamed-label") };
+    expect(cardContentFingerprint(renamed)).toBe(cardContentFingerprint(GAUGE_CARD));
+  });
+
+  test("(b) different content, same id → DIFFERENT fingerprint (no impersonation)", () => {
+    const reauthored = { ...GAUGE_CARD, upkeepMicroUsd: asMoney(11n) };
+    expect(cardContentFingerprint(reauthored)).not.toBe(cardContentFingerprint(GAUGE_CARD));
+    const retuned: PolicyCard = {
+      ...GAUGE_CARD,
+      then: Object.freeze([Object.freeze({ id: "scale-out" as const, runbookName: null, value: fromInt(3) })]),
+    };
+    expect(cardContentFingerprint(retuned)).not.toBe(cardContentFingerprint(GAUGE_CARD));
+  });
+
+  test("(c) the id itself never enters the fold (card-id-collision stays the id-space guard)", () => {
+    // Two ids, one content: identical keys by law (a); the door's collision
+    // guard still speaks ids — the two spaces are deliberately independent.
+    const twinA = { ...GAUGE_CARD, id: asRuleId("r-twin-a") };
+    const twinB = { ...GAUGE_CARD, id: asRuleId("r-twin-b") };
+    expect(cardContentFingerprint(twinA)).toBe(cardContentFingerprint(twinB));
+  });
+});
+
+describe("defaultPolicyCardIndex — the key space is fingerprints, never ids (revert guard)", () => {
+  test("default index is fingerprint-keyed, never id-keyed (revert of the 2026-10-09 flip goes red HERE)", () => {
+    // THE falsification pin. Under the OLD id-keyed default the two asserts
+    // below swap verdicts: `index.get(id)` returned the card (not undefined)
+    // and `index.get(fingerprint)` missed. Reverting match.ts's fallback line
+    // to key on card.id is a one-line edit that turns BOTH lines red — and it
+    // is the ONLY test in the lane that reads the DEFAULT map's key space
+    // directly (the door-wiring tests below always inject their own explicit
+    // `policyCardsByHash`, so they never exercise the fallback).
+    const index = defaultPolicyCardIndex([GAUGE_CARD]);
+    expect(index.get(GAUGE_CARD.id as string)).toBeUndefined();
+    expect(index.get(cardContentFingerprint(GAUGE_CARD))).toBe(GAUGE_CARD);
+  });
+
+  test("content-identical twins under different ids collapse to ONE fingerprint slot (fold drops id)", () => {
+    // The fold strips card.id, so two twins share one key. Map insert order
+    // gives the later pair the slot — pinned honestly as twinB (a last-write
+    // wins collapse, not a throw), never silently distinguished by id.
+    const twinA = { ...GAUGE_CARD, id: asRuleId("r-versus-twin-a") };
+    const twinB = { ...GAUGE_CARD, id: asRuleId("r-versus-twin-b") };
+    const index = defaultPolicyCardIndex([twinA, twinB]);
+    const fp = cardContentFingerprint(GAUGE_CARD);
+    expect(cardContentFingerprint(twinA)).toBe(fp);
+    expect(cardContentFingerprint(twinB)).toBe(fp);
+    expect(index.size).toBe(1);
+    expect(index.get(fp)).toBe(twinB);
+    // Neither id is ever a key.
+    expect(index.get(twinA.id as string)).toBeUndefined();
+    expect(index.get(twinB.id as string)).toBeUndefined();
+  });
+});
+
+describe("versus door wiring — cards resolve by CONTENT fingerprint, not by id", () => {
+  function runToTick(config: VersusMatchConfig, tick: number): VersusRunState {
+    const runner = createVersusRunner(config, { memoize: false });
+    return runner({
+      initialState: initialVersusRunState(config),
+      runSeed: config.seed,
+      targetTick: BigInt(tick),
+      intentsUpToTick: stampReserveIntents(config.defender.reserveIntents ?? []) as readonly unknown[] as readonly StampedIntent[],
+    });
+  }
+
+  const commitAt = (cardHash: string): readonly VersusReserveIntent[] =>
+    Object.freeze([
+      Object.freeze({ tick: 5, intent: Object.freeze({ verb: "policy-card-commit" as const, cardHash }) }),
+    ]);
+
+  test("default index: an id-shaped hash finds nothing — the book stays untouched", () => {
+    const config = matchConfig({
+      matchTicks: 12,
+      customerBaseline: null,
+      defender: { ...VERSUS_DEFENDER, reserveIntents: commitAt(GAUGE_CARD.id as string) },
+    });
+    const at5 = runToTick(config, 4);
+    const after = runToTick(config, 8);
+    // Refusal is state-inert (door law): nothing executed.
+    expect(after.game.ruleBook.map((card) => card.id)).toEqual(["r-versus-gauge"]);
+    expect(after.game.ruleBookHash).toBe(at5.game.ruleBookHash);
+    expect(after.game.ruleBookHash).toBe(versusRuleBookHash([GAUGE_CARD]));
+  });
+
+  test("default index: a fingerprint-commit of a book card hits the lookup and refuses as id-collision — book unchanged", () => {
+    // Lane reality pinned: the DEFAULT map is the ruleBook itself, so every
+    // resolvable fingerprint belongs to an already-committed id → the only
+    // honest verdict is card-id-collision (a refusal), never a re-execution.
+    const config = matchConfig({
+      matchTicks: 12,
+      customerBaseline: null,
+      defender: { ...VERSUS_DEFENDER, reserveIntents: commitAt(cardContentFingerprint(GAUGE_CARD)) },
+    });
+    const after = runToTick(config, 8);
+    expect(after.game.ruleBook).toHaveLength(1);
+    expect(after.game.ruleBookHash).toBe(versusRuleBookHash([GAUGE_CARD]));
+  });
+
+  test("fingerprint-keyed host map executes an off-book card (the ratification's live path)", () => {
+    const decoy: PolicyCard = {
+      ...GAUGE_CARD,
+      id: asRuleId("r-versus-off-book-decoy"),
+      then: [Object.freeze({ id: "page" as const, runbookName: null, value: null })],
+    };
+    const config = matchConfig({
+      matchTicks: 12,
+      customerBaseline: null,
+      defender: {
+        ...VERSUS_DEFENDER,
+        policyCardsByHash: new Map([[cardContentFingerprint(decoy), decoy]]),
+        reserveIntents: commitAt(cardContentFingerprint(decoy)),
+      },
+    });
+    const before = runToTick(config, 4);
+    const after = runToTick(config, 8);
+    expect(after.game.ruleBook).toHaveLength(2);
+    expect((after.game.ruleBook[1] as typeof GAUGE_CARD).id).toBe("r-versus-off-book-decoy");
+    expect(after.game.ruleBookHash).not.toBe(before.game.ruleBookHash);
+    // The door re-folds its OWN M3 book hash on execution — versusRuleBookHash
+    // is the commit-time doctrine identity, not the door's runtime fold; both
+    // must simply agree that the book changed.
+    expect(before.game.ruleBookHash).toBe(versusRuleBookHash([GAUGE_CARD]));
+  });
+
+  test("re-authored card cannot impersonate its old fingerprint (bytes bind)", () => {
+    const original = { ...GAUGE_CARD, id: asRuleId("r-versus-original") };
+    const reauthored = { ...original, upkeepMicroUsd: asMoney(999n) };
+    const config = matchConfig({
+      matchTicks: 12,
+      customerBaseline: null,
+      defender: {
+        ...VERSUS_DEFENDER,
+        // Host bound the ORIGINAL bytes under the original fingerprint…
+        policyCardsByHash: new Map([[cardContentFingerprint(original), Object.freeze(original)]]),
+        // …and the player commits the RE-AUTHORED card's fingerprint.
+        reserveIntents: commitAt(cardContentFingerprint(reauthored)),
+      },
+    });
+    const after = runToTick(config, 8);
+    // Different content → different key → lookup misses → unknown-card-hash
+    // refusal, state-inert. This host map is EXPLICIT and fingerprint-keyed,
+    // so it never touches the default index's key space — the default-map
+    // revert guard lives in the `defaultPolicyCardIndex` pin above, not here.
+    expect(after.game.ruleBook).toHaveLength(1);
+    expect(after.game.ruleBookHash).toBe(versusRuleBookHash([GAUGE_CARD]));
   });
 });
