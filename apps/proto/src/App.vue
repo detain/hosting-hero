@@ -31,6 +31,7 @@ import { connectionState, ingestProjection, fault, projection as projectionRef }
 import { era, setEra } from "./i18n/eraState";
 import { SimClient, asWorkerLike, type WorkerLike } from "./bridge/simClient";
 import { globalBudget } from "./render/budget";
+import DecisionRail from "./decision/DecisionRail.vue"; // §7.6 marked-decision rail
 
 /** The sandbox view id — never collides with a "G<n>" gateId. */
 const SANDBOX_ID = "sandbox";
@@ -198,6 +199,10 @@ const speed = ref<1 | 2 | 4>(1);
       </section>
 
       <ChromaMeter :budget="globalBudget" :visible="chromaVisible" />
+
+      <!-- §7.6 Decision Highlight v0: watches the same observed-store frames
+           the canvas does; claims markedDecision slots via globalBudget. -->
+      <DecisionRail />
 
       <p v-if="connectionState !== 'live'" class="connection">
         {{ connectionState === "faulted" ? `fault: ${projection === null ? "no frames" : "stale"}` : "connecting to sim worker…" }}
