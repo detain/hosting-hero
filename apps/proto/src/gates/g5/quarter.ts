@@ -42,6 +42,9 @@ import {
   type LedgerEntry,
   type MoneyBuckets,
   type MoneyUnit,
+  type ObservedCell,
+  type ObservedKey,
+  type ObservedWrite,
   type RunSeed,
   type SimMinute,
   type TickContext,
@@ -412,6 +415,10 @@ export interface SettleRecord {
   readonly minute: SimMinute;
   readonly entries: readonly LedgerEntry[];
   readonly notices: readonly EconomyNotice[];
+  /** Economy-sourced observations minted at THIS settle (publish-on-change:
+   *  empty on quiet minutes). Today exactly `company::reputation` when the
+   *  score moves — the host-forwarding contract fix-economy handed over. */
+  readonly observedWrites: readonly ObservedWrite[];
   readonly cash: MoneyBuckets;
 }
 
@@ -442,6 +449,10 @@ export interface QuarterResult {
   readonly settles: readonly SettleRecord[];
   readonly allEntries: readonly LedgerEntry[];
   readonly allNotices: readonly EconomyNotice[];
+  /** Every economy observation in settle order (chronological trail). */
+  readonly observedWrites: readonly ObservedWrite[];
+  /** Last-wins observed map at quarter end — what a live store would hold. */
+  readonly observedCells: ReadonlyMap<ObservedKey, ObservedCell<unknown>>;
   readonly noticesByKind: Readonly<Record<string, readonly EconomyNotice[]>>;
   readonly months: readonly MonthSummary[];
   readonly minuteAuditViolations: readonly string[];
@@ -490,6 +501,8 @@ export function runQuarter(options: RunQuarterOptions): QuarterResult {
   let clocks = initialClocks();
   let prevRealMark = 0n;
   const settles: SettleRecord[] = [];
+  const observedTrail: ObservedWrite[] = [];
+  const observedCells = new Map<ObservedKey, ObservedCell<unknown>>();
 
   for (const minute of settleMinutes()) {
     /* Land the business clock exactly on `minute` via real-mark deltas. */
@@ -549,7 +562,16 @@ export function runQuarter(options: RunQuarterOptions): QuarterResult {
        audit below generalizes it across the freeze gaps). */
     assertJournalMatchesCash(state, `settle ${minute}`);
 
-    settles.push({ minute, entries: out.entries, notices: out.notices, cash: state.cash });
+    /* Collect the economy's observations (fix-economy's forwarding contract).
+       NOT part of digestQuarter's serialized subset — the replay goldens ride
+       entries/notices/cash, so carrying these cells is digest-neutral by
+       construction (verified by the ×100 replay arm in the host tests). */
+    for (const write of out.observedWrites) {
+      observedTrail.push(write);
+      observedCells.set(write.key, write.cell);
+    }
+
+    settles.push({ minute, entries: out.entries, notices: out.notices, observedWrites: out.observedWrites, cash: state.cash });
   }
 
   const allEntries = state.journal.entries;
@@ -570,6 +592,8 @@ export function runQuarter(options: RunQuarterOptions): QuarterResult {
     settles,
     allEntries,
     allNotices,
+    observedWrites: observedTrail,
+    observedCells,
     noticesByKind,
     months: summarizeMonths(allEntries),
     minuteAuditViolations: violations,

@@ -123,6 +123,13 @@ const incidentBanner = computed(() => {
           @input="settleIdx = Number(($event.target as HTMLInputElement).value)"
         />
         <span class="g5-readout" data-test="g5-minute-readout">{{ businessMinuteLabel(minute) }}</span>
+        <button
+          class="g5-reputation"
+          type="button"
+          data-test="g5-reputation"
+          :title="frame.reputation.published ? `company::reputation published at m${frame.reputation.lastPublishedAtMinute}` : 'opening score — nothing published yet'"
+          @click="explain = frame.reputation.explain"
+        >rep {{ frame.reputation.percentText }}</button>
         <span class="g5-ends">quarter ends {{ businessMinuteLabel(frame.quarterEndsAt) }}</span>
       </div>
 
@@ -250,6 +257,18 @@ const incidentBanner = computed(() => {
 .g5-play:hover { filter: brightness(1.1); }
 .g5-scrubber { flex: 1; accent-color: var(--g5-teal); height: 22px; cursor: ew-resize; }
 .g5-readout { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--g5-mint); min-width: 118px; }
+.g5-reputation {
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--g5-ink);
+  background: none;
+  border: 1px solid var(--g5-rule);
+  border-radius: 3px;
+  padding: 1px 8px;
+  cursor: pointer;
+}
+.g5-reputation:hover { border-color: var(--g5-teal); color: var(--g5-teal); }
 .g5-ends { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--g5-ink-dim); }
 
 .g5-body { display: grid; }

@@ -376,6 +376,10 @@ export interface UnattendedReport {
   /** Honest advisory lines (deduped, code-unit sorted). */
   readonly warns: readonly string[];
   readonly guardsParsed: readonly ParsedGuard[];
+  /** The tick-final merged observed map (store overlay included, economy
+   *  forwarding included) — hosts read `company::reputation` etc. from here
+   *  instead of re-running the store. */
+  readonly finalObserved: ReadonlyMap<ObservedKey, ObservedCell<unknown>>;
 }
 
 /* ═══════════════════════════ per-tick facts + sampling ═══════════════════════════ */
@@ -1015,6 +1019,16 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
         }));
         econ = out.state;
         for (const notice of out.notices) summary.notices.set(notice.kind, (summary.notices.get(notice.kind) ?? 0) + 1);
+        /* Forward the economy's own observations (fix-economy publisher: today
+           exactly `company::reputation`, publish-on-change so quiet ticks ship
+           an empty batch) into the store, then re-merge THIS tick's observed
+           map — the tick-960 merge ran before the money lane, so without this
+           second pass the host would keep '?' cells for economy-sourced keys.
+           Same-tick watermark is legal (store allows equal tickUs). */
+        if (out.observedWrites.length > 0) {
+          store.applyObservedWrites(out.observedWrites, game.context.clocks.simUs);
+          game = Object.freeze({ ...game, observed: mergeObserved(game.observed, store) });
+        }
         econAdvanced = true;
       } catch (err) {
         if (!(err instanceof RangeError) || !NEGATIVE_BUCKET_LAW.test(err.message)) throw err;
@@ -1199,6 +1213,7 @@ function assembleReport(
     hourlyBuckets: Object.freeze(buckets),
     warns: Object.freeze([...warns].sort(compareCodeUnits)),
     guardsParsed: guards,
+    finalObserved: finalGame.observed,
   });
 }
 

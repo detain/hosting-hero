@@ -19,8 +19,17 @@
  *     buckets, invoice records, notices, error-budget structs).
  */
 
-import { asMoney, type BucketId, type EntityId, type MoneyUnit } from "@hh/sim-core/types";
-import { BUCKET_IDS } from "@hh/sim-core/economy";
+import {
+  asEntityId,
+  asMoney,
+  observedKey,
+  type BucketId,
+  type EntityId,
+  type MoneyUnit,
+  type ObservedKey,
+  type ObservedWrite,
+} from "@hh/sim-core/types";
+import { BUCKET_IDS, emptyEconomyState } from "@hh/sim-core/economy";
 import type { DunningStage, EconomyNotice, Invoice } from "./quarter.ts";
 import {
   DUNNING_STAGE_ORDER,
@@ -182,10 +191,27 @@ export interface TickerRow {
   readonly detail: string;
 }
 
+/** Company-wide reputation as the economy publishes it (§2.10/§5.10):
+ *  `company::reputation` cells ride QuarterResult's observation trail —
+ *  before the first publish the pane honestly shows the OPENING constant
+ *  (derived from `emptyEconomyState()`, never a hardcoded lie). */
+export interface ReputationPane extends Explainable {
+  /** e.g. "48.00 %" — bps on the 0..10,000 scale, two decimals. */
+  readonly percentText: string;
+  /** Whole bps (integer, clamped by the economy itself). */
+  readonly bps: number;
+  /** False ⇒ no cell published yet at this minute; `bps` is the opening. */
+  readonly published: boolean;
+  readonly lastPublishedAtMinute: number | null;
+  /** Publish count up to this minute (change witnesses, not a signal census). */
+  readonly publishesSoFar: number;
+}
+
 export interface Gate5Frame {
   readonly minute: number;
   readonly day: number;
   readonly quarterEndsAt: number;
+  readonly reputation: ReputationPane;
   readonly buckets: readonly BucketRow[];
   readonly bankBalanceText: string;
   readonly spendableText: string;
@@ -257,6 +283,7 @@ export function projectFrame(result: QuarterResult, minute: number): Gate5Frame 
     minute,
     day: Math.floor(minute / MINUTES_PER_DAY),
     quarterEndsAt: QUARTER_MINUTES,
+    reputation: reputationPane(result, minute),
     buckets,
     ...totals,
     kanban: kanbanColumns(result, minute, noticesSoFar),
@@ -266,6 +293,68 @@ export function projectFrame(result: QuarterResult, minute: number): Gate5Frame 
     months: monthPanes(result, minute),
     budgets: budgetRows(result, minute, noticesSoFar),
     ticker: tickerRows(noticesSoFar, 24),
+  };
+}
+
+/* Reputation pane — the observedWrites forwarding seam made legible */
+
+const REPUTATION_KEY: ObservedKey = observedKey(asEntityId("company"), "reputation");
+
+/** Opening score the economy gives every fresh run (derived, not authored —
+ *  stays honest if REPUTATION_INITIAL_BPS ever moves). */
+const OPENING_BPS: number = Number(emptyEconomyState().reputation.overallBps);
+
+/** Q16.16 Fixed → whole bps, exact integer round-half-up (the fromRatio fold
+ *  inverted; no float in the hot path). */
+function fixedToBps(fixed: bigint): number {
+  return Number((fixed * 10_000n + 32_768n) / 65_536n);
+}
+
+function percentOf(bps: number): string {
+  return `${String(Math.floor(bps / 100))}.${String(bps % 100).padStart(2, "0")} %`;
+}
+
+function reputationPane(result: QuarterResult, minute: number): ReputationPane {
+  let last: { readonly write: ObservedWrite; readonly atMinute: number } | null = null;
+  let publishes = 0;
+  for (const settle of result.settles) {
+    if (settle.minute > minute) break; // settles arrive in minute order
+    for (const write of settle.observedWrites) {
+      if (write.key !== REPUTATION_KEY) continue;
+      publishes += 1;
+      last = { write, atMinute: settle.minute };
+    }
+  }
+  let bps = OPENING_BPS;
+  if (last !== null) {
+    const raw = last.write.cell.value;
+    if (typeof raw !== "bigint") {
+      throw new RangeError(
+        `g5/projection: company::reputation must carry a bigint Fixed cell, got ${String(raw)}`,
+      );
+    }
+    bps = fixedToBps(raw);
+  }
+  return {
+    percentText: percentOf(bps),
+    bps,
+    published: last !== null,
+    lastPublishedAtMinute: last?.atMinute ?? null,
+    publishesSoFar: publishes,
+    explain: {
+      title: "Reputation — as of this minute",
+      formula:
+        "economy step 12.5 folds signed-bps signals into one company ledger (written-off −600, voluntary churn −200, dunning recovered +150, chargeback −400, major incident −500 — halved once an honest post-mortem stands, honest post-mortem +250), clamps 0..10,000 bps, and publishes company::reputation ONLY when it changes (all deltas PROVISIONAL, economy/config.ts)",
+      inputs: [
+        { name: "as-of minute", value: "current scrub position" },
+        {
+          name: "source",
+          value: last !== null ? `published cell at m${String(last.atMinute)}` : "opening constant — nothing published yet",
+        },
+        { name: "publishes so far", value: String(publishes) },
+        { name: "scale", value: "10,000 bps = 100 %" },
+      ],
+    },
   };
 }
 

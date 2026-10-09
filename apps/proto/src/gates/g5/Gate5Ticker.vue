@@ -6,20 +6,28 @@
  *  — decision `alert.churn-fuse` filled with the signer's customer label from
  *  GATE5_SCRIPT. The wire's own kind/detail/cause columns stay VERBATIM
  *  ledger truth; pack prose supplements, never replaces, the data. Kinds
- *  without a pack key render exactly as before (see i18n/noticeCopy.ts). */
+ *  without a pack key render exactly as before (see i18n/noticeCopy.ts).
+ *
+ *  HOST-WIRING ADDITION (rest-host-wiring lane): the three new economy kinds
+ *  (contract-activated / covenant-breached / chargeback-posted) fall through
+ *  to the PROVISIONAL voices in gates/g5/noticeSurface.ts — pack prose still
+ *  wins whenever noticeWireCopy returns a line. */
 import { computed } from "vue";
 import { signingsById, type TickerRow } from "./projection.ts";
 import { noticeWireCopy } from "../../i18n/noticeCopy.ts";
+import { voiceEconomyNotice } from "./noticeSurface.ts";
 
 const props = defineProps<{ rows: readonly TickerRow[] }>();
 
-/** Row → pack prose line (null = no honest key, chrome keeps its silence). */
+/** Row → second-line prose: pack copy first, provisional voice as the
+ *  fallback for the new kinds (null = chrome keeps its silence). */
 const copyByRowKey = computed(
   () =>
     new Map(
       props.rows.map((row) => [
         row.key,
-        noticeWireCopy(row.kind, signingsById.get(row.contractId)?.customerLabel ?? null),
+        noticeWireCopy(row.kind, signingsById.get(row.contractId)?.customerLabel ?? null)
+          ?? voiceEconomyNotice(row.kind),
       ]),
     ),
 );
