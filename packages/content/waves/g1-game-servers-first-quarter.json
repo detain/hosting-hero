@@ -14,7 +14,7 @@
     "sawtooth": {
       "kind": "rising-floor-sawtooth",
       "values": null,
-      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (PROVISIONAL-B pending owner pick, OD-2)."
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
     },
     "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
     "tuningSheet": "PROVISIONAL-B"

@@ -71,7 +71,7 @@
             "weight": { "type": ["number", "null"] },
             "loyalty": { "type": ["number", "null"] },
             "fragility": { "type": ["number", "null"] },
-            "tuningSheet": { "type": "string", "description": "PROVISIONAL-A|PROVISIONAL-B|PROVISIONAL-C marker (owner has NOT picked the canonical tuning sheet — MASTER_REPORT Appendix D / OD-2)." },
+            "tuningSheet": { "type": "string", "description": "PROVISIONAL-A|PROVISIONAL-B|PROVISIONAL-C marker (owner ratified PROVISIONAL-B as the canonical sheet 2026-10-09 — docs/adr/0009, OD-2 CLOSED; wire markers stay PROVISIONAL-[ABC] until the owner re-author sweep)." },
             "_todo": { "type": "string" }
           }
         },

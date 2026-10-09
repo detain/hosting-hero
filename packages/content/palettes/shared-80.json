@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "palette:shared-80",
+  "name": "The Shared Eighty",
+  "description": "Named home for the archetype objects type-bundles compose from. Laws encoded: §0.2 R7 corollary (a new hosting type reuses >=80% known objects; genuinely-distinct stays <=20%) and §4.10 authoring rule 'skin the mechanics, never skin the silhouette' (R61: reserve the ~15 genuinely-distinct verb-changing objects game-wide; everything else is a costume on a shared-mechanics object). Both shipped prototype-anchor bundles (official:shared-web, official:game-servers) point buildables.paletteRef here; every archetype their buildables.archetypeInstances name MUST be defined in this file — the content validator makes a dangling paletteRef or an unknown archetype loud red (audit group-13: the ref previously resolved nowhere).",
+  "archetypes": [
+    {
+      "id": "concurrency-pool",
+      "object": "The countable concurrency pool — slots that fill, a queue that backs up, patience that drains (§4.10 names it as ONE object wearing five costumes).",
+      "engine": "sim-core pipeline slot/queue/rho + patience laws (packages/sim-core/src/pipeline/)",
+      "verbChanger": false,
+      "costumes": [
+        "shared-web: the per-account connection-slot pool (the oversell ratio rides this same object)",
+        "game-servers: the game-server slot (tick-budgeted sessions in rooms)",
+        "future: the VoIP channel group",
+        "future: the serverless warm pool — cross-reference verbChangerReserve item 'warm-pool'",
+        "future: the Modem Bank (dial pool)"
+      ]
+    },
+    {
+      "id": "two-face-rack",
+      "object": "The rack vessel with an authored front and an authored back — two-face law, G6 (the back view is canonical for rack verbs).",
+      "engine": "sim-core topology rack grid + blast-radius projection (packages/sim-core/src/topology/)",
+      "verbChanger": false,
+      "costumes": [
+        "shared-web: the cabinet row (Cabinet 14)",
+        "game-servers: the tick-node rack row behind the inspector's metronome panel"
+      ]
+    },
+    {
+      "id": "control-plane",
+      "object": "The panel the customer lives in — a cPanel-class god view over one account's slice.",
+      "engine": "sim-core observed seat-scoped projection (packages/sim-core/src/observed/)",
+      "verbChanger": false,
+      "costumes": [
+        "shared-web: cPanel (archetypeInstance skin 'cpanel')"
+      ]
+    },
+    {
+      "id": "matchmaker",
+      "object": "The session rendezvous object that projects players into rooms — a genuine verb-changer occupying an archetype slot (§4.10 names it in the R61 reserve).",
+      "engine": "waves arrival routing + the game-servers 'matchmaker-projection' mechanic (packages/sim-core/src/waves/)",
+      "verbChanger": true,
+      "costumes": [
+        "game-servers: the server-browser matchmaking tier (archetypeInstance skin 'game-servers')"
+      ]
+    }
+  ],
+  "verbChangerReserve": {
+    "max": 15,
+    "source": "hosting_game.md §4.10 / R61 — the ~15 genuinely-distinct, verb-changing objects reserved for the whole game. The accounting lives in this palette so a content lane cannot silently spend the reserve: the validator fails when items exceed max or when a palette archetype marked verbChanger is absent from this list.",
+    "items": [
+      { "name": "tape-robot", "status": "reserved-unbuilt" },
+      { "name": "residency-fence", "status": "reserved-unbuilt" },
+      { "name": "compliance-boundary-paint", "status": "reserved-unbuilt" },
+      { "name": "tick-optimised-node", "status": "reserved-unbuilt" },
+      { "name": "job-checkpointing-service", "status": "reserved-unbuilt" },
+      { "name": "meet-me-room", "status": "reserved-unbuilt" },
+      { "name": "the-dish", "status": "reserved-unbuilt" },
+      { "name": "warm-pool", "status": "reserved-unbuilt" },
+      { "name": "spend-cap", "status": "reserved-unbuilt" },
+      { "name": "erasure-coding-policy", "status": "reserved-unbuilt" },
+      { "name": "immutable-vault", "status": "reserved-unbuilt" },
+      { "name": "matchmaker", "status": "shipped", "note": "Consumed by official:game-servers buildables.archetypeInstances." },
+      { "name": "high-density-busway", "status": "reserved-unbuilt" },
+      { "name": "out-of-band-modem", "status": "reserved-unbuilt" },
+      { "name": "origin-shield", "status": "reserved-unbuilt" }
+    ]
+  },
+  "openQuestions": [
+    "The full >=80% common-object catalogue beyond these four engine-backed archetypes is future Phase-2 content (audit group-13 finding: named per-tier buildables had no home; this palette is the home, its shelves beyond the archetype layer await authoring).",
+    "The per-bundle 20% distinct-budget arithmetic is not machine-enforced yet: bundle distinct lists (shared-web 12+3, game-servers 8+3) are hand-reviewed against §0.2 R7 until the common catalogue is large enough for the ratio to mean anything."
+  ]
+}

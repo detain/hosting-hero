@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // Structural validator for packages/content — Node stdlib only (no npm deps).
 // Gates: parse, schema-required keys (via a JSON-Schema-subset interpreter),
-// id uniqueness, cross-registry reference resolution, Second-Answer counters,
+// id uniqueness, cross-registry reference resolution, PALETTE ANCHOR RESOLUTION
+// (every bundle buildables.paletteRef must equal an authored palettes/*.json id
+// and every archetypeInstances name must live in that palette — audit group-13),
+// R61 verb-changer reserve budget, Second-Answer counters,
 // null=>_todo discipline, PROVISIONAL-[ABC] tuningSheet markers, §1.7 wave
 // authoring rules, and i18n ticket-pack conformance: packs exist for every
 // file:packs/ ref, cover every bundle-referenced key, obey the decision/flavour
@@ -219,6 +222,50 @@ if (archetypes) {
   scanNulls(archetypes, "visitors/archetypes-core.json");
 }
 
+// ---------- palette checks (§0.2 R7 / §4.10-R61 anchor resolution) ----------
+// A bundle's buildables.paletteRef must resolve to an authored palette here, and
+// every archetype its buildables.archetypeInstances names must be defined in that
+// palette. Before audit group-13 the shipped "palette:shared-80" resolved nowhere.
+const paletteSchemaRel = "schema/palette.schema.json";
+const paletteSchema = readJson(paletteSchemaRel);
+if (!paletteSchema) { console.error("palette schema unreadable; aborting"); process.exit(1); }
+if (paletteSchema.$schema !== "https://json-schema.org/draft/2020-12/schema") fail(paletteSchemaRel, "not draft 2020-12");
+
+const palettesRel = dataFiles.filter((f) => f.startsWith("palettes") && f.endsWith(".json"));
+const paletteArchetypes = new Map(); // palette id -> Set<archetype id>
+const paletteIdToRel = new Map(); // palette id -> rel (orphan guard)
+for (const rel of palettesRel) {
+  const p = readJson(rel);
+  if (!p) continue;
+  validateAgainst(paletteSchema, p, rel);
+  scanNulls(p, rel);
+  if (!ID_RE.test(p.id ?? "")) fail(rel, `palette id '${p.id}' bad`);
+  if (paletteArchetypes.has(p.id)) { fail(rel, `duplicate palette id '${p.id}'`); continue; }
+  if (typeof p.id === "string") paletteIdToRel.set(p.id, rel);
+  const archSet = new Set();
+  const verbSet = new Set();
+  (p.archetypes ?? []).forEach((a, i) => {
+    const w = `${rel}.archetypes[${i}](${a.id ?? "???"})`;
+    if (!ID_RE.test(a.id ?? "")) fail(w, `bad archetype id '${a.id}'`);
+    if (archSet.has(a.id)) fail(w, `duplicate archetype id '${a.id}'`);
+    archSet.add(a.id);
+    if (a.verbChanger === true) verbSet.add(a.id);
+  });
+  const reserve = p.verbChangerReserve ?? {};
+  const reserveNames = new Set();
+  (reserve.items ?? []).forEach((it, i) => {
+    const w = `${rel}.verbChangerReserve.items[${i}](${it?.name ?? "???"})`;
+    if (reserveNames.has(it?.name)) fail(w, `duplicate reserve item '${it?.name}'`);
+    reserveNames.add(it?.name);
+  });
+  if ((reserve.items ?? []).length > (reserve.max ?? 0))
+    fail(rel, `verbChangerReserve holds ${(reserve.items ?? []).length} items over max ${reserve.max} (R61 budget)`);
+  verbSet.forEach((id) => {
+    if (!reserveNames.has(id)) fail(rel, `archetype '${id}' is verbChanger:true but absent from verbChangerReserve — the R61 reserve is the only place a verb-changer may live`);
+  });
+  paletteArchetypes.set(p.id, archSet);
+}
+
 // ---------- bundle checks ----------
 const bundleIds = new Set();
 for (const rel of bundlesRel) {
@@ -244,6 +291,17 @@ for (const rel of bundlesRel) {
   (b.visitor?.archetypeRefs ?? []).forEach((id) => {
     if (!archetypeIds.has(id)) fail(`${rel}.visitor.archetypeRefs`, `'${id}' not in visitors/archetypes-core.json`);
   });
+  const paletteRef = b.buildables?.paletteRef;
+  if (typeof paletteRef !== "string" || !paletteRef.startsWith("palette:")) {
+    fail(`${rel}.buildables.paletteRef`, `must be a 'palette:<id>' ref, got ${JSON.stringify(paletteRef)}`);
+  } else if (!paletteArchetypes.has(paletteRef)) {
+    fail(`${rel}.buildables.paletteRef`, `'${paletteRef}' matches no authored palette (known: [${[...paletteArchetypes.keys()].join(", ") || "none"}])`);
+  } else {
+    (b.buildables?.archetypeInstances ?? []).forEach((ai, i) => {
+      if (!paletteArchetypes.get(paletteRef).has(ai?.archetype))
+        fail(`${rel}.buildables.archetypeInstances[${i}]`, `archetype '${ai?.archetype}' not defined in palette '${paletteRef}'`);
+    });
+  }
   (b.skin?.palette?.chord ?? []).forEach((c) => {
     if (/magenta/i.test(c)) fail(`${rel}.skin.palette.chord`, `magenta band excluded — hue ledger reserves magenta for hostile traffic (§1.3/§8.10)`);
   });
@@ -252,6 +310,13 @@ for (const rel of bundlesRel) {
     const target = waveRef.slice("file:".length);
     if (!existsSync(join(ROOT, target))) warn(rel, `waveTable ref '${target}' not on disk yet (authored next slice)`);
   }
+}
+
+// Orphan guard: a palette no bundle points at is drift waiting to happen.
+{
+  const paletteUsed = new Set();
+  for (const { b } of bundles) if (typeof b.buildables?.paletteRef === "string") paletteUsed.add(b.buildables.paletteRef);
+  for (const [id, rel] of paletteIdToRel) if (!paletteUsed.has(id)) warn(rel, `palette '${id}' referenced by no bundle (orphan)`);
 }
 
 // ---------- i18n ticket packs (R46; README §Key literals; §9.3/§9.11 laws) ----------
@@ -464,8 +529,8 @@ for (const rel of wavesRel) {
 }
 
 // ---------- report ----------
-console.log(`checked: ${[schemaRel, packSchemaRel, "threats/registry-core.json", "visitors/archetypes-core.json", ...bundlesRel, ...wavesRel, ...packsClaimed].length} files`);
-console.log(`bundles=${bundlesRel.length} threats=${threatIds.size} archetypes=${archetypeIds.size} waves=${wavesRel.length} packs=${parsedPacks.length}`);
+console.log(`checked: ${[schemaRel, packSchemaRel, paletteSchemaRel, "threats/registry-core.json", "visitors/archetypes-core.json", ...bundlesRel, ...wavesRel, ...palettesRel, ...packsClaimed].length} files`);
+console.log(`bundles=${bundlesRel.length} threats=${threatIds.size} archetypes=${archetypeIds.size} palettes=${paletteArchetypes.size} waves=${wavesRel.length} packs=${parsedPacks.length}`);
 for (const { rel, pack } of parsedPacks) {
   const d = Object.keys(pack.decision ?? {}).length;
   const f = Object.keys(pack.flavour ?? {}).length;

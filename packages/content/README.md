@@ -14,8 +14,10 @@ directory ships JSON.
 ```
 schema/type-bundle.schema.json      JSON Schema draft 2020-12, faithful to Appendix A (21 required keys)
 schema/i18n-pack.schema.json        ticket-pack shape (draft 2020-12 subset — deep laws live in the validator)
+schema/palette.schema.json          palette shape (draft 2020-12 subset — anchor resolution + R61 budget laws live in the validator)
 types/shared-web.json               anchor type 1 ("The Mass Host" / Cabinet 14) — density game
 types/game-servers.json             anchor type 2 ("Prime Time") — G6 co-anchor: ms scale + permanent incident clock
+palettes/shared-80.json             the named home of buildables.paletteRef — 4 engine-backed shared archetypes (concurrency-pool, two-face-rack, control-plane, matchmaker) + the R61 ~15-slot verb-changer reserve accounting
 waves/g1-shared-web-first-quarter.json  seeded wave slice for gates G1/G5
 waves/g1-game-servers-first-quarter.json  seeded wave slice for gate G6 (same law set, type-specific DATA only)
 threats/registry-core.json          16 mechanical threat entries (exactly the ids the two bundles reference)
@@ -34,7 +36,11 @@ node packages/content/script/validate.mjs   # exit 0 = green; prints _todo inven
 Checks: every JSON parses · bundles carry all 21 schema-required keys · ids unique
 · every `signatureThreats`/`unlockedByBuildables` threat ref resolves in
 `threats/registry-core.json` · every `visitor.archetypeRefs` resolves in
-`visitors/archetypes-core.json` · every threat has ≥2 counters (§5.1 Second
+`visitors/archetypes-core.json` · every `buildables.paletteRef` resolves to an
+authored `palettes/*.json` id and every `buildables.archetypeInstances` name is
+defined in that palette (audit group-13: the shipped `palette:shared-80` ref
+formerly resolved nowhere) · palette R61 reserve accounting: items ≤ max and
+every `verbChanger:true` archetype appears in the reserve · every threat has ≥2 counters (§5.1 Second
 Answer) drawn from the 9 defense roles · every object containing a `null` carries
 a non-empty `"_todo"` (two declared exemptions below) · every `tuningSheet` value
 matches `PROVISIONAL-[ABC]` · wave files re-check §1.7 authoring rules (≤4
@@ -69,7 +75,7 @@ print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
 | **Verb-Shift** | R4, §0.2 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect** (one of the six invariant verbs, never a 7th, §1.9). |
 | **Rosetta Card** | R11 | One canonical engine metric + one player-language alias + one joining line. Both anchors carry doc-verbatim lines (table below). |
 | **3–5 budget** (handover) | R10, §1.9 | `handoverNote` is EXACTLY 3 keys: runsOut / killsYou / customerWants, diegetic sheet-on-desk voice. Schema enforces maxProperties 3. |
-| **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"`). Both anchors compose from the shared `concurrency-pool` + `two-face-rack` archetypes in two costumes (G6). |
+| **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"` — authored in `palettes/shared-80.json`, validator-enforced). Both anchors compose from the shared `concurrency-pool` + `two-face-rack` archetypes in two costumes (G6); the `matchmaker` archetype is the R61 reserve's first shipped verb-changer (14 of 15 slots remain unbuilt). |
 | **Five-Asset Skin Kit** | R48/R49/R53, §8.10 | Exactly: 1 palette (accent+secondary) · 2 visitor costume (hull+prop) · 3 ONE hero silhouette · 4 bespoke meter face · 5 bespoke catastrophe FX (+ ambient sound swap). Everything else = parameters of shared systems ("five assets plus eight parameter values"). Author order: METER FIRST. |
 | **Localisation law** | R46 + owner directive | **ALL human strings are i18n keys** resolved through the bundle's `ticketPack` file. No literal prose, no joke text in bundles. The packs ARE the authored English: `packs/*.i18n.json` carry every string, split into a sober `decision` namespace (shown while deciding or losing — §9.3 clauses 2–3) and a comedic `flavour` namespace (quiet surfaces only); the validator enforces the wall by root vocabulary and refuses any bundle-referenced key that strays into flavour. |
 | **Pruning rule R36** | WS-3, §2.12 | A threat earns a mechanical slot (stats + counters) only if it CHANGES THE PLAYER'S VERB, not just the noun. Everything else is Codex flavour attached to a mechanical entry. |

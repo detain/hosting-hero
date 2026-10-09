@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hosting-hero.local/schema/palette.schema.json",
+  "title": "Shared palette (the archetype layer type-bundles compose from)",
+  "description": "Shape of packages/content/palettes/*.json — the object a bundle's buildables.paletteRef resolves to. Deep laws (paletteRef resolution, archetype-instance membership, verb-changer reserve budget, null=>_todo discipline) live in script/validate.mjs; this schema is the structural shell. Interpreter subset in use: type, required, properties, items, enum, pattern, minimum, maximum, minItems.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "name", "description", "archetypes", "verbChangerReserve"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "id": { "type": "string", "pattern": "^palette:[a-z0-9][a-z0-9-]*$" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "archetypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "object", "engine", "verbChanger", "costumes"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "object": { "type": "string" },
+          "engine": { "type": "string" },
+          "verbChanger": { "type": "boolean" },
+          "costumes": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "verbChangerReserve": {
+      "type": "object",
+      "required": ["max", "source", "items"],
+      "properties": {
+        "max": { "type": "integer", "minimum": 1, "maximum": 15 },
+        "source": { "type": "string" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "status"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+              "status": { "enum": ["shipped", "reserved-unbuilt"] },
+              "note": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "openQuestions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
