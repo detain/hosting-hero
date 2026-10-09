@@ -84,10 +84,10 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
     expect(typeof SHARED.todo).toBe("string");
   });
 
-  test("namespace key counts are pinned (37/61 shared-web, 34/41 game)", () => {
-    expect(SHARED.decision.size).toBe(37);
+  test("namespace key counts are pinned (40/61 shared-web, 34/41 game)", () => {
+    expect(SHARED.decision.size).toBe(40);
     expect(SHARED.flavour.size).toBe(61);
-    expect(stableSerializePackKeys(SHARED).length).toBe(98);
+    expect(stableSerializePackKeys(SHARED).length).toBe(101);
     expect(GAME.decision.size).toBe(34);
     expect(GAME.flavour.size).toBe(41);
     expect(stableSerializePackKeys(GAME).length).toBe(75);
