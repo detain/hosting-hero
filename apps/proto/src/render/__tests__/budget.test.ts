@@ -83,7 +83,10 @@ describe("alert hue triad (≤3 active hues)", () => {
   });
 
   it("off-ledger alert hues are an authoring bug, not a refusal", () => {
-    expect(() => budget.admit(req({ id: "x", hue: "chartreuse" })).admitted).toThrow(/Hue Ledger/);
+    expect(() => budget.admit(req({ id: "x", hue: "chartreuse" })).admitted).toThrow(BudgetError);
+    expect(() => budget.admit(req({ id: "x", hue: "chartreuse" })).admitted).toThrow(
+      /budget\[off-ledger-hue\].*Hue Ledger/,
+    );
   });
 
   it("re-admitting a live claim refreshes, never double-draws", () => {

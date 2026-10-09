@@ -193,7 +193,10 @@ export class BudgetManager {
     if (request.category === "alertHue") {
       const hue = request.hue ?? "";
       if (!isAlertHue(hue)) {
-        throw new Error(`BudgetManager: "${hue}" is not in the Hue Ledger's alert pool — pick a ledger hue`);
+        throw new BudgetError(
+          "off-ledger-hue",
+          `"${hue}" is not in the Hue Ledger's alert pool — pick a ledger hue`,
+        );
       }
       const activeHues = this.activeAlertHues();
       if (activeHues.has(hue)) return null; // shares a hue slot
