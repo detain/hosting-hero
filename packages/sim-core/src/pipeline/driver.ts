@@ -37,6 +37,7 @@
 import type {
   BackpressureIn,
   BoardState,
+  CauseId,
   ClockState,
   ConfidenceContribution,
   Contract,
@@ -68,6 +69,7 @@ import type {
   RoutingLock,
   RunSeed,
   SimEvent,
+  SimMinute,
   SimTick,
   SimTimeUs,
   Unit,
@@ -127,6 +129,57 @@ export interface TickInputs {
   readonly externalIntents?: readonly ExternalIntent[];
 }
 
+/* ═══════════════════ Unlock-observer seam (Phase-2 wiring, §5) ═══════════════════
+ * The unlocks/ engine (its README: "Wiring into drivers is Phase-2 — the seam
+ * is observe(tickInput)") ships as a digest-neutral leaf that must never
+ * import pipeline. This side mirrors the handshake STRUCTURALLY — exactly as
+ * pipeline embeds its own board slice instead of importing topology/ — so the
+ * driver can forward one tick's observables without a runtime dependency:
+ * `createUnlockObserver()` satisfies `UnlockDriverObserver` by shape, and tsc
+ * refuses the handoff if the two mirrors ever drift. */
+
+/** Structural mirror of unlocks/triggers.ts `UnlockNoticeLike`. */
+export interface UnlockNoticeView {
+  readonly kind: string;
+  readonly causeId: string;
+}
+
+/** Structural mirror of unlocks/triggers.ts `UnlockTickInput` — the ONE
+ *  window the driver forwards per advance. No GameState, ever. */
+export interface UnlockObservationWindow {
+  readonly tick: SimTick;
+  readonly minute: SimMinute;
+  readonly events: readonly SimEvent[];
+  readonly notices?: readonly UnlockNoticeView[];
+  readonly eraYear?: number | null;
+}
+
+/** Structural mirror of unlocks/triggers.ts `UnlockProposal` (the `via`
+ *  widens to string exactly as the engine's own union is a closed subset). */
+export interface UnlockProposalView {
+  readonly via: string;
+  readonly targetRef: EntityId;
+  readonly atTick: SimTick;
+  readonly causeId: CauseId;
+}
+
+/** The minimum surface the driver uses off the engine's observer. */
+export interface UnlockDriverObserver {
+  readonly observe: (window: UnlockObservationWindow) => readonly UnlockProposalView[];
+}
+
+/** `TickDriverOptions.unlocks` wiring: the observer plus two optional host
+ *  feeds the driver itself cannot produce — economy notices (economy ticks
+ *  run beside the pipeline, not inside it) and the era year (loader/eras.ts
+ *  vocabulary held by the host). Both are read fresh EVERY advance, so the
+ *  proposal stream is a deterministic function of (event stream, feed order)
+ *  — replay the same inputs, get the same proposals. */
+export interface UnlockDriverWiring {
+  readonly observer: UnlockDriverObserver;
+  readonly noticesOf?: () => readonly UnlockNoticeView[];
+  readonly eraYearOf?: () => number | null;
+}
+
 /* ═══════════════════════════ Driver surface ═══════════════════════════ */
 
 export interface TickResult {
@@ -141,6 +194,11 @@ export interface TickResult {
   /** Per-intent door verdicts in canonical (tick, seq) application order —
    *  host ticker/HUD sugar over the replay-grade event record. */
   readonly doorReceipts: readonly IntentReceipt[];
+  /** Unlock proposals fired by the wired observer THIS tick (empty array =
+   *  nothing crossed). PRESENT ONLY when `options.unlocks` is wired — an
+   *  unwired TickResult serializes exactly as before (digest-neutrality of
+   *  the seam: nothing here enters GameState, events, or any digest). */
+  readonly unlockProposals?: readonly UnlockProposalView[];
   /** 0..1 retry-storm pressure this tick (metastability read-out). */
   readonly pressure: Fixed;
   /** Re-entries scheduled but not yet matured (storm headroom). */
@@ -179,6 +237,12 @@ export interface TickDriverOptions {
    *  incremental path alone (debug ladder only). Same validation shape as
    *  `purgeProbeCap`. */
   readonly purgeVerifyTicks?: number;
+  /** §5 Phase-2 seam: wire an unlocks observer (createUnlockObserver()
+   *  satisfies it structurally) and the driver feeds one window per
+   *  advance — events always, notices/era through the host's callbacks.
+   *  Default OFF: unwired runs digest byte-identically (pinned in
+   *  __tests__/driver-unlocks.test.ts). */
+  readonly unlocks?: UnlockDriverWiring;
   /** rec#5 · smallest board the attribution index runs on. Below it the
    *  full-board sweep is already sub-microsecond and paying the per-tick
    *  indexing tax is a NET LOSS — small boards skip indexing altogether
@@ -331,6 +395,10 @@ export function createTickDriver(
     throw new Error(
       `createTickDriver: purgeTargetedMinNodes ${purgeTargetedMinNodes} must be a non-negative integer (0 = always index)`,
     );
+  }
+  const unlocks = options.unlocks;
+  if (unlocks !== undefined && typeof unlocks.observer?.observe !== "function") {
+    throw new Error("createTickDriver: options.unlocks.observer must carry an observe(window) function");
   }
 
   let pending: PendingReentry[] = [];
@@ -912,6 +980,23 @@ export function createTickDriver(
       ...backpressureOut.events,
       ...economicsOut.events,
     ];
+
+    /* ── §5 unlock observer (AFTER the tick is fully formed, OUTSIDE the
+       state chain): one window per advance, proposals ride the adjacent
+       TickResult channel. The observer is a fold over fed windows, so a
+       replayed run re-proposes byte-identically; nothing here can move a
+       digest (GameState was already rebuilt above, events are frozen). ── */
+    let unlockProposals: readonly UnlockProposalView[] | undefined;
+    if (unlocks !== undefined) {
+      unlockProposals = unlocks.observer.observe({
+        tick: context.tick,
+        minute: context.minute,
+        events,
+        ...(unlocks.noticesOf !== undefined ? { notices: unlocks.noticesOf() } : {}),
+        ...(unlocks.eraYearOf !== undefined ? { eraYear: unlocks.eraYearOf() } : {}),
+      });
+    }
+
     return Object.freeze({
       state: next,
       events: Object.freeze(events),
@@ -921,6 +1006,7 @@ export function createTickDriver(
       doorReceipts: door.receipts,
       pressure: backpressureOut.pressure,
       pendingReentries: pending.length,
+      ...(unlockProposals !== undefined ? { unlockProposals } : {}),
     });
   }
 
