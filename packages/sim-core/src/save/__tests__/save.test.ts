@@ -496,9 +496,13 @@ describe("Uptime streak — ONE shared cross-mode counter set", () => {
   });
 });
 
-/* ═══════════════════════ 6. OD-8 write-access matrix ═══════════════════════ */
+/* ═══════════════════════ 6. OD-8 write-access matrix (Matrix B ratified) ═══════════════════════ */
 
-describe("Mode write-access matrix — OD-8 PENDING, campaign LIVE", () => {
+const RATIFIED_MATRIX_B = ["scenario", "daily", "consultant", "blitz"] as const;
+/** §2.5-B: the only facets a Matrix B shadow instance appends. */
+const MATRIX_B_LEDGER = new Set(["records", "medals", "streaksShared", "codex"]);
+
+describe("Mode write-access matrix — OD-8 Matrix B LIVE, endless held, campaign full-carry", () => {
   it("campaign may write EVERY facet (full-carry, L18)", () => {
     for (const facet of WRITE_FACETS) {
       expect(() => writeGuard("campaign", facet)).not.toThrow();
@@ -514,37 +518,75 @@ describe("Mode write-access matrix — OD-8 PENDING, campaign LIVE", () => {
     expect(writeGuard("campaign", "playbook")).toBe("instance");
   });
 
-  it("writeGuard THROWS naming OD-8 on every PENDING row — 5 modes × 32 facets (don't silently decide)", () => {
-    let pendingCount = 0;
-    for (const mode of SAVE_MODES) {
-      if (mode === "campaign") continue;
+  it("OD-8 Matrix B (ratified 2026-10-09, ADR-0009): scenario/daily/consultant/blitz rows are LIVE and never throw", () => {
+    for (const mode of RATIFIED_MATRIX_B) {
       for (const facet of WRITE_FACETS) {
-        pendingCount += 1;
-        expect(() => writeGuard(mode, facet)).toThrow(/OD-8/);
-        expect(writeAccessOf(mode, facet).status).toBe("PENDING_OD8");
+        expect(() => writeGuard(mode, facet)).not.toThrow();
+        expect(writeAccessOf(mode, facet).status).toBe("LIVE");
       }
     }
-    expect(pendingCount).toBe(160);
-    expect(pendingOd8Rows().length).toBe(160);
   });
 
-  it("pending rows CARRY the Option-B recommendation as data without enforcing it (§2.5-B)", () => {
-    expect(writeAccessOf("consultant", "records").kind).toBe("append"); // ledger-only would allow
-    expect(writeAccessOf("consultant", "streaksShared").kind).toBe("append");
-    expect(writeAccessOf("consultant", "scars").kind).toBe("deny"); // NEVER scars/rep/cash
-    expect(writeAccessOf("consultant", "reputation").kind).toBe("deny");
-    expect(writeAccessOf("daily", "finances").kind).toBe("deny"); // Bulletproof precedent: earnings unusable
-    expect(writeAccessOf("endless", "habits").kind).toBe("instance"); // §2.5: endless continues the Long Save in place
-    // …yet ALL of them throw until the owner ratifies:
-    expect(() => writeGuard("consultant", "records")).toThrow(/OD-8/);
-    expect(() => writeGuard("endless", "habits")).toThrow(/OD-8/);
+  it("Matrix B pattern enforced: ratified modes APPEND only records/medals/streaksShared/codex and DENY everything else (§2.5-B)", () => {
+    for (const mode of RATIFIED_MATRIX_B) {
+      const appendFacets = WRITE_ACCESS_MATRIX.filter((r) => r.mode === mode && r.kind === "append")
+        .map((r) => r.facet)
+        .sort();
+      expect(appendFacets).toEqual([...MATRIX_B_LEDGER].sort()); // exactly the ledger four
+      for (const facet of WRITE_FACETS) {
+        const expected = MATRIX_B_LEDGER.has(facet) ? "append" : "deny";
+        expect(writeGuard(mode, facet)).toBe(expected);
+      }
+    }
+    // the split named in the ratification:
+    expect(writeGuard("scenario", "records")).toBe("append");
+    expect(writeGuard("scenario", "scars")).toBe("deny"); // NEVER scars/rep/customer_book/cash
+    expect(writeGuard("daily", "finances")).toBe("deny"); // Bulletproof precedent: earnings unusable
   });
 
-  it("guardBatch aborts a whole settlement batch on any contested row (settlement atomicity, §2.4)", () => {
+  it("endless stays contested: all 32 rows PENDING_OD8 and EVERY writeGuard call THROWS naming OD-8", () => {
+    for (const facet of WRITE_FACETS) {
+      expect(writeAccessOf("endless", facet).status).toBe("PENDING_OD8");
+      expect(() => writeGuard("endless", facet)).toThrow(/OD-8/);
+    }
+    // campaign-mirror recommendation carried as DATA only (§2.5 Long Save in place):
+    expect(writeAccessOf("endless", "habits").kind).toBe("instance");
+    expect(writeAccessOf("endless", "records").kind).toBe("append");
+    // the throw names the held mode and the hold, fail-loud (Law 4):
+    expect(() => writeGuard("endless", "habits")).toThrow(/"endless".*HELD PENDING/s);
+  });
+
+  it("matrix arithmetic under Matrix B: LIVE + PENDING counts derived from SAVE_MODES × WRITE_FACETS", () => {
+    const total = SAVE_MODES.length * WRITE_FACETS.length; // 6 × 32 = 192
+    expect(WRITE_ACCESS_MATRIX.length).toBe(total);
+    expect(pendingOd8Rows().length).toBe(WRITE_FACETS.length); // endless only
+    expect(pendingOd8Rows().every((r) => r.mode === "endless")).toBe(true);
+    expect(liveRows().length).toBe(total - WRITE_FACETS.length); // campaign + 4 ratified modes
+    const ratifiedLive = liveRows().filter((r) => r.mode !== "campaign").length;
+    expect(ratifiedLive).toBe(RATIFIED_MATRIX_B.length * WRITE_FACETS.length); // 4 × 32 = 128
+    for (const mode of SAVE_MODES) {
+      const expected = mode === "endless" ? 0 : WRITE_FACETS.length;
+      expect(liveRows(mode).length).toBe(expected);
+    }
+  });
+
+  it("guardBatch aborts a whole settlement batch on a denied or held row (settlement atomicity, §2.4)", () => {
     const ok = { runId: "run-1", mode: "campaign" as const, committedAtTick: 10n, writes: [{ facet: "records" as const, payload: {} }] };
     expect(() => guardBatch(ok)).not.toThrow();
+    // a ratified ledger-only batch commits:
+    const ledgerBatch = {
+      runId: "run-3",
+      mode: "blitz" as const,
+      committedAtTick: 10n,
+      writes: (["records", "medals", "streaksShared", "codex"] as const).map((facet) => ({ facet, payload: {} })),
+    };
+    expect(() => guardBatch(ledgerBatch)).not.toThrow();
+    // LIVE-but-denied row in a ratified mode's batch: aborted by the Matrix B deny, not silently passed
     const tainted = { runId: "run-2", mode: "blitz" as const, committedAtTick: 10n, writes: [{ facet: "medals" as const, payload: {} }, { facet: "scars" as const, payload: {} }] };
-    expect(() => guardBatch(tainted)).toThrow(/OD-8/);
+    expect(() => guardBatch(tainted)).toThrow(/denies mode "blitz"/);
+    // held endless row: still throws naming OD-8
+    const held = { runId: "run-4", mode: "endless" as const, committedAtTick: 10n, writes: [{ facet: "records" as const, payload: {} }] };
+    expect(() => guardBatch(held)).toThrow(/OD-8/);
     expect(() => guardBatch({ runId: "r", mode: "campaign", committedAtTick: 0n, writes: [] })).toThrow(/facts or nothing/);
   });
 
