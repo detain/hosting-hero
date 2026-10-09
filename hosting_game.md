@@ -50,7 +50,7 @@ Headings are used at exactly three depths so future waves can merge in cleanly: 
 | ❌ | Missing — not in source (note in group report says deferred-by-plan vs unlisted) |
 | 📝 | Editorial/non-code heading |
 
-Per-heading statuses were assigned by 25 group audits (reports/audit/group-01..25.md, contract: reports/audit/AUDIT-BRIEF.md). Total tallies: see reports/audit/SUMMARY.md.
+Per-heading statuses were assigned by 25 group audits (reports/audit/group-01..25.md, contract: reports/audit/AUDIT-BRIEF.md). Total tallies: see reports/audit/SUMMARY.md. Fix-wave re-markup 2026-10-09: statuses updated in place after the 16-commit fix wave — per-row dispositions of the 15 audit PROBLEM rows in "Appendix — Audit Findings & Resolutions" at the end of this file.
 
 ## Table of Contents
 
@@ -1788,7 +1788,7 @@ vibrates. Chord: bakelite black · brass · cream · signal red · ribbon teal.
 **three named cord states with hard boundaries** — **Clear** (smooth, bright), **Grainy** (visible
 noise in the glow, MOS 3.5–4.0), **Fraying** (the braid visibly separates, below 3.5).
 
-### "Postmaster" / "Deliverability" / "The Post Office" — Email hosting ❌
+### "Postmaster" / "Deliverability" / "The Post Office" — Email hosting 🔧
 The scarce resource is **reputation**, which is held by other people and can be destroyed by one
 customer.
 
@@ -9502,7 +9502,7 @@ someone else.
 **How it works:** The modding community is **simultaneously your best marketing and your worst attack
 surface**, which is the honest shape of this business.
 
-### Game hosting: The Empty Server Spiral ❌
+### Game hosting: The Empty Server Spiral ✅ 4ce67fc ef8f35e 626d2a7
 A server that dips below a population threshold empties out and never recovers.
 
 **How it works:** A reputation failure specific to communities: a full server attracts players, an
@@ -11018,7 +11018,7 @@ Every hard wave draws from two of {bandwidth, concurrency, hands, cash, reputati
 ### The denomination quota ❌
 No more than four threats per level share a damage denomination. (See §2.1.)
 
-### The Second Incident multiplier ❌
+### The Second Incident multiplier 🔧
 1.8× during an incident, 2.5× during a recovery, stated openly in the Codex. (See §2.1.)
 
 ### The Feint budget 🔧
@@ -11394,7 +11394,7 @@ The variety engine at a glance: what a level of this type *feels* like.
 - **Satellite / edge:** weather, pass windows, physical remoteness, vandalism, backhaul cost, the site
   with no remote access.
 
-### Matrix C — which threat families dominate which type ⚠️
+### Matrix C — which threat families dominate which type ✅ 4856a42 cf7a696
 A third cut, useful for wave-budget authoring rather than flavour.
 
 **How it works:** Assign each type a rough split across the four families (§2.1). Shared web and VPS
@@ -12850,12 +12850,12 @@ three mechanical shapes, and once classified the whole system balances from one 
 The master stat. Every hop with queueing costs patience, and every intermediate hop adds to TTFB.
 Remember that it is **emergent from load, not additive from a spec sheet** (§3.1).
 
-### Path Ugliness (too many hops) ❌
+### Path Ugliness (too many hops) ✅ 8fd409a cf7a696
 A visitor routed through extra proxies, a distant PoP, or an overloaded firewall accumulates latency
 per hop. **Elegant infrastructure literally looks shorter on screen** — the rare case where the
 aesthetically pleasing layout is also the correct one.
 
-### Redirect chains
+### Redirect chains ❌
 `http → https → www → trailing slash` is four round trips before a byte of content.
 
 **How it works:** Make this visible as four extra path segments the visitor must physically walk. For
@@ -14421,7 +14421,7 @@ high-risk segments (1–2 months MRC, refundable). **Deposits are cash you hold 
 they are a liability that *looks* like cash.** Requiring one loses ~15% of deals and eliminates most
 bad debt — a clean, legible trade the player makes per segment rather than globally.
 
-### The Controlled Shrink ⚠️
+### The Controlled Shrink ❌
 Deliberately closing a product line, a region, or a customer segment. Should be a *winning* move
 sometimes, and the game should have a scoring path that rewards it.
 
@@ -16328,7 +16328,7 @@ filtered by role lets a player under pressure ask "what do I own that *Contains*
 an encyclopedia.
 **Interacts with:** the Build Role Taxonomy (§4.1), the Coverage Grid, the stacking rules.
 
-### The Coverage Grid ⚠️
+### The Coverage Grid ✅ e24e1bb e1190d1
 The single screen that tells you what you are actually protected against.
 
 **How it works:** A matrix: **threat roles down one axis, your nine defense roles across the other**,
@@ -18736,7 +18736,7 @@ makes each line feel like a new game, and flattening them into skins is how vari
 resolution: **skin the mechanics, but never skin the silhouette.** A Modem Bank and a VoIP channel
 group may share every number and must share **no pixels.**
 
-### Mail Server / MTA Cluster — "The Sorting Table" *(email)* ❌
+### Mail Server / MTA Cluster — "The Sorting Table" *(email)* 🔧
 Enables transactional email and sells mailboxes.
 
 **Opens:** open-relay misconfiguration, outbound spam, blacklisting, backscatter, and **the misery of
@@ -19570,7 +19570,7 @@ at once. Especially sharp on CDN, web and API-hosting levels.
 **How it works:** The second-disk-dies-during-rebuild scar; the counter is the one nobody buys until
 they've watched a 14-hour rebuild bar and lost.
 
-### First breach ❌
+### First breach 🔧
 → unlocks the entire **Forensics branch**: log retention, file-integrity monitoring, an immutable audit
 trail, and the timeline-reconstruction minigame. Plus **Segmentation**, **Immutable Rebuild**, Incident
 Response Plan and Cyber Insurance, and a permanent **"we've been through it" trust modifier with
@@ -19788,7 +19788,7 @@ conversion.
 ### Peering at an IX ❌
 → unlocks **Anycast** and the world-map layer.
 
-### Business scars (the commercial half of the table) ❌
+### Business scars (the commercial half of the table) 🔧
 **The business tree should be almost entirely scar-driven** — more so than the infrastructure tree,
 because nobody builds a dunning engine or a deal desk speculatively. You build it the month after it
 cost you.
@@ -19829,7 +19829,7 @@ didn't gets both the catastrophe and the elite branch. Keep both.
 ---
 ## 5.3 Milestone unlocks 🔧
 
-### The milestone law (the threshold is the consequence, not the count) ❌
+### The milestone law (the threshold is the consequence, not the count) 🔧
 **A milestone unlock fires at the exact point the old method visibly stops working** — and the game
 lets the player *feel the strain for 60–90 seconds first.*
 
@@ -19949,7 +19949,7 @@ are visibly different as physical artifacts**:
 **Interacts with:** Progressive Icon Disclosure (below), §5.1's Anticipation Track (you bet on Codex
 entries), §8.8's growing tooltips.
 
-### Progressive Icon Disclosure ❌
+### Progressive Icon Disclosure 🔧
 Your growing literacy should be visible **in the world**, not only in a menu.
 
 **How it looks:** A threat's board glyph gains detail with Codex level. At *Seen* it is an
@@ -20621,7 +20621,7 @@ tree should feel next to an infrastructure one.
    and business trees**, which makes the two halves one game instead of two.
 **Interacts with:** §6 throughout; §5.9's financial-maturity gates.
 
-### Branch ladders (the concrete step sequences) ❌
+### Branch ladders (the concrete step sequences) 🔧
 Each branch is a legible ladder where every rung both raises a ceiling and adds a new failure mode.
 
 **How it works:**
@@ -20771,7 +20771,7 @@ in the game.** Full art direction in §5.8.
 line is not a node — it is a **Ruleset Card** (§0.2) becoming available, with its own scarce resource,
 unit of sale, threat mix, economics and look.*
 
-### The prerequisite lattice ❌
+### The prerequisite lattice 🔧
 **Each new line is unlocked by having built the thing it actually depends on.** This is the most
 satisfying structure in the whole document because the prerequisites are *real*.
 
@@ -20798,7 +20798,7 @@ satisfying structure in the whole document because the prerequisites are *real*.
   highest-margin line in the game.
 - **A scheduler + a fast interconnect** (on top of GPU) → unlocks **HPC / render farm.**
 
-### The commercial prerequisites ❌
+### The commercial prerequisites 🔧
 The technical prerequisites are the strongest structural idea in the section — and they are only half
 the gate. The commercial ones bind just as hard in reality.
 
@@ -20817,7 +20817,7 @@ the gate. The commercial ones bind just as hard in reality.
 - **Reseller / agent channel** needs a commission portal and a quotable rate card.
 - **Wholesale / build-to-suit** needs multi-MW capacity and a credit-worthy balance sheet.
 
-### Alternative prerequisite sets (two or three routes into every line) ❌
+### Alternative prerequisite sets (two or three routes into every line) 🔧
 **⚔️ Tension, resolved:** a strict DAG of line unlocks risks becoming a single optimal path, which
 violates §9.6's "no optimal build order."
 
@@ -20837,7 +20837,7 @@ Show the lattice as **a map with locked doors whose conditions are readable from
 more incidents, and a permanent **"we launched early" scar** on the line's placard — which gives the
 impatient player a real option with a real cost rather than a wall.
 
-### The playable 12 months (making the best gate interactive) ❌
+### The playable 12 months (making the best gate interactive) 🔧
 A 12-month gate with no interaction is just a timer. Make the twelve months *played.*
 
 **How it works:** A visible reputation meter that **individual decisions move**: accepting a marginal
@@ -23001,7 +23001,7 @@ that **their most popular plan loses money.** *That discovery moment is worth a 
 should let you build a plan with a 14-month payback and an 11-month tenure and **not warn you** — then
 show it in the postmortem as the reason you ran out of cash while growing.
 
-### The oversell ratio ⚠️
+### The oversell ratio 🔧
 The defining shared-hosting decision, generalized to every hosting type.
 
 **How it works:** A slider from 1:1 to 30:1. Higher oversell = more revenue per box, thinner headroom,
@@ -27379,7 +27379,7 @@ and **the game scores it**: the postmortem reports whether the thing that broke 
 **Interacts with:** §7.16's Selection Grammar (pin is the third selection state, with a tether line to a
 docked mini-inspector), §6.9's postmortem, §7.16's LOD rules.
 
-### The Attention Heatmap (a post-level self-portrait) ✅ 8fd409a
+### The Attention Heatmap (a post-level self-portrait) ❌
 Where you looked versus where the damage was.
 
 **How it works:** The game records where the camera was and what was selected, and the postmortem renders
@@ -28076,7 +28076,7 @@ playing a different, better game than one who runs everything at Inspect.
 (you may inspect class 4 deeply and class 1 not at all), §4.5's defensive buildables, §2.4's mimicry
 threats.
 
-### Suspicion Routing — the Two Lanes 🔧
+### Suspicion Routing — the Two Lanes ✅ 8fd409a cf7a696
 **This is the mazing.**
 
 **How it works:** Traffic is **scored on arrival**, not judged. The score determines **which path it
@@ -32335,7 +32335,7 @@ version is the pretty one; the readout is the honest one; both are always availa
 palette collapses to icons, inspector becomes a full-screen overlay, bottom furniture stacks. Full
 keyboard navigation. **Tabular figures everywhere** (§8.15) so scaled numbers never reflow.
 
-### The full accessibility affordance list ⚠️
+### The full accessibility affordance list 🔧
 Non-negotiable, collected in one place.
 
 **How it works:** Colour-blind-first iconography and three named palettes · a reduced-motion mode with a
@@ -32514,7 +32514,7 @@ merges** into the parent's aggregate glyph via LOD3.
 **Interacts with:** the readability targets in §8.9 (2,000 discrete objects, 20,000 in-flight entities,
 40 per glyph, 30 labels at Z3), which are the same constraint stated as outcomes rather than caps.
 
-### The acceptance-test roster ⚠️
+### The acceptance-test roster 🔧
 The full set of gates, collected. **Testable art direction is the only kind that survives production.**
 
 | Test | Asks | Lives in |
@@ -35517,3 +35517,38 @@ the audience that doesn't run servers.
   **Resolved by consequence rather than prohibition** (§9.11) — available and profitable, never
   indefinitely stable, and never a how-to.
 
+
+## Appendix — Audit Findings & Resolutions (2026-10-09 fix wave)
+
+This appendix records how each of the 15 audit PROBLEM (⚠️) rows fared after the 16-commit fix wave (d8fc8ec..a98fd55). Full notes with evidence live in reports/audit/SUMMARY.md ("PROBLEMS — original 15 rows with post-wave disposition"); group reports reports/audit/group-01..25.md remain the untouched historical record.
+
+| orig. line | heading | was | now | evidence | what remains |
+|---|---|---|---|---|---|
+| 11385 | Matrix C — threat families × type | ⚠️ | ✅ | 4856a42, cf7a696 | nothing — weights filled in both bundles, parseFamilyWeightsTable + familyMix consumers live, host FAMILY_MIX wired in the product runner |
+| 14424 | The attention budget | ⚠️ | ⚠️ | — | OD-6 support-hands ruling decided, implementation deferred |
+| 15178 | The Build Role Taxonomy (nine roles) | ⚠️ | ⚠️ | d8fc8ec (ADR-0010 proposed) | owner ratification of the taxonomy reconciliation |
+| 16291 | The Nine Defense Roles | ⚠️ | ⚠️ | d8fc8ec (ADR-0010 proposed) | same pending ADR-0010 record |
+| 16331 | Defense-in-Depth stacking rules | ⚠️ | ⚠️ | d8fc8ec (ADR-0010 proposed) | MAX-vs-multiplicative law contradiction unratified |
+| 22940 | 6.5 Pricing as a mechanic | ⚠️ | ⚠️ | — | no player pricing verb; door closed at 8 verbs |
+| 22992 | The oversell ratio | ⚠️ | 🔧 | 4856a42 | engine seam live (contentionProbabilityMicro + planWave oversell input); host-side slider→input wiring owed |
+| 31543 | The readability targets | ⚠️ | ⚠️ | — | OD-10/OD-12 figures unratified |
+| 31810 | Era presentation shifts | ⚠️ | ⚠️ | — | owner era grid not provided |
+| 31837 | Era UI skins, enumerated | ⚠️ | ⚠️ | — | 2 of 5 skins; owner-gated |
+| 32326 | The full accessibility affordance list | ⚠️ | 🔧 | 9b32cc5, 942834f | 4 of 11 roster rows live; 7 affordances absent |
+| 32366 | Era display faces | ⚠️ | ⚠️ | — | owner-gated era grid |
+| 32505 | The acceptance-test roster | ⚠️ | 🔧 | 9b32cc5, 942834f | 4 of 11 gates live (was 1 of 11) |
+| 32694 | Endless / Survival | ⚠️ | ⚠️ | — | 32 rows contested under OD-8 |
+| 33137 | Mode tiering | ⚠️ | ⚠️ | — | OD-16 open in DECISIONS-PENDING |
+
+Other fix-wave uplifts (non-⚠️ rows flipped): §5 unlock lattice/trigger rows ❌→🔧 (71b8960 engine, d8e5986 driver seam — observer default-off, hosts unwired); §2.24 Second Incident ❌→🔧 (4856a42 consumers + c9c0433 foreign-rules adapter); §1.3 Postmaster + §5.5 Sorting Table ❌→🔧 (4c28169 mail-hosting bundle, §5.6 email-gate prereqSets authored verbatim); §7.10 two-lane routing + Path Ugliness →✅ (8fd409a engine + cf7a696 mainline wiring); 12846 "Redirect chains" gains its missing ❌ marker.
+
+### Review minors (read-only review of the fix wave, 4 findings)
+
+1. **c9c0433 commit-title inaccuracy:** the title claims "goldens recaptured" — zero goldens were moved. The rules adapter is a proven byte-identical passthrough (headless parity b0162ab5/a9b4b7b8 held; serial green). Recorded so future readers do not hunt for golden diffs.
+2. **Marker-vs-manifest drift class:** at ef74a2f, 134 heading markers on disk disagreed with the group manifests (a markup-application bug in the original audit). This re-markup realigned the 5 drift rows that intersect the problem/class set (9505, 12853, 14424, 16331, 27382); the remaining class rows stand as on disk, and SUMMARY.md tallies are now computed from disk truth rather than the manifests.
+3. **Unalignable drift row:** one g11-adjacent manifest row (orig 11630 area) cites heading text that does not match disk at its line; realignment would be a guess, so it was left as-is.
+4. **§0.3 email scarcity row has no heading:** the mail-hosting scarcity entry lives in the catalogue table, not under a heading, so there is no marker to move; the data-level fact (scarce.resourceId ip-reputation @4c28169) is noted here instead.
+
+Palette anchor (0e0d7e1): palettes/shared-80.json resolves the previously phantom `palette:shared-80` anchor at DATA level; the §4.2–4.4 rows that cited it stay ❌ — no engine consumes palette slots yet.
+
+Historical record: reports/audit/outline.md (structure), reports/audit/AUDIT-BRIEF.md (contract), reports/audit/group-01..25.md (per-group evidence, frozen at ef74a2f), reports/audit/SUMMARY.md (regenerated post-wave).

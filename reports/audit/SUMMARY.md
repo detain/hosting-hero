@@ -1,55 +1,69 @@
-# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09)
+# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09)
 
-Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3.
-Manifest rows parsed: **3592** · heading lines marked in hosting_game.md: **3588** of 3,589 in-scope (3,590 outline rows − 1 ToC) · skipped/anomalies: 5 (see ANOMALIES).
+Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3, then **updated in place on disk after the 2026-10-09 fix wave** (16 commits d8fc8ec..a98fd55; per-row dispositions in the hosting_game.md Appendix). The tallies below are computed from the **current marked hosting_game.md**, not the original manifests — they include the 23 fix-wave flips and the small set of marker/manifest drift realignments disclosed in the Appendix.
 
 > Line numbers throughout are ORIGINAL (pre-legend) positions matching reports/audit/outline.md and the group manifests. In the marked hosting_game.md, add **+12** to any line > 43 (the 12-line legend block inserted above the ToC).
 
-## GLOBAL TALLIES (manifest rows)
+## GLOBAL TALLIES (disk truth, post-fix-wave)
 
-| STATUS | rows | marked |
-|---|---|---|
-| DONE ✅ | 284 | 284 |
-| PARTIAL 🔧 | 983 | 983 − 3 umbrella-skipped = 980 |
-| PROBLEM ⚠️ | 15 | 15 |
-| MISSING ❌ | 2281 (1892 deferred / 388 unlisted / 0 other) | 2280 |
-| NA 📝 | 29 | 29 |
+| STATUS | marked headings on disk |
+|---|---|
+| DONE ✅ | 284 |
+| PARTIAL 🔧 | 989 |
+| PROBLEM ⚠️ | 11 |
+| MISSING ❌ | 2275 |
+| NA 📝 | 30 |
+| **total marked** | **3589** (+2 unmarked out-of-scope headings) |
 
-## PER-SECTION ROLL-UP (marked headings by level-1 section)
+## PER-SECTION ROLL-UP (marked headings by level-1 section — disk truth)
 
 | section | ✅ DONE | 🔧 PARTIAL | ⚠️ PROBLEM | ❌ MISSING | 📝 NA | total |
 |---|---|---|---|---|---|---|
-| 0. Foundations | 19 | 11 | 0 | 10 | 9 | 49 |
-| 1. Levels, scenarios, and progression | 16 | 83 | 0 | 319 | 2 | 420 |
-| 2. Threats | 46 | 100 | 1 | 447 | 1 | 595 |
-| 3. Visitors, traffic, and clients | 32 | 87 | 1 | 292 | 0 | 412 |
-| 4. Buildables: services and infrastructure | 27 | 118 | 3 | 332 | 1 | 481 |
-| 5. Unlocks and discovery | 1 | 108 | 0 | 189 | 1 | 299 |
-| 6. Economy, money, and scoring | 36 | 98 | 2 | 253 | 1 | 390 |
-| 7. Core gameplay mechanics | 67 | 129 | 0 | 104 | 2 | 302 |
-| 8. Visuals and presentation | 22 | 164 | 6 | 158 | 7 | 357 |
-| 9. Anything else | 18 | 82 | 2 | 176 | 5 | 283 |
-| **TOTAL** | **284** | **980** | **15** | **2280** | **29** | **3588** |
+| preamble | 0 | 0 | 0 | 0 | 0 | 0 |
+| 0. Foundations | 20 | 10 | 0 | 10 | 9 | 49 |
+| 1. Levels, scenarios, and progression | 16 | 86 | 0 | 316 | 2 | 420 |
+| 2. Threats | 50 | 98 | 0 | 446 | 1 | 595 |
+| 3. Visitors, traffic, and clients | 30 | 79 | 1 | 303 | 0 | 413 |
+| 4. Buildables: services and infrastructure | 21 | 119 | 3 | 338 | 0 | 481 |
+| 5. Unlocks and discovery | 1 | 115 | 0 | 182 | 1 | 299 |
+| 6. Economy, money, and scoring | 36 | 102 | 1 | 250 | 1 | 390 |
+| 7. Core gameplay mechanics | 68 | 125 | 0 | 107 | 2 | 302 |
+| 8. Visuals and presentation | 23 | 168 | 4 | 155 | 7 | 357 |
+| 9. Anything else | 19 | 87 | 2 | 168 | 7 | 283 |
+| **TOTAL** | **284** | **989** | **11** | **2275** | **30** | **3589** |
 
-## PROBLEMS (⚠️)
+## FIX-WAVE UPLIFT (what moved since the original markup)
 
-| line | section | heading | group | note |
-|---|---|---|---|---|
-| 11385 | 2. Threats | Matrix C — which threat families dominate which type | g10 | activeFamilies + qualitative _todo ship but familyWeights are null with stale _todo prose awaiting the ratified tuning sheet (OD-2) — OD-2 was ratified sheet B at 24dfcfe yet the weights were never re-authored; owner-gated content debt |
-| 14424 | 3. Visitors, traffic, and clients | The attention budget | g12 | door hands live but support-hands unimplemented, OD-6 two-denomination ruling decided 2026-10-09 with implementation deferred (MODULE-STATUS gap row) |
-| 15178 | 4. Buildables: services and infrastructure | The Build Role Taxonomy (nine roles) | g13 | The nine build roles are tagged nowhere; coverage/defenseRoles.ts ships the DIFFERENT nine defense roles sharing only four words (Classify/Contain/Detect/Recover) - the spec's shared-tag promise between palette and Coverage Grid is broken |
-| 16291 | 4. Buildables: services and infrastructure | The Nine Defense Roles | g14 | shipped taxonomy follows the §2.1 list (absent Block, added Negotiate) — contradicts this heading's enumeration |
-| 16331 | 4. Buildables: services and infrastructure | Defense-in-Depth stacking rules | g14 | matrix.ts combine law is MAX never multiplicative (deliberate, docblock cites §2.1 ratification), no latency-additive/diminishing/synergy/Waste-Indicator |
-| 22940 | 6. Economy, money, and scoring | 6.5 Pricing as a mechanic | g18 | Pricing is engine-side data (MRC/cliff/escalator/MFN/grandfather) with NO player pricing verb among the 8 door verbs; 21 of 29 dials unbuilt; oversell slider declared-dead (22992) |
-| 22992 | 6. Economy, money, and scoring | The oversell ratio | g18 | shared-web.json:84 commercialSlider "oversell-ratio" + rosetta card parsed (loader/bundle.ts:112,616; R16 lint hook) but ZERO engine consumers — dead slider; P(contention)=ratio^2.2 x homogeneity never computed |
-| 31543 | 8. Visuals and presentation | The readability targets | g23 | perf grid harness exists but 2k/20k figures are OD-10/OD-12 unratified and unmeasured |
-| 31810 | 8. Visuals and presentation | Era presentation shifts | g23 | era-tokens.css ships 1998/2026 only; MODULE-STATUS era-count row awaits owner era grid |
-| 31837 | 8. Visuals and presentation | Era UI skins, enumerated | g23 | 2 of 5 enumerated skins; owner-gated per MODULE-STATUS era row (same as above) |
-| 32326 | 8. Visuals and presentation | The full accessibility affordance list | g23 | plan promised a11y CI harness "from day one"; PHASE1-PLAN:165 admits only Shape-First+Readout shipped |
-| 32366 | 8. Visuals and presentation | Era display faces | g23 | only 2 era faces via era tokens; same owner-gated era grid (MODULE-STATUS era row) |
-| 32505 | 8. Visuals and presentation | The acceptance-test roster | g23 | 1 of 11 gates (Chroma Meter) shipped; PHASE1-PLAN:165 records the harness as partial |
-| 32694 | 9. Anything else | Endless / Survival ("The NOC" / "The Long Haul" / "Keep It Running") | g24 | endless rows held PENDING_OD8 (32 rows contested) per DECISIONS-PENDING OD-8, no loop shipped |
-| 33137 | 9. Anything else | ⚔️ Mode tiering — twenty-six modes is too many, and none of them are prioritised | g24 | OD-16 open in DECISIONS-PENDING (ratify ~15 orphan re-tierings), tiering adopted-as-law nowhere |
+- **§5 unlocks (71b8960 engine + d8e5986 driver seam):** 9 rows ❌→🔧 — scar/milestone/era triggers, prereqSets consumer (canUnlock/whatBlocks), codex ladder; observer seam default-off, host wiring owed.
+- **§2.24 rules blocks (4856a42 + c9c0433):** Second Incident row ❌→🔧 — feint/secondIncident/copycat consumers exist in planWave; foreign-slice adapter carries the g1 rules block; host inputs (dominantDefenseFamily) still owed.
+- **Mail bundle (4c28169):** Postmaster §1.3 + Sorting Table §5.5 rows ❌→🔧 — mail-hosting.json authors the hero, defense, and §5.6 email-gate prereqSets verbatim.
+- **§7.10 mazing (cf7a696 + 8fd409a):** two-lane routing rows →✅ (mainline product runner routes deep vs express through the intent door); millisecond-budget row stays 🔧 (served-by-QoS-weight owed).
+- **§7.6 decision highlight (50a936a):** producer exists (apps/proto/src/decision/); seam row already 🔧 — no flip needed; Attention Heatmap corrected ✅→❌ (false marker, no telemetry consumer).
+- **§6.10 reputation (57ea80e + 45f0edf + a98fd55):** publisher live; the already-🔧 §2.10/§5.10 rows stay 🔧 (gates/scorecard consumption unwired).
+- **12846 '### Redirect chains'** — the one unmarked in-scope heading (ANOMALIES #2) — now carries ❌.
+- **Palette anchor (0e0d7e1):** palettes/shared-80.json resolves the phantom anchor at DATA level; §4.2–4.4 rows citing it stay ❌ (zero engine consumers of palette slots).
+
+## PROBLEMS (⚠️) — original 15 rows with post-wave disposition
+
+| line | section | heading | group | original note | disposition (2026-10-09 fix wave) |
+|---|---|---|---|---|---|
+| 11385 | 2. Threats | Matrix C — which threat families dominate which type | g10 | activeFamilies + qualitative _todo ship but familyWeights are null with stale _todo prose awaiting the ratified tuning sheet (OD-2) — OD-2 was ratified sheet B at 24dfcfe yet the weights were never re-authored; owner-gated content debt | ✅ RESOLVED @4856a42 (weights filled in both bundles, parseFamilyWeightsTable + weightedFamilyOf/familyMix consumers live) + cf7a696 (host FAMILY_MIX wired in product runner) |
+| 14424 | 3. Visitors, traffic, and clients | The attention budget | g12 | door hands live but support-hands unimplemented, OD-6 two-denomination ruling decided 2026-10-09 with implementation deferred (MODULE-STATUS gap row) | ⚠️ HELD — OD-6 deferral unchanged by the fix wave |
+| 15178 | 4. Buildables: services and infrastructure | The Build Role Taxonomy (nine roles) | g13 | The nine build roles are tagged nowhere; coverage/defenseRoles.ts ships the DIFFERENT nine defense roles sharing only four words (Classify/Contain/Detect/Recover) - the spec's shared-tag promise between palette and Coverage Grid is broken | ⚠️ HELD — contradiction recorded in ADR-0010 (proposed) @d8fc8ec; owner ratification owed before either taxonomy moves |
+| 16291 | 4. Buildables: services and infrastructure | The Nine Defense Roles | g14 | shipped taxonomy follows the §2.1 list (absent Block, added Negotiate) — contradicts this heading's enumeration | ⚠️ HELD — same ADR-0010 pending record @d8fc8ec |
+| 16331 | 4. Buildables: services and infrastructure | Defense-in-Depth stacking rules | g14 | matrix.ts combine law is MAX never multiplicative (deliberate, docblock cites §2.1 ratification), no latency-additive/diminishing/synergy/Waste-Indicator | ⚠️ HELD — same ADR-0010 pending record @d8fc8ec |
+| 22940 | 6. Economy, money, and scoring | 6.5 Pricing as a mechanic | g18 | Pricing is engine-side data (MRC/cliff/escalator/MFN/grandfather) with NO player pricing verb among the 8 door verbs; 21 of 29 dials unbuilt; oversell slider declared-dead (22992) | ⚠️ HELD — no player pricing verb shipped; door verb set closed at 8 |
+| 22992 | 6. Economy, money, and scoring | The oversell ratio | g18 | shared-web.json:84 commercialSlider "oversell-ratio" + rosetta card parsed (loader/bundle.ts:112,616; R16 lint hook) but ZERO engine consumers — dead slider; P(contention)=ratio^2.2 x homogeneity never computed | 🔧 PARTIAL @4856a42 — contentionProbabilityMicro(r,h)=f(r)×h ships in waves/contention.ts + planWave oversell input; host-side wiring (bundle slider value → planWave oversell) still owed |
+| 31543 | 8. Visuals and presentation | The readability targets | g23 | perf grid harness exists but 2k/20k figures are OD-10/OD-12 unratified and unmeasured | ⚠️ HELD — OD-10/OD-12 unratified |
+| 31810 | 8. Visuals and presentation | Era presentation shifts | g23 | era-tokens.css ships 1998/2026 only; MODULE-STATUS era-count row awaits owner era grid | ⚠️ HELD — owner era grid not provided |
+| 31837 | 8. Visuals and presentation | Era UI skins, enumerated | g23 | 2 of 5 enumerated skins; owner-gated per MODULE-STATUS era row (same as above) | ⚠️ HELD — owner-gated |
+| 32326 | 8. Visuals and presentation | The full accessibility affordance list | g23 | plan promised a11y CI harness "from day one"; PHASE1-PLAN:165 admits only Shape-First+Readout shipped | 🔧 PARTIAL @9b32cc5 + 942834f — roster ledger (chrome/a11y/roster.ts, 11 rows) + contrast-audit + motion-audit acceptance gates; 4 of 11 rows live |
+| 32366 | 8. Visuals and presentation | Era display faces | g23 | only 2 era faces via era tokens; same owner-gated era grid (MODULE-STATUS era row) | ⚠️ HELD — owner-gated |
+| 32505 | 8. Visuals and presentation | The acceptance-test roster | g23 | 1 of 11 gates (Chroma Meter) shipped; PHASE1-PLAN:165 records the harness as partial | 🔧 PARTIAL — 4 of 11 gates live after 9b32cc5/942834f (greyscale-pass, chroma-meter, strobe-budget-check, contrast-audit-mode) |
+| 32694 | 9. Anything else | Endless / Survival ("The NOC" / "The Long Haul" / "Keep It Running") | g24 | endless rows held PENDING_OD8 (32 rows contested) per DECISIONS-PENDING OD-8, no loop shipped | ⚠️ HELD — OD-8 rows still contested |
+| 33137 | 9. Anything else | ⚔️ Mode tiering — twenty-six modes is too many, and none of them are prioritised | g24 | OD-16 open in DECISIONS-PENDING (ratify ~15 orphan re-tierings), tiering adopted-as-law nowhere | ⚠️ HELD — OD-16 open |
+
+11 rows HELD at ⚠️ (all owner-gated or OD-deferred), 4 rows uplifted (1→✅, 3→🔧).
 
 ## NOTABLE PARTIALS (🔧)
 
