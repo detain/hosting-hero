@@ -10,7 +10,9 @@ internal, not barrel-exported); UNATTENDED-LANE pass 2026-10-07
 (`## unattended` section + import row, +69 names); CALIBRATION-WAVE
 docs-currency pass 2026-10-09 (api-verify 1,270 → 1,273 names — versus
 fingerprint pair + `registerContractsEconomy`; OD-1/OD-2/OD-8/OD-4d row
-flips to the ratified truth, `docs/adr/0009-owner-ratifications-calibration.md`).** Ground truth = source
+flips to the ratified truth, `docs/adr/0009-owner-ratifications-calibration.md`); UNLOCKS-LANE pass
+2026-10-09 (`## unlocks` section + import row, +43 names — hg §5 unlock-trigger
+engine v0, digest-neutral observer, unwired by design).** Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
 `docs/api-verify.test.mjs` (run `node docs/api-verify.test.mjs` — it fails if
@@ -34,7 +36,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 
 | Subpath specifier | Resolves to | Ships |
 |---|---|---|
-| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 12 module barrels **incl. `save` (2026-10-06), `versus` + `coverage` + `unattended` (2026-10-07), zero name collisions — native names ride the star** |
+| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 13 module barrels **incl. `save` (2026-10-06), `versus` + `coverage` + `unattended` (2026-10-07), `unlocks` (2026-10-09), zero name collisions — native names ride the star** |
 | `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (167 exports; intent-door arm landed 2026-10-06, +20) |
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
 | `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (55 exports incl. the 11-name intent-door surface; `internal.ts` private) |
@@ -49,6 +51,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 71 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names (count re-pinned for the fingerprint-flip lane's `cardContentFingerprint` + the versus-pin-fix lane's `defaultPolicyCardIndex`, 2026-10-09) |
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 | `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 69 exports — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
+| `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -1097,6 +1100,76 @@ via `createRulePhaseStep`, gauge via `ObservedStore`, optional money lane via
 | `WhatIfResult` | `interface { divergent; firstDivergentTick; divergentWindow; deltaSummary; baseline: UnattendedReport; variant: UnattendedReport }` | The rewindable answer: both full reports + first-divergence tick (`null` when the worlds never split — ×1 surge genuinely proves it) | — |
 | `DEFAULT_WHATIF_CHECKPOINT_EVERY` | `60` | Experiment cadence default (coarse pass), refine always runs cadence 1 inside the winning window | constant |
 | `guardsInConfig` | `(config: RunUnattendedConfig) => readonly ParsedGuard[]` | Boundary passthrough so hosts can preview which guards a weekend will carry | pure |
+
+---
+
+## unlocks
+
+Purpose: the unlock-DISCOVERY engine (hg §5, audit g16/g17 TOP-PROBLEMS #1–#3:
+save/ persisted the unlock VOCABULARY since 9e701a0 but nothing EMITTED a scar,
+consumed `relations.unlocks.prereqSets`, or advanced codex mastery). v0 is an
+OBSERVER, never a mutator: it consumes event windows fed from OUTSIDE GameState
+(pipeline `TickResult.events`, economy notices, era state, host declarations)
+and emits `UnlockProposal` rows into its own store — every digest golden stays
+byte-identical (pinned by `src/unlocks/__tests__/integration.test.ts`). NOT
+wired into any driver in v0; `observe(tickInput)` is the documented seam
+(Phase-2 maps proposals onto `save/node.ts` `NodeUnlockRecord` fields). The
+seven `via` channels and the four codex stages are VOCABULARY MIRRORS of
+`save/node.ts:231/:291` (structural re-declaration, no import — leaf law).
+Pure: no RNG, no wall-clock, no Date; every output is a deterministic fold of
+its inputs, deep-frozen. Import: `@hh/sim-core/unlocks`.
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `UnlockTriggerKind` | `"scar" \| "foresight" \| "testimony" \| "anticipation" \| "milestone" \| "era" \| "acquisition"` | The §5.1 taxonomy = save/ `UnlockVia` verbatim | closed union |
+| `UNLOCK_TRIGGER_KINDS` | `readonly UnlockTriggerKind[]` (7) | Ordered vocabulary table (§5.1 reading order) | frozen |
+| `UnlockDeclaredKind` | `"foresight" \| "testimony" \| "anticipation" \| "acquisition"` | The four channels NOT computable from sim events — host-declared | closed union |
+| `UNLOCK_DECLARED_KINDS` | `readonly UnlockDeclaredKind[]` (4) | Ordered declared-channel table | frozen |
+| `UnlockProposal` | `interface { via; targetRef: EntityId; atTick: SimTick; causeId: CauseId }` | One earned unlock, Phase-2 raw material for a `NodeUnlockRecord`; `targetRef` is the stable id (`scar:bounce:<node>`, `milestone:<label>`, `era:<year>`, or a node id) | frozen per proposal |
+| `UnlocksErrorCode` | `"bad-config" \| "bad-clock" \| "bad-value" \| "unknown-prereq"` | Closed error vocabulary | closed union |
+| `UnlocksError` | `class extends Error { code; path }` | Grammar `unlocks[CODE] at 'path': detail` (versus-family pattern) | — |
+| `MilestoneThreshold` | `interface { atMinute: number; label: string }` | One time milestone row (`atMinute` is a SimMinute; label is a `:`-free slug feeding `milestone:<label>`) | — |
+| `UnlockObserverConfig` | `interface { bounceScarAfter; falsePositiveScarAfter; landedScarAfter; noticeScarAfter; milestoneMinutes }` | The typed thresholds the §5.3 "explicit numeric values" spec awaits; notice census + milestone ladder are config, not code | — |
+| `DEFAULT_UNLOCK_OBSERVER_CONFIG` | `UnlockObserverConfig` | v0 defaults: scar at 5 bounces / 3 FPs / 1 landing; business-pain notices (written-off, churned-voluntary, suspended, spiral-flagged) at 1; day/week/month milestones | frozen constant |
+| `parseUnlockObserverConfig` | `(overrides?: Partial<UnlockObserverConfig>) => UnlockObserverConfig` | Boundary wall (Laws 2/4): positive safe ints, unique `:`-free labels, strictly ascending minutes; empty milestone list legal; frozen output | pure · total-throwing |
+| `UnlockNoticeLike` | `interface { kind: string; causeId: string }` | Structural reader for economy `EconomyNotice` (leaf law: no economy import) | — |
+| `UnlockDeclaration` | `interface { via: UnlockDeclaredKind; targetRef: EntityId; causeId?: CauseId }` | Host-side declaration for the four non-computable channels (diagrams, testimonies, acquisitions) | — |
+| `UnlockTickInput` | `interface { tick; minute; events?; notices?; eraYear?; declarations? }` | THE integration seam payload: one between-ticks window. Deliberately carries NO GameState — the observer cannot reach mutable state even by accident | — |
+| `UnlockCounters` | `interface { bounceCountByNode; falsePositiveCountByNode; landedCount; noticeCountByKind }` | Lifetime evidence census the fold accumulates (Maps frozen per snapshot) | — |
+| `UnlockObservation` | `interface { tick; minute; counters; causes; eraYear; eraChanged; declarations }` | One fold result: trusted snapshot; `causes` maps counter key → LATEST crossing event's cause | frozen snapshot |
+| `UNATTRIBUTED_NODE` | `"_unattributed"` | Bucket key for bounces with `nodeId === null` (queue-less sheds) | constant |
+| `observeUnlockWindow` | `(prev: UnlockObservation \| null, window: UnlockTickInput) => UnlockObservation` | PURE fold of one window into the next snapshot (Law 3): prev untouched; era flips only between two KNOWN years (null re-baselines); declarations window-scoped | pure · deterministic |
+| `scarTrigger` | `(obs, cfg?) => readonly UnlockProposal[]` | §5.2 scars: per-node bounce/FP counts, total landings, configured notice kinds, all ≥ thresholds; sorted iteration | pure · sorted order |
+| `milestoneTrigger` | `(obs, cfg?) => readonly UnlockProposal[]` | §5.3 clock milestones (business-minute ladder, authored order) | pure |
+| `eraTrigger` | `(obs, cfg?) => readonly UnlockProposal[]` | §5.1 era-flip unlock (the only channel with a content resolver — loader/eras.ts — this consumes the FACT, not the resolver) | pure |
+| `declaredTrigger` | `(obs, cfg?) => readonly UnlockProposal[]` | Pass-through for host declarations, stamped with the window tick; host causeId wins, else minted | pure |
+| `evaluateUnlockTriggers` | `(obs, cfg) => readonly UnlockProposal[]` | Canonical trigger order: scar → milestone → era → declared | pure · fixed order |
+| `UnlockObserver` | `interface { observe; proposals; lastObservation; config }` | The stateful shell: folds windows, fires each targetRef ONCE per run | — |
+| `createUnlockObserver` | `(overrides?: Partial<UnlockObserverConfig>) => UnlockObserver` | Constructor; invalid config throws HERE, not at observe time (Fail Fast); proposals() returns a copy | frozen shell |
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `PrereqSetLike` | `interface { tech?; commercial?; alt? }` | Structural mirror of loader `LoadedPrereqSet` (bundle.ts:262) — a parsed bundle's `relations.prereqSets` feeds `parsePrereqSets` directly | — |
+| `ParsedPrereqSet` | `interface { tech: readonly string[]; commercial: readonly string[]; alt: string \| null }` | Trusted route record (omitted channels parse to empty) | deep-frozen |
+| `PrereqBlocker` | `interface { setIndex; missingTech; missingCommercial; missingAlt }` | One still-locked route's readable lock (§5.6 "readable locks") — the explanation IS the lock label | frozen row |
+| `SatisfiedSet` | `ReadonlySet<string>` | Evidence alias: every prereq id already earned | — |
+| `parsePrereqSets` | `(raw: readonly unknown[], where?: string) => readonly ParsedPrereqSet[]` | Boundary wall: rejects non-objects, empty/duplicate ids, non-string alt, and vacuous all-empty routes ("vacuous lock") | pure · total-throwing |
+| `canUnlock` | `(sets, satisfied, knownIds?) => boolean` | ANY-route law (§5.6 alternative routes): route opens when every NAMED channel is met OR its alt is met; empty lattice opens trivially (authored-ungated, waves/ledger idiom); optional known-id universe fail-louds unsatisfiable authoring | pure |
+| `whatBlocks` | `(sets, satisfied, knownIds?) => readonly PrereqBlocker[]` | Per-route missing ids while locked; EMPTY once any route opens (a lock nobody stands behind prints nothing) | pure · route order |
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `CodexStage` | `"seen" \| "analyzed" \| "countered" \| "mastered"` | save/ `CodexEntry["stage"]` mirror (§5.4 ladder; save parser is the wall) | closed union |
+| `CODEX_STAGES` | `readonly CodexStage[]` (4) | Ladder order | frozen |
+| `WEATHER_DEMOTION_BAND` | `"weather"` | The waves/bands.ts band a mastered threat plays at — same word, same meaning | constant |
+| `WeatherDemotionBand` | `typeof WEATHER_DEMOTION_BAND` | Literal type of the band name | — |
+| `CodexCounters` | `interface { sightings: number; counters: number }` | Repeat-observation evidence for ONE threat (host folds wave plans / defense resolutions in — v0 counter source is structural, pipeline events carry no threatIds) | — |
+| `CodexLadderConfig` | `interface { analyzeAfterSightings; masterAfterCounters }` | Rung thresholds | — |
+| `CODEX_LADDER_DEFAULTS` | `CodexLadderConfig` (3, 5) | `masterAfterCounters` ALIGNED with waves/ledger `DEFAULT_LEDGER_CONFIG.masteryDemotionAfter` — one number, one law (pinned by test) | frozen constant |
+| `codexStageFor` | `(counters, cfg?) => CodexStage \| null` | The advancer save/ was waiting for: null = never sighted; highest satisfied rung wins (counters dominate sightings) | pure |
+| `CodexGap` | `interface { next: CodexStage \| null; remaining: number; evidence: "sightings" \| "counters" \| null }` | Readable distance to the next rung (§5.4 fill-in-the-blank progress) | frozen row |
+| `nextCodexGap` | `(counters, cfg?) => CodexGap` | Stage is DERIVED from the counters — a caller cannot hand a stage its counters disagree with; null/null at the mastered ceiling | pure |
+| `isDemotedToWeather` | `(counterCount: number, cfg?) => boolean` | Codex-side twin of `bandAfterMastery`: counters ≥ threshold ⇔ mastery settled | pure |
 
 ---
 

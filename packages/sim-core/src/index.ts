@@ -38,6 +38,10 @@ export * from "./coverage/index.ts";
  * star ride is proven collision-free by tsc — all names stay native on the
  * root. */
 export * from "./unattended/index.ts";
+/* unlocks (2026-10-09): explicit-named barrel (hg §5 unlock-trigger engine
+ * v0, digest-neutral observer); the star ride is proven collision-free by
+ * tsc — all 43 unlocks names stay native on the root. */
+export * from "./unlocks/index.ts";
 
 /**
  * Disambiguation (integrator): `stableSerialize` exists in BOTH observed

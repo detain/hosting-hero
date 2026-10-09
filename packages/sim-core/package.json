@@ -21,7 +21,8 @@
     "./save": "./src/save/index.ts",
     "./versus": "./src/versus/index.ts",
     "./coverage": "./src/coverage/index.ts",
-    "./unattended": "./src/unattended/index.ts"
+    "./unattended": "./src/unattended/index.ts",
+    "./unlocks": "./src/unlocks/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
