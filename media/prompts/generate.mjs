@@ -170,6 +170,8 @@
  */
 
 import { promises as fs } from "node:fs";
+import http from "node:http";
+import https from "node:https";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -620,26 +622,89 @@ function videoBucketSize(aspect) {
   return portrait ? { w: best.h, h: best.w } : { w: best.w, h: best.h };
 }
 
+// ---------------------------------------------------------------------------
+// Wan2.2 trained-size buckets (feature 2026-10-08)
+//
+// Wan2.2 is trained on exactly four resolutions — the server logs
+// "Unsupported resolution: 1216x704 ... Supported: 1280x720, 720x1280,
+// 832x480, 480x832" for anything else. We snap the (already ÷16-validated,
+// at load, against the REQUESTED size) wan-track resolution to the nearest
+// trained bucket so every payload is bucket-native. LTX paths are NOT
+// touched — that server honors its ÷32 sizes fine.
+//
+// Deterministic nearest-neighbor rule:
+//   1. Orientation first: W/H >= 1.0 → landscape pair {1280x720, 832x480};
+//      < 1.0 → portrait {720x1280, 480x832}. Square (ratio exactly 1.0)
+//      takes the landscape side.
+//   2. Within the pair, pick by log-aspect distance |ln(req) − ln(bucket)|.
+//   3. If the two distances are within WAN_SNAP_TIE_EPS of each other,
+//      pixel AREA decides (smaller |ln(area_req/area_bucket)| wins). The
+//      epsilon is deliberate: it pulls 1216x704 (99 of the 120 live wan
+//      manifest entries; aspect 1.727 — only 0.025 log-aspect from BOTH
+//      landscape buckets) to HD 1280x720 instead of the aspect-marginally-
+//      closer 832x480, and lands square 1024x1024 on 1280x720 (area 0.129
+//      vs 0.964) — quality-first, owner call, PINNED by test. 512x512 by
+//      the same area law falls to 832x480 (0.420 vs 1.253). Exact ties
+//      resolve to the HD bucket (pair order).
+// Opt out entirely with --no-wan-snap (verbatim PASS-THROUGH of the sent
+// size, restored pre-feature behavior).
+// ---------------------------------------------------------------------------
+const WAN_BUCKETS = Object.freeze([
+  { label: "1280x720", w: 1280, h: 720 },
+  { label: "720x1280", w: 720, h: 1280 },
+  { label: "832x480", w: 832, h: 480 },
+  { label: "480x832", w: 480, h: 832 },
+]);
+const WAN_SNAP_TIE_EPS = 0.05;
+
+/** Nearest trained wan bucket for a size. Pure; returns a WAN_BUCKETS entry. */
+function snapToWanBucket(w, h) {
+  const landscape = w / h >= 1;
+  const pair = landscape ? [WAN_BUCKETS[0], WAN_BUCKETS[2]] : [WAN_BUCKETS[1], WAN_BUCKETS[3]];
+  const lnReq = Math.log(w / h);
+  const dAspect = pair.map((b) => Math.abs(lnReq - Math.log(b.w / b.h)));
+  if (Math.abs(dAspect[0] - dAspect[1]) >= WAN_SNAP_TIE_EPS) {
+    return dAspect[0] <= dAspect[1] ? pair[0] : pair[1];
+  }
+  const lnArea = Math.log(w * h);
+  const dArea = pair.map((b) => Math.abs(lnArea - Math.log(b.w * b.h)));
+  return dArea[0] <= dArea[1] ? pair[0] : pair[1];
+}
+
 /**
  * Resolve the wire size from the library size + group limits.
- * Manifest tasks BYPASS this (their resolutions are model-legal as given —
- * validated per track at load); only an explicit --max-pixels trims them.
- * Returns {sent:{w,h}, original:{w,h}, method}.
+ * Manifest tasks bypass the image bucketing (their resolutions are
+ * model-legal as given — validated per track at load); only an explicit
+ * --max-pixels trims them. Wan-track manifest tasks then snap to the four
+ * trained buckets (see WAN_BUCKETS above).
+ * Returns {sent:{w,h}, original:{w,h}, method, size_snapped?}.
  */
 function resolveSize(block, group, opts) {
   const original = { ...block.size };
   const maxPixels = opts.maxPixels ?? group.maxPixels;
 
   if (block.source === "manifest") {
+    let result;
     if (opts.maxPixels && original.w * original.h > maxPixels) {
       const scale = Math.sqrt(maxPixels / (original.w * original.h));
-      return {
+      result = {
         sent: { w: snap16(original.w * scale), h: snap16(original.h * scale) },
         original,
         method: "manifest-max-pixels-scale",
       };
+    } else {
+      result = { sent: { ...original }, original, method: "manifest-resolution" };
     }
-    return { sent: { ...original }, original, method: "manifest-resolution" };
+    // Wan2.2 bucket snap — applied AFTER validation/scale of the REQUESTED
+    // size; on the rare --max-pixels + wan combo the bucket wins and the
+    // scale method is superseded (the pair never coexists in practice).
+    if (block.track === "wan" && !opts.noWanSnap) {
+      const b = snapToWanBucket(result.sent.w, result.sent.h);
+      if (b.w !== result.sent.w || b.h !== result.sent.h) {
+        result = { sent: { w: b.w, h: b.h }, original, method: `wan-bucket-snap(${b.label})`, size_snapped: true };
+      }
+    }
+    return result;
   }
 
   let w = Math.floor(original.w / 16) * 16;
@@ -674,6 +739,24 @@ function appendNegative(prompt, negative) {
   const bans = negative.replace(/\s*,\s*/g, ", ").trim().replace(/[,.\s]+$/, "");
   if (!bans) return prompt;
   return `${prompt}\n\navoid: ${bans}`;
+}
+
+/**
+ * LTX-Video text-encoder budget (feature 2026-10-08). The LTX-Video server
+ * caps prompt tokens at 128 ("max seq length 128" errors on long prompts);
+ * the diffusers pipeline honors `max_sequence_length` via diffusers_kwargs.
+ * SCOPE GATE: ONLY the ltxvideo group (exact model Lightricks/LTX-Video) —
+ * NEVER wan22/wan-track, NEVER ltx25 (different encoder, not verified to
+ * accept the kwarg). --ltx-max-seq 0 omits diffusers_kwargs entirely
+ * (pre-change wire shape). Merge-not-clobber is defensive: as of 2026-10-08
+ * NO code path sets diffusers_kwargs anywhere (grep-verified zero), so the
+ * spread only future-proofs the shape.
+ */
+function attachLtxKwargs(payload, group, opts) {
+  if (group.kind === "video" && group.key === "ltxvideo" && opts.ltxMaxSeq > 0) {
+    payload.diffusers_kwargs = { ...(payload.diffusers_kwargs ?? {}), max_sequence_length: opts.ltxMaxSeq };
+  }
+  return payload;
 }
 
 /**
@@ -734,7 +817,7 @@ function buildPayload(task, group, opts) {
     if (guidance !== null && guidance !== undefined) payload.guidance_scale = guidance;
     // steps_hint is ADVISORY (README): never parsed — --steps only.
     if (opts.steps !== null) payload.num_inference_steps = opts.steps;
-    return { path: "/v1/videos", payload, perSeed };
+    return { path: "/v1/videos", payload: attachLtxKwargs(payload, group, opts), perSeed };
   }
 
   const payload = {
@@ -749,7 +832,7 @@ function buildPayload(task, group, opts) {
   if (negative !== null) payload.negative_prompt = negative;
   if (opts.steps !== null) payload.num_inference_steps = opts.steps;
   if (opts.guidance !== null) payload.guidance_scale = opts.guidance;
-  return { path: "/v1/videos", payload, perSeed };
+  return { path: "/v1/videos", payload: attachLtxKwargs(payload, group, opts), perSeed };
 }
 
 // ---------------------------------------------------------------------------
@@ -768,6 +851,13 @@ const USAGE = `usage: node generate.mjs [options]
                          id= matches manifest ids like gl-1-v1)
   --track <ltx|wan>     force a manifest dialect regardless of group (A/B the
                         same track on a different server); video groups only
+  --no-wan-snap         wan groups: send the manifest resolution VERBATIM
+                        (default: snap to the nearest of the four trained
+                        Wan2.2 buckets 1280x720/720x1280/832x480/480x832)
+  --ltx-max-seq <N>     ltxvideo group only: diffusers_kwargs
+                        max_sequence_length sent to the text encoder
+                        (default 256; 0 = omit diffusers_kwargs entirely —
+                        pre-fix wire shape). Never applied to wan/ltx25.
   --out <dir>           output dir (default ../output relative to this script)
   --parallel <n>        concurrent requests (default 2)
   --n <n>               outputs per variation block (default 1)
@@ -785,13 +875,17 @@ const USAGE = `usage: node generate.mjs [options]
                         (alias --model-id; skips the /v1/models probe)
   --api-key <k>         Bearer token (or env SKYNET_API_KEY)
   --timeout <ms>        per-task wall clock incl. retries/polling (default 600000)
-  --retries <n>         retries on 5xx/429/network (default 2, exp backoff)
+  --retries <n>         retries on 5xx/429/network (default 4, exp backoff)
   --max-pixels <n>      override the group's pixel ceiling
   --video-seconds <s>   video duration; overrides manifest duration_s for
                         every task (legacy markdown default 5)
   --video-fps <n>       video fps; overrides the track fps (ltx 25 / wan 24)
   --force               regenerate even if output files exist
   --prompts-dir <dir>   prompt library dir (default: this script's directory)
+  --repair              maintenance pass over --out tree (no network): relabel
+                        files whose extension contradicts magic bytes, pair
+                        sidecars, plan manifest updates. DRY BY DEFAULT.
+  --apply               with --repair: perform renames/deletes/rewrites
   --help                show this help`;
 
 function fail(message) {
@@ -804,8 +898,10 @@ function parseArgs(argv) {
     model: "flux1", list: false, dryRun: false, filters: [], out: null,
     parallel: 2, n: 1, autoN: false, seed: null, steps: null, guidance: null,
     negativeMode: "field", baseUrl: null, port: null, modelId: null, track: null,
-    apiKey: process.env.SKYNET_API_KEY ?? null, timeout: 600_000, retries: 2,
+    apiKey: process.env.SKYNET_API_KEY ?? null, timeout: 12000_000, retries: 4,
     maxPixels: null, videoSeconds: null, videoFps: null, force: false,
+    noWanSnap: false, ltxMaxSeq: 256,
+    repair: false, apply: false,
     promptsDir: SCRIPT_DIR, help: false,
   };
 
@@ -813,7 +909,7 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (!arg.startsWith("--")) fail(`unexpected positional argument "${arg}"`);
     const name = arg.slice(2);
-    const takesValue = !["list", "dry-run", "auto-n", "force", "help"].includes(name);
+    const takesValue = !["list", "dry-run", "auto-n", "force", "help", "no-wan-snap", "repair", "apply"].includes(name);
 
     let value = null;
     if (takesValue) {
@@ -830,6 +926,15 @@ function parseArgs(argv) {
       case "dry-run": opts.dryRun = true; break;
       case "auto-n": opts.autoN = true; break;
       case "force": opts.force = true; break;
+      case "no-wan-snap": opts.noWanSnap = true; break;
+      case "ltx-max-seq": {
+        const v = Number(value);
+        if (!Number.isInteger(v) || v < 0) fail(`--ltx-max-seq needs an integer >= 0 (got "${value}")`);
+        opts.ltxMaxSeq = v;
+        break;
+      }
+      case "repair": opts.repair = true; break;
+      case "apply": opts.apply = true; break;
       case "help": opts.help = true; break;
       case "filter": {
         const m = /^(category|file|id|concept)=(.*)$/.exec(value);
@@ -922,6 +1027,9 @@ function planTasks(blocks, group, opts) {
     // Seed precedence: --seed flag > manifest seed_hint > none (markdown path unchanged).
     const seedBase = opts.seed ?? block.seedHint ?? null;
     const size = resolveSize(block, group, opts);
+    if (size.size_snapped === true) {
+      console.error(`  [size-snap] ${size.original.w}x${size.original.h} -> ${size.sent.w}x${size.sent.h} (wan22 bucket)`);
+    }
     const { path: apiPath, payload, perSeed } = buildPayload({ block, size, n, seedBase }, group, opts);
     const ext = group.kind === "image" ? "png" : "mp4";
     let dir;
@@ -985,13 +1093,119 @@ function isProvablyNotDelivered(err) {
   return PRE_CONNECT_CODES.has(err?.cause?.code ?? err?.code ?? "");
 }
 
+/**
+ * Wall-clock transport replacing global fetch (bug fix 2026-10-07).
+ *
+ * Why: undici-backed `fetch()` enforces a hardcoded ~300s headersTimeout
+ * while waiting for response headers. SGLang's synchronous
+ * /v1/images/generations holds the response open for the whole generation
+ * (flux2 images routinely exceed 5 minutes under --parallel), so fetch()
+ * killed healthy connections at ~5 min; the caller saw
+ * "TypeError: fetch failed" — delivery state unknown under the M2 law —
+ * and marked the task FAILED even though the server finished the image.
+ *
+ * Contract with the M2 law (a POST may only be re-sent when provably
+ * not delivered):
+ *  - The ONLY timer is the caller's wall deadline. When it fires the
+ *    request bytes were already written, so we reject with
+ *    name "TimeoutError" → isProvablyNotDelivered() stays false →
+ *    no POST retry. Exactly the classification AbortSignal.timeout gave,
+ *    just at the right duration.
+ *  - Connection-phase socket errors (ECONNREFUSED, ENOTFOUND, EAI_AGAIN,
+ *    ENETUNREACH, EHOSTUNREACH) propagate with `.code` intact — all of
+ *    them can only occur before the request is flushed, so POSTs still
+ *    retry on them and GETs still retry on them.
+ *  - Mid-flight breaks after flush (ECONNRESET, EPIPE, aborted response)
+ *    carry no PRE_CONNECT code → POST = unknown → no retry; GET retries.
+ *    Same semantics as the old fetch path.
+ *
+ * Redirect policy: GET follows up to 3 Location hops (fetch did this;
+ * keeps /v1/models behavior); POST never auto-follows — re-issuing a
+ * generation POST at a redirect target would double-spend GPU.
+ *
+ * The body is fully buffered (what res.arrayBuffer() did anyway; video
+ * downloads of tens of MB are fine). No size cap is imposed. Resolved
+ * object exposes exactly the accessors callers use: ok, status,
+ * headers.get("location"), text(), json(), arrayBuffer().
+ */
+const MAX_GET_REDIRECTS = 3;
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+function wallDeadlineError(url) {
+  const err = new Error(`wall-clock deadline reached during request to ${url}`);
+  err.name = "TimeoutError"; // M2: POST delivery state unknown → never retried
+  return err;
+}
+
+function requestOnce(url, init, deadlineMs) {
+  return new Promise((resolve, reject) => {
+    let target;
+    try { target = new URL(url); } catch { reject(new TypeError(`invalid URL: ${url}`)); return; }
+    if (target.protocol !== "http:" && target.protocol !== "https:") {
+      reject(new TypeError(`unsupported protocol ${target.protocol} in ${url}`));
+      return;
+    }
+    const remainingMs = deadlineMs - Date.now();
+    if (remainingMs <= 0) { reject(wallDeadlineError(url)); return; }
+    const transport = target.protocol === "https:" ? https : http;
+    let deadlineTimer = null; // armed right after req exists; handlers guard for null
+    const clearDeadline = () => { if (deadlineTimer) clearTimeout(deadlineTimer); };
+    const req = transport.request(
+      target,
+      { method: init.method ?? "GET", headers: { ...(init.headers ?? {}) } },
+      (incoming) => {
+        const chunks = [];
+        incoming.on("data", (chunk) => chunks.push(chunk));
+        incoming.on("aborted", () => {
+          clearDeadline();
+          reject(new Error(`connection aborted mid-response from ${url}`));
+        });
+        incoming.on("error", (err) => {
+          clearDeadline();
+          reject(err);
+        });
+        incoming.on("end", () => {
+          clearDeadline();
+          const body = Buffer.concat(chunks);
+          const status = incoming.statusCode ?? 0;
+          const location = typeof incoming.headers.location === "string" ? incoming.headers.location : null;
+          resolve({
+            ok: status >= 200 && status < 300,
+            status,
+            headers: { get: (name) => (name.toLowerCase() === "location" ? location : null) },
+            text: async () => body.toString("utf8"),
+            json: async () => JSON.parse(body.toString("utf8")),
+            arrayBuffer: async () => body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
+          });
+        });
+      }
+    );
+    // Single absolute wall timer — no per-header-read timeout exists here.
+    deadlineTimer = setTimeout(() => req.destroy(wallDeadlineError(url)), remainingMs);
+    req.on("error", (err) => {
+      clearDeadline();
+      reject(err);
+    });
+    req.end(init.body ?? undefined);
+  });
+}
+
+async function rawRequest(url, init, deadlineMs, redirectsLeft = MAX_GET_REDIRECTS) {
+  const res = await requestOnce(url, init, deadlineMs);
+  const isGet = (init.method ?? "GET").toUpperCase() === "GET";
+  if (!isGet || !REDIRECT_STATUSES.has(res.status) || redirectsLeft <= 0) return res;
+  const location = res.headers.get("location");
+  if (!location) return res;
+  return rawRequest(new URL(location, url).href, init, deadlineMs, redirectsLeft - 1);
+}
+
 async function fetchWithRetry(url, init, opts, deadline) {
   const isPost = (init.method ?? "GET").toUpperCase() === "POST";
   let attempt = 0;
   for (;;) {
     if (Date.now() > deadline) throw new Error(`timeout after ${opts.timeout}ms: ${url}`);
     try {
-      const res = await fetch(url, { ...init, signal: AbortSignal.timeout(Math.max(1000, deadline - Date.now())) });
+      const res = await rawRequest(url, init, deadline);
       if (res.ok || res.status === 404 || (!res.ok && res.status < 500 && res.status !== 429)) return res;
       if (attempt >= opts.retries) {
         throw new HttpError(res.status, await safeText(res), url);
@@ -1158,6 +1372,39 @@ async function detectModelId(baseUrl, group, opts) {
 }
 
 // ---------------------------------------------------------------------------
+// Media format sniffing (bug fix 2026-10-07, PART A)
+//
+// Why: the planner names image outputs ".png" before the response exists,
+// but SGLang pipelines return whichever container the scheduler encodes —
+// FLUX/SD3.5 commonly emit JPEG bytes under a .png name. File extensions
+// lie; magic bytes don't. At save time we sniff the buffer and write under
+// the detected extension, recording the truth in sidecar + manifest.
+// ---------------------------------------------------------------------------
+
+const DETECTABLE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "gif", "mp4"]);
+
+/** JPEG FFD8FF, PNG 89504E47, GIF 474946, WEBP RIFF....WEBP, MP4 ftyp@4. */
+function detectImageFormat(buffer) {
+  const b = buffer;
+  if (!Buffer.isBuffer(b)) throw new TypeError("detectImageFormat expects a Buffer");
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpg";
+  if (b.length >= 4 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "png";
+  if (b.length >= 3 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return "gif";
+  if (b.length >= 12 && b.subarray(0, 4).toString("latin1") === "RIFF" && b.subarray(8, 12).toString("latin1") === "WEBP") return "webp";
+  if (b.length >= 12 && b.subarray(4, 8).toString("latin1") === "ftyp") return "mp4";
+  return "bin";
+}
+
+/** Replace a media file's extension with the detected one (".png" → ".jpg"). */
+function withExtension(file, ext) {
+  const cur = path.extname(file).replace(/^\./, "").toLowerCase();
+  if (cur === ext) return file;
+  const jpegAlias = ext === "jpg" && cur === "jpeg" ? "jpeg" : ext;
+  if (jpegAlias === cur) return file;
+  return `${file.slice(0, file.length - path.extname(file).length)}.${ext}`;
+}
+
+// ---------------------------------------------------------------------------
 // Execution: images (sync) and videos (async job + poll)
 // ---------------------------------------------------------------------------
 
@@ -1177,9 +1424,17 @@ async function runImageTask(baseUrl, task, opts, deadline) {
       const abs = item.url.startsWith("http") ? item.url : `${baseUrl}${item.url}`;
       bytes = await getBinary(abs, opts, deadline);
     } else throw new Error(`image data[${i}] had neither b64_json nor url`);
-    await fs.mkdir(path.dirname(task.files[i]), { recursive: true });
-    await writeFileAtomic(task.files[i], bytes);
-    written.push(task.files[i]);
+    const detected = detectImageFormat(bytes);
+    let file = task.files[i];
+    if (detected === "bin") {
+      console.error(`    warn: ${path.basename(file)}: unrecognized magic bytes — keeping planned name`);
+    } else {
+      file = withExtension(file, detected); // derive name from CONTENT, not plan
+    }
+    meta.format = detected;
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await writeFileAtomic(file, bytes);
+    written.push({ file, format: detected });
   }
   return { meta, written };
 }
@@ -1239,9 +1494,17 @@ async function runVideoTask(baseUrl, task, opts, deadline) {
   for (let i = 0; i < task.n; i++) {
     const { meta: jobMeta, bytes } = await runVideoJob(baseUrl, task, i, opts, deadline);
     meta.jobs.push(jobMeta);
-    await fs.mkdir(path.dirname(task.files[i]), { recursive: true });
-    await writeFileAtomic(task.files[i], bytes);
-    written.push(task.files[i]);
+    const detected = detectImageFormat(bytes);
+    let file = task.files[i];
+    if (detected !== "mp4") {
+      // Video keeps its .mp4 name (players/pollers assume it); the mismatch
+      // is surfaced, not silently relabelled — PART A law.
+      console.error(`    warn: ${path.basename(file)}: expected mp4 magic, detected "${detected}" — keeping .mp4`);
+    }
+    meta.format = detected;
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await writeFileAtomic(file, bytes);
+    written.push({ file, format: detected });
   }
   return { meta, written };
 }
@@ -1255,19 +1518,34 @@ async function appendManifest(manifestPath, row) {
   await fs.appendFile(manifestPath, `${JSON.stringify(row)}\n`, "utf8");
 }
 
-async function writeSidecar(mediaFile, task, group, opts, meta, ok, errorText) {
+async function writeSidecar(mediaFile, task, group, opts, meta, ok, errorText, format = null) {
   const sidecar = {
     generated_at: new Date().toISOString(),
     model_group: opts.model,
     served_model: group.model,
     endpoint: `${group.baseUrl}${task.apiPath}`,
     negative_mode: opts.negativeMode,
+    // Negative evidence trail (PART B, 2026-10-07): what the library defined
+    // vs what the wire payload actually carried. `negative_defined` set +
+    // `negative_sent` null + group supportsNegative=false is the BY-DESIGN
+    // FLUX case (guidance-distilled pipeline ignores negative_prompt).
+    negative_defined: task.block.negative || null,
+    negative_sent: task.payload?.negative_prompt ?? null,
+    // LTX-Video encoder budget actually sent (feature 2026-10-08); null for
+    // every other group / --ltx-max-seq 0.
+    diffusers_kwargs: task.payload?.diffusers_kwargs ?? null,
     block: task.block,
     size_original: task.size.original,
     size_sent: task.size.sent,
     size_method: task.size.method,
+    // Wan2.2 bucket-snap evidence (feature 2026-10-08): the library asked
+    // for requested_size; size_snapped true means the wire size is a
+    // trained bucket the library did NOT state (see size_method).
+    requested_size: `${task.size.original.w}x${task.size.original.h}`,
+    size_snapped: task.size.size_snapped === true,
     requested_n: task.n,
     media_file: path.basename(mediaFile),
+    media_format: format ?? meta?.format ?? null,
     status: ok ? "ok" : "failed",
     error: errorText ?? null,
     response_meta: meta ?? null,
@@ -1275,11 +1553,30 @@ async function writeSidecar(mediaFile, task, group, opts, meta, ok, errorText) {
   await writeFileAtomic(`${mediaFile}.json`, JSON.stringify(sidecar, null, 2), "utf8");
 }
 
-async function allExist(files) {
+async function existsOne(p) {
+  try { await fs.access(p); return true; } catch { return false; }
+}
+
+/**
+ * Skip-existing check aware of content-derived names (PART A): a task
+ * planned as ".png" also counts as done when a repaired/regenerated
+ * sibling with the same stem but true image extension exists — so relabel
+ * passes never cause paid re-generation.
+ */
+async function resolveExistingVariants(files) {
+  const resolved = [];
   for (const f of files) {
-    try { await fs.access(f); } catch { return false; }
+    if (await existsOne(f)) { resolved.push(f); continue; }
+    const stem = f.slice(0, f.length - path.extname(f).length);
+    let hit = null;
+    for (const e of ["png", "jpg", "jpeg", "webp", "gif"]) {
+      const cand = `${stem}.${e}`;
+      if (cand !== f && (await existsOne(cand))) { hit = cand; break; }
+    }
+    if (!hit) return null;
+    resolved.push(hit);
   }
-  return files.length > 0;
+  return resolved.length ? resolved : null;
 }
 
 /** Atomic media write: a killed process must never leave a truncated file
@@ -1396,7 +1693,7 @@ async function cmdRun(tasks, group, opts) {
     const label = isManifest
       ? `${VIDEO_SOURCE_DIR}/${task.block.concept}/${task.block.id}-${task.block.track}`
       : `${task.block.category}/${task.block.id}`;
-    const row = { ts: new Date().toISOString(), index: task.index, id: task.block.id, category: task.block.category, file: task.block.fileStem, variant: task.block.variantNum, model: group.model, kind: group.kind, n: task.n, size_original: task.size.original, size_sent: task.size.sent, files: task.files.map((f) => path.relative(opts.out, f)) };
+    const row = { ts: new Date().toISOString(), index: task.index, id: task.block.id, category: task.block.category, file: task.block.fileStem, variant: task.block.variantNum, model: group.model, kind: group.kind, n: task.n, size_original: task.size.original, size_sent: task.size.sent, requested_size: `${task.size.original.w}x${task.size.original.h}`, size_snapped: task.size.size_snapped === true, diffusers_kwargs: task.payload?.diffusers_kwargs ?? null, files: task.files.map((f) => path.relative(opts.out, f)) };
     if (isManifest) {
       row.track = task.block.track;
       row.concept = task.block.concept;
@@ -1406,9 +1703,11 @@ async function cmdRun(tasks, group, opts) {
       if (task.block.i2vNote) row.i2v_recommended = true;
     }
 
-    if (!opts.force && (await allExist(task.files))) {
+    const existing = opts.force ? null : await resolveExistingVariants(task.files);
+    if (existing) {
       skipped++;
       row.status = "skipped-existing";
+      row.files = existing.map((f) => path.relative(opts.out, f)); // actual on-disk names
       await appendManifest(manifestPath, row);
       return;
     }
@@ -1425,9 +1724,12 @@ async function cmdRun(tasks, group, opts) {
       const { meta, written } = group.kind === "image"
         ? await runImageTask(baseUrl, task, opts, deadline)
         : await runVideoTask(baseUrl, task, opts, deadline);
-      for (const f of written) await writeSidecar(f, task, group, opts, meta, true, null);
+      for (const w of written) await writeSidecar(w.file, task, group, opts, meta, true, null, w.format);
       saved++;
       row.status = "ok";
+      row.files = written.map((w) => path.relative(opts.out, w.file)); // truth: actual names written
+      row.format = written[0]?.format ?? null;
+      row.negative_sent = task.payload?.negative_prompt ?? null;
       row.wall_ms = Date.now() - taskStart;
       row.response_meta = meta;
       await appendManifest(manifestPath, row);
@@ -1463,17 +1765,259 @@ async function cmdRun(tasks, group, opts) {
 }
 
 // ---------------------------------------------------------------------------
+// Repair mode (PART C) — offline maintenance of the --out tree. NO network.
+//
+// Conventions it repairs to:
+//   - media file extension == magic-byte truth (detectImageFormat)
+//   - sidecar at `<media>.json` naming the SAME basename as the media file
+//   - manifest.jsonl `files` entries pointing at names that exist
+// Victim deletion (C2) requires POSITIVE evidence that a supported negative
+// was NOT sent: a new-format sidecar with negative_sent:null while the block
+// defines one, or a legacy video sidecar whose job payloads lack
+// negative_prompt. Legacy IMAGE sidecars without payload evidence are NEVER
+// deleted (conservative law — "unknown" is not "guilty").
+// ---------------------------------------------------------------------------
+
+const LIVE_WINDOW_MS = 5 * 60 * 1000; // fresher writes belong to the LIVE sweep — hands off
+
+function isLiveFresh(statMs) {
+  return Date.now() - statMs < LIVE_WINDOW_MS;
+}
+
+function groupSupportsNegative(groupName) {
+  const g = GROUPS[groupName];
+  if (!g) return null; // unknown group dir — classify, never act
+  if (g.kind === "video") return true; // manifest law: both tracks honor negative_prompt
+  return Boolean(g.supportsNegative);
+}
+
+/** Recursively collect media files (extension in DETECTABLE_EXTS) under dir. */
+async function collectMediaFiles(dir, acc) {
+  let entries;
+  try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch { return acc; }
+  for (const e of entries) {
+    if (e.name.startsWith(".")) continue;
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) { await collectMediaFiles(full, acc); continue; }
+    const ext = path.extname(e.name).replace(/^\./, "").toLowerCase();
+    if (!DETECTABLE_EXTS.has(ext)) continue;
+    if (/\.tmp-/.test(e.name)) continue; // mid-write atomics are not outputs
+    acc.push(full);
+  }
+  return acc;
+}
+
+async function readMagicHead(file, bytes = 16) {
+  let fh;
+  try {
+    fh = await fs.open(file, "r");
+    const buf = Buffer.alloc(bytes);
+    const { bytesRead } = await fh.read(buf, 0, bytes, 0);
+    return buf.subarray(0, bytesRead);
+  } catch {
+    return Buffer.alloc(0);
+  } finally {
+    await fh?.close();
+  }
+}
+
+function sameImageExt(a, b) {
+  const n = (x) => (x === "jpeg" ? "jpg" : x);
+  return n(a) === n(b);
+}
+
+/** Was this output's negative governed? Returns {verdict, reason}. */
+function classifyNegativeEvidence(sidecar, groupName) {
+  const supports = groupSupportsNegative(groupName);
+  if (supports === null) return { verdict: "unknown-group", reason: `group "${groupName}" not in GROUPS` };
+  const defined = sidecar?.block?.negative || null;
+  if (!defined) return { verdict: "no-negative-in-library", reason: "entry defines no negative" };
+  if (!supports) return { verdict: "kept-by-design", reason: `${groupName}: pipeline ignores negative_prompt (FLUX law)` };
+  if (sidecar?.status !== "ok") return { verdict: "not-ok-status", reason: `status=${sidecar?.status}` };
+  if (sidecar.negative_mode === "append") return { verdict: "kept-by-design", reason: "negative folded into positive (append mode)" };
+  if (sidecar.negative_mode === "drop") return { verdict: "kept-by-design", reason: "user --negative-mode drop" };
+  if ("negative_sent" in sidecar) {
+    return sidecar.negative_sent
+      ? { verdict: "sent", reason: "negative_sent recorded" }
+      : { verdict: "victim", reason: "field mode + group supports but negative_sent null (explicit record)" };
+  }
+  // Legacy video sidecars embed each job payload — positive evidence possible.
+  const jobs = sidecar?.response_meta?.jobs;
+  if (Array.isArray(jobs) && jobs.length) {
+    const anySent = jobs.some((j) => j?.payload && "negative_prompt" in j.payload);
+    return anySent
+      ? { verdict: "sent", reason: "job payloads carry negative_prompt" }
+      : { verdict: "victim", reason: "legacy video sidecar: no job payload carries negative_prompt" };
+  }
+  // Legacy image sidecar: no payload evidence exists → conservative keep.
+  return { verdict: "unknown-record-kept", reason: "legacy sidecar without negative evidence" };
+}
+
+async function readSidecar(mediaFile) {
+  try {
+    return JSON.parse(await fs.readFile(`${mediaFile}.json`, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+async function cmdRepair(opts) {
+  const out = opts.out;
+  let dirents;
+  try {
+    dirents = await fs.readdir(out, { withFileTypes: true });
+  } catch (err) {
+    fail(`--repair: output tree "${out}" unreadable: ${err.message}`);
+  }
+  const groupDirs = dirents.filter((d) => d.isDirectory() && !d.name.startsWith(".")).map((d) => d.name);
+  if (!groupDirs.length) {
+    console.log(`repair: no group dirs under ${out} — nothing to do.`);
+    return;
+  }
+  console.log(`repair ${opts.apply ? "--apply (MUTATING)" : "(dry-run, no changes)"} — root ${out}`);
+
+  const manifestRewrites = []; // {path, lines} — collected during planning
+
+  const totals = { media: 0, relabels: 0, victims: 0, keptByDesign: 0, mtimeSkipped: 0, unknownKept: 0, noSidecar: 0, sentOk: 0, manifestRewrites: 0, manifestSkipped: 0, videoWarnings: 0 };
+  const relabelPlan = []; // {group, from, to}
+  const victimPlan = []; // {group, file, reason}
+
+  for (const g of groupDirs) {
+    const media = [];
+    await collectMediaFiles(path.join(out, g), media);
+    const actions = []; // relabels in THIS group (for manifest patching)
+    for (const file of media) {
+      totals.media++;
+      const st = await fs.stat(file);
+      if (isLiveFresh(st.mtimeMs)) { totals.mtimeSkipped++; continue; }
+      const ext = path.extname(file).replace(/^\./, "").toLowerCase();
+      const detected = detectImageFormat(await readMagicHead(file));
+      const sidecar = await readSidecar(file);
+      if (!sidecar) totals.noSidecar++;
+
+      // C1 — extension vs magic truth
+      if (ext === "mp4" || detected === "mp4") {
+        if (detected !== "mp4" && ext === "mp4") {
+          totals.videoWarnings++;
+          console.error(`  warn[${g}]: ${path.relative(out, file)} — mp4 name holds "${detected}" bytes (kept, video names stay .mp4)`);
+        }
+      } else if (detected === "bin") {
+        totals.unknownKept++;
+        console.error(`  warn[${g}]: ${path.relative(out, file)} — unrecognized magic (kept unchanged)`);
+      } else if (!sameImageExt(ext, detected)) {
+        const to = withExtension(file, detected);
+        let clash = false;
+        try { await fs.access(to); clash = true; } catch { /* free */ }
+        if (clash) {
+          totals.unknownKept++;
+          console.error(`  warn[${g}]: ${path.relative(out, file)} — relabel target ${path.basename(to)} already exists, skipped`);
+          continue;
+        }
+        totals.relabels++;
+        actions.push({ from: file, to });
+        relabelPlan.push({ group: g, from: file, to });
+      }
+
+      // C2 — missing-negative victims (delete so the next run regenerates)
+      if (sidecar) {
+        const { verdict, reason } = classifyNegativeEvidence(sidecar, g);
+        if (verdict === "victim") { totals.victims++; victimPlan.push({ group: g, file, reason }); }
+        else if (verdict === "kept-by-design") totals.keptByDesign++;
+        else if (verdict === "unknown-record-kept") totals.unknownKept++;
+        else if (verdict === "sent") totals.sentOk++;
+      }
+    }
+
+    // Manifest patch plan for this group (file relabels only; rows are history)
+    const manifestPath = path.join(out, g, "manifest.jsonl");
+    if (actions.length) {
+      let mstat = null;
+      try { mstat = await fs.stat(manifestPath); } catch { /* no manifest */ }
+      if (mstat && isLiveFresh(mstat.mtimeMs)) {
+        totals.manifestSkipped++;
+        console.error(`  warn[${g}]: manifest.jsonl written <5min ago (LIVE sweep?) — rewrite SKIPPED; relabels apply, rows will be stale`);
+      } else if (mstat) {
+        const raw = await fs.readFile(manifestPath, "utf8");
+        const lines = raw.split("\n");
+        const byOld = new Map(actions.map((a) => [path.relative(out, a.from).split(path.sep).join("/"), path.relative(out, a.to).split(path.sep).join("/")]));
+        let touched = false;
+        const patched = lines.map((line) => {
+          if (!line.trim()) return line;
+          let row;
+          try { row = JSON.parse(line); } catch { return line; }
+          if (!Array.isArray(row.files)) return line;
+          const nextFiles = row.files.map((f) => byOld.get(f) ?? f);
+          if (nextFiles.some((f, i) => f !== row.files[i])) {
+            touched = true;
+            return JSON.stringify({ ...row, files: nextFiles });
+          }
+          return line;
+        });
+        if (touched) {
+          totals.manifestRewrites++;
+          manifestRewrites.push({ path: manifestPath, lines: patched });
+        }
+      }
+    }
+    // per-group report
+    const gRel = actions.length;
+    const gVict = victimPlan.filter((v) => v.group === g).length;
+    console.log(`  ${g.padEnd(8)} media=${media.length} relabel=${gRel} victims=${gVict}`);
+  }
+
+  console.log(`\nrelabels (${relabelPlan.length}):`);
+  for (const r of relabelPlan.slice(0, 400)) console.log(`  ${path.relative(out, r.from)} -> ${path.basename(r.to)}`);
+  if (relabelPlan.length > 400) console.log(`  … +${relabelPlan.length - 400} more`);
+  console.log(`\nvictims (${victimPlan.length}):`);
+  for (const v of victimPlan.slice(0, 200)) console.log(`  ${v.group}/${path.basename(v.file)}  [${v.reason}]`);
+  console.log(`\ntotals: ${JSON.stringify(totals, null, 0)}`);
+
+  if (!opts.apply) {
+    console.log(`\ndry-run complete — nothing mutated. Re-run with --apply to execute.`);
+    return;
+  }
+
+  // Apply: sidecars first (derive .json rename), then media rename, then victims, then manifests.
+  for (const r of relabelPlan) {
+    const scOld = `${r.from}.json`;
+    const scNew = `${r.to}.json`;
+    try {
+      const sc = JSON.parse(await fs.readFile(scOld, "utf8"));
+      sc.media_file = path.basename(r.to);
+      sc.media_format = detectImageFormat(await readMagicHead(r.from));
+      await writeFileAtomic(scNew, JSON.stringify(sc, null, 2), "utf8");
+      await fs.unlink(scOld);
+    } catch { /* sidecar absent/unparseable — media rename still proceeds */ }
+    await fs.rename(r.from, r.to);
+  }
+  for (const v of victimPlan) {
+    await fs.unlink(v.file);
+    try { await fs.unlink(`${v.file}.json`); } catch { /* sidecar may be absent */ }
+  }
+  for (const m of manifestRewrites) {
+    await writeFileAtomic(m.path, `${m.lines.join("\n")}`, "utf8");
+  }
+  console.log(`\napplied: ${relabelPlan.length} relabels, ${victimPlan.length} victim deletions, ${manifestRewrites.length} manifest rewrites.`);
+}
+
+// ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   if (opts.help) { console.log(USAGE); return; }
+  if (opts.apply && !opts.repair) fail("--apply only operates together with --repair");
+  if (opts.repair) {
+    // Repair is strictly offline: no endpoint resolution, no probes, no POSTs.
+    opts.out = opts.out === null ? path.resolve(SCRIPT_DIR, "..", "output") : path.resolve(opts.out);
+    return cmdRepair(opts);
+  }
   if (opts.track !== null && GROUPS[opts.model].kind !== "video") {
     fail(`--track ${opts.track} applies to video groups only (${opts.model} is ${GROUPS[opts.model].kind})`);
   }
 
-  const group = { ...GROUPS[opts.model] };
+  const group = { ...GROUPS[opts.model], key: opts.model }; // key = stable group identity (served-model may rewrite .model)
   group.baseUrl = resolveBaseUrl(opts);
   if (opts.modelId) group.model = opts.modelId; // --served-model: honored by dry-run and real runs alike
 
