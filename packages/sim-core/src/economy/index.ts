@@ -16,5 +16,6 @@ export * from "./churn.ts";
 export * from "./errorBudget.ts";
 export * from "./scoring.ts";
 export * from "./runway.ts";
+export * from "./reputation.ts";
 export * from "./state.ts";
 export * from "./tick.ts";

@@ -224,6 +224,31 @@ export interface RunwayConfig {
   readonly creditLineAprBps: bigint;
 }
 
+/* ──────────────────── reputation deltas (§2.10/§5.10) ────────────────── */
+
+/** Signed bps of the FULL 0..10,000 score moved by each reputation signal
+ *  (economy/reputation.ts folds them). Every value PROVISIONAL — the docs
+ *  give the DIRECTION (§2.10 outages/reviews hurt, recoveries and honest
+ *  post-mortems help; §5.10 permanent damage floor after a published
+ *  post-mortem) but no magnitudes. Tuning is an owner/list item, same class
+ *  as the unattended thresholds. */
+export interface ReputationConfig {
+  /** Billing failure made public and final (dunning write-off) — §2.10. */
+  readonly writtenOffChurnBps: bigint;
+  /** A logo left on its own — milder than being thrown out over money. */
+  readonly voluntaryChurnBps: bigint;
+  /** A failed payment recovered before it went public — §6.4 dunning win. */
+  readonly dunningRecoveredBps: bigint;
+  /** Card chargeback (§6.13 fee table) — accusations stick. */
+  readonly chargebackBps: bigint;
+  /** SLA credit due / host-reported major incident (§2.10 outage reviews).
+   *  Halved in magnitude once honestHostFloor is set (§5.10). */
+  readonly majorIncidentBps: bigint;
+  /** Published honest post-mortem (§5.10) — earns score AND sets the
+   *  permanent damage floor. */
+  readonly honestPostmortemBps: bigint;
+}
+
 /* ─────────────────────────────── root config ──────────────────────────── */
 
 export interface EconomyConfig {
@@ -237,6 +262,7 @@ export interface EconomyConfig {
   readonly arAging: ArAgingConfig;
   readonly deferred: DeferredRevenueConfig;
   readonly runway: RunwayConfig;
+  readonly reputation: ReputationConfig;
 }
 
 export function defaultEconomyConfig(): EconomyConfig {
@@ -329,6 +355,14 @@ export function defaultEconomyConfig(): EconomyConfig {
       spiralRunwayCeilingMonths: 3, // PROVISIONAL
       minWarningRealMinutes: 3, // LIVE §9.6 lose-slowly gate
       creditLineAprBps: 1100n, // 8–14% MID §6.13
+    },
+    reputation: {
+      writtenOffChurnBps: -600n, // PROVISIONAL (§2.10 direction; no magnitude)
+      voluntaryChurnBps: -200n, // PROVISIONAL
+      dunningRecoveredBps: 150n, // PROVISIONAL
+      chargebackBps: -400n, // PROVISIONAL
+      majorIncidentBps: -500n, // PROVISIONAL (§2.10 reddit-thread class event)
+      honestPostmortemBps: 250n, // PROVISIONAL (§5.10 transparency earns back)
     },
   };
 }

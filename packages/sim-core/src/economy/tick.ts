@@ -15,23 +15,29 @@
  *    Math.random reads, no floats anywhere in the money path.
  *
  * Sub-step order inside one tick (stable across replays):
+ *   0.5 committedOut re-declaration from the vendor-commit book (§6.12/§6.13)
  *   1 auto-prime guard for contracts the orchestrator never registered
+ *   1.5 backlog sign-post + pending→active service-start (§6.13)
  *   2 month rolls — burn close, runway/spiral, voluntary churn cohort,
- *     error-budget carry/re-grant (may catch up several months of a pause)
+ *     error-budget carry/re-grant, covenant bank review (may catch up
+ *     several months of a pause)
  *   3 MFN reprices fire when their lag delay elapses (§7.15)
  *   4 renewal pulses — 90 d window (§6.4)
  *   5 renewal cliffs — fire exactly at the term-end business minute (§6.12);
  *     BEFORE the calendar, so a renew restarts the grid on the same tick and
  *     a lapse never writes a zombie invoice
- *   6 invoice calendar — AR credit at issue (§6.4 "billing 1st")
+ *   6 invoice calendar — AR credit at issue, backlog drain while seeded
+ *     promise remains (§6.4 "billing 1st")
  *   7 payment attempts at due — card-failure roll (5–9%/mo, §6.4)
  *   8 dunning FSM ladder — recovery (lifting a suspension back to active) /
  *     suspend / write-off+terminate + cancellation refund settlement (§6.4)
+ *   8.5 chargeback fees (§6.13)
  *   9 error budgets — outage drains, spends with exhaustion locks, clean
  *     weeks, sla-hit credit readouts (§6.1)
  *  10 ghosted churn signals / defusals (30–60 d lag, §7.15)
  *  11 unlock schedules — deferred recognition 1/12 & reserve release (§6.13)
  *  12 lose-slowly guard — ≥3 real-minutes warning (§9.6)
+ *  12.5 reputation fold + publish-on-change observed write (§2.10/§5.10)
  */
 
 import {
@@ -45,6 +51,7 @@ import {
   type LedgerEntry,
   type MoneyBuckets,
   type MoneyUnit,
+  type ObservedWrite,
   type RevenueQualityBand,
   type RunSeed,
   type SimMinute,
@@ -77,6 +84,7 @@ import {
   commitmentBpsOf,
   drainOutage,
   initBudget,
+  remainingSec,
   rollMonth,
   rollWeek,
   slaCreditOwedSec,
@@ -114,7 +122,23 @@ import {
   sortedEntityIds,
   type EconomyState,
 } from "./state.ts";
-import { meetsLoseSlowlyGuard, observeRunway, type DeathSpiralState } from "./runway.ts";
+import {
+  buildCovenantReadoutsBps,
+  covenantBreaches,
+  errorBudgetHealthBps,
+  meetsLoseSlowlyGuard,
+  observeRunway,
+  type Covenant,
+  type CovenantBreachRecord,
+  type DeathSpiralState,
+} from "./runway.ts";
+import {
+  applyReputationSignals,
+  reputationObservedWrite,
+  type ReputationLedger,
+  type ReputationSignal,
+  type ReputationSignalKind,
+} from "./reputation.ts";
 
 /* ────────────────────────────── in / out ──────────────────────────────── */
 
@@ -133,6 +157,16 @@ export interface MfnTrigger {
 export interface RenewalDecisionInput {
   readonly contractId: EntityId;
   readonly decision: RenewalDecision;
+}
+
+/** One take-or-pay vendor promise (§6.12/§6.13 committedOut). The host
+ *  re-declares the whole book per tick (input replaces, like cfg); the
+ *  bucket tracks Σ monthly × whole months left, so it burns down by itself
+ *  as terms elapse. */
+export interface VendorCommitment {
+  readonly id: string;
+  readonly monthlyMicroUsd: MoneyUnit;
+  readonly termEndMin: SimMinute;
 }
 
 export interface EconomyTickIn {
@@ -159,6 +193,24 @@ export interface EconomyTickIn {
   readonly creditLineDrawn?: boolean | undefined;
   /** Dunning Engine buildable owned → recovery bonus applies (§6.4). */
   readonly dunningEngineOwned?: boolean | undefined;
+  /** Contracts hit by a card chargeback THIS tick (§6.13): posts the fee
+   *  from free at step 8.5 and docks reputation at 12.5 (audit g18 TP6
+   *  consumes the once-dead `chargebackFeeMicroUsd` knob). */
+  readonly chargebacks?: readonly EntityId[] | undefined;
+  /** Host-reported major incidents the economy cannot see on its own
+   *  (§2.10 outages outside SLA credits): reputation damage only, no money. */
+  readonly majorIncidents?: readonly CauseId[] | undefined;
+  /** Published honest post-mortems (§5.10): earn score back and set the
+   *  PERMANENT honestHostFloor that halves future incident damage. */
+  readonly honestPostmortems?: readonly CauseId[] | undefined;
+  /** The bank's card (audit g19 #2): when provided it REPLACES the primed
+   *  covenant set (whole-book re-declaration, like vendorCommits); the
+   *  month roll evaluates them. Empty array / undefined = nothing to check. */
+  readonly covenants?: readonly Covenant[] | undefined;
+  /** Take-or-pay promises behind `committedOut` (§6.12/§6.13, audit
+   *  g15 #2): the whole book per tick; the bucket follows
+   *  Σ monthly × whole months left. Undefined = no write, byte-identity. */
+  readonly vendorCommits?: readonly VendorCommitment[] | undefined;
   /**
    * LONG-SAVE retention (perf audit #3), OPT-IN default OFF:
    * settled-and-fully-resolved invoices (paid/written-off with no live
@@ -200,7 +252,14 @@ export type EconomyNoticeKind =
   | "clean-week-refund"
   | "sla-credit-due"
   | "spiral-flagged"
-  | "lose-slowly-violated";
+  | "lose-slowly-violated"
+  /** A signed-not-started (pending) deal reached its service start minute. */
+  | "contract-activated"
+  /** Bank-review covenant newly breached at this month roll (OD-25: data
+   *  only — posture semantics remain owner-open). */
+  | "covenant-breached"
+  /** Chargeback fee posted from free (§6.13). */
+  | "chargeback-posted";
 
 /** Economy-side observations for HUD/rules (not SimEvents: types.ts owns
  *  that closed union; the orchestrator maps the ones it wants across). */
@@ -222,6 +281,12 @@ export interface EconomyTickOut {
   readonly entries: readonly LedgerEntry[];
   readonly events: readonly InvoiceSettledEvent[];
   readonly notices: readonly EconomyNotice[];
+  /** Step-12 observed-layer writes the host feeds to
+   *  ObservedStore.applyObservedWrites alongside the driver's own batch
+   *  (audit g17 #2: `company::reputation` producer). Publish-on-change:
+   *  EMPTY on every tick where the score did not move, so a host that wires
+   *  it pays zero digest cost in the steady state. */
+  readonly observedWrites: readonly ObservedWrite[];
 }
 
 /* ─────────────────────────── tick-local store ─────────────────────────── */
@@ -269,6 +334,12 @@ interface Working {
   creditDrawnThisMonth: boolean;
   loseSlowlyViolated: boolean;
   warnedAtBusinessMin: SimMinute | null;
+  reputation: ReputationLedger;
+  covenants: readonly Covenant[];
+  breachedCovenantIds: readonly string[];
+  covenantBreachLog: CovenantBreachRecord[];
+  committedOutTarget: MoneyUnit;
+  observedWrites: ObservedWrite[];
   entries: LedgerEntry[];
   events: InvoiceSettledEvent[];
   notices: EconomyNotice[];
@@ -324,6 +395,12 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     creditDrawnThisMonth: input.prior.creditDrawnThisMonth || (input.creditLineDrawn ?? false),
     loseSlowlyViolated: input.prior.loseSlowlyViolated,
     warnedAtBusinessMin: input.prior.warnedAtBusinessMin,
+    reputation: input.prior.reputation,
+    covenants: input.covenants ?? input.prior.covenants,
+    breachedCovenantIds: input.prior.breachedCovenantIds,
+    covenantBreachLog: [...input.prior.covenantBreachLog],
+    committedOutTarget: input.prior.committedOutTarget,
+    observedWrites: [],
     entries: [],
     events: [],
     notices: [],
@@ -339,6 +416,22 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   };
 
   const ids = sortedEntityIds(contracts.keys());
+
+  /* 0.5 committedOut re-declaration (§6.12/§6.13; audit g15 #2 writer): the
+   * bucket equals Σ monthly × whole months left over the vendor book. The
+   * input REPLACES the book (like cfg), so recomputing a target and posting
+   * the delta is the only honest fold — no event stream to replay, no
+   * double-count. Undefined input → zero writes → byte-identity for every
+   * existing host. */
+  if (input.vendorCommits !== undefined) {
+    let target = 0n;
+    for (const commit of input.vendorCommits) target += commitTargetMicroUsd(commit, now, cfg);
+    const delta = asMoney(target - w.committedOutTarget);
+    if (delta !== 0n) {
+      post(asCauseId(`economy:committed-out:${now}`), "blue", { committedOut: delta }, "vendor commitments");
+      w.committedOutTarget = asMoney(target);
+    }
+  }
 
   /* 1 auto-prime guard: un-registered contracts get neutral records so an
    * orchestrator forgetfulness degrades LOUDLY (notice) but deterministically. */
@@ -360,6 +453,38 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
       initBudget(contract.id, commitmentBpsOf(contract.sla.uptimeTarget), monthIndexOf(now, cfg), now, cfg),
     );
     w.notices.push({ kind: "contract-unprimed", contractId: id, atBusinessMin: now, causeId: asCauseId(`economy:prime:${id}`) });
+  }
+
+  /* 1.5 MRR backlog lifecycle (§6.13 "the gap between TCV and Billing MRR";
+   * audit g15 #2 writer). Order per contract, sorted ids:
+   *   a) a pending deal's promise is credited into `backlog` EXACTLY ONCE
+   *      (stamp `backlogPostedAtMin`), then
+   *   b) at its service-start minute the deal activates (pending→active,
+   *      legal PHASE_EDGES) and the invoice calendar takes over below.
+   * Activation precedes pulses/cliffs (steps 4-5) so a start-day activation
+   * can legitimately cliff on the same tick it started its term. */
+  for (const id of ids) {
+    let econ = w.econ.get(id)!;
+    if (econ.phase !== "pending") continue;
+    if (econ.backlogPostedAtMin === null && econ.backlogRemaining > 0n) {
+      post(
+        asCauseId(`economy:backlog-sign:${id}`),
+        econColour(econ),
+        { backlog: econ.backlogRemaining },
+        `backlog ${id}`,
+      );
+      econ = { ...econ, backlogPostedAtMin: now };
+      w.econ.set(id, econ);
+    }
+    const contract = contracts.get(id)!;
+    if (now < contract.termStartMin) continue;
+    w.econ.set(id, setPhase(econ, "active", now));
+    w.notices.push({
+      kind: "contract-activated",
+      contractId: id,
+      atBusinessMin: now,
+      causeId: asCauseId(`economy:activate:${id}`),
+    });
   }
 
   /* 2 month rolls (catch-up loop for paused clocks). */
@@ -427,7 +552,10 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
       });
     }
     w.econ.set(id, econ);
-    if (outcome.kind === "lapsed") settleCancellationRefunds(w, id, now, post);
+    if (outcome.kind === "lapsed") {
+      settleCancellationRefunds(w, id, now, post);
+      unwindBacklog(w, id, now, post);
+    }
   }
 
   /* 6 invoice calendar. */
@@ -477,6 +605,26 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   /* 9 error budgets: drains, spends w/ exhaustion locks, clean weeks. */
   applyBudgets(w, ids, input, now, cfg);
 
+  /* 8.5 chargeback fees (§6.13; audit g18 TP6 — the fee knob finally has a
+   * consumer). Sorted visit for the determinism contract; duplicates in the
+   * host's list are real repeat disputes and each posts its own fee. The
+   * throw on insolvent free cash is §6.13 law ("death happens on free") —
+   * hosts that tolerate it use the review-F4 catch-and-keep-prior pattern. */
+  for (const id of sortedEntityIds(input.chargebacks ?? [])) {
+    if (!w.econ.has(id)) {
+      throw new Error(`economy/tick: chargeback on un-primed contract '${id}'`);
+    }
+    const cause = asCauseId(`economy:chargeback:${id}:${now}`);
+    post(cause, "red", { free: asMoney(-cfg.fees.chargebackFeeMicroUsd) }, `chargeback ${id}`);
+    w.notices.push({
+      kind: "chargeback-posted",
+      contractId: id,
+      atBusinessMin: now,
+      causeId: cause,
+      amount: cfg.fees.chargebackFeeMicroUsd,
+    });
+  }
+
   /* 10 ghosted churn forecasts. */
   for (const id of input.churnSignals ?? []) {
     w.forecasts = addChurnSignal(w.forecasts, id, now, runSeed, cfg);
@@ -491,6 +639,28 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
 
   /* 12 lose-slowly guard. */
   evaluateLoseSlowly(w, now, cfg);
+
+  /* 12.5 reputation fold (§2.10/§5.10; audit g17 #2 producer). Signals come
+   * from THIS tick's notices (money-lifecycle events the economy already
+   * saw) plus the two host-reported vocabularies. Nothing moves money; the
+   * score is state + one publish-on-change observed write. With no signals
+   * the ledger returns BY IDENTITY, the score cannot move, and
+   * `observedWrites` stays empty — byte-identity for every existing host. */
+  const repSignals: ReputationSignal[] = [];
+  for (const n of w.notices) {
+    const kind = noticeReputationKind(n.kind);
+    if (kind !== null) repSignals.push({ kind, causeId: n.causeId, contractId: n.contractId });
+  }
+  for (const causeId of input.majorIncidents ?? []) {
+    repSignals.push({ kind: "major-incident", causeId });
+  }
+  for (const causeId of input.honestPostmortems ?? []) {
+    repSignals.push({ kind: "honest-postmortem", causeId });
+  }
+  w.reputation = applyReputationSignals(w.reputation, repSignals, cfg);
+  if (w.reputation.overallBps !== input.prior.reputation.overallBps) {
+    w.observedWrites.push(reputationObservedWrite(w.reputation, asCauseId(`economy:reputation:${now}`)));
+  }
 
   /* 13 OPT-IN retention (perf audit #3, default off — see EconomyTickIn):
      settled history leaves the WORKING SET only; the journal keeps every
@@ -523,8 +693,19 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     loseSlowlyViolated: w.loseSlowlyViolated,
     warnedAtBusinessMin: w.warnedAtBusinessMin,
     lastBusinessMin: now,
+    reputation: w.reputation,
+    covenants: w.covenants,
+    breachedCovenantIds: w.breachedCovenantIds,
+    covenantBreachLog: w.covenantBreachLog,
+    committedOutTarget: w.committedOutTarget,
   };
-  return { state, entries: w.entries, events: w.events, notices: w.notices };
+  return {
+    state,
+    entries: w.entries,
+    events: w.events,
+    notices: w.notices,
+    observedWrites: w.observedWrites,
+  };
 }
 
 /* ────────────────────────────── guards ────────────────────────────────── */
@@ -561,12 +742,23 @@ function generateDueInvoices(
     const terms = input.invoiceTerms?.get(id) ?? defaultTermsFor(contract, cfg);
     const discount = firedMfnDiscountBps(w.mfnQueue, id);
     let invoicedCycles = econ.invoicedCycles;
+    let backlogRemaining = econ.backlogRemaining;
     for (let n = 0; n < cap; n += 1) {
       const invoice = issueInvoice(contract, { ...econ, invoicedCycles }, invoicedCycles, now, terms, discount, cfg);
+      /* §6.13 recognition: backlog money does NOT re-appear at issue — the
+       * same entry MOVES it (backlog −drain ⇒ accountsReceivable +gross), so
+       * a signed deal's promise is never counted twice inside netPosition.
+       * drain = 0n for the ordinary signed-and-starting contract keeps the
+       * single-bucket delta exactly as it was (byte-identity for g5 and the
+       * unattended witnesses). */
+      const drain = backlogRemaining < invoice.gross ? backlogRemaining : invoice.gross;
+      backlogRemaining = asMoney(backlogRemaining - drain);
       post(
         asCauseId(`economy:invoice:${id}:${invoicedCycles}`),
         econColour(econ),
-        { accountsReceivable: invoice.gross },
+        drain > 0n
+          ? { accountsReceivable: invoice.gross, backlog: asMoney(-drain) }
+          : { accountsReceivable: invoice.gross },
         `invoice ${invoice.id}`,
       );
       const seen = w.invoiceAt.get(invoice.id);
@@ -583,7 +775,7 @@ function generateDueInvoices(
       });
       invoicedCycles += 1;
     }
-    w.econ.set(id, { ...econ, invoicedCycles });
+    w.econ.set(id, { ...econ, invoicedCycles, backlogRemaining });
   }
 }
 
@@ -727,6 +919,7 @@ function advanceDunningLadder(
       const econ = w.econ.get(current.contractId)!;
       if (econ.phase !== "terminated") w.econ.set(current.contractId, setPhase(econ, "terminated", now));
       settleCancellationRefunds(w, current.contractId, now, post);
+      unwindBacklog(w, current.contractId, now, post);
       w.notices.push({
         kind: "written-off",
         contractId: current.contractId,
@@ -796,6 +989,7 @@ function rollBusinessMonth(
     if (churnRoll(id, bps, newMonth, runSeed) === "churned") {
       w.econ.set(id, setPhase(econ, "terminated", now));
       settleCancellationRefunds(w, id, now, post);
+      unwindBacklog(w, id, now, post);
       w.notices.push({
         kind: "churned-voluntary",
         contractId: id,
@@ -803,6 +997,38 @@ function rollBusinessMonth(
         causeId: asCauseId(`economy:churn:${id}:m${newMonth}`),
       });
     }
+  }
+
+  /* Covenant bank review (audit g19 #2 — the orphan evaluator finally gets
+   * a consumer). Cadence: once per business month, AFTER the spiral
+   * observation and BEFORE the budget re-grant, so the health readout still
+   * sees the month just closed (rollMonth zeroes drained/spent).
+   * EDGE-TRIGGERED: a covenant already breached at the previous roll
+   * does not re-notice; recovery clears the latch so a relapse fires again.
+   * OD-25 (insolvency posture) is OWNER-OPEN — a breach here is RECORD +
+   * NOTICE ONLY; nothing terminates, nothing games-over. */
+  if (w.covenants.length > 0) {
+    const health: bigint[] = [];
+    for (const id of ids) {
+      const budget = w.budgets.get(id);
+      if (budget === undefined) continue;
+      health.push(errorBudgetHealthBps(remainingSec(budget), budget.budgetSec));
+    }
+    const readouts = buildCovenantReadoutsBps(w.spiral.runwayMonths, health);
+    const latched = new Set(w.breachedCovenantIds);
+    const breachedNow = covenantBreaches(w.covenants, readouts);
+    for (const covenantId of breachedNow) {
+      if (latched.has(covenantId)) continue;
+      const causeId = asCauseId(`economy:covenant:${covenantId}:m${newMonth}`);
+      w.covenantBreachLog.push({ covenantId, atBusinessMin: now, monthIndex: newMonth, causeId });
+      w.notices.push({
+        kind: "covenant-breached",
+        contractId: asEntityId("company"),
+        atBusinessMin: now,
+        causeId,
+      });
+    }
+    w.breachedCovenantIds = [...new Set(breachedNow)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   }
 
   /* Error-budget month rolls: surplus carry + re-grant (§6.1/§6.14). */
@@ -821,6 +1047,7 @@ function rollBusinessMonth(
       });
     }
   }
+
 }
 
 /* ──────────────────────────── budget internals ────────────────────────── */
@@ -942,6 +1169,62 @@ function settleCancellationRefunds(w: Working, contractId: EntityId, now: SimMin
       causeId: cause,
       amount: refund,
     });
+  }
+}
+
+/** Whole months of promise left on a vendor commitment at `now` (ceil — a
+ *  partial month is still owed at monthly granularity, §6.12 take-or-pay).
+ *  Boundary parse (Law 2): the shape is checked where the data enters. */
+function commitTargetMicroUsd(commit: VendorCommitment, now: SimMinute, cfg: EconomyConfig): MoneyUnit {
+  if (typeof commit.id !== "string" || commit.id.length === 0) {
+    throw new RangeError("economy/tick: vendorCommit.id must be a non-empty string");
+  }
+  if (typeof commit.monthlyMicroUsd !== "bigint" || commit.monthlyMicroUsd < 0n) {
+    throw new RangeError(
+      `economy/tick: vendorCommit '${commit.id}' monthlyMicroUsd must be a bigint >= 0, got ${String(commit.monthlyMicroUsd)}`,
+    );
+  }
+  if (!Number.isSafeInteger(commit.termEndMin) || commit.termEndMin < 0) {
+    throw new RangeError(`economy/tick: vendorCommit '${commit.id}' termEndMin must be a non-negative integer minute`);
+  }
+  const left = commit.termEndMin - now;
+  if (left <= 0) return asMoney(0n);
+  const mpm = cfg.calendar.minutesPerMonth;
+  const monthsLeft = floorDiv(left, mpm) + (left % mpm === 0 ? 0 : 1);
+  return asMoney(commit.monthlyMicroUsd * BigInt(monthsLeft));
+}
+
+/** §6.13 backlog unwind: a dead deal's un-invoiced promise leaves the
+ *  `backlog` bucket with it. Zero remaining (the normal case for every
+ *  contract that never entered pending) posts NOTHING — byte-identity. */
+function unwindBacklog(w: Working, contractId: EntityId, now: SimMinute, post: Post): void {
+  const econ = w.econ.get(contractId);
+  if (econ === undefined || econ.backlogRemaining === 0n) return;
+  post(
+    asCauseId(`economy:backlog-unwind:${contractId}`),
+    econColour(econ),
+    { backlog: asMoney(-econ.backlogRemaining) },
+    `backlog unwind ${contractId}`,
+  );
+  w.econ.set(contractId, { ...econ, backlogRemaining: asMoney(0n) });
+}
+
+/** Money-lifecycle notices that carry reputation weight (§2.10), mapped to
+ *  the signal vocabulary; every other notice kind is score-neutral. */
+function noticeReputationKind(kind: EconomyNoticeKind): ReputationSignalKind | null {
+  switch (kind) {
+    case "written-off":
+      return "written-off";
+    case "churned-voluntary":
+      return "voluntary-churn";
+    case "dunning-recovered":
+      return "dunning-recovered";
+    case "chargeback-posted":
+      return "chargeback";
+    case "sla-credit-due":
+      return "major-incident";
+    default:
+      return null;
   }
 }
 

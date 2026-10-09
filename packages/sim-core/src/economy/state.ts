@@ -33,7 +33,13 @@ import {
 } from "./contract.ts";
 import type { GhostedForecast } from "./churn.ts";
 import { initBudget, type ErrorBudgetState } from "./errorBudget.ts";
-import { initialDeathSpiralState, type DeathSpiralState } from "./runway.ts";
+import {
+  initialDeathSpiralState,
+  type Covenant,
+  type CovenantBreachRecord,
+  type DeathSpiralState,
+} from "./runway.ts";
+import { initialReputationLedger, type ReputationLedger } from "./reputation.ts";
 import { floorDiv } from "./intMath.ts";
 import { daysToMinutes, type EconomyConfig } from "./config.ts";
 
@@ -63,6 +69,22 @@ export interface EconomyState {
   /** When the runway tone first left "normal" (guard lead-time anchor). */
   readonly warnedAtBusinessMin: SimMinute | null;
   readonly lastBusinessMin: SimMinute | null;
+  /** §2.10/§5.10 company reputation score (audit g17 #2 producer). The tick
+   *  folds this-tick signals and publishes the observed cell on change. */
+  readonly reputation: ReputationLedger;
+  /** The bank's card the host primed (audit g19 #2 consumer input). Empty
+   *  array = no covenants = evaluation is a structural no-op. */
+  readonly covenants: readonly Covenant[];
+  /** Covenants breached at the LAST month roll (the edge-detect latch: a
+   *  recovered covenant leaves this set and a relapse fires again). */
+  readonly breachedCovenantIds: readonly string[];
+  /** Append-only breach history (§5.10-style permanent record; OD-25: data
+   *  only — posture/game-over semantics stay owner-open). */
+  readonly covenantBreachLog: readonly CovenantBreachRecord[];
+  /** The `committedOut` bucket total the last vendor-commit recompute
+   *  produced (audit g15 #2 writer bookkeeping; 0n until a host supplies
+   *  commitments, so delta math is exactly zero for every existing run). */
+  readonly committedOutTarget: MoneyUnit;
 }
 
 export function emptyEconomyState(): EconomyState {
@@ -83,6 +105,11 @@ export function emptyEconomyState(): EconomyState {
     loseSlowlyViolated: false,
     warnedAtBusinessMin: null,
     lastBusinessMin: null,
+    reputation: initialReputationLedger(),
+    covenants: [],
+    breachedCovenantIds: [],
+    covenantBreachLog: [],
+    committedOutTarget: asMoney(0n),
   };
 }
 

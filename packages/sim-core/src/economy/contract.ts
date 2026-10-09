@@ -20,6 +20,7 @@
 
 import {
   asCauseId,
+  asMoney,
   type CauseId,
   type Contract,
   type EntityId,
@@ -161,6 +162,16 @@ export interface ContractEconomy {
   readonly termMonths: number;
   /** Suspended since (dunning dial), for the suspension-clock readout. */
   readonly suspendedAtMin: SimMinute | null;
+  /** §6.13 MRR backlog ("the gap between TCV and Billing MRR"): the not-yet-
+   *  invoiced share of this contract's promise, mirrored from the `backlog`
+   *  cash bucket so the cash view and the contract view can never disagree.
+   *  0n for everything except signed-but-not-started (pending) deals; the
+   *  tick drains it into AR as invoices issue and unwinds the remainder on
+   *  termination. */
+  readonly backlogRemaining: MoneyUnit;
+  /** Business minute the tick posted this contract's backlog credit (null =
+   *  not yet posted) — the once-only posting stamp. */
+  readonly backlogPostedAtMin: SimMinute | null;
 }
 
 export interface OpenContractInput {
@@ -184,9 +195,25 @@ export function openContractEconomy(input: OpenContractInput, cfg: EconomyConfig
   // the renewal lookup falls back to its PROVISIONAL default. Half-up round
   // in bigint (E-12) — no float can nudge a k−ε quotient to k.
   const termMonths = roundDiv(contract.termEndMin - contract.termStartMin, cfg.calendar.minutesPerMonth);
+  // Signed-but-not-started (§6.13): a deal whose service grid opens in the
+  // FUTURE is PENDING — its value sits in backlog, not in billable anything.
+  // A contract signed at-or-after its start keeps today's behavior exactly
+  // (every existing host registers that way, so no digest moves). The invoice
+  // calendar already refuses to bill before cycleAnchorMin (= termStartMin),
+  // so pending additionally gains only the churn/cliff skips (both gate on
+  // phase === "active") — which is the honest reading: you cannot churn or
+  // lapse out of a service that has not started.
+  const startsInTheFuture = contract.termStartMin > input.atBusinessMin;
+  // Backlog seed: TCV when the deal states one (§6.13 "enormous colo/GPU");
+  // otherwise mrc × whole term months as the documented estimate.
+  const backlogSeed = startsInTheFuture
+    ? contract.tcvMicroUsd > 0n
+      ? contract.tcvMicroUsd
+      : asMoney(contract.mrcMicroUsd * BigInt(Math.max(1, termMonths)))
+    : asMoney(0n);
   return {
     contractId: contract.id,
-    phase: "active",
+    phase: startsInTheFuture ? "pending" : "active",
     termEndMin: contract.termEndMin,
     cycleAnchorMin: contract.termStartMin,
     invoicedCycles: 0,
@@ -201,6 +228,8 @@ export function openContractEconomy(input: OpenContractInput, cfg: EconomyConfig
     revenueTags: input.revenueTags,
     termMonths,
     suspendedAtMin: null,
+    backlogRemaining: backlogSeed,
+    backlogPostedAtMin: null,
   };
 }
 

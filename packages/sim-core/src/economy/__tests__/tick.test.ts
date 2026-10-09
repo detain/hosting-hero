@@ -470,7 +470,7 @@ describe("E-11 cancellation settles deferred prepay (§6.13 'refund punishes')",
     // Cycle-1 walks the ladder from due 86_400; the recognition boundary
     // (settle 43_200 + month) also falls at 86_400 and earns out normally
     // via step 11 at the first failing tick.
-    let finalOut: EconomyTickOut = { state: s, entries: [], events: [], notices: [] };
+    let finalOut: EconomyTickOut = { state: s, entries: [], events: [], notices: [], observedWrites: [] };
     for (const min of [86_400, 87_840, 93_600, 97_920, 100_800, 115_200]) {
       finalOut = tick(s, min, map, failing, SEED, { invoiceTerms: withTerms });
       s = finalOut.state;

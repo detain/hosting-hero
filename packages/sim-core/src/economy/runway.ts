@@ -20,7 +20,7 @@
 
 import { FIXED_RAW_MAX, fromRatio, inRange, compare } from "../kernel/fixed.ts";
 import { BUSINESS_SCALE_DEFAULT, type ClockScale } from "../kernel/time.ts";
-import type { Fixed, MoneyUnit } from "../types.ts";
+import type { CauseId, Fixed, MoneyUnit, SimMinute } from "../types.ts";
 import { type EconomyConfig } from "./config.ts";
 
 export type RunwayTone = "normal" | "caution" | "critical";
@@ -102,6 +102,67 @@ export interface Covenant {
   readonly metricId: string;
   readonly floorBps: bigint;
   readonly direction: "min" | "max";
+}
+
+/** The canonical metric names the economy can read out on its own, so a
+ *  host-authored covenant (the bank's card) can reference them without
+ *  inventing a producer. */
+export const COVENANT_METRIC_RUNWAY_MONTHS_BPS = "runwayMonthsBps";
+export const COVENANT_METRIC_ERROR_BUDGET_HEALTH_BPS = "errorBudgetHealthBps";
+
+/** "Not burning" has no month count — a min-runway covenant is then
+ *  comfortably MET, so the readout is a sentinel far above any floor a
+ *  bank would write (1,000,000 months). A max-style covenant on this metric
+ *  would fire — which is honest: promising to BURN less cash is not a
+ *  runway covenant's shape. */
+export const COVENANT_UNBOUNDED_RUNWAY_BPS: bigint = 1_000_000_000_000n;
+
+/** A fleet with no uptime commitments, or a whole budget still unspent,
+ *  reads as fully healthy. */
+export const COVENANT_FULL_HEALTH_BPS: bigint = 10_000n;
+
+/** One contract's remaining error budget as a bps ratio of its grant
+ *  (overrun clamps to 0 — the covenant reads "nothing left", not negative
+ *  theatre). */
+export function errorBudgetHealthBps(remainingSec: bigint, budgetSec: bigint): bigint {
+  if (budgetSec <= 0n) return COVENANT_FULL_HEALTH_BPS;
+  const bps = (remainingSec * 10_000n) / budgetSec;
+  return bps < 0n ? 0n : bps;
+}
+
+/** Assemble the readout map `covenantBreaches` consumes for the two
+ *  economy-produced metrics (Law 2: the evaluator keeps refusing to invent
+ *  values — this is the sanctioned assembler next to it). `runwayMonthsBps`
+ *  is bps OF MONTHS (a "min 6 months" covenant writes floorBps 60_000n).
+ *  Structural params keep runway.ts dependency-free of errorBudget.ts. */
+export function buildCovenantReadoutsBps(
+  spiralRunwayMonths: Fixed | null,
+  budgetHealthBps: readonly bigint[],
+): Map<string, bigint> {
+  const monthsBps =
+    spiralRunwayMonths === null
+      ? COVENANT_UNBOUNDED_RUNWAY_BPS
+      : (spiralRunwayMonths * 10_000n) / 65_536n;
+  let health = COVENANT_FULL_HEALTH_BPS;
+  for (const bps of budgetHealthBps) {
+    if (bps < health) health = bps;
+  }
+  return new Map([
+    [COVENANT_METRIC_RUNWAY_MONTHS_BPS, monthsBps],
+    [COVENANT_METRIC_ERROR_BUDGET_HEALTH_BPS, health],
+  ]);
+}
+
+/** One latched breach (audit g19 #2: the evaluator existed; the RECORD did
+ *  not). Edge-triggered per month roll: a covenant that recovers leaves the
+ *  active set and a later relapse logs again. OD-25 (insolvency posture) is
+ *  OWNER-OPEN: breaches are observable data only — nothing here ends the
+ *  game. */
+export interface CovenantBreachRecord {
+  readonly covenantId: string;
+  readonly atBusinessMin: SimMinute;
+  readonly monthIndex: number;
+  readonly causeId: CauseId;
 }
 
 /** Covenants are DATA (the bank's card, P13-style): evaluate against bps
