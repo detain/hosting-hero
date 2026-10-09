@@ -1,5 +1,6 @@
-/** Pressure law P(n)=100×1.115^n×S(n) — exact bigint micro domain, sheets
- *  ALL PROVISIONAL, none active (§4.1 R-61, MASTER_REPORT §6 open decision). */
+/** Pressure law P(n)=100×1.115^n×S(n) — exact bigint micro domain, sheet B
+ *  CANONICAL (OD-2 ratified 2026-10-09, ADR-0009), A|C PROVISIONAL
+ *  alternates (§4.1 R-61). */
 import { describe, expect, it } from "vitest";
 import {
   ACTIVE_TUNING_SHEET,
@@ -43,19 +44,23 @@ describe("parPressureMicro", () => {
 });
 
 describe("tuning sheets", () => {
-  it("all three exist and are marked PROVISIONAL", () => {
-    for (const id of ["A", "B", "C"] as const) {
+  it("A and C stand PROVISIONAL; B carries the RATIFIED marker (OD-2, 2026-10-09)", () => {
+    for (const id of ["A", "C"] as const) {
       expect(TUNING_SHEETS[id].status).toBe("PROVISIONAL");
       expect(TUNING_SHEETS[id].note).toContain("PROVISIONAL");
     }
+    expect(TUNING_SHEETS.B.status).toBe("RATIFIED");
+    expect(TUNING_SHEETS.B.note).toContain("RATIFIED");
+    expect(TUNING_SHEETS.B.note).not.toContain("PROVISIONAL");
   });
   it("sheet B carries the documented series (L25564)", () => {
     expect(TUNING_SHEETS.B.params.sawtoothMicro.slice(0, 8)).toEqual([
       1_000_000n, 550_000n, 1_300_000n, 700_000n, 1_550_000n, 600_000n, 1_750_000n, 650_000n,
     ]);
   });
-  it("nothing is active — resolveActiveSheet fails loud", () => {
-    expect(ACTIVE_TUNING_SHEET).toBeNull();
-    expect(() => resolveActiveSheet()).toThrow(/owner has not picked|PROVISIONAL/);
+  it("sheet B is active — resolveActiveSheet() returns it (flip landed 2026-10-09)", () => {
+    expect(ACTIVE_TUNING_SHEET).toBe("B");
+    expect(resolveActiveSheet()).toBe(TUNING_SHEETS.B);
+    expect(resolveActiveSheet().status).toBe("RATIFIED");
   });
 });

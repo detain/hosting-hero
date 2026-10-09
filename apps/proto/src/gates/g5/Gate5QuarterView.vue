@@ -9,7 +9,8 @@
  * as-of projection (projection.ts). No sim mutators are introduced here —
  * this slice READS the economy's public state and shows each number its law.
  *
- * OD-1: no scorecard. The Book shows ledger primitives only.
+ * OD-1 ratified 2026-10-09 (commitment-convergence); this gate STILL shows
+ * no scorecard — the Book renders ledger primitives only.
  * Content wires arrive via Vite `?raw` and are parsed at the engine boundary.
  * All economy sheet values are the shipped PROVISIONAL defaults (marked).
  */

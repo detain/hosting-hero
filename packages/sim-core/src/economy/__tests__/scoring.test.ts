@@ -13,18 +13,19 @@ import {
 } from "../scoring.js";
 
 /**
- * OD-1 IS OPEN. These tests pin the UNDECIDED state: three candidates
- * side-by-side, active null, and a getter that THROWS pointing at
- * MASTER_REPORT §6. When the owner picks, flip `active` (a different
- * config value — not a code default) and adjust the throw test.
+ * OD-1 RATIFIED 2026-10-09 (choice (c), ADR-0009). These tests pin the
+ * RESOLVED default — three candidates side-by-side as comparison data,
+ * `active: "commitment-convergence"` — plus the retained fail-loud law for
+ * configs that explicitly pass null. G5's both-fork grading stays data.
  */
 
-describe("scorecard stays undecided until the owner chooses (task-6)", () => {
-  it("getActiveScorecard THROWS while active is null, citing MASTER_REPORT §6", () => {
-    expect(defaultScorecardConfig.active).toBeNull();
-    expect(() => getActiveScorecard(defaultScorecardConfig)).toThrow(/MASTER_REPORT/);
-    expect(() => getActiveScorecard(defaultScorecardConfig)).toThrow(/OD-1/);
-    expect(() => getActiveScorecard(defaultScorecardConfig)).toThrow(/§6/);
+describe("scorecard resolves to the ratified OD-1 choice (task-6 flip)", () => {
+  it("default resolves to 'commitment-convergence'; an explicit null still throws", () => {
+    expect(defaultScorecardConfig.active).toBe("commitment-convergence");
+    expect(getActiveScorecard(defaultScorecardConfig).id).toBe("commitment-convergence");
+    expect(() =>
+      getActiveScorecard({ ...defaultScorecardConfig, active: null }),
+    ).toThrow(/OD-1|explicitly null/);
   });
 
   it("all three §6.16 candidates stand side by side, sheets A|B|C tagged", () => {
@@ -48,7 +49,7 @@ describe("scorecard stays undecided until the owner chooses (task-6)", () => {
     expect(conversion.weights[AXIS.RESILIENCE]).toBe(20);
     expect(conversion.weights[AXIS.GROWTH]).toBe(20);
     const convergence = SCORECARD_CANDIDATES[2]!;
-    expect(convergence.weights[AXIS.AVAILABILITY_VS_COMMITMENT]).toBe(30); // semantics OD-1c, value PROVISIONAL mirror
+    expect(convergence.weights[AXIS.AVAILABILITY_VS_COMMITMENT]).toBe(30); // OD-1c ACTIVE (2026-10-09); value is the §6.9 mirror
   });
 
   it("an explicit owner choice resolves the getter; a bogus one fails loud", () => {

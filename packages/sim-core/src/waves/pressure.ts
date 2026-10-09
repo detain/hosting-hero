@@ -7,9 +7,11 @@
  * because Q16.16 Fixed overflows long before late-game pressure does.
  * Growth 1.115 is kept exact as the rational 223/200 — no floats in logic.
  *
- * Tuning sheets A | B | C are PROVISIONAL parameter sets. The owner has not
- * picked one (open decision, MASTER_REPORT §6), so NONE is active and
- * resolveActiveSheet() fails loud until that ratification lands.
+ * Tuning sheet B is CANONICAL (OD-2, owner decision 2026-10-09, recorded in
+ * docs/adr/0009-owner-ratifications-calibration.md). Sheets A | C stay
+ * PROVISIONAL alternates. resolveActiveSheet() resolves sheet B; its
+ * fail-loud guard remains as the config-resolution law — it now only fires
+ * if ACTIVE_TUNING_SHEET is ever hand-nulled.
  */
 
 export const PRESSURE_MICRO: bigint = 1_000_000n;
@@ -28,7 +30,8 @@ export interface PressureParams {
 
 export interface TuningSheet {
   readonly id: TuningSheetId;
-  readonly status: "PROVISIONAL";
+  /** RATIFIED marks the owner-chosen canonical set; PROVISIONAL marks alternates. */
+  readonly status: "PROVISIONAL" | "RATIFIED";
   readonly params: PressureParams;
   readonly note: string;
 }
@@ -69,12 +72,14 @@ const SAWTOOTH_B: readonly bigint[] = [
   1_000_000n, 550_000n, 1_300_000n, 700_000n, 1_550_000n, 600_000n, 1_750_000n, 650_000n,
 ];
 
-/** Sheet A — gentler floor, shallower spikes (PROVISIONAL guess-shape). */
+/** Sheet A — gentler floor, shallower spikes (PROVISIONAL; future
+ *  landlord-convention derivation per the OD-2 ratification, 2026-10-09). */
 const SAWTOOTH_A: readonly bigint[] = [
   1_000_000n, 700_000n, 1_150_000n, 800_000n, 1_250_000n, 750_000n, 1_350_000n, 800_000n,
 ];
 
-/** Sheet C — punishing valleys, higher crests (PROVISIONAL guess-shape). */
+/** Sheet C — punishing valleys, higher crests (PROVISIONAL; future
+ *  realism-toggle data per the OD-2 ratification, 2026-10-09). */
 const SAWTOOTH_C: readonly bigint[] = [
   1_000_000n, 400_000n, 1_500_000n, 500_000n, 1_900_000n, 450_000n, 2_200_000n, 500_000n,
 ];
@@ -84,30 +89,36 @@ export const TUNING_SHEETS: Readonly<Record<TuningSheetId, TuningSheet>> = {
     id: "A",
     status: "PROVISIONAL",
     params: { baseMicro: 100n * PRESSURE_MICRO, growthNum: GROWTH_NUM, growthDen: GROWTH_DEN, sawtoothMicro: SAWTOOTH_A },
-    note: "PROVISIONAL — comfort-leaning curve; owner has NOT ratified (MASTER_REPORT §6 open decision).",
+    note: "PROVISIONAL — comfort-leaning curve; future landlord-convention derivation (OD-2 ratified B on 2026-10-09, ADR-0009). Not active.",
   },
   B: {
     id: "B",
-    status: "PROVISIONAL",
+    status: "RATIFIED",
     params: { baseMicro: 100n * PRESSURE_MICRO, growthNum: GROWTH_NUM, growthDen: GROWTH_DEN, sawtoothMicro: SAWTOOTH_B },
-    note: "PROVISIONAL — the documented rising-floor sawtooth from hosting_game.md L25564; owner has NOT ratified.",
+    note: "RATIFIED CANONICAL — the documented rising-floor sawtooth from hosting_game.md L25564; owner decision 2026-10-09 (OD-2, docs/adr/0009-owner-ratifications-calibration.md).",
   },
   C: {
     id: "C",
     status: "PROVISIONAL",
     params: { baseMicro: 100n * PRESSURE_MICRO, growthNum: GROWTH_NUM, growthDen: GROWTH_DEN, sawtoothMicro: SAWTOOTH_C },
-    note: "PROVISIONAL — hardcore curve; owner has NOT ratified.",
+    note: "PROVISIONAL — hardcore curve; future realism-toggle data (OD-2 ratified B on 2026-10-09, ADR-0009). Not active.",
   },
 };
 
-/** The owner hasn't picked a sheet; nothing is active. */
-export const ACTIVE_TUNING_SHEET: TuningSheetId | null = null;
+/** Sheet B is canonical: OD-2 ratified by the owner 2026-10-09
+ *  (docs/adr/0009-owner-ratifications-calibration.md). */
+export const ACTIVE_TUNING_SHEET: TuningSheetId | null = "B";
 
-/** Fail-fast accessor: throws until ratification flips ACTIVE_TUNING_SHEET. */
+/** Config-resolution accessor: returns the ACTIVE sheet (B since the OD-2
+ *  flip landed 2026-10-09). The throw is the fail-loud guard for a
+ *  hand-edited null — the ratification means it is unreachable by default,
+ *  but config resolution still refuses to guess (Law 4). */
 export function resolveActiveSheet(): TuningSheet {
   if (ACTIVE_TUNING_SHEET === null) {
     throw new Error(
-      "tuning sheet: no ACTIVE_TUNING_SHEET — sheets A|B|C are all PROVISIONAL and the owner has not picked one (MASTER_REPORT §6).",
+      "tuning sheet: ACTIVE_TUNING_SHEET is null — OD-2 ratified sheet B on 2026-10-09 " +
+        "(docs/adr/0009-owner-ratifications-calibration.md); a null here means the const " +
+        "was hand-edited, not that the decision is open.",
     );
   }
   return TUNING_SHEETS[ACTIVE_TUNING_SHEET];

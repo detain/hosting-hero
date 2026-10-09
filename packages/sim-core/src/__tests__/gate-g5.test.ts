@@ -10,10 +10,13 @@
  * a byte-identical mirror (./g5-quarter-fixture.ts) whose header pins the
  * sync law; the proto panel keeps compiling the upstream original directly.
  *
- * OD-1 (scorecard owner UNCHOSEN): the gate runs WITHOUT the scorecard.
- * It consumes only ledger primitives (journal, buckets, invoices, phases,
- * error budgets, notices). Group 0 pins that the scorecard is still unset
- * and that touching it — or the tuning-sheet resolver — throws.
+ * OD-1 RATIFIED 2026-10-09 (choice (c) commitment-convergence, ADR-0009):
+ * the gate STILL runs WITHOUT the scorecard by design. It consumes only
+ * ledger primitives (journal, buckets, invoices, phases, error budgets,
+ * notices). Group 0 pins that the default now RESOLVES (sheet B / the C
+ * candidate) while this gate keeps never needing either accessor. Group 0b
+ * enforces that law by source-scan: the accessor names may live in these
+ * files' COMMENT prose, but in CODE they appear nowhere.
  */
 
 import { readFileSync } from "node:fs";
@@ -77,19 +80,19 @@ function noticesFor(state: QuarterResult, kind: EconomyNotice["kind"]): readonly
   return state.noticesByKind[kind] ?? [];
 }
 
-/* ═══════════════════ Group 0 · OD-1: the gate runs scorecard-less ═══════════════════ */
+/* ═══════════════ Group 0 · OD-1 ratified; the gate still runs scorecard-less ═══════════════ */
 
-describe("G5 group 0 — scorecard is NOT chosen (OD-1), and this gate never needs it", () => {
-  it("defaultScorecardConfig.active is still null", () => {
-    expect(defaultScorecardConfig.active).toBeNull();
+describe("G5 group 0 — scorecard is ratified (OD-1, 2026-10-09), and this gate never needs it", () => {
+  it("defaultScorecardConfig.active resolves to the ratified choice", () => {
+    expect(defaultScorecardConfig.active).toBe("commitment-convergence");
   });
 
-  it("touching the scorecard throws (documented: G5 consumes ledger primitives only)", () => {
-    expect(() => getActiveScorecard(defaultScorecardConfig)).toThrow(/OD-1|scorecard/i);
+  it("the default getter resolves (was a throw pre-ratification); G5 still consumes ledger primitives only", () => {
+    expect(getActiveScorecard(defaultScorecardConfig).id).toBe("commitment-convergence");
   });
 
-  it("resolveActiveSheet still throws — G5 carries the PROVISIONAL marker, never resolves it", () => {
-    expect(() => resolveActiveSheet()).toThrow(/PROVISIONAL|owner/i);
+  it("resolveActiveSheet resolves sheet B (OD-2 flip) — G5 carries the wire's PROVISIONAL marker, never resolves it", () => {
+    expect(resolveActiveSheet().id).toBe("B");
     expect(theQuarter().tuningSheetMarker).toMatch(/^PROVISIONAL/);
   });
 
@@ -99,6 +102,65 @@ describe("G5 group 0 — scorecard is NOT chosen (OD-1), and this gate never nee
     expect(q.incidentWindow.id).toBe("waves/g1-shared-web-first-quarter");
     expect(q.incidentWindow.type).toBe("official:shared-web");
     expect(q.incidentWindow.waveCount).toBe(5);
+  });
+});
+
+/* ═══════════ Group 0b · "ledger primitives only" enforced by source scan ═══════════ */
+
+describe("G5 group 0b — CODE never calls getActiveScorecard/resolveActiveSheet (comment-prose exempt)", () => {
+  // OD-1 resolved 2026-10-09, so the pre-ratification throwing-accessors that
+  // used to police this lane are gone — the law was left comment-only. This
+  // group makes it falsifiable again. Both scan targets legitimately MENTION
+  // the accessor names inside truthful "never calls" docblocks, so a raw-text
+  // scan would be vacuously red: strip comments first and assert on CODE.
+  // FALSIFICATION STORY: if anyone reverts quarter.ts (or its byte-identical
+  // fixture mirror) to importing or calling either accessor, the name rides
+  // OUTSIDE comments, survives the strip, and the first test goes red — the
+  // armed probe in the second test proves a planted call would be caught.
+  const SCAN_TARGETS = [
+    {
+      label: "apps/proto/src/gates/g5/quarter.ts",
+      path: join(process.cwd(), "..", "..", "apps", "proto", "src", "gates", "g5", "quarter.ts"),
+    },
+    {
+      label: "src/__tests__/g5-quarter-fixture.ts",
+      path: join(process.cwd(), "src", "__tests__", "g5-quarter-fixture.ts"),
+    },
+  ] as const;
+
+  const BANNED_ACCESSORS = ["getActiveScorecard", "resolveActiveSheet"] as const;
+
+  /** Block comments then line comments (neither file carries "//" inside a
+   *  string — verified zero "://" occurrences; newlines are kept so a
+   *  swallowed-body scenario stays visible in any diff of the probe). */
+  function stripComments(source: string): string {
+    return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+  }
+
+  it("the banned names survive comment-stripping NOWHERE in either engine body", () => {
+    for (const target of SCAN_TARGETS) {
+      const raw = readFileSync(target.path, "utf8");
+      const code = stripComments(raw);
+      // Canary: the strip left a real, sizeable code body standing — the scan
+      // is never accidentally green by emptiness.
+      expect(code, target.label).toContain("export function runQuarter");
+      expect(code.split("\n").length, target.label).toBeGreaterThan(400);
+      for (const accessor of BANNED_ACCESSORS) {
+        expect(code, `${target.label} (code)`).not.toContain(accessor);
+        // Honesty witness: the raw file DOES mention each name — inside the
+        // docblocks that state this very law (this lane owns both sides).
+        expect(raw, `${target.label} (prose)`).toContain(accessor);
+      }
+    }
+  });
+
+  it("armed probe: a planted CALL survives the strip; a planted docblock mention does not", () => {
+    const plantedCall = stripComments(
+      'import { getActiveScorecard } from "@hh/sim-core/economy";\nconst s = resolveActiveSheet(); /* resolveActiveSheet */',
+    );
+    expect(plantedCall).toContain("getActiveScorecard");
+    expect(plantedCall).toContain("resolveActiveSheet"); // rode the real call, not the comment
+    expect(stripComments("/** it never calls getActiveScorecard **/")).not.toContain("getActiveScorecard");
   });
 });
 

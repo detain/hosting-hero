@@ -14,7 +14,8 @@
  *  3. EVERY NUMBER CARRIES ITS LAW. Each rendered value ships an
  *     ExplainPayload: the formula in prose + the literal inputs, so the UI's
  *     Explain-This-Number click is a lookup, not a computation.
- *  4. OD-1. No scorecard anywhere: only ledger primitives (journal deltas,
+ *  4. No scorecard anywhere (by gate design — OD-1 ratified 2026-10-09 and
+ *     this projection still uses only ledger primitives: journal deltas,
  *     buckets, invoice records, notices, error-budget structs).
  */
 

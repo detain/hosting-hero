@@ -18,11 +18,13 @@
  * content wires (shared-web bundle, g1 wave table) arrive as `unknown` and
  * are PARSED here at the boundary (Law 2), never re-parsed downstream.
  *
- * OD-1 (scorecard owner UNCHOSEN): this gate deliberately runs WITHOUT the
- * scorecard. It consumes ONLY ledger primitives — journal entries, buckets,
- * invoices, contracts' economy records, error budgets, notices. It never
- * touches `getActiveScorecard` / `defaultScorecardConfig.active` (which
- * throws until the owner picks one) and never calls `resolveActiveSheet`.
+ * OD-1 RATIFIED 2026-10-09 (choice (c) commitment-convergence ACTIVE,
+ * ADR-0009): this gate STILL runs WITHOUT the scorecard by design. It
+ * consumes ONLY ledger primitives — journal entries, buckets, invoices,
+ * contracts' economy records, error budgets, notices. It never touches
+ * `getActiveScorecard` / `defaultScorecardConfig.active` (which now
+ * resolves to the ratified candidate) and never calls `resolveActiveSheet`
+ * (OD-2 ratified sheet B the same day).
  * Every tuning-sheet value it inherits from `defaultEconomyConfig()` is
  * marked PROVISIONAL in economy/config.ts — this fixture rides those
  * defaults, it does not mint new numbers.
@@ -38,7 +40,8 @@
  *   realMark(m) = ceil(m × 7/43200 in µs) = (m×420_000_000n + 43_199n) / 43_200n
  * — the post-telescoping-fix law makes the landing partition-invariant, and
  * every settle re-asserts `businessMinuteOf(clocks) === m` (fail loud, Law 4).
- * Business-clock scale 43200/7 is itself PROVISIONAL (OD-2 / D-1).
+ * Business-clock scale 43200/7 is RATIFIED (OD-2, 2026-10-09: the
+ * 7-real-minute month was kept; the Sheet-B 4-min flip was declined).
  */
 
 import {
@@ -633,7 +636,9 @@ export function parseWaveTable(wire: unknown): ParsedWaveTable {
 
 /** The bundle wire carries economy.tuningSheet as a PROVISIONAL string
  *  ("PROVISIONAL-B"); the loader's LoadedEconomy does not surface it, and
- *  resolveActiveSheet() THROWS by OD-2 law — so we carry the marker only. */
+ *  this gate carries the marker only — it never resolves it via
+ *  resolveActiveSheet() (whose OD-2 default is the ratified sheet B; the
+ *  wire marker is authored content data, untouched here). */
 function readTuningSheetMarker(wire: unknown): string {
   const sheet = (wire as { economy?: { tuningSheet?: unknown } })?.economy?.tuningSheet;
   if (typeof sheet !== "string" || sheet.length === 0) {

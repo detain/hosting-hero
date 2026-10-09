@@ -8,9 +8,12 @@
  *  - "LIVE"   — value taken directly from a MASTER_REPORT / hosting_game figure.
  *  - "MID"    — midpoint of a documented range.
  *  - "PROVISIONAL" — no doc figure; placeholder that must be tuned (OD list).
- * Owner-gated decisions this module deliberately does NOT resolve:
- *  - OD-1 scorecard weights (scoring.ts keeps all three candidates, active:null)
- *  - OD-2 tuning sheet A|B|C + month length (Appendix D conflict table)
+ * RATIFIED 2026-10-09 (docs/adr/0009-owner-ratifications-calibration.md):
+ *  - OD-1 scorecard — "commitment-convergence" ACTIVE (scoring.ts keeps all
+ *    three candidates side-by-side as comparison data)
+ *  - OD-2 tuning sheet — B canonical; month stays 7 real-min (the 43200n/7n
+ *    BUSINESS_SCALE_DEFAULT is KEPT; the 4-min flip was declined)
+ * Still NOT resolved by this module:
  *  - suspension dial day 3|10|30 and policy-book concessions (player choices).
  */
 
@@ -29,7 +32,7 @@ export type TuningSheet = "A" | "B" | "C";
 export interface BusinessCalendarConfig {
   readonly minutesPerDay: number; // 1440 — LIVE (calendar tautology)
   readonly daysPerWeek: number; // 7 — LIVE
-  readonly minutesPerMonth: number; // 43200 = 30d — LIVE (§6.16 header; OD-2 flags month-length debate)
+  readonly minutesPerMonth: number; // 43200 = 30d — LIVE (§6.16 header; OD-2 ratified 2026-10-09: 30d/7-real-min month KEPT)
   readonly monthsPerYear: number; // 12 — LIVE
 }
 

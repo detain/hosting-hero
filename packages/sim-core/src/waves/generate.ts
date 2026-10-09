@@ -75,7 +75,8 @@ export interface WavePlanInput {
   readonly invitations: ThreatInvitations;
   readonly masteryCounts?: ReadonlyMap<string, number>;
   readonly entropyForecastPurchased: boolean;
-  /** Override the (PROVISIONAL) sheet params — default: the table's sheet. */
+  /** Override the tuning-sheet params — default: the table's own sheet
+   *  (the active sheet is B — RATIFIED 2026-10-09, OD-2, ADR-0009). */
   readonly pressureParams?: PressureParams;
 }
 
@@ -166,7 +167,8 @@ export function planWave(table: WaveTable, waveN: number, input: WavePlanInput):
   const dominantEntry = [...composition].sort((a, b) => b.sharePct - a.sharePct || cmpStr(a.threatId, b.threatId))[0];
   const envelope = buildEnvelope(wave, startUs, composition, dominantEntry?.band ?? "weather", table.id);
 
-  // 4. Pressure budget — PROVISIONAL sheet; director may deepen troughs only.
+  // 4. Pressure budget — the table's sheet (active sheet B — RATIFIED
+  //    2026-10-09, OD-2, ADR-0009); director may deepen troughs only.
   const baseParams = input.pressureParams ?? TUNING_SHEETS[table.tuningSheet].params;
   const params: PressureParams = {
     ...baseParams,

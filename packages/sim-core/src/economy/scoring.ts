@@ -1,12 +1,15 @@
 /**
- * Scorecard CONFIG (MASTER_REPORT §6.9 + §6.16; OD-1 is an OPEN owner
- * decision — this module's whole point is to NOT resolve it).
+ * Scorecard CONFIG (MASTER_REPORT §6.9 + §6.16; OD-1 RATIFIED 2026-10-09:
+ * choice (c) "commitment-convergence" is ACTIVE — availability scored
+ * against the SOLD SLA; the conversion-funnel axis is DISPLAYED LEADING in
+ * presentation, but the active weight set is the C candidate. Recorded in
+ * docs/adr/0009-owner-ratifications-calibration.md).
  *
- * Three candidate weight sets live SIDE BY SIDE, each tagged with the
- * Appendix-D tuning sheet whose lens it belongs to, and `active: null`.
- * `getActiveScorecard()` THROWS while nothing is chosen: a game that scores
- * the player by an undecided rubric must fail loud (Law 4), pointing the
- * reader at MASTER_REPORT §6 where the owner decides.
+ * Three candidate weight sets still live SIDE BY SIDE as comparison data —
+ * G5's score screen grades BOTH forks over the same save — and
+ * `defaultScorecardConfig.active` now resolves. `getActiveScorecard()`
+ * THROWS only for configs that explicitly pass `active: null`: an
+ * unresolved caller must fail loud (Law 4), never score by a guessed rubric.
  *
  * Provenance of the three candidates (hosting_game.md line cites):
  *  - "uptime-first" — §6.9 DEFAULT / §6.16:25639 Uptime 30 / Perf 20 /
@@ -15,15 +18,16 @@
  *    Profit 25 / Resilience 20 / Growth 20 (uptime folded into conversion).
  *  - "commitment-convergence" — §6.9 SECOND REFRAMING ("both camps accept:
  *    availability scored against the COMMITMENT, not raw uptime"; OD-1c:
- *    "99.95% on a 99.9% contract beats 99.99% on a 99.99% contract"). The
- *    numbers MIRROR uptime-first and are PROVISIONAL — only the axis
- *    SEMANTICS are canonical; the owner may re-weight.
+ *    "99.95% on a 99.9% contract beats 99.99% on a 99.99% contract").
+ *    ACTIVE by owner decision 2026-10-09; the numbers MIRROR uptime-first —
+ *    no new weights were ratified, so the values stay the §6.9 mirror while
+ *    the axis SEMANTICS are law.
  *
  * Tuning-sheet A|B|C attribution: Appendix D lists the weight sets as SHARED
  * CONSTANTS across all three sheets, so the A/B/C tags here map each
  * candidate to its lens lineage (A generalist/physics, B game-designer,
- * C CEO/market) for bookkeeping and are AUTHOR-ATTRIBUTED — PROVISIONAL
- * under OD-2.
+ * C CEO/market) for bookkeeping and are AUTHOR-ATTRIBUTED (OD-2 ratified
+ * sheet B canonical on 2026-10-09; these lens tags are unaffected).
  *
  * Fifth-axis law (§6.9): per-type bundles replace 20 pts proportionally
  * (30/20/30/20 → 24/16/24/16 + 20); the math requires every base weight
@@ -98,28 +102,34 @@ export const SCORECARD_CANDIDATES: readonly ScorecardCandidate[] = [
     "commitment-convergence",
     "C",
     { [AXIS.AVAILABILITY_VS_COMMITMENT]: 30, [AXIS.PERFORMANCE]: 20, [AXIS.PROFITABILITY]: 30, [AXIS.GROWTH]: 20 },
-    "hosting_game.md §6.9 second reframing (OD-1c); weights PROVISIONAL mirror — semantics canonical",
+    "hosting_game.md §6.9 second reframing (OD-1c); ACTIVE by owner decision 2026-10-09 — weights remain the §6.9 mirror (no new numbers ratified)",
   ),
 ] as const;
 
 export interface ScorecardConfig {
   readonly candidates: readonly ScorecardCandidate[];
-  /** THE OPEN OWNER DECISION (OD-1): null until the owner picks. */
+  /** The OD-1 choice — ratified default "commitment-convergence" (2026-10-09).
+   *  null still means UNRESOLVED for any other config: getActiveScorecard fails loud. */
   readonly active: string | null;
 }
 
-/** Owner has NOT chosen. Do not "helpfully" default anything. */
+/** OD-1 RATIFIED 2026-10-09 (docs/adr/0009-owner-ratifications-calibration.md):
+ *  choice (c) commitment-convergence is ACTIVE — availability scored against
+ *  the SOLD SLA. The conversion-funnel axis is DISPLAYED LEADING (presentation
+ *  layer); the active weight set is the C candidate. */
 export const defaultScorecardConfig: ScorecardConfig = {
   candidates: SCORECARD_CANDIDATES,
-  active: null,
+  active: "commitment-convergence",
 };
 
 export function getActiveScorecard(config: ScorecardConfig): ScorecardCandidate {
   if (config.active === null) {
     throw new Error(
-      "economy/scoring: no scorecard selected (OD-1 OPEN). The owner must choose a " +
-        "weight set in MASTER_REPORT.md §6 (candidates catalogued in §6.9/§6.16, " +
-        "tuning-sheet conflict in Appendix D) and set ScorecardConfig.active to one of: " +
+      "economy/scoring: scorecard explicitly null in this config — OD-1 is RATIFIED " +
+        "(choice (c) commitment-convergence, owner decision 2026-10-09, " +
+        "docs/adr/0009-owner-ratifications-calibration.md; candidates catalogued in " +
+        "MASTER_REPORT.md §6.9/§6.16); a null here means the caller deliberately " +
+        "left it unresolved. Set ScorecardConfig.active to one of: " +
         `${config.candidates.map((c) => `'${c.id}'`).join(", ")}.`,
     );
   }

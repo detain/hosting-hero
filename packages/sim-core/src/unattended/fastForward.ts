@@ -24,7 +24,8 @@
  *     them, the replay/verify.ts pattern).
  *
  * Money threading: unlike versus (which deliberately never touches the
- * scorecard, OD-1), the weekend MUST see money — a company can go broke
+ * scorecard — weights there stay caller-supplied data even after the OD-1
+ * ratification), the weekend MUST see money — a company can go broke
  * offline. When `money` is configured the runner registers the contracts,
  * steps runEconomyTick every tick on the driver's business clock, mirrors
  * cash + ledgerSeq into GameState (the notary contract g5 proved), and
