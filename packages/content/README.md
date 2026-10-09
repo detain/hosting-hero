@@ -52,7 +52,12 @@ across variants · every `{slot}` is glossed and every glossary slot is used ≥
 README §Key literals table is verbatim-synced against pack `decision` values ·
 zero §9.11 technique vocabulary (shell/SQL/CVE/path ban-list over every template
 body) · ≥25 templates per pack · provenance covers every key (cite string, or
-null + `_provenance._todo` — never an invented law-number). Pack `_todo` markers
+null + `_provenance._todo` — never an invented law-number). VOLUME RATIFIED
+2026-10-09 (owner decision, `docs/adr/0009-owner-ratifications-calibration.md`):
+the shipped counts — shared-web 98 / game-servers 75 templates — are approved,
+superseding the ≤60-per-pack task-line guidance (the validator keeps its ≥25
+floor and sets no ceiling; most provenance cites are §9.3 verbatim doc seeds, so
+trimming would delete doc-mandated content). Pack `_todo` markers
 print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
 (63) is untouched by pack authoring.
 
@@ -88,13 +93,24 @@ game §6.6). Values that exist ONLY to make a tuning decision visible are marked
 
 ### PROVISIONAL marking convention
 
-Owner has NOT picked the canonical tuning sheet (A/B/C — MASTER_REPORT OD-2).
-Until they do, every object holding tuning-derived numbers carries
-`"tuningSheet": "PROVISIONAL-B"` (B = the sheet the wave formula P(n)=100×1.115ⁿ×S(n)
-was drafted against; the marker, not the pick). The validator rejects any
-`tuningSheet` value not matching `PROVISIONAL-[ABC]`. When the owner ratifies a
-sheet, sweep the marker to `"RATIFIED-<letter>"` in one commit — loader lint
-treats unmarked tuning numerics as errors.
+**UPDATE 2026-10-09:** the owner HAS picked the canonical sheet — **Sheet B,
+RATIFIED** (`24dfcfe` flips the engine default; `docs/adr/0009` records it). The
+wire markers below have NOT yet been swept: `packages/content/types/*.json`
+still carry `"tuningSheet": "PROVISIONAL-B"`, and that is deliberate — the
+re-author is an owner content commit, not an engine-lane edit. Two pins keep the
+marker honest in the meantime: the validator still rejects any `tuningSheet`
+value not matching `PROVISIONAL-[ABC]`, and
+`packages/sim-core/src/__tests__/gate-g5.test.ts:96` (G5 group 0) pins the
+quarter's wire marker to `/^PROVISIONAL/` — while group 0b's source scan keeps
+G5's CODE calling neither resolver — so no lane can self-declare RATIFIED on the
+wire before the owner sweeps. When that sweep
+lands, move the marker to `"RATIFIED-<letter>"` in one commit and re-cut both
+pins in the same change — loader lint treats unmarked tuning numerics as errors.
+
+(Historical law, still the reason the markers exist: every object holding
+tuning-derived numbers carries `"tuningSheet": "PROVISIONAL-B"` — B = the sheet
+the wave formula P(n)=100×1.115ⁿ×S(n) was drafted against; the marker, not the
+pick. The pick has now happened; the marker sweep is owed.)
 
 ## Key literals (ticketPack seeds)
 

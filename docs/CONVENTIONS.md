@@ -46,13 +46,13 @@ hosting-hero/
 | `waves` | wave envelopes (ramp/plateau/decay/composition/telegraph); seeded director draws logged in `director` domain; attack-surface deck derived from the construction log | §4.1, §4.8 (deck legality = `hosting_game.md §2.24` constraints), §7.2 |
 | `replay` | append-only `ReplayLog`, checkpoint ring, state-hash CI tripwire, replay bundle (§3.3 rule) | §3.3, §4.1 (replay artifact) |
 | `loader` | strict hand-rolled type-bundle parser against the authored Appendix A v0 JSON contract — **no zod dependency** (fail-loud `UNKNOWN_FIELD`); grammar-pack registry (closed enums) | §7.0, Appendix A, Appendix B |
-| `save` | THE LONG SAVE — save envelopes + lineage, `WRITE_ACCESS_MATRIX` write-guard (OD-8 pending), modes, migration planner | §3.3, §4.1 (replay artifact), DECISIONS-PENDING OD-8 |
+| `save` | THE LONG SAVE — save envelopes + lineage, `WRITE_ACCESS_MATRIX` write-guard (OD-8 Matrix B RATIFIED 2026-10-09 — 160 rows LIVE, endless's 32 held `PENDING_OD8`; `74f157b`), modes, migration planner | §3.3, §4.1 (replay artifact), DECISIONS-PENDING OD-8, ADR-0009 |
 
 ### 1.2 Package rules
 
 - **`packages/content` is data-only.** Official hosting types are authored as mod-format JSON with **no privileged code path** (§4.3 R77, `hosting_game.md §9.11`). Adding a type must never require a code branch in `sim-core` — grep law: `rg "business.?type" packages/sim-core/` returns formatting-only hits (§7.6 G6).
 - **`apps/proto` is the Phase-1 prototype** (Vite + Vue + TS + PixiJS v8) — programmer art, not polish (§2.2 R-7). Vue stays **behind the observed-layer boundary**: hot sim state never enters `reactive()` proxies; step-12 snapshots/deltas feed shallow refs (§4.2).
-- **`tools/headless` is the Node port of `sim-core`** (§3.4). Required by approved features regardless of OD-5 (Async-Versus, Long Weekend, Analyst forward-sims, Ratchet-Audit, CI determinism gates); its *role as MP session host* is conditional on OD-5. WS-8 slice (d) deliberately hosts the sim on Node inside a browser app as the proof-of-recommendation-(b) (§2.2, §7.7d).
+- **`tools/headless` is the Node port of `sim-core`** (§3.4). Required by approved features regardless of OD-5 (Async-Versus, Long Weekend, Analyst forward-sims, Ratchet-Audit, CI determinism gates); its *role as MP session host* is now RATIFIED — OD-5=(b) accepted 2026-10-09 (`ea7acee`, ADR-0009). WS-8 slice (d) deliberately hosts the sim on Node inside a browser app as the proof-of-recommendation-(b) (§2.2, §7.7d).
 - **The `sim-core` package is imported unchanged** by browser (Web Worker, SP), `tools/headless` (Node), and `apps/proto`'s worker — **one codebase everywhere** (§2.2 R-2, recommendation OD-5(b)).
 
 ---
@@ -105,4 +105,4 @@ The following are **build-breaking in `packages/sim-core/` and `tools/headless/`
 
 ## 5. What conventions this deliberately does *not* fix
 
-`docs/DECISIONS-PENDING.md` owns the open items. In particular: **`scorecard.weights` (OD-1), `tuning.sheet` + `monthLengthRealMin` (OD-2), `content.threatVisitorCensus` (OD-3), and `mp.topology` (OD-5)** are config knobs, **not** conventions — do not resolve them in code review. The repo is scaffolded *per recommendation (b)* for OD-5, which is a scaffolding choice, not a decision (§2.2, §6.1).
+`docs/DECISIONS-PENDING.md` owns the open items. In particular: **`scorecard.weights` (OD-1), `tuning.sheet` + `monthLengthRealMin` (OD-2), `content.threatVisitorCensus` (OD-3), and `mp.topology` (OD-5)** are config knobs, **not** conventions — do not resolve them in code review. All four were resolved by OWNER decision 2026-10-09 (commitment-convergence / Sheet B / keep ~200 threats / option (b) — `docs/adr/0009-owner-ratifications-calibration.md`; engine flips `24dfcfe`), which is exactly how a knob is allowed to move. The OD-5 scaffolding *per recommendation (b)* (§2.2, §6.1) is now the ratified architecture, not just a scaffold choice — ARCHITECTURE §10 records the acceptance.

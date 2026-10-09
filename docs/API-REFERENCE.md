@@ -7,7 +7,10 @@
 pass 2026-10-07 (chunked journal + settled-invoice retention rows, +13 names;
 pipeline digest sink port shipped ZERO surface change — `digest-limbs.ts` is
 internal, not barrel-exported); UNATTENDED-LANE pass 2026-10-07
-(`## unattended` section + import row, +69 names).** Ground truth = source
+(`## unattended` section + import row, +69 names); CALIBRATION-WAVE
+docs-currency pass 2026-10-09 (api-verify 1,270 → 1,273 names — versus
+fingerprint pair + `registerContractsEconomy`; OD-1/OD-2/OD-8/OD-4d row
+flips to the ratified truth, `docs/adr/0009-owner-ratifications-calibration.md`).** Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
 `docs/api-verify.test.mjs` (run `node docs/api-verify.test.mjs` — it fails if
@@ -36,7 +39,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
 | `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (55 exports incl. the 11-name intent-door surface; `internal.ts` private) |
 | `@hh/sim-core/policy` | `src/policy/index.ts` | ✅ 90 exports (P1/P3/P4/P7 fixer-lane additions) |
-| `@hh/sim-core/economy` | `src/economy/index.ts` | ✅ 195 exports (journal chunking + invoice retention landed 2026-10-07, +13) |
+| `@hh/sim-core/economy` | `src/economy/index.ts` | ✅ 196 exports (journal chunking + invoice retention landed 2026-10-07, +13; `registerContractsEconomy` batch API landed 2026-10-09, +1) |
 | `@hh/sim-core/observed` | `src/observed/index.ts` | ✅ 49 exports (composite-cell fold family) |
 | `@hh/sim-core/topology` | `src/topology/index.ts` | ✅ 99 exports (round-2 fixes incl. `domains.projectionVersion`) |
 | `@hh/sim-core/waves` | `src/waves/index.ts` | ✅ 74 exports |
@@ -187,7 +190,7 @@ and `rng-reference.ts` (bigint oracle used only by tests).
 | `ClockScale` | `interface { num: bigint; den: bigint }` | rational clock ratio | — |
 | `SpeedFactor` | `1 \| 2 \| 4` | ratified speed set | closed |
 | `simScale` `incidentScale` | `(speed: SpeedFactor) => ClockScale` | sim/incident clock ratios per speed | pure |
-| `BUSINESS_SCALE_DEFAULT` | `ClockScale = 43200/7` | business-minutes-per-real-day ratio — **OD-2/D-1 pending; flip this ONE constant when owner settles** | const (awaiting OD-2) |
+| `BUSINESS_SCALE_DEFAULT` | `ClockScale = 43200/7` | business-minutes-per-real-day ratio — **OD-2 RATIFIED 2026-10-09 (ADR-0009 rec #2): month stays 7 real-min, the 4-min flip DECLINED (§7.13 doctrine); constant is ratified law as-shipped** (the code docblock's pre-ratification "pending" wording is owed a hygiene pass) | const |
 | `WALL_SCALE` | `ClockScale` | 1:1 reference wall mapping | const |
 | `scaleUs` | `(durationUs: SimTimeUs, scale: ClockScale) => SimTimeUs` | exact rational time rescale | pure bigint |
 | `us` | `(value: bigint \| number) => SimTimeUs` | parse boundary → µs | total-throwing |
@@ -254,7 +257,7 @@ driver calls `applyIntentDoor` BEFORE step 1 every tick. Import:
 | `patienceRatioBps` | `(elapsedUs: SimTimeUs, patienceUs: SimTimeUs) => number` | integer ratio → bps | pure |
 | `bounceLutEntry` | `(index: number) => Fixed` | single LUT cell | pure |
 | `BOUNCE_LUT_LENGTH` | `number` | LUT size (pre-allocated at module load) | const |
-| `DEFAULT_KNEE_RHO` | `Fixed (0.7)` | hockey-stick knee default (R-07; **final value OD-2's sheet**, pass `kneeRho` to override) | const (pending OD-2) |
+| `DEFAULT_KNEE_RHO` | `Fixed (0.7)` | hockey-stick knee default (R-07; OD-2 ratified 2026-10-09 — the knee is NOT sheet data, the shipped 0.7 stays law until a later calibration pass; pass `kneeRho` to override) | const |
 | `RHO_CEILING` | `Fixed (0.99)` | utilization clamp | const |
 | `MAX_WAIT_MULTIPLIER` | `Fixed` | ρ/(1−ρ) at the ceiling | const |
 | `occupiedSlots` | `(node: NodeRecord) => number` | busy-slot count | pure |
@@ -420,10 +423,12 @@ contract-as-tower lifecycle (MRC/escalators/MFN/renewal cliff §7.15),
 invoicing + AR aging + deferred-revenue schedules, the dunning ladder, churn
 with ghosted "fuse" forecasts, error budgets with exhaustion locks, runway /
 death-spiral / lose-slowly guards, and the scorecard aggregation (**OD-1
-OPEN — `getActiveScorecard` throws until the owner picks** — do not pick for
-them). Every money move REQUIRES a `CauseId` (P10 attribution structurally
+RATIFIED 2026-10-09, ADR-0009 — `defaultScorecardConfig.active` resolves to
+"commitment-convergence"**; `getActiveScorecard` still fails loud for configs
+that explicitly pass `active: null`). Every money move REQUIRES a `CauseId` (P10 attribution structurally
 mandatory). Import: `@hh/sim-core/economy`. ~40 config constants are marked
-PROVISIONAL in `config.ts` pending the OD-2 tuning pass.
+PROVISIONAL in `config.ts` pending the post-ratification tuning pass (the
+OD-2 SHEET question itself settled 2026-10-09; value calibration did not).
 
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 |---|---|---|---|
@@ -494,9 +499,9 @@ PROVISIONAL in `config.ts` pending the OD-2 tuning pass.
 | `paymentFailureRoll` | `(invoiceDueAtMin, contractId, runSeed, cfg) => boolean` | invoice payment success roll | seeded |
 | `GhostedForecast` `addChurnSignal` `forecastChurnBpsAt` `defuseForecasts` `pruneForecasts` `ghostedForecastTable` | the ghosted-fuse model (§7.15) | unanswered escalations light fuses; save-the-account defuses | deterministic decay |
 | `AXIS` | const record of axis ids | the five score axes | — |
-| `ScoreAxisId` `ScoreWeights` `ScorecardCandidate` `SCORECARD_CANDIDATES` | types + 3 authored cards (uptime-first A / conversion-first B / convergent) | the OD-1 candidates, weights PROVISIONAL mirrors | const |
-| `ScorecardConfig` `defaultScorecardConfig` | interface + active:null | **OD-1 UNSET — choosing here = owner decision, don't** | fail-fast |
-| `getActiveScorecard` | `(config) => ScorecardCandidate` | resolve the chosen card — THROWS while OD-1 open | total-throwing |
+| `ScoreAxisId` `ScoreWeights` `ScorecardCandidate` `SCORECARD_CANDIDATES` | types + 3 authored cards (uptime-first A / conversion-first B / convergent C) | the OD-1 candidates — **C ("commitment-convergence") ACTIVE per the 2026-10-09 ratification** (`24dfcfe`); all three sets still ride side-by-side as G5's both-fork comparison data; weights remain doc-figure mirrors | const |
+| `ScorecardConfig` `defaultScorecardConfig` | interface + default `active: "commitment-convergence"` | **OD-1 ratified (ADR-0009 rec #1)** — the default resolves; explicit `active: null` remains the fail-loud opt-out | fail-fast on null |
+| `getActiveScorecard` | `(config) => ScorecardCandidate` | resolve the chosen card — throws ONLY for configs explicitly passing `active: null` | total-throwing |
 | `FIFTH_AXIS_POINTS` `applyFifthAxis` | `20`; `(base, fifthAxisId, fifthPoints?) => ScoreWeights` | the promised fifth axis grafted on | pure |
 | `compositeScore` | `(weights, axisScores: ReadonlyMap<ScoreAxisId, Fixed>) => Fixed` | weighted Σ | pure Fixed |
 | `Grade` `GRADE_BANDS_BPS` `gradeFor` | S…F bands ≥9200/8200/7000/5800/4500 bps | the end-of-run letter | pure |
@@ -553,12 +558,12 @@ Import: `@hh/sim-core/topology`.
 | `FloorLoadVerdict` `ThermalNeighbor` `thermalCouplingFixed` | interfaces; `(distance) => Fixed` | floor-load + heat coupling reads | pure |
 | `classifyPlacement` | `(a, b, rackOf, facilityOf) => AdjacencyClass` | where two placements sit on the adjacency ladder | pure |
 | `PhysicalIndex` `createPhysicalIndex` | interface + ctor | rack/facility lookup index fed to blast/domains | sorted keys |
-| `DomainKind` `DeathModel` `FailureDomain` | `"pdu"\|"rack"\|"switch"\|"template"`; `"kill-all"\|"degrade-all"`; interface | what fails together (§4.2 hyperedges) | closed |
+| `DomainKind` `DeathModel` `FailureDomain` | `"pdu"\|"rack"\|"switch"\|"template"`; `"kill-all"\|"degrade-all"`; interface | what fails together (§4.2 hyperedges); **T-9 two-color law RATIFIED 2026-10-09 (`8a5f413`): power-domain events KILL (red), rack/switch domains DEGRADE (amber), and `members` always includes the anchor** | closed |
 | `domainId` | `(kind, anchor) => EntityId` | stable domain identity | pure |
 | `pduDomains` `rackDomains` `switchDomains` `templateDomains` `buildDomainSet` `DomainSet` | `(graph, [index]) => readonly FailureDomain[]` / set | the four materializers + aggregate set | sorted enumeration |
 | `projectionVersion` | `(graph: TopologyGraph, index: PhysicalIndex) => string` | T-1 dual-version stamp of the joint graph+index projection — the exact pair key `` `${graph.version}:${index.version}` `` (T-a: the old `× 1_000_003` fold collided at index.version ≥ 1_000_003, e.g. (1, 1000003) ≡ (2, 0)): any cache over a graph+index view (blast radius!) MUST key on THIS, never `graph.version` alone, or a placement with an untouched graph serves a stale result | pure; injective over both version counters |
 | `BlastRadius` `PersonBlast` `BlastComputer` | interfaces | the ONE flood answer: affected (dead) / degraded (amber) sets; person variant; reusable computer bound to graph+index | `computeBlast(graph, domains, anchor)` — deterministic BFS+union |
-| `computeBlast` | `(graph: TopologyGraph, domains: DomainSet, anchor: EntityId) => BlastRadius` | flood rides DATA edges, geography never gates it; kill-all domains whose anchor died explode wholly | pinned order |
+| `computeBlast` | `(graph: TopologyGraph, domains: DomainSet, anchor: EntityId) => BlastRadius` | flood rides DATA edges, geography never gates it; kill-all domains whose anchor died explode wholly; degrade-all domains NEVER explode — the anchor dies, co-residents shade degraded/amber (T-9 ratified) | pinned order |
 | `computePersonBlast` | `(graph, person) => PersonBlast` | runbook/credential holder reach | pinned |
 | `createBlastComputer` | `(graph, index) => BlastComputer` | pre-indexed repeated queries (hover UI) | pure results |
 | `POLICY_BEADS` `PolicyBead` `isPolicyBead` | 8 beads (tls/rateLimit/breaker/timeout/pool/retry/firewall/egress) | the bead-on-a-wire vocabulary | closed |
@@ -591,9 +596,10 @@ attack-surface LEDGER ("threats are unspawnable until you build their
 invitation", retirement-with-lag, mastery→weather demotion); the difficulty
 DIRECTOR (trough-depth/entropy draws ONLY, never mid-incident, never touching
 telegraphed composition — draws replay-logged); the authoring-CI ENFORCER
-(eight named violation codes) and official-content inspector. Sheets A|B|C
-are all PROVISIONAL, `ACTIVE_TUNING_SHEET = null` — `resolveActiveSheet()`
-fail-fast throws until OD-2 ratifies. Import: `@hh/sim-core/waves`.
+(eight named violation codes) and official-content inspector. Sheet **B is
+canonical and ACTIVE** (`ACTIVE_TUNING_SHEET = "B"`, OD-2 ratified 2026-10-09,
+`24dfcfe`; A/C carry honest `status:"PROVISIONAL"` for their future-derivation
+rows — landlord convention / realism toggle). Import: `@hh/sim-core/waves`.
 
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 |---|---|---|---|
@@ -609,7 +615,7 @@ fail-fast throws until OD-2 ratifies. Import: `@hh/sim-core/waves`.
 | `PRESSURE_MICRO` `TuningSheetId` `PressureParams` `TuningSheet` | `1_000_000n`; `"A"\|"B"\|"C"`; interfaces | pressure-law units; the sheet DATA shape (root ships waves' `TuningSheet`) | — |
 | `mulDivRound` | `(numerator: bigint, denominator: bigint) => bigint` | round-half-up exact bigint division (positive denominators) — the module convention for EVERY bigint ratio in waves/ (truncating `/` biased late-game budgets low) | pure; throws on non-positive denominator |
 | `parPressureMicro` | `(params, n: number) => bigint` | P(n) = 100 pts × growth^n × sawtooth(n), micro-bigint domain (never through Fixed — ±32768 overflow) | pure bigint |
-| `TUNING_SHEETS` `ACTIVE_TUNING_SHEET` `resolveActiveSheet` | record A/B/C (all `status:"PROVISIONAL"`); `TuningSheetId \| null = null`; `() => TuningSheet` | the OD-2 knob: THROWS naming the open decision until ratified | fail-fast |
+| `TUNING_SHEETS` `ACTIVE_TUNING_SHEET` `resolveActiveSheet` | record A/B/C (B `status:"RATIFIED"`, A/C `"PROVISIONAL"`); `TuningSheetId \| null = "B"`; `() => TuningSheet` | the OD-2 knob — RATIFIED 2026-10-09, resolves sheet B; the null-guard throw stays armed as a hand-null protection (fail-loud law) | fail-fast guard, now-resolving |
 | `BuildOp` `LedgerConfig` `DEFAULT_LEDGER_CONFIG` `ThreatInvitations` `LedgerSnapshot` | interfaces/const | append-only build log → spawnable-at-tick snapshot; retirement lag + mastery thresholds | asOfTick determinism |
 | `buildInvitations` | `(unlockedByBuildables: Record<string, readonly string[]>) => ThreatInvitations` | invert the buildables' `unlocksThreats` map | sorted |
 | `ledgerSnapshot` | `(ops, asOfTick, cfg?) => LedgerSnapshot` | replay the build log to a tick | pinned order |
@@ -827,10 +833,10 @@ as OPAQUE data.
 | `SaveMode` `SAVE_MODES` | campaign/scenario/endless/daily/consultant/blitz | the six modes | closed |
 | `WriteKind` `RowStatus` | `"append"\|"instance"\|"deny"`; `"LIVE"\|"PENDING_OD8"` | the matrix value/risk cells | — |
 | `WRITE_FACETS` `WriteFacet` | ~27 facet names | every writable facet of a CompanyNode | closed |
-| `WriteAccessRow` `WRITE_ACCESS_MATRIX` | interface + generated table | mode × facet access grid — rows carry the OD-8 Option-B recommendation as DATA, status PENDING | const |
-| `writeGuard` | `(mode, facet) => WriteKind` | LIVE rows answer; **PENDING_OD8 rows THROW naming OD-8** | fail-fast until ratified |
-| `writeAccessOf` `pendingOd8Rows` `liveRows` | reads over the matrix | audit helpers | pinned |
-| `SettlementWrite` `SettlementBatch` `guardBatch` | interfaces; `(batch) => void` | end-of-settlement write gate (every facet checked) | total-throwing |
+| `WriteAccessRow` `WRITE_ACCESS_MATRIX` | interface + generated table | mode × facet access grid — **OD-8 Matrix B RATIFIED 2026-10-09 (`74f157b`): 160 rows LIVE (campaign 32 + scenario/daily/consultant/blitz 128), the 32 endless rows stay `PENDING_OD8` (contested)**; Matrix-B semantics are encoded data (ledger four `records/medals/streaksShared/codex` append, every other facet denies) | const |
+| `writeGuard` | `(mode, facet) => WriteKind` | LIVE rows ANSWER — deny-as-data included (probe facets return `"deny"`, they do not throw); **only the 32 held endless rows still THROW naming OD-8** | fail-fast on pending rows |
+| `writeAccessOf` `pendingOd8Rows` `liveRows` | reads over the matrix | audit helpers (`pendingOd8Rows()` now returns exactly the endless 32) | pinned |
+| `SettlementWrite` `SettlementBatch` `guardBatch` | interfaces; `(batch) => void` | end-of-settlement write gate: an EMPTY batch throws ("every run commits facts or nothing"); **a ratified-mode batch touching any DENIED facet THROWS and aborts the whole settlement (§2.4 atomicity) — the shadow-instance law is enforced, not advisory** | total-throwing |
 | `ReadFace` | `"wall"\|"scrapbook"\|"almanac"\|"people"` | the four faces — READ views, never storage (§4.6) | closed |
 | `WallView` `readWall` `ScrapbookView` `readScrapbook` `AlmanacView` `readAlmanac` `PeopleView` `readPeople` | view interfaces + readers `(node, [streaks/globalRecords]) => view` | each face rendered from node facts | pure projections |
 | `FaceView` `FaceReadContext` `readFace` | union; interface; `(nodeId, graph, face, ctx) => FaceView` | one entry point for all faces | pure |
@@ -844,8 +850,9 @@ Purpose: the ratified async Red-vs-Blue deck format (docs/adr/0004 —
 defender commits board + doctrine, attacker runs a committed deck offline
 against it; the defender's live reserve is played by small hands through
 the real intent door and the Policy-Book autopilot). Pure data + pure
-logic: no UI, no netcode, no economy import — OD-1/OD-2 are unchosen, so
-match score folds ONLY caller-supplied weights-as-data (`getActiveScorecard`
+logic: no UI, no netcode, no economy import — OD-1/OD-2 ratified
+2026-10-09, yet versus still never resolves them by law: match score folds
+ONLY caller-supplied weights-as-data (`getActiveScorecard`
 / `resolveActiveSheet` are never called; pinned absent by test). Boundary
 parsers mirror `loader/boundary.ts` style with a local `VersusError`. The
 deck→WaveTable converter honors the §2.24 authoring laws by construction
@@ -915,7 +922,7 @@ Import: `@hh/sim-core/versus`.
 | `versusRuleBookHash` | `(ruleBook: readonly PolicyCard[]) => string` | `hh-versus-book-v1:` canonical fold of the doctrine (same family as deck commit) | pure · order-pinned |
 | `cardContentFingerprint` | `(card: PolicyCard) => string` | `hh-card-v1:<16hex>` CONTENT fingerprint of one policy card — canonical tagged-JSON fold (id stripped: identity is bytes of content, `card.id` stays display metadata) + FNV-1a-64 avalanche, same family as `commitDeck`/`versusRuleBookHash`. The keying law for `policyCardHashes`/`policyCardsByHash` (owner-ratified 2026-10-09): a re-authored card is a different key, an old hash never resolves to new bytes (reveal-binds-bytes) | pure · key-order-independent (sorted by construction) · no RNG · no clock |
 | `defaultPolicyCardIndex` | `(cards: readonly PolicyCard[]) => ReadonlyMap<string, PolicyCard>` | Build the DEFAULT `policyCardsByHash` index the door consults for `policy-card-commit` — keyed by `cardContentFingerprint(card)`, NEVER `card.id` (owner-ratified 2026-10-09; `createVersusEngine` falls back here only when the host wires no explicit map). Two content-identical cards under different ids collapse to ONE entry (the fold drops id; last-write wins the shared slot) — the key space is a named, testable law, pinned by the `defaultPolicyCardIndex` revert guard in match.test.ts | pure · order-pinned (later card wins a fingerprint collision) · no RNG · no clock |
-| `MatchScoringWeights` | `interface { landedValue; blockedValue; servedValue; falsePositivePenalty: bigint }` | Weights-as-DATA (OD-1/OD-2 unchosen — the module never resolves a scorecard) | — |
+| `MatchScoringWeights` | `interface { landedValue; blockedValue; servedValue; falsePositivePenalty: bigint }` | Weights-as-DATA (OD-1/OD-2 ratified 2026-10-09; versus law keeps the module never resolving a scorecard) | — |
 | `DEFAULT_MATCH_WEIGHTS` | frozen `MatchScoringWeights` | Neutral-money defaults (−50M landed, +2M blocked, +1M served, −20M FP µ$) — pure data, replaceable | frozen |
 | `OutcomeCounters` | `interface { served; blocked; falsePositive; landed: number }` | Harvested terminals for one label (from REAL outcome events) | — |
 | `PerWaveOutcome` | `interface OutcomeCounters + { label: "wave-n"|"baseline"|"unattributed"; waveN: number|null }` | One results row; baseline row when enabled, unattributed only when >0 | frozen |
@@ -1367,9 +1374,10 @@ swap in their own scenario. Rules extracted from the working file:
 4. **Waves first, then ticks.** `parseWaveTable(raw)` → `planWave(table, n, {
    startMinute, tick, rng: waveStream(seed, n, m), director,
    ledger: ledgerSnapshot([], 0n), invitations: buildInvitations({}),
-   entropyForecastPurchased, pressureParams })`. While OD-2 is open,
-   `resolveActiveSheet()` throws — pass explicit `pressureParams` (legal per
-   `WavePlanInput`) instead of waiting for ratification. Apply the director's
+    entropyForecastPurchased, pressureParams })`. `resolveActiveSheet()`
+    resolves to ratified sheet B since OD-2 settled (2026-10-09) — explicit
+    `pressureParams` (legal per `WavePlanInput`) remain the override for
+    A/B/C fork experiments. Apply the director's
    `directorPropose` draw BEFORE planning (it's a logged input, not a
    mid-wave surprise).
 5. **Per-tick loop:** assemble `TickInputs` (frozen envelopes slice while the
