@@ -16,10 +16,15 @@ import {
   type EntityId,
   type ObservedKey,
 } from "@hh/sim-core/types";
-import { fromInt } from "@hh/sim-core/kernel";
+import { FIXED_UNIT, fromInt, fromRatio } from "@hh/sim-core/kernel";
 import { decodeProjection, encodeProjection, type SimProjection } from "../shared/protocol";
 import { createRunner, SimCoreRunner } from "../runner/index";
-import { partitionLaneEntries } from "../runner/simCoreRunner";
+import {
+  FAMILY_MIX,
+  arrivalSuspicion,
+  partitionLaneEntries,
+} from "../runner/simCoreRunner";
+import { SimCoreRunner as LegacySimCoreRunner } from "./legacyRunner.fixture";
 
 const TICKS = 100;
 
@@ -315,10 +320,13 @@ describe("lane arrival honesty (F2: retry re-entries bypass step-1 events)", () 
   });
 
   it("in-window frames carry the explicit split: total = organic + reentries", () => {
-    // Seed 7, organic override: tick 13 mixes one organic arrival with one
+    // Seed 33, organic override: tick 14 mixes one organic arrival with one
     // re-entry (probe-pinned) — the (c) requirement: storms read DIFFERENTLY.
-    const mixed = driveFrames(7, "organic").find((f) => f.tick === 13n);
-    if (mixed === undefined) throw new Error("expected a tick-13 frame");
+    // (Was seed 7 / tick 13 pre-mazing; the two-lane latencies shift every
+    // bounce's backoff maturity, so the mixed frame moved — see the
+    // legacy-fixture pin below for what the pre-mazing board read.)
+    const mixed = driveFrames(33, "organic").find((f) => f.tick === 14n);
+    if (mixed === undefined) throw new Error("expected a tick-14 frame");
     const reentry = fixedCell(mixed, KEY_REENTRY);
     const total = fixedCell(mixed, KEY_RATE);
     expect(reentry).toBe(fromInt(1)); // one silent re-entry
@@ -359,5 +367,197 @@ describe("lane arrival honesty (F2: retry re-entries bypass step-1 events)", () 
     expect(legacy.observed.has(KEY_REENTRY)).toBe(false);
     expect(legacy.observed.get(KEY_RATE)?.value).toBe(fixedCell(frame, KEY_RATE));
     expect(legacy.lanes[0]?.ratePerMin).toBe(frame.lanes[0]?.ratePerMin);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * REST-MAZING (§7.10) — the strategic lane split on the MAINLINE
+ * board. The audit finding (group-21 #2): mazing lived only inside
+ * gate G3 because the product runner pinned expressPath == deepPath.
+ * The board now forks — express = edge → waf → origin, deep = edge →
+ * deep-terminal — classification is armed by the FRONT DOOR's own
+ * inspectionDepth (movable only through the real intent door), the
+ * dial slider sets the split threshold, and the familyWeights table
+ * authored in packages/content rides the arrival dice.
+ * ------------------------------------------------------------------ */
+
+const KEY_EXPRESS = observedKey(LANE, "routedExpress");
+const KEY_DEEP = observedKey(LANE, "routedDeep");
+const KEY_ARMED = observedKey(LANE, "mazeArmed");
+
+/** Count-cells are plain numbers (not Fixed) — fail loud on any drift. */
+function intCell(projection: SimProjection, key: ObservedKey): number {
+  const value = projection.observed.get(key)?.value;
+  if (typeof value !== "number") {
+    throw new Error(`observed cell "${key}" missing or not a number`);
+  }
+  return value;
+}
+
+function dialIntent(value: bigint): PlayerIntent {
+  return {
+    seq: 1,
+    clock: "sim",
+    atUs: 0n,
+    origin: "player",
+    payload: { kind: "slider", control: "dial", value },
+  };
+}
+
+function disarmFrontDoorIntent(seq: number): PlayerIntent {
+  return verbIntent(seq, {
+    verb: "configure-node",
+    nodeId: "edge",
+    inspectionDepth: "pass-through",
+    shedOrder: null,
+  });
+}
+
+type RunnerOptions = ConstructorParameters<typeof SimCoreRunner>[0];
+function drive(
+  seed: number,
+  opts?: {
+    /** intents[i] is submitted BEFORE the (i+1)-th frame (null = quiet tick). */
+    intents?: ReadonlyArray<PlayerIntent | null>;
+    ticks?: number;
+    familyOverride?: "organic";
+  },
+): SimProjection[] {
+  const runner = new SimCoreRunner(
+    (opts?.familyOverride === undefined
+      ? { seed }
+      : { seed, familyOverride: opts.familyOverride }) as RunnerOptions,
+  );
+  const frames: SimProjection[] = [];
+  const ticks = opts?.ticks ?? 40;
+  for (let i = 0; i < ticks; i += 1) {
+    const intent = opts?.intents?.[i];
+    if (intent !== undefined && intent !== null) runner.submit(intent);
+    frames.push(runner.headlessStep(10));
+  }
+  runner.stop();
+  return frames;
+}
+
+describe("mainline mazing (§7.10): two lanes, real door, authored traffic mix", () => {
+  it("no intents needed: hot arrivals route deep, cold arrivals ride express", () => {
+    // Seed 42 (default authored mix on): the first demotion is tick 7, and
+    // after the wave the ledger reads 8 express / 1 deep (probe-pinned).
+    const frames = drive(42);
+    const firstDeep = frames.find((f) => intCell(f, KEY_DEEP) >= 1);
+    expect(firstDeep?.tick).toBe(7n);
+    const last = frames[frames.length - 1];
+    if (last === undefined) throw new Error("expected frames");
+    expect(intCell(last, KEY_EXPRESS)).toBe(8);
+    expect(intCell(last, KEY_DEEP)).toBe(1);
+    expect(intCell(last, KEY_ARMED)).toBe(1); // front door boots armed (sample-1-in-20)
+  });
+
+  it("ConfigureNode on the front door (via the REAL intent door) stops classification", () => {
+    // Submitted at tick 1, executed at tick 2 — before any arrival mints —
+    // so EVERY unit rides express: deep stays 0, armed flips to 0, and the
+    // express total matches the armed board's combined split (8 + 1 = 9).
+    const frames = drive(42, {
+      intents: [null, disarmFrontDoorIntent(2)], // index 1 = after frame 1
+    });
+    const receipts = frames.flatMap((f) =>
+      f.notices.filter(
+        (n) => n.kind === "intent-executed" && (n.detail ?? "").startsWith("configure-node"),
+      ),
+    );
+    expect(receipts).toHaveLength(1); // the door ran the verb, receipt posted
+    const last = frames[frames.length - 1];
+    if (last === undefined) throw new Error("expected frames");
+    expect(intCell(last, KEY_ARMED)).toBe(0);
+    expect(intCell(last, KEY_DEEP)).toBe(0);
+    expect(intCell(last, KEY_EXPRESS)).toBe(9); // same mints — only the lane changed
+  });
+
+  it("the dial is the split threshold: max ⇒ all express, zero ⇒ all deep", () => {
+    const lenient = drive(42, { intents: [dialIntent(FIXED_UNIT)] });
+    const strict = drive(42, { intents: [dialIntent(0n)] });
+    const lastOf = (frames: SimProjection[]): SimProjection => {
+      const last = frames[frames.length - 1];
+      if (last === undefined) throw new Error("expected frames");
+      return last;
+    };
+    // score > dial ⇒ deep. dial=1.0: no score exceeds it (max score = 1.0,
+    // and the comparison is strict). dial=0: every unit with reputation < 1
+    // is demoted — seed 42's wave has no perfect-reputation mints.
+    expect(intCell(lastOf(lenient), KEY_DEEP)).toBe(0);
+    expect(intCell(lastOf(lenient), KEY_EXPRESS)).toBe(9);
+    expect(intCell(lastOf(strict), KEY_EXPRESS)).toBe(0);
+    expect(intCell(lastOf(strict), KEY_DEEP)).toBe(9);
+  });
+
+  it("split ledger conserves lane entries: Σ ratePerMin == express + deep", () => {
+    for (const seed of [42, 33]) {
+      for (const arm of [{}, { familyOverride: "organic" as const }]) {
+        const frames = drive(seed, arm);
+        const entered = frames.reduce(
+          (acc, f) => acc + Number(fixedCell(f, KEY_RATE) / FIXED_UNIT),
+          0,
+        );
+        const last = frames[frames.length - 1];
+        if (last === undefined) throw new Error("expected frames");
+        expect(intCell(last, KEY_EXPRESS) + intCell(last, KEY_DEEP)).toBe(entered);
+      }
+    }
+  });
+
+  it("arrivalSuspicion is the exact Q16.16 complement of reputation", () => {
+    expect(arrivalSuspicion({ source: { reputation: FIXED_UNIT } })).toBe(0n);
+    expect(arrivalSuspicion({ source: { reputation: 0n } })).toBe(FIXED_UNIT);
+    expect(arrivalSuspicion({ source: { reputation: fromRatio(3n, 4n) } })).toBe(
+      FIXED_UNIT - fromRatio(3n, 4n),
+    );
+  });
+
+  it("FAMILY_MIX carries the authored shared-web weights, renormalised to 1e6", () => {
+    // Batch-B handoff (@4856a42): parseFamilyWeightsTable is the SSOT parse —
+    // code-unit family order, exact 1_000_000 sum. If the bundle drifts, the
+    // module-load parse throws; this pin shows WHAT the arrival dice now carry.
+    expect([...FAMILY_MIX]).toEqual([
+      { family: "customerAsThreat", shareMicro: 200_000 },
+      { family: "entropic", shareMicro: 50_000 },
+      { family: "human", shareMicro: 200_000 },
+      { family: "malicious", shareMicro: 350_000 },
+      { family: "systemic", shareMicro: 200_000 },
+    ]);
+    expect(FAMILY_MIX.reduce((acc, row) => acc + row.shareMicro, 0)).toBe(1_000_000);
+  });
+
+  it("mazed frames stay byte-identical across fresh instances (headline gate covers it)", () => {
+    const digests = (): string[] =>
+      drive(42, { ticks: 100, intents: [null, disarmFrontDoorIntent(2)] }).map((f) =>
+        canonicalDigest(encodeProjection(f)),
+      );
+    expect(digests()).toEqual(digests());
+  });
+
+  it("pre-arrival frames are field-identical to the pre-mazing runner", () => {
+    // (b)'s conservative form: the maze board may only differ from the old
+    // single-lane board WHERE ROUTING LEGITIMATELY BECOMES VISIBLE — i.e.
+    // once units exist. Ticks 1–2 have no units on either board, so every
+    // shared field must match byte-for-byte (the three new count-cells are
+    // additive surface the old frame simply lacks).
+    const legacy = new LegacySimCoreRunner({ seed: 42 });
+    const modern = new SimCoreRunner({ seed: 42 });
+    for (let i = 0; i < 2; i += 1) {
+      const a = legacy.headlessStep(10);
+      const b = modern.headlessStep(10);
+      expect(b.tick).toBe(a.tick);
+      expect(b.minute).toBe(a.minute);
+      expect(b.clocks).toEqual(a.clocks);
+      expect(b.lanes).toEqual(a.lanes);
+      expect(b.counters).toEqual(a.counters);
+      expect(b.notices).toEqual(a.notices);
+      expect(b.freeCashMicroUsd).toBe(a.freeCashMicroUsd);
+      for (const [key, cell] of a.observed) {
+        expect(b.observed.get(key)).toEqual(cell); // shared cells agree exactly
+      }
+    }
+    legacy.stop();
+    modern.stop();
   });
 });

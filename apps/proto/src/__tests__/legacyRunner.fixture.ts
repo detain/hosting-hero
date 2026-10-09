@@ -1,4 +1,11 @@
 /**
+ * TEST FIXTURE MIRROR — the pre-mazing simCoreRunner exactly as shipped at
+ * master 71b8960, frozen for the legacy-frame equality pin in
+ * simCoreRunner.test.ts. NOT a suite (vitest only collects *.test.ts).
+ * If upstream changes, do NOT re-copy blindly — that is the point of the pin.
+ */
+// eslint-disable
+/**
  * SimCoreRunner — the REAL @hh/sim-core pipeline behind the same SimRunner
  * seam the mock fills (wave-2 swap: `createRunner("sim-core")`).
  *
@@ -17,25 +24,6 @@
  *   observed.ObservedStore    → step-12 gate: renderer-facing cells derived
  *                               from REAL driver outputs, sealed via the
  *                               store, merged into GameState.observed
- *
- * MAINLINE MAZING (§7.10, audit g21 #2): the board is a real fork —
- * `edge` is the shared front door; cold traffic (score ≤ dial) walks the
- * EXPRESS lane edge→waf→origin (short, shallow, cheap); hot traffic is
- * scored at arrival and routed into the DEEP lane edge→deep (slow, high
- * inspection depth, terminal — "the only route you are allowed to lengthen
- * is the deep lane"). The score is `1 − source.reputation` (the §7.10
- * scoring vocabulary's first input, already minted on the arrival stream —
- * zero new RNG), and it is consulted ONLY while the front door is authored
- * to actually look: a door-set `ConfigureNode edge pass-through` stops the
- * intel and every unit rides express (§7.10's bargain — inspection is what
- * makes routing a choice). The dial is a `slider` arm ("dial", Fixed
- * 0…FIXED_UNIT = expressMaxConfidence); node depths move through the REAL
- * intent door (`player-verb` configure). The bundle's authored
- * threats.familyWeights (batch-B handoff, audit fix 3) now steers the
- * arrival dice via waves.parseFamilyWeightsTable → arrival config.familyMix.
- * v0 honesty: mid-path demotion (G3's wire-yank) is NOT mainlined — the
- * lane is decided at arrival and re-decided on each retry re-entry (the
- * re-mint carries the same source identity, so stickiness rides reputation).
  * The projection that leaves through the protocol carries ONLY observed-layer
  * data: LaneStats aggregates, ObservedCells, counters, notices, clocks.
  *
@@ -70,11 +58,8 @@ import {
   type PlayerIntent,
   type QosClassDef,
   type RetryPolicy,
-  type RouteIn,
-  type RouteOut,
   type RunSeed,
   type SimTick,
-  type TickStep,
   type WaveEnvelope,
 } from "@hh/sim-core/types";
 import {
@@ -85,7 +70,6 @@ import {
   fromRatio,
   initialClocks,
   streamFor,
-  sub,
 } from "@hh/sim-core/kernel";
 import {
   createDefaultSlots,
@@ -102,7 +86,6 @@ import {
   buildInvitations,
   directorPropose,
   ledgerSnapshot,
-  parseFamilyWeightsTable,
   parseWaveTable,
   planWave,
   waveStream,
@@ -110,30 +93,16 @@ import {
   type PressureParams,
   type WavePlan,
 } from "@hh/sim-core/waves";
-// SSOT law: the traffic mix comes from the authored bundle, never a copied
-// number (precedent: lab/coverageGridModel.ts, gates/g5, gates/g6).
-import sharedWebBundleRaw from "../../../../packages/content/types/shared-web.json?raw";
 import type { SimProjection, EventNotice, ProtoCell, CellValue } from "../shared/protocol";
-import type { SimRunner } from "./simRunner";
+import type { SimRunner } from "../runner/simRunner";
 
-/* ═══════════════════════════ scenario (G1 maze board) ═══════════════════════════
- * Local constants, not sim-core internals: a two-lane maze board whose
- * base numbers come from the sanctioned integration example, forked per
- * §7.10. Placeholder-content grade — the content wave replaces this with
- * loaded ruleset bundles.
- *
- *        cold (score ≤ dial)                service target
- *  edge ────────────────────► waf ─────────► origin
- *       ╲                                      ▲
- *        ╲ hot (score > dial), terminal        │ deep lane never
- *         ╲─────────────────────────────► deep─╯ reaches origin —
- *                                              the maze IS the containment.
- */
+/* ═══════════════════════════ scenario (G1 smoke board) ═══════════════════════════
+ * Local constants, not sim-core internals: a one-lane ingress board whose
+ * numbers come from the sanctioned integration example. Placeholder-content
+ * grade — the content wave replaces this with loaded ruleset bundles. */
 
 const LANE_ID = asEntityId("lane/ingress-1");
 const NODE_EDGE = asEntityId("edge");
-const NODE_WAF = asEntityId("waf");
-const NODE_DEEP = asEntityId("deep");
 const NODE_ORIGIN = asEntityId("origin");
 const LAG_TABLE_REF = "g1-smoke-lag-v0";
 const WAVE_WINDOW_MINUTES = 12;
@@ -248,100 +217,10 @@ const CONTRACT: Contract = Object.freeze({
   allocations: Object.freeze([]),
 });
 
-/** AUDIT FIX 3 consumer wiring (batch-B handoff @4856a42): the bundle's
- *  authored five-family weights become the arrival dice's table. Parsed
- *  once at module load — a drift in the bundle text fails the boot LOUD
- *  (parseFamilyWeightsTable is fail-loud), never silently smooths over. */
-function bundleFamilyMix(): NonNullable<DefaultPipelineConfig["familyMix"]> {
-  const doc = JSON.parse(sharedWebBundleRaw) as {
-    threats?: { familyWeights?: Record<string, unknown> };
-  };
-  const table = doc.threats?.familyWeights;
-  if (table === undefined) {
-    throw new Error(
-      "SimCoreRunner: shared-web.json#threats.familyWeights missing — the authored traffic mix cannot be wired",
-    );
-  }
-  return parseFamilyWeightsTable(table, "shared-web.json#threats.familyWeights");
-}
-
-export const FAMILY_MIX = bundleFamilyMix();
-
-/* ═══════════════════════ mainline mazing law (§7.10) ═══════════════════════ */
-
-/** Cumulative lane-split ledger — minted per runner instance (purity law),
- *  written ONLY by the maze route step, read into observed cells each frame. */
-export interface MazeSplitLedger {
-  express: number;
-  deep: number;
-}
-
-/** Score a fresh visit at arrival (the §7.10 "scored on arrival, not
- *  judged" input): 1 − source.reputation, the first-named scoring input in
- *  the spec's vocabulary. The value is ALREADY minted on the arrival stream
- *  (defaults.ts `source.reputation`) — the score consults truth, it does
- *  not roll dice. */
-export function arrivalSuspicion(unit: { readonly source: { readonly reputation: Fixed } }): Fixed {
-  return sub(FIXED_UNIT, unit.source.reputation);
-}
-
-/**
- * The route-slot wrapper that puts mazing on the mainline board. The stock
- * createRouteStep splits `confidence <= dial` between expressPath and
- * deepPath, but every unit arrives (and re-enters) with confidence 0 and
- * the product runner feeds no per-tick evidence — so with paths equal the
- * dial was decorative. This wrapper applies the SAME engine predicate
- * (`score > expressMaxConfidence ⇒ deep`) to the arrival score, at the
- * engine's own routing boundary:
- *
- *  · intel is armed only while the FRONT DOOR (edge) is authored to look —
- *    `inspectionDepth !== "pass-through"` on that node. A door-set
- *    `ConfigureNode edge pass-through` stops classification cold: every
- *    unit rides express (cheap, exposed). That is the "route selection
- *    honors per-node inspection depth" lever, moved by the REAL intent door.
- *  · demoted units get the deep remainder verbatim; never the express lane
- *    (D-4: "you never maze the express lane").
- *  · every fresh assignment increments the split ledger — the numbers the
- *    renderer reads as "watch the ratio of motes taking each lane".
- *
- * Pure over (input, ledger): same seed + same intents ⇒ same frames.
- */
-export function createMazeRouteStep(
-  base: TickStep<RouteIn, RouteOut>,
-  law: Readonly<{
-    frontDoor: EntityId;
-    deepPath: readonly EntityId[];
-    split: MazeSplitLedger;
-  }>,
-): TickStep<RouteIn, RouteOut> {
-  return (input) => {
-    const preHops = new Map<string, number>();
-    for (const unit of input.units) preHops.set(String(unit.id), unit.routeHops.length);
-
-    const routed = base(input).units;
-    const door = input.nodes.get(law.frontDoor);
-    const armed = door !== undefined && door.inspectionDepth !== "pass-through";
-
-    const units = routed.map((unit) => {
-      if (preHops.get(String(unit.id)) !== 0) return unit; // in-flight: lane untouched
-      if (armed && arrivalSuspicion(unit) > input.expressMaxConfidence) {
-        law.split.deep += 1;
-        return Object.freeze({ ...unit, routeHops: Object.freeze([...law.deepPath]) });
-      }
-      law.split.express += 1;
-      return unit;
-    });
-    return Object.freeze({ units: Object.freeze(units) });
-  };
-}
-
 const PIPELINE_CONFIG: Omit<DefaultPipelineConfig, "runSeed"> = Object.freeze({
   dnsNodeId: null,
-  // §7.10 fork: express = front door → WAF tier → service; deep = front door
-  // → slow inspection terminal (containment; hot traffic never pays for
-  // reaching origin, benign FPs routed there cost conversion — the ache).
-  expressPath: Object.freeze([NODE_EDGE, NODE_WAF, NODE_ORIGIN]),
-  deepPath: Object.freeze([NODE_EDGE, NODE_DEEP]),
+  expressPath: Object.freeze([NODE_EDGE, NODE_ORIGIN]),
+  deepPath: Object.freeze([NODE_EDGE, NODE_ORIGIN]),
   defaultPatienceUs: 3n * MICROS_PER_MIN,
   defaultSizeCost: fromInt(1),
   patienceJitterPct: 0,
@@ -417,19 +296,6 @@ export function partitionLaneEntries(input: {
   return Object.freeze({ organic: input.arrivalUnitIds.size, reentered });
 }
 
-/** Exact integer counter cell (maze split totals) — the G3-exact shape:
- *  the renderer sees "metered-exact", not a derived 80%-coverage Fixed. */
-function countCell(value: number): ObservedCell<unknown> {
-  return Object.freeze({
-    value,
-    fidelity: ResolutionBand.Exact,
-    freshnessUs: 0n,
-    coverage: FIXED_UNIT,
-    certainty: FIXED_UNIT,
-    status: "live" as const,
-  });
-}
-
 function derivedCell(value: Fixed): ObservedCell<Fixed> {
   // Derived (not metered) truth: Fine band, 80% coverage/certainty — the
   // renderer must be able to SEE that these are computed aggregates.
@@ -461,9 +327,6 @@ export interface SimCoreRunnerOptions {
    *  bounces can form real retry storms. Shipped content is 100% malicious —
    *  adversarial units are neutralized, never re-entered — so without this
    *  knob the driver's between-steps re-entry mint is unobservable in tests.
-   *  The override also DISARMS the bundle familyMix dice (audit fix 3): the
-   *  seam means "force one family", and with the mix table off the arrival
-   *  stream is byte-identical to the pre-mix era (envelope label decides).
    *  Unset keeps the sim numbers byte-identical to the shipped placeholder;
    *  the wire itself gains one always-zero additive cell (`reentryRatePerMin`)
    *  from the F2 split, which every pre-F2 consumer reads as absent-0. */
@@ -482,13 +345,6 @@ export class SimCoreRunner implements SimRunner {
   private game: GameState;
   private lanes: ReadonlyMap<EntityId, LaneStats>;
   private aggression: Fixed = fromRatio(5n, 10n);
-  /** §7.10 suspicion dial = TickInputs.expressMaxConfidence (Fixed 0…1).
-   *  Slider arm "dial" moves it; the maze route step compares every arrival
-   *  score against it. Default 0.8 ⇒ roughly the hottest fifth of traffic
-   *  (reputation < 0.2) walks the deep lane while the door is armed. */
-  private dial: Fixed = fromRatio(8n, 10n);
-  /** Lane-split totals (minted per instance — the purity law covers ledgers). */
-  private readonly split: MazeSplitLedger = { express: 0, deep: 0 };
   private readonly intentLog: PlayerIntent[] = [];
   /** Door schedule: intents stamped for the next headlessStep, fed EXACTLY once. */
   private pendingDoorIntents: ExternalIntent[] = [];
@@ -512,15 +368,7 @@ export class SimCoreRunner implements SimRunner {
       contentHashes: { rulesetCardHashes: {}, sheetsHash: "adapter-sheets-v0", ruleBookHash: "" },
       clocks,
       nodes: [
-        // Shared front door — its AUTHORED depth arms/disarms the arrival
-        // classifier (see createMazeRouteStep); door-settable posture.
         mkNode(NODE_EDGE, 2, MICROS_PER_MIN, "sample-1-in-20", NODE_ORIGIN),
-        // Express defense tier — pass-through at boot, the door can deepen
-        // it (inspect/challenge) into a real ROC on the fast lane.
-        mkNode(NODE_WAF, 2, 30_000_000n, "pass-through", null),
-        // Deep lane — slow by law (§7.10 "the slow lane is made of depth"),
-        // terminal: hot traffic is contained here, never reaches origin.
-        mkNode(NODE_DEEP, 4, 90_000_000n, "inspect", null),
         mkNode(NODE_ORIGIN, 1, MICROS_PER_MIN, "pass-through", null),
       ],
       lanes: [this.zeroLane()],
@@ -530,23 +378,8 @@ export class SimCoreRunner implements SimRunner {
     });
     this.lanes = this.game.lanes;
 
-    const config: DefaultPipelineConfig = Object.freeze({
-      ...PIPELINE_CONFIG,
-      runSeed: this.runSeed,
-      // Audit fix 3: the dice roll the bundle's mix — unless the test seam
-      // forces a single family (then the stream stays pre-mix byte-identical).
-      ...(options.familyOverride === undefined ? { familyMix: FAMILY_MIX } : {}),
-    });
-    const baseSlots = createDefaultSlots(config);
-    const slots = Object.freeze({
-      ...baseSlots,
-      // The sanctioned composition seam (mirrors gates/g3): swap ONE slot.
-      route: createMazeRouteStep(baseSlots.route, {
-        frontDoor: NODE_EDGE,
-        deepPath: PIPELINE_CONFIG.deepPath,
-        split: this.split,
-      }),
-    });
+    const config: DefaultPipelineConfig = Object.freeze({ ...PIPELINE_CONFIG, runSeed: this.runSeed });
+    const slots = createDefaultSlots(config);
     this.driver = createTickDriver(slots, streamFor(this.runSeed, "root", 0), this.game.context.clocks);
     this.store = new ObservedStore();
 
@@ -581,11 +414,8 @@ export class SimCoreRunner implements SimRunner {
    *  `player-verb` intent is stamped for the NEXT macro-tick and fed EXACTLY
    *  ONCE through `TickInputs.externalIntents` — hands pay there, execute-or-
    *  refuse verdicts return as `doorReceipts` and surface on the projection
-   *  as `intent-executed` / `intent-refused` notices. `configure` on a board
-   *  node moves per-node inspection depth — which is what arms/disarms the
-   *  §7.10 arrival classifier (front door) and sets each lane's ROC posture
-   *  (waf/deep tiers). The slider arms keep direct pre-door bindings
-   *  ("aggression" = ROC posture, "dial" = expressMaxConfidence). The legacy `verb`
+   *  as `intent-executed` / `intent-refused` notices. The slider arm keeps
+   *  its direct ROC-posture binding (pre-door control). The legacy `verb`
    *  carrier stays INPUT-LOG ONLY by law: the door refuses that carrier
    *  (`unsupported-verb-carrier`), so it must never reach the schedule. */
   submit(intent: PlayerIntent): void {
@@ -593,9 +423,6 @@ export class SimCoreRunner implements SimRunner {
     const payload = intent.payload;
     if (payload.kind === "slider") {
       if (payload.control === "aggression") this.aggression = clampUnit(payload.value);
-      // §7.10 suspicion dial: Fixed 0…FIXED_UNIT straight into
-      // expressMaxConfidence. 0 ⇒ maze everything hot; 1 ⇒ no mazing.
-      else if (payload.control === "dial") this.dial = clampUnit(payload.value);
       return;
     }
     if (payload.kind === "player-verb") {
@@ -637,7 +464,7 @@ export class SimCoreRunner implements SimRunner {
       dependencyEdges: DEPENDENCY_EDGES,
       retryPolicy: RETRY,
       aggression: this.aggression,
-      expressMaxConfidence: this.dial,
+      expressMaxConfidence: fromRatio(8n, 10n),
       lanes: this.lanes,
       ...(due.length > 0 ? { externalIntents: Object.freeze(due) } : {}),
     });
@@ -682,25 +509,6 @@ export class SimCoreRunner implements SimRunner {
           key: observedKey(LANE_ID, "health"),
           cell: derivedCell(health),
           causeId: asCauseId(`adapter:lane-health:${this.game.context.tick}`),
-        }),
-        /* §7.10 lane-split cells — "watch the ratio of motes taking each
-           lane": cumulative arrival routings by lane + the classifier's
-           armed flag (0/1), so a flat deep-count is READABLE as "the door
-           stopped looking", not as "nobody is hot". */
-        Object.freeze({
-          key: observedKey(LANE_ID, "routedExpress"),
-          cell: countCell(this.split.express),
-          causeId: asCauseId(`adapter:maze:${this.game.context.tick}:exp`),
-        }),
-        Object.freeze({
-          key: observedKey(LANE_ID, "routedDeep"),
-          cell: countCell(this.split.deep),
-          causeId: asCauseId(`adapter:maze:${this.game.context.tick}:deep`),
-        }),
-        Object.freeze({
-          key: observedKey(LANE_ID, "mazeArmed"),
-          cell: countCell(this.edgeIsArmed(this.game)),
-          causeId: asCauseId(`adapter:maze:${this.game.context.tick}:armed`),
         }),
       ]),
       tickUs,
@@ -789,14 +597,6 @@ export class SimCoreRunner implements SimRunner {
       classMix: Object.freeze({}),
       health: FIXED_UNIT,
     });
-  }
-
-  /** Classifier posture reader (0/1 for the wire): the front door sees
-   *  traffic only while its (door-settable) inspection depth is not
-   *  pass-through — the exact law createMazeRouteStep applies. */
-  private edgeIsArmed(state: GameState): number {
-    const door = state.nodes.get(NODE_EDGE);
-    return door !== undefined && door.inspectionDepth !== "pass-through" ? 1 : 0;
   }
 
   /** Worst-node saturation → headroom: health = clamp(1 − max ρ). ρ is a
