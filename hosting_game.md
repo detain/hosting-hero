@@ -14433,7 +14433,7 @@ sometimes, and the game should have a scoring path that rewards it.
 deserves its own subsection because it is simultaneously a cost centre, a conversion tower, a
 retention tower, and an attack surface on the player's attention.*
 
-### The attention budget ⚠️
+### The attention budget 🔧
 The resource support spends is not money, it is **hands**.
 
 **How it works:** Every Support Seeker, every ticket, every locked-out customer, every angry whale
@@ -15187,7 +15187,8 @@ three verbs turns "more capability = more monsters" from a punishment into a *st
 **Interacts with:** P2, the Build Card "Opens:" row, the wave generator, §5.7 deprecation, the
 Exposure Chevron Count.
 
-### The Build Role Taxonomy (nine roles) ⚠️
+### The Build Role Taxonomy (nine roles) 🔧
+> *[2026-10-09b ruling — ADR-0010(a)=i] The nine build roles are a Phase-2 content-tagging layer; the Coverage Grid reads the §2.1-derived nine defense roles — see the law list under "The Nine Defense Roles" (16304).*
 So the palette has a shape a player can navigate mid-fight.
 
 **How it works:** Every buildable — not just defenses — is tagged with one of nine roles, and the
@@ -16300,7 +16301,8 @@ this feeds.
 purchases and become a system with **roles**, **placement**, **tuning** and **coverage** — four
 orthogonal skills instead of one shopping decision.*
 
-### The Nine Defense Roles ⚠️
+### The Nine Defense Roles ✅ e24e1bb
+> *[2026-10-09b ruling — ADR-0010(a)=i] Corrected list: the law defense vocabulary is the shipped nine (`coverage/defenseRoles.ts`, e24e1bb) — Absorb / Classify / Meter / Contain / Detect / Recover / Deter / Divert / Negotiate. "Block" below is not a shipped role and "Negotiate" is; the §4.2 build-role tagging (15190) is a Phase-2 content lane.*
 Every defense carries exactly one primary role tag. The palette, the Coverage Grid and the stacking
 rules all read from it.
 
@@ -16340,7 +16342,8 @@ is "I had six of the same kind." The grid makes that legible at a glance, and it
 decision from "what's strong?" into "**what am I missing?**"
 **Pairs with:** the Waste Indicator (below), which is the grid's negative image.
 
-### Defense-in-Depth stacking rules ⚠️
+### Defense-in-Depth stacking rules 🔧
+> *[2026-10-09b ruling — ADR-0010(b)=i] Superseded by implementation: the ratified combine law is MAX per role, never sum/multiplicative (`coverage/matrix.ts`, e24e1bb); the multiplicative example below is historical. Diminishing returns, synergy, latency-additive and the Waste Indicator are gap-registered POSSIBLE FUTURE refinements of the MAX law — explicitly not obligations, and no unify lane is scheduled.*
 *Without these, stacking defenses is either free or unknowable — and "layered defense" is a phrase the
 design uses everywhere and models nowhere.*
 
@@ -22949,7 +22952,7 @@ demands covenants, bootstrapping demands patience. Full instrument list in §6.1
 
 ---
 
-## 6.5 Pricing as a mechanic ⚠️
+## 6.5 Pricing as a mechanic 🔧
 
 ### The price slider (difficulty as a dial the player sets) ❌
 One slider that reshapes the entire level.
@@ -31819,7 +31822,7 @@ in shorthand; the thin ones have been filled out to the five-field standard.*
 
 ---
 
-### Era presentation shifts ⚠️
+### Era presentation shifts 🔧
 Time changes everything above the substrate. **The gameplay is unchanged; the world has moved.**
 
 **How it works:** Each era re-skins the **UI chrome, palette, typography and material language**: 1995
@@ -31846,7 +31849,7 @@ and the player never has to relearn where anything is.**
 **The same tokens re-skin the Instrument Bezel**, which is why every gauge in the game changes era for
 free.
 
-### Era UI skins, enumerated ⚠️
+### Era UI skins, enumerated 🔧
 **Visual:** **1994** — a text-mode frame with box-drawing. **2001** — Win95 grey with bevels and a title
 bar. **2008** — glassy, with gradients and rounded corners. **2016** — flat, with generous whitespace.
 **2030** — translucent dark panels with a subtle blur. **Same layout, different skin.**
@@ -32375,7 +32378,7 @@ it.**
 **Interacts with:** §8.10's era shifts (which swap only the Chrome face), §9.4's procedural label text,
 §1.8's Tier-Up Title Card, §8.2's Handmade Layer.
 
-### Era display faces ⚠️
+### Era display faces 🔧
 **The title card alone should date the level.**
 
 **How it works:** **1994** — a chunky bitmap face. **2001** — a humanist sans with a bevel. **2008** — a
@@ -32703,7 +32706,7 @@ in level 3 show up in level 9 as depositions. Three acts, multiple hosting types
 
 **Hosting types:** all — the campaign is the mechanism by which the player meets each one.
 
-### Endless / Survival ("The NOC" / "The Long Haul" / "Keep It Running") ⚠️
+### Endless / Survival ("The NOC" / "The Long Haul" / "Keep It Running") 🔧
 One infrastructure, escalating forever.
 
 **How it works:** Waves keep coming and keep getting harder; you build, adapt, and eventually fall.
@@ -33146,7 +33149,7 @@ Community screenshots.
 submitter's company mark and tier in the corner card, browsable with the Orbit camera. Consistent with
 the house rule that *nothing is a pop-up if it can be a thing.*
 
-### ⚔️ Mode tiering — twenty-six modes is too many, and none of them are prioritised ⚠️
+### ⚔️ Mode tiering — twenty-six modes is too many, and none of them are prioritised 🔧
 **The problem:** several of the modes above are full games (Competitive Market, Co-op NOC, Versus,
 Async Attack, Franchise). **Shipping a quarter of them well beats shipping all of them.**
 

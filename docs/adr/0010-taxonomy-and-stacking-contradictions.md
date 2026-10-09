@@ -1,12 +1,15 @@
 # ADR-0010 — Record the §4.5 role-taxonomy split and the defense-stacking MAX law as spec contradictions pending owner ruling
 
 ## Status
-**Proposed** (triage-docs lane, 2026-10-09, from the `reports/audit/` full-spec sweep).
-NOT ratified — this ADR records the contradictions and carries a recommendation per
-item; the owner decision blocks below must be resolved (amend spec / extend code /
-unify) before any wording here becomes law. Until then: **shipped code behavior is
-the de-facto law** (it is what tests pin and gates exercise) and the spec text at the
-cited headings remains a known divergence, marked ⚠️ in `hosting_game.md`.
+**Accepted (2026-10-09b)** — owner ruled 2026-10-09 (session 2, following the
+`reports/audit/` sweep): **(a) = option (i)** and **(b) = option (i)**, exactly as
+the Decision section below proposed. Execution landed in the same wave: italic
+law-notes inserted under the three cited headings in `hosting_game.md` (current
+lines 15190 / 16304 / 16345 after the rulings insert), markers re-markuped —
+"Nine Defense Roles" ⚠️→✅ `e24e1bb`, "Build Role Taxonomy" and "Defense-in-Depth
+stacking rules" ⚠️→🔧 (ruled law; the residual work is gap-registered, not
+contradicted) — and dispositions recorded across `docs/DECISIONS-PENDING.md`,
+`docs/MODULE-STATUS.md` and `reports/audit/SUMMARY.md`.
 
 ## Context
 
@@ -55,7 +58,8 @@ shipped implementation — and, in the first case, contradicts itself:
 
 ## Decision
 
-**PROPOSED — awaiting owner ruling; not law yet.**
+**RATIFIED 2026-10-09b (session 2): (a) = option (i), (b) = option (i)** — the
+proposals below are now owner law, executed verbatim as written.
 
 (a) Treat the **shipped §2.1-derived defense set** (`defenseRoles.ts`:
 Absorb/Classify/Meter/Contain/Detect/Recover/Deter/Divert/Negotiate) as the law
@@ -74,28 +78,33 @@ engine being rewritten toward the prose. The unbuilt stacking clauses (diminishi
 returns, synergy, Waste Indicator) move to the gap register as possible future
 refinements of the MAX law, not as current obligations.
 
-> **OWNER DECISION BLOCK (a)** — ratify/decline: shipped §2.1 set is the defense
-> taxonomy; §4.2/§4.5 spec text amended at re-markup; build-role tagging deferred to
-> a Phase-2 content lane. Alternatives: extend code with Block column + build-role
-> field; or unify ontologies.
+> **RULED 2026-10-09b (a) = (i)** — shipped §2.1-derived nine (`defenseRoles.ts`:
+> Absorb/Classify/Meter/Contain/Detect/Recover/Deter/Divert/Negotiate) is THE law
+> defense vocabulary; §4.2 (15178) and §4.5 (16291) spec prose amended with law-notes
+> at this re-markup; the nine BUILD roles re-scoped as a **Phase-2 content-tagging
+> task** in the MODULE-STATUS gap register. No code change.
 >
-> **OWNER DECISION BLOCK (b)** — ratify/decline: MAX combine law retained; §4.5
-> stacking prose marked superseded with a law note at re-markup; refinement clauses
-> gap-registered. Alternative: re-implement multiplicative stacking (goldens move).
+> **RULED 2026-10-09b (b) = (i)** — MAX-never-sum combine law RETAINED; §4.5
+> stacking prose (16331) annotated superseded-by-implementation with the ratified-law
+> note; the unbuilt clauses (diminishing returns, synergy, latency-additive,
+> Waste Indicator) sit in the gap register as POSSIBLE FUTURE refinements of the MAX
+> law — explicitly NOT obligations, and **no unify/multiplicative lane is scheduled**.
 
 ## Consequences
 
-While PROPOSED, nothing changes in code or docs behavior: the audit's ⚠️ markers at
-15178/16291/16331 remain, and `docs/MODULE-STATUS.md` §"Spec-Audit Gap Register"
-cluster 5 (§4.5 defenses) already tells content lanes to map new defenses onto the
-**shipped** nine roles. If ratified: the next re-markup of `hosting_game.md` (owned
-by the audit lane) amends the three headings' prose and downgrades the ⚠️ rows to
-recorded law; the build-role tagging enters the Phase-2 content backlog (with the
-OD-14 type-count work it interacts with). If declined in favor of code extension:
-expect Coverage Grid geometry re-cuts (goldens in `coverage/__tests__`), a types.ts
-contract change for a role field, and re-anchored citations in `docs/API-REFERENCE.md`
-— a separately-metered engine lane, not a docs edit. Neither path blocks any shipped
-gate; this is a wording-vs-code reconciliation.
+EXECUTED at this ruling (no code changes anywhere): the three `hosting_game.md`
+headings carry italic law-notes naming the outcomes above — "The Build Role Taxonomy"
+(now 🔧: tagging layer, Phase-2), "The Nine Defense Roles" (now ✅ `e24e1bb`: shipped
+nine = law), "Defense-in-Depth stacking rules" (now 🔧: MAX law ratified, prose
+superseded). Both residual workstreams land in the `docs/MODULE-STATUS.md`
+Spec-Audit Gap Register as **Phase-2/backlog items, not obligations**: (1) build-role
+content tagging (cluster 5 vocabulary, interacts with the OD-14 type canon —
+DECIDED (a) 2026-10-09b: 34 line entries / 20 launch bundles) and (2) possible future
+refinements of the MAX stacking law. `docs/DECISIONS-PENDING.md` flips OD-14/21/22/23/
+24/25 to DECIDED 2026-10-09b alongside this ADR; `reports/audit/SUMMARY.md` PROBLEMS
+rows 15178/16291/16331 carry the disposition notes. Coverage Grid goldens, types.ts,
+and every shipped gate are untouched — the contradiction was reconciled in the
+docs direction, exactly as option (i)/(i) promised.
 
 ## Source
 `reports/audit/SUMMARY.md` PROBLEMS rows 15178 / 16291 / 16331; `reports/audit/group-13.md` TOP-PROBLEMS #1; `reports/audit/group-14.md` TOP-PROBLEMS #1–2; `packages/sim-core/src/coverage/defenseRoles.ts:1-13,40-98`; `packages/sim-core/src/coverage/matrix.ts:5,189`; `hosting_game.md` §2.1 (twelve threat roles / nine defense roles table), §4.2, §4.5; `docs/DECISIONS-PENDING.md` OD-14 (type canon interacts); audit commit `ef74a2f` @ base `58f5186` (v0.3.0).
