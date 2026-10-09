@@ -32,7 +32,7 @@ const typeFiles = readdirSync(join(CONTENT, "types"))
 
 describe("real packages/content loads through the strict boundary", () => {
   test("every shipped type-bundle loads with zero errors", () => {
-    expect(typeFiles).toEqual(["game-servers.json", "shared-web.json"]);
+    expect(typeFiles).toEqual(["game-servers.json", "mail-hosting.json", "shared-web.json"]);
     for (const name of typeFiles) {
       expect(() => loadTypeBundle(readJson("types", name))).not.toThrow();
     }
@@ -90,7 +90,7 @@ describe("real-content Ruleset Diff Lint verdict", () => {
     }
     // The shipped anchor resolves, so the §7.8 budget is measured for real.
     expect(report.findings.some((f) => f.detail.includes("falling back to the first-sorted id"))).toBe(false);
-    // Today the shipped corpus is literally clean: both g1 slices on disk and
+    // Today the shipped corpus is literally clean: all three g1 slices on disk and
     // every type well-declared against the anchor. A new benign warn must be
     // re-authorized in `allowedWarns` AND here.
     expect(report.findings).toEqual([]);
@@ -98,12 +98,12 @@ describe("real-content Ruleset Diff Lint verdict", () => {
     expect(report.pass).toBe(true);
   });
 
-  test("era roster on real content: 2010 lists both official lines", () => {
+  test("era roster on real content: 2010 lists every official line", () => {
     const bundles = typeFiles.map((name) => loadTypeBundle(readJson("types", name)));
     const live2010 = bundlesLiveInEra(bundles, 2010, { includeUndocumented: true });
-    expect(live2010).toEqual(["official:game-servers", "official:shared-web"]);
-    // game-servers eras.availableFrom is an unauthored placeholder (§0.4 R66):
-    // without the undocumented opt-in it must NOT be silently granted.
+    expect(live2010).toEqual(["official:game-servers", "official:mail-hosting", "official:shared-web"]);
+    // game-servers and mail-hosting eras.availableFrom are unauthored placeholders
+    // (§0.4 R66): without the undocumented opt-in they must NOT be silently granted.
     expect(bundlesLiveInEra(bundles, 2010)).toEqual(["official:shared-web"]);
   });
 });

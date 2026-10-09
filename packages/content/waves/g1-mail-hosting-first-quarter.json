@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-mail-hosting-first-quarter",
+  "type": "official:mail-hosting",
+  "purpose": "First-quarter wave slice for the third Ruleset Card — the variety-engine proof (3 of ~34 types). Slice shape mirrors the two shipped g1 slices: one outbound flow with a diurnal postal-rounds baseline, a 2am spam-cannon exemplar as the surprise-with-composition beat, and a finale built on the level's authored cruelty ('you can be perfect and still be blocked'). Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "postal-collection-rounds",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": 9,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. The mail round shape is authored qualitatively (§1.3 messages ride conveyor rounds; the doc's only clock anchor on this line is the 2am threat burst, which is an envelope, not the baseline) — peakHourLocal 9 (morning collection intuition) and amplitude are PROVISIONAL-B until the owner sweep; the curve id awaits the waves-lane curve catalogue.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "overnight-spam-cannon",
+      "kind": "threat",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "delisting-tail" },
+      "amplitude": null,
+      "telegraph": "none — the card's signature is the one-compromised-account detonation with no ramp: 'one compromised customer account sending 400k messages at 2am' (§1.3)",
+      "source": "§1.3 mail card Threats line (verbatim 400k @ 2am); §2.12 'Email: The Compromised Mailbox' is the same beat at 200k — the two doc figures await the owner reconciliation, this slice quotes the card",
+      "compoundWave": "the decay tail IS the rest of the quarter: listing, complaint avalanche, delisting paperwork (§2.12 'Blocklist Cascade / Spamhaus SBL Listing')",
+      "_todo": "cannon volume → outbound-pool pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "purchased-list-drop",
+      "kind": "threat",
+      "overWaves": [3],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "gentle" },
+      "amplitude": null,
+      "telegraph": "the customer announces it in a ticket — they are proud of the list",
+      "source": "§1.3 mail card Threats: 'a legitimate customer who bought a mailing list' (§1.5 'The Mail-Only Customer' is the account-shape analogue)",
+      "_todo": "list size unauthored; hoarder-family pool saturation model rides the engine; PROVISIONAL-B."
+    },
+    {
+      "id": "silent-deprioritization",
+      "kind": "threat",
+      "overWaves": [4, 5],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "none-visible" },
+      "amplitude": null,
+      "composition": ["layer7-mimic", "empty-server-spiral"],
+      "telegraph": "none — 'Google silently deciding your mail goes to spam with no error and no appeal' (§1.3); the meter shows it before any alert does: 'a postmark that is perfectly crisp and stamped in slightly the wrong place'",
+      "source": "§1.3 mail card Threats + 'The meter, expanded' (silent deprioritization render law)",
+      "compoundWave": "authored so REPUTATION LEGIBILITY is the scarce resource, not throughput (§2.24 compound-wave authoring, mail variant)",
+      "_todo": "deprioritization percentage-of-placement decay curve unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is a probe drizzle reading itself as blocklist interest, not volume.",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["reputation"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the card's signature detonation, early and unmissable. Two-Front (§2.24): the compromised account spends concurrency (outbound pool queue) AND reputation (listing risk); the webmail-credential squad feeds it (password leak = entry point, §2.12 'A customer's password leaks').",
+      "entries": [
+        { "threat": "vulnerable-plugin-compromise", "role": "Bypass/Flyer", "pressurePct": 55, "band": "storm" },
+        { "threat": "wp-login-brute-squad", "role": "Swarm", "pressurePct": 45, "band": "weather" }
+      ],
+      "denominations": ["reputation", "concurrency"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24)."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the warm-up ramp, the quarantine pool, the feedback-loop subscriptions all get their window here. The drop is not clean air — it is the delisting-tail of wave 2 plus a customer proudly mass-mailing a bought list against a half-warm pool.",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 60, "band": "entropy" },
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 40, "band": "weather" }
+      ],
+      "denominations": ["concurrency", "hands"]
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, mail variant: the joe-job lands — forged senders wearing your address space (Mimic debuts here, the every-4th-wave NEW ROLE beat; unseen in waves 1-3) — and the abuse-desk avalanche (Swarm, hands) arrives inside the same incident window, so the second-incident multiplier applies (stated openly in the Codex, §2.24). Two fronts: reputation (the forgery spends YOUR postmarks) x hands (every complaint wants a human).",
+      "entries": [
+        { "threat": "layer7-mimic", "role": "Mimic", "pressurePct": 55, "band": "hunter" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["reputation", "hands"],
+      "secondIncident": "complaint avalanche arrives inside the joe-job incident window -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the card's cruelty, mechanised: nothing new arrives at full volume — the spiral (Healer/Spawner, second fresh role of the slice's cadence) compounds the wave-4 smudge into silent deprioritization while the mimic trickle continues and the desk avalanche self-renews. Hard wave draws TWO fronts — reputation x hands — per §2.24. The signature moment fires inside this wave if the abuse@ mailbox went unread all quarter: 'you discover your abuse@ mailbox has 6,000 unread messages, and that is why you're on a blocklist' (§1.3). Win check: placement held >=98% across the window while still growing.",
+      "entries": [
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 40, "band": "entropy" },
+        { "threat": "layer7-mimic", "role": "Mimic", "pressurePct": 30, "band": "hunter" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 30, "band": "storm" }
+      ],
+      "denominations": ["reputation", "hands"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}

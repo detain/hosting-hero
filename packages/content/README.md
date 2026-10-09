@@ -17,15 +17,32 @@ schema/i18n-pack.schema.json        ticket-pack shape (draft 2020-12 subset — 
 schema/palette.schema.json          palette shape (draft 2020-12 subset — anchor resolution + R61 budget laws live in the validator)
 types/shared-web.json               anchor type 1 ("The Mass Host" / Cabinet 14) — density game
 types/game-servers.json             anchor type 2 ("Prime Time") — G6 co-anchor: ms scale + permanent incident clock
+types/mail-hosting.json             type 3 ("The Post Office") — variety-engine proof: outbound defense, reputation scarcity, dominant verb Tune
 palettes/shared-80.json             the named home of buildables.paletteRef — 4 engine-backed shared archetypes (concurrency-pool, two-face-rack, control-plane, matchmaker) + the R61 ~15-slot verb-changer reserve accounting
 waves/g1-shared-web-first-quarter.json  seeded wave slice for gates G1/G5
 waves/g1-game-servers-first-quarter.json  seeded wave slice for gate G6 (same law set, type-specific DATA only)
-threats/registry-core.json          16 mechanical threat entries (exactly the ids the two bundles reference)
-visitors/archetypes-core.json       9 visitor archetypes (exactly the ids the two bundles reference)
+waves/g1-mail-hosting-first-quarter.json  type-3 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
+threats/registry-core.json          16 mechanical threat entries (mail-hosting reuses 8 existing ids; a mail-native threat roster awaits the registry-owner pass — the census pins live in sibling tests, see Type 3 notes)
+visitors/archetypes-core.json       9 visitor archetypes (mail-hosting references NONE — its visitor is the message itself; see Type 3 notes)
 packs/shared-web.i18n.json          ticket pack for official:shared-web — 98 grammar templates, decision 37 / flavour 61
 packs/game.i18n.json                ticket pack for official:game-servers — 75 grammar templates, decision 34 / flavour 41
+packs/mail-hosting.i18n.json        ticket pack for official:mail-hosting — 63 grammar templates, decision 32 / flavour 31
 script/validate.mjs                 Node-stdlib structural validator (no npm deps)
 ```
+
+### Type 3 notes (official:mail-hosting, 2026-10-09)
+
+Chosen over Backup/Storage because the §1.3 backup card's dominant verb is
+**Schedule** — not one of the six invariant verbs (§1.9), so it would ship on a
+VERB_SHIFT violation; the mail card names **Tune** verbatim and carries a fully
+authored Ruleset Card (scarce = IP reputation per §0.3, fatal = Blacklisting,
+customer = "Everyone, cheaply", unit = mailbox §6.6, win = ">98% inbox placement
+while still growing"). Two honest limits, both fenced by sibling-owned pins:
+`visitor.archetypeRefs` is `[]` (all 9 registry archetypes are human/machine
+visitors; a mail-native archetype would move the g2 corpus census) and
+`threats.signatureThreats` reuses 8 of the 16 registry ids with the mail framing
+carried in `_todo` cites (coverage `invitations.test.ts` pins threats=16). The
+slice ships WITHOUT a rules block so batch-D's rule-adapter work stays optional.
 
 ## Validate
 
@@ -65,17 +82,19 @@ superseding the ≤60-per-pack task-line guidance (the validator keeps its ≥25
 floor and sets no ceiling; most provenance cites are §9.3 verbatim doc seeds, so
 trimming would delete doc-mandated content). Pack `_todo` markers
 print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
-(63) is untouched by pack authoring.
+(84 since the type-3 mail-hosting authoring pass; 63 at wave-1) is untouched by
+pack authoring — no test pins the printed number, though sibling lane memory
+quotes the wave-1 figure.
 
 ## The authoring laws this directory obeys
 
 | Law | Source | In practice here |
 |---|---|---|
-| **Three-Change** | §0.2 | A type ships only if ≥3 of the six Ruleset-Card slots change vs existing types. shared-web and game-servers differ on Unit, Scarce, Patience-Analog, Threat-Mix, Look (5 of 6). |
-| **Verb-Shift** | R4, §0.2 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect** (one of the six invariant verbs, never a 7th, §1.9). |
+| **Three-Change** | §0.2 | A type ships only if ≥3 of the six Ruleset-Card slots change vs existing types. shared-web and game-servers differ on Unit, Scarce, Patience-Analog, Threat-Mix, Look (5 of 6). mail-hosting differs on Unit (message), Scarce (ip-reputation), Goal (recipient-inbox), Threat-Mix and Look — loader lint reports 5 of 9 §7.8 hooks changed vs the anchor (within the 3–5 budget). |
+| **Verb-Shift** | R4, §0.2 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect**, mail-hosting = **Tune** (§1.3 card verbatim; one of the six invariant verbs, never a 7th, §1.9). |
 | **Rosetta Card** | R11 | One canonical engine metric + one player-language alias + one joining line. Both anchors carry doc-verbatim lines (table below). |
 | **3–5 budget** (handover) | R10, §1.9 | `handoverNote` is EXACTLY 3 keys: runsOut / killsYou / customerWants, diegetic sheet-on-desk voice. Schema enforces maxProperties 3. |
-| **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"` — authored in `palettes/shared-80.json`, validator-enforced). Both anchors compose from the shared `concurrency-pool` + `two-face-rack` archetypes in two costumes (G6); the `matchmaker` archetype is the R61 reserve's first shipped verb-changer (14 of 15 slots remain unbuilt). |
+| **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"` — authored in `palettes/shared-80.json`, validator-enforced). All three shipped types compose from the shared `concurrency-pool` + `two-face-rack` archetypes (plus `control-plane` in two skins, web's cPanel and mail's webmail); the `matchmaker` archetype is the R61 reserve's first shipped verb-changer (14 of 15 slots remain unbuilt). |
 | **Five-Asset Skin Kit** | R48/R49/R53, §8.10 | Exactly: 1 palette (accent+secondary) · 2 visitor costume (hull+prop) · 3 ONE hero silhouette · 4 bespoke meter face · 5 bespoke catastrophe FX (+ ambient sound swap). Everything else = parameters of shared systems ("five assets plus eight parameter values"). Author order: METER FIRST. |
 | **Localisation law** | R46 + owner directive | **ALL human strings are i18n keys** resolved through the bundle's `ticketPack` file. No literal prose, no joke text in bundles. The packs ARE the authored English: `packs/*.i18n.json` carry every string, split into a sober `decision` namespace (shown while deciding or losing — §9.3 clauses 2–3) and a comedic `flavour` namespace (quiet surfaces only); the validator enforces the wall by root vocabulary and refuses any bundle-referenced key that strays into flavour. |
 | **Pruning rule R36** | WS-3, §2.12 | A threat earns a mechanical slot (stats + counters) only if it CHANGES THE PLAYER'S VERB, not just the noun. Everything else is Codex flavour attached to a mechanical entry. |
@@ -143,6 +162,15 @@ here and the pack's `decision` value.
 | `goal.game-servers.binding` | "A server 'up' at 140ms is dead." | §1.3 |
 | `type.shared-web.name` | "The Mass Host" (codename "Cabinet 14") | §1.3 |
 | `type.game-servers.name` | "Prime Time" | §1.3 |
+| `handover.mail-hosting.runs-out` | "Your IP reputation. It appreciates over months and one customer can spend all of it in an hour." | §1.3 |
+| `handover.mail-hosting.kills-you` | "A compromised mailbox at 2am, four hundred thousand messages, and a listing nobody will explain." | §1.3 |
+| `handover.mail-hosting.customer-wants` | "Their mail reaches the inbox. Not the junk folder, not a bounce — the inbox." | §1.3 |
+| `rosetta.mail-hosting.warmup` | "The IP warm-up ramp is the oversell ratio played backwards: volume is earned from the providers, not sold to the customers." | §1.3/§1.9 |
+| `rosetta.mail-hosting.rates` | "Per-account outbound rate limits are cgroup caging pointed the other way — the same dial, now aimed at what leaves." | §1.9 |
+| `verbs.mail-hosting.transfer.1` | "some resources are held by third parties and cannot be bought back." | §1.9 Portable Skills (§1.3 Teaches verbatim) |
+| `economy.mail-hosting.bad-month` | "A blocklisting." | §6.6 Companion C |
+| `goal.mail-hosting.binding` | "Your server accepted it. That is not the same sentence as 'they received it.'" | §1.3 |
+| `type.mail-hosting.name` | "The Post Office" | §1.3 |
 
 ## How to add a type
 

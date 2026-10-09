@@ -1,0 +1,349 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:mail-hosting",
+  "_todo": "All human strings are keys into file:packs/mail-hosting.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. Pack authored at file:packs/mail-hosting.i18n.json — cac.mail-hosting.todo stays a placeholder until §6.6 Companion B prices the email channel.",
+
+  "meta": {
+    "name": "type.mail-hosting.name",
+    "codexSummary": "type.mail-hosting.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.message",
+    "durationClass": "Instant",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§1.3 mail card authors bounce as LITERAL and reputation as the unit of account, but no per-message patience/value scalars: §2.x 'Reputation Bounce' moves rejection off-board entirely ('if your IP is listed, the visitor never even arrives'), so the patience budget is provider-side, not visitor-side. Value is indirect (customer's mailbox-month, §6.6 Email row); loyalty/fragility unauthored."
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": [0.6, 1.0, 1.6],
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline. budgetMs unauthored for mail: §1.3 says 'bouncing is literal' but the doc's mail delays (queue retry, silent deprioritization) have no numeric patience; §2.x Reputation Bounce is an off-board verdict, not a waited-too-long bounce."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null
+    },
+    "populationEffect": false,
+    "retryAmplifies": true,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-message",
+    "trustReadable": true,
+    "archetypeRefs": [],
+    "_todo": "retryAmplifies true: §2.12 'Email: Backscatter' — 'Bounce messages from forged senders flood your queues' makes retry traffic literal queue load on this line. archetypeRefs empty by authoring law, not oversight: all nine shipped archetypes (visitors/archetypes-core.json) are human/machine visitors and mail's visitor is the message itself; a mail-native archetype would move the registry censuses this lane is fenced off from (coverage invitations.test.ts pins threats=16; g2 corpus pins the 9-archetype roster) — flagged for the registry-owner pass instead of invented here. costPerInvocation per-message: egress spam scanning + per-account outbound rate limits (§1.3 buildables) meter the act of sending, not the account's idle presence."
+  },
+
+  "goal": {
+    "nodeType": "recipient-inbox",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "inbox-placement-rate",
+      "threshold": 98,
+      "_todo": "§1.3 WIN verbatim: '30 days at >98% inbox placement while still growing'. The 30-day window and the growth qualifier ride the level harness (hold-duration + net-new signups), not this scalar; §0.3 fifth-axis row names the metric ('Email on inbox placement rate')."
+    },
+    "loseCondition": {
+      "kind": "blacklisting"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.mail-hosting.binding"
+  },
+
+  "scarce": {
+    "resourceId": "ip-reputation",
+    "meterWidget": "reputation-postmark",
+    "meterBoundStat": "inbox-placement-rate",
+    "commercialSlider": "ip-pool-tier",
+    "operationalDials": [
+      "outbound-rate-limits-per-account",
+      "egress-spam-scanning",
+      "spam-aggressiveness-slider",
+      "quarantine-pool-mix"
+    ],
+    "windowGrows": false,
+    "shedOrder": "transactional-first-ladder",
+    "qosAnswer": "scarce.mail-hosting.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "annual",
+      "escalator": false,
+      "grandfathering": false
+    },
+    "seasonality": [
+      "annual-renewal-window"
+    ],
+    "diurnalBaseline": "postal-collection-rounds"
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.3,
+      "human": 0.1,
+      "entropic": 0.05,
+      "systemic": 0.25,
+      "customerAsThreat": 0.3,
+      "_todo": "Provisional sheet-B-era skew read straight off the §1.3 mail card (no §2.27 Matrix C row exists for email): customerAsThreat .30 — 'one compromised customer account sending 400k messages at 2am; a legitimate customer who bought a mailing list' puts the customer's own traffic at parity with attackers; malicious .30 — joe-jobs, backscatter, snowshoe spammers (§2.12); systemic .25 — 'your /24 listed because of a neighbour's IP' and 'Google silently deciding your mail goes to spam'; human .10 — bulk-send friction complaints; entropic .05 — config rot (SPF/DKIM 'subtly wrong for months'). Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "systemic"
+    ],
+    "signatureThreats": [
+      { "id": "wp-login-brute-squad", "mechanical": true },
+      { "id": "vulnerable-plugin-compromise", "mechanical": true },
+      { "id": "xmlrpc-pingback-amplifier", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "layer7-mimic", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "empty-server-spiral", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "permissive-outbound-rate-limits": ["xmlrpc-pingback-amplifier", "hoarder-noisy-neighbor"],
+      "no-egress-spam-scanning": ["layer7-mimic"],
+      "public-whois-listing": ["scanner-drizzle"]
+    },
+    "twoFrontDraw": [
+      "reputation",
+      "concurrency",
+      "hands",
+      "cash",
+      "data-integrity"
+    ],
+    "waveTable": "file:waves/g1-mail-hosting-first-quarter.json"
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "manila and postal blue",
+      "accent": "rubber-stamp red",
+      "chord": [
+        "manila",
+        "postal blue",
+        "rubber-stamp red",
+        "twine brown",
+        "sorted-mail white"
+      ]
+    },
+    "materialPreset": "preset:paper-stock-and-enamel",
+    "visitorCostume": {
+      "hull": "spark",
+      "propSlot": "envelope"
+    },
+    "heroSilhouette": "asset:hero.sorting-table",
+    "heroObject": "sorting-table",
+    "meterFace": "reputation-postmark",
+    "catastropheFx": "fx:return-to-sender-stamp",
+    "ambientSoundPack": "sound:conveyor-and-stamp",
+    "densityMultiplier": null,
+    "arrivalRhythm": "postal-rounds",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.blocklist-form",
+    "signatureMotion": "motion:conveyor-and-shredder",
+    "signatureFrame": "frame:cutaway-post-office-sorting-hall",
+    "lodContract": {
+      "full": "asset:lod.sorting-table.full",
+      "icon16": "asset:lod.sorting-table.icon16",
+      "pip": "pip:postal-blue-round",
+      "aggregate": "agg:mail-sack-stack",
+      "inspector": "skin.mail-hosting.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented. Chord verbatim §1.3 'manila · postal blue · rubber-stamp red · twine brown · sorted-mail white'. Hero object from §4.x buildables catalogue: 'Mail Server / MTA Cluster — The Sorting Table'. Costume: hull 'spark' is the Instant-class shape primitive (§3.1: shape encodes class, never identity — same primitive shared-web's page-loads use); identity rides the propSlot 'envelope' per §1.3 'messages are envelopes on conveyor belts'. Signature motion = the spam-cannon presentation beat (§2.12): 'false positives are a legitimate envelope going into the shredder with a small guilty red pip'. Catastrophe FX verbatim: a blocklisting is 'a giant red RETURN TO SENDER stamp descending on your whole outbound flow'. Meter = the Reputation Postmark, 'four small postmarks, one per major mailbox provider, each independently smudging'."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4 era grid (1994 dial-up / 2001 colo / 2009 shared-cPanel / 2016 cloud / 2024 GPU) does not date the email line; the §5.6 gate ('clean IP reputation for 12 months') implies an established company, not a year. Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "mailbox-month",
+    "revenueShape": "tiny-per-unit-very-sticky",
+    "marginProfile": "thin",
+    "cashTiming": "annual-negative-CCC",
+    "termStructure": {
+      "typical": "annual",
+      "churn": "1-2-pct-mo"
+    },
+    "cacProfile": "cac.mail-hosting.todo",
+    "ticketsPerCustomer": null,
+    "signatureCost": "deliverability-ops",
+    "badMonth": "economy.mail-hosting.bad-month",
+    "fifthAxisScore": {
+      "metric": "inbox-placement-rate",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.3 'Type-specific fifth-axis scoring' verbatim: 'Email on inbox placement rate'. R42 score weight not authored."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false
+    },
+    "_todo": "§6.6 rows, all near-verbatim: Email | mailbox/month | 'tiny per unit, very sticky' | 'thin' | 'annual common' | signature cost 'deliverability ops' (revenue-shape table); | annual | 1-2% churn | negative cash conversion (Companion A); bad month 'a blocklisting' (Companion C). cacProfile: §6.6 Companion B prices no email row (affiliate CPA table is shared-web-only). ticketsPerCustomer: no rate authored; §6.x 'complaints, blocklistings and legal requests at a predictable rate per customer — budget the abuse desk' attests the cost exists without pricing it."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "mail-hosting" },
+      { "archetype": "two-face-rack", "skin": "mail-hosting" },
+      { "archetype": "control-plane", "skin": "webmail" }
+    ],
+    "distinct": [
+      "spf-dkim-dmarc-enforcement",
+      "reverse-dns-control",
+      "feedback-loop-subscriptions",
+      "per-account-outbound-rate-limits",
+      "egress-spam-scanning",
+      "ip-warmup-ramp",
+      "quarantine-pool-by-risk-tier",
+      "delisting-desk",
+      "spam-aggressiveness-display"
+    ],
+    "nonPhysical": [
+      "abuse-desk-staff",
+      "postmaster-relationships"
+    ]
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2 control-granularity authors only the shared-hosting profile ('control everything inside the box', max pips); the mail pip row awaits its ruleset-card pass. Never invented (same law game-servers cites)."
+    },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+
+  "mechanics": [
+    "ip-reputation-balance-sheet",
+    "outbound-defense-orientation",
+    "warmup-ramp-minigame",
+    "blocklist-snowball",
+    "false-positive-display",
+    "delisting-paperwork",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Tune",
+    "transfers": [
+      "verbs.mail-hosting.transfer.1"
+    ]
+  },
+
+  "relations": {
+    "synergies": [],
+    "antagonisms": [
+      {
+        "with": "official:bulletproof",
+        "resource": "reputation",
+        "kind": "mutually-exclusive",
+        "render": "line-availability"
+      }
+    ],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["clean-ip-reputation-12-months", "reverse-dns-control", "own-address-space"],
+          "_todo": "§5.6 prerequisite lattice, verbatim: 'Clean IP reputation for 12 months → unlocks Email hosting... additionally requires reverse DNS control, which requires your own address space, which requires the ASN/registry branch'."
+        },
+        {
+          "commercial": ["acquisition-with-clean-reputation"],
+          "_todo": "§5.6 alternative-prerequisite sets: 'OR acquire a company that has one'."
+        },
+        {
+          "tech": ["longer-warmup-acceptance"],
+          "commercial": ["deliverability-specialist-hire"],
+          "_todo": "§5.6 alternative-prerequisite sets: 'OR hire a deliverability specialist from a large provider and accept a longer warm-up'."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {
+        "official:shared-web": {
+          "customerOverlap": null,
+          "hardwareReuse": null,
+          "skillTransfer": null,
+          "regulatoryDelta": 0,
+          "_todo": "§5.6 pivot numbers unauthored for this pair; regulatoryDelta 0 qualitative (no regulated-vertical row for email in §2.27 Matrix C). customerOverlap is likely high in reality (§0.3: email's customer is 'Everyone, cheaply' — the shared-web base buying mail) but no number is authored."
+        }
+      }
+    },
+    "masteryBuff": "relations.mail-hosting.mastery",
+    "distillate": "relations.mail-hosting.distillate",
+    "_todo": "synergies left empty honestly: §0.2's line-synergy pass names email only in antagonism ('Email + bulletproof are mutually exclusive because IP reputation is the product of one and the sacrifice of the other' — §0.2, verbatim); §5.6's 'email line depends on the network line... gives the network line a second payoff' is a prerequisite payoff, not an authored synergy row."
+  },
+
+  "ticketPack": "file:packs/mail-hosting.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.mail-hosting.runs-out",
+    "killsYou": "handover.mail-hosting.kills-you",
+    "customerWants": "handover.mail-hosting.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "oversell-ratio",
+      "alias": "ip-warmup-curve",
+      "line": "rosetta.mail-hosting.warmup"
+    },
+    {
+      "canonical": "cgroup-caging",
+      "alias": "outbound-rate-limits",
+      "line": "rosetta.mail-hosting.rates"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Escort",
+      "Diagnose",
+      "Endure"
+    ],
+    "analogues": {
+      "backscatter-flood": "scenarios.mail-hosting.backscatter",
+      "joe-job": "scenarios.mail-hosting.joe-job",
+      "mail-only-customer": "scenarios.mail-hosting.mail-only-customer"
+    }
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

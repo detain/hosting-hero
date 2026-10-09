@@ -6,7 +6,7 @@
  * LOADER itself adds no entropy: no iteration-order luck, no float drift.)
  *
  * Two arms: the crafted fixture twins, and the REAL shipped corpus in
- * packages/content (both type-bundles + both registries + every wave doc), so
+ * packages/content (every type-bundle + both registries + every wave doc), so
  * the gate covers the bytes that actually ship — not only the happy shapes.
  */
 
@@ -100,8 +100,8 @@ function reloadCorpus(texts: CorpusTexts): RulesetCorpus {
 describe("shipped packages/content determinism ×100", () => {
   const texts = shippedCorpusTexts();
 
-  test("both shipped type-bundles + both registries load identically 100×", () => {
-    expect(texts.types.length).toBe(2);
+  test("every shipped type-bundle + both registries load identically 100×", () => {
+    expect(texts.types.length).toBe(3);
     const first = reloadCorpus(texts);
     const firstSerialized = first.bundles.map((bundle) => stableSerialize(bundle));
     expect(firstSerialized.every((line) => line.length > 1000)).toBe(true);
