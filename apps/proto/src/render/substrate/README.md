@@ -25,10 +25,13 @@ spike findings → verdict → what the first mount must own.
 - Admission model: parse → quad-cap meter (refusal, live set untouched) →
   **category probe** → whole-layer claim. The probe
   (`substrateCategoryMetered`) asks the wired BudgetManager's live caps
-  table for a `substrate` entry. Today budget.ts has none — every claim
-  throws `substrate[category-pending]` BY DESIGN, including a ledger wired
-  straight to `globalBudget`. The seam self-activates the day the owner
-  widens BUDGET_CAPS: no flag to flip, no silent cap-widening by this lane.
+  table for a `substrate` entry. THE SEAM IS LIVE: the owner signed
+  `BUDGET_CAPS.substrate = 1200` on 2026-10-09 (rec #16,
+  `docs/adr/0009-owner-ratifications-calibration.md` §3), and the
+  self-activating probe flipped true exactly as promised — no flag flipped,
+  no silent cap-widening by this lane. A port answering the probe FALSE
+  now means MIS-WIRING (stub/forged caps table), and the
+  `substrate[category-pending]` throw stays as that fail-loud guard.
 
 ## The numbers (measured, node env, no renderer)
 
@@ -60,7 +63,9 @@ falsifiably in `tileField.test.ts`.
 Cap model (law 4): `QUAD_CAP_BY_ALTITUDE[a] = LABEL_CAP_BY_ALTITUDE[a] ×
 SUBSTRATE_QUADS_PER_LABEL_SLOT(40)` → **{Z1: 1920, Z2: 1440, Z3: 1200, Z4:
 480}**. The multiplier 40 is the spike anchor that makes Z3 land on the
-brief's ≤ 1200 target — a PROVISIONAL taste row (owner question #2).
+brief's ≤ 1200 target — ratified 2026-10-09 (rec #16) as one of the four
+taste rows, and it is also the derivation the signed `BUDGET_CAPS.substrate
+= 1200` mirrors.
 
 The "200-rack floor × 40U" thought experiment, at 1 quad per tile edge:
 
@@ -111,10 +116,10 @@ enforces it at admission, per altitude, with a named refusal.
    caps table and throws `budget[unknown-category]` naming the offender
    (`budget.test.ts`, "unknown-category law"; the seam's former fail-open
    pin in `substrateField.test.ts` is re-pinned to the throw). The probe
-   layers IN FRONT of it for seam claims: `category-pending` speaks of a
-   pending OWNER decision, the generic throw of an authoring BUG. The
-   hardening option this finding offered is CLOSED; the category + cap
-   question below is NOT.
+   layers IN FRONT of it for seam claims: post-ratification `category-pending`
+   speaks of BROKEN WIRING (a port that does not carry the ratified caps
+   table), the generic throw of an authoring BUG. Both the hardening and the
+   category + cap question below are CLOSED (cap signed 2026-10-09).
 4. **Import side effects are real.** `@pixi/tilemap` calls
    `extensions.add(TilemapPipe)` + the GL and GPU adaptors AT MODULE SCOPE.
    Merely importing registers three renderer extensions globally and pulls
@@ -132,7 +137,7 @@ enforces it at admission, per altitude, with a named refusal.
     disagreement before the map is handed out (a vendor-dropped quad becomes
     a crash at materialization, never a half-painted floor on screen).
 
-## Verdict — RECOMMEND (adoption), HOLD (mount) — three owner decisions are load-bearing
+## Verdict — RECOMMEND (adoption), HOLD (mount) — decisions #1/#2 ANSWERED 2026-10-09
 
 **Adopt the seam; recommend @pixi/tilemap 5.0.2 for substrate material.**
 The measured property the ADR promised is real: whole authored regions
@@ -145,18 +150,27 @@ written as tests, not prose.
 **HOLD on mounting** until (and this is the whole distance between spike and
 shipping):
 
-1. **Owner decision — the category + cap.** `budget.ts` gains
-   `substrate: N` to `BudgetCategory` + `BUDGET_CAPS` (N = max concurrently
-   live regions; the spike's accounting is ready and self-activating via
-   `substrateCategoryMetered`). This tripwire is already coded:
-   `substrateField.test.ts` fails RED the day the cap appears, telling the
-   lane to wire `globalBudget` and update this README.
-2. **Owner decision — the taste rows.** `SUBSTRATE_QUADS_PER_LABEL_SLOT =
-   40` (anchor: Z3 = 30×40 = 1200), `tileWorldSize` default 16,
-   `SUBSTRATE_PRIORITY = 0`, and the cluster-by-altitude convention. All
-   four are defensible defaults, none is data-backed yet.
+1. **ANSWERED 2026-10-09 — the category + cap (rec #16).** `budget.ts`
+   carries `substrate: 1200` in `BudgetCategory` + `BUDGET_CAPS` — N = max
+   concurrently-live whole-layer REGIONS (one claim per region, law 2), the
+   value pinned equal to the spike's `QUAD_CAP_BY_ALTITUDE.Z3` ceiling.
+   **THE AUTHORED-PATCHES LAW IS NOW LAW:** substrate paint arrives as
+   authored patches (per-rack idioms), never procedural flood-fill — the
+   witness is this README's own arithmetic: a Z3 paint-fill measures ≈46k
+   quads against the 1200 ceiling, and the ledger refuses it at admission
+   with a named refusal. The coded tripwire did its job: it went RED the day
+   the cap landed and now stands re-cut as a falsifiable positive pin
+   (`BUDGET_CAPS.substrate === 1200` + the 1201st-claim refusal end-to-end
+   against a real `BudgetManager`).
+2. **ANSWERED 2026-10-09 — the taste rows (same ADR row).** The four
+   constants are RATIFIED AS-IS: `SUBSTRATE_QUADS_PER_LABEL_SLOT = 40`
+   (anchor: Z3 = 30×40 = 1200 — the cap's own derivation), `tileWorldSize`
+   default 16, `SUBSTRATE_PRIORITY = 0`, cluster-by-altitude convention.
+   Code comments still labelled them PROVISIONAL pre-sweep; the ADR-0009 §3
+   Substrate row is the authority until the docs-currency lane revisits.
 3. **The first-mount commit must own:**
-   - wiring: `SubstrateLedger({ budget: globalBudget })` + mount into
+   - wiring: `SubstrateLedger({ budget: globalBudget })` — a metered,
+     working wiring today — + mount into
      `compositor` `layers.substrate` (the label assertion already matches
      its `layer:${name}` construction — pinned by substrateLaw);
    - palette plumbing: the skin-kit texture loaded through the assetpack

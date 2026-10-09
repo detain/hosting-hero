@@ -7,7 +7,8 @@
  *
  * Caps (WS-7 roster): ≤3 alert hues · 1 overlay · 5 event FX · 1 modal ·
  * ≤3 promoted clocks · ≤3 marked decisions · ≤3 inbox cards · labels capped
- * per altitude (30 at Z3 per §1.3), pinned exempt.
+ * per altitude (30 at Z3 per §1.3), pinned exempt · ≤1200 whole-layer
+ * substrate regions (ratified 2026-10-09, see `BUDGET_CAPS.substrate`).
  *
  * Pure TypeScript: no DOM, no Pixi — this whole file is unit-testable and the
  * ChromaMeter is just a viewer over `snapshot()`.
@@ -22,7 +23,8 @@ export type BudgetCategory =
   | "promotedClock"
   | "markedDecision"
   | "inboxCard"
-  | "label";
+  | "label"
+  | "substrate"; // whole-layer tilemap regions — plain metered, no special logic
 
 export const BUDGET_CAPS: Readonly<Record<BudgetCategory, number>> = {
   alertHue: 3,
@@ -33,6 +35,19 @@ export const BUDGET_CAPS: Readonly<Record<BudgetCategory, number>> = {
   markedDecision: 3,
   inboxCard: 3,
   label: 30, // fallback; the altitude table usually supplies the real cap
+  /**
+   * Substrate: max CONCURRENTLY LIVE whole-layer regions (one claim per
+   * region, never per tile — render/substrate law 2). RATIFIED 2026-10-09
+   * (calibration rec #16, docs/adr/0009-owner-ratifications-calibration.md
+   * §3 "Substrate" row). The value mirrors the spike's QUAD_CAP_BY_ALTITUDE
+   * .Z3 ceiling (30 label slots × 40 quads = 1200, pinned equal in
+   * substrateField.test.ts): the spike measured a Z3 paint-fill at ≈46k
+   * quads against the 1200 ceiling, which is exactly why the ratified row
+   * carries the AUTHORED-PATCHES LAW — substrate arrives as authored patches
+   * (per-rack idioms), never procedural flood-fill. See
+   * apps/proto/src/render/substrate/README.md for the arithmetic.
+   */
+  substrate: 1200,
 };
 
 /** Label budget by camera altitude (§1.3: "30-label budget at Z3"; Z1 detail
@@ -162,6 +177,7 @@ export class BudgetManager {
       markedDecision: 0,
       inboxCard: 0,
       label: 0,
+      substrate: 0,
     };
     const hues = new Set<AlertHue>();
     const holders: { id: string; category: BudgetCategory; priority: number }[] = [];

@@ -19,22 +19,22 @@
  *    budget holder with the ADR's id shape `tilemap:substrate:<region>` —
  *    never per-tile admission. Region ids may therefore never contain ':'.
  *
- * 3. THE CATEGORY SEAM (owner question, not a silent cap-widening).
- *    budget.ts has no `substrate` category, and adding one picks a cap — a
- *    taste call this lane must not make. SUBSTRATE_CATEGORY names the
- *    candidate; the seam PROBE is `substrateCategoryMetered(budget)`, which
- *    asks the wired BudgetManager's own caps table whether the category
- *    exists. Until the owner widens BUDGET_CAPS the probe is false and the
- *    ledger REFUSES every claim with `substrate[category-pending]` — even a
- *    ledger wired straight to globalBudget — because wrapper law 3 is "an
- *    unmetered draw is a law breach, regardless of which package draws it".
- *    The probe still earns its place after budget.ts hardened its door
- *    (`budget[unknown-category]` now throws on any unmetered claim): the
- *    two layers carry DIFFERENT meanings — `category-pending` = a PENDING
- *    OWNER DECISION told with the full wiring story, the generic throw = an
- *    authoring BUG. A seam claim is the former and must never surface as
- *    the latter. The moment budget.ts grows the category the seam
- *    self-activates: no flag to flip, no silent widening anywhere.
+ * 3. THE CATEGORY SEAM — LIVE (ratified 2026-10-09, rec #16).
+ *    The spike deliberately did NOT widen BUDGET_CAPS (adding a category
+ *    picks a cap — an owner call). SUBSTRATE_CATEGORY names the candidate;
+ *    the seam PROBE is `substrateCategoryMetered(budget)`, which asks the
+ *    wired BudgetManager's own caps table whether the category exists. The
+ *    owner signed `substrate: 1200` on 2026-10-09
+ *    (docs/adr/0009-owner-ratifications-calibration.md §3), exactly as the
+ *    seam predicted: the probe flipped true on its own, no flag to flip, no
+ *    silent widening anywhere. The probe keeps a second job post-ratification:
+ *    a port whose caps table LACKS the category is now a MIS-WIRING (a stub
+ *    or forged port), and the `substrate[category-pending]` throw stays as
+ *    that fail-loud guard — a different meaning than the spike-era "pending
+ *    owner decision", still distinct from budget.ts's generic
+ *    `budget[unknown-category]` authoring-bug throw. Wrapper law 3 stands:
+ *    "an unmetered draw is a law breach, regardless of which package draws
+ *    it" — metering is real now; the guard fires only on broken wiring.
  *
  * 4. QUAD CAPS METER TO THE LABEL BUDGET. "Metered against the zoom-stage
  *    label/draw budgets" (ADR-0008) is modelled as: every label slot an
@@ -68,10 +68,11 @@ export class SubstrateFieldError extends Error {
 
 // ── the category seam (law 3) ───────────────────────────────────────────────
 
-/** Candidate budget-category name for whole-layer tilemap holders. NOT in
- *  BUDGET_CAPS yet — adding it (and choosing its cap) is the owner question
- *  this spike documents rather than decides. `substrateCategoryMetered`
- *  below turns that question into a live probe, so no flag can rot. */
+/** Budget-category name for whole-layer tilemap holders. IN BUDGET_CAPS
+ *  since 2026-10-09 (rec #16: `substrate: 1200`,
+ *  docs/adr/0009-owner-ratifications-calibration.md §3). The spike modelled
+ *  the decision as a live probe (`substrateCategoryMetered`) instead of a
+ *  flag, so ratification activated the seam with zero code here. */
 export const SUBSTRATE_CATEGORY = "substrate" as const;
 
 /** Background nicety — §budget vocabulary ("0 = background nicety"). The
@@ -121,9 +122,11 @@ export function assertSubstrateMountTarget(layer: string): SubstrateMountTarget 
 
 // ── altitude quad caps (law 4) ──────────────────────────────────────────────
 
-/** PROVISIONAL taste row (owner question): substrate quads bought per label
- *  slot at each altitude. 40 keeps the spike's anchor exact —
- *  Z3: LABEL_CAP 30 × 40 = 1200 quads ("Z3 ≤ 1200 target"). */
+/** RATIFIED taste row (2026-10-09, rec #16): substrate quads bought per
+ *  label slot at each altitude. 40 keeps the spike's anchor exact —
+ *  Z3: LABEL_CAP 30 × 40 = 1200 quads ("Z3 ≤ 1200 target"), the ceiling
+ *  BUDGET_CAPS.substrate mirrors. Authored-patches law: regions arrive as
+ *  authored patches, never flood-fill (see substrate/README.md). */
 export const SUBSTRATE_QUADS_PER_LABEL_SLOT = 40;
 
 export const QUAD_CAP_BY_ALTITUDE: Readonly<Record<Altitude, number>> = Object.freeze(
@@ -340,9 +343,9 @@ export function parseSubstrateRegion(input: SubstrateRegionInput): ParsedSubstra
 // ── admission model (law 2 + law 3) ────────────────────────────────────────
 
 /** The slice of BudgetManager this ledger speaks to — shaped so the REAL
- *  BudgetManager structurally satisfies it the moment budget.ts widens
- *  BudgetCategory with 'substrate' (method bivariance does the typing; this
- *  lane adds no fields the manager cannot carry). */
+ *  BudgetManager structurally satisfies it (it has, since budget.ts widened
+ *  BudgetCategory with 'substrate' on 2026-10-09; method bivariance does the
+ *  typing; this lane adds no fields the manager cannot carry). */
 export interface SubstrateAdmitRequest {
   readonly id: string;
   readonly category: string;
@@ -363,15 +366,16 @@ export interface SubstrateBudgetPort {
 }
 
 /** The seam's live probe: does this budget manager actually have a cap for
- *  `substrate`? Today budget.ts says NO — so wiring globalBudget here throws
- *  the owner-intent `category-pending` BEFORE the manager's own
- *  `budget[unknown-category]` authoring-bug guard can fire. (The fail-open
- *  this probe once fenced has since been hardened inside budget.ts; the
- *  probe stays as the OWNER-INTENT layer — see substrateField.test.ts,
- *  "the probe answers before the budget guard can".) The day budget.ts adds
- *  `substrate: N` to BUDGET_CAPS, admit() meters correctly by its own
- *  existing logic and this probe flips true on its own — nothing to rename,
- *  nothing to re-wire, no flag to flip. */
+ *  `substrate`? budget.ts signed `substrate: 1200` into BUDGET_CAPS on
+ *  2026-10-09 (rec #16), exactly as this seam predicted — the probe flipped
+ *  true on its own (nothing renamed, nothing re-wired, no flag to flip) and
+ *  real managers now meter by admit()'s own existing logic. The probe keeps
+ *  a fail-loud job: a port answering FALSE is a MIS-WIRING — a stub or
+ *  forged manager whose snapshot lacks the ratified caps table — and the
+ *  ledger throws `category-pending` BEFORE the manager's own
+ *  `budget[unknown-category]` authoring-bug guard can fire, so broken wiring
+ *  is named as broken wiring (see substrateField.test.ts, "a forged stub
+ *  port …"). */
 export function substrateCategoryMetered(budget: SubstrateBudgetPort): boolean {
   return SUBSTRATE_CATEGORY in budget.snapshot().caps;
 }
@@ -419,11 +423,13 @@ interface LiveRegion {
  *
  * A ledger with NO port, or a port whose caps table lacks `substrate`,
  * refuses claims with `substrate[category-pending]` — never a silent local
- * counter: wrapper law 3 forbids unmetered draws, and the probe keeps the
- * owner-pending story in front of BudgetManager's hardened generic
- * `budget[unknown-category]` authoring-bug throw (layers, not duplicates).
- * The first-mount commit wires the real manager the
- * day budget.ts carries the owner's cap.
+ * counter: wrapper law 3 forbids unmetered draws. Since the owner signed
+ * `substrate: 1200` into BUDGET_CAPS (2026-10-09, rec #16), a real
+ * BudgetManager answers the probe TRUE and every claim meters through
+ * admit(); the throw now names MIS-WIRING — a stub or forged port that does
+ * not carry the ratified caps table (different semantic than the spike-era
+ * "pending owner decision", kept fail-loud either way). The first-mount
+ * commit wires `SubstrateLedger({ budget: globalBudget })` today.
  */
 export class SubstrateLedger {
   private readonly budget: SubstrateBudgetPort | null;
@@ -475,11 +481,12 @@ export class SubstrateLedger {
     if (this.budget === null || !substrateCategoryMetered(this.budget)) {
       throw new SubstrateFieldError(
         "category-pending",
-        `'${region.regionId}' (${region.quads} quads) would be an UNMETERED draw: the wired budget ` +
-          `manager has no '${SUBSTRATE_CATEGORY}' cap in BUDGET_CAPS yet. Adding the category + cap ` +
-          "is the owner decision this seam waits on (ADR-0008 wrapper law 3: an unmetered draw is a " +
-          "law breach). The quad cap above was still checked — the arithmetic is real even while the " +
-          "claim is parked — and the claim self-activates the moment the caps table carries 'substrate'.",
+        `'${region.regionId}' (${region.quads} quads) cannot claim: the wired budget port does ` +
+          `not meter '${SUBSTRATE_CATEGORY}'. BUDGET_CAPS gained the category 2026-10-09 ` +
+          "(rec #16, substrate: 1200) — a snapshot WITHOUT the cap means a stub/forged port, " +
+          "i.e. mis-wiring (ADR-0008 wrapper law 3: an unmetered draw is a law breach). Wire " +
+          "the real BudgetManager (globalBudget). The quad cap above was still checked — the " +
+          "arithmetic runs regardless of wiring.",
       );
     }
 

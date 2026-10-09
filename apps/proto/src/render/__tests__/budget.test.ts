@@ -3,7 +3,14 @@
  * Every cap from the §1.9 roster, refusal → "+N" cluster, preemption, pins.
  */
 import { beforeEach, describe, expect, it } from "vitest";
-import { BudgetError, BudgetManager, LABEL_CAP_BY_ALTITUDE, type AdmitRequest, type BudgetCategory } from "../budget";
+import {
+  BUDGET_CAPS,
+  BudgetError,
+  BudgetManager,
+  LABEL_CAP_BY_ALTITUDE,
+  type AdmitRequest,
+  type BudgetCategory,
+} from "../budget";
 
 let budget: BudgetManager;
 beforeEach(() => {
@@ -113,6 +120,22 @@ describe("count caps", () => {
     expect(budget.clusterCount(sixth.clusterId)).toBe(1);
   });
 
+  it("substrate is a plain metered category — ratified cap 1200 (rec #16, 2026-10-09)", () => {
+    // Ratified value pinned at the manager level too (substrateField.test.ts
+    // pins the ledger end-to-end at exactly 1200 concurrent claims).
+    expect(BUDGET_CAPS.substrate).toBe(1200);
+    expect(budget.admit({ id: "s1", category: "substrate", priority: 0 }).admitted).toBe(true);
+    expect(budget.admit({ id: "s2", category: "substrate", priority: 0, region: "Z3" }).admitted).toBe(true);
+    expect(budget.snapshot().used.substrate).toBe(2);
+    // Plain count metering — no hue validation, no altitude table: claims
+    // share the one caps-table number, and release returns capacity.
+    budget.release("s1");
+    expect(budget.snapshot().used.substrate).toBe(1);
+    expect(budget.admit({ id: "under", category: "substrate", priority: 0, region: "Z3" }).admitted).toBe(true);
+    expect(budget.snapshot().used.substrate).toBe(2);
+    expect(budget.snapshot().breach).toBe(false); // nowhere near 1200
+  });
+
   it("≤3 promoted clocks, ≤3 marked decisions, ≤3 inbox cards, 1 modal", () => {
     for (const [category, cap] of [
       ["promotedClock", 3],
@@ -164,17 +187,21 @@ describe("snapshot for the ChromaMeter", () => {
 
 describe("unknown-category law — fail loud, never a silent admission", () => {
   it("admit() throws budget[unknown-category] naming the forged category", () => {
+    // This pin historically rode "substrate" while the spike's owner question
+    // was open; the 2026-10-09 ratification made that category KNOWN (see the
+    // positive substrate pins in the count-caps suite), so the still-unknown
+    // example moved to "forged" to keep the fail-loud guard falsifiable.
     const forged = () =>
-      budget.admit({ id: "forged", category: "substrate" as BudgetCategory, priority: 50 });
+      budget.admit({ id: "x", category: "forged" as BudgetCategory, priority: 50 });
     expect(forged).toThrow(BudgetError);
     expect(forged).toThrowError(
-      /budget\[unknown-category\]: 'substrate' not in BUDGET_CAPS — widen the closed union or use an existing category/,
+      /budget\[unknown-category\]: 'forged' not in BUDGET_CAPS — widen the closed union or use an existing category/,
     );
     // The throw is atomic: the request never reaches the ledger.
     expect(budget.snapshot().holders).toEqual([]);
     const used = budget.snapshot().used as Readonly<Record<string, number | undefined>>;
-    expect(used.substrate).toBeUndefined(); // the old NaN slot can no longer form
-    expect(budget.clusterCount("substrate:global")).toBe(0); // refusal clustering never engages
+    expect(used.forged).toBeUndefined(); // the old NaN slot can no longer form
+    expect(budget.clusterCount("forged:global")).toBe(0); // refusal clustering never engages
   });
 
   it("the guard stands at the door, before every other check", () => {

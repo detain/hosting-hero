@@ -363,50 +363,107 @@ describe("admission model — one whole-layer holder per region (law 2)", () => 
 
 /* ────────────────────────────── the seam ────────────────────────────── */
 
-describe("the category seam — owner question modelled, not answered (law 3)", () => {
-  it("BUDGET_CAPS has no 'substrate' entry today (tripwire: flips red with the owner's cap)", () => {
-    // When the owner rules `substrate: N` into budget.ts this pin goes red on
-    // purpose: the fix is to delete the negation, wire globalBudget at first
-    // mount, and update substrate/README.md — not to edit this line's spirit.
-    expect(BUDGET_CAPS as Readonly<Record<string, number>>).not.toHaveProperty(SUBSTRATE_CATEGORY);
+describe("the category seam — RATIFIED 2026-10-09, live metering (law 3)", () => {
+  it("BUDGET_CAPS.substrate is exactly the ratified 1200 (rec #16; pinned equal to the Z3 quad ceiling)", () => {
+    // The spike tripwire ("no substrate entry today") flipped red the day the
+    // owner signed, exactly as designed — this is its successor pin. Changing
+    // the cap in budget.ts without an owner decision turns this red.
+    expect(BUDGET_CAPS.substrate).toBe(1200);
+    // The ratified row's stated anchor: cap = QUAD_CAP_BY_ALTITUDE.Z3.
+    expect(BUDGET_CAPS.substrate).toBe(QUAD_CAP_BY_ALTITUDE.Z3);
   });
 
-  it("a ledger without a port throws category-pending — never a silent local count", () => {
+  it("a ledger with NO port throws category-pending — never a silent local count (mis-wiring)", () => {
     const ledger = new SubstrateLedger();
     expect(() => ledger.acquire(regionInput(), "Z3")).toThrowError(/substrate\[category-pending\]/);
     expect(ledger.liveRegions()).toEqual([]); // nothing half-admitted
   });
 
-  it("wiring globalBudget straight in refuses with the OWNER message — the probe answers before the budget guard can", () => {
-    // Layers, kept deliberately: `substrate[category-pending]` = a PENDING
-    // OWNER DECISION with the full wiring story; `budget[unknown-category]`
-    // = an authoring BUG. A region claim is the former, so the seam must
-    // never let it fall through to the generic throw.
+  it("a stub/forged port whose caps table LACKS 'substrate' still throws — the mis-wiring probe", () => {
+    // Post-ratification the probe's false branch means BROKEN WIRING, not a
+    // pending decision. Caps minus the key — DELETED, not set undefined:
+    // the probe is an `in` check, so an undefined-valued key would still pass.
+    const capsWithoutSubstrate: Record<string, number> = { ...BUDGET_CAPS };
+    delete capsWithoutSubstrate[SUBSTRATE_CATEGORY];
+    const forgedPort: SubstrateBudgetPort = {
+      admit: () => ({ admitted: true, evicted: [] }),
+      release: () => undefined,
+      snapshot: () => ({ caps: capsWithoutSubstrate }),
+    };
+    expect(substrateCategoryMetered(forgedPort)).toBe(false);
+    const ledger = new SubstrateLedger({ budget: forgedPort });
+    expect(() => ledger.acquire(regionInput(), "Z3")).toThrowError(/substrate\[category-pending\]/);
+    try {
+      ledger.acquire(regionInput(), "Z3");
+    } catch (error) {
+      expect((error as Error).message).toMatch(/stub\/forged port/); // names MIS-WIRING
+      expect((error as Error).message).toMatch(/BUDGET_CAPS gained the category 2026-10-09/);
+    }
+    expect(ledger.liveRegions()).toEqual([]);
+  });
+
+  it("the REAL BudgetManager now meters substrate — probe true, claims land, release frees", () => {
+    // The self-activation promise, verified against the real manager rather
+    // than a fake: nothing was renamed, re-wired, or flagged.
+    const manager = new BudgetManager();
+    expect(substrateCategoryMetered(manager)).toBe(true);
+    const ledger = new SubstrateLedger({ budget: manager });
+    const result = ledger.acquire(regionInput({ cells: [[0, null], [null, 7]] }), "Z3");
+    expect(result.acquired).toBe(true);
+    const snap = manager.snapshot();
+    expect(snap.used.substrate).toBe(1);
+    expect(snap.holders).toEqual([
+      { id: "tilemap:substrate:north-hall", category: "substrate", priority: SUBSTRATE_PRIORITY },
+    ]);
+    ledger.release("north-hall");
+    expect(manager.snapshot().used.substrate).toBe(0);
+    expect(manager.snapshot().holders).toHaveLength(0);
+  });
+
+  it("at the ratified cap: the 1201st concurrent region refuses via category-budget, keeping holders", () => {
+    // The consumption unit is ONE claim per live region (law 2), so the cap
+    // meters concurrent REGIONS. End-to-end against the real manager.
     const manager = new BudgetManager();
     const ledger = new SubstrateLedger({ budget: manager });
-    expect(substrateCategoryMetered(manager)).toBe(false);
-    expect(() => ledger.acquire(regionInput(), "Z3")).toThrowError(/substrate\[category-pending\]/);
-    expect(manager.snapshot().holders).toHaveLength(0); // no claim was even made
+    for (let i = 0; i < 1200; i++) {
+      const ok = ledger.acquire(regionInput({ regionId: `r-${i}`, cells: [[0]] }), "Z3");
+      if (!ok.acquired) throw new Error(`filler region ${i} unexpectedly refused`);
+    }
+    expect(manager.snapshot().used.substrate).toBe(1200);
+    const overflow = ledger.acquire(regionInput({ regionId: "one-too-many", cells: [[0]] }), "Z3");
+    expect(overflow.acquired).toBe(false);
+    if (overflow.acquired === false) {
+      expect(overflow.reason).toBe("category-budget");
+      expect(overflow.refusal).toBe("category-budget");
+      expect(overflow.clusterId).toBe(`${SUBSTRATE_CATEGORY}:Z3`); // folds per zoom-stage
+      expect(overflow.kept).toHaveLength(1200);
+    }
+    expect(ledger.liveRegions()).toHaveLength(1200); // live set untouched
+    expect(ledger.snapshot().holders).toHaveLength(1200);
   });
 
   it("FORMER SPIKE FINDING, SINCE HARDENED: BudgetManager.admit throws on unknown categories", () => {
     // The fail-open hole (BUDGET_CAPS[unknown] undefined → `count >= undefined`
     // false → admitted uncapped, snapshot().used growing a NaN slot) is CLOSED:
     // admit() now guards the caps table and throws `budget[unknown-category]`
-    // naming the offender. Our seam still never rides that throw —
-    // substrateCategoryMetered probes the caps table BEFORE admitting (test
-    // above); this pin holds the runtime twin of the closed TS union.
+    // naming the offender. 'substrate' itself rode this pin while pending;
+    // after ratification the probe uses a STILL-unknown forged name so the
+    // runtime twin of the closed TS union stays falsifiable.
     const manager = new BudgetManager();
     expect(() =>
       manager.admit({
         id: "forged",
-        category: "substrate" as BudgetCategory, // deliberate cast to expose the runtime shape
+        category: "glow" as BudgetCategory, // deliberate cast to expose the runtime shape
         priority: 0,
       }),
-    ).toThrowError(/budget\[unknown-category\]: 'substrate' not in BUDGET_CAPS/);
+    ).toThrowError(/budget\[unknown-category\]: 'glow' not in BUDGET_CAPS/);
     expect(manager.snapshot().holders).toHaveLength(0); // nothing half-claimed
     const used = manager.snapshot().used as Readonly<Record<string, number | undefined>>;
-    expect(used.substrate).toBeUndefined(); // the NaN symptom is gone
+    expect(used.glow).toBeUndefined(); // the NaN symptom cannot form
+    // And the ratified path proves 'substrate' is NOT that offender anymore:
+    expect(() =>
+      manager.admit({ id: "real", category: "substrate", priority: 0 }),
+    ).not.toThrow();
   });
 
   it("the seam self-activates when the caps table carries 'substrate' — no flag to flip", () => {
@@ -416,10 +473,14 @@ describe("the category seam — owner question modelled, not answered (law 3)", 
     expect(ledger.acquire(regionInput(), "Z3").acquired).toBe(true);
   });
 
-  it("quad arithmetic still runs while claims are parked (cap refusal precedes the throw)", () => {
+  it("quad arithmetic precedes claims even on a live metered port", () => {
     const ledger = new SubstrateLedger({ budget: new BudgetManager() });
     const breach: SubstrateAcquireResult = ledger.acquire(regionInput({ cells: regionCells(50, 40) }), "Z3");
-    expect(breach.acquired).toBe(false); // quad-budget refusal, NOT a category throw
-    if (breach.acquired === false) expect(breach.reason).toBe("quad-budget");
+    expect(breach.acquired).toBe(false); // quad-budget refusal, BEFORE any budget claim
+    if (breach.acquired === false) {
+      expect(breach.reason).toBe("quad-budget");
+      expect(breach.cap).toBe(1200);
+    }
+    expect(ledger.snapshot().holders).toHaveLength(0);
   });
 });

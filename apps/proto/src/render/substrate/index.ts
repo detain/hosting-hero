@@ -11,10 +11,12 @@
  *
  * SPIKE STATUS (README.md in this dir carries the verdict): law-first,
  * NOTHING mounts. No consumer imports this directory yet — substrateLaw
- * scans for that. The first-mount commit owns three things this spike
- * deliberately does not decide: the BUDGET_CAPS 'substrate' category + cap
- * (owner question), region authoring in the skin kits, and the
- * LAYER_ORDER/container wiring.
+ * scans for that. The category seam is LIVE: the owner signed
+ * `BUDGET_CAPS.substrate = 1200` on 2026-10-09 (rec #16, ADR-0009 §3), and
+ * the self-activating probe flipped true with no code change here. The
+ * first-mount commit owns what remains: wiring `SubstrateLedger({budget:
+ * globalBudget})` + the compositor mount, region authoring in the skin kits
+ * under the authored-patches law, and the LAYER_ORDER/container wiring.
  */
 export {
   QUAD_CAP_BY_ALTITUDE,
