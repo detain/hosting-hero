@@ -86,7 +86,7 @@ import {
   type SpeedFactor,
 } from "../kernel/time.ts";
 import { streamFor } from "../kernel/rng.ts";
-import { TICK_US, sortedIds, withUnit } from "./internal.ts";
+import { orderShedForTick, TICK_US, sortedIds, withUnit } from "./internal.ts";
 import { UNIT_HOLD } from "./defaults.ts";
 import { DEFAULT_KNEE_RHO, utilization } from "./queue.ts";
 import { applyIntentDoor, mintHandState, type IntentDoorConfig, type IntentReceipt } from "./intent-door.ts";
@@ -447,6 +447,14 @@ export function createTickDriver(
 
     /* ── step 5 · serve (slot-occupancy queueing core) ────────────────── */
     const serveOut = steps.serve({ context, units, nodes: worked.nodes });
+    // R-06 class-aware shed (audit fix, §7.11): a hard-ceiling node sheds its WHOLE
+    // residual queue each tick, but the order shed units enter the terminal ledger
+    // follows each node's authored `shedOrder` law — cheap classes walk off first,
+    // sold classes last, no-contract (unclassified) before them all, unitId breaks
+    // every tie deterministically. Queue membership → node via routeHops[0]
+    // (the FIX-8 queue-member-implies-hop invariant); foreign ghosts pass through
+    // in place.
+    const shed = orderShedForTick(serveOut.shed, worked.nodes, unitsById, inputs.classes);
     let nodes = serveOut.nodes;
 
     /* ── rec#5 · targeted-purge attribution ─────────────────────────────
@@ -571,7 +579,7 @@ export function createTickDriver(
             attributionContradiction = true;
           }
         }
-        for (const unitId of serveOut.shed) {
+        for (const unitId of shed) {
           const hop = unitsById.get(unitId)?.routeHops[0];
           if (hop === undefined) {
             attributionContradiction = true;
@@ -724,7 +732,7 @@ export function createTickDriver(
         }),
       );
     };
-    for (const unitId of serveOut.shed) {
+    for (const unitId of shed) {
       // R8 F-2 · R-06 hard-ceiling shed: terminal like a bounce (SILENT — no
       // explosion, no alarm), pushed BEFORE the roster loop so the "bounced"
       // preset wins `candidateSeen`. The roster loop's null-preset push used

@@ -107,12 +107,12 @@
 
   "threats": {
     "familyWeights": {
-      "malicious": null,
-      "human": null,
-      "entropic": null,
-      "systemic": null,
-      "customerAsThreat": null,
-      "_todo": "§2.27 Matrix C: game hosting = malicious + human with an unusually LARGE customer-as-threat share — qualitative skew only; weights await the ratified tuning sheet (OD-2)."
+      "malicious": 0.35,
+      "human": 0.15,
+      "entropic": 0.05,
+      "systemic": 0.1,
+      "customerAsThreat": 0.35,
+      "_todo": "Sheet-B canon (OD-2 ratified 2026-10-09): §2.27 Matrix C numbered — booter/mod drama keeps malicious first, and game hosting carries an unusually LARGE customer-as-threat share (toxic players ARE the traffic). Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
     },
     "activeFamilies": [
       "malicious",

@@ -97,8 +97,10 @@ export function cleanTable(): WaveTable {
 
 /** Deep-writable clone so crafted-violation tests can mutate table data
  *  without fighting the readonly contract types. */
-export type DeepMutable<T> = T extends ReadonlyArray<infer U>
-  ? DeepMutable<U>[]
+export type DeepMutable<T> = T extends readonly [unknown, ...unknown[]]
+  ? { -readonly [K in keyof T]: DeepMutable<T[K]> }
+  : T extends ReadonlyArray<infer U>
+    ? DeepMutable<U>[]
   : T extends object
     ? { -readonly [K in keyof T]: DeepMutable<T[K]> }
     : T;

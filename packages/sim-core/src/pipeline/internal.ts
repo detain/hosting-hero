@@ -9,6 +9,8 @@
 import type {
   EntityId,
   Fixed,
+  NodeRecord,
+  QosClassDef,
   SimTimeUs,
   ThreatFamily,
   Unit,
@@ -120,6 +122,136 @@ export function slotsNeeded(sizeCost: Fixed): number {
 /** End of the current tick's sim minute (µs) — service deadlines are absolute. */
 export function tickEndUs(simUs: SimTimeUs): SimTimeUs {
   return simUs + TICK_US;
+}
+
+/* ═══════════════ R-06b · bundle familyWeights arrival mix (audit fix 3) ═══════════════ */
+
+/** One bucket of the authored family-mix table (waves.parseFamilyWeightsTable
+ *  produces exactly this shape; shareMicro is an integer, shares sum to
+ *  1_000_000). Lives here (barrel-invisible) because the mix is consumed by
+ *  the arrival step's CONFIG, not by the runtime contract types. */
+export interface FamilyMixEntry {
+  readonly family: ThreatFamily;
+  readonly shareMicro: number;
+}
+
+/** Cumulative-scan roll over a validated mix (total exactly 1_000_000). */
+export function weightedFamilyOf(mix: readonly FamilyMixEntry[], rollMicro: number): ThreatFamily {
+  let acc = 0;
+  for (const bucket of mix) {
+    acc += bucket.shareMicro;
+    if (rollMicro < acc) return bucket.family;
+  }
+  return mix[mix.length - 1]!.family; // unreachable: rollMicro < 1e6 === sum
+}
+
+/** Fail-fast validation at the step's BOUNDARY (parse-don't-validate): the
+ *  roll loop can then trust the table completely. */
+export function validateFamilyMix(mix: readonly FamilyMixEntry[]): void {
+  const seen = new Set<ThreatFamily>();
+  let total = 0;
+  for (const bucket of mix) {
+    if (!Number.isSafeInteger(bucket.shareMicro) || bucket.shareMicro <= 0) {
+      throw new Error(`arrival familyMix: ${bucket.family} shareMicro must be a positive integer, got ${String(bucket.shareMicro)}`);
+    }
+    if (seen.has(bucket.family)) {
+      throw new Error(`arrival familyMix: duplicate family "${bucket.family}"`);
+    }
+    seen.add(bucket.family);
+    total += bucket.shareMicro;
+  }
+  if (total !== 1_000_000) {
+    throw new Error(`arrival familyMix: shares sum to ${total}, must equal exactly 1000000 (use waves.parseFamilyWeightsTable to renormalise)`);
+  }
+}
+
+/* ═══════════════════ R-06 · class-aware shed ordering ═══════════════════ */
+
+/**
+ * Rank of a shed candidate at ONE node (lower = dies earlier in the terminal
+ * ledger). §7.11 "sold classes cannot be shed" binds the ORDER: the cheap
+ * classes walk off first, the sold ones go last, and an UNCLASSIFIED unit —
+ * no contract, no seat to defend — heads the list. The WS-5 R57 "unclassified
+ * sheds at random" flavour is deliberately replaced by the deterministic
+ * unitId tie-break: the ladder is the same ladder, only its ORDER moves, and
+ * a coin flip would perturb the streams of every other roll for zero law.
+ */
+function shedBucket(unit: Unit | undefined, def: QosClassDef | undefined, metric: "priority" | "value"): number {
+  if (unit === undefined) return -2; // ghost (foreign list): earliest, id-ordered
+  if (def === undefined) return -1; // unclassified / stale class id: no contract to defend
+  return metric === "priority" ? def.shedPriority : Number(def.weight);
+}
+
+/** One node's shed list, ordered by its authored `shedOrder` law (R-06, §7.11).
+ *  The hard-ceiling discipline sheds the WHOLE residual queue every tick, so
+ *  "selection" is the ORDER in which units enter the terminal ledger — the
+ *  order the outcome step iterates candidates in, the order the bounce events
+ *  ride, the order a postmortem reads its triage ladder in:
+ *  - "first-in-first-out"  → queue order (the pre-fix behaviour, pinned);
+ *  - "last-in-first-out"   → reversed queue order;
+ *  - "qos-weighted"        → unclassified first, then class `shedPriority`
+ *    ascending ("lower number = shed earlier"), unitId tie-break;
+ *  - "lowest-value-first"  → unclassified first, then class `weight`
+ *    ascending (capacity share = value proxy; a class's `weight` is the sold
+ *    promise), unitId tie-break.
+ */
+export function orderShedForNode(
+  node: NodeRecord,
+  queueOrder: readonly EntityId[],
+  unitById: ReadonlyMap<EntityId, Unit>,
+  classes: readonly QosClassDef[],
+): readonly EntityId[] {
+  switch (node.shedOrder) {
+    case "first-in-first-out":
+      return [...queueOrder];
+    case "last-in-first-out":
+      return [...queueOrder].reverse();
+    case "qos-weighted":
+    case "lowest-value-first": {
+      const byClass = new Map(classes.map((def) => [def.id, def]));
+      const metric = node.shedOrder === "qos-weighted" ? "priority" : "value";
+      const bucket = (unitId: EntityId): number =>
+        shedBucket(unitById.get(unitId), byClass.get(unitById.get(unitId)?.qosClassId ?? ""), metric);
+      return [...queueOrder].sort((a, b) => bucket(a) - bucket(b) || compareEntityId(a, b));
+    }
+  }
+}
+
+/**
+ * Re-order the serve step's flat `shed` channel by each shedding node's law.
+ * The queue is cleared inside the step, so the unit→node link is read from
+ * `routeHops[0]` — the FIX-8 invariant (a queued unit's hop IS its queue
+ * node) makes this exact for every default-authored board. Units whose hop
+ * names no known node pass through in their original relative position:
+ * foreign steps may forge anything, and a forged entry must never be silently
+ * dropped. Contiguous same-node runs are ordered independently, so a
+ * multi-node shed list keeps its per-node segments.
+ */
+export function orderShedForTick(
+  shed: readonly EntityId[],
+  nodes: ReadonlyMap<EntityId, NodeRecord>,
+  unitById: ReadonlyMap<EntityId, Unit>,
+  classes: readonly QosClassDef[],
+): readonly EntityId[] {
+  if (shed.length === 0) return shed;
+  const runs: { readonly nodeId: EntityId | null; readonly ids: EntityId[] }[] = [];
+  for (const unitId of shed) {
+    const hop = unitById.get(unitId)?.routeHops[0] ?? null;
+    const nodeId = hop !== null && nodes.has(hop) ? hop : null;
+    const last = runs[runs.length - 1];
+    if (last !== undefined && last.nodeId === nodeId) last.ids.push(unitId);
+    else runs.push({ nodeId, ids: [unitId] });
+  }
+  const out: EntityId[] = [];
+  for (const run of runs) {
+    if (run.nodeId === null) {
+      out.push(...run.ids); // unknown node (ghost/foreign): keep as authored
+      continue;
+    }
+    const node = nodes.get(run.nodeId)!;
+    out.push(...orderShedForNode(node, run.ids, unitById, classes));
+  }
+  return Object.freeze(out);
 }
 
 export { FIXED_UNIT, FIXED_ZERO, FIXED_SCALE };

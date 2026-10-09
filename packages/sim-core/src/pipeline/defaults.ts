@@ -78,12 +78,15 @@ import { FIXED_UNIT, FIXED_ZERO, clampUnit, fromRatio, mul, sub } from "../kerne
 import { streamFor } from "../kernel/rng.ts";
 import {
   familyToIntent,
+  type FamilyMixEntry,
   fracRawOfUnit,
   isAdversarialIntent,
   mulUsFixed,
   rollUnder,
   slotsNeeded,
   sortedIds,
+  validateFamilyMix,
+  weightedFamilyOf,
   wholeOf,
   withUnit,
 } from "./internal.ts";
@@ -131,6 +134,13 @@ export interface DefaultPipelineConfig {
   /** Served-customer viral loop: P(referral draft), P(return-visit draft). */
   readonly referralProbability: Fixed;
   readonly returnProbability: Fixed;
+  /** AUDIT FIX 3 (heading 11385): the bundle's threats.familyWeights table,
+   *  normalized by waves.parseFamilyWeightsTable. When set, every minted
+   *  unit draws its family on the arrival stream (one roll after
+   *  sourceBucket) and carries it as trueIntent — the traffic mix IS the
+   *  bundle's contract, not just the envelope's single dominantFamily label.
+   *  Absent ⇒ no roll, no stream-shape change, byte-identical arrivals. */
+  readonly familyMix?: readonly FamilyMixEntry[];
 }
 
 /* ═══════════════════════════ Step 1 · Arrival ═══════════════════════════ */
@@ -147,11 +157,13 @@ export interface DefaultPipelineConfig {
  *  arbitrary multiples). Arrival-counting consumers therefore miss retry
  *  storms; count `SimEvent` arrivals or roster growth, not this step alone. */
 export function createArrivalStep(
-  config: Pick<DefaultPipelineConfig, "defaultPatienceUs" | "defaultSizeCost" | "patienceJitterPct">,
+  config: Pick<DefaultPipelineConfig, "defaultPatienceUs" | "defaultSizeCost" | "patienceJitterPct" | "familyMix">,
 ): TickStep<ArrivalIn, ArrivalOut> {
   if (config.patienceJitterPct < 0 || config.patienceJitterPct > 50) {
     throw new Error(`arrival: patienceJitterPct must be 0..50, got ${config.patienceJitterPct}`);
   }
+  const mix = config.familyMix;
+  if (mix !== undefined) validateFamilyMix(mix);
   const jitterSpread = 2 * config.patienceJitterPct + 1;
   return (input: ArrivalIn): ArrivalOut => {
     const { context, envelopes, rng } = input;
@@ -167,13 +179,16 @@ export function createArrivalStep(
         const unitId = asEntityId(`${envelope.tableId}@${context.tick}#${e}.${i}`);
         const jitterPct = jitterSpread === 1 ? 100 : 100 - config.patienceJitterPct + rng.range(jitterSpread);
         const sourceBucket = rng.range(1024);
+        // familyMix die (audit fix 3): rolled ONLY when the bundle authors a
+        // weighted table — absent keeps the stream position byte-identical.
+        const drawnFamily = mix === undefined ? envelope.dominantFamily : weightedFamilyOf(mix, rng.range(1_000_000));
         units.push(
           Object.freeze({
             id: unitId,
             type: envelope.tableId,
             sizeCost: config.defaultSizeCost,
             patienceUs: (config.defaultPatienceUs * BigInt(jitterPct)) / 100n,
-            trueIntent: familyToIntent(envelope.dominantFamily),
+            trueIntent: familyToIntent(drawnFamily),
             source: Object.freeze({
               identity: `${envelope.tableId}:s${sourceBucket}`,
               reputation: fromRatio(BigInt(rng.range(101)), 100n),
@@ -315,6 +330,11 @@ export const UNIT_HOLD = new Map<EntityId, EntityId>();
  *        "size ≠ 1");
  *     d. `hard-ceiling` discipline (R-81…R-85) sheds the un-admitted queue
  *        instantly; `hockey-stick` nodes let the queue ride the curve.
+ *        The step emits shed candidates in queue order; the DRIVER re-orders
+ *        that channel per node by the R-06 class-aware shed law (see
+ *        internal.orderShedForTick) so the terminal ledger honors each node's
+ *        `shedOrder` + QoS class ranking (§7.11) — ServeIn itself is a frozen
+ *        contract and cannot see the class table.
  *  2. `assignments` = new starts (serviceEndUs > simNow, blocked=false)
  *     ∪ completions (blocked=false, serviceEndUs ≤ simNow)
  *     ∪ holds (blocked=true). The driver derives hop progress from (2).

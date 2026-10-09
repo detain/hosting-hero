@@ -108,12 +108,12 @@
 
   "threats": {
     "familyWeights": {
-      "malicious": null,
-      "human": null,
-      "entropic": null,
-      "systemic": null,
-      "customerAsThreat": null,
-      "_todo": "§2.27 Matrix C authors the skew qualitatively — shared web & VPS lean malicious + human; §1.3 signature threat is 'your own customers' (large customerAsThreat share). No weights in doc; tuning sheet pending (OD-2)."
+      "malicious": 0.35,
+      "human": 0.2,
+      "entropic": 0.05,
+      "systemic": 0.2,
+      "customerAsThreat": 0.2,
+      "_todo": "Sheet-B canon (OD-2 ratified 2026-10-09): §2.27 qualitative skew numbered — shared web leans malicious + human, systemic noise rides the stack, and §1.3's signature 'your own customers' keeps a large customerAsThreat share. Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
     },
     "activeFamilies": [
       "malicious",

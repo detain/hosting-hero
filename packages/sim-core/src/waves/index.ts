@@ -12,4 +12,6 @@ export * from "./enforcer.ts";
 export * from "./ledger.ts";
 export * from "./director.ts";
 export * from "./generate.ts";
+export * from "./contention.ts";
 export * from "./contentInspector.ts";
+export * from "./families.ts";

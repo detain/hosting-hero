@@ -59,6 +59,32 @@ export interface WaveDefinition {
   readonly parPct: number;
   readonly hard: boolean;
   readonly entries: readonly CompositionEntry[];
+  /** AUDIT FIX 4 (§2.24 feints): this wave opens with a decoy sub-burst —
+   *  the first quarter of every entry's units (min 1) is re-parked on the
+   *  envelope's opening beat. Timing-only split, zero RNG cost; consumed
+   *  ONLY when the table also authors `rules.feints`. */
+  readonly feint?: boolean;
+  /** AUDIT FIX 4 (§2.24 second incident): a follow-on copy rides AFTER the
+   *  envelope once an incident window is active (see WavePlanInput
+   *  .incidentState). Authoring accepts a boolean OR the foreign slices'
+   *  prose marker (non-empty string = present). */
+  readonly secondIncident?: boolean;
+}
+
+/** §2.24 rules block, engine-facing subset (closed vocabulary — unknown
+ *  keys throw at the boundary, never silently ignored). */
+export interface WaveFeintRule {
+  readonly maxPerLevel: number;
+  readonly neverTwoLevelsInRow: boolean;
+  readonly namedInPostmortem?: boolean;
+}
+
+export interface WaveRules {
+  readonly feints?: WaveFeintRule;
+  readonly secondIncidentMultiplierDuringIncident?: number;
+  readonly secondIncidentMultiplierDuringRecovery?: number;
+  /** [min, max] band; v0 CONSUMES THE LOWER BOUND deterministically. */
+  readonly copycatReservePct?: readonly [number, number];
 }
 
 export interface WaveTable {
@@ -68,6 +94,9 @@ export interface WaveTable {
   /** Units spawned per whole pressure point of a wave's budget (int ≥1). */
   readonly unitsPerPressurePoint: number;
   readonly waves: readonly WaveDefinition[];
+  /** AUDIT FIX 4: the authored §2.24 rules block (absent ⇒ dead-neutral:
+   *  feint/secondIncident/copycat semantics never fire). */
+  readonly rules?: WaveRules;
 }
 
 function reqInt(obj: Record<string, unknown>, key: string, where: string, min: number): number {
@@ -147,7 +176,95 @@ function parseWave(raw: unknown, expectedN: number, where: string): WaveDefiniti
   }
   const shareSum = entries.reduce((acc, e) => acc + e.sharePct, 0);
   if (shareSum !== 100) throw new Error(`${where}: sharePct must sum to 100, got ${shareSum}`);
-  return { n, windowMinutes, rampMin, plateauMin, decayMin, parPct, hard: obj.hard, entries };
+  if (obj.feint !== undefined && typeof obj.feint !== "boolean") {
+    throw new Error(`${where}: feint must be a boolean when present, got ${String(obj.feint)}`);
+  }
+  // Foreign slices author secondIncident as PROSE ("ticket avalanche
+  // arrives inside the defacement window -> 1.8x…") — presence is the law,
+  // the sentence is commentary. Engine tables author a boolean.
+  const siRaw = obj.secondIncident;
+  const secondIncident =
+    typeof siRaw === "string" ? siRaw.length > 0 || undefined : siRaw === true ? true : siRaw === false ? false : undefined;
+  if (typeof siRaw !== "undefined" && secondIncident === undefined) {
+    throw new Error(`${where}: secondIncident must be a boolean or a non-empty prose marker, got ${String(siRaw)}`);
+  }
+  return {
+    n,
+    windowMinutes,
+    rampMin,
+    plateauMin,
+    decayMin,
+    parPct,
+    hard: obj.hard,
+    entries,
+    ...(obj.feint === undefined ? {} : { feint: obj.feint }),
+    ...(secondIncident === undefined ? {} : { secondIncident }),
+  };
+}
+
+const RULE_KEYS = new Set([
+  "feints",
+  "secondIncidentMultiplierDuringIncident",
+  "secondIncidentMultiplierDuringRecovery",
+  "copycatReservePct",
+]);
+
+/** Closed-vocabulary rules parser (§2.24). Structural gates that were
+ *  already enforced unconditionally (maxThreatEntriesPerWave, firstWave-
+ *  MaxParPct, denomination quotas, pool caps…) stay OUT of the engine
+ *  surface: the engine consumes exactly the three DEAD-DATA families —
+ *  feints, second-incident multipliers, copycat reserve. */
+function parseRules(raw: unknown, where: string): WaveRules {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new Error(`${where}: rules must be an object`);
+  }
+  const obj = raw as Record<string, unknown>;
+  for (const key of Object.keys(obj)) {
+    if (!RULE_KEYS.has(key)) throw new Error(`${where}: unknown rules key "${key}" (closed vocabulary)`);
+  }
+  const rules: { -readonly [K in keyof WaveRules]: WaveRules[K] } = {};
+  if (obj.feints !== undefined) {
+    if (typeof obj.feints !== "object" || obj.feints === null) throw new Error(`${where}: rules.feints must be an object`);
+    const f = obj.feints as Record<string, unknown>;
+    for (const key of Object.keys(f)) {
+      if (!new Set(["maxPerLevel", "neverTwoLevelsInRow", "namedInPostmortem"]).has(key)) {
+        throw new Error(`${where}: unknown rules.feints key "${key}" (closed vocabulary)`);
+      }
+    }
+    const maxPerLevel = reqInt(f, "maxPerLevel", `${where} rules.feints`, 1);
+    if (typeof f.neverTwoLevelsInRow !== "boolean") {
+      throw new Error(`${where}: rules.feints.neverTwoLevelsInRow must be a boolean`);
+    }
+    if (f.namedInPostmortem !== undefined && typeof f.namedInPostmortem !== "boolean") {
+      throw new Error(`${where}: rules.feints.namedInPostmortem must be a boolean`);
+    }
+    rules.feints = {
+      maxPerLevel,
+      neverTwoLevelsInRow: f.neverTwoLevelsInRow,
+      ...(f.namedInPostmortem === undefined ? {} : { namedInPostmortem: f.namedInPostmortem }),
+    };
+  }
+  for (const key of ["secondIncidentMultiplierDuringIncident", "secondIncidentMultiplierDuringRecovery"] as const) {
+    const v = obj[key];
+    if (v !== undefined) {
+      if (typeof v !== "number" || !Number.isFinite(v) || v <= 1) {
+        throw new Error(`${where}: rules.${key} must be a finite number > 1, got ${String(v)}`);
+      }
+      rules[key] = v;
+    }
+  }
+  if (obj.copycatReservePct !== undefined) {
+    const v = obj.copycatReservePct;
+    if (
+      !Array.isArray(v) || v.length !== 2 ||
+      v.some((x) => typeof x !== "number" || !Number.isFinite(x) || x < 0 || x > 100) ||
+      (v[0] as number) > (v[1] as number)
+    ) {
+      throw new Error(`${where}: rules.copycatReservePct must be [min,max] ⊂ 0..100 with min ≤ max`);
+    }
+    rules.copycatReservePct = Object.freeze([v[0] as number, v[1] as number] as const);
+  }
+  return Object.freeze(rules);
 }
 
 /** Boundary parser: unknown in → trusted WaveTable out, or a loud throw. */
@@ -163,5 +280,30 @@ export function parseWaveTable(raw: unknown): WaveTable {
     throw new Error("wave table: waves must be a non-empty array");
   }
   const waves = obj.waves.map((w, i) => parseWave(w, i + 1, `wave table ${id} wave[${i}]`));
-  return { id, typeBundleId, tuningSheet: tuningSheet as TuningSheetId, unitsPerPressurePoint, waves };
+  const rules = obj.rules === undefined ? undefined : parseRules(obj.rules, `wave table ${id}`);
+  if (rules?.feints?.neverTwoLevelsInRow) {
+    for (let i = 1; i < waves.length; i += 1) {
+      if (waves[i - 1]?.feint && waves[i]?.feint) {
+        throw new Error(
+          `wave table ${id}: waves ${String(waves[i - 1]?.n)} and ${String(waves[i]?.n)} both feint — rules.feints.neverTwoLevelsInRow forbids it (§2.24)`,
+        );
+      }
+    }
+  }
+  if (rules?.feints) {
+    const flagged = waves.filter((w) => w.feint).length;
+    if (flagged > rules.feints.maxPerLevel) {
+      throw new Error(
+        `wave table ${id}: ${String(flagged)} feint waves exceed rules.feints.maxPerLevel ${String(rules.feints.maxPerLevel)} (§2.24 one decoy per level)`,
+      );
+    }
+  }
+  return {
+    id,
+    typeBundleId,
+    tuningSheet: tuningSheet as TuningSheetId,
+    unitsPerPressurePoint,
+    waves,
+    ...(rules === undefined ? {} : { rules }),
+  };
 }
