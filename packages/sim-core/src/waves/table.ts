@@ -202,12 +202,17 @@ function parseWave(raw: unknown, expectedN: number, where: string): WaveDefiniti
   };
 }
 
-const RULE_KEYS = new Set([
+/** Closed §2.24 engine vocabulary — the ONLY rules keys parseRules accepts.
+ *  Exported so the foreign-slice adapter (foreign.ts) projects onto exactly
+ *  this set — one source of truth for "what the engine consumes". */
+export const WAVE_RULE_KEYS = [
   "feints",
   "secondIncidentMultiplierDuringIncident",
   "secondIncidentMultiplierDuringRecovery",
   "copycatReservePct",
-]);
+] as const;
+
+const RULE_KEYS: ReadonlySet<string> = new Set(WAVE_RULE_KEYS);
 
 /** Closed-vocabulary rules parser (§2.24). Structural gates that were
  *  already enforced unconditionally (maxThreatEntriesPerWave, firstWave-

@@ -15,3 +15,4 @@ export * from "./generate.ts";
 export * from "./contention.ts";
 export * from "./contentInspector.ts";
 export * from "./families.ts";
+export * from "./foreign.ts";

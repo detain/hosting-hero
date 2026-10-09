@@ -73,7 +73,7 @@ import {
   observedKey,
   ObservedStore,
   parseDiurnalCurve,
-  parseWaveTable,
+  parseForeignWaveSlice,
   planWave,
   sampleCurveMicro,
   streamFor,
@@ -84,6 +84,7 @@ import {
   type DiurnalCurveTable,
   type EntityId,
   type Fixed,
+  type ForeignThreatMeta,
   type GameState,
   type LaneStats,
   type NodeRecord,
@@ -125,26 +126,6 @@ interface CorpusThreat {
   readonly denomination: string;
 }
 
-interface CorpusWaveEntry {
-  readonly threat: string;
-  readonly role: string;
-  readonly pressurePct: number;
-  readonly band: string;
-}
-
-interface CorpusWave {
-  readonly n: number;
-  readonly parPct: number;
-  readonly trough?: boolean;
-  readonly entries: readonly CorpusWaveEntry[];
-}
-
-/** Foreign-slice role strings → the THREAT_ROLES vocabulary (table.ts). */
-function canonicalRole(foreignRole: string): string {
-  const head = foreignRole.split("/")[0]!.toLowerCase();
-  return head === "healer" ? "healer" : head;
-}
-
 function corpusThreatIndex(): Map<string, CorpusThreat> {
   const registry = readCorpusJson("threats/registry-core.json");
   const threats = registry["threats"] as CorpusThreat[];
@@ -154,36 +135,21 @@ function corpusThreatIndex(): Map<string, CorpusThreat> {
 const WAVE_WINDOW_MINUTES = 12;
 const WAVE_GEOMETRY = Object.freeze({ windowMinutes: WAVE_WINDOW_MINUTES, rampMin: 3, plateauMin: 3, decayMin: 2 });
 
-/** Adapt a foreign-schema g1 slice into parseWaveTable input (the exact
- *  adapter gate-g2 established: existence data verbatim, geometry authored). */
+/** Adapt a foreign-schema g1 slice through the CANONICAL waves/foreign
+ *  adapter (REST-RULES-ADAPTER — same carry-through gate-g2 now uses):
+ *  existence data verbatim, geometry authored, §2.24 rules block and
+ *  per-wave secondIncident markers forwarded to the engine consumers. */
 function corpusWaveTable(sliceRelPath: string, typeBundleId: string): WaveTable {
   const slice = readCorpusJson(sliceRelPath);
   const index = corpusThreatIndex();
-  const waves = (slice["waves"] as CorpusWave[]).map((w) => ({
-    ...WAVE_GEOMETRY,
-    n: w.n,
-    parPct: w.parPct,
-    hard: w.trough !== true,
-    entries: w.entries.map((e) => {
-      const meta = index.get(e.threat);
-      if (meta === undefined) throw new Error(`gate-g6: slice threat "${e.threat}" absent from registry-core`);
-      return {
-        threatId: e.threat,
-        role: canonicalRole(e.role),
-        family: meta.family,
-        band: e.band,
-        sharePct: e.pressurePct,
-        denominations: [meta.denomination],
-        targets: ["origin"],
-      };
-    }),
-  }));
-  return parseWaveTable({
-    id: String(slice["id"]),
+  return parseForeignWaveSlice(slice, {
     typeBundleId,
-    tuningSheet: "B",
-    unitsPerPressurePoint: 1,
-    waves,
+    geometry: WAVE_GEOMETRY,
+    threatMeta: (threatId) => {
+      const meta = index.get(threatId);
+      if (meta === undefined) return undefined;
+      return { family: meta.family as ForeignThreatMeta["family"], denomination: meta.denomination as ForeignThreatMeta["denomination"] };
+    },
   });
 }
 
