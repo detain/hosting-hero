@@ -28,6 +28,10 @@ import { SimCoreRunner as LegacySimCoreRunner } from "./legacyRunner.fixture";
 
 const TICKS = 100;
 
+/** The fix-economy @57ea80e reputation publisher's exact cell key, branded
+ *  at this boundary like the producer does (economy/reputation.ts). */
+const REPUTATION_KEY: ObservedKey = observedKey(asEntityId("company"), "reputation");
+
 /** Drive a fresh runner and return the digest of every projected frame. */
 function frameDigests(seed: number): string[] {
   const runner = new SimCoreRunner({ seed });
@@ -541,8 +545,22 @@ describe("mainline mazing (§7.10): two lanes, real door, authored traffic mix",
     // once units exist. Ticks 1–2 have no units on either board, so every
     // shared field must match byte-for-byte (the three new count-cells are
     // additive surface the old frame simply lacks).
+    //
+    // MONEY-LANE EXTENSION (REST-PROTO-FINAL, disclosed): the economy lane
+    // adds exactly two kinds of movement to these frames, both additive —
+    //  · notices: every `economy-notice` is new surface (the legacy runner
+    //    had no money lane at all); stripping them must leave the legacy
+    //    notice list byte-identical, in order.
+    //  · freeCashMicroUsd: the legacy value was the createInitialState
+    //    PLACEHOLDER (0n, never mirrored); the modern value is the real
+    //    ledger mirror. Equality here was never physics — it was two zeros —
+    //    so the honest pin flips to "ledger-funded opening grew on tick 1",
+    //    with the exact probe-derived figure.
+    // Pipeline-owned fields (tick/minute/clocks/lanes/counters + shared
+    // observed cells) keep their exact-equality contract untouched.
     const legacy = new LegacySimCoreRunner({ seed: 42 });
     const modern = new SimCoreRunner({ seed: 42 });
+    const LEDGER_TICK1_FREE: bigint = 25_005_307_300n; // opening 25_000_000_000 + tick-1 settles
     for (let i = 0; i < 2; i += 1) {
       const a = legacy.headlessStep(10);
       const b = modern.headlessStep(10);
@@ -551,13 +569,129 @@ describe("mainline mazing (§7.10): two lanes, real door, authored traffic mix",
       expect(b.clocks).toEqual(a.clocks);
       expect(b.lanes).toEqual(a.lanes);
       expect(b.counters).toEqual(a.counters);
-      expect(b.notices).toEqual(a.notices);
-      expect(b.freeCashMicroUsd).toBe(a.freeCashMicroUsd);
+      expect(b.notices.filter((n) => n.kind !== "economy-notice")).toEqual(a.notices);
+      for (const n of b.notices) {
+        if (a.notices.includes(n)) continue;
+        expect(n.kind).toBe("economy-notice"); // every extra is money, nothing else
+      }
+      if (i === 0) {
+        expect(b.freeCashMicroUsd).toBe(LEDGER_TICK1_FREE); // ledger authority, exact
+        expect(a.freeCashMicroUsd).toBe(0n); // legacy placeholder, on the record
+      } else {
+        expect(b.freeCashMicroUsd).toBeGreaterThan(a.freeCashMicroUsd);
+      }
       for (const [key, cell] of a.observed) {
         expect(b.observed.get(key)).toEqual(cell); // shared cells agree exactly
       }
+      // Reputation is publish-on-change: quiet ticks 1–2 must NOT have moved
+      // it, so the modern frames carry no `company::reputation` cell yet.
+      expect(b.observed.has(REPUTATION_KEY)).toBe(false);
     }
     legacy.stop();
     modern.stop();
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * MONEY LANE (REST-PROTO-FINAL, 45f0edf handoff #1) — the product
+ * runner ticks the real economy, forwards its observedWrites, and lets
+ * the ledger own `freeCashMicroUsd`. All figures probe-derived from a
+ * 100-tick seed-42 run of THIS runner (deterministic by the headline
+ * gate's own law), pinned as goldens below.
+ * ------------------------------------------------------------------ */
+
+describe("runner money lane (economy engine + observedWrites flow)", () => {
+  /** Drive seed 42, return every frame. */
+  function moneyFrames(seed = 42): SimProjection[] {
+    const runner = new SimCoreRunner({ seed });
+    const frames: SimProjection[] = [];
+    for (let i = 0; i < TICKS; i += 1) frames.push(runner.headlessStep(10));
+    runner.stop();
+    return frames;
+  }
+
+  function economyDetails(frame: SimProjection): string[] {
+    return frame.notices
+      .filter((n) => n.kind === "economy-notice")
+      .map((n) => n.detail ?? "?");
+  }
+
+  it("frame 1 carries the priming witnesses: renewal pulses, then the hourly heartbeat issue→paid", () => {
+    // Engine order is deterministic: all three contracts pulse at term start,
+    // then the monthly + the TWO hourly cycles the ~102.86-business-minute
+    // first tick crosses issue and settle.
+    expect(economyDetails(moneyFrames()[0] as SimProjection)).toEqual([
+      "renewal-pulse:ctr-gold-1",
+      "renewal-pulse:ctr-hourly-1",
+      "renewal-pulse:ctr-pending-1",
+      "invoice-issued:ctr-gold-1",
+      "invoice-issued:ctr-hourly-1",
+      "invoice-issued:ctr-hourly-1",
+      "invoice-paid:ctr-gold-1",
+      "invoice-paid:ctr-hourly-1",
+      "invoice-paid:ctr-hourly-1",
+    ]);
+  });
+
+  it("the pending deal ACTIVATES at tick 3 (termStartMin 300 crossed) — the 57ea80e phase witness", () => {
+    const frames = moneyFrames();
+    expect(economyDetails(frames[1] as SimProjection)).not.toContain("contract-activated:ctr-pending-1");
+    expect(economyDetails(frames[2] as SimProjection)).toContain("contract-activated:ctr-pending-1");
+  });
+
+  it("freeCashMicroUsd is the ledger mirror, not the placeholder (exact 100-tick golden)", () => {
+    const frames = moneyFrames();
+    expect((frames[0] as SimProjection).freeCashMicroUsd).toBe(25_005_307_300n);
+    const last = (frames[TICKS - 1] as SimProjection).freeCashMicroUsd;
+    expect(last).toBe(25_109_732_500n);
+    // Revenue-positive over the window, and never rewinds within a run at
+    // this funding level (no opex lane; settles only add).
+    let prev = 25_000_000_000n;
+    for (const f of frames) {
+      expect(f.freeCashMicroUsd).toBeGreaterThanOrEqual(prev);
+      prev = f.freeCashMicroUsd;
+    }
+  });
+
+  it("dunning drama on the hourly contract moves the reputation cell through the store (g17 #2 in the product)", () => {
+    const frames = moneyFrames();
+    // The engine's own census over the window (probe-derived goldens):
+    const census = new Map<string, number>();
+    for (const f of frames) {
+      for (const d of economyDetails(f)) {
+        const kind = d.split(":")[0] as string;
+        census.set(kind, (census.get(kind) ?? 0) + 1);
+      }
+    }
+    expect(census.get("invoice-failed")).toBe(16);
+    expect(census.get("dunning-stage")).toBe(15);
+    expect(census.get("dunning-recovered")).toBe(2);
+    // 2 × +150 bps from initial 5000 ⇒ 5300 bps ⇒ Fixed 34734 (the ONLY
+    // signal class that fired — no incident/write-off on this board).
+    const rep = (frames[TICKS - 1] as SimProjection).observed.get(REPUTATION_KEY);
+    expect(rep?.value).toBe(34_734n);
+    expect(rep?.status).toBe("live");
+    // Quiet early frames carry NO reputation cell (publish-on-change law):
+    expect((frames[0] as SimProjection).observed.has(REPUTATION_KEY)).toBe(false);
+  });
+
+  it("no insolvent-settle refusals on a funded roster (F4 boundary stays silent)", () => {
+    const runner = new SimCoreRunner({ seed: 42 });
+    for (let i = 0; i < TICKS; i += 1) runner.headlessStep(10);
+    expect(runner.economyInvoiceRefusals()).toBe(0);
+    runner.stop();
+  });
+
+  it("the familyOverride test seam does NOT fork the money lane", () => {
+    // Economy inputs are family-independent; only pipeline notices/cells may
+    // differ — cash is the same ledger walk both arms.
+    const plain = moneyFrames();
+    const organic = moneyFrames();
+    const runner = new SimCoreRunner({ seed: 42, familyOverride: "organic" });
+    let last: SimProjection | null = null;
+    for (let i = 0; i < TICKS; i += 1) last = runner.headlessStep(10);
+    runner.stop();
+    expect((last as SimProjection).freeCashMicroUsd).toBe((plain[TICKS - 1] as SimProjection).freeCashMicroUsd);
+    expect(organic.length).toBe(TICKS);
   });
 });

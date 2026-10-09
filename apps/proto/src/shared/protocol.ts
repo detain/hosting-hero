@@ -92,7 +92,13 @@ export type NoticeKind =
    *  verdict roll-up the host HUD ticks. `detail` carries "<verb>" on an
    *  execution and "<verb>: <reason>" on a refusal. */
   | "intent-executed"
-  | "intent-refused";
+  | "intent-refused"
+  /** Runner money-lane roll-up (REST-PROTO-FINAL): one notice per
+   *  EconomyNotice out of `runEconomyTick`, so the 25-kind economy vocabulary
+   *  does NOT bloat this union — `detail` carries `<economyKind>:<contractId>`
+   *  and consumers who care split on the first colon. laneId is always null
+   *  (money is company-wide, not per-lane). */
+  | "economy-notice";
 
 const NOTICE_KINDS: readonly NoticeKind[] = [
   "arrival-surge",
@@ -102,6 +108,7 @@ const NOTICE_KINDS: readonly NoticeKind[] = [
   "rule-fired",
   "intent-executed",
   "intent-refused",
+  "economy-notice",
 ];
 
 /** One FX-worthy moment, aggregate-level only (no unit ids cross the seam). */

@@ -17,6 +17,11 @@
  *   observed.ObservedStore    → step-12 gate: renderer-facing cells derived
  *                               from REAL driver outputs, sealed via the
  *                               store, merged into GameState.observed
+ *   economy.runEconomyTick    → money lane (REST-PROTO-FINAL): the tick's
+ *                               observedWrites (company::reputation publisher)
+ *                               forward through the SAME store; cash +
+ *                               ledgerSeq mirror into GameState like the
+ *                               sanctioned fastForward example
  *
  * MAINLINE MAZING (§7.10, audit g21 #2): the board is a real fork —
  * `edge` is the shared front door; cold traffic (score ≤ dial) walks the
@@ -97,6 +102,18 @@ import {
   type TickInputs,
 } from "@hh/sim-core/pipeline";
 import { ObservedStore } from "@hh/sim-core/observed";
+import {
+  defaultEconomyConfig,
+  emptyEconomyState,
+  postEntry,
+  registerContractEconomy,
+  runEconomyTick,
+  type EconomyConfig,
+  type EconomyNotice,
+  type EconomyState,
+  type EntryDraft,
+  type RevenueColourTags,
+} from "@hh/sim-core/economy";
 import {
   INITIAL_DIRECTOR_STATE,
   buildInvitations,
@@ -247,6 +264,142 @@ const CONTRACT: Contract = Object.freeze({
   shedImmunityClassId: "gold",
   allocations: Object.freeze([]),
 });
+
+/* ───────────────────────── money-lane roster ─────────────────────────
+ * REST-PROTO-FINAL (audit 45f0edf handoff #1): the product runner advances
+ * the REAL economy engine alongside the pipeline and forwards the tick's
+ * `EconomyTickOut.observedWrites` into the same ObservedStore the lanes use
+ * — so `company::reputation` (fix-economy @57ea80e publisher) and the money
+ * notices flow live instead of reading '?'. Composition mirrors the
+ * sanctioned money lane in sim-core src/unattended/fastForward.ts.
+ *
+ * The book is deliberately THREE-shaped so every v0 money surface is a
+ * witness, not a placeholder:
+ *  · ctr-gold-1  — the monthly contract already on GameState.contracts
+ *                  ($5 MRC; the ~420-tick monthly cycle stays quiet in a
+ *                  100-tick run, which is itself the honest baseline).
+ *  · ctr-hourly-1 — hourly cycle at mrc 720_000_000 µ$ ($720/mo, $1 per
+ *                  60-business-minute cycle — exact-÷720 so scaleMoney
+ *                  never rounds): issues AND settles inside the test window.
+ *  · ctr-pending-1 — signed-not-started (termStartMin 300 business-min ≈
+ *                  tick 3 on the driver clock): exercises the 57ea80e
+ *                  pending→activate phase with a real `contract-activated`
+ *                  witness.
+ *
+ * GameState.contracts keeps ONLY the monthly record — the money book is the
+ * runner's private contractsBook (fastForward's separation law: pipeline
+ * physics never reads it; digest sees cash/ledgerSeq, which the mirror moves
+ * honestly). */
+
+/** Hourly-metered SMB ticket — the fast money heartbeat of the demo board. */
+const CONTRACT_HOURLY: Contract = Object.freeze({
+  id: asEntityId("ctr-hourly-1"),
+  customerEntityId: asEntityId("cust-2"),
+  bundleId: "shared-web",
+  mrcMicroUsd: asMoney(720_000_000n),
+  tcvMicroUsd: asMoney(720_000_000n),
+  acvMicroUsd: asMoney(720_000_000n),
+  termStartMin: 0,
+  termEndMin: 43_200,
+  billingCycle: "hourly" as const,
+  sla: CONTRACT.sla,
+  routingLocks: Object.freeze([]),
+  shedImmunityClassId: "bronze",
+  allocations: Object.freeze([]),
+});
+
+/** Signed deal with a future service start: prime pending → the engine
+ *  flips it live at termStartMin with a `contract-activated` notice. */
+const CONTRACT_PENDING: Contract = Object.freeze({
+  id: asEntityId("ctr-pending-1"),
+  customerEntityId: asEntityId("cust-3"),
+  bundleId: "shared-web",
+  mrcMicroUsd: asMoney(12_000_000n),
+  tcvMicroUsd: asMoney(144_000_000n),
+  acvMicroUsd: asMoney(144_000_000n),
+  termStartMin: 300,
+  termEndMin: 43_500,
+  billingCycle: "monthly" as const,
+  sla: CONTRACT.sla,
+  routingLocks: Object.freeze([]),
+  shedImmunityClassId: null,
+  allocations: Object.freeze([]),
+});
+
+const MONEY_CONTRACTS: readonly Contract[] = Object.freeze([
+  CONTRACT,
+  CONTRACT_HOURLY,
+  CONTRACT_PENDING,
+]);
+
+/** Opening float (PROVISIONAL scenario row): $25,000 of free cash so the
+ *  settle lane is funded from tick one — an unfunded roster would only ever
+ *  exercise the insolvent-settle boundary. */
+const OPENING_FREE_MICRO_USD: bigint = 25_000_000_000n;
+
+/** Neutral five-axis "blue" census — verbatim fastForward default (the
+ *  tags are a content/finance decision the runner has no authority to invent). */
+const DEFAULT_REVENUE_TAGS: RevenueColourTags = Object.freeze({
+  margin: "blue",
+  churnRisk: "blue",
+  term: "blue",
+  concentration: "blue",
+  abuse: "blue",
+} as const);
+
+/** One landed breach = one sim-minute of company-wide outage (the
+ *  fastForward PROVISIONAL reading — per-contract target attribution is an
+ *  open OD item; landed traffic must at least cost SLA budget, not nothing). */
+const OUTAGE_SECONDS_PER_LANDED = 60n;
+
+/** Review-F4 boundary (mirrors fastForward): economy/ refuses negative
+ *  buckets by throwing a raw RangeError deep inside settle. ONLY that family
+ *  is converted into a counted refusal (prior econ kept — the same invoice
+ *  retries next tick, deterministic livelock-by-design, never a crash and
+ *  never a silent success). OWNER QUESTION (economy lane): canSettle() so
+ *  this catch can retire. */
+const NEGATIVE_BUCKET_LAW = /would go negative/;
+
+function openingDraft(amountMicroUsd: bigint): EntryDraft {
+  return Object.freeze({
+    causeId: asCauseId("adapter:opening-balance"),
+    atBusinessMin: 0,
+    moneyColour: "gold" as const,
+    delta: Object.freeze({ free: asMoney(amountMicroUsd) }),
+    context: "runner opening float",
+  });
+}
+
+/** Prime the money state: opening float + one registration per contract,
+ *  exactly the fastForward money-lane fold (single-registration chaining —
+ *  three contracts, no need for the batch API at this roster size). */
+function primeEconomy(cfg: EconomyConfig): EconomyState {
+  const posted = postEntry(
+    emptyEconomyState().journal,
+    emptyEconomyState().cash,
+    openingDraft(OPENING_FREE_MICRO_USD),
+  );
+  let econ: EconomyState = Object.freeze({
+    ...emptyEconomyState(),
+    journal: posted.journal,
+    cash: posted.cash,
+  });
+  for (const contract of MONEY_CONTRACTS) {
+    econ = registerContractEconomy(
+      econ,
+      {
+        contract,
+        atBusinessMin: 0,
+        clauseRefs: ["auto-renew"],
+        grandfather: null,
+        revenueTags: DEFAULT_REVENUE_TAGS,
+        commitmentBps: 9_990n,
+      },
+      cfg,
+    );
+  }
+  return econ;
+}
 
 /** AUDIT FIX 3 consumer wiring (batch-B handoff @4856a42): the bundle's
  *  authored five-family weights become the arrival dice's table. Parsed
@@ -493,6 +646,12 @@ export class SimCoreRunner implements SimRunner {
   /** Door schedule: intents stamped for the next headlessStep, fed EXACTLY once. */
   private pendingDoorIntents: ExternalIntent[] = [];
   private counters = { served: 0, bounced: 0, blockedFalsePositive: 0, landed: 0 };
+  /* ── money lane (per-instance, purity law covers the ledger) ── */
+  private readonly ecoCfg: EconomyConfig;
+  private readonly contractsBook: ReadonlyMap<EntityId, Contract>;
+  private econ: EconomyState;
+  /** Review-F4 refusal census (test-visible via economyInvoiceRefusals()). */
+  private invoiceRefusals = 0;
   private seq = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private speedX: 1 | 2 | 4 = 1;
@@ -549,6 +708,14 @@ export class SimCoreRunner implements SimRunner {
     });
     this.driver = createTickDriver(slots, streamFor(this.runSeed, "root", 0), this.game.context.clocks);
     this.store = new ObservedStore();
+
+    // Money lane priming (mirrors fastForward's register-fold): opening float
+    // + one ContractEconomy/error-budget record per book entry.
+    this.ecoCfg = defaultEconomyConfig();
+    this.contractsBook = Object.freeze(
+      new Map<EntityId, Contract>(MONEY_CONTRACTS.map((contract) => [contract.id, contract])),
+    );
+    this.econ = primeEconomy(this.ecoCfg);
 
     // Director nudge FIRST (logged input law R-31), then plan wave 1.
     const proposed = directorPropose(INITIAL_DIRECTOR_STATE, 0n, streamFor(this.runSeed, "director", 0));
@@ -622,6 +789,12 @@ export class SimCoreRunner implements SimRunner {
   /** Intents recorded this run (read-only view for the bridge/tests). */
   submittedIntents(): readonly PlayerIntent[] {
     return Object.freeze([...this.intentLog]);
+  }
+
+  /** Review-F4 insolvent-settle refusal census (test/ops visibility — a
+   *  growing count means the roster is underfunded, not that physics broke). */
+  economyInvoiceRefusals(): number {
+    return this.invoiceRefusals;
   }
 
   headlessStep(_dtRealMs: number): SimProjection {
@@ -709,6 +882,57 @@ export class SimCoreRunner implements SimRunner {
     for (const [key, cell] of this.store.toObservedMap()) merged.set(key, cell);
     this.game = Object.freeze({ ...this.game, observed: Object.freeze(merged) });
 
+    /* ── money lane (REST-PROTO-FINAL, 45f0edf handoff #1) ──────────────
+       runEconomyTick on the driver's business clock, seeded dunning rolls,
+       company-wide outage reading of landed breaches. The tick's own
+       observedWrites (fix-economy @57ea80e: today `company::reputation`,
+       publish-on-change so quiet ticks ship an empty batch) go through the
+       SAME single-writer store, then the observed map is re-merged this tick
+       — without that second pass chrome would keep '?' reputation cells for
+       the frame the score moved. Same-tick watermark is legal (store allows
+       equal tickUs). Cash + ledger seq mirror into GameState exactly like
+       fastForward's withCashMirror: the ledger becomes the money authority
+       the projection reads (the pre-lane `cash.free` was a createInitialState
+       placeholder that never moved). */
+    const landedThisTick = result.outcomes.reduce(
+      (acc, outcome) => (outcome.terminal === "landed" ? acc + OUTAGE_SECONDS_PER_LANDED : acc),
+      0n,
+    );
+    const outage =
+      landedThisTick === 0n
+        ? null
+        : Object.freeze(new Map<EntityId, bigint>([...this.contractsBook.keys()].map((id) => [id, landedThisTick])));
+    const economyNotices: EconomyNotice[] = [];
+    try {
+      const out = runEconomyTick(
+        Object.freeze({
+          context: this.game.context,
+          runSeed: this.runSeed,
+          contracts: this.contractsBook,
+          prior: this.econ,
+          cfg: this.ecoCfg,
+          dunningEngineOwned: false,
+          ...(outage === null ? {} : { outageSecs: outage }),
+        }),
+      );
+      this.econ = out.state;
+      economyNotices.push(...out.notices);
+      if (out.observedWrites.length > 0) {
+        this.store.applyObservedWrites(out.observedWrites, tickUs);
+        const remerged = new Map(this.game.observed);
+        for (const [key, cell] of this.store.toObservedMap()) remerged.set(key, cell);
+        this.game = Object.freeze({ ...this.game, observed: Object.freeze(remerged) });
+      }
+    } catch (err) {
+      if (!(err instanceof RangeError) || !NEGATIVE_BUCKET_LAW.test(err.message)) throw err;
+      this.invoiceRefusals += 1; // prior econ kept; the invoice retries next tick
+    }
+    this.game = Object.freeze({
+      ...this.game,
+      cash: this.econ.cash,
+      ledgerSeq: this.econ.journal.nextSeq,
+    });
+
     /* counters + notices from the REAL outcome stream. Surge reads the HONEST
        entry total (organic + re-entries): a retry storm flooding the lane IS a
        surge — that blindness was the F2 bug this fix retires. */
@@ -740,6 +964,19 @@ export class SimCoreRunner implements SimRunner {
     for (const firing of result.ruleFirings) {
       void firing;
       notices.push({ kind: "rule-fired", laneId: null, atUs: tickUs });
+    }
+    /* Money-lane roll-up (protocol NoticeKind "economy-notice"): one wire
+       notice per EconomyNotice the tick emitted, detail carrying the
+       engine-kind + contract so chrome/i18n consumers split on the first
+       colon without a 25-member union crossing the seam. Order = engine
+       order (deterministic). */
+    for (const notice of economyNotices) {
+      notices.push({
+        kind: "economy-notice",
+        laneId: null,
+        atUs: tickUs,
+        detail: `${notice.kind}:${notice.contractId}`,
+      });
     }
 
     /* next tick's lane input: aggregates of THIS ground truth (the default

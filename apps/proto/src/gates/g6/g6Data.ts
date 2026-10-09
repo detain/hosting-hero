@@ -21,13 +21,14 @@ import { loadTypeBundle, type LoadedTypeBundle } from "@hh/sim-core/loader";
 import {
   buildInvitations,
   parseDiurnalCurve,
-  parseWaveTable,
+  parseForeignWaveSlice,
+  type DamageDenomination,
   type DiurnalCurveTable,
   type ThreatInvitations,
   type WaveTable,
 } from "@hh/sim-core/waves";
 import type { FaceKind } from "../../chrome/instruments/faces";
-import type { SimTimeUs } from "@hh/sim-core/types";
+import type { SimTimeUs, ThreatFamily } from "@hh/sim-core/types";
 
 /* ═══════════════════════════ bundle parsing ═══════════════════════════════ */
 
@@ -46,11 +47,15 @@ const WAVE_RAW: Readonly<Record<string, string>> = Object.freeze({
   "waves/g1-game-servers-first-quarter.json": gameWaveRaw,
 });
 
+/** Registry rows the slice entries cannot carry themselves. The values are
+ *  typed at this JSON boundary (single parse point) and re-verified inside
+ *  the engine's own parseWaveTable — an off-vocab family/denomination still
+ *  throws at the boundary, never reaches a plan. */
 interface RegistryThreat {
   readonly id: string;
-  readonly family: string;
+  readonly family: ThreatFamily;
   readonly band: string;
-  readonly denomination: string;
+  readonly denomination: DamageDenomination;
 }
 
 function threatIndex(): ReadonlyMap<string, RegistryThreat> {
@@ -60,50 +65,34 @@ function threatIndex(): ReadonlyMap<string, RegistryThreat> {
 
 const WAVE_WINDOW_MINUTES = 12;
 
-/** Foreign g1 slice schema (threat/role/pressurePct) → parseWaveTable input.
- *  The exact adapter the headless gate uses (existence data verbatim,
- *  geometry authored — headline law: identical geometry BOTH types). */
+/** Foreign g1 slice schema (threat/role/pressurePct) → engine WaveTable.
+ *  DELEGATED to the canonical boundary adapter `parseForeignWaveSlice`
+ *  (waves/foreign.ts, @c9c0433) — the hand-rolled copy this replaces dropped
+ *  the authored `rules` block and the per-wave feint/secondIncident markers,
+ *  structurally preventing the @4856a42 rules consumers from ever firing on
+ *  shipped content. Geometry stays g6's authored reading (headline law:
+ *  identical geometry BOTH types); plans stay byte-identical for THIS gate
+ *  because every rules consumer is absent-gated on the inputs g6Runner
+ *  feeds (no dominantDefenseFamily share, no active/recovering incident
+ *  state, no feint marker on the g1 slices) — proven by
+ *  __tests__/g6DataAdapter.test.ts, not asserted. */
 function adaptWaveSlice(raw: unknown, typeBundleId: string): WaveTable {
-  const slice = raw as {
-    id: string;
-    waves: ReadonlyArray<{
-      n: number;
-      parPct: number;
-      trough?: boolean;
-      entries: ReadonlyArray<{ threat: string; role: string; pressurePct: number; band: string }>;
-    }>;
-  };
   const index = threatIndex();
-  return parseWaveTable({
-    id: slice.id,
+  return parseForeignWaveSlice(raw, {
     typeBundleId,
-    tuningSheet: "B",
-    unitsPerPressurePoint: 1,
-    waves: slice.waves.map((w) => ({
-      n: w.n,
+    geometry: Object.freeze({
       windowMinutes: WAVE_WINDOW_MINUTES,
       rampMin: 3,
       plateauMin: 3,
       decayMin: 2,
-      parPct: w.parPct,
-      hard: w.trough !== true,
-      entries: w.entries.map((e) => {
-        const meta = index.get(e.threat);
-        if (meta === undefined) {
-          throw new Error(`g6Data: slice threat "${e.threat}" absent from registry-core`);
-        }
-        const role = e.role.split("/")[0]!.toLowerCase();
-        return {
-          threatId: e.threat,
-          role: role === "healer" ? "healer" : role,
-          family: meta.family,
-          band: e.band,
-          sharePct: e.pressurePct,
-          denominations: [meta.denomination],
-          targets: ["origin"],
-        };
-      }),
-    })),
+    }),
+    threatMeta: (threatId) => {
+      const meta = index.get(threatId);
+      if (meta === undefined) return undefined;
+      return { family: meta.family, denomination: meta.denomination };
+    },
+    tuningSheet: "B",
+    unitsPerPressurePoint: 1,
   });
 }
 

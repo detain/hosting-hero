@@ -22,7 +22,9 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
       expect(Object.isFrozen(pack)).toBe(true);
       expect(pack.decision.size + pack.flavour.size).toBeGreaterThan(0);
     }
-    expect(packOf("shared-web").decision.size + packOf("shared-web").flavour.size).toBe(98);
+    // 101 = 98 + the three economy-notice keys (contract-activated /
+    // covenant-breached / chargeback-posted) landed by the docs-sync lane.
+    expect(packOf("shared-web").decision.size + packOf("shared-web").flavour.size).toBe(101);
     expect(packOf("game").decision.size + packOf("game").flavour.size).toBe(75);
   });
 

@@ -1,7 +1,8 @@
 /**
- * i18n noticeCopy — the two G5 seams where a pack key replaces chrome prose
- * 1:1 (cliff-lapse → alert.churn-fuse; annual issue → terms.prepay-lock),
- * plus the honest nulls for every kind without a key.
+ * i18n noticeCopy — the G5 seams where a pack key replaces chrome prose 1:1
+ * (cliff-lapse → alert.churn-fuse; annual issue → terms.prepay-lock;
+ * contract-activated / chargeback-posted → their alert.* keys, the
+ * rest-proto-final flip), plus the honest nulls for every declined fit.
  */
 import { describe, expect, it } from "vitest";
 import { noticeWireCopy, prepayLockCopy } from "../noticeCopy.ts";
@@ -11,6 +12,30 @@ describe("i18n/noticeCopy · the fitted seams", () => {
     expect(noticeWireCopy("cliff-lapsed", "MegaBlog Ltd (WHALE)")).toBe(
       "Cancellation in progress: MegaBlog Ltd (WHALE). The fuse tripped before renewal; the stated reason is in the ledger.",
     );
+  });
+
+  it("contract-activated + a customer label → the pack line (handoff #2 flip)", () => {
+    expect(noticeWireCopy("contract-activated", "birdsong.page")).toBe(
+      "Contract live: birdsong.page. The signed term starts billing from this minute; the backlog it promised now drains into revenue.",
+    );
+  });
+
+  it("chargeback-posted + a customer label → the pack line (handoff #2 flip)", () => {
+    expect(noticeWireCopy("chargeback-posted", "birdsong.page")).toBe(
+      "Chargeback posted: birdsong.page. A settled payment was reversed after the fact; the fee is charged and the reversal is booked where reputation is scored.",
+    );
+  });
+
+  it("the three alert keys live in shared-web only — the game pack declines them", () => {
+    expect(noticeWireCopy("contract-activated", "x", "game")).toBeNull();
+    expect(noticeWireCopy("chargeback-posted", "x", "game")).toBeNull();
+  });
+
+  it("covenant-breached DECLINES until a company-label seam exists ({company} cannot be invented)", () => {
+    // The key EXISTS (alert.covenant-breached {company}); what's missing is a
+    // company display name in the ticker's data path. The provisional voice in
+    // gates/g5/noticeSurface.ts keeps the row honest meanwhile.
+    expect(noticeWireCopy("covenant-breached", "birdsong.page")).toBeNull();
   });
 
   it("annual issue → the prepay-lock law (intro price + term are slots)", () => {

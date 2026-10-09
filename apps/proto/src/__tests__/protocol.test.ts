@@ -81,6 +81,27 @@ describe("encode/decode round-trip", () => {
     }
   });
 
+  it("economy-notice roll-ups round-trip (kind, null lane, colon detail)", () => {
+    // Money-lane wire shape (REST-PROTO-FINAL): laneId is always null and the
+    // detail carries `<economyKind>:<contractId>` — the codec must preserve
+    // both exactly so chrome can split on the first colon.
+    const base = sampleProjection();
+    const withMoney: SimProjection = {
+      ...base,
+      notices: [
+        ...base.notices,
+        { kind: "economy-notice", laneId: null, atUs: 9n, detail: "invoice-paid:ctr-hourly-1" },
+        { kind: "economy-notice", laneId: null, atUs: 9n, detail: "contract-activated:ctr-pending-1" },
+      ],
+    };
+    const decoded = decodeProjection(throughJson(encodeProjection(withMoney)));
+    const money = decoded.notices.filter((n) => n.kind === "economy-notice");
+    expect(money.map((n) => [n.detail, n.laneId, n.atUs])).toEqual([
+      ["invoice-paid:ctr-hourly-1", null, 9n],
+      ["contract-activated:ctr-pending-1", null, 9n],
+    ]);
+  });
+
   it("door receipts round-trip with their detail rider; unset details stay off the wire", () => {
     const base = sampleProjection();
     const withReceipts: SimProjection = {

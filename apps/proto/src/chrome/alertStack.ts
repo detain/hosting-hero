@@ -17,12 +17,16 @@ import { compareCodeUnits } from "./textLaw";
 export type AlertSeverity = 1 | 2 | 3; // 1 = stops the show
 export type AlertStatus = "new" | "acked" | "snoozed" | "silenced";
 
-/** Severity vocabulary — chrome's reading of the seven notice kinds. */
+/** Severity vocabulary — chrome's reading of the eight notice kinds. */
 export const ALERT_SEVERITY: Readonly<Record<NoticeKind, AlertSeverity>> = Object.freeze({
   landed: 1,
   bounce: 2,
   "false-positive": 2,
   "intent-refused": 2, // your own command bouncing IS your business
+  // Money-lane roll-up (runner economy lane, REST-PROTO-FINAL). PROVISIONAL
+  // taste row: money events sit with the other "your business" notices —
+  // the detail rider (<economyKind>:<contractId>) tells chrome which one.
+  "economy-notice": 2,
   "arrival-surge": 3,
   "rule-fired": 3,
   "intent-executed": 3,
