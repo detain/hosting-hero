@@ -249,6 +249,27 @@ export interface ReputationConfig {
   readonly honestPostmortemBps: bigint;
 }
 
+/* ────────────────── company death thresholds (OD-25(a), §6.10) ────────── */
+
+/** The three canonical company deaths (economy/death.ts folds them at tick
+ *  step 12.6). Every value PROVISIONAL — ratify-on-playtest, same class as
+ *  the runway constants. Days go through `daysToMinutes` (calendar-driven),
+ *  never a hardcoded 1440. */
+export interface DeathConfig {
+  /** Active-customer book BELOW this counts as collapse territory. Default
+   *  1 = literal extinction (zero customers sustained); ratify-on-playtest. */
+  readonly churnFloor: number; // PROVISIONAL
+  /** How long the book must stay under the floor before DISSOLUTION arms. */
+  readonly churnCollapseSustainedDays: number; // PROVISIONAL
+  /** How long free cash may sit at zero WITH refused settles before the float
+   *  death arms. 3 days mirrors the unattended LONG_WEEKEND ceiling (2880
+   *  business minutes), so a weekend never outlives the threshold. */
+  readonly floatInsolvencySustainedDays: number; // PROVISIONAL
+  /** Cure window a latched covenant breach gets after its month-roll
+   *  (dunning's middle-rung shape, §6.4: warn long, escapable at a cost). */
+  readonly covenantCureGraceDays: number; // PROVISIONAL
+}
+
 /* ─────────────────────────────── root config ──────────────────────────── */
 
 export interface EconomyConfig {
@@ -263,6 +284,7 @@ export interface EconomyConfig {
   readonly deferred: DeferredRevenueConfig;
   readonly runway: RunwayConfig;
   readonly reputation: ReputationConfig;
+  readonly death: DeathConfig;
 }
 
 export function defaultEconomyConfig(): EconomyConfig {
@@ -363,6 +385,12 @@ export function defaultEconomyConfig(): EconomyConfig {
       chargebackBps: -400n, // PROVISIONAL
       majorIncidentBps: -500n, // PROVISIONAL (§2.10 reddit-thread class event)
       honestPostmortemBps: 250n, // PROVISIONAL (§5.10 transparency earns back)
+    },
+    death: {
+      churnFloor: 1, // PROVISIONAL — extinction line
+      churnCollapseSustainedDays: 3, // PROVISIONAL
+      floatInsolvencySustainedDays: 3, // PROVISIONAL — matches LONG_WEEKEND 2880-min ceiling
+      covenantCureGraceDays: 10, // PROVISIONAL — dunning middle-rung shape (§6.4)
     },
   };
 }

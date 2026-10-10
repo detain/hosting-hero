@@ -38,6 +38,8 @@
  *  11 unlock schedules — deferred recognition 1/12 & reserve release (§6.13)
  *  12 lose-slowly guard — ≥3 real-minutes warning (§9.6)
  *  12.5 reputation fold + publish-on-change observed write (§2.10/§5.10)
+ *  12.6 company-death fold — OD-25(a) three canonical deaths, warning →
+ *      notice → dissolution state machine (economy/death.ts, §6.10/§9.6)
  */
 
 import {
@@ -139,6 +141,16 @@ import {
   type ReputationSignal,
   type ReputationSignalKind,
 } from "./reputation.ts";
+import {
+  advanceDeathWatch,
+  deathEvidenceFor,
+  emptyDeathWatch,
+  isIdleDeathWatch,
+  type CompanyDeathRecord,
+  type DeathWarningRecord,
+  type DeathWatch,
+  type RefusedSettlement,
+} from "./death.ts";
 
 /* ────────────────────────────── in / out ──────────────────────────────── */
 
@@ -211,6 +223,13 @@ export interface EconomyTickIn {
    *  g15 #2): the whole book per tick; the bucket follows
    *  Σ monthly × whole months left. Undefined = no write, byte-identity. */
   readonly vendorCommits?: readonly VendorCommitment[] | undefined;
+  /** OD-25(a) float-insolvency witness (economy/death.ts): settlements the
+   *  host could NOT pay out of free cash THIS fold — the evidentiary stream
+   *  behind the `float-insolvency` death (the class the unattended runner
+   *  today handles by catch-and-void; forwarding refusals here lets the
+   *  ledger itself declare the death). Unset ⇒ the path stays idle, byte-
+   *  identity for every existing host. */
+  readonly refusedSettlements?: readonly RefusedSettlement[] | undefined;
   /**
    * LONG-SAVE retention (perf audit #3), OPT-IN default OFF:
    * settled-and-fully-resolved invoices (paid/written-off with no live
@@ -259,7 +278,13 @@ export type EconomyNoticeKind =
    *  only — posture semantics remain owner-open). */
   | "covenant-breached"
   /** Chargeback fee posted from free (§6.13). */
-  | "chargeback-posted";
+  | "chargeback-posted"
+  /** DEATH NOTICE (OD-25(a), §9.6): one canonical cause armed — visible,
+   *  still-escapable warning; dissolution projects at the next armed fold. */
+  | "death-imminent"
+  /** DISSOLVED (OD-25(a)): terminal. The ledger is closed; every later
+   *  `runEconomyTick` is a no-op-preserve of this state. */
+  | "company-dissolved";
 
 /** Economy-side observations for HUD/rules (not SimEvents: types.ts owns
  *  that closed union; the orchestrator maps the ones it wants across). */
@@ -339,6 +364,9 @@ interface Working {
   breachedCovenantIds: readonly string[];
   covenantBreachLog: CovenantBreachRecord[];
   committedOutTarget: MoneyUnit;
+  deathWatch: DeathWatch | null;
+  deathWarning: DeathWarningRecord | null;
+  companyDeath: CompanyDeathRecord | null;
   observedWrites: ObservedWrite[];
   entries: LedgerEntry[];
   events: InvoiceSettledEvent[];
@@ -361,6 +389,21 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   assertDunningLadder(cfg);
   const now = businessMinuteOf(context.clocks);
   guardTickClock(input.prior, now);
+
+  /* OD-25(a) terminal law: a DISSOLVED ledger is closed. Refuse CLEAN —
+     no throw, no settle, no accrual, no notices. The same state value
+     comes back out so hosts can keep folding ticks after an ending without
+     a special case (endings/HUD lane reads prior.companyDeath for the
+     epilogue). Checked before anything else so zero side work happens. */
+  if (input.prior.companyDeath !== undefined) {
+    return {
+      state: input.prior,
+      entries: [],
+      events: [],
+      notices: [],
+      observedWrites: [],
+    };
+  }
 
   /* Boundary parse: copy the invoice array once and index it in the same
      pass. Ids may legitimately REPEAT (renewal re-mints `inv:<id>:<cycle>`
@@ -400,6 +443,9 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     breachedCovenantIds: input.prior.breachedCovenantIds,
     covenantBreachLog: [...input.prior.covenantBreachLog],
     committedOutTarget: input.prior.committedOutTarget,
+    deathWatch: input.prior.deathWatch ?? null,
+    deathWarning: input.prior.deathWarning ?? null,
+    companyDeath: null,
     observedWrites: [],
     entries: [],
     events: [],
@@ -662,6 +708,13 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     w.observedWrites.push(reputationObservedWrite(w.reputation, asCauseId(`economy:reputation:${now}`)));
   }
 
+  /* 12.6 company-death fold (OD-25(a); economy/death.ts). AFTER reputation
+     (its notices ride w.notices which 12.5 has already scanned — no
+     entanglement), BEFORE retention prune. Runs on every fold: the watch,
+     the warning, and the dissolution are all derivable from state + the
+     same boundary readings, so replays are byte-identical. */
+  foldCompanyDeath(w, input, now, cfg);
+
   /* 13 OPT-IN retention (perf audit #3, default off — see EconomyTickIn):
      settled history leaves the WORKING SET only; the journal keeps every
      money movement. Runs after every consumer of `invoices` (steps 6-8,
@@ -698,6 +751,9 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     breachedCovenantIds: w.breachedCovenantIds,
     covenantBreachLog: w.covenantBreachLog,
     committedOutTarget: w.committedOutTarget,
+    ...(w.deathWatch !== null ? { deathWatch: w.deathWatch } : {}),
+    ...(w.deathWarning !== null ? { deathWarning: w.deathWarning } : {}),
+    ...(w.companyDeath !== null ? { companyDeath: w.companyDeath } : {}),
   };
   return {
     state,
@@ -1225,6 +1281,80 @@ function noticeReputationKind(kind: EconomyNoticeKind): ReputationSignalKind | n
       return "major-incident";
     default:
       return null;
+  }
+}
+
+/** The customer book the churn death watches: signed contracts still in the
+ *  game — active OR suspended (a dunned customer is a customer; a terminated
+ *  one is a corpse). */
+function activeCustomerCount(w: Working): number {
+  let alive = 0;
+  for (const econ of w.econ.values()) {
+    if (econ.phase === "active" || econ.phase === "suspended") alive += 1;
+  }
+  return alive;
+}
+
+/**
+ * OD-25(a) step 12.6 — the LIVE → DEATH NOTICE → DISSOLVED machine.
+ * Pure fold over (watch, gauges this tick, prior warning); every write goes
+ * through `w` so one pass stays one immutable state at assembly.
+ */
+function foldCompanyDeath(w: Working, input: EconomyTickIn, now: SimMinute, cfg: EconomyConfig): void {
+  const activeCustomers = activeCustomerCount(w);
+  const watch = advanceDeathWatch(
+    w.deathWatch ?? emptyDeathWatch(),
+    { now, freeCash: w.cash.free, activeCustomers, refusedSettlements: input.refusedSettlements ?? [] },
+    cfg,
+  );
+  w.deathWatch = isIdleDeathWatch(watch) ? null : watch;
+
+  const armed = deathEvidenceFor(
+    {
+      now,
+      watch,
+      freeCash: w.cash.free,
+      activeCustomers,
+      breachedCovenantIds: w.breachedCovenantIds,
+      covenantBreachLog: w.covenantBreachLog,
+    },
+    cfg,
+  );
+
+  if (w.deathWarning !== null) {
+    if (armed !== null && armed.cause === w.deathWarning.cause) {
+      /* Still armed one fold after the notice → DISSOLVED (§6.10 terminal;
+         the warning fold already gave the player its §9.6-visible beat). */
+      w.companyDeath = {
+        cause: armed.cause,
+        atBusinessMinute: now,
+        warnedAtBusinessMin: w.deathWarning.atBusinessMinute,
+        evidence: armed,
+      };
+      w.deathWarning = null;
+      w.notices.push({
+        kind: "company-dissolved",
+        contractId: asEntityId("company"),
+        atBusinessMin: now,
+        causeId: asCauseId(`economy:death:dissolved:${armed.cause}:${now}`),
+      });
+      return;
+    }
+    /* The cause disarmed inside the notice window → escaped (§6.10
+       soft-over-hard: warned long, escapable at a cost). A DIFFERENT cause
+       arming here also lifts the old warning — one death story at a time,
+       re-warned below from scratch. */
+    w.deathWarning = null;
+  }
+
+  if (armed !== null) {
+    w.deathWarning = { cause: armed.cause, atBusinessMinute: now, evidence: armed };
+    w.notices.push({
+      kind: "death-imminent",
+      contractId: asEntityId("company"),
+      atBusinessMin: now,
+      causeId: asCauseId(`economy:death:imminent:${armed.cause}:${now}`),
+    });
   }
 }
 

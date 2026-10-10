@@ -40,6 +40,11 @@ import {
   type DeathSpiralState,
 } from "./runway.ts";
 import { initialReputationLedger, type ReputationLedger } from "./reputation.ts";
+import type {
+  CompanyDeathRecord,
+  DeathWarningRecord,
+  DeathWatch,
+} from "./death.ts";
 import { floorDiv } from "./intMath.ts";
 import { daysToMinutes, type EconomyConfig } from "./config.ts";
 
@@ -85,6 +90,18 @@ export interface EconomyState {
    *  produced (audit g15 #2 writer bookkeeping; 0n until a host supplies
    *  commitments, so delta math is exactly zero for every existing run). */
   readonly committedOutTarget: MoneyUnit;
+  /** OD-25(a) death-watch counters (economy/death.ts). The key is ABSENT
+   *  while every spell is idle — existing hosts' serialization shape never
+   *  changes until a death path actually starts running. */
+  readonly deathWatch?: DeathWatch | undefined;
+  /** DEATH NOTICE phase (§9.6): one canonical cause armed, dissolution
+   *  projected at the next still-armed fold. ESCAPABLE — recovery before
+   *  then lifts this and the watch restarts from zero. */
+  readonly deathWarning?: DeathWarningRecord | undefined;
+  /** DISSOLVED terminal record (OD-25(a)): once set, `runEconomyTick` is a
+   *  no-op-preserve — no settle, no MRR accrual, no throw. The endings/
+   *  HUD lane reads `companyDeath.cause` to pick the epilogue. */
+  readonly companyDeath?: CompanyDeathRecord | undefined;
 }
 
 export function emptyEconomyState(): EconomyState {
