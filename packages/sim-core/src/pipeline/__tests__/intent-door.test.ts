@@ -16,7 +16,7 @@
  *  - boundary law (M2/M4): a primitive TYPE mismatch anywhere on the feed
  *    (stamp fields, per-verb arg shapes, missing keys) and a repeated
  *    (tick, seq) stamp are STRUCTURAL garbage → IntentDoorError; only
- *    well-typed values ever reach the 26-code refusal census.
+ *    well-typed values ever reach the 32-code refusal census.
  */
 
 import { describe, expect, it } from "vitest";
@@ -860,7 +860,7 @@ describe("door state constructors", () => {
  * One law now: primitive TYPE mismatch (stamp fields, per-verb arg shapes,
  * missing keys) is structural wire garbage → IntentDoorError parsed in
  * parseEntry; the VALUE domain (out-of-set numbers, empty strings, unknown
- * ids) stays the handlers' 26-code refusal space, census untouched. */
+ *  ids) stays the handlers' 32-code refusal space, census untouched. */
 
 describe("M2 — wire arg types parse at the boundary (throw); values refuse", () => {
   const feed = (args: unknown) =>
@@ -902,7 +902,7 @@ describe("M2 — wire arg types parse at the boundary (throw); values refuse", (
     expect(outcomeOf(feed({ verb: PlayerVerb.ConfigureNode, nodeId: IDS.edge, inspectionDepth: "inspect", shedOrder: null }), 1)).toBe("executed");
   });
 
-  it("value-domain junk still REFUSES — the 26-code census is untouched by M2", () => {
+  it("value-domain junk still REFUSES — the 32-code census is untouched by M2", () => {
     expect(refused(feed({ verb: PlayerVerb.ToggleSpeed, speedX: 2.5 }), 1)).toBe("bad-speed: 2.5 not in {1,2,4}");
     expect(refused(feed({ verb: PlayerVerb.ToggleSpeed, speedX: NaN }), 1)).toBe("bad-speed: NaN not in {1,2,4}");
     expect(refused(feed({ verb: PlayerVerb.ToggleSpeed, speedX: 0 }), 1)).toMatch(/^bad-speed:/);

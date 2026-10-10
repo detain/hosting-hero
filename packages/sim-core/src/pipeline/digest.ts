@@ -218,6 +218,26 @@ export function digestState(state: GameState): HashHex {
       sink.text(edge.id).text(edge.relation).text(edge.from).text(edge.to).nullableText(edge.slot);
     }
   }
+  // OD-24(a) part 1 — the price-override book (digest-switch law, same embed
+  // law as hands/board): absorbed ONLY when present, so every pre-pricing
+  // state (all shipped goldens) keeps byte-identical digests. Composite keys
+  // sort code-unit (Map insertion order NEVER read); the null effective minute
+  // takes the -1 sentinel slot (business minutes are >= 0 by door refusal law).
+  if (state.pricing !== undefined) {
+    sink.text("pricing").int(state.pricing.version);
+    const bookKeys = Array.from(state.pricing.overrides.keys()).sort(byId);
+    sink.int(bookKeys.length);
+    for (const key of bookKeys) {
+      const rec = state.pricing.overrides.get(key);
+      if (rec === undefined) continue;
+      sink
+        .text(rec.targetKind)
+        .text(rec.targetId)
+        .int(rec.newPriceMicroUsd)
+        .int(rec.effectiveAtBusinessMinute ?? -1)
+        .int(rec.setAtTick);
+    }
+  }
 
   return sink.hex() as HashHex;
 }

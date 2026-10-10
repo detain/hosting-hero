@@ -1213,6 +1213,11 @@ export enum PlayerVerb {
   ShedLoad = "shed-load",
   Communicate = "communicate",
   ToggleSpeed = "toggle-speed",
+  /** OD-24(a) FULL PRICING SURFACE (owner ruling 2026-10-09b) part 1: the 9th
+   *  door verb. The door records the ORDER into `GameState.pricing` (structure
+   *  + target resolution only); elasticity, revenue and dial wiring are the
+   *  queued economy/HUD lanes reading this book, not the door's job. */
+  AdjustPrice = "adjust-price",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1225,6 +1230,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.ShedLoad,
   PlayerVerb.Communicate,
   PlayerVerb.ToggleSpeed,
+  PlayerVerb.AdjustPrice,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1292,6 +1298,31 @@ export interface ToggleSpeedArgs {
    *  default; the door records the request as an event for HUD/projection. */
   readonly speedX: 1 | 2 | 4;
 }
+/** What an `adjust-price` order binds to (OD-24(a) vocabulary, closed):
+ *  plan = a sellable price-list entry; contract-class = a cohort of live
+ *  contracts (uplift/legacy tier); sku = the finest metered line. The door
+ *  never interprets them — the host validator (`canAdjustPrice`) resolves
+ *  target ids inside whichever namespace the kind selects. */
+export type PriceTargetKind = "plan" | "contract-class" | "sku";
+
+export interface AdjustPriceArgs {
+  readonly verb: PlayerVerb.AdjustPrice;
+  /** Closed vocabulary above; anything else is a `bad-target-kind` refusal. */
+  readonly targetKind: PriceTargetKind;
+  /** Id inside the targetKind namespace — resolved by the host validator
+   *  (absent validator = the door enforces structural sanity only, exactly
+   *  the `canPlaceDevice` decoupling pattern). */
+  readonly targetId: EntityId;
+  /** Integer µ$ — the MoneyUnit bigint makes a fractional price
+   *  UNREPRESENTABLE at the wire (Law 2): a float/string price is structural
+   *  garbage (throws), a non-positive bigint is a value-domain refusal. */
+  readonly newPriceMicroUsd: MoneyUnit;
+  /** Business-clock effective minute (Dual-Clock law §4.4: pricing is a
+   *  business action); null sentinel = effective at the executing tick.
+   *  The door only STAMPS this field (part 1 is state-neutral); the economy
+   *  lane decides what "later" means when it consumes the book. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
 
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
@@ -1302,7 +1333,8 @@ export type PlayerVerbArgs =
   | PolicyCardCommitArgs
   | ShedLoadArgs
   | CommunicateArgs
-  | ToggleSpeedArgs;
+  | ToggleSpeedArgs
+  | AdjustPriceArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -1512,6 +1544,35 @@ export interface HandState {
   readonly tokens: readonly HandToken[];
 }
 
+/** One executed `adjust-price` order, frozen into the price book. The record
+ *  is the ENTIRE part-1 side effect (OD-24(a)): revenue, churn-elasticity and
+ *  invoice math READ this book downstream — nothing in the door consults it.
+ *  `causeId` attribution lives on the minting `intent-executed` event
+ *  (`intent:<seq>`), mirroring every other door verb. */
+export interface PriceOverrideRecord {
+  readonly targetKind: PriceTargetKind;
+  readonly targetId: EntityId;
+  readonly newPriceMicroUsd: MoneyUnit;
+  /** null = effective at `setAtTick`; a business-minute stamp otherwise. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+  /** Macro tick the door executed the order (order-of-writes tie-break for
+   *  consumers; the book's Map is keyed, never ordered). */
+  readonly setAtTick: SimTick;
+}
+
+/** OPTIONAL `GameState` embed — the digest-safe price-override book written
+ *  ONLY by the door's `adjust-price` handler (same embed law as board/hands:
+ *  absent ⇒ byte-identical digests everywhere; `pipeline/digest.ts` absorbs
+ *  it WHEN PRESENT, keys sorted code-unit so Map insertion order never
+ *  leaks). Composite key `<targetKind>:<targetId>` — the kind segment is a
+ *  colon-free closed vocabulary, so the split on the FIRST colon is exact and
+ *  ids inside a namespace may themselves contain colons. `version` bumps on
+ *  every materialized write (topology/board memoization convention). */
+export interface PriceOverrideBook {
+  readonly version: number;
+  readonly overrides: ReadonlyMap<string, PriceOverrideRecord>;
+}
+
 /* ═══════════════════════════ GameState root ═══════════════════════════ */
 
 /**
@@ -1546,4 +1607,9 @@ export interface GameState {
    *  digest.ts absorbs both WHEN PRESENT. */
   readonly board?: BoardState;
   readonly hands?: HandState;
+  /** OD-24(a) part-1 embed — the price-override book `adjust-price` writes
+   *  (see `PriceOverrideBook`; OPTIONAL, digest-switch law: absorbed by
+   *  pipeline/digest.ts ONLY when present, so every pre-pricing state — all
+   *  shipped goldens — digests byte-identically). */
+  readonly pricing?: PriceOverrideBook;
 }

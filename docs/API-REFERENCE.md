@@ -37,9 +37,9 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | Subpath specifier | Resolves to | Ships |
 |---|---|---|
 | `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 13 module barrels **incl. `save` (2026-10-06), `versus` + `coverage` + `unattended` (2026-10-07), `unlocks` (2026-10-09), zero name collisions — native names ride the star** |
-| `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (167 exports; intent-door arm landed 2026-10-06, +20) |
+| `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (171 exports; intent-door arm landed 2026-10-06, +20; OD-24(a) pricing arm 2026-10-09, +4) |
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
-| `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (55 exports incl. the 11-name intent-door surface; `internal.ts` private) |
+| `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (60 exports incl. the intent-door surface + the OD-24(a) adjust-price additions, +5; `internal.ts` private) |
 | `@hh/sim-core/policy` | `src/policy/index.ts` | ✅ 90 exports (P1/P3/P4/P7 fixer-lane additions) |
 | `@hh/sim-core/economy` | `src/economy/index.ts` | ✅ 196 exports (journal chunking + invoice retention landed 2026-10-07, +13; `registerContractsEconomy` batch API landed 2026-10-09, +1) |
 | `@hh/sim-core/observed` | `src/observed/index.ts` | ✅ 49 exports (composite-cell fold family) |
@@ -84,7 +84,8 @@ interface, the 13-slot pipeline I/O shapes (`TickStep`, `PipelineSlots`,
 `TICK_STEP_ORDER`), the Policy-Card grammar (Appendix B), money/contract
 shapes (§4.4), the Appendix-A type-bundle mirror, replay/event shapes (§3.3),
 the INTENT-DOOR contract (player verbs, args union, `ExternalIntent`,
-board/hands slices — §4.2/§7.5/§7.13, executed by `pipeline/intent-door.ts`),
+board/hands/pricing slices — §4.2/§7.5/§7.13, executed by
+`pipeline/intent-door.ts`),
 and `GameState` (§4.1). Data + one law each; zero behavior. Import:
 `@hh/sim-core/types` or `@hh/sim-core`.
 
@@ -136,10 +137,10 @@ and `GameState` (§4.1). Data + one law each; zero behavior. Import:
 | `ThreatFamily` `DurationClass` `PatienceMode` `BundleTimeScale` | closed unions | Appendix A vocab (§2.24 families etc.) | closed |
 | `BundleMeta` `VisitorStats` `PatienceModelParams` `PatienceModel` `BundleVisitor` `GoalCondition` `BundleGoal` `BundleScarce` `BundleTempo` `SignatureThreat` `BundleThreats` `BundleSkin` `BundleEras` `BundleEconomy` `BundleBuildables` `BundleControl` `BundleVerbs` `BundleRelations` `HandoverNote` `RosettaCard` `BundleScenarios` `BundleGuardrails` `TypeBundle` | `interface`s | hosting-type Ruleset Card as DATA (§4.3 R77: adding a type never touches code); wire numbers are JSON `number`s — the LOADER lane converts to Fixed/bigint at the boundary | frozen after parse |
 | `PlayerIntent` `IntentPayload` | `interface`/union | clock-typed input-log entry — the ONLY way anything reaches the sim (§3.1 seam); `IntentPayload` has three arms: legacy `verb` (rule-carrier `PolicyActionId`/`run-runbook:NAME` strings from `policy/evaluator.ts` — the door REFUSES this carrier), `slider` (host-fed control), and `player-verb` (the door's executed arm) | append-order; replay-bundle parses payloads OPAQUELY so new arms survive the wire untouched |
-| `PlayerVerb` | `enum`, 8 string values `"place-device"`…`"toggle-speed"` | the CLOSED player-verb set the intent door executes (§4.2 economy, §7.5 hands, §7.13 tick-inserted intents); the ten rule-carrier `PolicyActionId` verbs are deliberately NOT in it | closed enum; wire value = enum string |
-| `PLAYER_VERBS` | `readonly PlayerVerb[]` (frozen, 8) | enumeration of the closed set — door guard + host introspection | deep-frozen const |
+| `PlayerVerb` | `enum`, 9 string values `"place-device"`…`"toggle-speed"`, `"adjust-price"` | the CLOSED player-verb set the intent door executes (§4.2 economy, §7.5 hands, §7.13 tick-inserted intents); `adjust-price` is the 9th — OD-24(a) FULL PRICING SURFACE part 1 (owner ruling 2026-10-09b, verb-set amendment recorded in the landing commit; ADR-0005 carries only the WS-2 coarse per-tier sets); the ten rule-carrier `PolicyActionId` verbs are deliberately NOT in it | closed enum; wire value = enum string |
+| `PLAYER_VERBS` | `readonly PlayerVerb[]` (frozen, 9) | enumeration of the closed set — door guard + host introspection | deep-frozen const |
 | `PlayerVerbPayload` | `interface { kind: "player-verb"; args: PlayerVerbArgs }` | the `IntentPayload` arm the door executes — the only carrier `applyIntentDoor` runs | — |
-| `PlayerVerbArgs` | `union` of the 8 per-verb arg records below | the discriminated half of the door payload (discriminant `verb`) | ids/strings/numbers ONLY, never embedded objects — a wire round-trip cannot smuggle structure into the sim (Law 2) |
+| `PlayerVerbArgs` | `union` of the 9 per-verb arg records below | the discriminated half of the door payload (discriminant `verb`) | ids/strings/numbers/bigint-money ONLY, never embedded objects — a wire round-trip cannot smuggle structure into the sim (Law 2) |
 | `PlaceDeviceArgs` | `{ verb; nodeId: EntityId; deviceKind: string; template: string \| null }` | mint a skeleton node — host-minted unique id; `deviceKind` is a bundle archetype string the door NEVER branches on (the host validator interprets it = module decoupling); `template` null = ad-hoc | no RNG |
 | `ConnectPortsArgs` | `{ verb; relation: BoardRelation; from: EntityId; to: EntityId; slot: string \| null }` | the cable verb — topology's relation reading: data = from DEPENDS ON to · power = from FEEDS to · control = from GOVERNS to · trust = from AUTHENTICATES AGAINST to; `slot` is the power-only consumer socket ("psu1"), null for the others | no RNG |
 | `DisconnectDrainArgs` | `{ verb; edgeId: EntityId }` | pull a board edge by id — v0 default remains a plain pull; `drainPolicy.enabled` on the door config opts into the two-phase drained-disconnect choreography — see contract #10 | no RNG |
@@ -148,6 +149,8 @@ and `GameState` (§4.1). Data + one law each; zero behavior. Import:
 | `ShedLoadArgs` | `{ verb; nodeId: EntityId; qosClassId: string \| null }` | records the player shed DIRECTIVE only — sold-class-shed immunity (R-55…R-58) is enforced where shedding actually happens (step 5), not here | events-only verb |
 | `CommunicateArgs` | `{ verb; target: EntityId \| null; note: string }` | status-page line — target null = estate-wide post; reputation accounting is the economy lane's read of the emitted event, not the door's job | events-only verb |
 | `ToggleSpeedArgs` | `{ verb; speedX: 1 \| 2 \| 4 }` | speed gates OBSERVATION, never physics (§7.5) — no hand cost by default; the door records the request for HUD/projection (host clock-scaling seam) | events-only verb |
+| `PriceTargetKind` | `"plan" \| "contract-class" \| "sku"` | closed `adjust-price` target vocabulary (OD-24(a)); the door never interprets the namespaces — the host `canAdjustPrice` callback resolves ids inside whichever kind is named | closed union; value law in `intent-door.ts` `PRICE_TARGET_KINDS` |
+| `AdjustPriceArgs` | `{ verb; targetKind: PriceTargetKind; targetId: EntityId; newPriceMicroUsd: MoneyUnit; effectiveAtBusinessMinute: SimMinute \| null }` | the 9th door verb (OD-24(a) part 1) — records a price ORDER into the OPTIONAL `GameState.pricing` book; NO revenue/elasticity/invoice math in the door (parts 2/3 read the book); `effectiveAtBusinessMinute` null = effective at the executing tick (business clock, Dual-Clock law) | no RNG; bigint money makes fractional prices UNREPRESENTABLE at the wire (M2 throw), ≤0 refuses `invalid-price` |
 | `ExternalIntent` | `interface { tick: SimTick; intent: PlayerIntent }` | a player intent stamped with the macro tick the host submitted it — the door's feed unit; structurally twin-compatible with replay/bundle `StampedIntent` (its optional `extras` sidecar is tolerated) so any fed schedule survives `stampIntents` unchanged — types.ts must not import replay, hence the narrower twin | canonical order (tick, seq); pause-with-orders: a PAUSED-tick stamp applies at the first unfrozen advance |
 | `BoardRelation` | `"data" \| "power" \| "control" \| "trust"` | id-space twin of topology's `EdgeKind` — mirror, NO import (decoupling law) | closed |
 | `IntentExecutedEvent` | `interface { …base; kind: "intent-executed"; verb: PlayerVerb; intentSeq: number; handIndexes: readonly number[]; busyUntilTick: SimTick; detail: string \| null }` | the door executed an intent and its handler mutated state (or an event-only verb recorded its directive): tokens occupied (`handIndexes` empty = free verb), occupancy end exclusive, canonical short rendering ("speed=2", "qos=bronze", "depth=inspect"); disconnect details: `pulled:<edge>` (v0 plain pull), `drain-started:<edge>` / `drained:<edge>` (drain mode, contract #10) | `causeId` is `intent:<seq>` — replay-visible attribution for every applied order (§7.0); drain continuations carry causeId `drain:<edge>` with sentinel `intentSeq` −1 (never a fed intent, never receipted) |
@@ -159,7 +162,9 @@ and `GameState` (§4.1). Data + one law each; zero behavior. Import:
 | `BoardState` | `interface { version: number; edges: ReadonlyMap<EntityId, BoardEdgeRecord> }` | OPTIONAL GameState embed — the pipeline-local "what CAN happen" structural slice (§4.2 graph-is-map) that connect/disconnect mutate; `version` bumps on every mutation (topology's memoization convention); pre-door hosts compile and digest unchanged | Map iteration NEVER defines order — the digest sorts edges by id; lazy-materialized |
 | `HandToken` | `interface { index: number; busyUntilTick: SimTick; busyCauseId: CauseId \| null }` | one hand — free iff `busyUntilTick <= current tick` (occupancy is half-open `[start, busyUntilTick)`); `busyCauseId` names the intent event that took it | stable 0-based index = insertion order; §7.0 attribution |
 | `HandState` | `interface { capacity: number; tokens: readonly HandToken[] }` | OPTIONAL GameState embed — the Hands action economy (§7.5): capacity is staff hands (T0–1: 1 · T2: 2 · …), tokens are concurrent actions; per-verb occupancy duration is door CONFIG, not stored here (v0 collapses §7.5 "duration vs attendance" into one window) | frozen array; refusal never spends |
-| `GameState` | `interface { runSeed; engineVersion; contentHashes; context; units; nodes; lanes; observed; cash; ledgerSeq; contracts; ruleBook; ruleBookHash; board?; hands? }` | THE sim state (§4.1); `observed` written ONLY by step 12; map insertion order part of identity; `board`/`hands` are the INTENT-DOOR embeds — both OPTIONAL, digest-switch law: `pipeline/digest.ts` absorbs both WHEN PRESENT (pre-door digests byte-identical) | order-pinned, frozen per tick |
+| `PriceOverrideRecord` | `interface { targetKind; targetId; newPriceMicroUsd: MoneyUnit; effectiveAtBusinessMinute: SimMinute \| null; setAtTick: SimTick }` | one executed `adjust-price` order frozen into the book — the ENTIRE part-1 side effect (attribution `intent:<seq>` rides the minting event, not the record) | frozen record |
+| `PriceOverrideBook` | `interface { version: number; overrides: ReadonlyMap<string, PriceOverrideRecord> }` | OPTIONAL GameState embed (OD-24(a) part 1) — composite key `<targetKind>:<targetId>` (kind is colon-free so the first-colon split is exact; codec `priceOverrideKey`/`parsePriceOverrideKey` in the door); `version` bumps per materialized write; last-write-wins per key | digest-switch law: `pipeline/digest.ts` absorbs ONLY when present (pre-pricing digests byte-identical); keys sort code-unit — Map insertion order NEVER read |
+| `GameState` | `interface { runSeed; engineVersion; contentHashes; context; units; nodes; lanes; observed; cash; ledgerSeq; contracts; ruleBook; ruleBookHash; board?; hands?; pricing? }` | THE sim state (§4.1); `observed` written ONLY by step 12; map insertion order part of identity; `board`/`hands` are the INTENT-DOOR embeds and `pricing` the OD-24(a) part-1 price-override book — all OPTIONAL, digest-switch law: `pipeline/digest.ts` absorbs each WHEN PRESENT (pre-door/pre-pricing digests byte-identical) | order-pinned, frozen per tick |
 
 ---
 
@@ -274,18 +279,23 @@ driver calls `applyIntentDoor` BEFORE step 1 every tick. Import:
 | `effectiveRho` | `(node: NodeRecord, downstreamQueueDepth: number) => Fixed` | ρ adjusted by downstream backlog | pure |
 | `makeSlots` | `(count: number) => NodeRecord["slots"]` | mint an empty slot array | pure |
 | `ONE_SLOT` | `Fixed` | one-slot cost unit | const |
-| `digestState` | `(state: GameState) => HashHex` | the state-hash tripwire over GameState (feeds replay ring); absorbs `hands` (capacity + per-token occupancy) and `board` (version + edges sorted by id) ONLY WHEN PRESENT — pre-door digests byte-identical | own double-FNV-1a over a sorted-key canonical sink ("hh-state-v1" tag) — pluggable as replay's `StateDigest` override, NOT the replay codec |
+| `digestState` | `(state: GameState) => HashHex` | the state-hash tripwire over GameState (feeds replay ring); absorbs `hands` (capacity + per-token occupancy), `board` (version + edges sorted by id) and `pricing` (version + overrides keyed-sorted, `-1` sentinel for null effective minutes) ONLY WHEN PRESENT — pre-door / pre-pricing digests byte-identical | own double-FNV-1a over a sorted-key canonical sink ("hh-state-v1" tag) — pluggable as replay's `StateDigest` override, NOT the replay codec |
 | `applyIntentDoor` | `(state: GameState, context: TickContext, externalIntents: readonly ExternalIntent[], config?: IntentDoorConfig) => IntentDoorResult` | THE intent door (§4.2/§7.5/§7.13, contract #10 below): apply the fed schedule BEFORE step 1 — entries stamped at or before the current tick sort by (tick, seq), future stamps refuse after the due pass in input order; pure over GameState | no RNG, no clock reads, no platform APIs; same schedule ⇒ identical digest chain (×100-gated) |
 | `IntentDoorError` | `class extends Error` | STRUCTURAL wire garbage at the boundary throws (Law 2 parse-don't-validate + Law 4 fail-fast) — ANY primitive TYPE mismatch on the feed: stamp fields AND every per-verb arg shape parsed in `parseEntry` (M2: one type law, not per-handler checks), plus a repeated `(tick, seq)` stamp within one schedule (M4: two entries claiming one attribution identity — offenders' input positions named). A host feeding malformed wire data has a bug to find, not a game state to fork; VALUE-domain violations (out-of-set values, empty strings, unknown ids) stay semantic refusals (event-logged, nothing thrown) | total-throwing at parse |
-| `IntentDoorConfig` | `interface { handCapacity?; handCost?; occupancyTicks?; canPlaceDevice?; lookupPolicyCard?; deviceSlots?; deviceServiceTimeUs?; deviceInspectionDepth?; deviceShedOrder?; deviceDiscipline?; drainPolicy? }` | door tuning: per-verb cost/occupancy overrides + the two host callbacks (placement validator, policy-card resolver) + skeleton `NodeRecord` knobs for placed devices + `drainPolicy?: { enabled?: boolean (DEFAULT false — v0 plain pull stays law); drainTicks?: number (default 2) }` opting `disconnect-drain` into the two-phase drain choreography (contract #10); cost>0 paired with occupancy 0 is a LEGAL override — the half-open window `[tick, tick+0)` releases the token at the next door pass (the token still counts busy within the submitting pass; no default verb pairs the two) | data-in; callbacks must be deterministic; a malformed `drainPolicy` (non-boolean `enabled`, non-safe-int/`<1` `drainTicks`, or `enabled` paired with `handCost[disconnect-drain]` 0 — the reservation record would be uncarriable) throws `IntentDoorError` at the boundary |
+| `IntentDoorConfig` | `interface { handCapacity?; handCost?; occupancyTicks?; canPlaceDevice?; canAdjustPrice?; lookupPolicyCard?; deviceSlots?; deviceServiceTimeUs?; deviceInspectionDepth?; deviceShedOrder?; deviceDiscipline?; drainPolicy? }` | door tuning: per-verb cost/occupancy overrides + the three host callbacks (placement validator, price-target validator, policy-card resolver) + skeleton `NodeRecord` knobs for placed devices + `drainPolicy?: { enabled?: boolean (DEFAULT false — v0 plain pull stays law); drainTicks?: number (default 2) }` opting `disconnect-drain` into the two-phase drain choreography (contract #10); cost>0 paired with occupancy 0 is a LEGAL override — the half-open window `[tick, tick+0)` releases the token at the next door pass (the token still counts busy within the submitting pass; no default verb pairs the two) | data-in; callbacks must be deterministic; a malformed `drainPolicy` (non-boolean `enabled`, non-safe-int/`<1` `drainTicks`, or `enabled` paired with `handCost[disconnect-drain]` 0 — the reservation record would be uncarriable) throws `IntentDoorError` at the boundary |
 | `PlaceDeviceQuery` | `interface { args: PlaceDeviceArgs; state: GameState; context: TickContext }` | what the host's `canPlaceDevice` validator sees — parsed args plus a READ-ONLY view of the draft (devices placed EARLIER in the same tick are visible, never a stale board); needs/provides, palette membership, U-space, power fit stay HOST-side | read-only snapshot |
 | `PlacementRejection` | `interface { reason: string }` | the validator's "no" — null means accept; the reason lands VERBATIM in the refusal event as `placement-rejected: <reason>` | — |
+| `AdjustPriceQuery` | `interface { args: AdjustPriceArgs; state: GameState; context: TickContext }` | what the host's `canAdjustPrice` validator sees (OD-24(a) part 1) — parsed args plus a READ-ONLY view of the draft (earlier same-tick writes visible, W1 snapshot law); plan/catalog existence, ownership shape, price floors stay HOST-side | read-only snapshot |
+| `PriceTargetRejection` | `interface { reason: string }` | the price validator's "no" — null means accept; the reason lands VERBATIM in the refusal event as `unknown-plan: <reason>` | — |
 | `IntentReceipt` | `interface { submittedTick: SimTick; seq: number; verb: string; outcome: "executed" \| "refused"; reason: string \| null }` | one per FED intent — the door's verdict roll-up (host HUD ticker / test assertion sugar; the events array is the replay-grade record); door-internal drain continuations (contract #10) NEVER mint receipts — they are not fed inputs, their record is the event alone | canonical application order |
 | `IntentDoorResult` | `interface { state: GameState; events: readonly SimEvent[]; receipts: readonly IntentReceipt[] }` | the door's answer — SAME state object identity when nothing applied (no intents / all refused) AND no hand token was due for release (a refused pass that still touches the rail materializes the released-hands slice — a state change, not an identity violation); executed + refused events in canonical order (future-stamp refusals trail, in input order) | frozen; identity-preserving |
 | `mintHandState` | `(capacity: number) => HandState` | mint all-free hand tokens (indices 0…capacity−1, `busyUntilTick` 0n) — §7.5 T0/T2 default is 1 | deep-frozen; total-throwing unless safe integer ≥ 1 |
 | `createBoardState` | `(edges?: readonly BoardEdgeRecord[]) => BoardState` | empty (or seeded) board slice — edges stored sorted by `EntityId` and each record frozen | order-pinned on insertion; records deep-frozen (`edges` ReadonlyMap is a TYPE-level guarantee — `Object.freeze` on a Map cannot seal its contents; writers replace the Map) |
-| `DEFAULT_INTENT_HAND_COST` | `Readonly<Record<PlayerVerb, number>>` (frozen table) | hand tokens per verb: 1 for every verb EXCEPT toggle-speed = 0 (speed gates observation, never physics) | const table |
-| `DEFAULT_INTENT_OCCUPANCY_TICKS` | `Readonly<Record<PlayerVerb, number>>` (frozen table) | §7.5 reference durations rounded UP to whole sim-minute ticks: place/connect 3 · disconnect/shed/communicate 2 · configure/commit 1 · toggle 0 (config change 40 s→1, failover 90 s→2, cable trace 3 min→3); "duration vs attendance" COLLAPSED to one window in v0 | const table |
+| `createPriceOverrideBook` | `() => PriceOverrideBook` | empty (version 0) pricing slice — the OD-24(a) part-1 mirror of the board constructor | deep-frozen |
+| `priceOverrideKey` | `(targetKind: PriceTargetKind, targetId: EntityId) => string` | composite book key `` `<targetKind>:<targetId>` `` — kinds are colon-free by vocabulary law, so the FIRST-colon split is exact even for colon-carrying ids | total |
+| `parsePriceOverrideKey` | `(key: string) => { targetKind: PriceTargetKind; targetId: EntityId } \| null` | the codec's inverse for part 2/3 readers — null on unknown kind or empty id (never throws on hostile strings) | null-on-garbage |
+| `DEFAULT_INTENT_HAND_COST` | `Readonly<Record<PlayerVerb, number>>` (frozen table) | hand tokens per verb: 1 for every verb EXCEPT toggle-speed = 0 (speed gates observation, never physics); adjust-price = 1 (OD-24(a)) | const table |
+| `DEFAULT_INTENT_OCCUPANCY_TICKS` | `Readonly<Record<PlayerVerb, number>>` (frozen table) | §7.5 reference durations rounded UP to whole sim-minute ticks: place/connect 3 · disconnect/shed/communicate 2 · configure/commit/adjust-price 1 (price change is a COMMIT-class decision, OD-24(a)) · toggle 0 (config change 40 s→1, failover 90 s→2, cable trace 3 min→3); "duration vs attendance" COLLAPSED to one window in v0 | const table |
 | `UnlockNoticeView` `UnlockObservationWindow` `UnlockProposalView` | structural mirrors of the unlocks/ engine's `UnlockNoticeLike` / `UnlockTickInput` / `UnlockProposal` (the `via` widens to string; the engine's union stays a closed subset) | the §5 Phase-2 observer seam mirrored DRIVER-side — pipeline never imports unlocks/ or economy/ (same decoupling pattern as the embedded board slice vs importing topology/): `createUnlockObserver()` satisfies the mirror BY SHAPE and tsc refuses drift between the two. The window is the ONE thing forwarded per advance: `tick`/`minute`/`events` always, `notices`/`eraYear` only through the host's callbacks (economy ticks run beside the pipeline; the loader/eras vocabulary is host-held) — no GameState, ever | read-only view; proposals deterministic from (event stream, feed order) |
 | `UnlockDriverObserver` `UnlockDriverWiring` | `interface { observe(window): readonly UnlockProposalView[] }`; `interface { observer; noticesOf?: () => readonly UnlockNoticeView[]; eraYearOf?: () => number \| null }` | `TickDriverOptions.unlocks` payload: the observer plus the two host feeds the driver cannot produce itself, both read FRESH every advance. Returned proposals ride `TickResult.unlockProposals` ONLY when wired — unwired TickResults serialize exactly as before (the seam's digest-neutrality: nothing enters GameState, events, or any digest; pinned in pipeline `__tests__/driver-unlocks.test.ts`) | default OFF; replay the same inputs ⇒ same proposals |
 
@@ -429,7 +439,10 @@ STATE computed in-core; MySQL is the notary"). Double-entry six-bucket cash,
 contract-as-tower lifecycle (MRC/escalators/MFN/renewal cliff §7.15),
 invoicing + AR aging + deferred-revenue schedules, the dunning ladder, churn
 with ghosted "fuse" forecasts, error budgets with exhaustion locks, runway /
-death-spiral / lose-slowly guards, and the scorecard aggregation (**OD-1
+death-spiral / lose-slowly guards, the THREE CANONICAL COMPANY DEATHS
+(OD-25(a) owner-ratified: float-insolvency / covenant-default / churn-collapse,
+warning→notice→dissolution at tick step 12.6 — economy/death.ts), and the
+scorecard aggregation (**OD-1
 RATIFIED 2026-10-09, ADR-0009 — `defaultScorecardConfig.active` resolves to
 "commitment-convergence"**; `getActiveScorecard` still fails loud for configs
 that explicitly pass `active: null`). Every money move REQUIRES a `CauseId` (P10 attribution structurally
@@ -476,7 +489,7 @@ OD-2 SHEET question itself settled 2026-10-09; value calibration did not).
 | `partitionPrunableInvoices` | `(invoices, schedules) => { keep; pruned }` | split the live list into survivors and prunable settled history, PRESERVING array order (order is digest- and save-visible content) | pure, order-pinned |
 | `economyArAging` | alias of `arAgingTrays` | HUD per-frame convenience (tick.ts re-export) | — |
 | `TuningSheet` | `"A" \| "B" \| "C"` union | sheet SELECTOR (clashes with waves' `TuningSheet` DATA type — root ships this as `EconomyTuningSheetId`; economy lane to rename) | type |
-| `BusinessCalendarConfig` `TransactionFeeConfig` `BillingConfig` `DunningConfig` `ChurnConfig` `BudgetSpendAction` `ErrorBudgetConfig` `ContractEconomyConfig` `ArAgingConfig` `DeferredRevenueConfig` `RunwayConfig` `ReputationConfig` `EconomyConfig` | interfaces | the whole tuning surface — LIVE doc figures vs PROVISIONAL placeholders annotated per-field in config.ts (`ReputationConfig` §2.10/§5.10 deltas: fully PROVISIONAL) | — |
+| `BusinessCalendarConfig` `TransactionFeeConfig` `BillingConfig` `DunningConfig` `ChurnConfig` `BudgetSpendAction` `ErrorBudgetConfig` `ContractEconomyConfig` `ArAgingConfig` `DeferredRevenueConfig` `RunwayConfig` `ReputationConfig` `DeathConfig` `EconomyConfig` | interfaces | the whole tuning surface — LIVE doc figures vs PROVISIONAL placeholders annotated per-field in config.ts (`ReputationConfig` §2.10/§5.10 deltas: fully PROVISIONAL; `DeathConfig` OD-25(a) thresholds: churnFloor 1 / churn 3d / float 3d / covenant grace 10d — ALL PROVISIONAL ratify-on-playtest) | — |
 | `defaultEconomyConfig` | `() => EconomyConfig` | the shipped config (many fields explicitly `// PROVISIONAL`) | const-shaped |
 | `minutesPerWeek` `minutesPerYear` `daysToMinutes` `secondsPerBusinessMonth` | calendar helpers through cfg | month = 43200 min LIVE; OD-2 flags month-length debate | pure |
 | `SLA_CLAUSE_IDS` `SlaClauseId` `parseClauseRefs` | 13-clause table (§4.4 WS-4) | the commercial clause vocabulary | closed |
@@ -519,7 +532,7 @@ OD-2 SHEET question itself settled 2026-10-09; value calibration did not).
 | `COVENANT_UNBOUNDED_RUNWAY_BPS` `COVENANT_FULL_HEALTH_BPS` | `1_000_000_000_000n` / `10_000n` | not-burning reads comfortably MET; no-commitments fleet reads fully healthy | const |
 | `errorBudgetHealthBps` | `(remainingSec, budgetSec) => bigint` | one contract's remaining grant as bps (overrun clamps to 0 — "nothing left", not negative theatre) | pure |
 | `buildCovenantReadoutsBps` | `(spiralRunwayMonths: Fixed \| null, budgetHealthBps: readonly bigint[]) => Map<string, bigint>` | the sanctioned readout assembler beside the evaluator (Law 2: the evaluator never invents values); fleet health = min | pure |
-| `CovenantBreachRecord` | `{ covenantId; atBusinessMin; monthIndex; causeId }` | one latched breach — appended to `EconomyState.covenantBreachLog`, notice `covenant-breached`; OD-25 OWNER-OPEN: record + notice ONLY, never a game-over | edge-triggered per roll (recovery clears the latch) |
+| `CovenantBreachRecord` | `{ covenantId; atBusinessMin; monthIndex; causeId }` | one latched breach — appended to `EconomyState.covenantBreachLog`, notice `covenant-breached`; OD-25(a) since 2026-10-10: the breach fold itself stays record + notice ONLY — death arms only via the 12.6 covenant-default lane once the cure grace lapses on a STILL-latched covenant | edge-triggered per roll (recovery clears the latch) |
 | `REPUTATION_BPS_SCALE` `REPUTATION_INITIAL_BPS` `REPUTATION_ENTITY` `REPUTATION_PROPERTY` | `10_000n` / `5_000n` / `company` / `"reputation"` | the `company::reputation` observed cell's address + neutral open (§2.10 "scored not judged"; open PROVISIONAL) | const |
 | `ReputationLedger` | `{ overallBps: 0..10_000; honestHostFloor; lifetimeEvents }` | the score's authoritative integer-bps home inside `EconomyState` (Fixed only at the observed boundary) | exact int fold |
 | `ReputationSignalKind` `ReputationSignal` | closed 6-kind union + `{ kind; causeId; contractId? }` | what moves the score: written-off / voluntary-churn / dunning-recovered / chargeback / major-incident / honest-postmortem | closed |
@@ -529,19 +542,28 @@ OD-2 SHEET question itself settled 2026-10-09; value calibration did not).
 | `reputationFixed` | `(ledger) => Fixed` | bps→0..1 boundary parse (`fromRatio(bps, 10_000)`) | pure |
 | `reputationObservedWrite` | `(ledger, causeId?) => ObservedWrite` | the house exactCell write for `company::reputation` — what chrome's HUD_PERMANENT_METRICS read forever showed '?' for want of (audit g17 #2) | frozen |
 | `VendorCommitment` | `{ id; monthlyMicroUsd; termEndMin }` | one take-or-pay promise behind `committedOut` (§6.12, audit g15 #2) — the host re-declares the whole book per tick; bucket = Σ monthly × whole months left (ceiling), so it burns down by itself; parse-boundary throws | declarative, zero input ⇒ zero writes |
+| `CompanyDeathCause` `COMPANY_DEATH_CAUSES` `DeathPhase` | `"float-insolvency" \| "covenant-default" \| "churn-collapse"` + frozen array + `"live" \| "notice" \| "dissolved"` | the THREE CANONICAL DEATHS (OD-25(a) owner-ratified 2026-10-09b, §6.10; economy/death.ts, folded at tick step 12.6) — canonical array order is also the fold priority when several arm on one tick | const |
+| `RefusedSettlement` | `{ contractId; amountMicroUsd }` | one host-forwarded settlement that could NOT be paid out of free cash (`EconomyTickIn.refusedSettlements`) — the evidentiary stream of the float-insolvency death; the witness lane for the class unattended/fastForward today handles by catch-and-void (that file untouched) | boundary-validated, garbage throws `economy/death:` |
+| `FloatInsolvencyEvidence` `CovenantDefaultEvidence` `ChurnCollapseEvidence` `DeathEvidence` | per-cause snapshots | evidence embedded in both records: float `{freeCash, refusedSettles, refusedMicroUsd, watchSinceBusinessMin, sustainedBusinessMin}`; covenant `{covenantId, breachCauseId, breachAtBusinessMin, graceBusinessMin}`; churn `{activeCustomers, churnFloor, watchSinceBusinessMin, sustainedBusinessMin}` | pure |
+| `DeathWarningRecord` `CompanyDeathRecord` | DEATH NOTICE + DISSOLVED records | the `EconomyState.deathWarning` / `EconomyState.companyDeath` values; the terminal record's `warnedAtBusinessMin` is the §9.6 "Lose slowly" ordering PROOF (strictly before `atBusinessMinute`); evidence re-snapshots FRESH at the dissolve fold | value types |
+| `DeathWatch` `emptyDeathWatch` `isIdleDeathWatch` | spell counters | float zero-cash spell (refusal counters reset at spell break — a bad day is not a death) + churn below-floor spell; the covenant lane needs no watch (its clock is the breach record) | state key ABSENT while idle ⇒ existing hosts serialize byte-identically |
+| `DeathFoldSample` `advanceDeathWatch` | `(watch, {now, freeCash, activeCustomers, refusedSettlements}, cfg) => DeathWatch` | the one pure spell advance per fold: continue/start on the offending reading, wipe on recovery | pure |
+| `CovenantBreachLike` `DeathEvidenceInput` | structural reader types | the covenant gate never imports the runway breach-record shape (leaf law); the ordered input bag of `deathEvidenceFor` | — |
+| `floatInsolvencyEvidence` `covenantDefaultEvidence` `churnCollapseEvidence` `deathEvidenceFor` | gated evidence builders | each returns null until trigger AND sustained threshold hold (float: free==0 ∧ ≥1 refusal ∧ floatInsolvencySustainedDays; covenant: EARLIEST still-latched breach surviving covenantCureGraceDays, log-order independent — a recovered covenant's old row can never arm; churn: active < churnFloor sustained churnCollapseSustainedDays); `deathEvidenceFor` = first armed in canonical order, never two stories on one fold | pure |
+| `deathPhaseOf` | `(stateLike) => DeathPhase` | the phase read for the endings/HUD projection lane | pure |
 | `LoseSlowlyVerdict` `businessMinutesForReal` `meetsLoseSlowlyGuard` | warn-before-death guard | death must be foreshadowed in business time (scale = BUSINESS_SCALE_DEFAULT → OD-2) | pure |
 | `isBeyondRunway` | `(months: Fixed \| null, wholeMonths) => boolean` | dead-line probe | pure |
-| `EconomyState` `emptyEconomyState` | interface + ctor | all per-contract econ twins, budgets, invoices, schedules, queues | map order sorted |
+| `EconomyState` `emptyEconomyState` | interface + ctor | all per-contract econ twins, budgets, invoices, schedules, queues; + the three OPTIONAL OD-25(a) death fields `deathWatch?` / `deathWarning?` / `companyDeath?` — keys ABSENT while idle, so `emptyEconomyState()` and every existing host's serialization never change | map order sorted |
 | `businessMinuteOf` `monthIndexOf` | clock lifts | business-minute index | pure |
 | `NEUTRAL_REVENUE_TAGS` | const | untagged revenue | const |
 | `RegisterContractInput` `registerContractEconomy` | `(state, input, cfg) => EconomyState` | prime a contract (MUST before first tick; auto-priming guard exists) | pure |
 | `registerContractsEconomy` | `(state, inputs, cfg) => EconomyState` | batch prime — BYTE-IDENTICAL to chained `registerContractEconomy` over the same sequence (atomic validate-then-merge; dup ids throw the single path's error; empty batch returns `state` by identity) | O(n + m log m) setup |
 | `pulseOpenMinFor` `defaultTermsFor` | `(termEndMin, cfg) => SimMinute`; `(contract, cfg) => InvoiceTerms` | renewal pulse open minute (90-day cliff window) / default net terms (PROVISIONAL 30d) | pure |
 | `sortedById` `sortedEntityIds` | map/id sort utilities | the sorted-insertion idiom every lane shares | pinned |
-| `SpendRequest` `MfnTrigger` `RenewalDecisionInput` `EconomyTickIn` | interfaces | the settlement input bag (contracts map + prior + cfg + optional outage/spend/cliff/MFN/signal inputs); `EconomyTickIn.pruneSettledInvoices?: boolean` is the step-13 retention opt-in — DEFAULT OFF (unset/false never touches the working set; g5's digestQuarter reads the un-pruned shape); dead-ledger inputs LIVE (2026-10-09 fix-economy): `chargebacks?: EntityId[]` (posts the §6.13 fee from free + docks reputation — consumes `fees.chargebackFeeMicroUsd`), `majorIncidents?: CauseId[]` / `honestPostmortems?: CauseId[]` (reputation-only signals the economy cannot see), `covenants?: Covenant[]` (whole-book REPLACE; state-carried when absent), `vendorCommits?: VendorCommitment[]` (whole-book REPLACE drives `committedOut`) | every new input UNSET ⇒ zero writes (byte-identity for existing hosts) |
-| `EconomyNoticeKind` `EconomyNotice` | 25-kind union + interface | human-readable settlement notices (HUD toast fodder); +`contract-activated` / `covenant-breached` / `chargeback-posted` (fix-economy 2026-10-09) | deterministic |
+| `SpendRequest` `MfnTrigger` `RenewalDecisionInput` `EconomyTickIn` | interfaces | the settlement input bag (contracts map + prior + cfg + optional outage/spend/cliff/MFN/signal inputs); `EconomyTickIn.pruneSettledInvoices?: boolean` is the step-13 retention opt-in — DEFAULT OFF (unset/false never touches the working set; g5's digestQuarter reads the un-pruned shape); dead-ledger inputs LIVE (2026-10-09 fix-economy): `chargebacks?: EntityId[]` (posts the §6.13 fee from free + docks reputation — consumes `fees.chargebackFeeMicroUsd`), `majorIncidents?: CauseId[]` / `honestPostmortems?: CauseId[]` (reputation-only signals the economy cannot see), `covenants?: Covenant[]` (whole-book REPLACE; state-carried when absent), `vendorCommits?: VendorCommitment[]` (whole-book REPLACE drives `committedOut`), `refusedSettlements?: RefusedSettlement[]` (OD-25(a) 2026-10-10: host-forwarded float-insolvency witness feeding the 12.6 death fold) | every new input UNSET ⇒ zero writes (byte-identity for existing hosts) |
+| `EconomyNoticeKind` `EconomyNotice` | 27-kind union + interface | human-readable settlement notices (HUD toast fodder); +`contract-activated` / `covenant-breached` / `chargeback-posted` (fix-economy 2026-10-09); +`death-imminent` (DEATH NOTICE, §9.6 visible warning, `contractId: "company"`) / `company-dissolved` (terminal, ledger closed) — OD-25(a) 2026-10-10 | deterministic |
 | `EconomyTickOut` | `interface { state; entries; events; notices; observedWrites }` | the settlement answer — caller mirrors cash/seq into GameState AND feeds `observedWrites` into the ObservedStore (batch-D host adoption: fastForward/g5/runner pass-through; the list is EMPTY unless the reputation score moved — publish-on-change) | seq order |
-| `runEconomyTick` | `(input: EconomyTickIn) => EconomyTickOut` | THE slot-12 settlement: committedOut mirror (0.5) → auto-prime → backlog sign-post + pending→active (1.5) → month rolls (incl. covenant bank review before the budget re-grant) → MFN → pulses → cliffs (lapse unwinds backlog) → billing (invoice issue MOVES backlog→AR) → dunning (write-off unwinds) → chargeback fees (8.5) → budgets → fuses → unlocks → lose-slowly → reputation fold + publish-on-change (12.5) → step-13 opt-in settled-invoice prune when `pruneSettledInvoices === true`, contracts in EntityId-sorted order | seeded draws keyed (seed, domain, business-min, contractId); no floats, no wall clock, ×100-stable |
+| `runEconomyTick` | `(input: EconomyTickIn) => EconomyTickOut` | THE slot-12 settlement: committedOut mirror (0.5) → auto-prime → backlog sign-post + pending→active (1.5) → month rolls (incl. covenant bank review before the budget re-grant) → MFN → pulses → cliffs (lapse unwinds backlog) → billing (invoice issue MOVES backlog→AR) → dunning (write-off unwinds) → chargeback fees (8.5) → budgets → fuses → unlocks → lose-slowly → reputation fold + publish-on-change (12.5) → company-death fold (12.6, OD-25(a): watch advance → evidence gate → LIVE→DEATH NOTICE→DISSOLVED; a prior with `companyDeath` set short-circuits the WHOLE tick to a clean no-op-preserve — same state identity, zero entries/notices/events/observedWrites, no throw) → step-13 opt-in settled-invoice prune when `pruneSettledInvoices === true`, contracts in EntityId-sorted order | seeded draws keyed (seed, domain, business-min, contractId); no floats, no wall clock, ×100-stable |
 | `pruneResolvedInvoices` | `(state: EconomyState) => { state; pruned }` | standalone LONG-SAVE retention pass for hosts holding a finished EconomyState — identical predicate to the tick's opt-in step 13: settled-and-fully-resolved invoices leave the working set, survivors keep relative order, journal and every cash bucket untouched (money truth lives in the cause-stamped ledger; dropped records returned for caller archiving) | pure |
 
 ---
@@ -1324,7 +1346,7 @@ of it). waves'
 
     Verb → handler → hand-cost table (verified against
     `DEFAULT_INTENT_HAND_COST` / `DEFAULT_INTENT_OCCUPANCY_TICKS`,
-    `intent-door.ts:186-206`; 1 tick = 1 sim-minute; §7.5 durations rounded UP):
+    `intent-door.ts` — frozen tables; 1 tick = 1 sim-minute; §7.5 durations rounded UP):
 
     | Verb (`PlayerVerb`) | Handler | Mutates | Cost | Occupancy |
     |---|---|---|---|---|
@@ -1336,6 +1358,7 @@ of it). waves'
     | `shed-load` | `handleShedLoad` | events-only (DIRECTIVE) | 1 | 2 ticks |
     | `communicate` | `handleCommunicate` | events-only | 1 | 2 ticks |
     | `toggle-speed` | `handleToggleSpeed` | events-only | 0 | 0 ticks |
+    | `adjust-price` | `handleAdjustPrice` | `pricing` (override record, version++) | 1 | 1 tick (commit class, OD-24(a)) |
 
     `ruleBookHash` after a commit (M3): a deterministic FNV-1a-64 fold (the
     kernel's hash family) over the WHOLE book — cards code-unit-sorted by id,
@@ -1378,15 +1401,16 @@ of it). waves'
     verb is SUPERSEDED by `drainTicks` in drain mode; the hand frees exactly
     as the pull lands (no double hold).
 
-    Refusal-reason census — 27 distinct machine codes, every one refusal-pinned
+    Refusal-reason census — 32 distinct machine codes, every one refusal-pinned
     in tests (`pipeline/__tests__/intent-door.test.ts` +
-    `pipeline/__tests__/intent-door-drain.test.ts` + `src/__tests__/gate-g4.test.ts`;
+    `pipeline/__tests__/intent-door-drain.test.ts` +
+    `pipeline/__tests__/intent-door-adjust-price.test.ts` + `src/__tests__/gate-g4.test.ts`;
     the four formerly-unpinned guards — `empty-node-id`, `empty-slot`,
     `bad-shed-order`, `empty-card-hash` — closed by the round-3 "census
     completeness" test). An `intent-refused` event carries the code with a
-    `": <detail>"` rider EXCEPT the six bare-code guards (`empty-node-id`,
+    `": <detail>"` rider EXCEPT the seven bare-code guards (`empty-node-id`,
     `empty-device-kind`, `empty-slot`, `power-needs-slot`, `empty-card-hash`,
-    `empty-note`), which emit the code alone (enumerated from
+    `empty-note`, `empty-target-id`), which emit the code alone (enumerated from
     `intent-door.ts` source); door-level `unsupported-verb-carrier` (legacy
     `verb`/`slider` carriers — until the policy lane maps rule actions onto
     door handlers), `hands-exhausted`, `stamped-in-future`; place-device
@@ -1401,10 +1425,16 @@ of it). waves'
     `bad-shed-order`, `unknown-node`; policy-card-commit `empty-card-hash`,
     `no-card-lookup`, `unknown-card-hash`, `card-id-collision`; shed-load
     `unknown-node`; communicate `empty-note`, `unknown-node` (target);
-    toggle-speed `bad-speed` (must be 1|2|4). `unknown-node` is one code shared
+    toggle-speed `bad-speed` (must be 1|2|4); adjust-price `bad-target-kind`,
+    `empty-target-id`, `invalid-price` (≤ 0 µ$ — fractional prices are
+    unrepresentable: the bigint wire type THROWS structural garbage, Law 2),
+    `bad-effective-minute`, `unknown-plan` (the `canAdjustPrice` host
+    callback's reason verbatim — absent callback = structural sanity only).
+    `unknown-node` is one code shared
     by four verbs.
 
-    BoardState / HandState slices (types.ts, door-owned semantics): `board` is
+    BoardState / HandState / PriceOverrideBook slices (types.ts, door-owned
+    semantics): `board` is
     the pipeline-local structural embed of "what CAN happen" (§4.2 graph-is-map)
     — `{ version; edges: ReadonlyMap<EntityId, BoardEdgeRecord> }`, version
     bumps on every mutation (topology's memoization convention), digest sorts
@@ -1416,10 +1446,14 @@ of it). waves'
     identity test, which is why there is no defensive copy either); `hands` is
     the action-economy
     ledger `{ capacity; tokens: readonly HandToken[] }` (§7.5: T0–1 staff = 1
-    hand, T2 = 2 …). Both are OPTIONAL `GameState` fields: pre-door hosts
+    hand, T2 = 2 …); `pricing` is the OD-24(a) part-1 price-override book
+    `{ version; overrides: ReadonlyMap<`<kind>:<id>`, PriceOverrideRecord> }` —
+    state-neutral by design (nothing reads it yet; parts 2/3 of the pricing
+    surface will). All three are OPTIONAL `GameState` fields: pre-door hosts
     compile and digest byte-identically (digest-switch law — `digest.ts`
     absorbs each only WHEN PRESENT); the door materializes `hands` lazily from
-    `config.handCapacity ?? 1`.
+    `config.handCapacity ?? 1` and `pricing` lazily on the first executing
+    adjust-price.
 
     Decoupling law: the pipeline NEVER imports `topology/`. connect/disconnect
     re-enforce topology's structural invariants (self-edge, slot double-feed,
@@ -1428,6 +1462,9 @@ of it). waves'
     topology's `EdgeKind`. Host-side knowledge (palette membership,
     needs/provides, U-space, power fit) enters ONLY through the
     `canPlaceDevice` callback (`PlaceDeviceQuery` in → `PlacementRejection |
+    null` out); price-target resolution (plan/catalog existence, ownership
+    shape, floors) enters ONLY through the OD-24(a) twin `canAdjustPrice`
+    (`AdjustPriceQuery` in → `PriceTargetRejection |
     null` out); Policy Book cards enter ONLY through `lookupPolicyCard(hash)`
     — payloads reference ids and plain strings, embedded objects are illegal
     (Law 2).
@@ -1443,7 +1480,13 @@ of it). waves'
     `intent-executed` event — step 5's shed logic and the host clock scaler
     are the actors); §7.5 "duration vs attendance" is COLLAPSED to one
     occupancy window (the unattended-job split, e.g. RAID 19 h / 0 hands,
-    awaits the receipt-engine twist).
+    awaits the receipt-engine twist). adjust-price is
+    PART 1 of the OD-24(a) FULL PRICING SURFACE (owner ruling 2026-10-09b):
+    the door validates the order and writes the `pricing` book — STATE-NEUTRAL,
+    nothing consumes it yet; revenue math, elasticity response and the pricing
+    dials/HUD are the queued parts 2/3, which read `GameState.pricing` (codec
+    `parsePriceOverrideKey`) and consume `intent-executed` events with verb
+    `adjust-price`, and may widen `canAdjustPrice` hosts — never the door's job.
 
 ---
 

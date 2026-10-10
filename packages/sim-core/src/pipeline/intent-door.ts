@@ -34,6 +34,8 @@
  *    40s→1 tick, failover 90s→2, cable trace 3min→3; 1 tick = 1 sim-minute);
  *  - SCOPE DISCIPLINE: handlers mutate ONLY their named slice — nodes (place/
  *    configure), board (connect/disconnect), ruleBook (+hash) (commit),
+ *    pricing (adjust-price — the OPTIONAL OD-24(a) part-1 override book,
+ *    STATE-NEUTRAL: no revenue, no elasticity, no invoice math in the door),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -70,6 +72,7 @@
  */
 
 import type {
+  AdjustPriceArgs,
   BoardEdgeRecord,
   BoardRelation,
   BoardState,
@@ -90,6 +93,9 @@ import type {
   PlayerIntent,
   PolicyCard,
   PolicyCardCommitArgs,
+  PriceOverrideBook,
+  PriceOverrideRecord,
+  PriceTargetKind,
   ShedLoadArgs,
   ShedOrder,
   SimEvent,
@@ -135,6 +141,20 @@ export interface PlacementRejection {
   readonly reason: string;
 }
 
+/** What the host's price-target validator sees — the SAME decoupling pattern
+ *  as `canPlaceDevice`: plan/catalog/contract-class knowledge stays HOST-side,
+ *  the door only learns "resolved" or "refused, because <reason verbatim>".
+ *  Returns null = accept (target resolves in the host's namespace), or a
+ *  rejection that lands in the refusal event as `unknown-plan: <reason>`. */
+export interface AdjustPriceQuery {
+  readonly args: AdjustPriceArgs;
+  readonly state: GameState;
+  readonly context: TickContext;
+}
+export interface PriceTargetRejection {
+  readonly reason: string;
+}
+
 export interface IntentDoorConfig {
   /** Hand tokens when materializing a missing GameState.hands (default 1 —
    *  T0/T2 per §7.5). Hosts SHOULD seed hands via createInitialState instead. */
@@ -146,6 +166,11 @@ export interface IntentDoorConfig {
   /** place-device validator (host-wired needs/provides check; absent = the
    *  door only enforces id uniqueness + structural sanity). */
   readonly canPlaceDevice?: (query: PlaceDeviceQuery) => PlacementRejection | null;
+  /** adjust-price target validator (OD-24(a) part 1; host-wired plan/catalog
+   *  resolution — absent = the door only enforces structural sanity, exactly
+   *  the `canPlaceDevice` law). Callback output is validated: `reason` must
+   *  be a string, host bugs throw rather than fork a state. */
+  readonly canAdjustPrice?: (query: AdjustPriceQuery) => PriceTargetRejection | null;
   /** policy-card-commit resolver: maps the payload hash to the authored card.
    *  Absent → commits refuse with "no-card-lookup". */
   readonly lookupPolicyCard?: (cardHash: string) => PolicyCard | null;
@@ -200,6 +225,9 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   [PlayerVerb.ShedLoad]: 2,
   [PlayerVerb.Communicate]: 2,
   [PlayerVerb.ToggleSpeed]: 0,
+  // OD-24(a) part 1: a price order is a decision at the desk — the COMMIT
+  // class (1 tick, same window as policy-card-commit/configure-node).
+  [PlayerVerb.AdjustPrice]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -211,6 +239,7 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   [PlayerVerb.ShedLoad]: 1,
   [PlayerVerb.Communicate]: 1,
   [PlayerVerb.ToggleSpeed]: 0,
+  [PlayerVerb.AdjustPrice]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -324,6 +353,33 @@ export function createBoardState(edges: readonly BoardEdgeRecord[] = []): BoardS
   return Object.freeze({ version: 0, edges: Object.freeze(byId) });
 }
 
+/** Empty price-override book (OD-24(a) part 1) — hosts that want the embed
+ *  present from tick 0 (e.g. seeded catalog overrides) mint it here; the
+ *  `adjust-price` handler materializes lazily without it. */
+export function createPriceOverrideBook(): PriceOverrideBook {
+  return Object.freeze({ version: 0, overrides: Object.freeze(new Map<string, PriceOverrideRecord>()) });
+}
+
+/** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
+ *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
+ *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
+export function priceOverrideKey(targetKind: PriceTargetKind, targetId: EntityId): string {
+  return `${targetKind}:${targetId}`;
+}
+
+/** Inverse of `priceOverrideKey` — null for any key outside the closed kind
+ *  vocabulary (foreign book, hand-forged state). Consumers (economy/HUD lanes)
+ *  parse through this instead of re-splitting. */
+export function parsePriceOverrideKey(key: string): { readonly targetKind: PriceTargetKind; readonly targetId: EntityId } | null {
+  const sep = key.indexOf(":");
+  if (sep <= 0) return null;
+  const kind = key.slice(0, sep);
+  if (!PRICE_TARGET_KINDS.includes(kind as PriceTargetKind)) return null;
+  const targetId = key.slice(sep + 1);
+  if (targetId.length === 0) return null; // empty ids are uncastable (types.ts asEntityId law)
+  return Object.freeze({ targetKind: kind as PriceTargetKind, targetId: asEntityId(targetId) });
+}
+
 /* ═══════════════════════════ Door internals (mutable draft) ═══════════════ */
 
 interface Draft {
@@ -336,6 +392,7 @@ interface Draft {
   hands: HandState | null;
   ruleBook: readonly PolicyCard[] | null;
   ruleBookHash: string | null;
+  pricing: PriceOverrideBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -354,6 +411,9 @@ const SHED_ORDERS: readonly ShedOrder[] = Object.freeze([
   "qos-weighted",
 ]);
 const RELATIONS: readonly BoardRelation[] = Object.freeze(["data", "power", "control", "trust"]);
+/** adjust-price target namespaces (OD-24(a) part 1, closed — types.ts
+ *  `PriceTargetKind` is the type-law twin of this value law). */
+const PRICE_TARGET_KINDS: readonly PriceTargetKind[] = Object.freeze(["plan", "contract-class", "sku"]);
 const VERB_SET: ReadonlySet<string> = new Set<string>(PLAYER_VERBS);
 
 function fail(where: string, detail: string): never {
@@ -392,11 +452,15 @@ function requireNumber(value: unknown, where: string): number {
 /** Per-verb WIRE arg shapes (M2 — one type law at the boundary). A primitive
  *  TYPE mismatch here (including a missing key, which parses as `undefined`)
  *  is structural garbage → `IntentDoorError`; value-domain violations stay
- *  the handlers' refusal space. `string-or-null` fields accept the JSON null
- *  sentinel ONLY — null in a non-nullable field is a type mismatch, and a
- *  present-but-wrong type is never silently coerced. The table's field order
- *  is fixed, so an error naming "the first offender" is deterministic. */
-type ArgWireType = "string" | "string-or-null" | "number";
+ *  the handlers' refusal space. `string-or-null` / `number-or-null` fields
+ *  accept the JSON null sentinel ONLY — null in a non-nullable field is a
+ *  type mismatch, and a present-but-wrong type is never silently coerced.
+ *  `bigint` is the money/clock wire family (MoneyUnit, SimTimeUs): a float or
+ *  string price is structural garbage, which makes a FRACTIONAL price
+ *  unrepresentable (Law 2 — the handler's `invalid-price` refusal owns only
+ *  the ≤ 0 value domain). The table's field order is fixed, so an error
+ *  naming "the first offender" is deterministic. */
+type ArgWireType = "string" | "string-or-null" | "number" | "number-or-null" | "bigint";
 const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWireType>>>> = Object.freeze({
   [PlayerVerb.PlaceDevice]: Object.freeze({ nodeId: "string", deviceKind: "string", template: "string-or-null" }),
   [PlayerVerb.ConnectPorts]: Object.freeze({ relation: "string", from: "string", to: "string", slot: "string-or-null" }),
@@ -406,6 +470,7 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   [PlayerVerb.ShedLoad]: Object.freeze({ nodeId: "string", qosClassId: "string-or-null" }),
   [PlayerVerb.Communicate]: Object.freeze({ target: "string-or-null", note: "string" }),
   [PlayerVerb.ToggleSpeed]: Object.freeze({ speedX: "number" }),
+  [PlayerVerb.AdjustPrice]: Object.freeze({ targetKind: "string", targetId: "string", newPriceMicroUsd: "bigint", effectiveAtBusinessMinute: "number-or-null" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -440,6 +505,8 @@ function parseEntry(entry: unknown, index: number): ExternalIntent {
       const wireType = shape[field];
       if (wireType === "string") requireString(value, fieldWhere);
       else if (wireType === "number") requireNumber(value, fieldWhere);
+      else if (wireType === "bigint") requireBigint(value, fieldWhere);
+      else if (wireType === "number-or-null") { if (value !== null) requireNumber(value, fieldWhere); }
       else if (value !== null) requireString(value, fieldWhere);
     }
   }
@@ -793,6 +860,49 @@ function handleToggleSpeed(_draft: Draft, args: ToggleSpeedArgs): HandlerVerdict
   return { ok: true, detail: `speed=${args.speedX}` };
 }
 
+/** OD-24(a) part 1 — the ONLY side effect is one frozen record in the
+ *  OPTIONAL `GameState.pricing` book (absent ⇒ every pre-pricing digest is
+ *  byte-identical — the same embed law as board/hands). No revenue, no
+ *  elasticity, no invoice math: those are the queued part-2/part-3 lanes
+ *  READING this book. Wire types are parse-trusted (M2): `newPriceMicroUsd`
+ *  is a bigint by law, so fractional prices never exist down here — the
+ *  value-domain refusals are positivity (`invalid-price`), target shape, and
+ *  a well-formed non-negative business minute. */
+function handleAdjustPrice(draft: Draft, args: AdjustPriceArgs): HandlerVerdict {
+  const targetKind = args.targetKind;
+  if (!PRICE_TARGET_KINDS.includes(targetKind)) {
+    return { ok: false, reason: `bad-target-kind: "${String(targetKind)}" not in {${PRICE_TARGET_KINDS.join(",")}}` };
+  }
+  if (args.targetId.length === 0) return { ok: false, reason: "empty-target-id" };
+  if (args.newPriceMicroUsd <= 0n) {
+    return { ok: false, reason: `invalid-price: ${String(args.newPriceMicroUsd)} µ$ must be > 0` };
+  }
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const rejection = draft.config.canAdjustPrice?.({ args, state: snapshotFor(draft), context: draft.context });
+  if (rejection !== undefined && rejection !== null) {
+    // host CALLBACK output stays validated (it is not door-wire input):
+    return { ok: false, reason: `unknown-plan: ${requireString(rejection.reason, "canAdjustPrice result.reason")}` };
+  }
+  const base = draft.pricing ?? draft.origin.pricing ?? createPriceOverrideBook();
+  const overrides = new Map(base.overrides);
+  overrides.set(
+    priceOverrideKey(targetKind, args.targetId as EntityId),
+    Object.freeze({
+      targetKind,
+      targetId: args.targetId as EntityId,
+      newPriceMicroUsd: args.newPriceMicroUsd,
+      effectiveAtBusinessMinute: effectiveAt,
+      setAtTick: draft.context.tick,
+    }),
+  );
+  draft.pricing = Object.freeze({ version: base.version + 1, overrides: Object.freeze(overrides) });
+  const detail = `target=${targetKind}:${args.targetId},price=${String(args.newPriceMicroUsd)}`;
+  return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -809,7 +919,10 @@ function snapshotFor(draft: Draft): GameState {
  *  throwaway frozen copies the validator cannot poison; the FINAL door
  *  state still keeps origin identity when nothing applied (identity law). */
 function buildState(draft: Draft, forSnapshot = false): GameState {
-  if (draft.nodes === null && draft.board === null && draft.hands === null && draft.ruleBook === null && draft.ruleBookHash === null) {
+  if (
+    draft.nodes === null && draft.board === null && draft.hands === null &&
+    draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null
+  ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
   }
@@ -826,6 +939,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.hands !== null ? { hands: draft.hands } : {}),
     ...(draft.ruleBook !== null ? { ruleBook: draft.ruleBook } : {}),
     ...(draft.ruleBookHash !== null ? { ruleBookHash: draft.ruleBookHash } : {}),
+    ...(draft.pricing !== null ? { pricing: draft.pricing } : {}),
   });
 }
 
@@ -920,6 +1034,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleCommunicate(draft, args as CommunicateArgs);
       case PlayerVerb.ToggleSpeed:
         return handleToggleSpeed(draft, args as ToggleSpeedArgs);
+      case PlayerVerb.AdjustPrice:
+        return handleAdjustPrice(draft, args as AdjustPriceArgs);
     }
   })();
 
@@ -971,6 +1087,7 @@ export function applyIntentDoor(
     hands: null,
     ruleBook: null,
     ruleBookHash: null,
+    pricing: null,
     events: [],
     receipts: [],
   };
