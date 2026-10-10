@@ -114,6 +114,8 @@ import { MICROS_PER_MIN } from "../kernel/time.ts";
 import { compareCodeUnits, fnv1a64OverCodePoints } from "../internal/canonical.ts";
 import { compareEntityId } from "./internal.ts";
 import { makeSlots } from "./queue.ts";
+import { attentionRelease, attentionSpend } from "./attention.ts";
+import type { AttentionState } from "../types.ts";
 
 /* ═══════════════════════════ Errors & config ═══════════════════════════ */
 
@@ -195,6 +197,15 @@ export interface IntentDoorConfig {
     readonly enabled?: boolean;
     readonly drainTicks?: number;
   };
+  /** OD-6(a) DOUBLE-DENOMINATION PAYMENT, opt-in. A verb mapped to 1 pays
+   *  its NORMAL hand cost (unchanged table) AND occupies one free token from
+   *  `GameState.attention` (pipeline/attention.ts) for the SAME occupancy
+   *  window. Absent/empty map = zero behavior change; a listed verb whose
+   *  attention pool is missing or has no free hand refuses `attention-debt`
+   *  (never a silent loss) with the normal rail refunded. Values must be 0 or
+   *  1 — anything else is host programming garbage and throws
+   *  `IntentDoorError` at the door boundary (Laws 2+4). */
+  readonly attentionCost?: Partial<Record<PlayerVerb, 0 | 1>>;
 }
 
 /** §7.5 reference durations, rounded UP to whole sim-minute ticks:
@@ -306,6 +317,36 @@ function drainEdgeOf(cause: CauseId | null): EntityId | null {
   return asEntityId(cause.slice(DRAIN_CAUSE_PREFIX.length));
 }
 
+/* ── OD-6(a) double-denomination attention cost (opt-in, default OFF) ── */
+
+/** Parse the host's `attentionCost` map at the boundary (Laws 2+4): every
+ *  value must be exactly 0 or 1 (the special hand is one slot; 2+ is
+ *  unrepresentable garbage), keys must be real PlayerVerbs. A value of 1 is
+ *  stored; 0 is dropped (an explicit 0 is IDENTICAL to omission — the map
+ *  only ever lists verbs that DO require attention). Returns null when nothing
+ *  is required, which keeps the whole attention path off for the pass — the
+ *  byte-identity guarantee. */
+function resolveAttentionCost(
+  config: IntentDoorConfig,
+): ReadonlyMap<PlayerVerb, 1> | null {
+  const map = config.attentionCost;
+  if (map === undefined) return null;
+  let required: Map<PlayerVerb, 1> | null = null;
+  for (const verb of PLAYER_VERBS) {
+    const value = map[verb];
+    if (value === undefined || value === 0) continue;
+    if (value !== 1) {
+      fail(
+        "config.attentionCost",
+        `value for "${verb}" must be 0 or 1 (the focus hand is a single slot), got ${String(value)}`,
+      );
+    }
+    if (required === null) required = new Map<PlayerVerb, 1>();
+    required.set(verb, 1);
+  }
+  return required;
+}
+
 /* ═══════════════════════════ Result surface ═══════════════════════════ */
 
 /** One per fed intent — the door's verdict roll-up (host HUD ticker / test
@@ -387,9 +428,15 @@ interface Draft {
   readonly context: TickContext;
   readonly config: IntentDoorConfig;
   readonly drain: ResolvedDrainPolicy;
+  /** OD-6(a) parsed attention-cost set (null = denomination off for this
+   *  pass — the byte-identity gate). */
+  readonly attentionCost: ReadonlyMap<PlayerVerb, 1> | null;
   nodes: ReadonlyMap<EntityId, NodeRecord> | null;
   board: BoardState | null;
   hands: HandState | null;
+  /** OD-6(a) COW attention slice — null until a verb requires (or releases)
+   *  the special hand; then the running copy materialized from origin. */
+  attention: AttentionState | null;
   ruleBook: readonly PolicyCard[] | null;
   ruleBookHash: string | null;
   pricing: PriceOverrideBook | null;
@@ -561,6 +608,20 @@ function freeHandCount(hands: HandState): number {
   let free = 0;
   for (const token of hands.tokens) if (token.busyCauseId === null) free += 1;
   return free;
+}
+
+/** OD-6(a) COW attention accessor — materializes `origin.attention` and runs
+ *  the due-release sweep ONCE, caching only when something actually matured
+ *  (a refused-only pass that frees nothing leaves the rail identity-untouched,
+ *  the exact law `draftHands` obeys). Returns null when the host never seeded
+ *  an attention pool — the denomination is off for this state. */
+function draftAttention(draft: Draft, tick: SimTick): AttentionState | null {
+  if (draft.attention !== null) return draft.attention;
+  const base = draft.origin.attention;
+  if (base === undefined) return null;
+  const released = attentionRelease(base, tick);
+  if (released !== base) draft.attention = released;
+  return released;
 }
 
 /**
@@ -921,7 +982,8 @@ function snapshotFor(draft: Draft): GameState {
 function buildState(draft: Draft, forSnapshot = false): GameState {
   if (
     draft.nodes === null && draft.board === null && draft.hands === null &&
-    draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null
+    draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
+    draft.attention === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -940,6 +1002,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.ruleBook !== null ? { ruleBook: draft.ruleBook } : {}),
     ...(draft.ruleBookHash !== null ? { ruleBookHash: draft.ruleBookHash } : {}),
     ...(draft.pricing !== null ? { pricing: draft.pricing } : {}),
+    ...(draft.attention !== null ? { attention: draft.attention } : {}),
   });
 }
 
@@ -1016,6 +1079,37 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
     handIndexes = Object.freeze(occupyHands(draft, tick, cost, tokenCause, busyUntilTick));
   }
 
+  // OD-6(a) DOUBLE-DENOMINATION: a verb listed in config.attentionCost ALSO
+  // books one free token from the special-hand pool (pipeline/attention.ts)
+  // for the SAME occupancy window and cause. Both denominations must be
+  // payable or NOTHING spends (the normal-rail refund below mirrors the
+  // handler-refusal undo). Absent pool or no free hand → refusal
+  // `attention-debt:` — the skip-the-token-that-tick law, a visible event,
+  // never a silent loss. Default: the map is empty and this block never runs.
+  let attentionSnapshot: AttentionState | null = null; // pre-occupy value for undo
+  let attentionPaid = false; // this entry booked a special token?
+  if (draft.attentionCost?.has(verb) === true) {
+    const pool = draftAttention(draft, tick); // caches any due-release
+    attentionSnapshot = draft.attention;
+    if (pool === null) {
+      if (cost > 0) draft.hands = handsSnapshot;
+      reject(label, `attention-debt: verb "${verb}" requires an attention hand but GameState.attention is absent (the host never seeded the special pool)`);
+      return;
+    }
+    const spend = attentionSpend(pool, tick, tokenCause, busyUntilTick);
+    if (spend.index === null) {
+      // No special hand free: `draftAttention` ALREADY cached any due-release
+      // above (attentionSpend's internal sweep is idempotent on the same tick,
+      // so spend.state === pool — nothing further to materialize). Refund the
+      // normal rail and refuse; a pass that freed nothing keeps state identity.
+      if (cost > 0) draft.hands = handsSnapshot;
+      reject(label, spend.refusal ?? "attention-debt: no free attention hand");
+      return;
+    }
+    draft.attention = spend.state;
+    attentionPaid = true;
+  }
+
   const verdict: HandlerVerdict = (() => {
     switch (verb) {
       case PlayerVerb.PlaceDevice:
@@ -1042,8 +1136,11 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
   if (!verdict.ok) {
     // Undo the reservation by restoring the pre-occupy snapshot: a refusal
     // spends nothing, including not materializing a `hands` slice that was
-    // absent on entry (keeps refused-only passes state-identity-stable).
+    // absent on entry (keeps refused-only passes state-identity-stable). The
+    // attention denomination rides the same undo (OD-6(a): refusal spends
+    // NOTHING, in either currency).
     draft.hands = handsSnapshot;
+    if (attentionPaid) draft.attention = attentionSnapshot;
     reject(label, verdict.reason);
     return;
   }
@@ -1082,9 +1179,11 @@ export function applyIntentDoor(
     context,
     config,
     drain: resolveDrainPolicy(config),
+    attentionCost: resolveAttentionCost(config),
     nodes: null,
     board: null,
     hands: null,
+    attention: null,
     ruleBook: null,
     ruleBookHash: null,
     pricing: null,

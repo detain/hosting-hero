@@ -1573,6 +1573,69 @@ export interface PriceOverrideBook {
   readonly overrides: ReadonlyMap<string, PriceOverrideRecord>;
 }
 
+/* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
+
+/** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
+ *  hand). `normal` is the everyday hand the `GameState.hands` pool already
+ *  carries (unchanged by this lane). `attention` is the scarcest resource —
+ *  the FOCUS hand — minted ONLY as a bounded loan. Kept as a marker union so
+ *  HUD/verb-class consumers can label which denomination a spend drew from
+ *  without re-deriving it from field presence. */
+export type AttentionDenomination = "normal" | "attention";
+
+/** The two loan denominations of the special hand (OD-4a). Both are BOUNDED
+ *  LEDGERED LOANS — the ONLY hand-creation event in the game.
+ *  `triage-window` is the focus hand the Triage Window extends while the
+ *  arrivals queue is visible and patience drains; `grace` is the single free
+ *  focus hand Attention Grace mints on a sev-1 (duplicate alerts suppressed).
+ *  Every mint appends an `AttentionLoanRecord`; the loan is serviced out of
+ *  the NEXT window's/month's replenished budget, never silently forgiven. */
+export type AttentionLoanKind = "triage-window" | "grace";
+
+/** One ledgered attention loan (OD-4a). Immutable record appended to
+ *  `AttentionState.loanLedger` at window entry; `repaid` flips to true exactly
+ *  once when the replenish seam services it. The row's existence while
+ *  `repaid === false` IS the outstanding attention debt — the ledger length is
+ *  the count of hand-creation events (the invariant this lane pins). */
+export interface AttentionLoanRecord {
+  /** Business minute the window/grace minted the focus hand (attribution). */
+  readonly createdAtMinute: SimMinute;
+  readonly kind: AttentionLoanKind;
+  /** Window ordinal in force when the loan was minted (monotonic integer the
+   *  attention seam bumps on every entry — NOT a wall clock; the host drives
+   *  windows). The replenish services loans oldest-first regardless of this
+   *  stamp; it is carried for HUD "due since" attribution. */
+  readonly repayAtWindow: number;
+  /** true once the replenish seam has folded this loan into paid budget. */
+  readonly repaid: boolean;
+}
+
+/** OPTIONAL `GameState` embed — the ATTENTION denomination (§7.5 · OD-6(a)
+ *  two denominations drawn from one special-hand pool; OD-23(a) design;
+ *  OD-4a bounded loan ledger). `capacity` is the focus-hand ceiling (v0: 1);
+ *  `tokens` is a `HandState`-shaped pool of those special hands (free iff
+ *  `busyUntilTick <= current tick && busyCauseId === null` — the SAME
+ *  half-open occupancy law as the everyday `hands` pool, which this embed
+ *  never mutates). `debt` is the count of unrepaid ledger rows (attention
+ *  owed): while debt reaches capacity the BOUNDED mint refuses a fresh focus
+ *  hand (`attentionWindowEntry` returns the refusal, never silent), and a
+ *  spend with no free hand refuses `attention-debt` — the row stays owed
+ *  until the replenish seam services it. `loanLedger` is the append-only
+ *  record of every focus-hand mint — the only hand-creation event. `window`
+ *  is the monotonic ordinal bumped on each entry. Written ONLY by
+ *  pipeline/attention.ts and the door's opt-in `attentionCost` path;
+ *  OPTIONAL, digest-switch law: `pipeline/digest.ts` absorbs it WHEN PRESENT,
+ *  so every pre-attention state — all shipped goldens — digests byte-
+ *  identically. */
+export interface AttentionState {
+  readonly capacity: number;
+  readonly tokens: readonly HandToken[];
+  readonly debt: number;
+  readonly loanLedger: readonly AttentionLoanRecord[];
+  readonly window: number;
+  readonly lastReplenishBusinessMinute: SimMinute;
+}
+
 /* ═══════════════════════════ GameState root ═══════════════════════════ */
 
 /**
@@ -1612,4 +1675,10 @@ export interface GameState {
    *  pipeline/digest.ts ONLY when present, so every pre-pricing state — all
    *  shipped goldens — digests byte-identically). */
   readonly pricing?: PriceOverrideBook;
+  /** OD-6/OD-23/OD-4a embed — the ATTENTION denomination (see
+   *  `AttentionState`). The special-hand pool every `attentionCost` verb also
+   *  pays from, plus its bounded loan ledger. OPTIONAL, digest-switch law:
+   *  `pipeline/digest.ts` absorbs it ONLY when present, so every pre-attention
+   *  state — all shipped goldens — digests byte-identically. */
+  readonly attention?: AttentionState;
 }

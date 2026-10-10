@@ -35,6 +35,7 @@
  */
 
 import type {
+  AttentionState,
   BackpressureIn,
   BoardState,
   CauseId,
@@ -316,6 +317,10 @@ export function createInitialState(options: {
   readonly hands?: HandState;
   readonly handCapacity?: number;
   readonly board?: BoardState;
+  /** OD-6(a)/OD-4a — seed the ATTENTION denomination (pipeline/attention.ts
+   *  `createAttentionState`/`attentionWindowEntry`). OPTIONAL, digest-switch
+   *  law: absent = denomination off, every pre-attention host unchanged. */
+  readonly attention?: AttentionState;
 }): GameState {
   const nodes = new Map<EntityId, NodeRecord>();
   for (const node of options.nodes ?? []) nodes.set(node.id, node);
@@ -346,6 +351,7 @@ export function createInitialState(options: {
     ruleBookHash: options.ruleBookHash ?? "",
     ...(hands !== undefined ? { hands } : {}),
     ...(options.board !== undefined ? { board: options.board } : {}),
+    ...(options.attention !== undefined ? { attention: options.attention } : {}),
   });
 }
 

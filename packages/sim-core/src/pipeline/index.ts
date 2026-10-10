@@ -16,4 +16,5 @@ export * from "./defaults.ts";
 export * from "./bounce.ts";
 export * from "./queue.ts";
 export * from "./intent-door.ts";
+export * from "./attention.ts";
 export { digestState } from "./digest.ts";

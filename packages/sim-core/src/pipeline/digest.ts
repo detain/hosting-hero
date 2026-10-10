@@ -239,5 +239,33 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
+  // law as hands/board/pricing): absorbed ONLY when present, so every
+  // pre-attention state (all shipped goldens) keeps byte-identical digests.
+  // Token order is the pinned index order; the loan ledger is APPEND-order
+  // (the creation-event history — never sorted, its sequence is the record).
+  if (state.attention !== undefined) {
+    sink
+      .text("attention")
+      .int(state.attention.capacity)
+      .int(state.attention.debt)
+      .int(state.attention.window)
+      .int(state.attention.lastReplenishBusinessMinute);
+    // Token COUNT is explicit here (unlike the fixed-`capacity` hands rail —
+    // attention materializes only as loans mint, so length varies).
+    sink.int(state.attention.tokens.length);
+    for (const token of state.attention.tokens) {
+      sink.int(token.index).int(token.busyUntilTick).nullableText(token.busyCauseId);
+    }
+    sink.int(state.attention.loanLedger.length);
+    for (const row of state.attention.loanLedger) {
+      sink
+        .int(row.createdAtMinute)
+        .text(row.kind)
+        .int(row.repayAtWindow)
+        .bool(row.repaid);
+    }
+  }
+
   return sink.hex() as HashHex;
 }
