@@ -26,7 +26,7 @@ waves/g1-mail-hosting-first-quarter.json  type-3 first-quarter slice — same la
 waves/g1-dns-hosting-first-quarter.json  type-4 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
 threats/registry-core.json          16 mechanical threat entries (mail-hosting and dns-hosting each reuse 8 existing ids; native threat rosters await the registry-owner pass — the census pins live in sibling tests, see Type 3/4 notes)
 visitors/archetypes-core.json       9 visitor archetypes (mail-hosting and dns-hosting reference NONE — their visitors are the message / the query itself; see Type 3/4 notes)
-packs/shared-web.i18n.json          ticket pack for official:shared-web — 101 grammar templates, decision 40 / flavour 61
+packs/shared-web.i18n.json          ticket pack for official:shared-web — 103 grammar templates, decision 42 / flavour 61
 packs/game.i18n.json                ticket pack for official:game-servers — 75 grammar templates, decision 34 / flavour 41
 packs/mail-hosting.i18n.json        ticket pack for official:mail-hosting — 63 grammar templates, decision 32 / flavour 31
 packs/dns-hosting.i18n.json         ticket pack for official:dns-hosting — 65 grammar templates, decision 33 / flavour 32
@@ -100,8 +100,9 @@ zero §9.11 technique vocabulary (shell/SQL/CVE/path ban-list over every templat
 body) · ≥25 templates per pack · provenance covers every key (cite string, or
 null + `_provenance._todo` — never an invented law-number). VOLUME RATIFIED
 2026-10-09 (owner decision, `docs/adr/0009-owner-ratifications-calibration.md`):
-the shipped counts — shared-web 98 (101 since the batch-E notice-voice pass
-2026-10-09: +3 decision `alert.*` economy voices) / game-servers 75 templates —
+the shipped counts — shared-web 98 (103 since the batch-E +3 and OD-25(a) death
++2 notice-voice passes 2026-10-09/10: +5 decision `alert.*` economy voices) /
+game-servers 75 templates —
 are approved, superseding the ≤60-per-pack task-line guidance (the validator keeps its ≥25
 floor and sets no ceiling; most provenance cites are §9.3 verbatim doc seeds, so
 trimming would delete doc-mandated content). Pack `_todo` markers

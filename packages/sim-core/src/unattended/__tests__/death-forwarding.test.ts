@@ -69,7 +69,10 @@ const STARVE = Object.freeze({
  *  with no ledger say-so is not death (float requires refusedSettles ≥ 1). */
 const STARVE_QUIET = Object.freeze({ ...STARVE, opex: Object.freeze([]) });
 
-function plant(money: RunUnattendedConfig["money"], overrides: Partial<RunUnattendedConfig> = {}): RunUnattendedConfig {
+/* money is REQUIRED on the helper's input shape: every plant threads the
+   money lane (the whole point of the witness), and NonNullable keeps the
+   spread legal under exactOptionalPropertyTypes. */
+function plant(money: NonNullable<RunUnattendedConfig["money"]>, overrides: Partial<RunUnattendedConfig> = {}): RunUnattendedConfig {
   return Object.freeze({
     runSeed: UA_SEED,
     ticks: 60n,
@@ -172,7 +175,11 @@ describe("deathHaltsRun opt-in (default FALSE ⇒ byte-ident witnesses)", () => 
     const halted = runUnattended(plant({ ...STARVE, cfg: cfgWithoutChurn() }, { deathHaltsRun: true }));
     const stop = halted.stop;
     expect(stop).not.toBeNull();
-    const clean = runUnattended(plant({ ...STARVE, cfg: cfgWithoutChurn() }, { ticks: stop?.atTick }));
+    const clean = runUnattended(
+      plant({ ...STARVE, cfg: cfgWithoutChurn() }, {
+        ...(stop?.atTick !== undefined ? { ticks: stop.atTick } : {}),
+      }),
+    );
     expect(clean.stop).toBeNull();
     expect(clean.finalDigest).toBe(stop?.snapshotDigest);
   });

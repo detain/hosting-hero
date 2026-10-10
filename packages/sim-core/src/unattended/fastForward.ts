@@ -147,7 +147,12 @@ const NEGATIVE_BUCKET_LAW = /would go negative/;
      unparseable message (money.ts-family wording) rides count-only:
      amount 0n under the neutral id `ledger:unattributed`. Honest best
      effort: death.ts advanceDeathWatch persists only COUNT + SUM of the
-     evidence, so a coarse identity costs nothing downstream. */
+     evidence, so a coarse identity costs nothing downstream.
+    • For a voided settle the INVOICE id rides `RefusedSettlement.contractId`
+      (harmless by the count+sum law above — nothing resolves it as a contract).
+    • `refusedMicroUsd` sums per-fold retries of the same invoice: the total
+      reads as evidence magnitude, not outstanding debt — duration, not sum,
+      gates the float death. */
 const SETTLE_REFUSAL_SHAPE = /settle (\S+): -(\d+) µ\$ on '/;
 
 function invoiceRefusalWitness(message: string): RefusedSettlement {
