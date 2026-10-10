@@ -1,19 +1,21 @@
 # AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b)
 
-Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3, then **updated in place on disk after the 2026-10-09 fix wave** (16 commits d8fc8ec..a98fd55; per-row dispositions in the hosting_game.md Appendix), then re-markuped for the **2026-10-09b session-2 owner rulings** (see SESSION-2 RE-MARKUP below + `docs/adr/0010-taxonomy-and-stacking-contradictions.md` Accepted). The tallies below are computed from the **current marked hosting_game.md**, not the original manifests — they include the 23 fix-wave flips, the session-2 flips, and the small set of marker/manifest drift realignments disclosed in the Appendix.
+Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3, then **updated in place on disk after the 2026-10-09 fix wave** (16 commits d8fc8ec..a98fd55; per-row dispositions in the hosting_game.md Appendix), then re-markuped for the **2026-10-09b session-2 owner rulings** (see SESSION-2 RE-MARKUP below + `docs/adr/0010-taxonomy-and-stacking-contradictions.md` Accepted), then flipped again for the **wave-3 batch-1 closeout** (0032a21..2ef5cae; see WAVE-3 BATCH-1 below). The tallies below are computed from the **current marked hosting_game.md**, not the original manifests — they include the 23 fix-wave flips, the session-2 flips, the batch-1 flips, and the small set of marker/manifest drift realignments disclosed in the Appendix.
 
 > Line numbers throughout are ORIGINAL (pre-legend) positions matching reports/audit/outline.md and the group manifests. In the marked hosting_game.md, add **+12** to any line > 43 (the 12-line legend block inserted above the ToC). **Session-2 adds three more law-note lines (see SESSION-2 RE-MARKUP → Insert offsets): cumulative offset is +12 through original 15178, +13 from original 15179, +14 from original 16292, +15 from original 16332. outline.md is NOT renumbered (too risky) — apply the offset table when citing it below line 15190.**
 
-## GLOBAL TALLIES (disk truth, post session-2 re-markup)
+## GLOBAL TALLIES (disk truth, post wave-3 batch-1 closeout)
 
 | STATUS | marked headings on disk |
 |---|---|
-| DONE ✅ | 285 |
-| PARTIAL 🔧 | 998 |
+| DONE ✅ | 289 |
+| PARTIAL 🔧 | 994 |
 | PROBLEM ⚠️ | 1 |
 | MISSING ❌ | 2275 |
 | NA 📝 | 30 |
 | **total marked** | **3589** (+2 unmarked out-of-scope headings) |
+
+Batch-1 delta from the session-2 tallies (✅285 🔧998 ⚠️1 ❌2275 📝30): four 🔧→✅ flips — The oversell ratio, The Second Incident multiplier, The Copycat reserve, Mode tiering. The Feint budget gained an inline scope note only (stays 🔧, not a count move).
 
 ## PER-SECTION ROLL-UP (marked headings by level-1 section — disk truth)
 
@@ -22,15 +24,15 @@ Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Ta
 | preamble | 0 | 0 | 0 | 0 | 0 | 0 |
 | 0. Foundations | 20 | 10 | 0 | 10 | 9 | 49 |
 | 1. Levels, scenarios, and progression | 16 | 86 | 0 | 316 | 2 | 420 |
-| 2. Threats | 50 | 98 | 0 | 446 | 1 | 595 |
+| 2. Threats | 52 | 96 | 0 | 446 | 1 | 595 |
 | 3. Visitors, traffic, and clients | 30 | 80 | 0 | 303 | 0 | 413 |
 | 4. Buildables: services and infrastructure | 22 | 121 | 0 | 338 | 0 | 481 |
 | 5. Unlocks and discovery | 1 | 115 | 0 | 182 | 1 | 299 |
-| 6. Economy, money, and scoring | 36 | 103 | 0 | 250 | 1 | 390 |
+| 6. Economy, money, and scoring | 37 | 102 | 0 | 250 | 1 | 390 |
 | 7. Core gameplay mechanics | 68 | 125 | 0 | 107 | 2 | 302 |
 | 8. Visuals and presentation | 23 | 171 | 1 | 155 | 7 | 357 |
-| 9. Anything else | 19 | 89 | 0 | 168 | 7 | 283 |
-| **TOTAL** | **285** | **998** | **1** | **2275** | **30** | **3589** |
+| 9. Anything else | 20 | 88 | 0 | 168 | 7 | 283 |
+| **TOTAL** | **289** | **994** | **1** | **2275** | **30** | **3589** |
 
 ## FIX-WAVE UPLIFT (what moved since the original markup)
 
@@ -52,8 +54,8 @@ Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Ta
 | 15178 | 4. Buildables: services and infrastructure | The Build Role Taxonomy (nine roles) | g13 | The nine build roles are tagged nowhere; coverage/defenseRoles.ts ships the DIFFERENT nine defense roles sharing only four words (Classify/Contain/Detect/Recover) - the spec's shared-tag promise between palette and Coverage Grid is broken | ⚠️ HELD — contradiction recorded in ADR-0010 (proposed) @d8fc8ec; owner ratification owed before either taxonomy moves. **2026-10-09b: 🔧 — ADR-0010(a)=i RULED: shipped §2.1 nine = law; build-role tagging → Phase-2 gap register; law-note under heading (now 15190)** |
 | 16291 | 4. Buildables: services and infrastructure | The Nine Defense Roles | g14 | shipped taxonomy follows the §2.1 list (absent Block, added Negotiate) — contradicts this heading's enumeration | ⚠️ HELD — same ADR-0010 pending record @d8fc8ec. **2026-10-09b: ✅ e24e1bb — ADR-0010(a)=i RULED: heading now names the shipped nine as law (corrected-list note, now 16304)** |
 | 16331 | 4. Buildables: services and infrastructure | Defense-in-Depth stacking rules | g14 | matrix.ts combine law is MAX never multiplicative (deliberate, docblock cites §2.1 ratification), no latency-additive/diminishing/synergy/Waste-Indicator | ⚠️ HELD — same ADR-0010 pending record @d8fc8ec. **2026-10-09b: 🔧 — ADR-0010(b)=i RULED: MAX law RETAINED, prose superseded-by-implementation (note now 16345); refinement clauses gap-registered, NO unify lane** |
-| 22940 | 6. Economy, money, and scoring | 6.5 Pricing as a mechanic | g18 | Pricing is engine-side data (MRC/cliff/escalator/MFN/grandfather) with NO player pricing verb among the 8 door verbs; 21 of 29 dials unbuilt; oversell slider declared-dead (22992) | ⚠️ HELD — no player pricing verb shipped; door verb set closed at 8. **2026-10-09b: 🔧 — OD-24(a) OWNER OVERRIDE: FULL pricing surface approved — door pricing verb(s) + ~21 dial consumers + elasticity model (provisional, ratify-on-playtest) + oversell host knob; 8:1 PROPOSED shared-web start; BUILD WAVE QUEUED (heading now 22952)** |
-| 22992 | 6. Economy, money, and scoring | The oversell ratio | g18 | shared-web.json:84 commercialSlider "oversell-ratio" + rosetta card parsed (loader/bundle.ts:112,616; R16 lint hook) but ZERO engine consumers — dead slider; P(contention)=ratio^2.2 x homogeneity never computed | 🔧 PARTIAL @4856a42 — contentionProbabilityMicro(r,h)=f(r)×h ships in waves/contention.ts + planWave oversell input; host-side wiring (bundle slider value → planWave oversell) still owed. **2026-10-09b: OD-24(a) — that wiring + the 8:1 starting ratio ride the queued pricing wave (marker stays 🔧, heading now 23004)** |
+| 22940 | 6. Economy, money, and scoring | 6.5 Pricing as a mechanic | g18 | Pricing is engine-side data (MRC/cliff/escalator/MFN/grandfather) with NO player pricing verb among the 8 door verbs; 21 of 29 dials unbuilt; oversell slider declared-dead (22992) | ⚠️ HELD — no player pricing verb shipped; door verb set closed at 8. **2026-10-09b: 🔧 — OD-24(a) OWNER OVERRIDE: FULL pricing surface approved — door pricing verb(s) + ~21 dial consumers + elasticity model (provisional, ratify-on-playtest) + oversell host knob; 8:1 PROPOSED shared-web start; BUILD WAVE QUEUED (heading now 22952). **2026-10-10 batch-1: heading STAYS 🔧 — part 1 landed @0032a21 (AdjustPrice door verb + state-neutral overrides book are verb-live); elasticity model + ~21 dial consumers owed by batch-2** |
+| 22992 | 6. Economy, money, and scoring | The oversell ratio | g18 | shared-web.json:84 commercialSlider "oversell-ratio" + rosetta card parsed (loader/bundle.ts:112,616; R16 lint hook) but ZERO engine consumers — dead slider; P(contention)=ratio^2.2 x homogeneity never computed | 🔧 PARTIAL @4856a42 — contentionProbabilityMicro(r,h)=f(r)×h ships in waves/contention.ts + planWave oversell input; host-side wiring (bundle slider value → planWave oversell) still owed. **2026-10-09b: OD-24(a) — that wiring + the 8:1 starting ratio ride the queued pricing wave (marker stays 🔧, heading now 23004). 2026-10-10 batch-1: 🔧→✅ 4856a42 2ef5cae — host wiring landed: OVERSELL_RATIO_MICRO (8:1 PROVISIONAL) + homogeneity fold feed planWave's oversell input on the mainline proto runner, gated on the bundle declaring the slider. SCOPE: proto-only host input — sim-core ships no default ratio** |
 | 31543 | 8. Visuals and presentation | The readability targets | g23 | perf grid harness exists but 2k/20k figures are OD-10/OD-12 unratified and unmeasured | ⚠️ HELD — OD-10/OD-12 unratified. **2026-10-09b: ⚠️ UNCHANGED — OD-10/OD-12 expressly NOT decided in session 2 (heading now 31558)** |
 | 31810 | 8. Visuals and presentation | Era presentation shifts | g23 | era-tokens.css ships 1998/2026 only; MODULE-STATUS era-count row awaits owner era grid | ⚠️ HELD — owner era grid not provided. **2026-10-09b: 🔧 — OD-22(c) RULED: v1 canon = 1998+2026; 4-era plan (~1998/~2008/~2016/2026) ratified as campaign-phase plan (heading now 31822)** |
 | 31837 | 8. Visuals and presentation | Era UI skins, enumerated | g23 | 2 of 5 enumerated skins; owner-gated per MODULE-STATUS era row (same as above) | ⚠️ HELD — owner-gated. **2026-10-09b: 🔧 — same OD-22(c) ruling (heading now 31849)** |
@@ -61,7 +63,7 @@ Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Ta
 | 32366 | 8. Visuals and presentation | Era display faces | g23 | only 2 era faces via era tokens; same owner-gated era grid (MODULE-STATUS era row) | ⚠️ HELD — owner-gated. **2026-10-09b: 🔧 — same OD-22(c) ruling (heading now 32378)** |
 | 32505 | 8. Visuals and presentation | The acceptance-test roster | g23 | 1 of 11 gates (Chroma Meter) shipped; PHASE1-PLAN:165 records the harness as partial | 🔧 PARTIAL — 4 of 11 gates live after 9b32cc5/942834f (greyscale-pass, chroma-meter, strobe-budget-check, contrast-audit-mode) |
 | 32694 | 9. Anything else | Endless / Survival ("The NOC" / "The Long Haul" / "Keep It Running") | g24 | endless rows held PENDING_OD8 (32 rows contested) per DECISIONS-PENDING OD-8, no loop shipped | ⚠️ HELD — OD-8 rows still contested. **2026-10-09b: 🔧 — OD-16(a): endless-32 STAY `PENDING_OD8` until an endless loop is scoped — deferral RATIFIED (heading now 32706)** |
-| 33137 | 9. Anything else | ⚔️ Mode tiering — twenty-six modes is too many, and none of them are prioritised | g24 | OD-16 open in DECISIONS-PENDING (ratify ~15 orphan re-tierings), tiering adopted-as-law nowhere | ⚠️ HELD — OD-16 open. **2026-10-09b: 🔧 — OD-16(a): ~15-mode tiering ADOPTED AS LAW; mode-table encode = queued content/save-surface lane (heading now 33149)** |
+| 33137 | 9. Anything else | ⚔️ Mode tiering — twenty-six modes is too many, and none of them are prioritised | g24 | OD-16 open in DECISIONS-PENDING (ratify ~15 orphan re-tierings), tiering adopted-as-law nowhere | ⚠️ HELD — OD-16 open. **2026-10-09b: 🔧 — OD-16(a): ~15-mode tiering ADOPTED AS LAW; mode-table encode = queued content/save-surface lane (heading now 33149). 2026-10-10 batch-1: 🔧→✅ 42fbbd2 (law enacted: Core/Extended/Deferred census in save/modes; 10a83df docs row) — the tier LIST itself stays owner-ratify-on-read** |
 
 11 rows HELD at ⚠️ (all owner-gated or OD-deferred), 4 rows uplifted (1→✅, 3→🔧).
 **Session-2 roll-up (2026-10-09b):** of the 11 HELD rows, 10 re-markuped by the rulings (9 ⚠️→🔧, 1 ⚠️→✅ via ADR-0010(a)=i); only 31543/31558 (readability targets, OD-10/OD-12) stays ⚠️ — expressly NOT decided in session 2, alongside OD-7/9/11/12/15/17/18/19/20 and the taste-row pile (ratify-on-playtest posture stands).
@@ -800,3 +802,24 @@ Manifest/format deviations encountered by the markup script (none blocked the ru
 
 - Script: /tmp/opencode/markup/markup.mjs (throwaway). Idempotent: strips trailing ` (✅|🔧|⚠️|❌|📝)…` from `## `/`### ` lines before re-appending; legend guarded by heading presence.
 - Verify: 35,507 → 35,519 lines (+12 legend) · `^# `=11 · `^## `=150+1 legend=151 · `^### `=3,440 · 3,588 heading lines carry markers, 1 in-scope heading unmarked (12846), zero other lines touched.
+
+## WAVE-3 BATCH-1 (closeout re-markup 2026-10-10, commits 0032a21..2ef5cae atop 8a674f0)
+
+Batch-1 shipped four lanes: `0032a21` door AdjustPrice (OD-24(a) part 1), `ab0bf5c` economy deaths (OD-25(a)), `2ef5cae` proto rules-live host inputs (B4, disclosed golden moves), `42fbbd2`+`10a83df` save mode tiering (OD-16(a)). Heading flips located by TEXT on the current file; markers flipped fail-loud (asserted current marker before writing):
+
+| heading (located by text) | flip | hashes | disposition note |
+|---|---|---|---|
+| ⚔️ Mode tiering — twenty-six modes… | 🔧→✅ | 42fbbd2 | tiering LAW enacted (Core/Extended/Deferred census); the tier list itself stays owner-ratify-on-read (flag recorded here, not on the marker) |
+| The oversell ratio | 🔧→✅ | 4856a42 2ef5cae | P(contention) computed from a host-supplied ratio on the mainline runner (OVERSELL_RATIO_MICRO 8:1 PROVISIONAL → planWave input.oversell, gated on bundle slider declaration). SCOPE: wiring is proto-only; sim-core ships no default ratio |
+| The Second Incident multiplier (§2.24) | 🔧→✅ | 4856a42 c9c0433 2ef5cae | liveness proven on shipped g1 data: seed-42 wave-4 plan carries 10 arrivals vs the 6 par alone (×1.8 follow-ons) — waveRules.test.ts |
+| The Copycat reserve (§2.24) | 🔧→✅ | 4856a42 c9c0433 2ef5cae | liveness proven: seed-42 wave-5 rescales to 3/3/3 against dominant human defense; seed-33 no-match twin keeps authored 4/3/3 |
+| The Feint budget (§2.24) | 🔧 + note | — | marker-inert — no shipped author: consumer structurally live (planted-marker test re-parks the first quarter), shipped slices author no feint marker |
+| 6.5 Pricing as a mechanic | stays 🔧 | 0032a21 (note) | part 1 landed: AdjustPrice verb + state-neutral overrides book are verb-live; elasticity model + ~21 dial consumers = batch-2 |
+
+Also flipped this closeout: the in-file Appendix "now" cells stopped lying — corrected for all 10 lane-R (8a674f0) flips the table never absorbed (14424, 15178, 22940, 31810, 31837, 32366, 32694, 33137 → 🔧; 16291 → ✅; 31543 stays ⚠️), the two batch-1 second-hop flips riding that correction (22992 🔧→✅, 33137 🔧→✅), and the 22940 "what remains" (door no longer closed at 8 verbs).
+
+**Disclosed proto runner golden moves (2ef5cae, simCoreRunner.test.ts — first product host for the §2.24 rules reshapes the arrival stream):** firstDeep tick 7→41; split arms 8/1→32/8 @100 ticks; disarm arms express 9→44, lenient 9→44, strict 9→41 (lane choice feeds back into bounce/re-entry maturity); storm first pure re-entry minute → 62; mixed frame moved to seed 7 minute 54. HELD: LEDGER_TICK1_FREE + frame-1 money pins, legacy-fixture tick-2 equivalence, determinism pairs, seed-42 zero-reentry census, FAMILY_MIX census. **Zero sim-core goldens moved; headless parity b0162ab5/a9b4b7b8 held.**
+
+**Marker census after batch-1 flips (recomputed from disk):** ✅289 🔧994 ⚠️1 ❌2275 📝30 = **3,589** (was ✅285 🔧998 ⚠️1 ❌2275 📝30). hosting_game.md line count unchanged at 35,557 — all closeout edits in-place, zero insertions.
+
+**Closeout battery (serial, @2ef5cae+markup):** sim-core 1,750/123 files exit 0 · api-verify PASS 1,399 names · content validate PASS · canary 115 files PASS · ci-verify 5/5 (incl g5-mirror-diff) · typecheck 5/5 · proto 776/71 · proto build OK · headless 53/5 parity literals green.

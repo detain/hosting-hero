@@ -11005,7 +11005,7 @@ Countered threats become weather; removed buildables retire their threats, with 
 late game readable, and they make **deleting infrastructure a defensive move** — an expression the
 design currently lacks entirely.
 
-### The Copycat reserve 🔧
+### The Copycat reserve ✅ 4856a42 c9c0433 2ef5cae
 10–15% of each level's pressure budget is drawn from your personal miss list. (See §2.1.)
 
 ### Affixes as a reward multiplier 🔧
@@ -11018,10 +11018,10 @@ Every hard wave draws from two of {bandwidth, concurrency, hands, cash, reputati
 ### The denomination quota ❌
 No more than four threats per level share a damage denomination. (See §2.1.)
 
-### The Second Incident multiplier 🔧
+### The Second Incident multiplier ✅ 4856a42 c9c0433 2ef5cae
 1.8× during an incident, 2.5× during a recovery, stated openly in the Codex. (See §2.1.)
 
-### The Feint budget 🔧
+### The Feint budget 🔧 (marker-inert — no shipped author)
 At most one feint per level, never two levels in a row, always named in the postmortem. (See §2.1.)
 
 ### Grudge as a difficulty input ❌
@@ -23004,7 +23004,7 @@ that **their most popular plan loses money.** *That discovery moment is worth a 
 should let you build a plan with a 14-month payback and an 11-month tenure and **not warn you** — then
 show it in the postmortem as the reason you ran out of cash while growing.
 
-### The oversell ratio 🔧
+### The oversell ratio ✅ 4856a42 2ef5cae
 The defining shared-hosting decision, generalized to every hosting type.
 
 **How it works:** A slider from 1:1 to 30:1. Higher oversell = more revenue per box, thinner headroom,
@@ -33149,7 +33149,7 @@ Community screenshots.
 submitter's company mark and tier in the corner card, browsable with the Orbit camera. Consistent with
 the house rule that *nothing is a pop-up if it can be a thing.*
 
-### ⚔️ Mode tiering — twenty-six modes is too many, and none of them are prioritised 🔧
+### ⚔️ Mode tiering — twenty-six modes is too many, and none of them are prioritised ✅ 42fbbd2
 **The problem:** several of the modes above are full games (Competitive Market, Co-op NOC, Versus,
 Async Attack, Franchise). **Shipping a quarter of them well beats shipping all of them.**
 
@@ -35523,27 +35523,27 @@ the audience that doesn't run servers.
 
 ## Appendix — Audit Findings & Resolutions (2026-10-09 fix wave)
 
-This appendix records how each of the 15 audit PROBLEM (⚠️) rows fared after the 16-commit fix wave (d8fc8ec..a98fd55). Full notes with evidence live in reports/audit/SUMMARY.md ("PROBLEMS — original 15 rows with post-wave disposition"); group reports reports/audit/group-01..25.md remain the untouched historical record.
+This appendix records how each of the 15 audit PROBLEM (⚠️) rows fared after the 16-commit fix wave (d8fc8ec..a98fd55), the session-2 re-markup (8a674f0, owner rulings recorded in ADR-0009/ADR-0010), and the wave-3 batch-1 closeout (0032a21..2ef5cae: AdjustPrice verb, economy deaths, rules-live proto host inputs, save mode tiering). "now" mirrors the CURRENT heading marker on disk. Full notes with evidence live in reports/audit/SUMMARY.md ("PROBLEMS" table + "WAVE-3 BATCH-1"); group reports reports/audit/group-01..25.md remain the untouched historical record.
 
 | orig. line | heading | was | now | evidence | what remains |
 |---|---|---|---|---|---|
 | 11385 | Matrix C — threat families × type | ⚠️ | ✅ | 4856a42, cf7a696 | nothing — weights filled in both bundles, parseFamilyWeightsTable + familyMix consumers live, host FAMILY_MIX wired in the product runner |
-| 14424 | The attention budget | ⚠️ | ⚠️ | — | OD-6 support-hands ruling decided, implementation deferred |
-| 15178 | The Build Role Taxonomy (nine roles) | ⚠️ | ⚠️ | d8fc8ec (ADR-0010 proposed) | owner ratification of the taxonomy reconciliation |
-| 16291 | The Nine Defense Roles | ⚠️ | ⚠️ | d8fc8ec (ADR-0010 proposed) | same pending ADR-0010 record |
-| 16331 | Defense-in-Depth stacking rules | ⚠️ | ⚠️ | d8fc8ec (ADR-0010 proposed) | MAX-vs-multiplicative law contradiction unratified |
-| 22940 | 6.5 Pricing as a mechanic | ⚠️ | ⚠️ | — | no player pricing verb; door closed at 8 verbs |
-| 22992 | The oversell ratio | ⚠️ | 🔧 | 4856a42 | engine seam live (contentionProbabilityMicro + planWave oversell input); host-side slider→input wiring owed |
+| 14424 | The attention budget | ⚠️ | 🔧 | 8a674f0 | OD-23(a) ratified: support-hands + OD-4a loan-ledger implementation lane scheduled (was deferred) |
+| 15178 | The Build Role Taxonomy (nine roles) | ⚠️ | 🔧 | d8fc8ec, 8a674f0 (ADR-0010(a)=i RULED) | shipped §2.1 nine = law; build-role tagging → Phase-2 gap register |
+| 16291 | The Nine Defense Roles | ⚠️ | ✅ | d8fc8ec, e24e1bb, 8a674f0 (ADR-0010(a)=i) | nothing — heading names the shipped nine as law |
+| 16331 | Defense-in-Depth stacking rules | ⚠️ | 🔧 | d8fc8ec, 8a674f0 (ADR-0010(b)=i RULED) | MAX combine retained, prose superseded-by-implementation; refinement clauses gap-registered future-only, no unify lane |
+| 22940 | 6.5 Pricing as a mechanic | ⚠️ | 🔧 | 8a674f0 (OD-24(a)), 0032a21 | part 1 live: AdjustPrice door verb + state-neutral overrides book; elasticity model + ~21 dial consumers owed |
+| 22992 | The oversell ratio | ⚠️ | ✅ | 4856a42, 2ef5cae | host wiring live on the mainline proto runner (OVERSELL_RATIO_MICRO 8:1 PROVISIONAL → planWave oversell, gated on bundle declaring the slider); scope note: proto-only host input, sim-core ships no default ratio |
 | 31543 | The readability targets | ⚠️ | ⚠️ | — | OD-10/OD-12 figures unratified |
-| 31810 | Era presentation shifts | ⚠️ | ⚠️ | — | owner era grid not provided |
-| 31837 | Era UI skins, enumerated | ⚠️ | ⚠️ | — | 2 of 5 skins; owner-gated |
+| 31810 | Era presentation shifts | ⚠️ | 🔧 | 8a674f0 (OD-22(c)) | v1 canon = 1998+2026; 4-era campaign-phase plan ratified |
+| 31837 | Era UI skins, enumerated | ⚠️ | 🔧 | 8a674f0 (OD-22(c)) | 2 of 5 skins shipped; 4-era plan ratified, remaining skins build-wave owed |
 | 32326 | The full accessibility affordance list | ⚠️ | 🔧 | 9b32cc5, 942834f | 4 of 11 roster rows live; 7 affordances absent |
-| 32366 | Era display faces | ⚠️ | ⚠️ | — | owner-gated era grid |
+| 32366 | Era display faces | ⚠️ | 🔧 | 8a674f0 (OD-22(c)) | same era ruling; 2 faces shipped |
 | 32505 | The acceptance-test roster | ⚠️ | 🔧 | 9b32cc5, 942834f | 4 of 11 gates live (was 1 of 11) |
-| 32694 | Endless / Survival | ⚠️ | ⚠️ | — | 32 rows contested under OD-8 |
-| 33137 | Mode tiering | ⚠️ | ⚠️ | — | OD-16 open in DECISIONS-PENDING |
+| 32694 | Endless / Survival | ⚠️ | 🔧 | 8a674f0, 42fbbd2 | OD-16(a): endless-32 STAY PENDING_OD8 until an endless loop is scoped — deferral ratified |
+| 33137 | Mode tiering | ⚠️ | ✅ | 8a674f0 (OD-16(a)), 42fbbd2 | tiering law enacted (Core/Extended/Deferred census); list's owner-ratify-on-read flag tracked in SUMMARY disposition |
 
-Other fix-wave uplifts (non-⚠️ rows flipped): §5 unlock lattice/trigger rows ❌→🔧 (71b8960 engine, d8e5986 driver seam — observer default-off, hosts unwired); §2.24 Second Incident ❌→🔧 (4856a42 consumers + c9c0433 foreign-rules adapter); §1.3 Postmaster + §5.5 Sorting Table ❌→🔧 (4c28169 mail-hosting bundle, §5.6 email-gate prereqSets authored verbatim); §7.10 two-lane routing + Path Ugliness →✅ (8fd409a engine + cf7a696 mainline wiring); 12846 "Redirect chains" gains its missing ❌ marker.
+Other fix-wave uplifts (non-⚠️ rows flipped): §5 unlock lattice/trigger rows ❌→🔧 (71b8960 engine, d8e5986 driver seam — observer default-off, hosts unwired); §2.24 Second Incident ❌→🔧 (4856a42 consumers + c9c0433 foreign-rules adapter); §1.3 Postmaster + §5.5 Sorting Table ❌→🔧 (4c28169 mail-hosting bundle, §5.6 email-gate prereqSets authored verbatim); §7.10 two-lane routing + Path Ugliness →✅ (8fd409a engine + cf7a696 mainline wiring); 12846 "Redirect chains" gains its missing ❌ marker. **Wave-3 batch-1 closeout (0032a21..2ef5cae):** §2.24 rules rows Second Incident multiplier + Copycat reserve 🔧→✅ (4856a42 engine + c9c0433 adapter + 2ef5cae liveness on shipped g1 data — wave-4 10-vs-6 arrivals, wave-5 copycat 3/3/3); Feint budget stays 🔧 (marker-inert — shipped slices author no feint marker, consumer structurally live via planted-seam proof); The oversell ratio 🔧→✅ (2ef5cae host wiring, proto-only scope noted); Mode tiering 🔧→✅ (42fbbd2).
 
 ### Review minors (read-only review of the fix wave, 4 findings)
 
