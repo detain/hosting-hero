@@ -132,7 +132,7 @@ importers:
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.9
-        version: 6.0.9(vite@7.3.6(@types/node@24.19.1))(vue@3.5.43(typescript@6.0.3))
+        version: 6.0.9(vite@7.3.7(@types/node@24.19.1))(vue@3.5.43(typescript@6.0.3))
       '@vue/test-utils':
         specifier: ^2.5.1
         version: 2.5.1(@vue/compiler-dom@3.5.43)(@vue/server-renderer@3.5.43)(vue@3.5.43(typescript@6.0.3))
@@ -143,11 +143,11 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       vite:
-        specifier: ^7.3.6
-        version: 7.3.6(@types/node@24.19.1)
+        specifier: ^7.3.7
+        version: 7.3.7(@types/node@24.19.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.19.1)(jsdom@30.1.2)(vite@7.3.6(@types/node@24.19.1))
+        version: 4.1.11(@types/node@24.19.1)(jsdom@30.1.2)(vite@7.3.7(@types/node@24.19.1))
       vue-tsc:
         specifier: ^3.3.12
         version: 3.3.12(typescript@6.0.3)
@@ -159,7 +159,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.19.1)(jsdom@30.1.2)(vite@7.3.6(@types/node@24.19.1))
+        version: 4.1.11(@types/node@24.19.1)(jsdom@30.1.2)(vite@7.3.7(@types/node@24.19.1))
 
   tools/assetpack:
     devDependencies:
@@ -174,7 +174,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@26.6.4)(jsdom@30.1.2)(vite@7.3.6(@types/node@26.6.4))
+        version: 4.1.11(@types/node@26.6.4)(jsdom@30.1.2)(vite@7.3.7(@types/node@26.6.4))
 
   tools/headless:
     devDependencies:
@@ -186,7 +186,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@26.6.4)(jsdom@30.1.2)(vite@7.3.6(@types/node@26.6.4))
+        version: 4.1.11(@types/node@26.6.4)(jsdom@30.1.2)(vite@7.3.7(@types/node@26.6.4))
 
   tools/perf:
     devDependencies:
@@ -198,7 +198,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@26.6.4)(jsdom@30.1.2)(vite@7.3.6(@types/node@26.6.4))
+        version: 4.1.11(@types/node@26.6.4)(jsdom@30.1.2)(vite@7.3.7(@types/node@26.6.4))
 
 packages:
 
@@ -2356,8 +2356,8 @@ packages:
   utif2@4.1.0:
     resolution: {integrity: sha512-+oknB9FHrJ7oW7A2WZYajOcv4FcDR4CfoGB0dPNfxbi4GO05RRnFmt5oa23+9w32EanrYcSJWspUiJkLMs+37w==}
 
-  vite@7.3.6:
-    resolution: {integrity: sha512-4XP60spRGjSZFf1qYH+dJIkK2znL3zQfl9KkOV9MkkRR/3Dls0dxaBsQPTloEc5BLXWPL9vsOxopxyKoMmDueg==}
+  vite@7.3.7:
+    resolution: {integrity: sha512-AHEzTORMbi7/7aXp7w7KZ5+DCUdSeLsJz0grY8xHpc9DHdYb0vQu6DqJfm2tOw3gDExNgPgnJTXxM6syYFHaCA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -3493,10 +3493,10 @@ snapshots:
 
   '@types/object-hash@3.0.6': {}
 
-  '@vitejs/plugin-vue@6.0.9(vite@7.3.6(@types/node@24.19.1))(vue@3.5.43(typescript@6.0.3))':
+  '@vitejs/plugin-vue@6.0.9(vite@7.3.7(@types/node@24.19.1))(vue@3.5.43(typescript@6.0.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 7.3.6(@types/node@24.19.1)
+      vite: 7.3.7(@types/node@24.19.1)
       vue: 3.5.43(typescript@6.0.3)
 
   '@vitest/expect@4.1.11':
@@ -3508,21 +3508,21 @@ snapshots:
       chai: 6.3.0
       tinyrainbow: 3.2.0
 
-  '@vitest/mocker@4.1.11(vite@7.3.6(@types/node@24.19.1))':
+  '@vitest/mocker@4.1.11(vite@7.3.7(@types/node@24.19.1))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.6(@types/node@24.19.1)
+      vite: 7.3.7(@types/node@24.19.1)
 
-  '@vitest/mocker@4.1.11(vite@7.3.6(@types/node@26.6.4))':
+  '@vitest/mocker@4.1.11(vite@7.3.7(@types/node@26.6.4))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.6(@types/node@26.6.4)
+      vite: 7.3.7(@types/node@26.6.4)
 
   '@vitest/pretty-format@4.1.11':
     dependencies:
@@ -4724,7 +4724,7 @@ snapshots:
     dependencies:
       pako: 1.0.11
 
-  vite@7.3.6(@types/node@24.19.1):
+  vite@7.3.7(@types/node@24.19.1):
     dependencies:
       esbuild: 0.28.2
       fdir: 6.5.0(picomatch@4.0.7)
@@ -4736,7 +4736,7 @@ snapshots:
       '@types/node': 24.19.1
       fsevents: 2.3.3
 
-  vite@7.3.6(@types/node@26.6.4):
+  vite@7.3.7(@types/node@26.6.4):
     dependencies:
       esbuild: 0.28.2
       fdir: 6.5.0(picomatch@4.0.7)
@@ -4748,10 +4748,10 @@ snapshots:
       '@types/node': 26.6.4
       fsevents: 2.3.3
 
-  vitest@4.1.11(@types/node@24.19.1)(jsdom@30.1.2)(vite@7.3.6(@types/node@24.19.1)):
+  vitest@4.1.11(@types/node@24.19.1)(jsdom@30.1.2)(vite@7.3.7(@types/node@24.19.1)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(vite@7.3.6(@types/node@24.19.1))
+      '@vitest/mocker': 4.1.11(vite@7.3.7(@types/node@24.19.1))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -4768,7 +4768,7 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
       tinyrainbow: 3.2.0
-      vite: 7.3.6(@types/node@24.19.1)
+      vite: 7.3.7(@types/node@24.19.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.19.1
@@ -4776,10 +4776,10 @@ snapshots:
     transitivePeerDependencies:
       - msw
 
-  vitest@4.1.11(@types/node@26.6.4)(jsdom@30.1.2)(vite@7.3.6(@types/node@26.6.4)):
+  vitest@4.1.11(@types/node@26.6.4)(jsdom@30.1.2)(vite@7.3.7(@types/node@26.6.4)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(vite@7.3.6(@types/node@26.6.4))
+      '@vitest/mocker': 4.1.11(vite@7.3.7(@types/node@26.6.4))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -4796,7 +4796,7 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
       tinyrainbow: 3.2.0
-      vite: 7.3.6(@types/node@26.6.4)
+      vite: 7.3.7(@types/node@26.6.4)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 26.6.4
