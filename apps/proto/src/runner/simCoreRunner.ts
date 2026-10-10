@@ -44,6 +44,15 @@
  * The projection that leaves through the protocol carries ONLY observed-layer
  * data: LaneStats aggregates, ObservedCells, counters, notices, clocks.
  *
+ * WAVE RULES LIVE (§2.24, B4): the traffic is the SHIPPED g1 shared-web slice
+ * (five par-scaled waves via the canonical foreign adapter @c9c0433), planned
+ * lazily at each window entry with the three host inputs wired in
+ * `runner/waveRules.ts` — OD-24's 8:1 oversell proposal (gated on the bundle
+ * declaring the slider), a bounce/land incident clock (fires wave-4's
+ * secondIncident marker), and the deep lane's engaged-family census (copycat).
+ * All thresholds PROVISIONAL scenario rows; witnesses via wavePlan(n) /
+ * incidentState() / dominantDefenseFamily().
+ *
  * Purity law: every per-run mutable object (driver, store, plan, counters) is
  * minted inside the constructor, so two fresh instances on one seed replay
  * byte-identically through the wire (see __tests__/simCoreRunner.test.ts).
@@ -79,6 +88,7 @@ import {
   type RouteOut,
   type RunSeed,
   type SimTick,
+  type ThreatFamily,
   type TickStep,
   type WaveEnvelope,
 } from "@hh/sim-core/types";
@@ -120,13 +130,29 @@ import {
   directorPropose,
   ledgerSnapshot,
   parseFamilyWeightsTable,
-  parseWaveTable,
   planWave,
   waveStream,
   type DirectorState,
   type PressureParams,
   type WavePlan,
+  type WaveTable,
 } from "@hh/sim-core/waves";
+import {
+  INCIDENT_ACTIVE_MINUTES,
+  INITIAL_INCIDENT_CLOCK,
+  OVERSELL_RATIO_MICRO,
+  SHARED_WEB_G1_TABLE,
+  bundleDeclaresOversellSlider,
+  dominantFamilyOfCensus,
+  homogeneityMicroFromClassMix,
+  incidentStateOf,
+  planWaveWindowSchedule,
+  stepIncidentClock,
+  threatFamilyOfIntent,
+  type IncidentClock,
+  type IncidentState,
+  type WaveWindowSpec,
+} from "./waveRules";
 // SSOT law: the traffic mix comes from the authored bundle, never a copied
 // number (precedent: lab/coverageGridModel.ts, gates/g5, gates/g6).
 import sharedWebBundleRaw from "../../../../packages/content/types/shared-web.json?raw";
@@ -153,45 +179,17 @@ const NODE_WAF = asEntityId("waf");
 const NODE_DEEP = asEntityId("deep");
 const NODE_ORIGIN = asEntityId("origin");
 const LAG_TABLE_REF = "g1-smoke-lag-v0";
-const WAVE_WINDOW_MINUTES = 12;
 const WAVE_START_MINUTE = 2;
 
-/** Small opening budget (6 units) — same legal pressure override the smoke
- *  uses, so a 100-tick test run stays cheap without losing bounce physics. */
+/** Demo-cheap pressure override — same legal shape the smoke uses, kept so a
+ *  100-tick test run stays cheap without losing bounce physics. The REAL
+ *  shipped g1 slice rides on top of it: each wave's parPct (25/60/30/75/100)
+ *  scales the draw, so the quarter builds instead of one flat placeholder. */
 const PRESSURE: PressureParams = Object.freeze({
   baseMicro: 6n * 1_000_000n,
   growthNum: 223n,
   growthDen: 200n,
   sawtoothMicro: Object.freeze([1_000_000n]),
-});
-
-const WAVE_TABLE_RAW = Object.freeze({
-  id: "g1-adapter",
-  typeBundleId: "shared-web",
-  tuningSheet: "B",
-  unitsPerPressurePoint: 1,
-  waves: Object.freeze([
-    Object.freeze({
-      n: 1,
-      windowMinutes: WAVE_WINDOW_MINUTES,
-      rampMin: 3,
-      plateauMin: 3,
-      decayMin: 2,
-      parPct: 100,
-      hard: false,
-      entries: Object.freeze([
-        Object.freeze({
-          threatId: "adapter-swarm",
-          role: "swarm",
-          family: "malicious",
-          band: "storm",
-          sharePct: 100,
-          denominations: Object.freeze(["bandwidth"] as const),
-          targets: Object.freeze(["origin"] as const),
-        }),
-      ]),
-    }),
-  ]),
 });
 
 const CLASSES: readonly QosClassDef[] = Object.freeze([
@@ -422,11 +420,24 @@ export const FAMILY_MIX = bundleFamilyMix();
 
 /* ═══════════════════════ mainline mazing law (§7.10) ═══════════════════════ */
 
+/** Exactly the rule inputs handed to planWave when a window was minted
+ *  (null-side semantics: oversell undefined ⇒ slider not declared by the
+ *  bundle; dominantDefenseFamily undefined ⇒ deep lane never engaged). */
+export interface WaveRuleInputs {
+  readonly incidentState: IncidentState;
+  readonly dominantDefenseFamily: ThreatFamily | undefined;
+  readonly oversell: { readonly ratioMicro: bigint; readonly homogeneityMicro: bigint } | undefined;
+}
+
 /** Cumulative lane-split ledger — minted per runner instance (purity law),
- *  written ONLY by the maze route step, read into observed cells each frame. */
+ *  written ONLY by the maze route step, read into observed cells each frame.
+ *  `deepByFamily` is the B4 copycat witness: the hidden true-intent family of
+ *  every unit the DEEP lane engaged (host-side ground truth — it never rides
+ *  the wire; only its derived dominant-family shows up inside wave plans). */
 export interface MazeSplitLedger {
   express: number;
   deep: number;
+  readonly deepByFamily?: Partial<Record<ThreatFamily, number>> | undefined;
 }
 
 /** Score a fresh visit at arrival (the §7.10 "scored on arrival, not
@@ -479,6 +490,13 @@ export function createMazeRouteStep(
       if (preHops.get(String(unit.id)) !== 0) return unit; // in-flight: lane untouched
       if (armed && arrivalSuspicion(unit) > input.expressMaxConfidence) {
         law.split.deep += 1;
+        // B4 copycat input: the deep lane's engaged-family census (hidden
+        // truth read host-side; benign intents contribute nothing).
+        const census = law.split.deepByFamily;
+        const family = threatFamilyOfIntent(unit.trueIntent);
+        if (census !== undefined && family !== null) {
+          census[family] = (census[family] ?? 0) + 1;
+        }
         return Object.freeze({ ...unit, routeHops: Object.freeze([...law.deepPath]) });
       }
       law.split.express += 1;
@@ -610,17 +628,21 @@ export interface SimCoreRunnerOptions {
   readonly seed: number;
   /** Emission cadence divisor at 1× — 100ms = 10Hz protocol cap (§7.0). */
   readonly tickRealMs?: number;
-  /** TEST SEAM (F2 arrival honesty): re-family the placeholder wave so benign
-   *  bounces can form real retry storms. Shipped content is 100% malicious —
-   *  adversarial units are neutralized, never re-entered — so without this
-   *  knob the driver's between-steps re-entry mint is unobservable in tests.
-   *  The override also DISARMS the bundle familyMix dice (audit fix 3): the
-   *  seam means "force one family", and with the mix table off the arrival
+  /** TEST SEAM (F2 arrival honesty): force every wave envelope's label to one
+   *  family so benign bounces can form real retry storms. Shipped g1 content
+   *  is mostly adversarial — neutralized units never re-enter — so without
+   *  this knob the driver's between-steps re-entry mint is unobservable in
+   *  tests. The override also DISARMS the bundle familyMix dice (audit fix 3):
+   *  the seam means "force one family", and with the mix table off the arrival
    *  stream is byte-identical to the pre-mix era (envelope label decides).
-   *  Unset keeps the sim numbers byte-identical to the shipped placeholder;
-   *  the wire itself gains one always-zero additive cell (`reentryRatePerMin`)
-   *  from the F2 split, which every pre-F2 consumer reads as absent-0. */
+   *  Unset keeps the shipped dice; the wire itself gains one always-zero
+   *  additive cell (`reentryRatePerMin`) from the F2 split, which every pre-F2
+   *  consumer reads as absent-0. */
   readonly familyOverride?: WaveEnvelope["dominantFamily"];
+  /** TEST SEAM (B4): swap the wave table the schedule is built from — the
+   *  feint-liveness proof plants a marker in an otherwise-shipped slice.
+   *  Absent ⇒ the shipped g1 shared-web slice (SHARED_WEB_G1_TABLE). */
+  readonly table?: WaveTable;
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -630,8 +652,22 @@ export class SimCoreRunner implements SimRunner {
   private readonly runSeed: RunSeed;
   private readonly driver: TickDriver;
   private readonly store: ObservedStore;
-  private readonly plan: WavePlan;
-  private readonly envelope: WaveEnvelope;
+  /* ── B4 wave-rules host inputs (per-instance, purity law covers plans) ──
+   *  The shipped g1 slice's waves are planned LAZILY at window entry, each
+   *  with the host signals live AT THAT MINUTE (incident state, deep-lane
+   *  family census, QoS homogeneity). RNG inputs (waveStream + director
+   *  chain) are keyed only by (seed, n, cursor) and precomputed in the
+   *  constructor, so deferral changes WHEN a draw happens, never WHAT. */
+  private readonly table: WaveTable;
+  private readonly windows: readonly WaveWindowSpec[];
+  private readonly directorChain: readonly DirectorState[];
+  private readonly oversellDeclared: boolean;
+  private readonly familyOverride: WaveEnvelope["dominantFamily"] | undefined;
+  private readonly plans = new Map<number, WavePlan>();
+  private readonly envelopes = new Map<number, WaveEnvelope>();
+  /** Witness of the rule inputs each lazy plan actually rode (B4 liveness). */
+  private readonly ruleInputs = new Map<number, WaveRuleInputs>();
+  private incidentClock: IncidentClock = INITIAL_INCIDENT_CLOCK;
   private game: GameState;
   private lanes: ReadonlyMap<EntityId, LaneStats>;
   private aggression: Fixed = fromRatio(5n, 10n);
@@ -641,7 +677,7 @@ export class SimCoreRunner implements SimRunner {
    *  (reputation < 0.2) walks the deep lane while the door is armed. */
   private dial: Fixed = fromRatio(8n, 10n);
   /** Lane-split totals (minted per instance — the purity law covers ledgers). */
-  private readonly split: MazeSplitLedger = { express: 0, deep: 0 };
+  private readonly split: MazeSplitLedger = { express: 0, deep: 0, deepByFamily: {} };
   private readonly intentLog: PlayerIntent[] = [];
   /** Door schedule: intents stamped for the next headlessStep, fed EXACTLY once. */
   private pendingDoorIntents: ExternalIntent[] = [];
@@ -717,23 +753,117 @@ export class SimCoreRunner implements SimRunner {
     );
     this.econ = primeEconomy(this.ecoCfg);
 
-    // Director nudge FIRST (logged input law R-31), then plan wave 1.
-    const proposed = directorPropose(INITIAL_DIRECTOR_STATE, 0n, streamFor(this.runSeed, "director", 0));
-    const director: DirectorState = proposed.next;
-    this.plan = planWave(parseWaveTable(WAVE_TABLE_RAW), 1, {
-      startMinute: WAVE_START_MINUTE,
-      tick: 0n,
-      rng: waveStream(this.runSeed, 1, WAVE_START_MINUTE),
-      director,
+    /* B4: shipped g1 slice on the wire. Director chain + window schedule are
+     * precomputed exactly like fastForward.buildWaveWindows (logged-input law
+     * R-31), so a lazy per-wave plan is bit-identical to an eager one. */
+    this.table = options.table ?? SHARED_WEB_G1_TABLE;
+    this.familyOverride = options.familyOverride;
+    this.windows = planWaveWindowSchedule(this.table, WAVE_START_MINUTE);
+    this.oversellDeclared = bundleDeclaresOversellSlider(JSON.parse(sharedWebBundleRaw));
+    const chain: DirectorState[] = [];
+    let director: DirectorState = INITIAL_DIRECTOR_STATE;
+    for (const w of this.windows) {
+      director = directorPropose(director, BigInt(w.cursor), streamFor(this.runSeed, "director", w.cursor)).next;
+      chain.push(director);
+    }
+    this.directorChain = Object.freeze(chain);
+  }
+
+  /** Lazily plan + label window `w` with the host signals LIVE AT ENTRY.
+   *  Memoized per wave number — the first covering minute mints it once. */
+  private envelopeFor(spec: WaveWindowSpec): WaveEnvelope {
+    const cached = this.envelopes.get(spec.n);
+    if (cached !== undefined) return cached;
+    const plan = this.planMemo(spec);
+    const envelope =
+      this.familyOverride === undefined
+        ? plan.waveEnvelope
+        : Object.freeze({ ...plan.waveEnvelope, dominantFamily: this.familyOverride });
+    this.envelopes.set(spec.n, envelope);
+    return envelope;
+  }
+
+  /** The §2.24 wiring point: every host-derived rule input rides THIS call.
+   *  incidentState "quiet" is engine-inert (absent ≙ quiet), dominantDefense-
+   *  Family is omitted until the deep lane has engaged a family, and oversell
+   *  is supplied only when the bundle declares the slider (OD-24). */
+  private planWaveFor(spec: WaveWindowSpec): WavePlan {
+    const lane = this.lanes.get(LANE_ID);
+    const dominant = dominantFamilyOfCensus(this.split.deepByFamily ?? {});
+    const oversell = this.oversellDeclared
+      ? Object.freeze({
+          ratioMicro: OVERSELL_RATIO_MICRO,
+          homogeneityMicro: homogeneityMicroFromClassMix(lane?.classMix ?? {}),
+        })
+      : undefined;
+    const incident = incidentStateOf(this.incidentClock);
+    this.ruleInputs.set(
+      spec.n,
+      Object.freeze({ incidentState: incident, dominantDefenseFamily: dominant, oversell }),
+    );
+    return planWave(this.table, spec.n, {
+      startMinute: spec.cursor,
+      tick: BigInt(spec.cursor),
+      rng: waveStream(this.runSeed, spec.n, spec.cursor),
+      director: this.directorChain[spec.index] as DirectorState,
       ledger: ledgerSnapshot([], 0n),
       invitations: buildInvitations({}),
       entropyForecastPurchased: false,
       pressureParams: PRESSURE,
+      incidentState: incident,
+      ...(dominant === undefined ? {} : { dominantDefenseFamily: dominant }),
+      ...(oversell === undefined ? {} : { oversell }),
     });
-    this.envelope =
-      options.familyOverride === undefined
-        ? this.plan.waveEnvelope
-        : Object.freeze({ ...this.plan.waveEnvelope, dominantFamily: options.familyOverride });
+  }
+
+  /** The fastForward envelope law (sim-core unattended): a window is active
+   *  at `minute` iff minute ∈ [plan.startMinute, plan.startMinute + authored
+   *  window) — plan.startMinute being the PLACEMENT-DRAW result, not the
+   *  cursor. Minting triggers the first time the cursor minute is reached,
+   *  so overlapping placements can legitimately feed two envelopes (the
+   *  arrival step fans every active envelope; the quarter builds). */
+  private envelopesAtMinute(minute: number): readonly WaveEnvelope[] {
+    const active: WaveEnvelope[] = [];
+    for (const w of this.windows) {
+      if (minute < w.cursor) continue; // not entered yet — never mint early
+      const plan = this.planMemo(w);
+      if (minute >= plan.startMinute && minute < plan.startMinute + w.windowMinutes) {
+        active.push(this.envelopeFor(w));
+      }
+    }
+    return Object.freeze(active);
+  }
+
+  private planMemo(spec: WaveWindowSpec): WavePlan {
+    const cached = this.plans.get(spec.n);
+    if (cached !== undefined) return cached;
+    const plan = this.planWaveFor(spec);
+    this.plans.set(spec.n, plan);
+    return plan;
+  }
+
+  /** B4 witnesses (tests / future HUD explain chains): plans mint LAZILY at
+   *  window entry, so a wave not yet reached reads undefined — never a lie. */
+  wavePlan(n: number): WavePlan | undefined {
+    return this.plans.get(n);
+  }
+
+  waveEnvelopes(): ReadonlyMap<number, WaveEnvelope> {
+    return this.envelopes;
+  }
+
+  incidentState(): IncidentState {
+    return incidentStateOf(this.incidentClock);
+  }
+
+  dominantDefenseFamily(): ThreatFamily | undefined {
+    return dominantFamilyOfCensus(this.split.deepByFamily ?? {});
+  }
+
+  /** The rule inputs each minted plan actually rode (B4 liveness witness —
+   *  undefined until that window's entry minute has been stepped). */
+  waveRuleInputs(n: number): WaveRuleInputs | undefined {
+    return this.ruleInputs.get(n);
   }
 
   start(emit: (projection: SimProjection) => void): void {
@@ -799,8 +929,9 @@ export class SimCoreRunner implements SimRunner {
 
   headlessStep(_dtRealMs: number): SimProjection {
     const minute = this.game.context.minute + 1;
-    const inWave = minute >= this.plan.startMinute && minute < this.plan.startMinute + WAVE_WINDOW_MINUTES;
-    const envelopes: readonly WaveEnvelope[] = inWave ? Object.freeze([this.envelope]) : Object.freeze([]);
+    /* placement-gated envelopes (fastForward law); lazily-planned waves mint
+       their plan with the host signals LIVE AT WINDOW ENTRY. */
+    const envelopes: readonly WaveEnvelope[] = this.envelopesAtMinute(minute);
     const due = this.pendingDoorIntents.splice(0, this.pendingDoorIntents.length);
 
     const inputs: TickInputs = Object.freeze({
@@ -937,6 +1068,7 @@ export class SimCoreRunner implements SimRunner {
        entry total (organic + re-entries): a retry storm flooding the lane IS a
        surge — that blindness was the F2 bug this fix retires. */
     const notices: EventNotice[] = [];
+    const incidentLosses = { bounced: 0, landed: 0 };
     if (entries.organic + entries.reentered >= 3) {
       notices.push({ kind: "arrival-surge", laneId: LANE_ID, atUs: tickUs });
     }
@@ -956,11 +1088,17 @@ export class SimCoreRunner implements SimRunner {
       else if (terminal === "bounced") this.counters.bounced += 1;
       else if (terminal === "blocked-false-positive") this.counters.blockedFalsePositive += 1;
       else this.counters.landed += 1;
+      /* B4 incident fold: losses THIS minute feed the rolling clock the next
+         lazy wave plan reads (a landed breach is an incident on sight; two
+         losses inside the window make one together). */
+      if (terminal === "bounced") incidentLosses.bounced += 1;
+      else if (terminal === "landed") incidentLosses.landed += 1;
       const noticeKind = NOTICE_FOR_TERMINAL[terminal];
       if (noticeKind !== null) {
         notices.push({ kind: noticeKind, laneId: LANE_ID, atUs: outcome.atUs });
       }
     }
+    this.incidentClock = stepIncidentClock(this.incidentClock, incidentLosses);
     for (const firing of result.ruleFirings) {
       void firing;
       notices.push({ kind: "rule-fired", laneId: null, atUs: tickUs });

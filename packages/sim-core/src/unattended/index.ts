@@ -71,6 +71,7 @@ export type {
   UnattendedStop,
   UnattendedSummary,
   UnattendedTrafficConfig,
+  UnattendedWaveRules,
 } from "./fastForward.ts";
 
 export {

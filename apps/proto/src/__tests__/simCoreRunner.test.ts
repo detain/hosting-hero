@@ -247,9 +247,16 @@ const LANE = asEntityId("lane/ingress-1");
 const KEY_RATE = observedKey(LANE, "ratePerMin");
 const KEY_REENTRY = observedKey(LANE, "reentryRatePerMin");
 
-/** The placeholder wave admits arrivals for WAVE_WINDOW minutes from
- *  WAVE_START_MINUTE (simCoreRunner scenario consts) — after this minute the
- *  envelope array is empty, so any lane entry is by construction a re-entry. */
+/* B4 RECAPTURE (disclosed): the runner plans the SHIPPED g1 slice lazily per
+ * window, so the stream moved — wave-1 is PLACED at minute 6 (not 2), the five
+ * authored windows run to ~minute 62, and the real family mix (customerAsThreat
+ * 20% / malicious 35% / human 20% / entropic 5% / systemic 20%) mints benign
+ * traffic that lands where the old all-malicious placeholder only bounced.
+ * Every pin below is a FRESH probe-derived value on the new stream. */
+
+/** The pre-B4 placeholder window boundary (2 + 12). Kept as the "late minutes"
+ *  gate: the live schedule runs to ~minute 62, so pure re-entry minutes past 14
+ *  are still structurally mint-free windows of organic traffic. */
 const WAVE_END_MINUTE = 2 + 12;
 
 function fixedCell(projection: SimProjection, key: ObservedKey): bigint {
@@ -305,14 +312,20 @@ describe("lane arrival honesty (F2: retry re-entries bypass step-1 events)", () 
   });
 
   it("a benign retry storm READS on the lane after the wave ends — event-counting saw zero", () => {
-    // Placeholder content is 100% malicious (adversarial → never re-enters),
-    // so the storm needs the familyOverride test seam: organic traffic that
-    // bounces re-enters via the driver's between-steps mint.
-    const frames = driveFrames(7, "organic");
+    // Organic override stays the storm seam: benign traffic that bounces
+    // re-enters via the driver's between-steps mint. B4 RECAPTURE: the live
+    // schedule runs to ~minute 62, so drive 100 ticks; the first PURE
+    // (re-entry-only) minute is 62 — exactly when the last envelope closes
+    // (probe: 10 pure frames, minutes 62-71, first rate 2/min).
+    const frames = driveFrames(7, "organic", TICKS);
     const stormFrames = frames.filter(
-      (f) => Number(f.minute) > WAVE_END_MINUTE && fixedCell(f, KEY_REENTRY) > 0n,
+      (f) =>
+        Number(f.minute) > WAVE_END_MINUTE &&
+        fixedCell(f, KEY_REENTRY) > 0n &&
+        fixedCell(f, KEY_RATE) === fixedCell(f, KEY_REENTRY),
     );
-    expect(stormFrames.length).toBeGreaterThan(0); // probe-pinned: seeds 7/42/904 all storm
+    expect(stormFrames.length).toBe(10); // probe-pinned on the B4 stream
+    expect(Number(stormFrames[0]?.minute)).toBe(62);
     for (const frame of stormFrames) {
       // Post-window there are NO arrival envelopes ⇒ organic is structurally 0.
       // The old arrivalsThisTick event count read 0 here while units entered.
@@ -323,14 +336,18 @@ describe("lane arrival honesty (F2: retry re-entries bypass step-1 events)", () 
     }
   });
 
-  it("in-window frames carry the explicit split: total = organic + reentries", () => {
-    // Seed 33, organic override: tick 14 mixes one organic arrival with one
-    // re-entry (probe-pinned) — the (c) requirement: storms read DIFFERENTLY.
-    // (Was seed 7 / tick 13 pre-mazing; the two-lane latencies shift every
-    // bounce's backoff maturity, so the mixed frame moved — see the
-    // legacy-fixture pin below for what the pre-mazing board read.)
-    const mixed = driveFrames(33, "organic").find((f) => f.tick === 14n);
-    if (mixed === undefined) throw new Error("expected a tick-14 frame");
+  it("mid-schedule frames carry the explicit split: total = organic + reentries", () => {
+    // B4 RECAPTURE: seed 33/organic no longer shows a mixed frame inside the
+    // old 14-tick reach (the placement draw parks wave-1 at minute 6 and the
+    // re-entry maturity moved); seed 7/organic mixes at minute 54 — inside
+    // wave-5's window — one organic mint plus one silent re-entry
+    // (probe-pinned: re 1.0, total 2.0).
+    const mixed = driveFrames(7, "organic", TICKS).find((f) => {
+      const re = fixedCell(f, KEY_REENTRY);
+      return re > 0n && fixedCell(f, KEY_RATE) > re;
+    });
+    if (mixed === undefined) throw new Error("expected a mixed frame");
+    expect(Number(mixed.minute)).toBe(54);
     const reentry = fixedCell(mixed, KEY_REENTRY);
     const total = fixedCell(mixed, KEY_RATE);
     expect(reentry).toBe(fromInt(1)); // one silent re-entry
@@ -338,7 +355,11 @@ describe("lane arrival honesty (F2: retry re-entries bypass step-1 events)", () 
     expect(total - reentry).toBe(fromInt(1)); // organic component stays visible by subtraction
   });
 
-  it("the shipped malicious placeholder never re-enters: honest zeros on every frame", () => {
+  it("seed 42's mainline mix never re-enters in 100 ticks: honest zeros on every frame", () => {
+    // B4: the content is no longer an all-malicious placeholder — the shipped
+    // g1 mix DOES mint benign families here, but on this seed they land or are
+    // served rather than bouncing back into a storm (probe: re-entry census
+    // stays 0 through minute 100). The cell is still published every frame.
     const frames = driveFrames(42, undefined, TICKS);
     for (const frame of frames) {
       expect(fixedCell(frame, KEY_REENTRY)).toBe(0n); // cell present, value honest
@@ -355,7 +376,8 @@ describe("lane arrival honesty (F2: retry re-entries bypass step-1 events)", () 
   });
 
   it("wire back-compat: new cell round-trips; old 2-cell frames still decode", () => {
-    const frame = driveFrames(7, "organic").find((f) => fixedCell(f, KEY_REENTRY) > 0n);
+    // B4 RECAPTURE: first storm frame moved to minute 54 → drive the full 100.
+    const frame = driveFrames(7, "organic", TICKS).find((f) => fixedCell(f, KEY_REENTRY) > 0n);
     if (frame === undefined) throw new Error("expected a storm frame");
     const decoded = decodeProjection(JSON.parse(JSON.stringify(encodeProjection(frame))));
     expect(decoded.observed.get(KEY_REENTRY)?.value).toBe(fixedCell(frame, KEY_REENTRY));
@@ -445,15 +467,17 @@ function drive(
 
 describe("mainline mazing (§7.10): two lanes, real door, authored traffic mix", () => {
   it("no intents needed: hot arrivals route deep, cold arrivals ride express", () => {
-    // Seed 42 (default authored mix on): the first demotion is tick 7, and
-    // after the wave the ledger reads 8 express / 1 deep (probe-pinned).
-    const frames = drive(42);
+    // B4 RECAPTURE (disclosed): the live schedule places wave-1 at minute 6
+    // and the first HOT units (deep-routed) only arrive with wave-4's marked
+    // follow-ons — first deep tick 41 (was 7 on the placeholder stream).
+    // After the full five windows at 100 ticks: 32 express / 8 deep.
+    const frames = drive(42, { ticks: TICKS });
     const firstDeep = frames.find((f) => intCell(f, KEY_DEEP) >= 1);
-    expect(firstDeep?.tick).toBe(7n);
+    expect(firstDeep?.tick).toBe(41n);
     const last = frames[frames.length - 1];
     if (last === undefined) throw new Error("expected frames");
-    expect(intCell(last, KEY_EXPRESS)).toBe(8);
-    expect(intCell(last, KEY_DEEP)).toBe(1);
+    expect(intCell(last, KEY_EXPRESS)).toBe(32);
+    expect(intCell(last, KEY_DEEP)).toBe(8);
     expect(intCell(last, KEY_ARMED)).toBe(1); // front door boots armed (sample-1-in-20)
   });
 
@@ -463,6 +487,7 @@ describe("mainline mazing (§7.10): two lanes, real door, authored traffic mix",
     // express total matches the armed board's combined split (8 + 1 = 9).
     const frames = drive(42, {
       intents: [null, disarmFrontDoorIntent(2)], // index 1 = after frame 1
+      ticks: TICKS,
     });
     const receipts = frames.flatMap((f) =>
       f.notices.filter(
@@ -474,12 +499,16 @@ describe("mainline mazing (§7.10): two lanes, real door, authored traffic mix",
     if (last === undefined) throw new Error("expected frames");
     expect(intCell(last, KEY_ARMED)).toBe(0);
     expect(intCell(last, KEY_DEEP)).toBe(0);
-    expect(intCell(last, KEY_EXPRESS)).toBe(9); // same mints — only the lane changed
+    // B4 RECAPTURE: 44 lane entries at 100 ticks (was 9 pre-B4 at 40 ticks —
+    // the armed/disarm arms no longer mint IDENTICAL totals: lane choice feeds
+    // back into bounce→re-entry maturity, so pass-through serves shift the
+    // queue. The conservation gate below re-pins Σrate == express + deep per arm.)
+    expect(intCell(last, KEY_EXPRESS)).toBe(44);
   });
 
   it("the dial is the split threshold: max ⇒ all express, zero ⇒ all deep", () => {
-    const lenient = drive(42, { intents: [dialIntent(FIXED_UNIT)] });
-    const strict = drive(42, { intents: [dialIntent(0n)] });
+    const lenient = drive(42, { intents: [dialIntent(FIXED_UNIT)], ticks: TICKS });
+    const strict = drive(42, { intents: [dialIntent(0n)], ticks: TICKS });
     const lastOf = (frames: SimProjection[]): SimProjection => {
       const last = frames[frames.length - 1];
       if (last === undefined) throw new Error("expected frames");
@@ -487,11 +516,13 @@ describe("mainline mazing (§7.10): two lanes, real door, authored traffic mix",
     };
     // score > dial ⇒ deep. dial=1.0: no score exceeds it (max score = 1.0,
     // and the comparison is strict). dial=0: every unit with reputation < 1
-    // is demoted — seed 42's wave has no perfect-reputation mints.
+    // is demoted — seed 42's live schedule mints no perfect-reputation units.
+    // B4 RECAPTURE (100 ticks): lenient 44/0, strict 0/41 — per-arm mint
+    // totals differ for the same bounce-feedback reason as the disarm arm.
     expect(intCell(lastOf(lenient), KEY_DEEP)).toBe(0);
-    expect(intCell(lastOf(lenient), KEY_EXPRESS)).toBe(9);
+    expect(intCell(lastOf(lenient), KEY_EXPRESS)).toBe(44);
     expect(intCell(lastOf(strict), KEY_EXPRESS)).toBe(0);
-    expect(intCell(lastOf(strict), KEY_DEEP)).toBe(9);
+    expect(intCell(lastOf(strict), KEY_DEEP)).toBe(41);
   });
 
   it("split ledger conserves lane entries: Σ ratePerMin == express + deep", () => {

@@ -69,6 +69,7 @@ import type {
   SimMinute,
   SimTick,
   SimTimeUs,
+  ThreatFamily,
   WaveEnvelope,
 } from "../types.ts";
 import { asCauseId, asEntityId, asMetricId, asMoney, observedKey, ResolutionBand } from "../types.ts";
@@ -77,6 +78,7 @@ import { FIXED_ONE, FIXED_ZERO, compare, fromInt, fromRatio, mul } from "../kern
 import { MICROS_PER_MIN, initialClocks } from "../kernel/time.ts";
 import { streamFor } from "../kernel/rng.ts";
 import type { PressureParams } from "../waves/pressure.ts";
+import type { OversellPressure } from "../waves/contention.ts";
 import type { WaveTable } from "../waves/table.ts";
 import { parseWaveTable } from "../waves/table.ts";
 import { planWave, waveStream } from "../waves/generate.ts";
@@ -197,6 +199,21 @@ export const UNATTENDED_DEFAULT_PATIENCE_MIN = 120;
 
 /* ═══════════════════════════ the config record ═══════════════════════════ */
 
+/** §2.24 wave-RULES host inputs (B4). Every field rides planWave verbatim for
+ *  EACH scheduled wave; absent record (or absent field) ⇒ the three rule
+ *  consumers (feint is marker-gated by the table itself) stay exactly as
+ *  pre-B4 — a run without `rules` is byte-identical to the same run before
+ *  this option existed. The product host derives these live
+ *  (apps/proto/src/runner/waveRules.ts); an unattended weekend declares a
+ *  STATIC posture instead ("play the quarter under an active incident"). */
+export interface UnattendedWaveRules {
+  /** OD-24 oversell posture (ratio ≤ 1e6 micro is provably inert — the
+   *  contention law's own floor, not a special case here). */
+  readonly oversell?: OversellPressure;
+  readonly incidentState?: "active" | "recovering" | "quiet";
+  readonly dominantDefenseFamily?: ThreatFamily;
+}
+
 /** Traffic: flat baseline plateau by default; legal waves data (parsed +
  *  law-enforced at parse time like versus) when supplied. */
 export interface UnattendedTrafficConfig {
@@ -212,6 +229,9 @@ export interface UnattendedTrafficConfig {
   readonly waveStartMinute?: SimMinute;
   /** Forwarded to planWave (default the table's own sheet). */
   readonly pressureParams?: PressureParams;
+  /** §2.24 rule inputs forwarded to every planWave (B4). Absent ⇒ every
+   *  wave plans with zero rule pressure — the byte-ident pre-B4 shape. */
+  readonly rules?: UnattendedWaveRules;
 }
 
 /** One host-scheduled burn posted through the ledger at its sim-minute
@@ -664,6 +684,7 @@ interface WaveWindow {
 
 function buildWaveWindows(seed: RunSeed, config: RunUnattendedConfig, table: WaveTable): readonly WaveWindow[] {
   const windows: WaveWindow[] = [];
+  const rules = config.traffic?.rules;
   let director: DirectorState = INITIAL_DIRECTOR_STATE;
   let cursor = config.traffic?.waveStartMinute ?? 2;
   for (const wave of table.waves) {
@@ -679,6 +700,12 @@ function buildWaveWindows(seed: RunSeed, config: RunUnattendedConfig, table: Wav
       invitations: buildInvitations({}),
       entropyForecastPurchased: false,
       ...(config.traffic?.pressureParams !== undefined ? { pressureParams: config.traffic.pressureParams } : {}),
+      /* §2.24 host rule inputs (B4): verbatim per wave, each field omitted
+         when the record leaves it unset — absent rules ⇒ zero new keys on
+         the planWave input, byte-identical to the pre-B4 fold. */
+      ...(rules?.oversell !== undefined ? { oversell: rules.oversell } : {}),
+      ...(rules?.incidentState !== undefined ? { incidentState: rules.incidentState } : {}),
+      ...(rules?.dominantDefenseFamily !== undefined ? { dominantDefenseFamily: rules.dominantDefenseFamily } : {}),
     });
     windows.push({ n: wave.n, startMinute: plan.startMinute, windowMinutes: wave.windowMinutes, envelope: plan.waveEnvelope });
     cursor += wave.windowMinutes;
