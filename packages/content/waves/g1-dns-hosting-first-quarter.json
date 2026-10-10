@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-dns-hosting-first-quarter",
+  "type": "official:dns-hosting",
+  "purpose": "First-quarter wave slice for the fourth Ruleset Card — the variety-engine proof (4 of ~34 types). Slice shape mirrors the three shipped g1 siblings: one query tide with a world-map baseline that has no local hour, an amplification volley as the surprise-with-composition beat, and a finale built on the level's authored cruelty ('Nothing is down. Everything is unreachable.'). Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "solid-grey-blur",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. DNS is the exception to the local-hour anchor: the card's product is a world map and the query tide circles it — 'peakHourLocal' has no honest single value while the sun never sets on the anycast set (§1.3 'The Signpost Network', world-map level). Amplitude and curve id await the waves-lane curve catalogue; PROVISIONAL-B.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "overnight-amplification-volley",
+      "kind": "threat",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "null-route-tail" },
+      "amplitude": null,
+      "telegraph": "none — the card's signature is the double face of amplification with no ramp: 'you are a reflector and a target at the same time, and your upstream null-routes you mid-volley' (§1.3)",
+      "source": "§1.3 DNS card Threats line (amplification, reflector AND target); §2.12 'Reflection Conscription' is the same beat's mechanic (counter: RRL)",
+      "compoundWave": "the decay tail IS the quarter's reputation leg: abuse-complaint glyphs flying in from every victim's NOC, peering partners asking questions (§2.12 conscription visual)",
+      "_todo": "volley volume → bandwidth/PPS pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "negative-cache-penance",
+      "kind": "customer",
+      "overWaves": [3],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "expiry-gated" },
+      "amplitude": null,
+      "telegraph": "the customer opens a ticket the moment they flip the record — they cannot see why their new subdomain does not exist yet",
+      "source": "§2.12 'Water Torture' cost clause, verbatim law: the counter to random-subdomain flooding (aggressive negative caching) is what makes 'customer's new subdomain waits for negative cache expiry' — the trough's drop is not clean air, it is your own throttle collecting its toll",
+      "_todo": "negative-TTL default and ticket-rate unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "silent-rollover-clock",
+      "kind": "threat",
+      "overWaves": [4, 5],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "none-visible" },
+      "amplitude": null,
+      "composition": ["mod-update-day", "empty-server-spiral"],
+      "telegraph": "the candle's draught, not a banner — 'a draught you can see disturbing it before the number moves' (§1.3 meter law); the failure the card names verbatim: 'Nothing is down. Everything is unreachable. Your monitoring, which uses a non-validating resolver, says green.'",
+      "source": "§1.3 DNS card 'The meter, expanded' + signature-failure block (missed DNSSEC rollover)",
+      "compoundWave": "authored so CORRECTNESS LEGIBILITY is the scarce resource, not throughput (§2.24 compound-wave authoring, DNS variant)",
+      "_todo": "validation-failure percentage-of-resolvers decay curve unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is a probe drizzle reading itself as zone-transfer curiosity, not volume — the grey blur barely notices.",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["reputation"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the card's signature volley, early and unmissable. Two-Front (§2.24): the amplification barrage spends bandwidth (query PPS against PoP capacity) AND reputation (the abuse desk lights up because your resolvers are the reflectors); the open-resolver conscription feeds it (§2.12 'Reflection Conscription' — a node blasting a cone off-map while an angry abuse-complaint glyph flies in).",
+      "entries": [
+        { "threat": "udp-amplification-barrage", "role": "Tank", "pressurePct": 60, "band": "storm" },
+        { "threat": "open-resolver-reflection", "role": "Parasite", "pressurePct": 40, "band": "weather" }
+      ],
+      "denominations": ["bandwidth", "reputation"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24)."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the RRL tuning, the negative-cache policy, the first extra PoP all get their window here. The drop is not clean air — free-tier tenants running table-scan queries against their own giant zones spend cash-per-query COGS (§2.12 'Free-Tier COGS Leak': 'the signature non-attack problem: the product is nearly free and it costs you not'), while the probe drizzle continues mapping your transfer posture.",
+      "entries": [
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 60, "band": "entropy" },
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 40, "band": "weather" }
+      ],
+      "denominations": ["concurrency", "cash"]
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, DNS variant: the rollover-day lands — a fleet-wide scheduled event that splits traffic toward whatever the player forgot to rotate (Splitter debuts here, the every-4th-wave NEW ROLE beat; unseen in waves 1-3) — and the zone-change ticket avalanche (Swarm, hands) arrives inside the same incident window, so the second-incident multiplier applies (stated openly in the Codex, §2.24). Two fronts: data-integrity (a signing or zone mistake is correctness debt, the card's '— and correctness' scarce tail) x hands (every customer's TTL bet wants a human).",
+      "entries": [
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 55, "band": "hunter" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["data-integrity", "hands"],
+      "secondIncident": "ticket avalanche arrives inside the rollover-day incident window -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the card's cruelty, mechanised: nothing new arrives at full volume — the abandonment spiral (Healer/Spawner, second fresh role of the slice's cadence) compounds the wave-4 smudge while validating resolvers quietly give up on you, the water-torture sipper grinds the cache (§2.12 random-subdomain flood: 'the cache is beaten, every query comes to you'), and the rollover day's split traffic continues. Hard wave draws TWO fronts — concurrency x reputation — per §2.24. The signature moment fires inside this wave if the key calendar went unread all quarter: 'Nothing is down. Everything is unreachable. Your monitoring, which uses a non-validating resolver, says green.' (§1.3). The world-map stake is the Dyn-2016 beat: you are attacked because of WHO your customers are, and hundreds of companies go down publicly with your name attached (§1.3). Win check: free-to-paid conversion held >=1.5% across the window while the free tier stayed survivable.",
+      "entries": [
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 40, "band": "entropy" },
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 30, "band": "storm" },
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 30, "band": "hunter" }
+      ],
+      "denominations": ["concurrency", "reputation"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}

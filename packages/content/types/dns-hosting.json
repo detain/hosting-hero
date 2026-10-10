@@ -1,0 +1,351 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:dns-hosting",
+  "_todo": "All human strings are keys into file:packs/dns-hosting.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. Pack authored at file:packs/dns-hosting.i18n.json — cac.dns-hosting.todo stays a placeholder until §6.6 Companion B prices the DNS channel.",
+
+  "meta": {
+    "name": "type.dns-hosting.name",
+    "codexSummary": "type.dns-hosting.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.query",
+    "durationClass": "Instant",
+    "stats": {
+      "patience": 100,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§3.1 five-stat example, verbatim: 'A DNS query is patience 100ms / value ~0 / weight ~0 / loyalty n/a / fragility low'. patience authored as the doc's single explicit scalar for this line; value/weight '~0', loyalty 'n/a', fragility 'low' stay qualitative — '~0' is not a signed budget and 'n/a' is not a number, so null + this cite, never a forged zero."
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": 100,
+        "bounceSigmoid": [0.6, 1.0, 1.6],
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "budgetMs = the §3.1 patience 100ms, same authoring pair shared-web uses for its 3000ms. bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline. §3.2 Query row names the failure modes the budget guards: 'SERVFAIL/timeout' at '~100ms'."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null
+    },
+    "populationEffect": false,
+    "retryAmplifies": false,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-query",
+    "trustReadable": true,
+    "archetypeRefs": [],
+    "_todo": "retryAmplifies false: the line's volume pressure is authored as TTL throttle ('TTL is a throttle you own' — §1.3 card) plus attack traffic (§2.12 Water Torture, Reflection Conscription), not as a doc'd visitor retry loop; resolver-side retransmit is real-world texture the card deliberately folds into 'unimaginable volume' rather than a mechanic. archetypeRefs empty by authoring law, not oversight: the nine shipped archetypes are human/machine visitors and DNS's visitor is the query itself (same law mail cites for the message); a DNS-native archetype would move the registry censuses this lane is fenced off from (coverage invitations.test.ts pins threats=16; g2 corpus pins the 9-archetype roster) — flagged for the registry-owner pass. cohortSpawn tier 3: each customer's zone summons its own query cohort — 'Domains by the million' (§0.3 customer row). costPerInvocation per-query: §6.6 revenue 'per-query at huge scale' meters the act of resolving."
+  },
+
+  "goal": {
+    "nodeType": "authoritative-answer",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "free-to-paid-conversion-rate",
+      "threshold": 1.5,
+      "_todo": "§1.3 card WIN verbatim: 'convert 1.5% of free tier to paid before the free tier's cost exceeds paid revenue'. The race clause (cost-crossover timing) rides the level harness (economy pressure), not this scalar; §0.3 fifth-axis row is the legibility frame the hold is judged in."
+    },
+    "loseCondition": {
+      "kind": "total-resolution-failure"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.dns-hosting.binding"
+  },
+
+  "scarce": {
+    "resourceId": "anycast-pop-capacity",
+    "meterWidget": "query-latency-candle",
+    "meterBoundStat": "query-latency-p99",
+    "commercialSlider": "free-tier-query-allowance",
+    "operationalDials": [
+      "zone-ttl-band",
+      "rrl-rate-ceiling",
+      "negative-cache-aggressiveness",
+      "dnssec-rotation-window"
+    ],
+    "windowGrows": false,
+    "shedOrder": "rrl-repeat-source-ladder",
+    "qosAnswer": "scarce.dns-hosting.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly",
+      "escalator": false,
+      "grandfathering": false
+    },
+    "seasonality": [],
+    "diurnalBaseline": "solid-grey-blur",
+    "_todo": "simTimeScale ms: §7.8 keeps the µs register for ad-tech/financial colo, not DNS — DNS's budget is the 100ms query patience (§3.1). seasonality []: no DNS season authored anywhere in §6.6/§1.3 ('monthly' is cash timing, not a season) — never invented. diurnalBaseline 'solid-grey-blur': the card's world-map product has no single local hour; the grey blur never sleeps, matching §1.3 'Tiny queries, unimaginable volume, microsecond budgets' as a constant tide rather than a commuter curve."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.3,
+      "human": 0.15,
+      "entropic": 0.05,
+      "systemic": 0.35,
+      "customerAsThreat": 0.15,
+      "_todo": "systemic .35 per §2.27 Matrix C (RATIFIED), verbatim: 'email, DNS and bulletproof skew systemic (reputation and third-party decisions)' — the systemic leg here is BGP hijack of your anycast prefix, registrar account compromise, and being attacked because of WHO your customers are (Dyn-2016, §1.3). malicious .30 — amplification conscription, water torture, cache poisoning attempts (§2.12). human .15 — customer zone-change tickets and fat-finger pushes (§2.12). customerAsThreat .15 — free-tier tenants turning you into a DDoS magnet and crypto-phishing host (§1.3 Freemium row). entropic .05 — dangling records and rotting DNSSEC key calendars. Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "systemic",
+      "malicious",
+      "human"
+    ],
+    "signatureThreats": [
+      { "id": "open-resolver-reflection", "mechanical": true },
+      { "id": "udp-amplification-barrage", "mechanical": true },
+      { "id": "slowloris-sipper", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true },
+      { "id": "noisy-query-table-scan", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "mod-update-day", "mechanical": true },
+      { "id": "empty-server-spiral", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "permissive-recursion": ["open-resolver-reflection", "udp-amplification-barrage"],
+      "no-negative-caching": ["slowloris-sipper"],
+      "unguarded-zone-transfer": ["scanner-drizzle"]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "concurrency",
+      "reputation",
+      "data-integrity",
+      "hands"
+    ],
+    "waveTable": "file:waves/g1-dns-hosting-first-quarter.json"
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "pale cyan on near-black",
+      "accent": "candle-flame white",
+      "chord": [
+        "pale cyan",
+        "near-black",
+        "signpost iron grey",
+        "candle-flame white",
+        "mist silver-blue"
+      ]
+    },
+    "materialPreset": "preset:night-glass-and-iron",
+    "visitorCostume": {
+      "hull": "spark",
+      "propSlot": "ping"
+    },
+    "heroSilhouette": "asset:hero.signpost-crossroads",
+    "heroObject": "signpost-crossroads",
+    "meterFace": "candle-in-glass",
+    "catastropheFx": "fx:districts-go-dark",
+    "ambientSoundPack": "sound:wind-past-glass",
+    "densityMultiplier": null,
+    "arrivalRhythm": "grey-blur-constant",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.abuse-complaint-glyph",
+    "signatureMotion": "motion:anycast-bloom",
+    "signatureFrame": "frame:cutaway-world-map-of-signposts",
+    "lodContract": {
+      "full": "asset:lod.signpost-crossroads.full",
+      "icon16": "asset:lod.signpost-crossroads.icon16",
+      "pip": "pip:cyan-signpost-diamond",
+      "aggregate": "agg:ping-mote-mist",
+      "inspector": "skin.dns-hosting.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented. Palette dominant verbatim §1.3 'The Signpost Network' visual: 'pale cyan on near-black'; accent and the last three chord notes authored from the card's own imagery (candle meter, iron signposts, ping-mote mist) — flagged for the owner's palette ratification. Hero object: §4.x buildables catalogue names 'DNS Authoritative Pair — The Index Card Cabinet (any)' and 'Anycast DNS Node / Signpost'; the crossroads signpost is the card's own metaphor at world-map altitude. Costume: hull 'spark' is the Instant-class shape primitive (§3.1: shape encodes class, never identity); identity rides the propSlot 'ping' per §3.3 'Ping Motes... single-frame lifespan'. Signature motion = anycast bloom verbatim: competing ripples, nearest wins. Commercial artifact icon = §2.12 Reflection Conscription visual: 'an angry abuse-complaint glyph flies in'. Catastrophe FX verbatim: 'all other district lights go out while the DNS racks stay lit'. Meter verbatim: query latency percentiles 'as a flickering candle in a glass chimney'."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4 era grid does not date the DNS line; the §5.6 gate ('Anycast + 3 PoPs → unlocks DNS hosting') is a capability prerequisite, not a year. Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "zone",
+    "revenueShape": "tiny-per-query-at-huge-scale",
+    "marginProfile": "high",
+    "cashTiming": "monthly",
+    "termStructure": {
+      "typical": "monthly",
+      "churn": "cheapest-sticky-product",
+      "_todo": "§5.6:20894 verbatim: 'DNS is the cheapest sticky product in hosting'. No numeric churn rate authored for the DNS row — the qualitative stickiness claim is all the doc commits to."
+    },
+    "cacProfile": "cac.dns-hosting.todo",
+    "ticketsPerCustomer": null,
+    "signatureCost": "anycast-footprint",
+    "badMonth": "economy.dns-hosting.bad-month",
+    "fifthAxisScore": {
+      "metric": "global-resolution-success-and-query-latency",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.3 fifth-axis table verbatim: 'DNS on global resolution success and query latency'. R42 score weight not authored."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false
+    },
+    "_todo": "§6.6 rows, near-verbatim: DNS | 'zone / query' | 'per-query at huge scale' | margin HIGH | cash 'monthly' | signature cost 'anycast footprint'; bad month 'an amplification incident originating from you'. unitOfSale picks 'zone' (the sold artifact per §0.3 'A zone') while costPerInvocation rides 'per-query' (the metered act). cacProfile: §6.6 Companion B prices no DNS row (affiliate CPA table is shared-web-only); §1.3's free tier is the doc'd lead source but its CAC numbers are unauthored. ticketsPerCustomer: no rate authored; §1.3's customer zone-change ticket attests the load exists without pricing it. realismToggles both false: the doc's per-query pricing law (§6.6, and §4.x's coin-motes-to-sheen LOD note) is presentation, not 95th-percentile billing — p95 billing belongs to the CDN line's economics."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "dns-hosting" },
+      { "archetype": "two-face-rack", "skin": "dns-hosting" },
+      { "archetype": "control-plane", "skin": "zone-editor" }
+    ],
+    "distinct": [
+      "dnssec-signer-and-expiry-monitor",
+      "response-rate-limiter",
+      "anycast-pop-map",
+      "negative-cache-tuner",
+      "staged-zone-publication",
+      "registrar-account-lock",
+      "out-of-band-secondary-provider",
+      "dangling-record-scanner"
+    ],
+    "nonPhysical": [
+      "abuse-desk-relationships",
+      "ix-transit-relationships-per-pop"
+    ]
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2 control-granularity authors only the shared-hosting profile; the DNS pip row awaits its ruleset-card pass. Never invented (same law game-servers and mail-hosting cite)."
+    },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+
+  "mechanics": [
+    "ttl-throttle-bets",
+    "rrl-conscription-display",
+    "dnssec-rotation-window",
+    "staged-zone-publication",
+    "silent-failure-legibility",
+    "anycast-bloom-forensics",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Commit",
+    "transfers": [
+      "verbs.dns-hosting.transfer.1"
+    ]
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:shared-web",
+        "kind": "dns-and-everything",
+        "numbers": null,
+        "_todo": "§0.2 line synergies, verbatim: 'DNS + everything (you already own the infrastructure)'. No numeric benefit authored."
+      },
+      {
+        "with": "official:game-servers",
+        "kind": "dns-and-everything",
+        "numbers": null,
+        "_todo": "§0.2: same 'DNS + everything' clause; no numbers authored for this pair."
+      },
+      {
+        "with": "official:mail-hosting",
+        "kind": "dns-and-everything",
+        "numbers": null,
+        "_todo": "§0.2: same 'DNS + everything' clause; §5.6:20894 groups them commercially ('Hosting → Email/DNS gate') but prices no joint row. No numbers authored."
+      }
+    ],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["anycast-deployment", "three-pop-presence", "ip-reputation-management", "abuse-desk"],
+          "_todo": "§5.6 prerequisite lattice, verbatim: 'Anycast + 3 PoPs → unlocks DNS hosting, then CDN (additionally a relationship with an IX or transit at each PoP)'; and the gate row 'Hosting → Email/DNS gate: IP reputation management + anycast + abuse desk + deliverability tooling'. The per-PoP IX/transit relationship rides nonPhysical buildables (ix-transit-relationships-per-pop) rather than a second prereq set — the doc states it as an additionally-clause, not an alternative."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {
+        "official:shared-web": {
+          "customerOverlap": null,
+          "hardwareReuse": null,
+          "skillTransfer": null,
+          "regulatoryDelta": 0,
+          "_todo": "§5.6 pivot numbers unauthored for this pair; regulatoryDelta 0 qualitative (no regulated-vertical row for DNS in §2.27 Matrix C). hardwareReuse is directionally high in the doc's language ('you already own the infrastructure' — §0.2; 'DNS is the first hop') but no number is authored."
+        }
+      }
+    },
+    "masteryBuff": "relations.dns-hosting.mastery",
+    "distillate": "relations.dns-hosting.distillate",
+    "_todo": "antagonisms left empty honestly: the doc ships no DNS antagonism row; the email↔bulletproof mutual exclusion has no DNS analogue. The 'then CDN' tail of the §5.6 unlock awaits a CDN bundle and is not invented as a pivot."
+  },
+
+  "ticketPack": "file:packs/dns-hosting.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.dns-hosting.runs-out",
+    "killsYou": "handover.dns-hosting.kills-you",
+    "customerWants": "handover.dns-hosting.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "cgroup-caging",
+      "alias": "rrl-rate-ceiling",
+      "line": "rosetta.dns-hosting.rrl"
+    },
+    {
+      "canonical": "oversell-ratio",
+      "alias": "free-tier-query-allowance",
+      "line": "rosetta.dns-hosting.allowance"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Diagnose",
+      "Endure",
+      "Convert"
+    ],
+    "analogues": {
+      "lame-delegation": "scenarios.dns-hosting.lame-delegation",
+      "water-torture": "scenarios.dns-hosting.water-torture",
+      "dyn-conscription": "scenarios.dns-hosting.dyn-conscription"
+    }
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

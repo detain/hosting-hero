@@ -101,7 +101,7 @@ describe("shipped packages/content determinism ×100", () => {
   const texts = shippedCorpusTexts();
 
   test("every shipped type-bundle + both registries load identically 100×", () => {
-    expect(texts.types.length).toBe(3);
+    expect(texts.types.length).toBe(4);
     const first = reloadCorpus(texts);
     const firstSerialized = first.bundles.map((bundle) => stableSerialize(bundle));
     expect(firstSerialized.every((line) => line.length > 1000)).toBe(true);
