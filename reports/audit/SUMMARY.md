@@ -1,21 +1,23 @@
-# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b)
+# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b, wave-3 batch-1 closeout 2026-10-10, wave-3 batch-2 closeout 2026-10-10b)
 
-Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3, then **updated in place on disk after the 2026-10-09 fix wave** (16 commits d8fc8ec..a98fd55; per-row dispositions in the hosting_game.md Appendix), then re-markuped for the **2026-10-09b session-2 owner rulings** (see SESSION-2 RE-MARKUP below + `docs/adr/0010-taxonomy-and-stacking-contradictions.md` Accepted), then flipped again for the **wave-3 batch-1 closeout** (0032a21..2ef5cae; see WAVE-3 BATCH-1 below). The tallies below are computed from the **current marked hosting_game.md**, not the original manifests — they include the 23 fix-wave flips, the session-2 flips, the batch-1 flips, and the small set of marker/manifest drift realignments disclosed in the Appendix.
+Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3, then **updated in place on disk after the 2026-10-09 fix wave** (16 commits d8fc8ec..a98fd55; per-row dispositions in the hosting_game.md Appendix), then re-markuped for the **2026-10-09b session-2 owner rulings** (see SESSION-2 RE-MARKUP below + `docs/adr/0010-taxonomy-and-stacking-contradictions.md` Accepted), then flipped again for the **wave-3 batch-1 closeout** (0032a21..2ef5cae; see WAVE-3 BATCH-1 below), then for the **wave-3 batch-2 closeout** (a79402c..05ecf97; see WAVE-3 BATCH-2 below). The tallies below are computed from the **current marked hosting_game.md**, not the original manifests — they include the 23 fix-wave flips, the session-2 flips, the batch-1 flips, and the small set of marker/manifest drift realignments disclosed in the Appendix.
 
 > Line numbers throughout are ORIGINAL (pre-legend) positions matching reports/audit/outline.md and the group manifests. In the marked hosting_game.md, add **+12** to any line > 43 (the 12-line legend block inserted above the ToC). **Session-2 adds three more law-note lines (see SESSION-2 RE-MARKUP → Insert offsets): cumulative offset is +12 through original 15178, +13 from original 15179, +14 from original 16292, +15 from original 16332. outline.md is NOT renumbered (too risky) — apply the offset table when citing it below line 15190.**
 
-## GLOBAL TALLIES (disk truth, post wave-3 batch-1 closeout)
+## GLOBAL TALLIES (disk truth, post wave-3 batch-2 closeout)
 
 | STATUS | marked headings on disk |
 |---|---|
-| DONE ✅ | 289 |
-| PARTIAL 🔧 | 994 |
+| DONE ✅ | 290 |
+| PARTIAL 🔧 | 997 |
 | PROBLEM ⚠️ | 1 |
-| MISSING ❌ | 2275 |
+| MISSING ❌ | 2271 |
 | NA 📝 | 30 |
 | **total marked** | **3589** (+2 unmarked out-of-scope headings) |
 
 Batch-1 delta from the session-2 tallies (✅285 🔧998 ⚠️1 ❌2275 📝30): four 🔧→✅ flips — The oversell ratio, The Second Incident multiplier, The Copycat reserve, Mode tiering. The Feint budget gained an inline scope note only (stays 🔧, not a count move).
+
+Batch-2 delta (see WAVE-3 BATCH-2): one 🔧→✅ (The Second Incident rule §2.12 twin) + four ❌→🔧 (price slider; three DNS type rows). Section deltas: §1 🔧86→88 ❌316→314 · §2 ✅52→53 ❌446→445 · §6 🔧102→103 ❌250→249.
 
 ## PER-SECTION ROLL-UP (marked headings by level-1 section — disk truth)
 
@@ -23,16 +25,16 @@ Batch-1 delta from the session-2 tallies (✅285 🔧998 ⚠️1 ❌2275 📝30)
 |---|---|---|---|---|---|---|
 | preamble | 0 | 0 | 0 | 0 | 0 | 0 |
 | 0. Foundations | 20 | 10 | 0 | 10 | 9 | 49 |
-| 1. Levels, scenarios, and progression | 16 | 86 | 0 | 316 | 2 | 420 |
-| 2. Threats | 52 | 96 | 0 | 446 | 1 | 595 |
+| 1. Levels, scenarios, and progression | 16 | 88 | 0 | 314 | 2 | 420 |
+| 2. Threats | 53 | 96 | 0 | 445 | 1 | 595 |
 | 3. Visitors, traffic, and clients | 30 | 80 | 0 | 303 | 0 | 413 |
 | 4. Buildables: services and infrastructure | 22 | 121 | 0 | 338 | 0 | 481 |
 | 5. Unlocks and discovery | 1 | 115 | 0 | 182 | 1 | 299 |
-| 6. Economy, money, and scoring | 37 | 102 | 0 | 250 | 1 | 390 |
+| 6. Economy, money, and scoring | 37 | 103 | 0 | 249 | 1 | 390 |
 | 7. Core gameplay mechanics | 68 | 125 | 0 | 107 | 2 | 302 |
 | 8. Visuals and presentation | 23 | 171 | 1 | 155 | 7 | 357 |
 | 9. Anything else | 20 | 88 | 0 | 168 | 7 | 283 |
-| **TOTAL** | **289** | **994** | **1** | **2275** | **30** | **3589** |
+| **TOTAL** | **290** | **997** | **1** | **2271** | **30** | **3589** |
 
 ## FIX-WAVE UPLIFT (what moved since the original markup)
 
@@ -50,11 +52,11 @@ Batch-1 delta from the session-2 tallies (✅285 🔧998 ⚠️1 ❌2275 📝30)
 | line | section | heading | group | original note | disposition (2026-10-09 fix wave) |
 |---|---|---|---|---|---|
 | 11385 | 2. Threats | Matrix C — which threat families dominate which type | g10 | activeFamilies + qualitative _todo ship but familyWeights are null with stale _todo prose awaiting the ratified tuning sheet (OD-2) — OD-2 was ratified sheet B at 24dfcfe yet the weights were never re-authored; owner-gated content debt | ✅ RESOLVED @4856a42 (weights filled in both bundles, parseFamilyWeightsTable + weightedFamilyOf/familyMix consumers live)  + **2026-10-09b: OD-21(a) — lane-authored weights RATIFIED AS PROVISIONAL; re-taste after G1 playtests, no owner sweep owed** |
-| 14424 | 3. Visitors, traffic, and clients | The attention budget | g12 | door hands live but support-hands unimplemented, OD-6 two-denomination ruling decided 2026-10-09 with implementation deferred (MODULE-STATUS gap row) | ⚠️ HELD — OD-6 deferral unchanged by the fix wave. **2026-10-09b: 🔧 — OD-23(a): implementation lane SCHEDULED NOW, paired with OD-4a loan ledger (heading now 14436)** |
+| 14424 | 3. Visitors, traffic, and clients | The attention budget | g12 | door hands live but support-hands unimplemented, OD-6 two-denomination ruling decided 2026-10-09 with implementation deferred (MODULE-STATUS gap row) | ⚠️ HELD — OD-6 deferral unchanged by the fix wave. **2026-10-09b: 🔧 — OD-23(a): implementation lane SCHEDULED NOW, paired with OD-4a loan ledger (heading now 14436). **2026-10-10 batch-2: 🔧 UNCHANGED marker, machinery LANDED @eff5694 — bounded window entry, loan ledger + month-roll repayment seam, per-verb door cost, digest absorb; host month-roll forwarding + HUD owed (🔧 rows carry no inline hashes — appendix + MODULE-STATUS gap row record the SHA)** |
 | 15178 | 4. Buildables: services and infrastructure | The Build Role Taxonomy (nine roles) | g13 | The nine build roles are tagged nowhere; coverage/defenseRoles.ts ships the DIFFERENT nine defense roles sharing only four words (Classify/Contain/Detect/Recover) - the spec's shared-tag promise between palette and Coverage Grid is broken | ⚠️ HELD — contradiction recorded in ADR-0010 (proposed) @d8fc8ec; owner ratification owed before either taxonomy moves. **2026-10-09b: 🔧 — ADR-0010(a)=i RULED: shipped §2.1 nine = law; build-role tagging → Phase-2 gap register; law-note under heading (now 15190)** |
 | 16291 | 4. Buildables: services and infrastructure | The Nine Defense Roles | g14 | shipped taxonomy follows the §2.1 list (absent Block, added Negotiate) — contradicts this heading's enumeration | ⚠️ HELD — same ADR-0010 pending record @d8fc8ec. **2026-10-09b: ✅ e24e1bb — ADR-0010(a)=i RULED: heading now names the shipped nine as law (corrected-list note, now 16304)** |
 | 16331 | 4. Buildables: services and infrastructure | Defense-in-Depth stacking rules | g14 | matrix.ts combine law is MAX never multiplicative (deliberate, docblock cites §2.1 ratification), no latency-additive/diminishing/synergy/Waste-Indicator | ⚠️ HELD — same ADR-0010 pending record @d8fc8ec. **2026-10-09b: 🔧 — ADR-0010(b)=i RULED: MAX law RETAINED, prose superseded-by-implementation (note now 16345); refinement clauses gap-registered, NO unify lane** |
-| 22940 | 6. Economy, money, and scoring | 6.5 Pricing as a mechanic | g18 | Pricing is engine-side data (MRC/cliff/escalator/MFN/grandfather) with NO player pricing verb among the 8 door verbs; 21 of 29 dials unbuilt; oversell slider declared-dead (22992) | ⚠️ HELD — no player pricing verb shipped; door verb set closed at 8. **2026-10-09b: 🔧 — OD-24(a) OWNER OVERRIDE: FULL pricing surface approved — door pricing verb(s) + ~21 dial consumers + elasticity model (provisional, ratify-on-playtest) + oversell host knob; 8:1 PROPOSED shared-web start; BUILD WAVE QUEUED (heading now 22952). **2026-10-10 batch-1: heading STAYS 🔧 — part 1 landed @0032a21 (AdjustPrice door verb + state-neutral overrides book are verb-live); elasticity model + ~21 dial consumers owed by batch-2** |
+| 22940 | 6. Economy, money, and scoring | 6.5 Pricing as a mechanic | g18 | Pricing is engine-side data (MRC/cliff/escalator/MFN/grandfather) with NO player pricing verb among the 8 door verbs; 21 of 29 dials unbuilt; oversell slider declared-dead (22992) | ⚠️ HELD — no player pricing verb shipped; door verb set closed at 8. **2026-10-09b: 🔧 — OD-24(a) OWNER OVERRIDE: FULL pricing surface approved — door pricing verb(s) + ~21 dial consumers + elasticity model (provisional, ratify-on-playtest) + oversell host knob; 8:1 PROPOSED shared-web start; BUILD WAVE QUEUED (heading now 22952). **2026-10-10 batch-1: heading STAYS 🔧 — part 1 landed @0032a21 (AdjustPrice door verb + state-neutral overrides book are verb-live); elasticity model + ~21 dial consumers owed by batch-2. **2026-10-10 batch-2: 🔧 HOLDS — parts 1+2 landed @5781335 (overrides consumed at churn/retention/dunning-recovery/invoice sites, PROVISIONAL bps); the section stays 🔧 because ~20 dial consumers remain — of the 4 shipped commercialSliders only oversell-ratio is live, ddos-tier/ip-pool/query-allowance are CODEX-only** |
 | 22992 | 6. Economy, money, and scoring | The oversell ratio | g18 | shared-web.json:84 commercialSlider "oversell-ratio" + rosetta card parsed (loader/bundle.ts:112,616; R16 lint hook) but ZERO engine consumers — dead slider; P(contention)=ratio^2.2 x homogeneity never computed | 🔧 PARTIAL @4856a42 — contentionProbabilityMicro(r,h)=f(r)×h ships in waves/contention.ts + planWave oversell input; host-side wiring (bundle slider value → planWave oversell) still owed. **2026-10-09b: OD-24(a) — that wiring + the 8:1 starting ratio ride the queued pricing wave (marker stays 🔧, heading now 23004). 2026-10-10 batch-1: 🔧→✅ 4856a42 2ef5cae — host wiring landed: OVERSELL_RATIO_MICRO (8:1 PROVISIONAL) + homogeneity fold feed planWave's oversell input on the mainline proto runner, gated on the bundle declaring the slider. SCOPE: proto-only host input — sim-core ships no default ratio** |
 | 31543 | 8. Visuals and presentation | The readability targets | g23 | perf grid harness exists but 2k/20k figures are OD-10/OD-12 unratified and unmeasured | ⚠️ HELD — OD-10/OD-12 unratified. **2026-10-09b: ⚠️ UNCHANGED — OD-10/OD-12 expressly NOT decided in session 2 (heading now 31558)** |
 | 31810 | 8. Visuals and presentation | Era presentation shifts | g23 | era-tokens.css ships 1998/2026 only; MODULE-STATUS era-count row awaits owner era grid | ⚠️ HELD — owner era grid not provided. **2026-10-09b: 🔧 — OD-22(c) RULED: v1 canon = 1998+2026; 4-era plan (~1998/~2008/~2016/2026) ratified as campaign-phase plan (heading now 31822)** |
@@ -823,3 +825,36 @@ Also flipped this closeout: the in-file Appendix "now" cells stopped lying — c
 **Marker census after batch-1 flips (recomputed from disk):** ✅289 🔧994 ⚠️1 ❌2275 📝30 = **3,589** (was ✅285 🔧998 ⚠️1 ❌2275 📝30). hosting_game.md line count unchanged at 35,557 — all closeout edits in-place, zero insertions.
 
 **Closeout battery (serial, @2ef5cae+markup):** sim-core 1,750/123 files exit 0 · api-verify PASS 1,399 names · content validate PASS · canary 115 files PASS · ci-verify 5/5 (incl g5-mirror-diff) · typecheck 5/5 · proto 776/71 · proto build OK · headless 53/5 parity literals green.
+
+## WAVE-3 BATCH-2 (closeout re-markup 2026-10-10, commits a79402c eff5694 984759b 5781335 05ecf97 atop 692b507)
+
+Batch-2 shipped five lanes: `a79402c` OD-14(a) type-4 DNS Ruleset Card (data-only: types/dns-hosting.json + g1-dns wave slice + dns-hosting.i18n pack), `eff5694` OD-6/23/4a attention denominations + bounded loan ledger (default-off), `984759b` L4 death wiring (host refuse-settlement forwarding + canonical-death i18n voices + `deathHaltsRun` opt-in), `5781335` OD-24(a) part 2 (price overrides consumed + elasticity model, PROVISIONAL), `05ecf97` review fix-lane (typecheck + witness docs + pack pins). Headings located by TEXT; every marker flip asserted its current marker fail-loud before writing (exact full-line match, uniqueness-checked):
+
+| heading | flip | hashes | disposition |
+|---|---|---|---|
+| The price slider (difficulty as a dial the player sets) | ❌→🔧 | — (0032a21 + 5781335 recorded here; 🔧 markers carry no inline hashes) | per-line price moves now reshape churn/retention/dunning/invoice arithmetic in the engine; live elasticity readout, demand-ghost preview and the hard-to-undo re-anchoring asymmetry remain unimplemented |
+| The Second Incident rule (§2.12 twin of the batch-1 ✅ §2.24 multiplier) | 🔧→✅ | 4856a42 c9c0433 2ef5cae | it held 🔧 ONLY on the owed-host-input ground the fix-wave recorded; the runner now feeds incidentState and the 1.8×/2.5× follow-on multipliers fire on shipped g1 data |
+| "Authoritative" / "NXDOMAIN" / "Root Zone" — Anycast DNS hosting | ❌→🔧 | — (a79402c) | the loader-parsed Ruleset Card verbatim-authors the type: dominant verb Commit, anycast-PoP scarce resource, zone-ttl-band/negative-cache/dnssec-rotation dials, free-tier-query-allowance slider, dnssec-signer/RRL/anycast-pop-map buildables |
+| `The Registrar` / `NXDOMAIN` | ❌→🔧 | — (a79402c) | the chair's boss threat is authored in the g1-dns wave slice (udp-amplification-barrage + open-resolver-reflection) which the waves inspector parses; playable-level framing still owed |
+| DNS: NXDOMAIN Flood and Free-Tier COGS Leak | ❌→🔧 | — (a79402c) | free-tier slider + negative-cache-tuner/aggressiveness machinery authored as parsed data; the water-torture leg remains a scenario-key hook only |
+
+SKIPPED — already moved (current markers asserted on disk per protocol): `## 6.5 Pricing as a mechanic` already 🔧 (holds — see PROBLEMS row); the canonical-death rows Bankruptcy/cash-zero, Covenant Default, Churn Spiral and `## 6.10 Win and lose conditions` were ALL already 🔧 since the audit — `ab0bf5c` + `984759b` strengthen them (warning→notice→dissolution state machine live, both hosts forward refused settlements into the death watch, halt-on-death opt-in, pack voices shipped) but win/lose screens + narration keep 🔧; §2.24 twins Copycat reserve + Second Incident multiplier already ✅ (batch-1); Feint budget holds 🔧 marker-inert (batch-1 ruling). The attention-budget row (orig 14424, disk 14436): NO file change — 🔧 markers carry no inline hashes; `eff5694` recorded in the PROBLEMS disposition above, the in-file appendix cell and the MODULE-STATUS OD-6 gap row.
+
+❌ HOLDS with reason: Elasticity testing orig 23225 (A/B research action unbuilt — shipped curve is static config), The Price Dial + Demand Ghost orig 25388 (visual row), Whois/Redemption Grace orig 2540 (no registrar card exists — the DNS bundle's registrar-account-lock is a buildable, not the business), The Copycat Wave orig 6249 (miss-list-driven draw ≠ the shipped dominant-defense-family reserve), Zero Downtime Migration + The Lame Delegation orig 3180/3700 (hollow scenario-key hooks — launch-window precedent), all narrated endings (§6.15/§9.9 group incl. Bankruptcy Cascade — need HUD/narration).
+
+DISCLOSED OWNER FLAGS (ratify-on-playtest posture; markers hold no such notes): (1) billing override order is GRANDFATHER-WINS (override → escalator → grandfather → MFN last); (2) retention-floor asymmetry — price cuts buy NO certainty (cap ≤1.0 mirrors down to the floors); (3) every constant shipped PROVISIONAL: death (float 3d, churn 3d sustained, grace 10d, collapse floor 1), elasticity (150/80/50% coefficients, ±10% dead band, 0.5×/3× clamps), attention (per-verb costs 0|1, capacity default).
+
+REVIEW OUTCOME: nine commits (batch-2 lanes + fix lane) — zero critical/major findings at 5781335; the one typecheck MAJOR (unattended death-forwarding.test.ts under exactOptionalPropertyTypes) fixed @05ecf97 with FULL serial re-proof **1,803 tests / 126 files exit 0** (api-verify PASS 1,426 · ci-verify 5/5 · headless parity b0162ab5/a9b4b7b8 held · zero goldens moved by the fix).
+
+**Marker census before→after batch-2 (recomputed from disk):**
+
+| bucket | before | after |
+|---|---|---|
+| ✅ DONE | 289 | **290** |
+| 🔧 PARTIAL | 994 | **997** |
+| ⚠️ PROBLEM | 1 | 1 |
+| ❌ MISSING | 2275 | **2271** |
+| 📝 NA | 30 | 30 |
+| **total marked** | **3,589** | **3,589** |
+
+hosting_game.md line count unchanged at 35,557 — all edits in-place (5 heading lines + appendix prose), zero insertions.

@@ -1407,7 +1407,7 @@ You are a transit provider.
 resource negotiation minigame. Pairs with §1.3 "The Fabric" (the IXP business), which is the neutral
 version of the same chair.
 
-### `The Registrar` / `NXDOMAIN` ❌
+### `The Registrar` / `NXDOMAIN` 🔧
 A tiny weird one: you run DNS for everybody.
 
 **How it works:** Your lane is queries. Your boss fight is a reflection/amplification attack that
@@ -1826,7 +1826,7 @@ the wrong place.** Delisting is a bureaucratic minigame with forms.
 **Interacts with:** §2.12 (snowshoe spammers, silent deprioritization), §5.6 (clean reputation as an
 unlock *prerequisite*), §1.5 `Blacklisted`.
 
-### "Authoritative" / "NXDOMAIN" / "Root Zone" — Anycast DNS hosting ❌
+### "Authoritative" / "NXDOMAIN" / "Root Zone" — Anycast DNS hosting 🔧
 You are infrastructure for other people's infrastructure, so your outages are everyone's outages.
 
 **How it works:** Tiny queries, unimaginable volume, microsecond budgets. Scarce resource: global PoP
@@ -6223,7 +6223,7 @@ encounter than either doubled. Every "hard" wave in the pressure budget must dra
 by whichever resource the player has most of.
 **Interacts with:** P4 (hands), §1.7 Two-Beat Wave (which is the threat-then-visitors version), §2.24.
 
-### The Second Incident rule 🔧
+### The Second Incident rule ✅ 4856a42 c9c0433 2ef5cae
 Things break when you're touching them.
 
 **How it works:** A generator rule, not a threat: **the probability of a new incident is multiplied
@@ -9630,7 +9630,7 @@ One bad zone file, published globally, in seconds.
 **How it works:** The registrar-hijack outcome with none of the villain. Counter: zone validation,
 staged publication, and a TTL you can live with.
 
-### DNS: NXDOMAIN Flood and Free-Tier COGS Leak ❌
+### DNS: NXDOMAIN Flood and Free-Tier COGS Leak 🔧
 Two quieter DNS problems.
 
 **How it works:** An NXDOMAIN flood costs you resolution work for nothing; a generous free DNS tier
@@ -22954,7 +22954,7 @@ demands covenants, bootstrapping demands patience. Full instrument list in §6.1
 
 ## 6.5 Pricing as a mechanic 🔧
 
-### The price slider (difficulty as a dial the player sets) ❌
+### The price slider (difficulty as a dial the player sets) 🔧
 One slider that reshapes the entire level.
 
 **How it works:** Raise price → fewer customers, higher margin, higher expectations, more demanding
@@ -35523,16 +35523,16 @@ the audience that doesn't run servers.
 
 ## Appendix — Audit Findings & Resolutions (2026-10-09 fix wave)
 
-This appendix records how each of the 15 audit PROBLEM (⚠️) rows fared after the 16-commit fix wave (d8fc8ec..a98fd55), the session-2 re-markup (8a674f0, owner rulings recorded in ADR-0009/ADR-0010), and the wave-3 batch-1 closeout (0032a21..2ef5cae: AdjustPrice verb, economy deaths, rules-live proto host inputs, save mode tiering). "now" mirrors the CURRENT heading marker on disk. Full notes with evidence live in reports/audit/SUMMARY.md ("PROBLEMS" table + "WAVE-3 BATCH-1"); group reports reports/audit/group-01..25.md remain the untouched historical record.
+This appendix records how each of the 15 audit PROBLEM (⚠️) rows fared after the 16-commit fix wave (d8fc8ec..a98fd55), the session-2 re-markup (8a674f0, owner rulings recorded in ADR-0009/ADR-0010), and the wave-3 batch-1 closeout (0032a21..2ef5cae: AdjustPrice verb, economy deaths, rules-live proto host inputs, save mode tiering), and the **wave-3 batch-2 closeout (a79402c..05ecf97: DNS type-4 data, attention machinery, death wiring + voices, pricing elasticity, review fixes)**. "now" mirrors the CURRENT heading marker on disk. Full notes with evidence live in reports/audit/SUMMARY.md ("PROBLEMS" table + "WAVE-3 BATCH-1"); group reports reports/audit/group-01..25.md remain the untouched historical record.
 
 | orig. line | heading | was | now | evidence | what remains |
 |---|---|---|---|---|---|
 | 11385 | Matrix C — threat families × type | ⚠️ | ✅ | 4856a42, cf7a696 | nothing — weights filled in both bundles, parseFamilyWeightsTable + familyMix consumers live, host FAMILY_MIX wired in the product runner |
-| 14424 | The attention budget | ⚠️ | 🔧 | 8a674f0 | OD-23(a) ratified: support-hands + OD-4a loan-ledger implementation lane scheduled (was deferred) |
+| 14424 | The attention budget | ⚠️ | 🔧 | 8a674f0, eff5694 | OD-23(a)+OD-4a machinery LIVE: bounded window entry (refuse while debt ≥ capacity), loan ledger with one-loan-per-business-month repayment, per-verb attention door cost, digest absorb — host month-roll forwarding + HUD consumers owed |
 | 15178 | The Build Role Taxonomy (nine roles) | ⚠️ | 🔧 | d8fc8ec, 8a674f0 (ADR-0010(a)=i RULED) | shipped §2.1 nine = law; build-role tagging → Phase-2 gap register |
 | 16291 | The Nine Defense Roles | ⚠️ | ✅ | d8fc8ec, e24e1bb, 8a674f0 (ADR-0010(a)=i) | nothing — heading names the shipped nine as law |
 | 16331 | Defense-in-Depth stacking rules | ⚠️ | 🔧 | d8fc8ec, 8a674f0 (ADR-0010(b)=i RULED) | MAX combine retained, prose superseded-by-implementation; refinement clauses gap-registered future-only, no unify lane |
-| 22940 | 6.5 Pricing as a mechanic | ⚠️ | 🔧 | 8a674f0 (OD-24(a)), 0032a21 | part 1 live: AdjustPrice door verb + state-neutral overrides book; elasticity model + ~21 dial consumers owed |
+| 22940 | 6.5 Pricing as a mechanic | ⚠️ | 🔧 | 8a674f0 (OD-24(a)), 0032a21, 5781335 | parts 1+2 live: AdjustPrice verb + overrides book + elasticity consumed at churn/retention/dunning-recovery/invoice sites (PROVISIONAL bps, ratify-on-playtest); ~20 dial consumers still unbuilt — of the 4 shipped commercialSliders only oversell-ratio moves; ddos-tier/ip-pool/free-tier/query-allowance remain CODEX-only |
 | 22992 | The oversell ratio | ⚠️ | ✅ | 4856a42, 2ef5cae | host wiring live on the mainline proto runner (OVERSELL_RATIO_MICRO 8:1 PROVISIONAL → planWave oversell, gated on bundle declaring the slider); scope note: proto-only host input, sim-core ships no default ratio |
 | 31543 | The readability targets | ⚠️ | ⚠️ | — | OD-10/OD-12 figures unratified |
 | 31810 | Era presentation shifts | ⚠️ | 🔧 | 8a674f0 (OD-22(c)) | v1 canon = 1998+2026; 4-era campaign-phase plan ratified |
@@ -35543,7 +35543,7 @@ This appendix records how each of the 15 audit PROBLEM (⚠️) rows fared after
 | 32694 | Endless / Survival | ⚠️ | 🔧 | 8a674f0, 42fbbd2 | OD-16(a): endless-32 STAY PENDING_OD8 until an endless loop is scoped — deferral ratified |
 | 33137 | Mode tiering | ⚠️ | ✅ | 8a674f0 (OD-16(a)), 42fbbd2 | tiering law enacted (Core/Extended/Deferred census); list's owner-ratify-on-read flag tracked in SUMMARY disposition |
 
-Other fix-wave uplifts (non-⚠️ rows flipped): §5 unlock lattice/trigger rows ❌→🔧 (71b8960 engine, d8e5986 driver seam — observer default-off, hosts unwired); §2.24 Second Incident ❌→🔧 (4856a42 consumers + c9c0433 foreign-rules adapter); §1.3 Postmaster + §5.5 Sorting Table ❌→🔧 (4c28169 mail-hosting bundle, §5.6 email-gate prereqSets authored verbatim); §7.10 two-lane routing + Path Ugliness →✅ (8fd409a engine + cf7a696 mainline wiring); 12846 "Redirect chains" gains its missing ❌ marker. **Wave-3 batch-1 closeout (0032a21..2ef5cae):** §2.24 rules rows Second Incident multiplier + Copycat reserve 🔧→✅ (4856a42 engine + c9c0433 adapter + 2ef5cae liveness on shipped g1 data — wave-4 10-vs-6 arrivals, wave-5 copycat 3/3/3); Feint budget stays 🔧 (marker-inert — shipped slices author no feint marker, consumer structurally live via planted-seam proof); The oversell ratio 🔧→✅ (2ef5cae host wiring, proto-only scope noted); Mode tiering 🔧→✅ (42fbbd2).
+Other fix-wave uplifts (non-⚠️ rows flipped): §5 unlock lattice/trigger rows ❌→🔧 (71b8960 engine, d8e5986 driver seam — observer default-off, hosts unwired); §2.24 Second Incident ❌→🔧 (4856a42 consumers + c9c0433 foreign-rules adapter); §1.3 Postmaster + §5.5 Sorting Table ❌→🔧 (4c28169 mail-hosting bundle, §5.6 email-gate prereqSets authored verbatim); §7.10 two-lane routing + Path Ugliness →✅ (8fd409a engine + cf7a696 mainline wiring); 12846 "Redirect chains" gains its missing ❌ marker. **Wave-3 batch-1 closeout (0032a21..2ef5cae):** §2.24 rules rows Second Incident multiplier + Copycat reserve 🔧→✅ (4856a42 engine + c9c0433 adapter + 2ef5cae liveness on shipped g1 data — wave-4 10-vs-6 arrivals, wave-5 copycat 3/3/3); Feint budget stays 🔧 (marker-inert — shipped slices author no feint marker, consumer structurally live via planted-seam proof); The oversell ratio 🔧→✅ (2ef5cae host wiring, proto-only scope noted); Mode tiering 🔧→✅ (42fbbd2). **Wave-3 batch-2 closeout (a79402c..05ecf97):** §6.5 The price slider ❌→🔧 (0032a21 verb + 5781335 elasticity — per-line price moves now reshape churn/retention/dunning/invoice arithmetic in the engine; live elasticity readout, the demand-ghost preview and the hard-to-undo re-anchoring asymmetry remain unimplemented); §2.12 The Second Incident rule 🔧→✅ (4856a42 c9c0433 2ef5cae — held 🔧 on the same owed-host-input ground as its §2.24 twin which batch-1 flipped; the runner now feeds incidentState and the 1.8×/2.5× follow-on multipliers fire on shipped g1 data); DNS type rows Anycast-DNS hosting entry (orig 1817) + `The Registrar` / `NXDOMAIN` chair (orig 1398) + `DNS: NXDOMAIN Flood and Free-Tier COGS Leak` (orig 9621) ❌→🔧 (a79402c: dns-hosting.json Ruleset Card parsed by the loader verbatim-authors the type's dominant verb, scarce PoP resource, TTL-band/negative-cache dials, free-tier-query-allowance slider and the dnssec-signer/RRL/anycast-pop buildables; the g1-dns wave slice parsed by the waves inspector carries the amplification-conscription boss threats).
 
 ### Review minors (read-only review of the fix wave, 4 findings)
 
@@ -35552,6 +35552,6 @@ Other fix-wave uplifts (non-⚠️ rows flipped): §5 unlock lattice/trigger row
 3. **Unalignable drift row:** one g11-adjacent manifest row (orig 11630 area) cites heading text that does not match disk at its line; realignment would be a guess, so it was left as-is.
 4. **§0.3 email scarcity row has no heading:** the mail-hosting scarcity entry lives in the catalogue table, not under a heading, so there is no marker to move; the data-level fact (scarce.resourceId ip-reputation @4c28169) is noted here instead.
 
-Palette anchor (0e0d7e1): palettes/shared-80.json resolves the previously phantom `palette:shared-80` anchor at DATA level; the §4.2–4.4 rows that cited it stay ❌ — no engine consumes palette slots yet.
+Palette anchor (0e0d7e1): palettes/shared-80.json resolves the previously phantom `palette:shared-80` anchor at DATA level; the §4.2–4.4 rows that cited it stay ❌ — no engine consumes palette slots yet. **Batch-2 holds (recorded, no marker move):** the three canonical-death rows needed no ❌→🔧 — Bankruptcy/cash-zero (orig 24433), Covenant Default (orig 24526) and Churn Spiral (orig 24457) already rode 🔧 since the audit; ab0bf5c + 984759b strengthen them (warning→notice→dissolution state machine live, refuse-settlements forwarded by hosts, halt-on-death opt-in, i18n death voices) while §6.10 win/lose screens, HUD surfacing and narrated endings stay owed → rows hold 🔧. ❌ holds with reason: Elasticity testing (orig 23225 — the A/B research action itself unbuilt, curve is static config), The Price Dial + Demand Ghost (orig 25388 — visual row, ghost preview unbuilt), Whois/Redemption Grace registrar type (orig 2540 — no registrar card authored; the DNS bundle's registrar-account-lock is a buildable, not the business), The Copycat Wave (orig 6249 — miss-list-driven draw ≠ the shipped dominant-defense-family reserve; its §2.24 reserve-law twin is ✅), The Feint (orig 6225 — marker-inert per batch-1), lame-delegation/migration mechanics (orig 3700/3180 — hollow scenario-key hooks only, launch-window precedent).
 
 Historical record: reports/audit/outline.md (structure), reports/audit/AUDIT-BRIEF.md (contract), reports/audit/group-01..25.md (per-group evidence, frozen at ef74a2f), reports/audit/SUMMARY.md (regenerated post-wave).
