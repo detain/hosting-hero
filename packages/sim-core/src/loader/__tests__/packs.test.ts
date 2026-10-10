@@ -84,13 +84,25 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
     expect(typeof SHARED.todo).toBe("string");
   });
 
-  test("namespace key counts are pinned (40/61 shared-web, 34/41 game)", () => {
-    expect(SHARED.decision.size).toBe(40);
+  test("namespace key counts are pinned (42/61 shared-web, 34/41 game)", () => {
+    expect(SHARED.decision.size).toBe(42);
     expect(SHARED.flavour.size).toBe(61);
-    expect(stableSerializePackKeys(SHARED).length).toBe(101);
+    expect(stableSerializePackKeys(SHARED).length).toBe(103);
     expect(GAME.decision.size).toBe(34);
     expect(GAME.flavour.size).toBe(41);
     expect(stableSerializePackKeys(GAME).length).toBe(75);
+  });
+
+  test("canonical-death alert keys parse era-flat with zero slots (L4 voice seam)", () => {
+    /* The runner/ticker data path carries no company label (covenant-breached
+       precedent, a98fd55), so the two OD-25(a) decision keys must stay
+       plain-string templates with no {slots} — flat across eras by design:
+       the end of a company is not an era-flavored joke. */
+    for (const key of ["alert.death-imminent", "alert.company-dissolved"]) {
+      const template = resolveTemplate(SHARED, key);
+      expect(template.kind).toBe("plain"); // era-flat: no variant object
+      expect([...template.slots]).toEqual([]); // zero-slot: fills with {} alone
+    }
   });
 
   test("era axis: shared-web declares 1998+2026 ascending; game declares none", () => {

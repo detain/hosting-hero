@@ -102,6 +102,17 @@ describe("i18n/corpusDrift · G5 seam slot-sets pinned against the pack JSON", (
     expect(slotsOf(sharedWebRaw, "terms.prepay-lock")).toEqual(["introPrice", "termMonths"]);
     expect(hasKey("game", "terms.prepay-lock")).toBe(false);
   });
+
+  it("alert.death-imminent / alert.company-dissolved are ZERO-SLOT — shared-web only (OD-25(a))", () => {
+    // The SLOT_FREE_DECISION_KEYS seam in noticeCopy.ts resolves these with
+    // customerLabel null; a slot appearing here would silently re-break the
+    // death-voice seam (the row's data path has no label to fill it), so the
+    // raw pack JSON — not the parsed store — is pinned empty.
+    expect(slotsOf(sharedWebRaw, "alert.death-imminent")).toEqual([]);
+    expect(slotsOf(sharedWebRaw, "alert.company-dissolved")).toEqual([]);
+    expect(hasKey("game", "alert.death-imminent")).toBe(false);
+    expect(hasKey("game", "alert.company-dissolved")).toBe(false);
+  });
 });
 
 describe("i18n/corpusDrift · the declined chrome consumer, on the record", () => {

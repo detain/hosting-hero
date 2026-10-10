@@ -2,7 +2,7 @@
  * i18n · pack store — the proto UI's copy layer over the shipped grammar packs.
  *
  * §9.11's "adding a type is a data task" proved end-to-end in the browser:
- * the SAME packs packages/content/script/validate.mjs keeps (98 + 75
+ * the SAME packs packages/content/script/validate.mjs keeps (103 + 75
  * templates) are parsed at module init through the loader's boundary
  * (`loadI18nPack` — already tested in sim-core; this file is a thin, loud
  * wrapper, Law 2: the wire JSON becomes a trusted frozen LoadedI18nPack

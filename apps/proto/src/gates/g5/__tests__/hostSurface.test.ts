@@ -113,9 +113,19 @@ describe("g5 frame · reputation pane", () => {
 });
 
 describe("g5 ticker · provisional notice voices", () => {
-  const NEW_KINDS = ["contract-activated", "covenant-breached", "chargeback-posted"] as const;
+  /* The three fix-economy kinds + the OD-25(a) canonical-death pair (lane
+     L4). The death lines are FALLBACKS: their pack keys ship zero-slot and
+     win the `noticeWireCopy(...) ?? …` race — the census here pins that the
+     safety net still voices every kind the seam owns. */
+  const NEW_KINDS = [
+    "contract-activated",
+    "covenant-breached",
+    "chargeback-posted",
+    "death-imminent",
+    "company-dissolved",
+  ] as const;
 
-  it("voices exactly the three fresh economy kinds, PROVISIONAL-marked", () => {
+  it("voices exactly the five fresh economy kinds, PROVISIONAL-marked", () => {
     expect(Object.keys(PROVISIONAL_NOTICE_VOICES).sort()).toEqual([...NEW_KINDS].sort());
     for (const kind of NEW_KINDS) {
       const line = voiceEconomyNotice(kind);

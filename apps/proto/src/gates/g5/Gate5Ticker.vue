@@ -11,7 +11,14 @@
  *  HOST-WIRING ADDITION (rest-host-wiring lane): the three new economy kinds
  *  (contract-activated / covenant-breached / chargeback-posted) fall through
  *  to the PROVISIONAL voices in gates/g5/noticeSurface.ts — pack prose still
- *  wins whenever noticeWireCopy returns a line. */
+ *  wins whenever noticeWireCopy returns a line.
+ *
+ *  DEATH PAIR (lane L4): the OD-25(a) kinds (death-imminent /
+ *  company-dissolved, contractId "company") need NO wiring here — their pack
+ *  keys are zero-slot, so noticeWireCopy resolves them label-free and the
+ *  provisional voices stay only as the pack-less fallback. Deaths are
+ *  unreachable inside the quarter horizon; a hand-authored scenario that
+ *  mints one rides this generic path. */
 import { computed } from "vue";
 import { signingsById, type TickerRow } from "./projection.ts";
 import { noticeWireCopy } from "../../i18n/noticeCopy.ts";

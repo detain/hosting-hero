@@ -104,6 +104,7 @@ import {
   registerContractEconomy,
   remainingSec,
   runEconomyTick,
+  type RefusedSettlement,
 } from "../economy/index.ts";
 import { compareCodeUnits } from "../internal/canonical.ts";
 import {
@@ -132,6 +133,36 @@ export const LONG_WEEKEND_MAX_TICKS = 2880;
  *  family). The insolvent-settle boundary (review F4) catches ONLY
  *  RangeErrors whose message matches — everything else rethrows. */
 const NEGATIVE_BUCKET_LAW = /would go negative/;
+
+/* ─── OD-25(a) refuse-settlements witness lane ───────────────────────────
+   The economy's float-insolvency death watch reads `EconomyTickIn.
+   refusedSettlements` — evidence the ledger said NO. Every refusal THIS
+   host already counts (the F4/F5 census) is folded into that witness
+   stream; nothing new is invented. Two shapes:
+   • opex bounce: identity + amount are KNOWN here (the host minted the
+     draft) → exact record, contractId `unattended:opex:<memo>`.
+   • voided settle: the refusal surfaces as the buckets-law throw, whose
+     text embeds `settle <invoiceId>: -<amount> µ$ on '<bucket>'` — the
+     attempted movement's magnitude is PARSED, never guessed. An
+     unparseable message (money.ts-family wording) rides count-only:
+     amount 0n under the neutral id `ledger:unattributed`. Honest best
+     effort: death.ts advanceDeathWatch persists only COUNT + SUM of the
+     evidence, so a coarse identity costs nothing downstream. */
+const SETTLE_REFUSAL_SHAPE = /settle (\S+): -(\d+) µ\$ on '/;
+
+function invoiceRefusalWitness(message: string): RefusedSettlement {
+  const shape = SETTLE_REFUSAL_SHAPE.exec(message);
+  if (shape === null) {
+    return Object.freeze({
+      contractId: asEntityId("ledger:unattributed"),
+      amountMicroUsd: asMoney(0n),
+    });
+  }
+  return Object.freeze({
+    contractId: asEntityId(shape[1] as string),
+    amountMicroUsd: asMoney(BigInt(shape[2] as string)),
+  });
+}
 
 /** Trailing window (sim-minutes) for the servedRate / ruleFiringsPerMin
  *  metrics — one empty tick is a hiccup, five is a catastrophe
@@ -322,6 +353,13 @@ export interface RunUnattendedConfig {
   readonly gaugeMetric?: string;
   /** Engine version stamp inside minted state (digest-visible). */
   readonly engineVersion?: string;
+  /** OD-25(a) halt-on-dissolution (default FALSE — the byte-identical
+   *  historical posture: the weekend keeps running on a dissolved ledger,
+   *  which no-ops honestly). When TRUE, the fold that mints the
+   *  `company-dissolved` notice is the FIRST terminal stop: it outranks a
+   *  same-tick guard verdict, and the stop carries the standard
+   *  never-mid-tick digest witness. */
+  readonly deathHaltsRun?: boolean;
 }
 
 /* ═══════════════════════════ the report records ═══════════════════════════ */
@@ -958,6 +996,13 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
     invoiceCount: 0,
     invoiceFirstMinute: -1,
   };
+  /* OD-25(a): the death-watch witness stream (see SETTLE_REFUSAL_SHAPE
+     docblock). A voided tick (F4 keep-prior) consumed NOTHING, so its
+     entries stay buffered and ride the NEXT call; a successful fold clears
+     the buffer. Empty buffer ⇒ the `refusedSettlements` key is OMITTED, so
+     every pre-death witness stays byte-identical. */
+  const refusalWitness: RefusedSettlement[] = [];
+  const deathHaltsRun = config.deathHaltsRun === true;
 
   let game = withCashMirror(game0, econ);
   const cashStart: bigint = game.cash.free;
@@ -995,12 +1040,17 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
        bounces + voided settles) for the guard sample — inability-to-pay
        evidence (review F5). */
     let refusedBurnsThisTick = 0;
+    let dissolvedThisTick = false;
     if (econ !== null) {
       for (const draft of opexByMinute.get(minute) ?? []) {
         if (econ.cash.free < draft.amountMicroUsd) {
           refusals.opexCount += 1;
           if (refusals.opexFirstMinute < 0) refusals.opexFirstMinute = minute;
           refusedBurnsThisTick += 1;
+          refusalWitness.push(Object.freeze({
+            contractId: asEntityId(`unattended:opex:${draft.memo}`),
+            amountMicroUsd: asMoney(draft.amountMicroUsd),
+          }));
           continue;
         }
         const posted = postEntry(econ.journal, econ.cash, opexLedgerDraft(draft, minute, game.context.clocks));
@@ -1043,8 +1093,17 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
           cfg: ecoCfg,
           dunningEngineOwned: config.money?.dunningEngineOwned ?? false,
           ...(outage !== null ? { outageSecs: outage } : {}),
+          /* Empty buffer ⇒ key omitted ⇒ every pre-existing input shape
+             (and every witness riding it) byte-identical. */
+          ...(refusalWitness.length > 0
+            ? { refusedSettlements: Object.freeze([...refusalWitness]) }
+            : {}),
         }));
         econ = out.state;
+        refusalWitness.length = 0; // the fold consumed the evidence
+        if (deathHaltsRun) {
+          dissolvedThisTick = out.notices.some((n) => n.kind === "company-dissolved");
+        }
         for (const notice of out.notices) summary.notices.set(notice.kind, (summary.notices.get(notice.kind) ?? 0) + 1);
         /* Forward the economy's own observations (fix-economy publisher: today
            exactly `company::reputation`, publish-on-change so quiet ticks ship
@@ -1062,6 +1121,9 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
         refusals.invoiceCount += 1;
         if (refusals.invoiceFirstMinute < 0) refusals.invoiceFirstMinute = minute;
         refusedBurnsThisTick += 1;
+        /* The voided fold consumed nothing — this refusal (plus whatever
+           was already pending) rides the NEXT call's witness stream. */
+        refusalWitness.push(invoiceRefusalWitness(err.message));
       }
       if (econAdvanced) game = withCashMirror(game, econ);
     }
@@ -1092,6 +1154,24 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
     if (atCadence || guards.length > 0) {
       tickDigest = digestState(game);
       if (atCadence) checkpoints.push(Object.freeze({ tick: game.context.tick, digest: tickDigest }));
+    }
+
+    /* OD-25(a) halt-on-dissolution (OPT-IN, default FALSE ⇒ every existing
+       witness byte-ident). The dissolution fold is the FIRST terminal stop:
+       checked before the guard loop, so it outranks a same-tick trigger.
+       The stop follows the never-mid-tick law exactly like a guard halt —
+       digestState of the full post-advance state at the stop tick, hence
+       byte-equal to the finalDigest of a clean run that simply ENDED there
+       (pinned by death-forwarding.test). */
+    if (deathHaltsRun && dissolvedThisTick) {
+      stop = Object.freeze({
+        reason: "company-dissolved",
+        atTick: game.context.tick,
+        atMinute: game.context.minute,
+        snapshotDigest: tickDigest ?? digestState(game),
+        triggered: Object.freeze([]),
+      });
+      break;
     }
 
     if (guards.length > 0) {

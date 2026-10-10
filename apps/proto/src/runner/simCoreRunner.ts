@@ -122,6 +122,7 @@ import {
   type EconomyNotice,
   type EconomyState,
   type EntryDraft,
+  type RefusedSettlement,
   type RevenueColourTags,
 } from "@hh/sim-core/economy";
 import {
@@ -357,6 +358,30 @@ const OUTAGE_SECONDS_PER_LANDED = 60n;
  *  never a silent success). OWNER QUESTION (economy lane): canSettle() so
  *  this catch can retire. */
 const NEGATIVE_BUCKET_LAW = /would go negative/;
+
+/* OD-25(a) refuse-settlements witness lane (mirrors unattended/fastForward.ts
+   SETTLE_REFUSAL_SHAPE — duplicated BY NECESSITY: the shared home would sit
+   in unattended/index.ts, outside this package's import surface). The death
+   fold persists only COUNT + SUM of the evidence (economy/death.ts
+   advanceDeathWatch), so the buckets-law text is parsed for the attempted
+   movement's magnitude, and an unparseable message rides count-only under
+   the neutral `ledger:unattributed` id. The runner never drafts opex, so
+   voided settles are its ONLY refusal family. */
+const SETTLE_REFUSAL_SHAPE = /settle (\S+): -(\d+) µ\$ on '/;
+
+function invoiceRefusalWitness(message: string): RefusedSettlement {
+  const shape = SETTLE_REFUSAL_SHAPE.exec(message);
+  if (shape === null) {
+    return Object.freeze({
+      contractId: asEntityId("ledger:unattributed"),
+      amountMicroUsd: asMoney(0n),
+    });
+  }
+  return Object.freeze({
+    contractId: asEntityId(shape[1] as string),
+    amountMicroUsd: asMoney(BigInt(shape[2] as string)),
+  });
+}
 
 function openingDraft(amountMicroUsd: bigint): EntryDraft {
   return Object.freeze({
@@ -688,6 +713,10 @@ export class SimCoreRunner implements SimRunner {
   private econ: EconomyState;
   /** Review-F4 refusal census (test-visible via economyInvoiceRefusals()). */
   private invoiceRefusals = 0;
+  /* OD-25(a): voided settles buffered as death-watch evidence; a successful
+     fold consumes the witness (clears), a void keeps it — the next call
+     carries the retried refusal again, same as the money it never moved. */
+  private readonly pendingRefusalWitness: RefusedSettlement[] = [];
   private seq = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private speedX: 1 | 2 | 4 = 1;
@@ -1044,9 +1073,15 @@ export class SimCoreRunner implements SimRunner {
           cfg: this.ecoCfg,
           dunningEngineOwned: false,
           ...(outage === null ? {} : { outageSecs: outage }),
+          /* Empty buffer ⇒ key omitted ⇒ the pre-death input shape (and the
+             goldens riding it) byte-identical. */
+          ...(this.pendingRefusalWitness.length > 0
+            ? { refusedSettlements: Object.freeze([...this.pendingRefusalWitness]) }
+            : {}),
         }),
       );
       this.econ = out.state;
+      this.pendingRefusalWitness.length = 0; // the fold consumed the evidence
       economyNotices.push(...out.notices);
       if (out.observedWrites.length > 0) {
         this.store.applyObservedWrites(out.observedWrites, tickUs);
@@ -1057,6 +1092,7 @@ export class SimCoreRunner implements SimRunner {
     } catch (err) {
       if (!(err instanceof RangeError) || !NEGATIVE_BUCKET_LAW.test(err.message)) throw err;
       this.invoiceRefusals += 1; // prior econ kept; the invoice retries next tick
+      this.pendingRefusalWitness.push(invoiceRefusalWitness(err.message));
     }
     this.game = Object.freeze({
       ...this.game,

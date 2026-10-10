@@ -31,6 +31,35 @@ describe("i18n/noticeCopy · the fitted seams", () => {
     expect(noticeWireCopy("chargeback-posted", "x", "game")).toBeNull();
   });
 
+  /* OD-25(a) canonical-death pair (lane L4): authored ZERO-SLOT precisely
+     because the covenant finding above has no answer for the company's own
+     collapse — the sentence needs no name tag, so the ticker's
+     contractId:"company" rows (customerLabel null) resolve the pack voice. */
+  it("death-imminent resolves WITHOUT any label (zero-slot pack line)", () => {
+    expect(noticeWireCopy("death-imminent", null)).toBe(
+      "Death watch armed: the register has stayed empty and the ledger has kept refusing what is owed, day after day. This is the visible beat before the end — cover the burn now, or the next fold dissolves the company.",
+    );
+  });
+
+  it("company-dissolved resolves WITHOUT any label (zero-slot pack line)", () => {
+    expect(noticeWireCopy("company-dissolved", null)).toBe(
+      "The company is dissolved. The ledger stops at its last entry: no settle, no accrual, no new notice. What ran here belongs to the replay now.",
+    );
+  });
+
+  it("the death keys are era-flat: 1998 and 2026 resolve byte-identically", () => {
+    for (const kind of ["death-imminent", "company-dissolved"]) {
+      expect(noticeWireCopy(kind, null, "shared-web", 1998)).toBe(
+        noticeWireCopy(kind, null, "shared-web", 2026),
+      );
+    }
+  });
+
+  it("the death keys live in shared-web only — the game pack declines them", () => {
+    expect(noticeWireCopy("death-imminent", null, "game")).toBeNull();
+    expect(noticeWireCopy("company-dissolved", null, "game")).toBeNull();
+  });
+
   it("covenant-breached DECLINES until a company-label seam exists ({company} cannot be invented)", () => {
     // The key EXISTS (alert.covenant-breached {company}); what's missing is a
     // company display name in the ticker's data path. The provisional voice in

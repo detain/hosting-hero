@@ -16,6 +16,7 @@ import {
   type SimProjection,
 } from "../shared/protocol";
 import { MockSimRunner } from "../runner/mockSimRunner";
+import { noticeWireCopy } from "../i18n/noticeCopy";
 
 function sampleProjection(): SimProjection {
   return new MockSimRunner(42).headlessStep(100);
@@ -92,6 +93,11 @@ describe("encode/decode round-trip", () => {
         ...base.notices,
         { kind: "economy-notice", laneId: null, atUs: 9n, detail: "invoice-paid:ctr-hourly-1" },
         { kind: "economy-notice", laneId: null, atUs: 9n, detail: "contract-activated:ctr-pending-1" },
+        // OD-25(a) canonical deaths ride the SAME roll-up (lane L4): the
+        // engine mints them with contractId "company", so the colon split
+        // yields (kind, "company") and the zero-slot pack voice resolves.
+        { kind: "economy-notice", laneId: null, atUs: 9n, detail: "death-imminent:company" },
+        { kind: "economy-notice", laneId: null, atUs: 9n, detail: "company-dissolved:company" },
       ],
     };
     const decoded = decodeProjection(throughJson(encodeProjection(withMoney)));
@@ -99,7 +105,14 @@ describe("encode/decode round-trip", () => {
     expect(money.map((n) => [n.detail, n.laneId, n.atUs])).toEqual([
       ["invoice-paid:ctr-hourly-1", null, 9n],
       ["contract-activated:ctr-pending-1", null, 9n],
+      ["death-imminent:company", null, 9n],
+      ["company-dissolved:company", null, 9n],
     ]);
+    for (const row of money.slice(2)) {
+      const [engineKind, contractId] = (row.detail ?? "").split(/:(.+)/);
+      expect(contractId).toBe("company");
+      expect(noticeWireCopy(engineKind as string, null)).toBeTypeOf("string");
+    }
   });
 
   it("door receipts round-trip with their detail rider; unset details stay off the wire", () => {
