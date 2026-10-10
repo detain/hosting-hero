@@ -28,6 +28,8 @@ import { streamFor } from "../kernel/rng.ts";
 import { type RunSeed } from "../types.ts";
 import { daysPastDue, type Invoice } from "./billing.ts";
 import type { EconomyConfig } from "./config.ts";
+import { BPS_DEN } from "./money.ts";
+import { applyFactorBps } from "./elasticity.ts";
 
 export type DunningStage = "failed" | "retry" | "reminder" | "warning" | "suspend" | "terminate";
 
@@ -81,14 +83,26 @@ export interface DunningAdvance {
   readonly stageNow: DunningStage;
 }
 
-function recoveryBpsForStage(stage: DunningStage, cfg: EconomyConfig, engineBonusBps: bigint): bigint {
+/** Recovery odds for a stage entry. `priceRecoveryFactorBps` (OD-24(a)
+ *  part 2, default exactly 1.0): the elasticity mirror of an active
+ *  adjust-price hike — recovery odds fall on a hike, cap at today's value
+ *  on a cut. Neutral ⇒ applyFactorBps's identity exit returns the unfactored
+ *  sum, so the PRE-EXISTING arithmetic (and the short-circuit on bps ≤ 0 in
+ *  advanceDunning) runs byte-identically — no roll is ever added or skipped
+ *  by elasticity itself. */
+function recoveryBpsForStage(
+  stage: DunningStage,
+  cfg: EconomyConfig,
+  engineBonusBps: bigint,
+  priceRecoveryFactorBps: bigint = BPS_DEN,
+): bigint {
   const base =
     stage === "terminate"
       ? cfg.dunning.postSuspensionRecoveryBps // last-chance roll before the write-off
       : stage === "failed"
         ? 0n // the initial decline itself never "recovers"; only retries do
         : cfg.dunning.stageRecoveryBps[stage];
-  const total = base + engineBonusBps; // Dunning Engine buildable, §6.4
+  const total = applyFactorBps(base + engineBonusBps, priceRecoveryFactorBps); // Dunning Engine buildable, §6.4
   return total > 10_000n ? 10_000n : total;
 }
 
@@ -96,6 +110,7 @@ function recoveryBpsForStage(stage: DunningStage, cfg: EconomyConfig, engineBonu
  * Attempt one stage advance for a FAILED invoice at `atBusinessMin`.
  * `engineBonusBps` = recovery bonus from built dunning tooling (0 = none;
  * pass cfg.dunning.dunningEngineBonusBps when owned).
+ * `priceRecoveryFactorBps` = active override's dunning mirror (default 1.0).
  *
  * Recovery rolls happen ONCE per stage entry (the stage domain pins the
  * stream), so re-invoking inside the same stage never re-draws.
@@ -106,6 +121,7 @@ export function advanceDunning(
   runSeed: RunSeed,
   cfg: EconomyConfig,
   engineBonusBps: bigint,
+  priceRecoveryFactorBps: bigint = BPS_DEN,
 ): DunningAdvance {
   if (invoice.state !== "failed") {
     throw new Error(
@@ -122,7 +138,7 @@ export function advanceDunning(
     return { invoice, kind: "held", stageBefore: current, stageNow: current };
   }
 
-  const bps = recoveryBpsForStage(target, cfg, engineBonusBps);
+  const bps = recoveryBpsForStage(target, cfg, engineBonusBps, priceRecoveryFactorBps);
   const stream = streamFor(runSeed, `economy/dunning/${target}`, invoice.dueAtMin, invoice.contractId);
   const recovered = bps > 0n && stream.range(10_000) < Number(bps);
 

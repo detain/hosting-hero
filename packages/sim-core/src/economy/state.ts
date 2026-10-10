@@ -166,6 +166,9 @@ export interface RegisterContractInput {
   readonly grandfather: GrandfatherLock | null;
   readonly revenueTags: RevenueColourTags;
   readonly commitmentBps: bigint;
+  /** OD-24(a): pricing classification for the override book (see
+   *  OpenContractInput.priceKey). Sparse — absent keeps records byte-ident. */
+  readonly priceKey?: string;
 }
 
 /** The single choke-point every registration folds through: per-entry side
@@ -184,6 +187,7 @@ function buildRegistration(
       clauseRefs: input.clauseRefs,
       grandfather: input.grandfather,
       revenueTags: input.revenueTags,
+      ...(input.priceKey === undefined ? {} : { priceKey: input.priceKey }),
     },
     cfg,
   );

@@ -20,3 +20,4 @@ export * from "./reputation.ts";
 export * from "./state.ts";
 export * from "./tick.ts";
 export * from "./death.ts";
+export * from "./elasticity.ts";

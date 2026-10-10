@@ -11,6 +11,14 @@ declare module "node:url" {
   export function fileURLToPath(url: URL | string): string;
 }
 
+/** elasticity.test.ts reads pipeline/intent-door.ts to pin the price-key
+ *  kind vocabulary against its economy-side mirror. Signature matches
+ *  src/loader/__tests__/node-fs.d.ts's declaration exactly, so the package-
+ *  wide tsc merges them as one overload (no duplicate-const hazard). */
+declare module "node:fs" {
+  export function readFileSync(path: string, encoding: "utf8"): string;
+}
+
 interface ImportMeta {
   readonly url: string;
 }
@@ -18,6 +26,10 @@ interface ImportMeta {
 declare class URL {
   constructor(url: string, base?: string);
 }
+
+/** Same declaration waves/__tests__/node-fs.d.ts carries — vitest 4 no
+ *  longer leaks lib.dom; elasticity.test.ts forks whole EconomyStates. */
+declare function structuredClone<T>(value: T): T;
 
 /** Monotonic clock surface journal.test.ts's perf pins need (same no-@types
  *  reason as above; Node + browsers both provide it at runtime). */

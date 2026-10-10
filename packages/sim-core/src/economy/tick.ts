@@ -54,6 +54,7 @@ import {
   type MoneyBuckets,
   type MoneyUnit,
   type ObservedWrite,
+  type PriceOverrideRecord,
   type RevenueQualityBand,
   type RunSeed,
   type SimMinute,
@@ -80,8 +81,9 @@ import {
   assertDunningLadder,
   type DunningStage,
 } from "./dunning.ts";
-import { bpsOf } from "./money.ts";
+import { bpsOf, BPS_DEN } from "./money.ts";
 import { floorDiv } from "./intMath.ts";
+import { applyFactorBps, priceElasticityFor } from "./elasticity.ts";
 import {
   commitmentBpsOf,
   drainOutage,
@@ -230,6 +232,16 @@ export interface EconomyTickIn {
    *  ledger itself declare the death). Unset ⇒ the path stays idle, byte-
    *  identity for every existing host. */
   readonly refusedSettlements?: readonly RefusedSettlement[] | undefined;
+  /** OD-24(a) part 2 — the door's frozen price book (`GameState.pricing
+   *  .overrides`, keyed `<kind>:<id>`) forwarded per fold. Contracts that
+   *  carry a matching sparse `priceKey` (set at signing) resolve their
+   *  effective price THROUGH this map as-of the tick minute: an override
+   *  replaces the authored MRC at the billing chain head and drives the
+   *  churn/retention/recovery elasticity factors (economy/elasticity.ts).
+   *  Unset (or key unmatched / inside the dead band) ⇒ every consumer runs
+   *  its pre-existing path byte-identically — no-roll discipline pinned by
+   *  __tests__/elasticity.test.ts. */
+  readonly priceOverrides?: ReadonlyMap<string, PriceOverrideRecord> | undefined;
   /**
    * LONG-SAVE retention (perf audit #3), OPT-IN default OFF:
    * settled-and-fully-resolved invoices (paid/written-off with no live
@@ -536,7 +548,7 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   /* 2 month rolls (catch-up loop for paused clocks). */
   const targetMonth = monthIndexOf(now, cfg);
   while (w.monthIndex < targetMonth) {
-    rollBusinessMonth(w, ids, contracts, now, cfg, runSeed, post);
+    rollBusinessMonth(w, ids, contracts, now, cfg, runSeed, post, input.priceOverrides);
   }
 
   /* 3 MFN queue: enqueue fresh triggers (lagged now, fired later) + fire due. */
@@ -576,7 +588,13 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     if (econ.phase !== "active" || econ.cliffFired || now < econ.termEndMin) continue;
     const contract = contracts.get(id)!;
     const supplied = input.renewalDecisions?.find((d) => d.contractId === id);
-    const decision = supplied?.decision ?? defaultCliffDecision(contract, econ, runSeed, cfg);
+    // OD-24(a): an active override tilts the win/loss pulse — retention is
+    // scaled by the elasticity mirror BEFORE the existing single draw.
+    // null (no key/book/future-dated) ⇒ neutral default inside the helper.
+    const elasticity = priceElasticityFor(contract, econ, input.priceOverrides, now, cfg);
+    const decision =
+      supplied?.decision ??
+      defaultCliffDecision(contract, econ, runSeed, cfg, elasticity?.retentionBpsFactor ?? BPS_DEN);
     const outcome = resolveRenewalCliff(econ, decision, now, cfg);
     econ = outcome.econ;
     if (outcome.kind === "escalate-and-renew") {
@@ -645,7 +663,14 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
       continue;
     }
     if (current.state !== "failed") continue;
-    advanceDunningLadder(w, current, now, runSeed, cfg, engineBonus, context, post);
+    // OD-24(a): the dunning mirror of an active price hike (default neutral
+    // when the contract has no key / no book / auto-prime guard left no econ).
+    const dunningContract = contracts.get(current.contractId);
+    const recoveryFactor =
+      payer !== undefined && dunningContract !== undefined && input.priceOverrides !== undefined
+        ? priceElasticityFor(dunningContract, payer, input.priceOverrides, now, cfg)?.recoveryBpsFactor ?? BPS_DEN
+        : BPS_DEN;
+    advanceDunningLadder(w, current, now, runSeed, cfg, engineBonus, context, post, recoveryFactor);
   }
 
   /* 9 error budgets: drains, spends w/ exhaustion locks, clean weeks. */
@@ -797,10 +822,14 @@ function generateDueInvoices(
     if (cap === 0) continue;
     const terms = input.invoiceTerms?.get(id) ?? defaultTermsFor(contract, cfg);
     const discount = firedMfnDiscountBps(w.mfnQueue, id);
+    // OD-24(a): as-of resolution of the price book at the INVOICE calendar —
+    // one resolution per contract-tick (all catch-up cycles bill at the same
+    // effective base; the grandfather lock inside billedMrc still wins).
+    const baseOverride = priceElasticityFor(contract, econ, input.priceOverrides, now, cfg)?.effectiveBaseMicroUsd ?? null;
     let invoicedCycles = econ.invoicedCycles;
     let backlogRemaining = econ.backlogRemaining;
     for (let n = 0; n < cap; n += 1) {
-      const invoice = issueInvoice(contract, { ...econ, invoicedCycles }, invoicedCycles, now, terms, discount, cfg);
+      const invoice = issueInvoice(contract, { ...econ, invoicedCycles }, invoicedCycles, now, terms, discount, cfg, baseOverride);
       /* §6.13 recognition: backlog money does NOT re-appear at issue — the
        * same entry MOVES it (backlog −drain ⇒ accountsReceivable +gross), so
        * a signed deal's promise is never counted twice inside netPosition.
@@ -935,10 +964,11 @@ function advanceDunningLadder(
   engineBonus: bigint,
   context: TickContext,
   post: Post,
+  priceRecoveryFactorBps: bigint = BPS_DEN,
 ): void {
   let current = invoice;
   for (let hop = 0; hop < 6; hop += 1) {
-    const adv = advanceDunning(current, now, runSeed, cfg, engineBonus);
+    const adv = advanceDunning(current, now, runSeed, cfg, engineBonus, priceRecoveryFactorBps);
     if (adv.kind === "held") return;
     const cause = asCauseId(`economy:dunning:${current.id}:${adv.stageNow}:${context.tick}`);
     if (adv.kind === "recovered") {
@@ -1016,6 +1046,7 @@ function rollBusinessMonth(
   cfg: EconomyConfig,
   runSeed: RunSeed,
   post: Post,
+  priceOverrides?: ReadonlyMap<string, PriceOverrideRecord> | undefined,
 ): void {
   w.monthIndex += 1;
   const newMonth = w.monthIndex;
@@ -1041,7 +1072,11 @@ function rollBusinessMonth(
     if (econ === undefined || econ.phase !== "active") continue;
     const contract = contracts.get(id);
     if (contract === undefined) continue;
-    const bps = effectiveMonthlyChurnBps(contract.bundleId, id, w.forecasts, now, cfg);
+    // OD-24(a): churn pressure from an active price hike/cut (neutral fast
+    // path when no override resolves — the pre-existing bps feeds the roll).
+    const churnFactor =
+      priceElasticityFor(contract, econ, priceOverrides, now, cfg)?.churnBpsFactor ?? BPS_DEN;
+    const bps = effectiveMonthlyChurnBps(contract.bundleId, id, w.forecasts, now, cfg, churnFactor);
     if (churnRoll(id, bps, newMonth, runSeed) === "churned") {
       w.econ.set(id, setPhase(econ, "terminated", now));
       settleCancellationRefunds(w, id, now, post);
@@ -1413,19 +1448,25 @@ function evaluateLoseSlowly(w: Working, now: SimMinute, cfg: EconomyConfig): voi
 
 /** Lapse-by-default law (§6.4): auto-renew contracts renew evergreen;
  *  otherwise the cohort roll draws the term-matrix retention (§6.12:24772).
- *  Stream slot = term-end minute ⇒ one pinned draw per (contract, term). */
+ *  Stream slot = term-end minute ⇒ one pinned draw per (contract, term).
+ *  `priceRetentionFactorBps` (OD-24(a) part 2, default exactly 1.0) scales
+ *  the retention bps BEFORE that single draw — hike shrinks the win chance,
+ *  cut caps at the authored retention (no certainty bought). The roll count
+ *  is invariant: exactly one `range(10_000)` per cliff, factor or not. */
 function defaultCliffDecision(
   contract: Contract,
   econ: ContractEconomy,
   runSeed: RunSeed,
   cfg: EconomyConfig,
+  priceRetentionFactorBps: bigint = BPS_DEN,
 ): RenewalDecision {
   const cause = asCauseId(`economy:cliff:${contract.id}:${econ.termEndMin}`);
   if (contract.sla.autoRenew) {
     return { choice: "renew", causeId: cause, escalatedMrc: null };
   }
-  const retention =
+  const retentionRaw =
     cfg.churn.renewalRetentionBpsByTermMonths[econ.termMonths] ?? cfg.churn.renewalRetentionFallbackBps;
+  const retention = applyFactorBps(retentionRaw, priceRetentionFactorBps);
   const stream = streamFor(runSeed, "economy/renewal", econ.termEndMin, contract.id);
   const stays = stream.range(10_000) < Number(retention);
   return { choice: stays ? "renew" : "lapse", causeId: cause, escalatedMrc: null };

@@ -25,6 +25,8 @@
 import { streamFor } from "../kernel/rng.ts";
 import { type EntityId, type RunSeed, type SimMinute } from "../types.ts";
 import type { EconomyConfig } from "./config.ts";
+import { BPS_DEN } from "./money.ts";
+import { applyFactorBps } from "./elasticity.ts";
 
 export const CHURN_DOMAIN = "economy/churn";
 export const CHURN_SIGNAL_DOMAIN = "economy/churn-signal";
@@ -33,17 +35,24 @@ export type ChurnRoll = "retained" | "churned";
 
 /** Monthly voluntary churn rate for a contract: bundle base rate (Sheet C
  *  band via config lookup on `bundleId`), ghosted fuses added, clamped to
- *  [0, 10000] bps. Deterministic pure read. */
+ *  [0, 10000] bps. Deterministic pure read.
+ *
+ *  `priceChurnFactorBps` (OD-24(a) part 2, default exactly 1.0): the
+ *  elasticity multiplier from an active adjust-price override, applied to
+ *  the rate BEFORE the clamp. Neutral ⇒ the pre-existing arithmetic runs
+ *  byte-identically (no-roll discipline: this only re-scales the bps fed
+ *  to churnRoll's single existing draw — it never adds a roll). */
 export function effectiveMonthlyChurnBps(
   bundleId: string,
   contractId: EntityId,
   forecasts: readonly GhostedForecast[],
   atBusinessMin: SimMinute,
   cfg: EconomyConfig,
+  priceChurnFactorBps: bigint = BPS_DEN,
 ): bigint {
   const base = cfg.churn.monthlyLogoChurnBpsByBundle[bundleId] ?? cfg.churn.fallbackMonthlyBps;
   const lit = forecastChurnBpsAt(forecasts, contractId, atBusinessMin);
-  const total = base + lit;
+  const total = applyFactorBps(base + lit, priceChurnFactorBps);
   return total > 10_000n ? 10_000n : total;
 }
 

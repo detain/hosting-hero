@@ -102,7 +102,9 @@ export function cyclePeriodStart(econ: ContractEconomy, contract: Contract, cycl
 /** Gross amount for a cycle: hourly bills MRC/720 (exact bigint ratio),
  *  monthly bills MRC (escalated/grandfathered), annual — and any prepay-
  *  elected monthly deal — bill a full year at the 15% prepay discount
- *  ("2 months free", financing instrument, §6.13). */
+ *  ("2 months free", financing instrument, §6.13).
+ *  `baseOverride` (OD-24(a) part 2, default null): active adjust-price
+ *  amount threaded to billedMrc's chain head — see its docblock. */
 export function cycleGross(
   contract: Contract,
   econ: ContractEconomy,
@@ -110,8 +112,9 @@ export function cycleGross(
   terms: InvoiceTerms,
   mfnDiscountBps: bigint,
   cfg: EconomyConfig,
+  baseOverride: MoneyUnit | null = null,
 ): MoneyUnit {
-  const monthly = billedMrc(contract, econ, periodStartMin, escalatorFor(contract, econ, cfg), mfnDiscountBps, cfg);
+  const monthly = billedMrc(contract, econ, periodStartMin, escalatorFor(contract, econ, cfg), mfnDiscountBps, cfg, baseOverride);
   const prepayDiscount = (amount: MoneyUnit): MoneyUnit =>
     bpsOf(amount, 10_000n - cfg.billing.annualPrepayDiscountBps, `prepay discount '${contract.id}'`);
   const year = scaleMoney(
@@ -145,10 +148,11 @@ export function issueInvoice(
   terms: InvoiceTerms,
   mfnDiscountBps: bigint,
   cfg: EconomyConfig,
+  baseOverride: MoneyUnit | null = null,
 ): Invoice {
   const period = cyclePeriodMinutes(contract, cfg);
   const periodStartMin = econ.cycleAnchorMin + cycleIndex * period;
-  const gross = cycleGross(contract, econ, periodStartMin, terms, mfnDiscountBps, cfg);
+  const gross = cycleGross(contract, econ, periodStartMin, terms, mfnDiscountBps, cfg, baseOverride);
   // Retail card schedule on net-0 auto-pay; invoiced B2B settles by wire/ACH
   // at interchange-plus — modeled here as rate-only (PROVISIONAL split §6.13).
   const rateFee = bpsOf(gross, cfg.fees.cardRateBps, `card rate '${contract.id}'`);

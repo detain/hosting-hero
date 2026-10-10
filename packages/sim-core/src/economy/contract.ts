@@ -31,6 +31,7 @@ import {
 import { ratioFromBps, scaleMoney, type MoneyRatio } from "./money.ts";
 import { floorDiv, roundDiv } from "./intMath.ts";
 import { daysToMinutes, type EconomyConfig } from "./config.ts";
+import { assertValidPriceKey } from "./elasticity.ts";
 
 /* ─────────────────────── SLA clause table (P13 data refs) ─────────────── */
 
@@ -172,6 +173,12 @@ export interface ContractEconomy {
   /** Business minute the tick posted this contract's backlog credit (null =
    *  not yet posted) — the once-only posting stamp. */
   readonly backlogPostedAtMin: SimMinute | null;
+  /** Composite key (`<kind>:<id>`, the door's override-book grammar) this
+   *  deal is PRICED under (OD-24(a) part 2, economy/elasticity.ts). SPARSE
+   *  by law: the key is ABSENT unless the host classifies at signing time,
+   *  so every pre-existing record — and every serialization of one — is
+   *  byte-identical. Absent ⇒ no override can ever resolve; neutral path. */
+  readonly priceKey?: string;
 }
 
 export interface OpenContractInput {
@@ -181,6 +188,10 @@ export interface OpenContractInput {
   readonly grandfather: GrandfatherLock | null;
   readonly revenueTags: RevenueColourTags;
   readonly mfnActive?: boolean;
+  /** OD-24(a): host classification of what plan/class/SKU this deal is
+   *  priced under — the lookup key into the door's override book. Parsed
+   *  (`assertValidPriceKey`) here at the boundary; absent ⇒ inert pricing. */
+  readonly priceKey?: string;
 }
 
 /** Parse-and-trust constructor (Law 2): validates term geometry once. */
@@ -204,6 +215,10 @@ export function openContractEconomy(input: OpenContractInput, cfg: EconomyConfig
   // phase === "active") — which is the honest reading: you cannot churn or
   // lapse out of a service that has not started.
   const startsInTheFuture = contract.termStartMin > input.atBusinessMin;
+  // OD-24(a) boundary parse: a provided priceKey must match the door book's
+  // grammar NOW (fail loud at signing); undefined stays absent — the record
+  // is written without the key so nothing serializes differently.
+  if (input.priceKey !== undefined) assertValidPriceKey(input.priceKey, `contract '${contract.id}'`);
   // Backlog seed: TCV when the deal states one (§6.13 "enormous colo/GPU");
   // otherwise mrc × whole term months as the documented estimate.
   const backlogSeed = startsInTheFuture
@@ -230,6 +245,7 @@ export function openContractEconomy(input: OpenContractInput, cfg: EconomyConfig
     suspendedAtMin: null,
     backlogRemaining: backlogSeed,
     backlogPostedAtMin: null,
+    ...(input.priceKey === undefined ? {} : { priceKey: input.priceKey }),
   };
 }
 
@@ -277,6 +293,12 @@ export function termYearsElapsed(econ: ContractEconomy, atBusinessMin: SimMinute
  *   base → ×(1 + escalator)^years → grandfathered override → ×(1 − mfnDiscount)
  * Exact bigint ratio math; "each concession writes a permanent line" —
  * escalator applications are counted, never recomputed from floats.
+ *
+ * `baseOverride` (OD-24(a) part 2, default null = today's behavior): the
+ * player's active `adjust-price` amount replaces the AUTHORED base at the
+ * head of the chain — escalators compound on the new price and the
+ * grandfather lock still overrides it (a written concession is a permanent
+ * line the dial cannot cross, §6.12).
  */
 export function billedMrc(
   contract: Contract,
@@ -285,8 +307,9 @@ export function billedMrc(
   escalator: Escalator | null,
   mfnDiscountBps: bigint,
   cfg: EconomyConfig,
+  baseOverride: MoneyUnit | null = null,
 ): MoneyUnit {
-  let amount: MoneyUnit = contract.mrcMicroUsd;
+  let amount: MoneyUnit = baseOverride ?? contract.mrcMicroUsd;
   const yearsAt = Math.max(
     0,
     floorDiv(periodStartMin - econ.cycleAnchorMin, cfg.calendar.minutesPerMonth * cfg.calendar.monthsPerYear),

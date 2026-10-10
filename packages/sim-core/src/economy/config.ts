@@ -270,6 +270,40 @@ export interface DeathConfig {
   readonly covenantCureGraceDays: number; // PROVISIONAL
 }
 
+/* ─────────────── price elasticity of the adjust-price book (OD-24(a)) ──── */
+
+/** The elasticity dial set behind `economy/elasticity.ts` (OD-24(a) owner
+ *  ruling 2026-10-09 — part 2 of the pricing surface: the door's
+ *  `adjust-price` records are CONSUMED here). Every value PROVISIONAL —
+ *  ratify-on-playtest, same class as the reputation deltas. Direction law:
+ *  a price HIKE raises churn pressure and lowers both renewal retention and
+ *  dunning recovery odds; a CUT mirrors. All factors are exact bigint bps
+ *  multipliers applied to the SAME single seeded roll each consumer already
+ *  draws — elasticity never adds an RNG roll (neutral ⇒ byte-identity). */
+export interface PricingConfig {
+  /** Churn-pressure coefficient: bps of extra churn-factor per 10,000 bps of
+   *  out-of-band price deviation (150% ⇒ churn doubles at +110% over the
+   *  dead-band). PROVISIONAL. */
+  readonly churnCoefficientBps: bigint;
+  /** Renewal-cliff retention coefficient (win/loss pulse): a hike scales the
+   *  term-matrix retention DOWN by this leverage. PROVISIONAL. */
+  readonly retentionCoefficientBps: bigint;
+  /** Dunning-recovery coefficient: a hike scales per-stage recovery odds
+   *  DOWN by this leverage (angry wallets pay slower). PROVISIONAL. */
+  readonly dunningCoefficientBps: bigint;
+  /** Dead-band: |deviation| ≤ this many bps from the authored price is
+   *  INERTIA — every factor stays exactly 1.0 (±10% — PROVISIONAL). */
+  readonly deadBandBps: bigint;
+  /** Saturation floor for adverse-direction factors (a −90% cut can only
+   *  halve churn pressure; a hike can at most multiply it by factorMax). */
+  readonly factorMinBps: bigint;
+  /** Saturation clamp for the churn factor above the dead band. PROVISIONAL. */
+  readonly factorMaxBps: bigint;
+  /** Hard floor for the retention mirror: even a brutal hike keeps a small
+   *  chance of renewal (retention factor never reaches 0). PROVISIONAL. */
+  readonly retentionFactorMinBps: bigint;
+}
+
 /* ─────────────────────────────── root config ──────────────────────────── */
 
 export interface EconomyConfig {
@@ -285,6 +319,7 @@ export interface EconomyConfig {
   readonly runway: RunwayConfig;
   readonly reputation: ReputationConfig;
   readonly death: DeathConfig;
+  readonly pricing: PricingConfig;
 }
 
 export function defaultEconomyConfig(): EconomyConfig {
@@ -391,6 +426,15 @@ export function defaultEconomyConfig(): EconomyConfig {
       churnCollapseSustainedDays: 3, // PROVISIONAL
       floatInsolvencySustainedDays: 3, // PROVISIONAL — matches LONG_WEEKEND 2880-min ceiling
       covenantCureGraceDays: 10, // PROVISIONAL — dunning middle-rung shape (§6.4)
+    },
+    pricing: {
+      churnCoefficientBps: 15_000n, // PROVISIONAL — ratify-on-playtest (OD-24(a) part 2)
+      retentionCoefficientBps: 8_000n, // PROVISIONAL
+      dunningCoefficientBps: 5_000n, // PROVISIONAL
+      deadBandBps: 1_000n, // PROVISIONAL — ±10% inertia band
+      factorMinBps: 5_000n, // PROVISIONAL — 0.5× saturation floor
+      factorMaxBps: 30_000n, // PROVISIONAL — 3× saturation clamp
+      retentionFactorMinBps: 1_000n, // PROVISIONAL — hikes never zero the renewal chance
     },
   };
 }
