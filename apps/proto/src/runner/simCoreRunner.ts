@@ -69,6 +69,7 @@ import {
   asMoney,
   asRunSeed,
   observedKey,
+  type AttentionState,
   type ClockState,
   type Contract,
   type DependencyEdge,
@@ -82,6 +83,7 @@ import {
   type GameState,
   type Outcome,
   type PlayerIntent,
+  type PriceOverrideBook,
   type QosClassDef,
   type RetryPolicy,
   type RouteIn,
@@ -107,6 +109,7 @@ import {
   createInitialState,
   createTickDriver,
   makeSlots,
+  replenishAtBusinessMonth,
   type DefaultPipelineConfig,
   type TickDriver,
   type TickInputs,
@@ -351,6 +354,13 @@ const DEFAULT_REVENUE_TAGS: RevenueColourTags = Object.freeze({
  *  open OD item; landed traffic must at least cost SLA budget, not nothing). */
 const OUTAGE_SECONDS_PER_LANDED = 60n;
 
+/** Business-calendar month grid (economy's default minutesPerMonth — the
+ *  43,200-minute rollBusinessMonth law). The attention seam rolls on THIS
+ *  grid read straight off the host clock, mirroring fastForward's
+ *  ATTENTION_MONTH_MINUTES: calendar authority, not the ledger's counter
+ *  (a dissolved/frozen monthIndex must not strand the pool). */
+const ATTENTION_MONTH_MINUTES = 43_200;
+
 /** Review-F4 boundary (mirrors fastForward): economy/ refuses negative
  *  buckets by throwing a raw RangeError deep inside settle. ONLY that family
  *  is converted into a counted refusal (prior econ kept — the same invoice
@@ -396,7 +406,7 @@ function openingDraft(amountMicroUsd: bigint): EntryDraft {
 /** Prime the money state: opening float + one registration per contract,
  *  exactly the fastForward money-lane fold (single-registration chaining —
  *  three contracts, no need for the batch API at this roster size). */
-function primeEconomy(cfg: EconomyConfig): EconomyState {
+function primeEconomy(cfg: EconomyConfig, priceKeys?: ReadonlyMap<EntityId, string>): EconomyState {
   const posted = postEntry(
     emptyEconomyState().journal,
     emptyEconomyState().cash,
@@ -408,6 +418,10 @@ function primeEconomy(cfg: EconomyConfig): EconomyState {
     cash: posted.cash,
   });
   for (const contract of MONEY_CONTRACTS) {
+    /* Sparse price key (@5781335 host seam, mirrors fastForward's register
+       fold): only the contracts the options name become price-classified;
+       an undefined entry spreads NOTHING ⇒ byte-identical record. */
+    const priceKey = priceKeys?.get(contract.id);
     econ = registerContractEconomy(
       econ,
       {
@@ -417,6 +431,7 @@ function primeEconomy(cfg: EconomyConfig): EconomyState {
         grandfather: null,
         revenueTags: DEFAULT_REVENUE_TAGS,
         commitmentBps: 9_990n,
+        ...(priceKey !== undefined ? { priceKey } : {}),
       },
       cfg,
     );
@@ -668,6 +683,22 @@ export interface SimCoreRunnerOptions {
    *  feint-liveness proof plants a marker in an otherwise-shipped slice.
    *  Absent ⇒ the shipped g1 shared-web slice (SHARED_WEB_G1_TABLE). */
   readonly table?: WaveTable;
+  /** OD-6/OD-23(a) attention pool (lane @eff5694 host seam, mirrors
+   *  fastForward's config.attention): embedded in the minted state and
+   *  serviced once per business-month roll the economy fold advances.
+   *  ABSENT ⇒ never minted — the state carries no attention key and
+   *  digestState ignores the block (byte-identity law). */
+  readonly attention?: AttentionState;
+  /** L1 pricing book (door lane @0032a21): embedded post-mint and forwarded
+   *  as `EconomyTickIn.priceOverrides` on every economy fold. ABSENT ⇒ the
+   *  key is OMITTED per tick (empty⇒omitted law @984759b) — the shipped
+   *  goldens (cash 25_109_732_500n etc.) are the byte-identity proof. */
+  readonly pricing?: PriceOverrideBook;
+  /** L1 pricing: contract id → price key at registration (pairs with
+   *  `pricing`; a book without keyed contracts resolves to neutral, and
+   *  keys without a book never see an override — both no-ops by the
+   *  elasticity resolve law). */
+  readonly priceKeys?: ReadonlyMap<EntityId, string>;
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -694,6 +725,12 @@ export class SimCoreRunner implements SimRunner {
   private readonly ruleInputs = new Map<number, WaveRuleInputs>();
   private incidentClock: IncidentClock = INITIAL_INCIDENT_CLOCK;
   private game: GameState;
+  /** Attention month authority (OD-6 host seam, mirrors fastForward): the
+   *  roll grid is the business CALENDAR (economy's 43,200-minute month
+   *  applied to the host clock), not `econ.monthIndex` — a voided F4 fold
+   *  or a dissolved terminal no-op freezes the ledger's counter, but the
+   *  calendar does not stop for a dead company. */
+  private attentionMonthCursor = 0;
   private lanes: ReadonlyMap<EntityId, LaneStats>;
   private aggression: Fixed = fromRatio(5n, 10n);
   /** §7.10 suspicion dial = TickInputs.expressMaxConfidence (Fixed 0…1).
@@ -751,7 +788,16 @@ export class SimCoreRunner implements SimRunner {
       contracts: [CONTRACT],
       // §7.5 action economy: two hands (T2 staff) — the door pays verbs here.
       handCapacity: 2,
+      /* Attention rides createInitialState's own optional gate (mirrors
+         fastForward.mintInitialState); absent ⇒ zero spread ⇒ no key. */
+      ...(options.attention !== undefined ? { attention: options.attention } : {}),
     });
+    /* The pricing book embeds post-mint (createInitialState accepts
+       attention but not pricing; the state record is frozen): absent ⇒ the
+       SAME object flows on, zero digest churn. */
+    if (options.pricing !== undefined) {
+      this.game = Object.freeze({ ...this.game, pricing: options.pricing });
+    }
     this.lanes = this.game.lanes;
 
     const config: DefaultPipelineConfig = Object.freeze({
@@ -780,7 +826,8 @@ export class SimCoreRunner implements SimRunner {
     this.contractsBook = Object.freeze(
       new Map<EntityId, Contract>(MONEY_CONTRACTS.map((contract) => [contract.id, contract])),
     );
-    this.econ = primeEconomy(this.ecoCfg);
+    this.econ = primeEconomy(this.ecoCfg, options.priceKeys);
+    this.attentionMonthCursor = this.attentionMonthOf(this.game);
 
     /* B4: shipped g1 slice on the wire. Director chain + window schedule are
      * precomputed exactly like fastForward.buildWaveWindows (logged-input law
@@ -956,6 +1003,23 @@ export class SimCoreRunner implements SimRunner {
     return this.invoiceRefusals;
   }
 
+  /** The live attention pool (OD-6 host seam) — undefined on every default
+   *  runner (never minted). Chrome/tests read the loan ledger here, like
+   *  economyInvoiceRefusals() reads the F4 census. */
+  attentionState(): AttentionState | undefined {
+    return this.game.attention;
+  }
+
+  /** The business-calendar month a state's clock points INTO (economy's
+   *  monthIndexOf law — floorDiv over the 43,200-minute month, tick.ts:152
+ *    — applied straight to the host clock). Mirrors fastForward's
+   *  attentionMonthOf: same grid, same arithmetic, two hosts. */
+  private attentionMonthOf(state: GameState): number {
+    return Math.floor(
+      Number(state.context.clocks.businessUs / MICROS_PER_MIN) / ATTENTION_MONTH_MINUTES,
+    );
+  }
+
   headlessStep(_dtRealMs: number): SimProjection {
     const minute = this.game.context.minute + 1;
     /* placement-gated envelopes (fastForward law); lazily-planned waves mint
@@ -1073,6 +1137,10 @@ export class SimCoreRunner implements SimRunner {
           cfg: this.ecoCfg,
           dunningEngineOwned: false,
           ...(outage === null ? {} : { outageSecs: outage }),
+          /* Pricing forward (@5781335 host seam, mirrors fastForward): the
+             embedded book's map IS priceOverrides' type; absent book ⇒ key
+             omitted ⇒ the golden-carrying input shape byte-identical. */
+          ...(this.game.pricing !== undefined ? { priceOverrides: this.game.pricing.overrides } : {}),
           /* Empty buffer ⇒ key omitted ⇒ the pre-death input shape (and the
              goldens riding it) byte-identical. */
           ...(this.pendingRefusalWitness.length > 0
@@ -1099,6 +1167,28 @@ export class SimCoreRunner implements SimRunner {
       cash: this.econ.cash,
       ledgerSeq: this.econ.journal.nextSeq,
     });
+
+    /* ── attention month-roll (OD-6 host seam @eff5694, mirrors fastForward) ──
+       Roll authority is the business CALENDAR (43,200-minute grid on the
+       host clock), independent of the economy fold's own counter — the
+       clock keeps rolling through voided F4 folds and dissolved ledgers.
+       replenishAtBusinessMonth services ONE oldest unrepaid loan per roll
+       (discrete-event law), so a multi-roll catch-up loops the delta.
+       Absent pool ⇒ never minted, lane reads the optional field and skips;
+       off-roll frames ⇒ never called (allocation-free). */
+    if (this.game.attention !== undefined) {
+      const monthsNow = this.attentionMonthOf(this.game);
+      const monthRolls = monthsNow - this.attentionMonthCursor;
+      this.attentionMonthCursor = monthsNow;
+      if (monthRolls > 0) {
+        const businessMinute = Number(this.game.context.clocks.businessUs / MICROS_PER_MIN);
+        let attention = this.game.attention;
+        for (let roll = 0; roll < monthRolls; roll += 1) {
+          attention = replenishAtBusinessMonth(attention, businessMinute, true);
+        }
+        this.game = Object.freeze({ ...this.game, attention });
+      }
+    }
 
     /* counters + notices from the REAL outcome stream. Surge reads the HONEST
        entry total (organic + re-entries): a retry storm flooding the lane IS a

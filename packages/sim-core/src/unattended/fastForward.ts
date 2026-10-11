@@ -51,6 +51,7 @@
  * (pinned ×100 via encodeTaggedTree in tests).
  */
 import type {
+  AttentionState,
   BoardRelation,
   ClockState,
   Contract,
@@ -62,6 +63,7 @@ import type {
   ObservedCell,
   ObservedKey,
   PolicyCard,
+  PriceOverrideBook,
   QosClassDef,
   RetryPolicy,
   RunSeed,
@@ -92,6 +94,7 @@ import {
   digestState,
   makeSlots,
   mintHandState,
+  replenishAtBusinessMonth,
 } from "../pipeline/index.ts";
 import type { DefaultPipelineConfig, IntentDoorConfig, IntentReceipt } from "../pipeline/index.ts";
 import { createRulePhaseStep } from "../policy/index.ts";
@@ -299,6 +302,12 @@ export interface UnattendedMoneyConfig {
    *  neutral "blue" on all five axes — PROVISIONAL; per-contract tags are
    *  a save/bundle concern the loader lane owns). */
   readonly revenueTags?: RevenueColourTags;
+  /** L1 pricing (lane @5781335 host seam): contract id → price key, handed
+   *  to `registerContractEconomy` at signing so the contract becomes
+   *  price-classified and the `pricing` book (RunUnattendedConfig) can
+   *  reach it. Sparse by law — contracts without a entry register exactly
+   *  as before (byte-ident records). */
+  readonly priceKeys?: ReadonlyMap<EntityId, string>;
 }
 
 /** The board cast — plain structural records (hosts and tests hand data;
@@ -365,6 +374,19 @@ export interface RunUnattendedConfig {
    *  same-tick guard verdict, and the stop carries the standard
    *  never-mid-tick digest witness. */
   readonly deathHaltsRun?: boolean;
+  /** OD-6/OD-23(a) attention pool (lane @eff5694 host seam): the minted
+   *  state carries this record and every business-month roll serviced by
+   *  the economy lane repays its oldest loan through
+   *  `replenishAtBusinessMonth`. ABSENT ⇒ never minted, and the digest is
+   *  byte-identical to every pre-attention weekend (digest.ts absorbs the
+   *  attention block only when present). */
+  readonly attention?: AttentionState;
+  /** L1 pricing book (door lane @0032a21): embedded in the minted state
+   *  and forwarded as `EconomyTickIn.priceOverrides` on every economy
+   *  fold. ABSENT ⇒ the key is OMITTED per tick — same empty⇒omitted law
+   *  as `refusedSettlements` (@984759b) — so quiet weekends stay
+   *  byte-identical (elasticity resolves to neutral, no extra RNG roll). */
+  readonly pricing?: PriceOverrideBook;
 }
 
 /* ═══════════════════════════ the report records ═══════════════════════════ */
@@ -443,6 +465,11 @@ export interface UnattendedReport {
    *  forwarding included) — hosts read `company::reputation` etc. from here
    *  instead of re-running the store. */
   readonly finalObserved: ReadonlyMap<ObservedKey, ObservedCell<unknown>>;
+  /** The tick-final attention pool — ONLY present when the config carried
+   *  one (sparse witness law: the key is absent on every pre-attention
+   *  report, so `reportIdentity` pairs stay byte-identical). Hosts read
+   *  `loanLedger`/`debt` here instead of re-running the roll loop. */
+  readonly finalAttention?: AttentionState;
 }
 
 /* ═══════════════════════════ per-tick facts + sampling ═══════════════════════════ */
@@ -630,7 +657,7 @@ export function mintInitialState(
   nodes: readonly NodeRecord[],
   edges: readonly BoardEdgeRecord[],
 ): GameState {
-  return createInitialState({
+  const state = createInitialState({
     runSeed: config.runSeed,
     engineVersion: config.engineVersion ?? "unattended-v0",
     contentHashes: {
@@ -644,7 +671,18 @@ export function mintInitialState(
     ruleBookHash: config.ruleBookHash,
     board: createBoardState(edges),
     hands: mintHandState(config.handCapacity ?? 2),
+    /* Attention rides createInitialState's own optional gate (@eff5694);
+       absent ⇒ zero spread ⇒ the minted record has NO attention key. */
+    ...(config.attention !== undefined ? { attention: config.attention } : {}),
   });
+  /* The pricing book embeds post-mint: createInitialState (not this lane's
+     file) accepts attention but not pricing, and the state record is
+     frozen — a host-side spread is the sanctioned embed point. Absent ⇒
+     the SAME state object flows on (identity, not a copy — zero digest
+     churn for every pre-pricing weekend). */
+  return config.pricing !== undefined
+    ? Object.freeze({ ...state, pricing: config.pricing })
+    : state;
 }
 
 /** The versus pipeline posture expressed from the config (exported so
@@ -938,6 +976,10 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
     }
     for (const contract of config.money.contracts) {
       contractsBook.set(contract.id, contract);
+      /* Sparse price key (@5781335): only classify contracts the host
+         names — an undefined entry spreads NOTHING, so the registered
+         record is byte-identical to every pre-pricing signing. */
+      const priceKey = config.money.priceKeys?.get(contract.id);
       econ = registerContractEconomy(
         econ,
         {
@@ -947,6 +989,7 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
           grandfather: null,
           revenueTags: config.money.revenueTags ?? DEFAULT_REVENUE_TAGS,
           commitmentBps: config.money.commitmentBps ?? 9_990n,
+          ...(priceKey !== undefined ? { priceKey } : {}),
         },
         ecoCfg,
       );
@@ -1010,6 +1053,14 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
   const deathHaltsRun = config.deathHaltsRun === true;
 
   let game = withCashMirror(game0, econ);
+  /* Attention month authority (OD-6 host seam): the roll clock is the
+     business minute grid itself (economy's rollBusinessMonth / 43,200
+     pattern), NOT `econ.monthIndex`. The ledger's own month counter FREEZES
+     once a company dissolves (terminal folds no-op), which would silently
+     strand attention loans unpaid after a death — but a calendar month is a
+     calendar month whether the ledger is alive or not. Cursor seeded from
+     game0 (0 today; stays honest if a host ever primes mid-quarter). */
+  let attentionMonthCursor: number = attentionMonthOf(game0);
   const cashStart: bigint = game.cash.free;
   let arrivalsSeen = 0;
   let stop: UnattendedStop | null = null;
@@ -1098,6 +1149,10 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
           cfg: ecoCfg,
           dunningEngineOwned: config.money?.dunningEngineOwned ?? false,
           ...(outage !== null ? { outageSecs: outage } : {}),
+          /* Pricing forward (lane @5781335 host seam): the embedded book's
+             override map IS EconomyTickIn.priceOverrides' type. Absent book
+             ⇒ key omitted ⇒ empty⇒omitted byte-identity (@984759b law). */
+          ...(game.pricing !== undefined ? { priceOverrides: game.pricing.overrides } : {}),
           /* Empty buffer ⇒ key omitted ⇒ every pre-existing input shape
              (and every witness riding it) byte-identical. */
           ...(refusalWitness.length > 0
@@ -1131,6 +1186,31 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
         refusalWitness.push(invoiceRefusalWitness(err.message));
       }
       if (econAdvanced) game = withCashMirror(game, econ);
+    }
+
+    /* ── attention month-roll (lane @eff5694 host-forwarded seam) ──────
+       ONE replenishAtBusinessMonth service per roll of the 43,200-minute
+       business calendar (the seam's discrete-event law: a roll services
+       the oldest unrepaid loan, never flushes). Deliberately OUTSIDE the
+       money lane: a voided F4 fold or a dissolved terminal no-op freezes
+       `econ.monthIndex`, but the calendar does not stop for a dead ledger
+       — roll authority is the host's business clock (economy's
+       rollBusinessMonth/43,200 grid, applied to the same clock economy
+       reads). Absent pool ⇒ the optional field is read and NOTHING is
+       minted; off-grid ticks ⇒ replenish is never called (allocation-free
+       off-roll path). */
+    if (game.attention !== undefined) {
+      const monthsNow = attentionMonthOf(game);
+      const monthRolls = monthsNow - attentionMonthCursor;
+      attentionMonthCursor = monthsNow;
+      if (monthRolls > 0) {
+        const businessMinute = Number(game.context.clocks.businessUs / MICROS_PER_MIN);
+        let attention = game.attention;
+        for (let roll = 0; roll < monthRolls; roll += 1) {
+          attention = replenishAtBusinessMonth(attention, businessMinute, true);
+        }
+        game = Object.freeze({ ...game, attention });
+      }
     }
 
     /* facts → guards at the tick boundary (NEVER mid-tick) */
@@ -1224,6 +1304,17 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
 function withCashMirror(game: GameState, econ: EconomyState | null): GameState {
   if (econ === null) return game;
   return Object.freeze({ ...game, cash: econ.cash, ledgerSeq: econ.journal.nextSeq });
+}
+
+/** The business-calendar month a state's clock points INTO — economy's
+ *  monthIndexOf law (floorDiv over the 43,200-minute month, tick.ts:152)
+ *  applied straight to the host clock, so the attention seam shares the
+ *  SAME month grid the economy folds on without coupling to any fold.
+ *  The clock is monotonic, so plain floor division is the exact twin of
+ *  floorDiv here. */
+const ATTENTION_MONTH_MINUTES = 43_200;
+function attentionMonthOf(game: GameState): number {
+  return Math.floor(Number(game.context.clocks.businessUs / MICROS_PER_MIN) / ATTENTION_MONTH_MINUTES);
 }
 
 function mergeObserved(existing: GameState["observed"], store: ObservedStore): ReadonlyMap<ObservedKey, ObservedCell<unknown>> {
@@ -1326,6 +1417,11 @@ function assembleReport(
     warns: Object.freeze([...warns].sort(compareCodeUnits)),
     guardsParsed: guards,
     finalObserved: finalGame.observed,
+    /* Sparse witness (same law as `refusedSettlements` forwarding): the key
+       exists ONLY when the run carried an attention pool, so every
+       pre-attention report — and every reportIdentity pair over them —
+       stays byte-identical. */
+    ...(finalGame.attention !== undefined ? { finalAttention: finalGame.attention } : {}),
   });
 }
 
