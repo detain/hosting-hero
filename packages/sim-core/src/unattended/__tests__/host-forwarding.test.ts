@@ -206,6 +206,26 @@ describe("attention month-roll forwarding (lane @eff5694 host seam)", () => {
     expect(replenishAtBusinessMonth(planted, ROLL_ONE_MINUTE, true).debt).toBe(1);
   });
 
+  it("dead ledger, live calendar: a dissolved company still services its loan at the roll", () => {
+    /* DEFAULT death dials + a broke, contract-free book: churn-collapse
+       dissolves the company around tick ~42, and the terminal fold no-op
+       PRESERVES state (econ.monthIndex freezes at 0 — exactly why a
+       monthIndex-coupled lane was the bug). The business CALENDAR keeps
+       rolling, so the loan is still repaid at minute 43,200. */
+    const deadMoney = Object.freeze({
+      contracts: Object.freeze([]),
+      initialFreeMicroUsd: 0n,
+    });
+    const report = runUnattended(
+      cfg({ ticks: ROLL_ONE_TICKS, money: deadMoney, attention: plantLoans(1) }),
+    );
+    expect(report.summary.invoiceEvents.get("company-dissolved")).toBe(1);
+    const attention = report.finalAttention;
+    expect(attention?.loanLedger.map((row) => row.repaid)).toEqual([true]);
+    expect(attention?.debt).toBe(0);
+    expect(attention?.lastReplenishBusinessMinute).toBe(ROLL_ONE_MINUTE);
+  });
+
   it("absent pool ⇒ no finalAttention key and deterministic twin reports (never-minted law)", () => {
     const a = runUnattended(cfg({ ticks: ROLL_ONE_TICKS, money: calmMoney() }));
     const b = runUnattended(cfg({ ticks: ROLL_ONE_TICKS, money: calmMoney() }));
