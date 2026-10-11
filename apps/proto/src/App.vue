@@ -32,6 +32,7 @@ import { era, setEra } from "./i18n/eraState";
 import { SimClient, asWorkerLike, type WorkerLike } from "./bridge/simClient";
 import { globalBudget } from "./render/budget";
 import DecisionRail from "./decision/DecisionRail.vue"; // §7.6 marked-decision rail
+import LossCard from "./chrome/LossCard.vue"; // §9.9 obituary — batch-E v0 death rider consumer
 import { toggleContrastAuditMode } from "./chrome/a11y/contrastAuditMode"; // §8.14 Contrast Audit Mode
 
 /** The sandbox view id — never collides with a "G<n>" gateId. */
@@ -217,6 +218,11 @@ const speed = ref<1 | 2 | 4>(1);
     </template>
 
     <Drawer v-model:readout="readout" />
+
+    <!-- §9.9 shell-level loss tier: watches the SAME wire the sandbox reads
+         (economy-notice death riders); raises the warning strip, then slams
+         the obituary on dissolution. View-independent — gates included. -->
+    <LossCard />
   </main>
 </template>
 

@@ -12,6 +12,7 @@
  * fairness contract: suppression is visible, never silent).
  */
 import type { EventNotice, NoticeKind } from "../shared/protocol";
+import { parseDeathRider } from "./deathWatch";
 import { compareCodeUnits } from "./textLaw";
 
 export type AlertSeverity = 1 | 2 | 3; // 1 = stops the show
@@ -46,6 +47,13 @@ export interface StackAlert {
   /** Business-clock tick until which a snooze holds (status "snoozed"). */
   readonly snoozedUntilMinute: number | null;
   readonly sampleDetail?: string;
+  /** Object label beyond the lane (death riders carry "company"). */
+  readonly label?: string;
+  /** Terminal riders (OD-25(a) deaths) cannot be acked, snoozed, silenced,
+   *  or pushed off screen by fatigue — you cannot silence your own funeral.
+   *  Pinned rows always render, sit outside the SNR denominator, and triage
+   *  ops THROW on them. */
+  readonly pinned?: true;
 }
 
 export interface AlertStackState {
@@ -71,6 +79,38 @@ export function ingestNotices(
   const byKey = new Map(state.alerts.map((a) => [a.key, a]));
   let totalRaised = state.totalRaised;
   for (const notice of notices) {
+    /* Death riders (batch-E v0): their own pinned group, severity 1, outside
+     * the fatigue denominator — a terminal state is not an action request,
+     * and it can never be triaged away. */
+    const rider = parseDeathRider(notice);
+    if (rider !== null) {
+      const deathKey = `death:${rider.phase}@${rider.contractId}`;
+      const existingDeath = byKey.get(deathKey);
+      if (existingDeath === undefined) {
+        byKey.set(deathKey, {
+          key: deathKey,
+          kind: notice.kind,
+          laneId: notice.laneId,
+          severity: 1,
+          firstAtUs: notice.atUs,
+          lastAtUs: notice.atUs,
+          occurrences: 1,
+          status: "new",
+          snoozedUntilMinute: null,
+          label: rider.contractId,
+          pinned: true,
+          ...(notice.detail === undefined ? {} : { sampleDetail: notice.detail }),
+        });
+      } else if (notice.atUs !== existingDeath.lastAtUs) {
+        byKey.set(deathKey, {
+          ...existingDeath,
+          firstAtUs: notice.atUs < existingDeath.firstAtUs ? notice.atUs : existingDeath.firstAtUs,
+          lastAtUs: notice.atUs > existingDeath.lastAtUs ? notice.atUs : existingDeath.lastAtUs,
+          occurrences: existingDeath.occurrences + 1,
+        });
+      }
+      continue;
+    }
     const key = alertKey(notice.kind, notice.laneId);
     const existing = byKey.get(key);
     if (existing === undefined) {
@@ -106,8 +146,11 @@ export function ingestNotices(
 }
 
 function setStatus(state: AlertStackState, key: string, status: AlertStatus, untilMinute: number | null = null): AlertStackState {
-  const found = state.alerts.some((a) => a.key === key);
-  if (!found) throw new Error(`alert triage: unknown key "${key}"`);
+  const target = state.alerts.find((a) => a.key === key);
+  if (target === undefined) throw new Error(`alert triage: unknown key "${key}"`);
+  if (target.pinned === true) {
+    throw new Error(`alert triage: "${key}" is pinned — terminal riders cannot be ${status} (§8.8)`);
+  }
   return {
     ...state,
     alerts: state.alerts.map((a) =>
@@ -193,8 +236,12 @@ export function layoutStack(state: AlertStackState): AlertStackLayout {
   const sorted = sortAlerts(state.alerts);
   const active = sorted.filter((a) => a.status !== "snoozed");
   const snoozed = sorted.filter((a) => a.status === "snoozed");
-  const rows = active.slice(0, maxVisible);
-  const capped = active.slice(maxVisible);
+  /* Fatigue caps triageable rows only. Pinned riders render ALWAYS — the
+   * screen budget may shrink the noise, never the funeral. */
+  const pinned = active.filter((a) => a.pinned === true);
+  const free = active.filter((a) => a.pinned !== true);
+  const rows = sortAlerts([...pinned, ...free.slice(0, maxVisible)]);
+  const capped = free.slice(maxVisible);
   return {
     rows,
     greyedCount: rows.filter((a) => a.status !== "new").length,

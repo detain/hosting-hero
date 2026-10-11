@@ -19,6 +19,8 @@ export * from "./explainRegistry";
 export * from "./statusChip";
 export * from "./alertStack";
 export * from "./panic";
+export * from "./deathWatch";
+export * from "./pricingDial";
 export {
   buildCandidates,
   buildHudCandidates,
@@ -43,6 +45,8 @@ export { default as StatusChip } from "./StatusChip.vue";
 export { default as AlertStack } from "./AlertStack.vue";
 export { default as PanicLayout } from "./PanicLayout.vue";
 export { default as HudLabPanel } from "./HudLabPanel.vue";
+export { default as LossCard } from "./LossCard.vue";
+export { default as PricingDial } from "./PricingDial.vue";
 
 /**
  * HUD-LAB mount — same frozen shape as every gates/gX/index.ts manifest

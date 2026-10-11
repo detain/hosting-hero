@@ -20,6 +20,7 @@ import ExplainValue from "./ExplainValue.vue";
 import StatusChip from "./StatusChip.vue";
 import AlertStack from "./AlertStack.vue";
 import PanicLayout from "./PanicLayout.vue";
+import PricingDial from "./PricingDial.vue";
 import { buildHudCandidates, formatMicroUsd, formatRunClock, hudPermanentRows, rhoDisplayOf } from "./metrics";
 import { planPromotion, toggleUserPin, type MetricCandidate } from "./promotion";
 import { globalExplain } from "./explainRegistry";
@@ -233,6 +234,11 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
             {{ sharedPlan.promoted.map((m) => m.label).join(", ") || "—" }}
             <template v-if="sharedPlan.collapsedCount > 0"> · +{{ sharedPlan.collapsedCount }} waiting</template>
           </p>
+        </section>
+
+        <section class="card" data-hud-optional="true" data-test="lab-pricing">
+          <h4>Pricing dial — adjust-price through the door (OD-24(a))</h4>
+          <PricingDial />
         </section>
       </div>
     </div>

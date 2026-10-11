@@ -74,7 +74,7 @@ describe("contrast audit — the shipped chrome census meets WCAG AA", () => {
   });
 
   it("the census size is pinned — additions/removals must be a decision", () => {
-    expect(CHROME_CONTRAST_SPECS).toHaveLength(40);
+    expect(CHROME_CONTRAST_SPECS).toHaveLength(41);
   });
 
   it("EVERY pairing passes its role floor, in BOTH eras (the gate)", () => {

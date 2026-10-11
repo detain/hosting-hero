@@ -1,0 +1,163 @@
+<script setup lang="ts">
+/**
+ * PricingDial — an actual `adjust-price` order through the actual intent door
+ * (batch-E v0). Self-contained by law: it owns a PRIVATE SimCoreRunner and
+ * NEVER writes the global observed store — the mainline sandbox keeps its own
+ * stream untouched. This is the G1-style local stepper pattern applied to the
+ * 9th verb.
+ *
+ * What you see is the door's VERDICT off the wire (intent-executed /
+ * intent-refused notices). What you do NOT see, and this panel says so:
+ * the money. The book is written into the runner's private GameState.pricing;
+ * the runner has no readback accessor and no priceOverrides forwarding into
+ * the economy tick yet (seams reported to the E1/L1 lanes). A green "executed"
+ * here means STRUCTURALLY LANDED, not "invoices moved".
+ */
+import { computed, onBeforeUnmount, ref } from "vue";
+import { SimCoreRunner } from "../runner/simCoreRunner";
+import { formatMicroUsd } from "./metrics";
+import { isPricingReceipt } from "./deathWatch";
+import {
+  ADJUST_PRICE,
+  DEMO_PLANS,
+  INVALID_PRICE_PROBE,
+  buildAdjustPriceIntent,
+  priceLadder,
+  receiptLine,
+} from "./pricingDial";
+
+const props = withDefaults(defineProps<{ seed?: number }>(), { seed: 905 });
+
+const runner = new SimCoreRunner({ seed: props.seed });
+const planIndex = ref(0);
+const ladderIndex = ref(1); // rung 1 = base price — the dial starts at law
+const seq = ref(0);
+const tick = ref(0n);
+const log = ref<readonly string[]>([]);
+
+const plan = computed(() => DEMO_PLANS[planIndex.value]!);
+const ladder = computed(() => priceLadder(plan.value.baseMicroUsd));
+const proposed = computed(() => ladder.value[ladderIndex.value]!);
+
+function pushLine(line: string): void {
+  log.value = Object.freeze([line, ...log.value].slice(0, 6));
+}
+
+/** Submit through the MAINLINE door path: submit() stamps tick+1, the next
+ *  headlessStep feeds it via TickInputs.externalIntents exactly once, and the
+ *  receipt returns on that frame's notices. */
+function submitOrder(priceMicroUsd = proposed.value): void {
+  const targetId = plan.value.id;
+  runner.submit(
+    buildAdjustPriceIntent({ seq: (seq.value += 1), targetId, newPriceMicroUsd: priceMicroUsd }),
+  );
+  const frame = runner.headlessStep(1000);
+  tick.value = frame.tick;
+  const receipts = frame.notices.filter(isPricingReceipt);
+  if (receipts.length === 0) {
+    pushLine(`${formatMicroUsd(priceMicroUsd)} → no pricing receipt yet (hands busy?)`);
+    return;
+  }
+  for (const notice of receipts) {
+    pushLine(
+      `${formatMicroUsd(priceMicroUsd)} · ${receiptLine(notice.detail, notice.kind === "intent-executed" ? "executed" : "refused")}`,
+    );
+  }
+}
+
+/** Value-domain demo: the door REFUSES a non-positive price and consumes
+ *  nothing — the refusal line is the point of the button. */
+function probeRefusal(): void {
+  runner.submit(
+    buildAdjustPriceIntent({ seq: (seq.value += 1), targetId: plan.value.id, newPriceMicroUsd: INVALID_PRICE_PROBE }),
+  );
+  const frame = runner.headlessStep(1000);
+  tick.value = frame.tick;
+  const refused = frame.notices.find((n) => n.kind === "intent-refused");
+  pushLine(`0 µ$ probe → ${refused?.detail ?? "(no refusal notice — unexpected)"}`);
+}
+
+function selectPlan(index: number): void {
+  planIndex.value = index;
+  ladderIndex.value = 1;
+}
+
+onBeforeUnmount(() => runner.stop());
+</script>
+
+<template>
+  <div class="pricing-dial" data-test="pricing-dial">
+    <div class="plans" role="radiogroup" aria-label="price target plan">
+      <button
+        v-for="(p, i) in DEMO_PLANS"
+        :key="p.id"
+        type="button"
+        role="radio"
+        :aria-checked="i === planIndex"
+        :data-test="`dial-plan-${p.id}`"
+        :class="{ on: i === planIndex }"
+        @click="selectPlan(i)"
+      >
+        {{ p.label }}
+      </button>
+    </div>
+
+    <div class="ladder" role="radiogroup" aria-label="proposed price">
+      <button
+        v-for="(price, i) in ladder"
+        :key="String(price)"
+        type="button"
+        role="radio"
+        :aria-checked="i === ladderIndex"
+        :data-test="`dial-rung-${i}`"
+        :class="{ on: i === ladderIndex }"
+        @click="ladderIndex = i"
+      >
+        {{ formatMicroUsd(price) }}
+      </button>
+    </div>
+
+    <div class="send">
+      <button type="button" data-test="dial-send" @click="submitOrder()">
+        submit {{ ADJUST_PRICE }} → {{ formatMicroUsd(proposed) }}
+      </button>
+      <button type="button" data-test="dial-refuse-probe" title="value-domain refusal demo (consumes nothing)" @click="probeRefusal()">
+        probe invalid-price
+      </button>
+      <span class="tick" data-test="dial-tick">door tick {{ tick }}</span>
+    </div>
+
+    <ul v-if="log.length > 0" class="log" data-test="dial-log" aria-live="polite">
+      <li v-for="(line, i) in log" :key="`${line}-${i}`">{{ line }}</li>
+    </ul>
+
+    <p class="honesty" data-test="dial-honesty">
+      Verdicts are the real intent door on a private runner. The override book
+      lands in GameState.pricing; invoice wiring is an unsettled host seam —
+      “executed” means the order held, not that the money moved.
+    </p>
+  </div>
+</template>
+
+<style scoped>
+.pricing-dial { display: grid; gap: 8px; font-family: var(--hh-typeface); font-size: 12px; color: color-mix(in srgb, var(--hh-accent) 78%, #fff); }
+.plans, .ladder, .send { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+button {
+  border: 1px solid color-mix(in srgb, var(--hh-accent) 35%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  border-radius: calc(var(--hh-radius) / 2);
+  padding: 2px 9px;
+  cursor: pointer;
+}
+button:hover { background: color-mix(in srgb, var(--hh-accent) 14%, transparent); }
+button[aria-pressed="true"], button.on { border-color: var(--hh-hue-cyan); color: var(--hh-hue-cyan); }
+[data-test="dial-send"] { border-color: color-mix(in srgb, var(--hh-hue-cyan) 60%, transparent); }
+[data-test="dial-refuse-probe"] { border-style: dashed; opacity: .7; }
+.tick { margin-left: auto; opacity: .5; font-size: 10px; }
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 11px; }
+.log li { opacity: .85; border-left: 2px solid color-mix(in srgb, var(--hh-hue-cyan) 45%, transparent); padding-left: 7px; }
+.honesty { margin: 0; font-size: 10px; line-height: 1.45; opacity: .45; }
+</style>

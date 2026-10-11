@@ -267,10 +267,10 @@ export const CHROME_CONTRAST_SPECS: readonly ContrastPairSpec[] = Object.freeze(
     // ---- body text -------------------------------------------------------
     spec("ink-on-body", "styles/chrome.css:9 body color over the accent-wash gradient stop", "text", CHROME_INK, BODY_WASH),
     spec("ink-on-topbar", "chrome/TopBar.vue:86 .top-bar text (inherited ink)", "text", CHROME_INK, panel(0.92)),
-    spec("ink-on-alert-panel", "chrome/AlertStack.vue:117-118 card ink text", "text", CHROME_INK, panel(0.9)),
+    spec("ink-on-alert-panel", "chrome/AlertStack.vue:138-139 card ink text", "text", CHROME_INK, panel(0.9)),
     spec("ink-on-popover", "chrome/ExplainPopover.vue:118 body ink text", "text", CHROME_INK, panelLightened(0.94)),
     spec("ink-on-chroma-panel", "chrome/ChromaMeter.vue:46-50 body text", "text", CHROME_INK, CHROMA_PANEL),
-    spec("faded-ink-on-alert-panel", "chrome/AlertStack.vue:145 .suppressed ink @ opacity .65", "text", mixRef(CHROME_INK, panel(0.9), 0.65), panel(0.9)),
+    spec("faded-ink-on-alert-panel", "chrome/AlertStack.vue:169 .suppressed ink @ opacity .65", "text", mixRef(CHROME_INK, panel(0.9), 0.65), panel(0.9)),
     // ---- era-accent text --------------------------------------------------
     spec("accent-on-button-wash", "styles/chrome.css:40-41 .hud-buttons button", "text", eraRef("accent"), mixRef(eraRef("accent"), eraRef("surface"), 0.1)),
     spec("accent-on-bezel-panel", "chrome/instruments/InstrumentBezel.vue:70-79 value + readout", "text", eraRef("accent"), panel(0.88)),
@@ -278,7 +278,7 @@ export const CHROME_CONTRAST_SPECS: readonly ContrastPairSpec[] = Object.freeze(
     spec("accent-on-clock-ribbon", "chrome/ClockRibbon.vue:185 .scrub button", "text", eraRef("accent"), panel(0.88)),
     spec("accent-on-drawer", "chrome/Drawer.vue:38-39 drawer text", "text", eraRef("accent"), panel(0.9)),
     // ---- accent lightened toward white (heading/permanent rows) -----------
-    spec("accent70-on-alert-panel", "chrome/AlertStack.vue:117 .head", "text", brightenAccent(0.7), panel(0.9)),
+    spec("accent70-on-alert-panel", "chrome/AlertStack.vue:138 panel color (accent-70% wash text)", "text", brightenAccent(0.7), panel(0.9)),
     spec("accent70-on-popover", "chrome/ExplainPopover.vue:122 header", "text", brightenAccent(0.7), panelLightened(0.94)),
     spec("accent80-on-topbar", "chrome/TopBar.vue:103 .permanent-row chips", "text", brightenAccent(0.8), panel(0.92)),
     spec("accent65-on-clock-ribbon", "chrome/ClockRibbon.vue:178 .head", "text", brightenAccent(0.65), panel(0.88)),
@@ -288,9 +288,9 @@ export const CHROME_CONTRAST_SPECS: readonly ContrastPairSpec[] = Object.freeze(
     // ---- inverted active state --------------------------------------------
     spec("surface-on-accent-active", "chrome/GateRail.vue:141-142 selected badge", "text", eraRef("surface"), eraRef("accent")),
     // ---- ledger-hue text ----------------------------------------------------
-    spec("alarm-on-alert-panel", "chrome/AlertStack.vue:134 .sev-1 .sev", "text", hueRef("alarm"), panel(0.9)),
-    spec("gold-on-alert-panel", "chrome/AlertStack.vue:135,140 .sev-2/.count", "text", hueRef("gold"), panel(0.9)),
-    spec("azure-on-alert-panel", "chrome/AlertStack.vue:136 .sev-3 .sev", "text", hueRef("azure"), panel(0.9)),
+    spec("alarm-on-alert-panel", "chrome/AlertStack.vue:155,160 .sev-1 .sev / .row.pinned .kind", "text", hueRef("alarm"), panel(0.9)),
+    spec("gold-on-alert-panel", "chrome/AlertStack.vue:156,164 .sev-2/.count", "text", hueRef("gold"), panel(0.9)),
+    spec("azure-on-alert-panel", "chrome/AlertStack.vue:157 .sev-3 .sev", "text", hueRef("azure"), panel(0.9)),
     spec("alarm-on-body-wash", "chrome/PanicLayout.vue:75,80 .headline--incident", "text", hueRef("alarm"), BODY_WASH),
     spec("amber-on-counter-bg", "chrome/instruments/CounterFace.vue:24 .state-warn .digit", "text", hueRef("amber"), panel(0.7)),
     spec("alarm-on-counter-bg", "chrome/instruments/CounterFace.vue:25 .state-alarm .digit", "text", hueRef("alarm"), panel(0.7)),
@@ -303,11 +303,12 @@ export const CHROME_CONTRAST_SPECS: readonly ContrastPairSpec[] = Object.freeze(
     spec("gold-on-clock-ribbon", "chrome/ClockRibbon.vue:231 .tone-warn", "text", hueRef("gold"), panel(0.88)),
     spec("alarm-on-clock-ribbon", "chrome/ClockRibbon.vue:232 .tone-bad", "text", hueRef("alarm"), panel(0.88)),
     spec("azure-on-bezel-panel", "chrome/StatusChip.vue:54 .tone-info (bezel-hosted)", "text", hueRef("azure"), panel(0.88)),
+    spec("cyan-on-dial-panel", "chrome/PricingDial.vue:156 pressed plan/rung buttons", "text", hueRef("cyan"), panel(0.92)),
     // ---- UI components (3:1) --------------------------------------------------
     spec("scope-trace-on-screen", "chrome/instruments/ScopeFace.vue:31-32 accent trace on CRT black", "ui", eraRef("accent"), SCREEN_BLACK),
     spec("chroma-border-on-panel", "chrome/ChromaMeter.vue:45 green frame", "ui", hueRef("green"), CHROMA_PANEL),
     spec("alarm-ring-on-bezel", "chrome/instruments/InstrumentBezel.vue:83 .state-alarm ring", "ui", hueRef("alarm"), panel(0.88)),
-    spec("snr-fill-on-track", "chrome/AlertStack.vue:126-127 green fill vs grey track", "ui", hueRef("green"), mixRef(hueRef("grey"), panel(0.9), 0.25)),
+    spec("snr-fill-on-track", "chrome/AlertStack.vue:147-148 green fill vs grey track", "ui", hueRef("green"), mixRef(hueRef("grey"), panel(0.9), 0.25)),
     // ---- decorative (exempt, but each row EARNED its exemption) --------------
     spec(
       "accent-hairline-frame",

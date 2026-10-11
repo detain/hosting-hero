@@ -21,6 +21,8 @@ import {
   type AlertStackState,
 } from "./alertStack";
 import { formatLatencyFromUs } from "./numberLaw";
+import { DEATH_WATCH_VOICE, DISSOLVED_HEADLINE, parseDeathRider } from "./deathWatch";
+import { noticeWireCopy } from "../i18n/noticeCopy";
 
 const state = ref<AlertStackState>(EMPTY_STACK);
 const showSuppressed = ref(false);
@@ -42,6 +44,23 @@ function at(key: string, op: (s: AlertStackState, k: string) => AlertStackState)
 function snooze(key: string): void {
   const until = (projection.value?.minute ?? 0) + SNOOZE_MINUTES;
   state.value = snoozeAlert(state.value, key, until);
+}
+
+/** Pinned death rows read as their engine kind, not the wire roll-up name. */
+function rowTitle(row: { kind: string; pinned?: true; sampleDetail?: string }): string {
+  if (row.pinned !== true) return row.kind;
+  const colon = row.sampleDetail?.indexOf(":") ?? -1;
+  return colon > 0 ? row.sampleDetail!.slice(0, colon) : row.kind;
+}
+
+/** Voice for a pinned rider: the ZERO-SLOT pack line first (lane L4), the
+ *  sober §9.9 provisional behind `??`. */
+function deathVoice(row: { kind: string; pinned?: true; sampleDetail?: string }): string {
+  if (row.pinned !== true || row.sampleDetail === undefined) return "";
+  const rider = parseDeathRider({ kind: "economy-notice", detail: row.sampleDetail });
+  if (rider === null) return "";
+  const engineKind = rider.detail.slice(0, rider.detail.indexOf(":"));
+  return noticeWireCopy(engineKind, null) ?? (rider.phase === "dissolved" ? DISSOLVED_HEADLINE : DEATH_WATCH_VOICE.line);
 }
 
 /** atUs is sim-µs since t0 — show it as an elapsed-ms ruler (§8.15 ms law). */
@@ -68,18 +87,20 @@ const nowSimUs = computed(() => projection.value?.clocks.simUs);
         v-for="row in layout.rows"
         :key="row.key"
         class="row"
-        :class="[`sev-${row.severity}`, { greyed: row.status !== 'new', snoozed: row.status === 'snoozed' }]"
+        :class="[`sev-${row.severity}`, { greyed: row.status !== 'new', snoozed: row.status === 'snoozed', pinned: row.pinned === true }]"
         :data-test="`alert-row-${row.key}`"
         :data-status="row.status"
+        :data-pinned="row.pinned === true ? 'true' : undefined"
       >
         <span class="sev" aria-hidden="true">{{ "▮".repeat(row.severity === 1 ? 3 : row.severity === 2 ? 2 : 1) }}</span>
         <span class="body">
-          <b class="kind">{{ row.kind }}</b>
-          <i class="lane">{{ row.laneId ?? "global" }}</i>
+          <b class="kind">{{ rowTitle(row) }}</b>
+          <i class="lane">{{ row.laneId ?? row.label ?? "global" }}</i>
           <em v-if="row.occurrences > 1" class="count">×{{ row.occurrences }}</em>
           <span class="age">{{ age(row.lastAtUs, nowSimUs) }}</span>
+          <em v-if="row.pinned === true" class="voice" data-test="death-voice">{{ deathVoice(row) }}</em>
         </span>
-        <span class="actions">
+        <span v-if="row.pinned !== true" class="actions">
           <button v-if="row.status === 'new'" type="button" data-test="alert-ack" title="acknowledge" @click="at(row.key, ackAlert)">✓</button>
           <button v-if="row.status === 'new'" type="button" data-test="alert-snooze" title="snooze 30m" @click="snooze(row.key)">z</button>
           <button v-if="row.status === 'new'" type="button" data-test="alert-silence" title="silence (stays visible)" @click="at(row.key, silenceAlert)">∅</button>
@@ -134,7 +155,10 @@ const nowSimUs = computed(() => projection.value?.clocks.simUs);
 .sev-1 .sev { color: var(--hh-hue-alarm); }
 .sev-2 .sev { color: var(--hh-hue-gold); }
 .sev-3 .sev { color: var(--hh-hue-azure); }
-.body { flex: 1; display: flex; gap: 6px; align-items: baseline; }
+.body { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.row.pinned { border-left: 2px solid var(--hh-hue-alarm); } /* terminal: always visible, never triageable */
+.row.pinned .kind { color: var(--hh-hue-alarm); }
+.voice { flex-basis: 100%; font-size: 10px; font-style: normal; opacity: .8; line-height: 1.35; }
 .kind { font-weight: 600; }
 .lane, .age { opacity: .55; font-size: 10px; font-style: normal; }
 .count { font-variant-numeric: tabular-nums; color: var(--hh-hue-gold); font-size: 10px; }

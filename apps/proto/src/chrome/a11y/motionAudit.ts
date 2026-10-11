@@ -171,6 +171,13 @@ const MOTION_SPECS: readonly MotionSpec[] = [
       reducedMotionFallback: "media guard (additive 2026-10-09) sets transition:none",
     },
     {
+      id: "loss-card-slam",
+      where: "chrome/LossCard.vue .loss-card — animation: slam .45s once",
+      kind: "once",
+      coverage: 0.35, // full-screen scrim moment, ONE deceleration, no repeat
+      reducedMotionFallback: "media guard sets animation:none — the card simply appears",
+    },
+    {
       id: "panic-optional-dim",
       where: "chrome/PanicLayout.vue .content :slotted([data-hud-optional]) — opacity .4s",
       kind: "transition",
