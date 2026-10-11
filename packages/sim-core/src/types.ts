@@ -1636,6 +1636,49 @@ export interface AttentionState {
   readonly lastReplenishBusinessMinute: SimMinute;
 }
 
+/* ═══════════════════════════ §7.7 recovery embed (pipeline/recovery.ts) ══════ */
+
+/** The two phases of a node's SECOND FAILURE WINDOW (§7.7 "Second Failure
+ *  Window", audit g21 MISSING row): `window` is the shadow period — the
+ *  countdown the player "desperately wants to hit zero" while the node
+ *  climbs back through gradual restoration; `locked` is the safe-mode floor
+ *  a failure INSIDE the window forces (reduced posture, window restarts). */
+export type RecoveryWindowPhase = "window" | "locked";
+
+/** One node's live recovery record. `fullSlots` is the undamaged arm count
+ *  captured at window open; `effectiveSlots` is the (re)computed slot count
+ *  the serve step sees while the record lives — the engine-side GRADUAL
+ *  RESTORATION and the cold-cache slow-admission counter, pure minute math,
+ *  never an RNG draw. Written ONLY by pipeline/recovery.ts. */
+export interface RecoveryWindowRecord {
+  readonly nodeId: EntityId;
+  readonly phase: RecoveryWindowPhase;
+  /** Minute the CURRENT window (or lock) opened — the countdown anchor. */
+  readonly openedAtMinute: SimMinute;
+  /** Minute the window closes untouched (the bar draining to zero). */
+  readonly closesAtMinute: SimMinute;
+  /** Locked-phase floor expiry; 0 while phase === "window". */
+  readonly lockUntilMinute: SimMinute;
+  /** Second failures folded so far this episode (each one re-locks). */
+  readonly strikes: number;
+  /** Arm count captured whole at window open (restoration target). */
+  readonly fullSlots: number;
+  /** Visible slots this minute (monotone ramp; locks clamp it to the floor). */
+  readonly effectiveSlots: number;
+}
+
+/** OPTIONAL `GameState` embed — the §7.7 recovery half v0. `windows` are the
+ *  live second-failure records per node; `lastStruggleMinute` is the
+ *  pre-window episode memory (the minute a node last bounced at/above the
+ *  struggle threshold). Written ONLY by pipeline/recovery.ts, and only when
+ *  the driver is wired with `options.recovery` — OPTIONAL, digest-switch law:
+ *  `pipeline/digest.ts` absorbs it ONLY when present, so every pre-recovery
+ *  state — all shipped goldens — digests byte-identically. */
+export interface RecoveryState {
+  readonly windows: ReadonlyMap<EntityId, RecoveryWindowRecord>;
+  readonly lastStruggleMinute: ReadonlyMap<EntityId, SimMinute>;
+}
+
 /* ═══════════════════════════ GameState root ═══════════════════════════ */
 
 /**
@@ -1681,4 +1724,10 @@ export interface GameState {
    *  `pipeline/digest.ts` absorbs it ONLY when present, so every pre-attention
    *  state — all shipped goldens — digests byte-identically. */
   readonly attention?: AttentionState;
+  /** §7.7 recovery embed — the SECOND FAILURE WINDOWS + gradual-restoration
+   *  throttles live on the board (see `RecoveryState`). Written only when the
+   *  driver is wired with `options.recovery`. OPTIONAL, digest-switch law:
+   *  `pipeline/digest.ts` absorbs it ONLY when present, so every pre-recovery
+   *  state — all shipped goldens — digests byte-identically. */
+  readonly recovery?: RecoveryState;
 }

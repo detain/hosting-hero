@@ -304,6 +304,27 @@ export interface PricingConfig {
   readonly retentionFactorMinBps: bigint;
 }
 
+/* ─────────────── blameless post-mortem filing gate (§7.7, g21) ─────────── */
+
+/** The adjudication limit behind `economy/postmortem.ts` (audit g21: the
+ *  §7.7 post-mortem rows were PARTIAL — evidence in, gated credit out).
+ *  PROVISIONAL — ratify-on-playtest like the reputation deltas themselves.
+ *  The section is OPTIONAL on EconomyConfig: absent ⇒ DEFAULT_POST_MORTEM_
+ *  CONFIG ships the limit, and the credit rides the existing
+ *  `reputation.honestPostmortemBps` (single source, never forked). */
+export interface PostMortemConfig {
+  /** §7.7 "if TWO changes were in-flight, the post-mortem cannot attribute
+   *  a cause": filings at/under this count are attributable; above it the
+   *  card goes `postmortem-unattributed` with zero credit. PROVISIONAL 1. */
+  readonly maxAttributableChanges: number;
+}
+
+/** The shipped default book — hosts that never pass `cfg.postMortem` get
+ *  exactly this (the fold reads `cfg.postMortem ?? DEFAULT_POST_MORTEM_CONFIG`). */
+export const DEFAULT_POST_MORTEM_CONFIG: PostMortemConfig = Object.freeze({
+  maxAttributableChanges: 1, // PROVISIONAL — the doc's "two changes" example
+});
+
 /* ─────────────────────────────── root config ──────────────────────────── */
 
 export interface EconomyConfig {
@@ -320,6 +341,11 @@ export interface EconomyConfig {
   readonly reputation: ReputationConfig;
   readonly death: DeathConfig;
   readonly pricing: PricingConfig;
+  /** §7.7 post-mortem filing gate — OPTIONAL (unlike every section above):
+   *  sibling hosts hand-build config literals, and a REQUIRED key would
+   *  break their typecheck for a fold that is input-gated anyway. The fold
+   *  reads `cfg.postMortem ?? DEFAULT_POST_MORTEM_CONFIG`. */
+  readonly postMortem?: PostMortemConfig | undefined;
 }
 
 export function defaultEconomyConfig(): EconomyConfig {
@@ -436,6 +462,7 @@ export function defaultEconomyConfig(): EconomyConfig {
       factorMaxBps: 30_000n, // PROVISIONAL — 3× saturation clamp
       retentionFactorMinBps: 1_000n, // PROVISIONAL — hikes never zero the renewal chance
     },
+    postMortem: DEFAULT_POST_MORTEM_CONFIG, // §7.7 — shared frozen default book
   };
 }
 

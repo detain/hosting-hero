@@ -267,5 +267,36 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // §7.7 — the RECOVERY slice (digest-switch law, same embed law as
+  // hands/board/pricing/attention): absorbed ONLY when present, so every
+  // pre-recovery state (all shipped goldens) keeps byte-identical digests.
+  // Both maps sort code-unit on the node id (insertion order NEVER read);
+  // the window record is the full countdown + restoration arithmetic.
+  if (state.recovery !== undefined) {
+    sink.text("recovery");
+    const windowIds = Array.from(state.recovery.windows.keys()).sort(byId);
+    sink.int(windowIds.length);
+    for (const id of windowIds) {
+      const window = state.recovery.windows.get(id);
+      if (window === undefined) continue;
+      sink
+        .text(window.nodeId)
+        .text(window.phase)
+        .int(window.openedAtMinute)
+        .int(window.closesAtMinute)
+        .int(window.lockUntilMinute)
+        .int(window.strikes)
+        .int(window.fullSlots)
+        .int(window.effectiveSlots);
+    }
+    const episodeIds = Array.from(state.recovery.lastStruggleMinute.keys()).sort(byId);
+    sink.int(episodeIds.length);
+    for (const id of episodeIds) {
+      const at = state.recovery.lastStruggleMinute.get(id);
+      if (at === undefined) continue;
+      sink.text(id).int(at);
+    }
+  }
+
   return sink.hex() as HashHex;
 }

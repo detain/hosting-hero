@@ -37,6 +37,8 @@
  *  10 ghosted churn signals / defusals (30–60 d lag, §7.15)
  *  11 unlock schedules — deferred recognition 1/12 & reserve release (§6.13)
  *  12 lose-slowly guard — ≥3 real-minutes warning (§9.6)
+ *  12.45 post-mortem filing adjudication — ambiguity/blame/duplicate gates,
+ *      signals feed the fold below, verdicts append the log (§7.7, g21)
  *  12.5 reputation fold + publish-on-change observed write (§2.10/§5.10)
  *  12.6 company-death fold — OD-25(a) three canonical deaths, warning →
  *      notice → dissolution state machine (economy/death.ts, §6.10/§9.6)
@@ -84,6 +86,16 @@ import {
 import { bpsOf, BPS_DEN } from "./money.ts";
 import { floorDiv } from "./intMath.ts";
 import { applyFactorBps, priceElasticityFor } from "./elasticity.ts";
+import {
+  foldPostMortemFilings,
+  parsePostMortemFilings,
+  POST_MORTEM_ENTITY,
+  postMortemNoticeCauseId,
+  postMortemReputationSignals,
+  type PostMortemFiling,
+  type PostMortemOutcome,
+  type PostMortemRecord,
+} from "./postmortem.ts";
 import {
   commitmentBpsOf,
   drainOutage,
@@ -217,6 +229,16 @@ export interface EconomyTickIn {
   /** Published honest post-mortems (§5.10): earn score back and set the
    *  PERMANENT honestHostFloor that halves future incident damage. */
   readonly honestPostmortems?: readonly CauseId[] | undefined;
+  /** §7.7 FORMAL post-mortem filings (economy/postmortem.ts): unlike the
+   *  unconditional `honestPostmortems` assertion above, every card is
+   *  ADJUDICATED — ambiguous (changes in flight over
+   *  `cfg.postMortem.maxAttributableChanges`), blame-styled, or already-
+   *  credited incidents earn ZERO; a first attributable blameless filing
+   *  rides the SAME honest-postmortem ledger signal. Unset ⇒ no fold, no
+   *  `postMortemLog` key — byte-identity for every existing host. A cause
+   *  listed HERE and in `honestPostmortems` the SAME tick throws (double
+   *  credit is authoring poison, not a tuning choice). */
+  readonly postMortems?: readonly PostMortemFiling[] | undefined;
   /** The bank's card (audit g19 #2): when provided it REPLACES the primed
    *  covenant set (whole-book re-declaration, like vendorCommits); the
    *  month roll evaluates them. Empty array / undefined = nothing to check. */
@@ -296,7 +318,15 @@ export type EconomyNoticeKind =
   | "death-imminent"
   /** DISSOLVED (OD-25(a)): terminal. The ledger is closed; every later
    *  `runEconomyTick` is a no-op-preserve of this state. */
-  | "company-dissolved";
+  | "company-dissolved"
+  /** §7.7 post-mortem card adjudicated and filed (economy/postmortem.ts):
+   *  blameless+attributable cards MOVED reputation; blame and re-file cards
+   *  are honestly filed with zero credit — the log row is the truth. */
+  | "postmortem-filed"
+  /** §7.7 "if two changes were in-flight, the post-mortem cannot attribute
+   *  a cause": the card earns nothing (and per the host-side unlocks law,
+   *  no progression — the engine only raises this notice). */
+  | "postmortem-unattributed";
 
 /** Economy-side observations for HUD/rules (not SimEvents: types.ts owns
  *  that closed union; the orchestrator maps the ones it wants across). */
@@ -379,6 +409,10 @@ interface Working {
   deathWatch: DeathWatch | null;
   deathWarning: DeathWarningRecord | null;
   companyDeath: CompanyDeathRecord | null;
+  /** §7.7 adjudication trail (economy/postmortem.ts): the prior log carried
+   *  forward plus this-tick records — materializes as `postMortemLog` ONLY
+   *  when non-empty (absent-while-idle). */
+  postMortemRows: PostMortemRecord[];
   observedWrites: ObservedWrite[];
   entries: LedgerEntry[];
   events: InvoiceSettledEvent[];
@@ -458,6 +492,7 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     deathWatch: input.prior.deathWatch ?? null,
     deathWarning: input.prior.deathWarning ?? null,
     companyDeath: null,
+    postMortemRows: [...(input.prior.postMortemLog ?? [])],
     observedWrites: [],
     entries: [],
     events: [],
@@ -711,6 +746,42 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   /* 12 lose-slowly guard. */
   evaluateLoseSlowly(w, now, cfg);
 
+  /* 12.45 §7.7 post-mortem adjudication (economy/postmortem.ts; audit g21
+   * "post-mortem PARTIAL" closure). INPUT-gated: absent/empty filings ⇒
+   * zero outcomes ⇒ zero signals/notices, and the `postMortemLog` key
+   * never materializes — byte-identity for every existing host. The
+   * double-credit guard is Fail-Fast law: one incident, one channel. */
+  let postMortemOutcomes: readonly PostMortemOutcome[] = [];
+  if (input.postMortems !== undefined && input.postMortems.length > 0) {
+    const filings = parsePostMortemFilings(input.postMortems);
+    for (const filing of filings) {
+      if ((input.honestPostmortems ?? []).includes(filing.incidentCauseId)) {
+        throw new Error(
+          `economy/tick: incident '${filing.incidentCauseId}' arrives BOTH as an honestPostmortems assertion and a formal postMortems filing — double credit is authoring poison`,
+        );
+      }
+    }
+    postMortemOutcomes = foldPostMortemFilings({
+      priorLog: input.prior.postMortemLog ?? [],
+      filings,
+      now,
+      cfg,
+    });
+    for (const outcome of postMortemOutcomes) {
+      w.notices.push({
+        kind: outcome.ambiguous ? "postmortem-unattributed" : "postmortem-filed",
+        contractId: POST_MORTEM_ENTITY,
+        atBusinessMin: now,
+        causeId: postMortemNoticeCauseId(
+          outcome.ambiguous ? "unattributed" : "filed",
+          outcome.record.incidentCauseId,
+          now,
+        ),
+      });
+      w.postMortemRows.push(outcome.record);
+    }
+  }
+
   /* 12.5 reputation fold (§2.10/§5.10; audit g17 #2 producer). Signals come
    * from THIS tick's notices (money-lifecycle events the economy already
    * saw) plus the two host-reported vocabularies. Nothing moves money; the
@@ -727,6 +798,15 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
   }
   for (const causeId of input.honestPostmortems ?? []) {
     repSignals.push({ kind: "honest-postmortem", causeId });
+  }
+  // §7.7: adjudicated blameless cards ride the SAME signal (bps + the
+  // permanent honestHostFloor) — spliced before the fold so the publish-
+  // on-change observed write below covers them. Ambiguous/blame/re-file
+  // cards contribute NOTHING here (their notice trail is the verdict).
+  for (const signal of postMortemReputationSignals(postMortemOutcomes, (incident) =>
+    postMortemNoticeCauseId("filed", incident, now),
+  )) {
+    repSignals.push(signal);
   }
   w.reputation = applyReputationSignals(w.reputation, repSignals, cfg);
   if (w.reputation.overallBps !== input.prior.reputation.overallBps) {
@@ -779,6 +859,9 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     ...(w.deathWatch !== null ? { deathWatch: w.deathWatch } : {}),
     ...(w.deathWarning !== null ? { deathWarning: w.deathWarning } : {}),
     ...(w.companyDeath !== null ? { companyDeath: w.companyDeath } : {}),
+    // §7.7: the key exists iff the trail is non-empty (prior rows carried,
+    // new verdicts appended) — absent-while-idle, death-key law.
+    ...(w.postMortemRows.length > 0 ? { postMortemLog: Object.freeze([...w.postMortemRows]) } : {}),
   };
   return {
     state,

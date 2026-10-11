@@ -45,6 +45,7 @@ import type {
   DeathWarningRecord,
   DeathWatch,
 } from "./death.ts";
+import type { PostMortemRecord } from "./postmortem.ts";
 import { floorDiv } from "./intMath.ts";
 import { daysToMinutes, type EconomyConfig } from "./config.ts";
 
@@ -102,6 +103,11 @@ export interface EconomyState {
    *  no-op-preserve — no settle, no MRR accrual, no throw. The endings/
    *  HUD lane reads `companyDeath.cause` to pick the epilogue. */
   readonly companyDeath?: CompanyDeathRecord | undefined;
+  /** §7.7 blameless-post-mortem adjudication log (economy/postmortem.ts):
+   *  every filed card, credited or not, append-only in fold order. The key
+   *  is ABSENT until the first `postMortems` input — existing hosts'
+   *  serialization shape never changes (absent-while-idle, death-key law). */
+  readonly postMortemLog?: readonly PostMortemRecord[] | undefined;
 }
 
 export function emptyEconomyState(): EconomyState {

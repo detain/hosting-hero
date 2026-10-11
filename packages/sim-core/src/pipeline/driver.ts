@@ -62,6 +62,7 @@ import type {
   PipelineSlots,
   QosClassDef,
   QueueWaitIn,
+  RecoveryState,
   ReplayContentHashes,
   RetryPolicy,
   RngStream,
@@ -90,6 +91,15 @@ import {
 } from "../kernel/time.ts";
 import { streamFor } from "../kernel/rng.ts";
 import { orderShedForTick, TICK_US, sortedIds, withUnit } from "./internal.ts";
+import {
+  countStrugglesByNode,
+  foldRecoveryTick,
+  parseRecoveryConfig,
+  throttleServeNodes,
+  type RecoveryConfig,
+  type RecoveryFoldResult,
+  type RecoveryNotice,
+} from "./recovery.ts";
 import { type ArrivalInExt, UNIT_HOLD } from "./defaults.ts";
 import { DEFAULT_KNEE_RHO, utilization } from "./queue.ts";
 import { applyIntentDoor, mintHandState, type IntentDoorConfig, type IntentReceipt } from "./intent-door.ts";
@@ -200,6 +210,12 @@ export interface TickResult {
    *  unwired TickResult serializes exactly as before (digest-neutrality of
    *  the seam: nothing here enters GameState, events, or any digest). */
   readonly unlockProposals?: readonly UnlockProposalView[];
+  /** §7.7 recovery notices raised THIS tick (episode/window/strike/lock/
+   *  clear — pipeline/recovery.ts). PRESENT ONLY when `options.recovery` is
+   *  wired (the unlockProposals seam law): nothing here enters GameState,
+   *  the frozen SimEvent union, or any digest — unwired results serialize
+   *  exactly as before. */
+  readonly recoveryNotices?: readonly RecoveryNotice[];
   /** 0..1 retry-storm pressure this tick (metastability read-out). */
   readonly pressure: Fixed;
   /** Re-entries scheduled but not yet matured (storm headroom). */
@@ -249,6 +265,17 @@ export interface TickDriverOptions {
    *  indexing tax is a NET LOSS — small boards skip indexing altogether
    *  (counted as `smallBoardSweeps`). Default 8; `0` = always index. */
   readonly purgeTargetedMinNodes?: number;
+  /** §7.7 RECOVERY HALF (pipeline/recovery.ts): wire it and every bounce-
+   *  struggling node earns second-failure windows — a quiet node opens a
+   *  countdown during which it serves GRADUALLY-RESTORED arms (ramping from
+   *  the safe-mode floor), and a struggle INSIDE the window is the second
+   *  failure the node "cannot survive": a strike locks it back to minimal
+   *  posture and restarts the clock. Parsed FAIL-LOUD at creation (unknown
+   *  keys / non-positive-integer values throw naming the path). Default
+   *  OFF: unwired drivers never materialize `GameState.recovery`, never
+   *  throttle serve inputs, and every shipped golden digests byte-
+   *  identically (pinned in __tests__/recovery.test.ts). */
+  readonly recovery?: RecoveryConfig;
 }
 
 export interface TickDriver {
@@ -321,6 +348,10 @@ export function createInitialState(options: {
    *  `createAttentionState`/`attentionWindowEntry`). OPTIONAL, digest-switch
    *  law: absent = denomination off, every pre-attention host unchanged. */
   readonly attention?: AttentionState;
+  /** §7.7 — seed the RECOVERY slice (pipeline/recovery.ts windows/episodes).
+   *  OPTIONAL, digest-switch law: absent = half off, every pre-recovery host
+   *  unchanged. Hosts normally let the fold materialize it, never seed it. */
+  readonly recovery?: RecoveryState;
 }): GameState {
   const nodes = new Map<EntityId, NodeRecord>();
   for (const node of options.nodes ?? []) nodes.set(node.id, node);
@@ -352,6 +383,7 @@ export function createInitialState(options: {
     ...(hands !== undefined ? { hands } : {}),
     ...(options.board !== undefined ? { board: options.board } : {}),
     ...(options.attention !== undefined ? { attention: options.attention } : {}),
+    ...(options.recovery !== undefined ? { recovery: options.recovery } : {}),
   });
 }
 
@@ -406,6 +438,11 @@ export function createTickDriver(
   if (unlocks !== undefined && typeof unlocks.observer?.observe !== "function") {
     throw new Error("createTickDriver: options.unlocks.observer must carry an observe(window) function");
   }
+  /* §7.7 recovery seam — PRESENCE-GATED: parsed once at creation (fail
+   * loud on a bad book, exactly like the purge knobs), undefined forever
+   * after on unwired drivers, which is the byte-identity switch. */
+  const recoveryCfg: RecoveryConfig | undefined =
+    options.recovery !== undefined ? parseRecoveryConfig(options.recovery) : undefined;
 
   let pending: PendingReentry[] = [];
   let mintCounter = 0;
@@ -531,7 +568,13 @@ export function createTickDriver(
     for (const unit of units) unitsById.set(unit.id, unit);
 
     /* ── step 5 · serve (slot-occupancy queueing core) ────────────────── */
-    const serveOut = steps.serve({ context, units, nodes: worked.nodes });
+    /* §7.7 · recovery throttle: with the seam wired AND a window live, the
+     * node serves its restored arms, not its full board (gradual
+     * restoration / safe-mode floor). No slice or no windows ⇒ the SAME Map
+     * object passes through by identity — zero copies, byte-identity. */
+    const serveInput =
+      recoveryCfg !== undefined ? throttleServeNodes(worked.nodes, worked.recovery) : worked.nodes;
+    const serveOut = steps.serve({ context, units, nodes: serveInput });
     // R-06 class-aware shed (audit fix, §7.11): a hard-ceiling node sheds its WHOLE
     // residual queue each tick, but the order shed units enter the terminal ledger
     // follows each node's authored `shedOrder` law — cheap classes walk off first,
@@ -967,7 +1010,36 @@ export function createTickDriver(
       Object.freeze({ ...intent, seq: (intentSeq += 1) }),
     );
 
+    /* ── §7.7 · recovery fold (presence-gated; AFTER the tick's bounce
+       truth exists, BEFORE the state chain closes). The witness is THIS
+       tick's bounced events naming nodes (R-06 sheds / R-10 patience); the
+       slice is ABSENT-while-idle (both maps empty ⇒ the key leaves
+       GameState — the economy death-key law, mirrored). One-tick reaction
+       lag by construction: a strike/lock at minute M reshapes the serve
+       input at M+1. ─────────────────────────────────────────────────── */
+    let recoveryOut: RecoveryFoldResult | undefined;
+    if (recoveryCfg !== undefined) {
+      const slotCounts = new Map<EntityId, number>();
+      for (const [nodeId, record] of nodes) slotCounts.set(nodeId, record.slots.length);
+      recoveryOut = foldRecoveryTick({
+        prior: worked.recovery,
+        minute: context.minute,
+        struggles: countStrugglesByNode(outcomeOut.events),
+        nodeSlotCounts: slotCounts,
+        cfg: recoveryCfg,
+      });
+    }
+
     /* ── rebuild GameState (immutable-by-convention) ──────────────────── */
+    /* When the recovery seam is WIRED, the fold owns the slice's lifecycle:
+     * strip any stale carried key first, re-attach only a live result —
+     * otherwise the slice would fossilize once its last window cleared.
+     * Unwired runs never touch the key (foreign/dead cargo rides `worked`). */
+    let workedBase: GameState = worked;
+    if (recoveryOut !== undefined && worked.recovery !== undefined) {
+      const { recovery: _stale, ...carcass } = worked;
+      workedBase = Object.freeze(carcass);
+    }
     const nextUnits = new Map<EntityId, Unit>();
     for (const unit of units) {
       if (terminalById.has(unit.id)) {
@@ -980,7 +1052,7 @@ export function createTickDriver(
     }
     const nextLedgerSeq = economicsOut.ledgerEntry === null ? worked.ledgerSeq : worked.ledgerSeq + 1;
     const next: GameState = Object.freeze({
-      ...worked,
+      ...workedBase,
       context,
       units: Object.freeze(nextUnits),
       nodes,
@@ -988,6 +1060,9 @@ export function createTickDriver(
       observed: Object.freeze(observed),
       cash: economicsOut.cash,
       ledgerSeq: nextLedgerSeq,
+      ...(recoveryOut !== undefined && recoveryOut.state !== undefined
+        ? { recovery: recoveryOut.state }
+        : {}),
     });
 
     const events: SimEvent[] = [
@@ -1024,6 +1099,9 @@ export function createTickDriver(
       pressure: backpressureOut.pressure,
       pendingReentries: pending.length,
       ...(unlockProposals !== undefined ? { unlockProposals } : {}),
+      /* §7.7 seam law (unlockProposals twin): channel EXISTS iff wired, an
+       * empty array is an honest "nothing recovered this minute". */
+      ...(recoveryOut !== undefined ? { recoveryNotices: recoveryOut.notices } : {}),
     });
   }
 
