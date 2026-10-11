@@ -1,0 +1,9 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true
+  },
+  "include": ["../types.ts", "../kernel/**/*.ts", "../economy/__tests__/node-url.d.ts", "./**/*.ts"],
+  "exclude": ["./parse.ts", "./vocab.ts"]
+}

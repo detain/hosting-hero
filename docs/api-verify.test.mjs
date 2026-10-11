@@ -96,6 +96,7 @@ const real = {
   coverage: resolveBarrel(join(SRC, "coverage/index.ts")),
   unattended: resolveBarrel(join(SRC, "unattended/index.ts")),
   unlocks: resolveBarrel(join(SRC, "unlocks/index.ts")),
+  scenario: resolveBarrel(join(SRC, "scenario/index.ts")),
 };
 
 /* ───────────────────────── markdown extraction ───────────────────────── */

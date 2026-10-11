@@ -12,7 +12,10 @@ docs-currency pass 2026-10-09 (api-verify 1,270 → 1,273 names — versus
 fingerprint pair + `registerContractsEconomy`; OD-1/OD-2/OD-8/OD-4d row
 flips to the ratified truth, `docs/adr/0009-owner-ratifications-calibration.md`); UNLOCKS-LANE pass
 2026-10-09 (`## unlocks` section + import row, +43 names — hg §5 unlock-trigger
-engine v0, digest-neutral observer, unwired by design).** Ground truth = source
+engine v0, digest-neutral observer, unwired by design).**
+SCENARIO-LANE pass 2026-10-10 (`## scenario` section + import row, +39 names —
+hg §1.5 declarative missions + runScenario over the existing engine; the
+api-verify module map gained its `scenario` line). Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
 `docs/api-verify.test.mjs` (run `node docs/api-verify.test.mjs` — it fails if
@@ -52,6 +55,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 | `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 69 exports — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
+| `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 39 exports (24 values + 15 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 3 shipped missions with one-flip lose probes; EXPLICIT barrel, zero root collisions |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -1282,6 +1286,90 @@ its inputs, deep-frozen. Import: `@hh/sim-core/unlocks`.
 | `CodexGap` | `interface { next: CodexStage \| null; remaining: number; evidence: "sightings" \| "counters" \| null }` | Readable distance to the next rung (§5.4 fill-in-the-blank progress) | frozen row |
 | `nextCodexGap` | `(counters, cfg?) => CodexGap` | Stage is DERIVED from the counters — a caller cannot hand a stage its counters disagree with; null/null at the mastered ceiling | pure |
 | `isDemotedToWeather` | `(counterCount: number, cfg?) => boolean` | Codex-side twin of `bandAfterMastery`: counters ≥ threshold ⇔ mastery settled | pure |
+
+---
+
+## scenario
+
+Purpose: the §1.5 scenario library runner (g03 verdict: "no campaign/scenario
+runner exists — save/modes.ts is schema-only"). One declarative document
+format (`hh-scenario@1` strict JSON behind a closed-vocabulary wall) plus a
+deterministic mission loop that COMPOSES the existing engine — mint helpers and
+traffic constants from `unattended/`, `createTickDriver` from `pipeline/`, the
+money lane from `economy/` (registerContractsEconomy + runEconomyTick, the F4
+refusal law mirrored from `fastForward.ts` and source-pinned by test) — and adds
+the one thing a weekend does not have: OBJECTIVE CHECKING at tick boundaries
+(terminal order guard → lose → win; a lose landing on a full-win tick is a
+LOSE). Output-side only: GameState is never widened, zero digests move; the
+`ScenarioReport` is a fold over TickResults + EconomyTickOuts whose `endDigest`
+is the house `digestState` of the tick-final state. Three missions ship
+(§1.5 `The Long Weekend` :3646, `Deadbeat Quarter` :3790, `The Angry Whale`
+:3408), each authored winnable as shipped and proven losable by flipping ONE
+wire field at the same seed. Traffic is segments-only in v0 — naming a
+waves-corpus `tableId` for ramp/storm shapes is the documented seam (§1.5's
+retry-storm missions like `Metastable` need it). Pure: no wall-clock, no Date,
+no I/O inside a run; `runScenario(doc, seed, config)` ×100 is byte-identical
+(`src/scenario/__tests__/runner.test.ts`). Import: `@hh/sim-core/scenario`.
+
+### doc.ts — the document wall
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+| --- | --- | --- | --- |
+| `SCENARIO_SCHEMA` | `"hh-scenario@1"` | The only wire version the wall accepts; anything else throws `BAD_VERSION` | frozen constant |
+| `SCENARIO_BRIEF_MAX_CHARS` | `280` | Mission-blurb length wall (a brief is a pitch, not a novel) | frozen constant |
+| `SCENARIO_MAX_MINUTES_CAP` | `2880` | Longest clock any scenario may declare (two business weeks at 1 tick ≡ 1 min) | frozen constant |
+| `SCENARIO_PREDICATE_KINDS` | `readonly ScenarioPredicateKind[]` (10) | The CLOSED objective vocabulary; the wall's error text enumerates it so an author never guesses | frozen array |
+| `ScenarioPredicateKind` | `"survive-minutes" \| "cash-above" \| "cash-below" \| "churn-below" \| "churn-above" \| "invoices-settled" \| "bounces-below" \| "bounces-above" \| "no-death-cause" \| "death-by-cause"` | One predicate tag per §1.5 mechanic the current observables can actually express | type-only |
+| `ScenarioDeathCause` | `CompanyDeathCause \| "any"` | OD-25(a) causes (float-insolvency / covenant-default / churn-collapse) plus the wildcard | type-only |
+| `ObjectivePredicate` | discriminated union (10 arms) | One parsed, frozen win/lose condition | type-only |
+| `ScenarioContractSpec` | `interface { id; contract: Contract; termMonths; commitmentBps: bigint }` | One signed customer: author's wire fields + the fully minted Contract (tcv/acv/SLA derived to the proven unattended fixture shape, never author-editable in v0) | type-only |
+| `ScenarioTraffic` | `interface { tableId: string; segments: readonly { fromMinute; ratePerMin }[] }` | Piecewise plateau arrivals over sim-minutes; rate 0 = silence; first segment must open at 0 | type-only |
+| `ScenarioLimits` | `interface { maxSimMinutes; initialFreeMicroUsd: bigint; opex: readonly UnattendedOpexDraft[]; dunningEngineOwned; handCapacity; guards: readonly ParsedGuard[] }` | What bounds the run: clock, opening balance, scheduled burns, dunning ownership, door capacity, catastrophe-guard passthrough (closed unattended vocabulary) | type-only |
+| `ScenarioDoc` | `interface { schemaVersion: 1; id; name; brief; specRef; specLine: number \| null; board: UnattendedBoardCast; contracts; traffic; objectives: { win; lose }; limits }` | THE trusted, deep-frozen mission document — only reachable through `parseScenarioDoc` | type-only |
+| `ScenarioErrorCode` | 18-arm string union (`BAD_RECORD` … `DUPLICATE`) | Closed error taxonomy of the wall | type-only |
+| `ScenarioError` | `class extends Error { code: ScenarioErrorCode; path: string }` | Message grammar `scenario[CODE] at 'path': detail` (versus/unlocks family); `path` names the offending wire node | deterministic throw |
+| `parseMoneyWire` | `(value: unknown, path: string, code: ScenarioErrorCode) => bigint` | µ$ on the wire: non-negative safe integer or its decimal string; everything else (floats, negatives, `"42.0"`, booleans) throws with the caller's code | pure |
+| `parseScenarioDoc` | `(raw: unknown) => ScenarioDoc` | THE sanctioned entry to the type — closed records (unknown key = refusal), cross-section law (burns AND contract cliffs must land inside the clock: sim = biz × 7/720), win list non-empty, lose list may be empty; result deep-frozen | pure |
+| `scenarioSeed` | `(base: RunSeed, offset: number) => RunSeed` | The documented seed policy: run seed = base + offset (offsets ≥ 0 safe ints only) | pure |
+| `scenarioContractId` | `(doc: ScenarioDoc, index: number) => EntityId` | Index into the doc's contract roster; out-of-range throws naming the roster size | pure |
+
+### objectives.ts — the evaluation law
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+| --- | --- | --- | --- |
+| `ScenarioObservation` | `interface { elapsedMin; cashFreeMicroUsd: bigint; settledInvoices; churnedCustomers; writtenOffCustomers; bounces; deaths: readonly CompanyDeathCause[] }` | What a mission is allowed to SEE — a fold of TickResults + EconomyTickOuts, nothing else | type-only |
+| `EMPTY_OBSERVATION` | `ScenarioObservation` | Honest zero point before the first tick | frozen constant |
+| `objectiveHolds` | `(obs, predicate) => boolean` | The closed truth table; boundary strictness: cash-above is `≥`, cash-below `<`, churn/bounces-below `<`, -above `>`, invoices-settled/survive `≥` | pure |
+| `ObjectiveProgress` | `interface { predicate; holds; progress: Fixed }` | Q16.16 in [0,1]: attainment predicates count UP toward the line, safety predicates count their HEADROOM DOWN to it; death-by-cause latches | type-only |
+| `objectiveLine` | `(predicate) => string` | Stable `kind:value` rendering (rides stopReason — never reword without moving the pins) | pure |
+| `objectiveProgress` | `(obs, predicate) => ObjectiveProgress` | hold + progress in one row | pure |
+| `progressAll` | `(obs, predicates) => readonly ObjectiveProgress[]` | Whole list in AUTHOR order (narrative emphasis, never sorted) | pure |
+
+### runner.ts — the mission loop
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+| --- | --- | --- | --- |
+| `SCENARIO_OUTCOMES` | `readonly ["won","lost","timeout"]` | Closed verdict vocabulary | frozen array |
+| `ScenarioOutcome` | union of the three | — | type-only |
+| `ScenarioRunConfig` | `interface { seedOffset?: number; tickCap?: number }` | Probe knobs: `tickCap` can only SHORTEN the declared clock, never extend; `seedOffset` walks the seed | type-only |
+| `ScenarioTrace` | `interface { arrivals; served; bounced; landed; falsePositives; economyRounds; economyRefusals; eventsByKind; noticesByKind }` | Cumulative census roll-up; F4 voids + F5 bounces combined as the refusal count; Record keys code-unit sorted | type-only |
+| `ScenarioReport` | `interface { scenarioId; runSeed; outcome; stopReason; endTick; endMinute; endDigest; observation; objectives: { win; lose }; trace; cashStartMicroUsd; cashEndMicroUsd }` | The mission verdict record, frozen, bigint-bearing — hosts serialize with the house canonical codec like UnattendedReport | type-only |
+| `SCENARIO_ENGINE_VERSION` | `"scenario-v0"` | engineVersion stamp inside every scenario-minted state (digest-visible) | frozen constant |
+| `runScenario` | `(doc: ScenarioDoc, seed: RunSeed, config?: ScenarioRunConfig) => ScenarioReport` | Assembly over the existing engine: mintInitialState/board/envelope-cadence from unattended, money lane per the fastForward F4/F5 law, opex burns posted by (atMinute, memo) order, guard/lose/win evaluated at EVERY tick boundary in terminal order; stopReason grammar `win@240` / `lose:<line>@<min>` / `guard:<reason>@<min>` / `timeout@<min>` | ×100 byte-identical (pinned); refuse-regex mirrors source-pinned against fastForward.ts |
+
+### scenarios.ts — the shipped library
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+| --- | --- | --- | --- |
+| `ScenarioWire` | `interface` (JSON-shaped pre-parse doc) | The authored wire form: plain JSON, safe to ship in files or over the wall | type-only |
+| `SHIPPED_SCENARIO_WIRES` | `Readonly<Record<string, ScenarioWire>>` | The three missions as plain-JSON literals — test surgery (one-field flips) happens HERE, then re-parses through the wall | frozen |
+| `theLongWeekendDoc` | `ScenarioDoc` | §1.5 :3646 — 240 sim-min of calm hourly revenue vs a payroll drip; win = survive + zero churn + no death; freeCashDepleted guard is the catastrophe halt | parsed at import (fail-loud) |
+| `deadbeatQuarterDoc` | `ScenarioDoc` | §1.5 :3790 — 300 sim-min where revenue books but cash lags (monthly invoices, net-terms delay); win = invoices-settled 4 + cash-above + full clock | parsed at import |
+| `theAngryWhaleDoc` | `ScenarioDoc` | §1.5 :3408 — a 400 Mµ$/hr whale cliffs at biz-minute 11 400 (≈ sim t111) inside a 200-minute clock; win = keep it (auto-renew) + cash-above 60 M; lose = churn-above 0 | parsed at import |
+| `SHIPPED_SCENARIO_IDS` | `readonly string[]` | The three ids in author order | frozen array |
+| `SHIPPED_SCENARIOS` | `Readonly<Record<string, ScenarioDoc>>` | id → parsed, frozen doc | frozen |
+| `shippedScenario` | `(id: string) => ScenarioDoc` | Registry read; unknown id throws `BAD_ID` enumerating the legal set | pure |
+
 
 ---
 
