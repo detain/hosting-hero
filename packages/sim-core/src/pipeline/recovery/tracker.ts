@@ -24,22 +24,56 @@
  *    credits the node; the NEXT failure's escalation EXCESS is halved and
  *    the credit consumed — the §5.10 honestHostFloor precedent (economy/
  *    reputation.ts): transparency insurance pays exactly once per incident.
+ *    The credit is PURELY escalation math. The monetary/§5.10 side lives in
+ *    EXACTLY one place — economy/postmortem.ts's filing fold consuming
+ *    cfg.reputation.honestPostmortemBps — this module never credits
+ *    reputation, so an honest filing can never double-pay.
  *
- * Integration stance (digest-switch friendly): this module NEVER touches
- * GameState. The host runs its driver normally and folds each tick's
- * `TickResult.events` through `observeRecoveryTick`; the derived capacity
- * reading (`recoveryCapacityBps`) is an OUT the host applies to node slots.
- * Nothing here mints money, SimEvents, or RNG rolls — recovery is a
- * consequence-shaping read-model until an owner call wires it into the tick.
- * Proven digest-neutral by pipeline/__tests__/recovery.test.ts (wired vs
- * bare driver run ×100, byte-equal digestState chains — the 71b8960
- * observer-seam precedent).
+ * INTEGRATION STANCE (reconciliation @60e464b, CODE-ENFORCED by ADR-0012):
+ * the STATEFUL ENGINE `pipeline/recovery.ts` (GameState.recovery? digest
+ * slice, driver throttle, strike/window/ramp math) is THE SIM AUTHORITY for
+ * what the spec calls "degraded" — windows, strikes, and the second-failure
+ * countdown are read from `GameState.recovery` via
+ * `deriveDurableImpressions`, never re-tracked here. THIS observer is the
+ * DEMOTED advisory/opex layer: it adds ONLY the durable impressions the
+ * engine doesn't carry —
+ *  · `degradedMinutes` (the Degradation Debt meter),
+ *  · `postmortemCredit` (the once-credit escalation-halving mark),
+ *  · `failbackEligibleAtMinute` + `priority` (the failback hold and the
+ *    "restore your whale first" crew order),
+ * and the opex menu (economy/recovery.ts) derived from its phase model.
+ * Its `recoveryCapacityBps` reading stays a HOST-SIDE display/advisory OUT;
+ * it is deliberately NOT applied to the sim's serve arms (that is (B)'s
+ * `throttleServeNodes` job, and applying both would move goldens twice).
+ * THE SINGLE-AUTHORITY RULE (this reconciliation): an incident escalates as
+ * a SECOND FAILURE iff the engine said the node was under a live window or
+ * lock when the failure landed — hosts pass the post-advance GameState in
+ * via `RecoveryObservation.engine` / `declareRecoveryFailure(…, engine)`.
+ * No engine in the observation ⇒ NO escalation, ever: the observer
+ * fabricates no degraded state of its own, so a drill run without the sim
+ * is a calm drill. The amber bar (`secondFailureWindowActive`) is likewise
+ * a pure engine read — the old observer-side `secondFailureWindowMinutes`
+ * tail was the second, drifting authority and is DELETED here.
+ *
+ * digest-neutral BY CONSTRUCTION: the observer never writes GameState and
+ * mints no money, no SimEvents, no RNG rolls. Nothing here is wired into any
+ * host's tick loop by this lane (the surfaces stay host-advisory, same class
+ * as the unlock observer). Re-verified digest-neutral by
+ * pipeline/__tests__/recovery.test.ts (wired vs bare driver ×100 byte-equal
+ * digestState chains — the 71b8960 observer-seam precedent).
  *
  * Money side lives in economy/recovery.ts (restore-action opex drafts + the
  * rebuild-vs-restart table). This file imports ONLY ../types (module law).
  */
 
-import { asCauseId, type CauseId, type EntityId, type SimEvent, type SimMinute } from "../../types.ts";
+import {
+  asCauseId,
+  type CauseId,
+  type EntityId,
+  type GameState,
+  type SimEvent,
+  type SimMinute,
+} from "../../types.ts";
 
 /* ────────────────────────────── closed vocab ─────────────────────────────── */
 
@@ -83,11 +117,13 @@ export interface NodeRecoveryRecord {
   /** Effective ramp length for the current incident — escalated/halved at
    *  failure time, then frozen (the number cannot drift mid-incident). */
   readonly rampMinutes: number;
-  /** Exact completion minute of the LAST ramp (the window anchor). */
+  /** Exact completion minute of the LAST ramp — the FAILBACK anchor only;
+   *  the WINDOW truth is the engine's (ADR-0012), never re-derived here. */
   readonly recoveredAtMinute: SimMinute | null;
   /** Minute steer-back unlocks (completion + failback hold). */
   readonly failbackEligibleAtMinute: SimMinute | null;
-  /** The current incident opened inside the previous recovery's window. */
+  /** The current incident opened while the ENGINE (ADR-0012) said this node
+   *  was under a live recovery window/lock — the single second-failure truth. */
   readonly secondFailure: boolean;
   /** §5.10-style once-credit: halves the NEXT failure's escalation excess. */
   readonly postmortemCredit: boolean;
@@ -124,9 +160,9 @@ export interface RecoveryTuning {
   readonly autoRecoverDelayMinutes: number;
   /** Gradual restore ramp, minutes, from the safe-mode floor to full. */
   readonly baseRampMinutes: number;
-  /** Second Failure Window: minutes after a completed recovery during
-   *  which a new failure is escalated. */
-  readonly secondFailureWindowMinutes: number;
+  /* (Reconciliation ADR-0012: the observer's `secondFailureWindowMinutes`
+     tail knob is DELETED — the amber bar's life is the engine's window,
+     read via deriveDurableImpressions, never a second countdown kept here.) */
   /** Ramp multiplier inside the window (20_000n = twice as long). */
   readonly secondFailureRampMultiplierBps: bigint;
   /** Safe Mode floor: capacity bps at ramp start (2_500n = serving at 25%
@@ -151,8 +187,7 @@ export function defaultRecoveryTuning(): RecoveryTuning {
     failureBounceThreshold: 4, // PROVISIONAL — a brownout signal worth reacting to
     autoRecoverDelayMinutes: 5, // PROVISIONAL — crash-cart dispatch lag
     baseRampMinutes: 30, // PROVISIONAL — slow-start admission
-    secondFailureWindowMinutes: 60, // PROVISIONAL — the amber RAID-rebuild bar
-    secondFailureRampMultiplierBps: 20_000n, // PROVISIONAL — 2× ramp inside the window
+    secondFailureRampMultiplierBps: 20_000n, // PROVISIONAL — 2× ramp inside the engine's window
     safeModeFloorBps: 2_500n, // PROVISIONAL — safe mode starts at 25% capacity
     failbackDelayMinutes: 15, // PROVISIONAL — don't steer home into a storm
     recoveryCrewSlots: 1, // PROVISIONAL — one recovery crew, order matters
@@ -163,7 +198,6 @@ const TUNING_INT_KEYS = [
   "failureBounceThreshold",
   "autoRecoverDelayMinutes",
   "baseRampMinutes",
-  "secondFailureWindowMinutes",
   "failbackDelayMinutes",
   "recoveryCrewSlots",
 ] as const;
@@ -298,23 +332,23 @@ export function createRecoveryTracker(): RecoveryTrackerState {
   return Object.freeze({ minute: 0, nodes: new Map<EntityId, NodeRecoveryRecord>() });
 }
 
-/** Effective ramp for a fresh incident. Inside the window: base × the
- *  escalation multiplier; a postmortem credit halves the EXCESS (2× → 1.5×)
- *  and is consumed. Outside the window: base, mark cleared. Exact integer
- *  math, floor, minimum 1 (parse already walls baseRampMinutes ≥ 1). */
+/** Effective ramp for a fresh incident. The second-failure VERDICT arrives
+ *  pre-computed from THE SIM AUTHORITY (`secondFailureNow` — derived from
+ *  `GameState.recovery` via `deriveDurableImpressions`, ADR-0012; this
+ *  function deliberately receives a boolean and owns no window math).
+ *  Escalated: base × the multiplier, a postmortem credit halving the EXCESS
+ *  (2× → 1.5×), consumed. At peace: base, mark cleared. Exact integer math,
+ *  floor, minimum 1 (parse already walls baseRampMinutes ≥ 1). */
 function escalateIncident(
   prior: NodeRecoveryRecord,
-  atMinute: SimMinute,
   cfg: RecoveryTuning,
+  secondFailureNow: boolean,
 ): {
   readonly rampMinutes: number;
   readonly secondFailure: boolean;
   readonly creditConsumed: boolean;
 } {
-  const insideWindow =
-    prior.recoveredAtMinute !== null &&
-    atMinute - prior.recoveredAtMinute < cfg.secondFailureWindowMinutes;
-  if (!insideWindow) {
+  if (!secondFailureNow) {
     return { rampMinutes: cfg.baseRampMinutes, secondFailure: false, creditConsumed: false };
   }
   const excess = cfg.secondFailureRampMultiplierBps - FULL_BPS;
@@ -328,17 +362,20 @@ function escalateIncident(
 }
 
 /** Open (or re-open) an incident on a node — the single failure funnel both
- *  the bounce detector and the host's explicit declare ride through. */
+ *  the bounce detector and the host's explicit declare ride through.
+ *  `secondFailureNow` is the ENGINE's verdict for this node at this minute
+ *  (ADR-0012); callers derive it from `deriveDurableImpressions`. */
 function openIncident(
   records: Map<EntityId, RecoveryDraft>,
   transitions: RecoveryTransition[],
   nodeId: EntityId,
   minute: SimMinute,
   cfg: RecoveryTuning,
+  secondFailureNow: boolean,
 ): void {
   const prior = records.get(nodeId) ?? healthyDraft(nodeId);
   if (prior.phase === "failed" || prior.phase === "recovering") return; // one incident at a time
-  const esc = escalateIncident(prior, minute, cfg);
+  const esc = escalateIncident(prior, cfg, secondFailureNow);
   records.set(nodeId, {
     ...prior,
     phase: "failed",
@@ -357,7 +394,7 @@ function openIncident(
         "second-failure",
         nodeId,
         minute,
-        esc.creditConsumed ? "escalation halved by postmortem credit" : "inside second failure window",
+        esc.creditConsumed ? "escalation halved by postmortem credit" : "engine recovery window live",
       ),
     );
   }
@@ -451,6 +488,11 @@ export interface RecoveryObservation {
   readonly minute: SimMinute;
   /** This tick's TickResult.events (read-only — never mutated). */
   readonly events: readonly SimEvent[];
+  /** THE SIM AUTHORITY snapshot (ADR-0012): the post-advance GameState of
+   *  THIS tick, whose `recovery` slice decides second-failure escalation via
+   *  `deriveDurableImpressions`. ABSENT ⇒ nothing escalates — degraded truth
+   *  belongs to the engine, and an engine-less drill is a calm drill. */
+  readonly engine?: GameState;
 }
 
 function bounceCountByNode(events: readonly SimEvent[]): Map<EntityId, number> {
@@ -508,12 +550,16 @@ export function observeRecoveryTick(
   }
   const records = cloneRecords(state.nodes);
   const transitions: RecoveryTransition[] = [];
+  // The engine's degraded set, read ONCE per observation (ADR-0012): an
+  // absent engine means an empty set — the observer invents no windows.
+  const degraded =
+    observation.engine === undefined ? undefined : deriveDurableImpressions(observation.engine);
   accrueDegradation(records, state.minute, observation.minute);
   advancePhases(records, transitions, observation.minute, cfg);
   allocateCrew(records, transitions, observation.minute, cfg);
   const failures = countThresholdedFailures(observation.events, state, cfg);
   for (const nodeId of [...failures].sort(compareIds)) {
-    openIncident(records, transitions, nodeId, observation.minute, cfg);
+    openIncident(records, transitions, nodeId, observation.minute, cfg, degraded?.windowNodeIds.has(nodeId) === true);
   }
   if (transitions.length === 0 && records.size === 0) {
     // clock moved over an empty world — keep the new minute, mint nothing
@@ -528,14 +574,18 @@ export function observeRecoveryTick(
 /* ───────────────────────── host-facing commands ──────────────────────────── */
 
 /** Explicit failure injection (Black Start, drills, scripted disasters):
- *  the same escalation funnel as bounce-detected failures. Throws when the
- *  node is already mid-incident — declaring a failure that is already
- *  happening is a host bug, say it loud (Law 4). */
+ *  the same escalation funnel as bounce-detected failures. `engine` is the
+ *  SIM-AUTHORITY snapshot (ADR-0012) whose live window decides whether the
+ *  declared incident escalates as a second failure — omit it and the
+ *  declaration lands at peace (base ramp). Throws when the node is already
+ *  mid-incident — declaring a failure that is already happening is a host
+ *  bug, say it loud (Law 4). */
 export function declareRecoveryFailure(
   state: RecoveryTrackerState,
   nodeId: EntityId,
   minute: SimMinute,
   cfg: RecoveryTuning,
+  engine?: GameState,
 ): ObserveResult {
   if (minute < state.minute) {
     throw new RecoveryTrackerError("RECOVERY_BAD_CLOCK", "minute", `${String(minute)} < tracker clock ${String(state.minute)}`);
@@ -550,7 +600,9 @@ export function declareRecoveryFailure(
   }
   const records = cloneRecords(state.nodes);
   const transitions: RecoveryTransition[] = [];
-  openIncident(records, transitions, nodeId, minute, cfg);
+  const secondFailureNow =
+    engine !== undefined && deriveDurableImpressions(engine).windowNodeIds.has(nodeId);
+  openIncident(records, transitions, nodeId, minute, cfg, secondFailureNow);
   return Object.freeze({
     state: snapshot(Math.max(minute, state.minute), records),
     transitions: Object.freeze(transitions),
@@ -632,19 +684,51 @@ export function acceptsFailback(state: RecoveryTrackerState, nodeId: EntityId, m
   return r.phase === "recovered" && r.failbackEligibleAtMinute !== null && minute >= r.failbackEligibleAtMinute;
 }
 
-/** The amber bar (27513): "you cannot survive another failure right now".
- *  True for the whole degraded stretch (failed, recovering) and for
- *  `secondFailureWindowMinutes` after the last recovery completed. */
-export function secondFailureWindowActive(
-  state: RecoveryTrackerState,
-  nodeId: EntityId,
-  minute: SimMinute,
-  cfg: RecoveryTuning,
-): boolean {
-  const r = nodeRecovery(state, nodeId);
-  if (r.phase === "failed" || r.phase === "recovering") return true;
-  if (r.phase === "recovered" && r.recoveredAtMinute !== null) {
-    return minute - r.recoveredAtMinute < cfg.secondFailureWindowMinutes;
+/* ──────────────────── the single-authority engine read ─────────────────── */
+
+/** What the SIM AUTHORITY's `GameState.recovery` slice says, pre-shaped for
+ *  the advisory layer (ADR-0012). Windows, strikes and the degraded-set are
+ *  READ here and never re-derived from events by this module. An unwired
+ *  engine (no `recovery` key) answers EMPTY — unwired means the sim asserts
+ *  no degraded node, and the observer does not contradict its authority. */
+export interface DurableImpressions {
+  /** Nodes the engine has under a LIVE recovery window or lock. */
+  readonly windowNodeIds: ReadonlySet<EntityId>;
+  /** Strikes the engine carries per windowed node (≥2 ⇒ the second failure
+   *  has already landed inside this episode). */
+  readonly strikesByNode: ReadonlyMap<EntityId, number>;
+  /** Minute each node last struggled in the engine's episode memory. */
+  readonly lastStruggleMinuteByNode: ReadonlyMap<EntityId, SimMinute>;
+}
+
+const NO_WINDOWS: ReadonlySet<EntityId> = Object.freeze(new Set<EntityId>());
+const NO_STRIKES: ReadonlyMap<EntityId, number> = Object.freeze(new Map<EntityId, number>());
+const NO_EPISODES: ReadonlyMap<EntityId, SimMinute> = Object.freeze(new Map<EntityId, SimMinute>());
+
+export function deriveDurableImpressions(game: GameState): DurableImpressions {
+  const recovery = game.recovery;
+  if (recovery === undefined) {
+    return Object.freeze({
+      windowNodeIds: NO_WINDOWS,
+      strikesByNode: NO_STRIKES,
+      lastStruggleMinuteByNode: NO_EPISODES,
+    });
   }
-  return false;
+  const strikes = new Map<EntityId, number>();
+  for (const [nodeId, record] of recovery.windows) strikes.set(nodeId, record.strikes);
+  return Object.freeze({
+    windowNodeIds: Object.freeze(new Set<EntityId>(recovery.windows.keys())),
+    strikesByNode: Object.freeze(strikes),
+    lastStruggleMinuteByNode: recovery.lastStruggleMinute,
+  });
+}
+
+/** The amber bar (27513): "you cannot survive another failure right now" —
+ *  a PURE READ of the SIM AUTHORITY (ADR-0012): true iff the engine carries
+ *  a live recovery window or lock for the node. The observer keeps NO
+ *  window memory of its own; the pre-reconciliation observer-side tail knob
+ *  (`secondFailureWindowMinutes`) was the second, drifting authority and is
+ *  deleted — while the engine says healthy, the bar is dark, full stop. */
+export function secondFailureWindowActive(game: GameState, nodeId: EntityId): boolean {
+  return deriveDurableImpressions(game).windowNodeIds.has(nodeId);
 }

@@ -858,3 +858,23 @@ REVIEW OUTCOME: nine commits (batch-2 lanes + fix lane) — zero critical/major 
 | **total marked** | **3,589** | **3,589** |
 
 hosting_game.md line count unchanged at 35,557 — all edits in-place (5 heading lines + appendix prose), zero insertions.
+
+## WAVE-3 ADDENDUM — recovery reconciliation (2026-10-13, ADR-0012, this lane; hosting_game.md NOT touched — closeout lane owns marker edits)
+
+The §7.7 recovery half shipped as two coexisting designs — the pure OBSERVER (`6867f74`) and the stateful ENGINE (`60e464b`) — with a dual second-failure-window authority between them. ADR-0012 makes the ENGINE canonical and demotes the OBSERVER to digest-neutral advisory/opex; both shipped hosts now wire the engine behind optional config (absent = byte-identical). Statuses below are PROPOSED flips for the closeout lane, located by heading TEXT; disk markers still read as before (census unchanged: ✅290 🔧997 ⚠️1 ❌2271 📝30).
+
+| heading (disk line) | flip | disposition after ADR-0012 |
+|---|---|---|
+| The Second Failure Window (27513) | ❌→🔧 | engine windows/strikes/locks are the single authority (`GameState.recovery.windows`); the amber bar `secondFailureWindowActive` is now a pure READ of it; strikes re-anchor and lock at the safe-mode floor; no HUD timer surfacing yet |
+| Recovery is gameplay (and recovery order matters) (27530) | ❌→🔧 | ramp-back one arm per `rampMinutes` moves REAL serves via `throttleServeNodes`; observer crew allocation orders by priority/fail-time as advisory queue; player-chosen recovery order (verbs/HUD) unowned |
+| Restore service or restore redundancy? (the recovery decision nobody states) (27561) | ❌→🔧 | `restoreOptions` decision table + `RECOVERY_ACTIONS` opex menu shipped as advisory decision-support reads; nothing states the choice in HUD/play flow yet (E2b) |
+| The cold-cache thundering herd (27569) | 🔧 holds | strengthens: slow-start admission is now LIVE ground truth (`effectiveSlots` climbing = cold-cache ramp on the engine's clamped board); the cache tier itself remains absent |
+| Degradation Debt (27577) | ❌→🔧 | `degradedMinutes` accrual meter shipped observer-side; strike memory (`strikesByNode`) is engine state; catch-up-overload repayment remains unimplemented |
+| Partial restore and prioritised recovery (27612) | ❌→🔧 | partial restore is engine law (floor→full arm-by-arm, occupied arms never evicted); `setRecoveryPriority` queue override shipped advisory; player-facing prioritisation UI unowned |
+| The Failback Problem (27620) | ❌→🔧 | `acceptsFailback` hold predicate (completion + failback delay) shipped advisory on the observer's `recoveredAtMinute` anchor; secondary-site failback authority absent |
+| The Post-Mortem (screen, sheet, and progression hook) (27674) | 🔧 holds | strengthens: filing fold + single-source reputation credit (`economy/postmortem.ts`, `cfg.reputation.honestPostmortemBps` — ADR-0012 verified the observer's `markBlamelessPostmortem` mints NO money/reputation, only halves its own advisory escalation excess) — screen/progression-hook half still absent |
+| Root cause vs band-aid (27687) | ❌ holds | band-aid-vs-root tracking not implemented by either design; unchanged |
+
+UNCHANGED honestly ❌ in the same section: The Failover Handoff (27523), The cold-start dependency cycle (27549), Data loss is permanent (27596), The Corruption Horizon (27604), The Reboot Roulette (27629), The rollback one-way doors (27643), Salvage and the rebuild (27667).
+
+If the closeout lane adopts: Δ = six ❌→🔧 flips → ✅290 🔧1003 ❌2265 (total 3,589 unchanged).

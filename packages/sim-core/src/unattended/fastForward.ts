@@ -96,7 +96,7 @@ import {
   mintHandState,
   replenishAtBusinessMonth,
 } from "../pipeline/index.ts";
-import type { DefaultPipelineConfig, IntentDoorConfig, IntentReceipt } from "../pipeline/index.ts";
+import type { DefaultPipelineConfig, IntentDoorConfig, IntentReceipt, RecoveryConfig, RecoveryNotice } from "../pipeline/index.ts";
 import { createRulePhaseStep } from "../policy/index.ts";
 import { ObservedStore } from "../observed/index.ts";
 import type { EconomyState, EntryDraft, EconomyConfig, EconomyNoticeKind, RevenueColourTags } from "../economy/index.ts";
@@ -387,6 +387,15 @@ export interface RunUnattendedConfig {
    *  as `refusedSettlements` (@984759b) — so quiet weekends stay
    *  byte-identical (elasticity resolves to neutral, no extra RNG roll). */
   readonly pricing?: PriceOverrideBook;
+  /** §7.7 recovery engine (ADR-0012 wiring, lane @cdb2bc5): arming the
+   *  driver's recovery fold — struggle detection, windows, strikes, locks
+   *  and gradual-restoration throttling run inside the SIM and ride the
+   *  state digest. ABSENT ⇒ the driver never folds recovery, the state
+   *  never carries the slice, and every pre-recovery weekend is
+   *  byte-identical (digest.ts absorbs the recovery block only when
+   *  present). The observer (pipeline/recovery/tracker.ts) is NOT run
+   *  here — it is a host-side advisory layer, never a second authority. */
+  readonly recovery?: RecoveryConfig;
 }
 
 /* ═══════════════════════════ the report records ═══════════════════════════ */
@@ -470,6 +479,13 @@ export interface UnattendedReport {
    *  report, so `reportIdentity` pairs stay byte-identical). Hosts read
    *  `loanLedger`/`debt` here instead of re-running the roll loop. */
   readonly finalAttention?: AttentionState;
+  /** Recovery notices in emission order (window-opened / second-failure /
+   *  lock-engaged / episode / window-cleared) — ONLY present when the config
+   *  carried `recovery` (sparse witness law). The key rides the WIRED flag,
+   *  not `finalGame.recovery`, because the engine slice self-clears once
+   *  every window closes — an armed-but-quiet weekend must still show the
+   *  honest empty array, and every unarmed report stays byte-identical. */
+  readonly recoveryNotices?: readonly RecoveryNotice[];
 }
 
 /* ═══════════════════════════ per-tick facts + sampling ═══════════════════════════ */
@@ -958,6 +974,9 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
   const game0 = mintInitialState(config, nodes, edges);
   const driver = createTickDriver(slots, streamFor(seed, "root", 0), game0.context.clocks, {
     ...(config.door !== undefined ? { intents: config.door } : {}),
+    /* ADR-0012: absent ⇒ the key is never present ⇒ the driver folds no
+       recovery slice ⇒ byte-identical to every pre-recovery weekend. */
+    ...(config.recovery !== undefined ? { recovery: config.recovery } : {}),
   });
   const store = new ObservedStore();
   const gaugeNode = nodes[0]?.id ?? asEntityId("unattended-gauge");
@@ -1051,6 +1070,9 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
      every pre-death witness stays byte-identical. */
   const refusalWitness: RefusedSettlement[] = [];
   const deathHaltsRun = config.deathHaltsRun === true;
+  /* ADR-0012 host witness: null when unarmed (the report key must stay
+     absent); an array in emission order when the config armed the engine. */
+  const recoveryNoticeLog: RecoveryNotice[] | null = config.recovery !== undefined ? [] : null;
 
   let game = withCashMirror(game0, econ);
   /* Attention month authority (OD-6 host seam): the roll clock is the
@@ -1077,6 +1099,12 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
       expressMaxConfidence: config.expressMaxConfidence ?? UNATTENDED_EXPRESS_MAX_CONFIDENCE,
     }));
     game = result.state;
+
+    /* Recovery notices arrive on their own channel (TickResult.
+       recoveryNotices, present only when the driver was armed). */
+    if (recoveryNoticeLog !== null && result.recoveryNotices !== undefined) {
+      recoveryNoticeLog.push(...result.recoveryNotices);
+    }
 
     /* gauge: cumulative arrivals folded into an observed cell so the
        Policy Book fires on traffic (versus doctrineGauge). The cell value
@@ -1296,7 +1324,7 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
     warns.add(`INVOICE-UNCOVERABLE ×${refusals.invoiceCount} from m${refusals.invoiceFirstMinute}: an invoice settle would have driven a bucket negative — the tick's economy progress was voided and will retry; host must fund the roster (see OWNER QUESTION: economy canSettle())`);
   }
 
-  return assembleReport(seed, totalTicks, game, cashStart, stop, checkpoints, summary, hours, warns, guards, econ);
+  return assembleReport(seed, totalTicks, game, cashStart, stop, checkpoints, summary, hours, warns, guards, econ, recoveryNoticeLog);
 }
 
 /* ═══════════════════════════ report plumbing ═══════════════════════════ */
@@ -1387,6 +1415,7 @@ function assembleReport(
   warns: Set<string>,
   guards: readonly ParsedGuard[],
   econ: EconomyState | null,
+  recoveryNotices: readonly RecoveryNotice[] | null,
 ): UnattendedReport {
   const cashEnd: bigint = econ !== null ? econ.cash.free : finalGame.cash.free;
   const sortedNotices = [...summary.notices.entries()].sort((a, b) => compareCodeUnits(a[0], b[0]));
@@ -1422,6 +1451,9 @@ function assembleReport(
        pre-attention report — and every reportIdentity pair over them —
        stays byte-identical. */
     ...(finalGame.attention !== undefined ? { finalAttention: finalGame.attention } : {}),
+    /* Sparse recovery witness (see UnattendedReport.recoveryNotices): the
+       WIRED flag governs, not the self-clearing state slice. */
+    ...(recoveryNotices !== null ? { recoveryNotices: Object.freeze([...recoveryNotices]) } : {}),
   });
 }
 
