@@ -1,0 +1,322 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:dedicated",
+  "_todo": "All human strings are keys into file:packs/dedicated.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. Pack authored at file:packs/dedicated.i18n.json. Dominant verb Observe is the §1.3 'Root Is Theirs' card verbatim ('Dominant verb: Observe') — the fifth invariant verb claimed; Diagnose stays the sole unclaimed slot of the six.",
+
+  "meta": {
+    "name": "type.dedicated.name",
+    "codexSummary": "type.dedicated.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.inquiry",
+    "durationClass": "Session",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§12521 (sales-inquiry ledger row) authors the dedicated-era visitor qualitatively — slow, high-value, needs a human — and no per-inquiry patience/value scalars exist in §3.1/§3.2 for this line. Value is account-level (server/month, §6.6 'Dedicated | server/month'), loyalty is contract-level (churn 1-2%/mo, Companion A), fragility unauthored. Never forged into numbers; null + this cite per README §Never-invent-numbers."
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": [0.6, 1.0, 1.6],
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline and mail-hosting. budgetMs unauthored for dedicated: the line's clock pressure is the 4-hour hardware-replacement expectation (§1.3 card) which is a fulfillment SLA, not a visitor wait budget; the sales inquiry's patience is human-scale and doc'd only as 'slow' (§12521) — same null-per-law mail cites for its provider-side budget."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null
+    },
+    "populationEffect": false,
+    "retryAmplifies": false,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-inquiry",
+    "trustReadable": true,
+    "archetypeRefs": [],
+    "_todo": "durationClass Session per §3.1: an inquiry occupies a human slot (sales desk / tech-support seat) for its duration rather than throughput — same shape the doc gives high-touch sales ('needs a human', §12521). archetypeRefs empty by authoring law, not oversight: the nine shipped archetypes are human/machine visitors and this lane is fenced off from the registry censuses (coverage invitations.test.ts pins threats=16; g2 corpus pins the 9-archetype roster) — a dedicated-native archetype (the sales inquiry, the RMA vendor) is flagged for the registry-owner pass. retryAmplifies false: no doc'd retry loop turns inquiry volume into load on this line; the amplification the card names is abuse traffic originating FROM customer boxes (§15399 network-consequences clause), carried in threats, not visitor retry. cohortSpawn tier 3: each signed customer drags its own inquiry/support cohort — 'Technical customers with root' (§0.3 customer row). costPerInvocation per-inquiry: the metered act is the human touch (remote-hands ticket, sales reply), §5.6 'remote hands cost centre'."
+  },
+
+  "goal": {
+    "nodeType": "server-delivery",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "rack-utilization",
+      "threshold": null,
+      "_todo": "§15395 verbatim law: 'Utilization is the whole game — empty dedicated server is pure loss every month'. No utilization percentage is authored anywhere in §0.3/§1.3/§6.6 for this line (breakeven is named as a Matrix A condition, never priced), so the hold has no doc'd threshold scalar: null + this cite, and the level harness carries the race against §2.27 Matrix A's 'Utilization below breakeven'."
+    },
+    "loseCondition": {
+      "kind": "capex-stranded"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.dedicated.binding"
+  },
+
+  "scarce": {
+    "resourceId": "rack-space",
+    "meterWidget": "crash-cart-install-screen",
+    "meterBoundStat": "provisioning-time",
+    "commercialSlider": "setup-fee-level",
+    "operationalDials": [],
+    "windowGrows": false,
+    "shedOrder": "standard-p3-p0-ladder",
+    "qosAnswer": "scarce.dedicated.qos",
+    "_todo": "resourceId per §0.3 dedicated row verbatim: scarce = 'rack space + provisioning time' — rack-space is the sold-out door, provisioning-time rides the signature meter (R15). operationalDials [] by budget law, not oversight: §7.8's per-type dial roster names no dedicated dials (its dial rows assign tenant-density/oversell kin to web, rate-ladder to mail, TTL bands to DNS); inventing a fourth dial set would spend a §7.8 hook this type already burns on R15/R16/R20/R21/R22. The card's real dials — spares depth, remote-hands retainer, setup-fee level — exist as buildables/slider instead. shedOrder stays the standard ladder: §7.8's QoS-roster pass names no dedicated shed doctrine (the card's traffic/power/IPMI visibility trio rides mechanics as abuse-escalation-trio); same parameter-not-invention law game-servers cites."
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly",
+      "escalator": false,
+      "grandfathering": false
+    },
+    "seasonality": [],
+    "diurnalBaseline": "business-hours-desk",
+    "_todo": "simTimeScale ms + clock false keep the baseline pair (R18 deliberately UNCHANGED — §7.8d's time-scale pass assigns dedicated no register; its truck-roll clock is an SLA horizon measured in hours, and hours belongs to the backup line's window per §7.8d's own roster; flagged in the 3-5 budget _todo on scarce). contractTerms default monthly: §1.12 verbatim 'Dedicated is month-to-month with a setup fee' (App A terms column 'monthly-annual' rides economy.termStructure). seasonality []: no dedicated season authored (§6.6 Companion A gives churn rate, not a season); never invented. diurnalBaseline business-hours-desk: the line's arrivals are human — the sales desk and abuse desk open on a schedule the §12521 ledger row ('needs a human') implies; curve id awaits the waves-lane catalogue; PROVISIONAL-B."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.25,
+      "human": 0.15,
+      "entropic": 0.15,
+      "systemic": 0.2,
+      "customerAsThreat": 0.25,
+      "_todo": "No §2.27 Matrix C row exists for dedicated (its systemic-skip clause names only email, DNS and bulletproof), so shares are authored off the Matrix A/B rows: 'Hardware failure + truck roll' and deck mix 'hardware failure, slow provisioning, remote-hands dependency, truck rolls' (§2.27). entropic .15 is honest hardware aging (disk wear, capacitor rot) but the 16-id registry contains no entropic entry — that pressure rides the batch-failure-day envelope instead, and activeFamilies omits entropic accordingly; flagged for the registry-owner pass. malicious .25 — the customer box becomes a bot and the internet answers in kind (§15399 reflection/spam consequences); customerAsThreat .25 — 'responsible for the NETWORK consequences of what they run' + foothold abuse (§15392 opens list); systemic .20 — vendor credit line, RMA queues, batch defects (Companion C's bought-together failure); human .15 — the inquiry and ticket traffic of a high-touch line. Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "systemic",
+      "customerAsThreat"
+    ],
+    "signatureThreats": [
+      { "id": "vulnerable-plugin-compromise", "mechanical": true },
+      { "id": "open-resolver-reflection", "mechanical": true },
+      { "id": "udp-amplification-barrage", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "empty-server-spiral", "mechanical": true },
+      { "id": "mod-update-day", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "no-egress-filtering": ["open-resolver-reflection", "udp-amplification-barrage"],
+      "shared-rack-uplink": ["hoarder-noisy-neighbor"],
+      "manual-provisioning": ["ticket-avalanche-hydra"]
+    },
+    "twoFrontDraw": [
+      "cash",
+      "hands",
+      "reputation",
+      "bandwidth"
+    ],
+    "waveTable": "file:waves/g1-dedicated-first-quarter.json",
+    "_todo": "signatureThreats reuse 8 of the 16 registry ids with the dedicated framing carried here (same law and count as mail/DNS): a compromised customer box is the foothold that turns YOUR network into the attacker — §15399 verbatim responsibility for 'reflection attacks, spam, abuse complaints'; open-resolver-reflection/udp-amplification-barrage model the box conscripted into volleys it originates from your address space; hoarder-noisy-neighbor is the rack neighbour saturating the shared uplink (§0.3 'noisy neighbor' family); empty-server-spiral is the hollow-stable death the goal metric guards (§15395 'empty dedicated server is pure loss every month'); ticket-avalanche-hydra is the high-touch support load (§12521); mod-update-day lands as the fleet-wide defect day (Companion C batch failure); scanner-drizzle reads your asset tags back at you. unlockedByBuildables grounded: no-egress-filtering per §15399 network-consequences clause verbatim; shared-rack-uplink per the metered-uplink buildable; manual-provisioning per §15404's 3-hour manual install. native threat rosters await the registry-owner pass — zero registry additions from this lane."
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "gunmetal and amber",
+      "accent": "safety orange",
+      "chord": [
+        "gunmetal",
+        "brushed aluminium",
+        "safety orange",
+        "oil-stain brown",
+        "green LED"
+      ]
+    },
+    "materialPreset": "preset:gunmetal-and-workshop",
+    "visitorCostume": {
+      "hull": "pawn",
+      "propSlot": "nameplate"
+    },
+    "heroSilhouette": "asset:hero.stable-rack-line",
+    "heroObject": "stable-rack-line",
+    "meterFace": "crash-cart-install-screen",
+    "catastropheFx": "fx:rack-row-domino-outage",
+    "ambientSoundPack": "sound:sparse-fan-drone",
+    "densityMultiplier": null,
+    "arrivalRhythm": "business-hours-desk",
+    "homeAltitude": "Z1",
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.handwritten-quote",
+    "signatureMotion": "motion:install-progress-creep",
+    "signatureFrame": "frame:stable-row-of-nameplates",
+    "lodContract": {
+      "full": "asset:lod.stable-rack-line.full",
+      "icon16": "asset:lod.stable-rack-line.icon16",
+      "pip": "pip:green-led-dot",
+      "aggregate": "agg:nameplate-row-pilots",
+      "inspector": "skin.dedicated.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values', METER FIRST obeyed (meterFace authored before the rest of this block). Chord verbatim from the §1.3 'Root Is Theirs' card: 'gunmetal · brushed aluminium · safety orange · oil-stain brown · green LED'; dominant reads the card's 'The Stable'/'The Workshop' gunmetal-and-amber description, accent takes the chord's safety orange — flagged for the owner's palette ratification like Type 3/4. homeAltitude 'Z1' verbatim: 'dedicated levels run at Z1 as home altitude' (§1.3 card); detailAltitude/densityMultiplier unauthored — never invented. Hero object: the card's stable row of mismatched boxes with label-tape nameplates ('hand-made label tape', §1.3) is the silhouette; commercial artifact icon = the handwritten quote of the high-touch sales desk (§12521). Costume: hull 'pawn' is the Session-class shape primitive (§3.1 shape encodes class, never identity — game-servers precedent); identity rides the propSlot 'nameplate' (the label tape IS the customer's identity on this line). Signature motion: install-progress-creep from the BMaaS beat (§15404 3h manual -> 8min automated). Signature frame: the row of nameplates, the card's own final image. pip 'green-led-dot' + aggregate 'nameplate-row-pilots' authored per the card's LED/meter language. Catastrophe FX 'rack-row-domino-outage' and ambient 'sparse-fan-drone' are authored flags awaiting asset passes — asset ids, not prose promises."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4 era grid does not date the dedicated line; the §5.6 gate ('VPS → Dedicated gate: PXE provisioning, spares depot, IPMI fleet management, vendor credit line') is a capability prerequisite, not a year. Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass (same law Type 3/4 cite)."
+  },
+
+  "economy": {
+    "unitOfSale": "server",
+    "revenueShape": "lumpy-sticky",
+    "marginProfile": "medium",
+    "cashTiming": "positive-ccc-60-120d",
+    "termStructure": {
+      "typical": "monthly-annual",
+      "churn": "1-2-pct-mo"
+    },
+    "cacProfile": "direct-sales-300-900-ttp-3-6mo",
+    "ticketsPerCustomer": 0.275,
+    "signatureCost": "hardware-capex",
+    "badMonth": "economy.dedicated.bad-month",
+    "fifthAxisScore": {
+      "metric": "rack-utilization",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.3 fifth-axis table carries NO dedicated row (its lines score density, tick budget, inbox placement, resolution success) — metric authored from the §15395 verbatim law 'Utilization is the whole game', weight unauthored per R42 (OD-14 fifth-axis rows may stay null; never invented)."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false
+    },
+    "_todo": "§6.6 rows verbatim: Dedicated | 'server/month' | 'lumpy, sticky' | margin 'medium' | cash monthly/annual | signature cost 'hardware capex'. marginProfile tension recorded honestly: §6.6 prices the margin column 'medium' while the §1.3 card says 'low margin %, high revenue per box' — the doc's own two registers (finance table vs card voice); the machine reads the table, the card voice rides type.dedicated.codex. cashTiming from Companion A: 'CCC +60 to +120 days (hardware first)' rendered positive (the customer precommits term while hardware capex leads). termStructure/churn 1-2%/mo + monthly-annual from Companion A verbatim; §1.12's 'month-to-month with a setup fee' is the default leg. cacProfile from Companion B verbatim: CAC $300-900, time-to-profit 3-6 months, direct-sales motion (the only sibling line with a PRICED CAC row — no cac.*.todo placeholder needed). ticketsPerCustomer 0.275 = midpoint of Companion B's authored 0.15-0.4 tickets/customer/month band, same midpoint law baseline used for its 0.3-0.6 band. realismToggles both false: p95 billing is the CDN line's doc'd law (§4.x), dedicated bills the box, not the percentile; demand charges unauthored for this line."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "dedicated" },
+      { "archetype": "two-face-rack", "skin": "dedicated" },
+      { "archetype": "control-plane", "skin": "ipmi-console" }
+    ],
+    "distinct": [
+      "pxe-provisioning-pipeline",
+      "ipmi-fleet-console",
+      "spares-depot",
+      "crash-cart",
+      "asset-tag-register",
+      "metered-rack-uplink",
+      "rma-warranty-desk"
+    ],
+    "nonPhysical": [
+      "remote-hands-contract",
+      "vendor-credit-line"
+    ],
+    "_todo": "20% palette law honoured: three shared archetype instances (concurrency-pool = the desk's open-inquiry pool skinned, two-face-rack = the stable's front-bezel/asset-tag face per §1.3's 'two-face authored back-view is canonical for rack-back verbs', control-plane in its ipmi-console skin = the keyhole itself) + seven distinct hardware objects + two nonPhysical contracts, every name grounded: PXE/spares depot/IPMI fleet management/vendor credit line verbatim from the §5.6 gate; crash cart + remote hands from the §1.3 card and §5.6 cost-centre clause; asset-tag register and metered rack uplink from the card's asset-tag imagery and the shared-uplink threat unlock; RMA warranty desk from the Companion C batch-failure beat."
+  },
+
+  "control": {
+    "pips": {
+      "hardware": 1,
+      "software": 0,
+      "network": 1,
+      "data": 0,
+      "_todo": "§7.8f verbatim: 'Dedicated = hardware and network' — the two agency faces stay live, software and data pips are the customer's side of the keyhole. This is the doc authoring a pip row for a non-shared-hosting line; the sibling null-rows cite 'never invented', this row cites its source."
+    },
+    "keyhole": true,
+    "unclickableObjects": true,
+    "_todo": "keyhole + unclickableObjects per the §1.3 card verbatim: 'You see traffic, power state, and IPMI console... email, null-route, power-off via IPMI. That's it. A level entirely about acting through a keyhole.' The card's own §7.8 interaction note: 'Interacts with: §7.8 (keyhole mode)'."
+  },
+
+  "mechanics": [
+    "ipmi-keyhole-visibility",
+    "abuse-escalation-trio",
+    "spares-depot-parity",
+    "truck-roll-clock",
+    "setup-fee-economics",
+    "utilization-breakeven",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Observe",
+    "transfers": [],
+    "_todo": "dominant 'Observe' verbatim from the §1.3 card's Ruleset line — fifth of the six invariant verbs claimed (Triage/Place & Connect/Tune/Commit shipped; Diagnose remains open). transfers [] by authoring law: §1.9's Portable Skill table carries NO dedicated row, and the lesson this line teaches — 'every unit of agency you remove must be replaced with two units of visibility' (§7.8f) — is the type's own keyhole doctrine, not a doc'd cross-type transfer. Attributing the colo/vps rows here would be invention; flagged for the §1.9 table-owner pass."
+  },
+
+  "relations": {
+    "synergies": [],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["pxe-provisioning", "spares-depot", "ipmi-fleet-management", "vendor-credit-line"],
+          "_todo": "§5.6 gate verbatim: 'VPS → Dedicated gate: PXE provisioning, spares depot, IPMI fleet management, vendor credit line. Higher ARPU, inventory risk, remote hands cost centre.' All four named legs ride one tech set — the doc states them conjunctively, with no alt route authored."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {},
+      "_todo": "pivots.to left empty honestly: the §5.6 'Dedicated → Colo gate: more rack space than servers' names a pivot destination the corpus has no bundle for — same law DNS cites for 'then CDN' (a gate clause awaits its bundle, never invented as a pivot row). customerOverlap/hardwareReuse/skillTransfer/regulatoryDelta numbers are unauthored for every dedicated pair in §5.6 regardless."
+    },
+    "masteryBuff": "relations.dedicated.mastery",
+    "distillate": "relations.dedicated.distillate",
+    "_todo": "synergies []: §0.2's line-synergy passages ('DNS + everything' etc.) carry no dedicated row — 'Hosting → Dedicated' is §5.6's gate lattice (rides unlocks), not a priced synergy; antagonisms []: the doc ships no dedicated exclusion row (the uplink contention is modelled as the hoarder unlock, not a cross-type ban). Both empties are never-invent-numbers calls flagged for the relations-owner pass."
+  },
+
+  "ticketPack": "file:packs/dedicated.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.dedicated.runs-out",
+    "killsYou": "handover.dedicated.kills-you",
+    "customerWants": "handover.dedicated.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "oversell-ratio",
+      "alias": "rack-occupancy",
+      "line": "rosetta.dedicated.occupancy"
+    },
+    {
+      "canonical": "triage-window",
+      "alias": "ipmi-power-cycle",
+      "line": "rosetta.dedicated.keyhole"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Diagnose",
+      "Endure",
+      "Escort",
+      "Hold-Without-Hands"
+    ],
+    "analogues": {
+      "truck-roll-race": "scenarios.dedicated.truck-roll-race",
+      "hollow-stable": "scenarios.dedicated.hollow-stable",
+      "foothold-abuse": "scenarios.dedicated.foothold-abuse"
+    }
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-dedicated-first-quarter",
+  "type": "official:dedicated",
+  "purpose": "First-quarter wave slice for the fifth Ruleset Card — the variety-engine proof (5 of the 20-type launch canon, OD-14(a)). Slice shape mirrors the four shipped g1 siblings: a probe-drizzle opening on a sales-desk baseline, an amplification volley as the surprise-with-composition beat, a hollow-stable trough where the real enemy is your own empty racks, and a finale built on the line's authored cruelty ('Utilization is the whole game — empty dedicated server is pure loss every month', §15395). Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "business-hours-desk",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. The dedicated line's arrivals are human-scale — the sales desk and abuse desk of a high-touch line (§12521 'slow / high-value / needs a human') — but no hour or amplitude is authored for it anywhere in §6.6/§1.3; curve id and both numbers await the waves-lane curve catalogue; PROVISIONAL-B.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "batch-failure-day",
+      "kind": "threat",
+      "overWaves": [4, 5],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "rma-queue-tail" },
+      "amplitude": null,
+      "composition": ["mod-update-day", "empty-server-spiral"],
+      "telegraph": "the first RMA reads as bad luck by serial number; the fifth in a week reads as a purchase order you signed — the batch defect was bought, not struck (§6.6 Companion C)",
+      "source": "§6.6 Companion C dedicated row verbatim: bad month = 'a hardware batch failure across gear you bought together'; §2.27 Matrix A dedicated deck 'hardware failure, slow provisioning, remote-hands dependency, truck rolls'",
+      "compoundWave": "authored so INVENTORY is the scarce lung, not throughput: every dead box drains the spares depot, every drained shelf extends the truck-roll clock, and the hollow racks keep billing nothing while the capex keeps depreciating (§15395)",
+      "_todo": "batch defect rate and spares-depot drain math unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "truck-roll-clock",
+      "kind": "threat",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "spare-swapped-tail" },
+      "amplitude": null,
+      "telegraph": "the volley lands and the first failure is a promise you can watch: '4-hour hardware-replacement expectations' (§1.3) — the meter is the crash-cart screen, and the clock that kills you starts when the LED goes amber",
+      "source": "§1.3 'Root Is Theirs' card: '4-hour hardware-replacement expectations'; §5.6 'remote hands cost centre' is the same clock priced",
+      "compoundWave": "the volley's twin face on this line: your customer's box is conscripted into the barrage (§15399 'responsible for the NETWORK consequences of what they run') while your own spare is still in a van",
+      "_todo": "volley volume → PPS/rack-power pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "hollow-stable-carry",
+      "kind": "customer",
+      "overWaves": [3],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "contract-signed" },
+      "amplitude": null,
+      "telegraph": "the trough's silence is the beat — arrivals thin, the row of nameplates keeps growing dark squares, and nothing rings: on this line the quiet IS the alarm",
+      "source": "§15395 verbatim: 'Utilization is the whole game — empty dedicated server is pure loss every month'; §2.27 Matrix A dedicated: 'Utilization below breakeven → Capex stranded'",
+      "_todo": "breakeven utilization percentage unauthored (Matrix A names the condition, prices no number — same honesty law as the goal threshold's null); PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is the scanner drizzle reading nameplate rows and asset tags — the stable's first visitor is nobody's ticket, and the sales desk signs the quarter's first box into the dark row it will have to fill.",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["hands", "reputation"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the conscription volley, early and double-faced. Two-Front (§2.24): the barrage spends bandwidth (volumes straight into the metered rack uplink) AND reputation (the abuse desk files against YOUR address space because a customer box with root is answering with reflection — §15399 verbatim: 'responsible for the NETWORK consequences of what they run (reflection attacks, spam, abuse complaints)'). The keyhole offers exactly three verbs into the storm: email, null-route, power-off via IPMI (§1.3) — every one of them spends hands, and the truck-roll clock envelope rides this wave's failures.",
+      "entries": [
+        { "threat": "udp-amplification-barrage", "role": "Tank", "pressurePct": 60, "band": "storm" },
+        { "threat": "open-resolver-reflection", "role": "Parasite", "pressurePct": 40, "band": "weather" }
+      ],
+      "denominations": ["bandwidth", "reputation"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS the spares depot."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the PXE pipeline, the second spares shelf, the remote-hands retainer all get their window here. But on the dedicated line the drop is not clean air — it is the hollow stable: the abandonment spiral (Healer/Spawner) is empty servers chaining into empty racks while the capex depreciates underneath them (§15395 'empty dedicated server is pure loss every month'), and the neighbour hoarder keeps spending your shared uplink whether the boxes are busy or not. Two fronts: cash x hands — quoting new business while answering the desk is the quarter's real throttle.",
+      "entries": [
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 60, "band": "entropy" },
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 40, "band": "weather" }
+      ],
+      "denominations": ["cash", "hands"]
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, dedicated variant: the batch-failure day lands — the same defect walks down a row of boxes bought together (Splitter debuts here, the every-4th-wave NEW ROLE beat; unseen in waves 1-3) — and the high-touch ticket avalanche (Swarm, second fresh role) arrives inside the same incident window, because every RMA is a human conversation on this line (§12521), so the second-incident multiplier applies (stated openly in the Codex, §2.24). Two fronts: data-integrity (the rebuild template that poisons builds — §15404 'bad template poisons builds' — and the customer's own root-held box you are forbidden to touch) x hands (remote-hands dependency, the cost centre the §5.6 gate named).",
+      "entries": [
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 55, "band": "hunter" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["data-integrity", "hands"],
+      "secondIncident": "ticket avalanche arrives inside the batch-failure incident window -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the line's cruelty, mechanised: the batch defect keeps walking (Splitter carry), the conscripted customer box answers the pingback echo with volume it never agreed to sell (Parasite — §15399's abuse-complaint fly-in made load), and the hollow stable's spiral (Healer/Spawner) compounds both, because every RMA'd box that stays dead is a nameplate over a dark square AND a truck roll spent. Hard wave draws TWO fronts — reputation x cash — per §2.24: the upstream notices arrive addressed to your ASN while the utilization the win-condition holds keeps sinking. The signature moment fires inside this wave if the spares shelf ran dry all quarter: the 4-hour replacement promise (§1.3) meeting a queue of five boxes and one van. Win check: rack utilization held above its unauthored breakeven across the window while the stable stayed quiet enough to hear the fans.",
+      "entries": [
+        { "threat": "xmlrpc-pingback-amplifier", "role": "Parasite", "pressurePct": 40, "band": "storm" },
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 30, "band": "entropy" },
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 30, "band": "hunter" }
+      ],
+      "denominations": ["reputation", "cash"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}

@@ -19,17 +19,20 @@ types/shared-web.json               anchor type 1 ("The Mass Host" / Cabinet 14)
 types/game-servers.json             anchor type 2 ("Prime Time") — G6 co-anchor: ms scale + permanent incident clock
 types/mail-hosting.json             type 3 ("The Post Office") — variety-engine proof: outbound defense, reputation scarcity, dominant verb Tune
 types/dns-hosting.json              type 4 ("The Signpost Network") — variety-engine proof: correctness scarcity, anycast-PoP capacity, dominant verb Commit
+types/dedicated.json                type 5 ("Root Is Theirs") — variety-engine proof: keyhole agency, rack-space scarcity, dominant verb Observe
 palettes/shared-80.json             the named home of buildables.paletteRef — 4 engine-backed shared archetypes (concurrency-pool, two-face-rack, control-plane, matchmaker) + the R61 ~15-slot verb-changer reserve accounting
 waves/g1-shared-web-first-quarter.json  seeded wave slice for gates G1/G5
 waves/g1-game-servers-first-quarter.json  seeded wave slice for gate G6 (same law set, type-specific DATA only)
 waves/g1-mail-hosting-first-quarter.json  type-3 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
 waves/g1-dns-hosting-first-quarter.json  type-4 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
-threats/registry-core.json          16 mechanical threat entries (mail-hosting and dns-hosting each reuse 8 existing ids; native threat rosters await the registry-owner pass — the census pins live in sibling tests, see Type 3/4 notes)
-visitors/archetypes-core.json       9 visitor archetypes (mail-hosting and dns-hosting reference NONE — their visitors are the message / the query itself; see Type 3/4 notes)
+waves/g1-dedicated-first-quarter.json  type-5 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
+threats/registry-core.json          16 mechanical threat entries (mail-hosting, dns-hosting and dedicated each reuse 8 existing ids; native threat rosters await the registry-owner pass — the census pins live in sibling tests, see Type 3/4/5 notes)
+visitors/archetypes-core.json       9 visitor archetypes (mail-hosting, dns-hosting and dedicated reference NONE — their visitors are the message / the query / the sales inquiry itself; see Type 3/4/5 notes)
 packs/shared-web.i18n.json          ticket pack for official:shared-web — 103 grammar templates, decision 42 / flavour 61
 packs/game.i18n.json                ticket pack for official:game-servers — 75 grammar templates, decision 34 / flavour 41
 packs/mail-hosting.i18n.json        ticket pack for official:mail-hosting — 63 grammar templates, decision 32 / flavour 31
 packs/dns-hosting.i18n.json         ticket pack for official:dns-hosting — 65 grammar templates, decision 33 / flavour 32
+packs/dedicated.i18n.json           ticket pack for official:dedicated — 66 grammar templates, decision 34 / flavour 32
 script/validate.mjs                 Node-stdlib structural validator (no npm deps)
 ```
 
@@ -66,6 +69,35 @@ registry additions, proto `THREAT_CATALOG` untouched. Loader lint: 5 of 9 §7.8
 hooks changed vs the anchor (within the 3–5 budget), THREE_CHANGE/VERB_SHIFT
 clean against all three siblings, waves contentInspector zero findings. The
 slice ships WITHOUT a rules block, same law as Type 3.
+
+### Type 5 notes (official:dedicated, 2026-10-13)
+
+Chosen over VoIP/object-storage because the §1.3 "Root Is Theirs" dedicated card
+is the only remaining candidate whose Ruleset-Card line names an unclaimed
+invariant verb verbatim: **Observe** (distinct from Triage / Place & Connect /
+Tune / Commit). This exhausts the six-verb census for card-grounded authoring:
+the Trunk Group (VoIP) and Eleven Nines (object storage) cards ALSO name
+Observe — shipping either after dedicated would trip the pairwise VERB_SHIFT
+error ("merge it as a scenario, not a type"), and no §1.3 card names **Diagnose**
+as a dominant verb. So the launch canon's type 6+ is owner-gapped behind
+ADR-0005 per-tier verb extensions (or new authored cards), not behind this
+lane. Scarce = rack space + provisioning time (§0.3 verbatim pair); fatal =
+"Capex stranded" (§2.27 Matrix A dedicated row); customer = "Technical customers
+with root"; unit = server (§6.6 Dedicated row, the only sibling with a PRICED
+CAC band — Companion B $300-900/3-6mo ships as a real cacProfile, no
+`cac.*.todo` placeholder). Win = hold rack utilization (§15395 "Utilization is
+the whole game"; threshold null — Matrix A names breakeven, prices none).
+Same two honest limits as Types 3/4: `visitor.archetypeRefs` `[]` (the visitor
+is the sales/support inquiry itself) and `signatureThreats` reuses 8 of the 16
+registry ids with the dedicated framing in `_todo` cites — zero registry
+additions. Additionally `verbs.transfers` ships `[]`: the §1.9 Portable Skill
+table carries no dedicated row and attributing a neighbour's row would be
+invention (bundle `verbs._todo`). Loader lint: 5 of 9 §7.8 hooks changed vs the
+anchor (R15 meter-swap, R16 commercial-slider, R20 control-granularity — the
+doc's only authored non-shared pip row, §7.8f "Dedicated = hardware and
+network" — R21 keyhole-mode verbatim, R22 mechanics), THREE_CHANGE/VERB_SHIFT
+clean against all four siblings, waves contentInspector zero findings. The
+slice ships WITHOUT a rules block, same law as Types 3/4.
 
 ## Validate
 
@@ -107,7 +139,7 @@ are approved, superseding the ≤60-per-pack task-line guidance (the validator k
 floor and sets no ceiling; most provenance cites are §9.3 verbatim doc seeds, so
 trimming would delete doc-mandated content). Pack `_todo` markers
 print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
-(108 since the type-4 dns-hosting authoring pass; 84 at type-3, 63 at wave-1) is untouched by
+(133 since the type-5 dedicated authoring pass; 108 at type-4, 84 at type-3, 63 at wave-1) is untouched by
 pack authoring — no test pins the printed number, though sibling lane memory
 quotes the wave-1 figure.
 
@@ -115,11 +147,11 @@ quotes the wave-1 figure.
 
 | Law | Source | In practice here |
 |---|---|---|
-| **Three-Change** | §0.2 | A type ships only if ≥3 of the six Ruleset-Card slots change vs existing types. shared-web and game-servers differ on Unit, Scarce, Patience-Analog, Threat-Mix, Look (5 of 6). mail-hosting differs on Unit (message), Scarce (ip-reputation), Goal (recipient-inbox), Threat-Mix and Look — loader lint reports 5 of 9 §7.8 hooks changed vs the anchor (within the 3–5 budget). dns-hosting differs on Unit (query), Scarce (anycast-pop-capacity), Goal (authoritative-answer), Threat-Mix and Look — likewise 5 of 9 hooks changed vs the anchor, clean pairwise against all three siblings. |
-| **Verb-Shift** | R4, §0.2 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect**, mail-hosting = **Tune**, dns-hosting = **Commit** (§1.3 card verbatim; one of the six invariant verbs, never a 7th, §1.9). |
+| **Three-Change** | §0.2 | A type ships only if ≥3 of the six Ruleset-Card slots change vs existing types. shared-web and game-servers differ on Unit, Scarce, Patience-Analog, Threat-Mix, Look (5 of 6). mail-hosting differs on Unit (message), Scarce (ip-reputation), Goal (recipient-inbox), Threat-Mix and Look — loader lint reports 5 of 9 §7.8 hooks changed vs the anchor (within the 3–5 budget). dns-hosting differs on Unit (query), Scarce (anycast-pop-capacity), Goal (authoritative-answer), Threat-Mix and Look — likewise 5 of 9 hooks changed vs the anchor, clean pairwise against all three siblings. dedicated differs on Unit (inquiry), Scarce (rack-space), Goal (server-delivery), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all four siblings. |
+| **Verb-Shift** | R4, §0.2 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect**, mail-hosting = **Tune**, dns-hosting = **Commit**, dedicated = **Observe** (§1.3 card verbatim; one of the six invariant verbs, never a 7th, §1.9). Diagnose remains the sole unclaimed slot — see Type 5 notes for the verb-exhaustion constraint on types 6+. |
 | **Rosetta Card** | R11 | One canonical engine metric + one player-language alias + one joining line. Both anchors carry doc-verbatim lines (table below). |
 | **3–5 budget** (handover) | R10, §1.9 | `handoverNote` is EXACTLY 3 keys: runsOut / killsYou / customerWants, diegetic sheet-on-desk voice. Schema enforces maxProperties 3. |
-| **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"` — authored in `palettes/shared-80.json`, validator-enforced). All three shipped types compose from the shared `concurrency-pool` + `two-face-rack` archetypes (plus `control-plane` in two skins, web's cPanel and mail's webmail); the `matchmaker` archetype is the R61 reserve's first shipped verb-changer (14 of 15 slots remain unbuilt). |
+| **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"` — authored in `palettes/shared-80.json`, validator-enforced). All shipped types compose from the shared `concurrency-pool` + `two-face-rack` archetypes (plus `control-plane` in three skins, web's cPanel, mail's webmail and dedicated's ipmi-console); the `matchmaker` archetype is the R61 reserve's first shipped verb-changer (14 of 15 slots remain unbuilt). |
 | **Five-Asset Skin Kit** | R48/R49/R53, §8.10 | Exactly: 1 palette (accent+secondary) · 2 visitor costume (hull+prop) · 3 ONE hero silhouette · 4 bespoke meter face · 5 bespoke catastrophe FX (+ ambient sound swap). Everything else = parameters of shared systems ("five assets plus eight parameter values"). Author order: METER FIRST. |
 | **Localisation law** | R46 + owner directive | **ALL human strings are i18n keys** resolved through the bundle's `ticketPack` file. No literal prose, no joke text in bundles. The packs ARE the authored English: `packs/*.i18n.json` carry every string, split into a sober `decision` namespace (shown while deciding or losing — §9.3 clauses 2–3) and a comedic `flavour` namespace (quiet surfaces only); the validator enforces the wall by root vocabulary and refuses any bundle-referenced key that strays into flavour. |
 | **Pruning rule R36** | WS-3, §2.12 | A threat earns a mechanical slot (stats + counters) only if it CHANGES THE PLAYER'S VERB, not just the noun. Everything else is Codex flavour attached to a mechanical entry. |
@@ -205,6 +237,14 @@ here and the pack's `decision` value.
 | `economy.dns-hosting.bad-month` | "An amplification incident originating from you." | §6.6 Companion C |
 | `goal.dns-hosting.binding` | "Every TTL choice is a bet: low buys agility and you pay for it in volume forever; high is a mistake that propagates for hours and you cannot take it back." | §1.3 |
 | `type.dns-hosting.name` | "The Signpost Network" | §1.3 |
+| `handover.dedicated.runs-out` | "Your rack space and your provisioning time. Sold-out is a door you can price; a dead box on a three-hour install path is a countdown you cannot." | §0.3 |
+| `handover.dedicated.kills-you` | "Capex stranded in dark rows: the batch you bought together failing apart, and utilization that never crossed breakeven while the lease depreciated underneath." | §2.27 Matrix A/§6.6 Companion C |
+| `handover.dedicated.customer-wants` | "Root, and the four-hour promise. They came for the whole box; they stay for the van that actually shows up." | §0.3/§1.3 |
+| `rosetta.dedicated.occupancy` | "Rack occupancy is the oversell ratio seen from the empty side: capacity already paid for and sold to nobody, depreciating in the dark." | §15395/§1.9 |
+| `rosetta.dedicated.keyhole` | "The IPMI power-cycle is the triage window aimed at a machine instead of a queue — every unit of agency you remove must be replaced with two units of visibility." | §7.8f/§1.9 |
+| `economy.dedicated.bad-month` | "A hardware batch failure across gear you bought together." | §6.6 Companion C |
+| `goal.dedicated.binding` | "An empty dedicated server is pure loss every month, and the only hands that can fill a rack are the same hands that answer for the abuse it commits." | §15395/§15399 |
+| `type.dedicated.name` | "Root Is Theirs" | §1.3 |
 
 ## How to add a type
 
