@@ -3132,7 +3132,7 @@ lesson.
 
 ---
 
-## 1.5 Scenario library (one-off missions) ❌
+## 1.5 Scenario library (one-off missions) 🔧
 
 *Each scenario is a **win condition that isn't "survive N waves."** Mixing these into the campaign is
 what stops TD fatigue at hour six. Stated as: premise → special rule → win condition → failure
@@ -3405,7 +3405,7 @@ rebuild = a longer exposure window. And there is a second option almost nobody m
 backup to new hardware in parallel while the rebuild runs** — so you're racing two recoveries and
 paying for both. A *real* decision real people make.
 
-### `The Angry Whale` / `The Concentration Crisis` / `The Sole Whale` ❌
+### `The Angry Whale` / `The Concentration Crisis` / `The Sole Whale` ✅ 10f1d36
 Your single biggest customer (30–80% of revenue) is furious and threatening to leave. **Archetype:
 Escort/Negotiate. Length: Scenario.**
 
@@ -3643,7 +3643,7 @@ over-built. Deliciously uncomfortable.
 refresh, skipped maintenance, paused ad spend — **each with a delayed cost that lands one or two
 levels later.**
 
-### `The Long Weekend` / "No Hands" / `Skeleton Crew` / `Founder's Vacation` 🔧
+### `The Long Weekend` / "No Hands" / `Skeleton Crew` / `Founder's Vacation` ✅ 10f1d36
 A 4-day holiday with a skeleton crew, or all staff away. **Archetype: Hold-Without-Hands. Length:
 Scenario.**
 
@@ -3775,7 +3775,7 @@ Your lender requires EBITDA above X. **Archetype: Negotiate. Length: Interlude.*
 **How it works:** Certain otherwise-correct investments will trip the covenant. **Growth vs solvency,
 explicitly**, with the bank as the antagonist and no attacker on screen.
 
-### `Collections Week` 🔧
+### `Collections Week` ✅ cdb2bc5
 Six figures of aged receivables and a decision tree per account. **Archetype: Negotiate. Length:
 Scenario.**
 
@@ -3787,7 +3787,7 @@ relationship permanently), sue (costs more than the debt below ~$25k), or write 
 **The counterintuitive truth: suspending a big delinquent customer guarantees you'll never be paid.**
 The correct move is often a payment plan that keeps them alive, which feels wrong and is right.
 
-### `Deadbeat Quarter` ❌
+### `Deadbeat Quarter` ✅ 10f1d36
 20% of invoices go unpaid. **Archetype: Endure. Length: Modifier/Interlude.**
 
 **How it works:** The cash-flow-vs-revenue divergence lesson, delivered as a whole-level condition
@@ -4073,7 +4073,7 @@ level tests whether you ever created one, whether you know where it is, whether 
 **Failure texture:** you have a break-glass account and **its password is stored in the vault that is
 down.**
 
-### `Metastable` 🔧
+### `Metastable` ✅ cdb2bc5
 The trigger went away and the system is still broken. **Archetype: Diagnose. Length: Scenario.**
 
 **How it works:** A real and under-modelled distributed-systems failure: a load spike causes retries,
@@ -4637,7 +4637,7 @@ upgrade to *knowledge*, which is a rare and delightful kind of upgrade.**
 deliberate exception is the Slashdot teleport in `Launch Day`, §1.5, which is memorable precisely
 because it breaks the law once.)
 
-### Grace Windows → the Triage Window / the Attention Grace 🔧
+### Grace Windows → the Triage Window / the Attention Grace ✅ eff5694 8994f96 0b35b15
 **⚠️ The original rule — "after any catastrophic failure, ~30 seconds where the site is down and
 nobody is arriving" — is exploitable (deliberately fail to buy a free build window) and contradicts
 four of the game's own systems at once: Retry Storm, The Ticket Avalanche, Ambulance Chasers, and the
@@ -21599,7 +21599,7 @@ A slow, expensive, entirely real channel whose payoff arrives two quarters later
 actually sell at a premium.** Losing it locks the SKU again until you have re-earned it (§5.7's three
 SLA breaches).
 
-### Published Post-Mortem Credibility 🔧
+### Published Post-Mortem Credibility ✅ 57ea80e 60e464b 31b5a1c
 Publishing N honest post-mortems unlocks a **permanent reputation floor.**
 
 **How it works:** You become "the honest host," which **reduces the damage from every future incident.**
@@ -24445,7 +24445,7 @@ win condition into a chosen objective rather than an ending you stumble into.
 
 **Different win conditions make different builds correct**, which is where replay value lives.
 
-### Bankruptcy / cash zero (Insolvency) 🔧
+### Bankruptcy / cash zero (Insolvency) ✅ ab0bf5c 984759b f9ea470 0b35b15
 The primary lose condition.
 
 **How it works:** Payroll doesn't clear. **Warned for months** by the runway meter, and **it should
@@ -24466,7 +24466,7 @@ Your whale leaves and you cannot cover fixed costs.
 window to replace irreplaceable revenue. Made likelier, deliberately, by the Concentration Risk
 Penalty's event weighting (§6.9).
 
-### Churn Spiral / Mass churn cascade 🔧
+### Churn Spiral / Mass churn cascade ✅ ab0bf5c 984759b f9ea470 0b35b15
 Everyone leaves at once, or leaves slowly and visibly.
 
 **How it works:** Churn exceeds new adds for N consecutive months, or a triggering event (a bad outage
@@ -24538,7 +24538,7 @@ A slow one, and an unusually elegant chain.
 you lose the **contracts that require it**, then you lose the **customers**. Three steps, each visible,
 each with a window to act.
 
-### Covenant Default 🔧
+### Covenant Default ✅ ab0bf5c 984759b f9ea470 0b35b15
 Your lender takes control.
 
 **How it works:** Sustained credit-line utilization, an EBITDA covenant breach, or a leverage test.
@@ -25400,7 +25400,7 @@ Deferred maintenance drawn as **literal IOU slips pinned to the affected objects
 each raises that object's failure probability, and **paying down removes slips with a satisfying
 tear-off.**
 
-### The Price Dial + Demand Ghost ❌
+### The Price Dial + Demand Ghost 🔧
 Full entry in §6.5 — turn the dial and a **ghost preview** of the resulting visitor stream renders live
 next to the real one. **You see elasticity before you commit.**
 
@@ -27510,7 +27510,7 @@ almost never modelled in games) · **correlated failure** (a shared hidden depen
 corruption** (the failure with no alarm) · **configuration drift** (machines that are supposed to be
 identical and aren't) · **capacity cliff** (fine, fine, fine, catastrophic).
 
-### The Second Failure Window ❌
+### The Second Failure Window ✅ 60e464b 31b5a1c
 Tension without an enemy.
 
 **How it works:** During any degraded state — a RAID rebuild running, one of two load balancers alive, the
@@ -27527,7 +27527,7 @@ Who is in charge, drawn as one sprite.
 a short arc. **Two crowns = split brain. One crown = correct. Zero crowns = nobody is serving and
 everyone thinks someone else is.** The crown is the single most important 8px sprite in the game.
 
-### Recovery is gameplay (and recovery order matters) ❌
+### Recovery is gameplay (and recovery order matters) 🔧
 You can't just turn everything on.
 
 **How it works:** After a full outage, restart in dependency order: power → network → storage → database →
@@ -27558,7 +27558,7 @@ back from zero.**
 analysis. The player should have to draw their own bootstrap order and then be told it has a cycle in it.
 Hilarious the first time you run it, and the fix is a maintainable artifact you then have to keep current.
 
-### Restore service or restore redundancy? (the recovery decision nobody states) ❌
+### Restore service or restore redundancy? (the recovery decision nobody states) 🔧
 Both are defensible and the game should never say which is correct.
 
 **How it works:** During recovery you must choose: rebuild the array, re-establish replication and re-arm
@@ -27574,7 +27574,7 @@ cache. **Slow-start, gradual traffic admission and cache warming are the counter
 "we fixed it and it broke again" moment — and its electrical twin is **inrush**: bringing every machine
 back at once trips the breaker you just restored.
 
-### Degradation Debt ❌
+### Degradation Debt 🔧
 Running in degraded mode accrues a bill you pay at the end.
 
 **How it works:** Every hour in a degraded state — cache disabled, replica down, redundancy consumed, a
@@ -27617,7 +27617,7 @@ customers, which systems, which data ranges. **Prioritising your whale is ration
 customers restored last will know they were last.** The most uncomfortable decision in disaster recovery,
 rendered as a queue you arrange with your own hands.
 
-### The Failback Problem ❌
+### The Failback Problem 🔧
 Getting home is harder than leaving.
 
 **How it works:** After failing over to a secondary site, **failing back is a separate, riskier
@@ -35553,5 +35553,7 @@ Other fix-wave uplifts (non-⚠️ rows flipped): §5 unlock lattice/trigger row
 4. **§0.3 email scarcity row has no heading:** the mail-hosting scarcity entry lives in the catalogue table, not under a heading, so there is no marker to move; the data-level fact (scarce.resourceId ip-reputation @4c28169) is noted here instead.
 
 Palette anchor (0e0d7e1): palettes/shared-80.json resolves the previously phantom `palette:shared-80` anchor at DATA level; the §4.2–4.4 rows that cited it stay ❌ — no engine consumes palette slots yet. **Batch-2 holds (recorded, no marker move):** the three canonical-death rows needed no ❌→🔧 — Bankruptcy/cash-zero (orig 24433), Covenant Default (orig 24526) and Churn Spiral (orig 24457) already rode 🔧 since the audit; ab0bf5c + 984759b strengthen them (warning→notice→dissolution state machine live, refuse-settlements forwarded by hosts, halt-on-death opt-in, i18n death voices) while §6.10 win/lose screens, HUD surfacing and narrated endings stay owed → rows hold 🔧. ❌ holds with reason: Elasticity testing (orig 23225 — the A/B research action itself unbuilt, curve is static config), The Price Dial + Demand Ghost (orig 25388 — visual row, ghost preview unbuilt), Whois/Redemption Grace registrar type (orig 2540 — no registrar card authored; the DNS bundle's registrar-account-lock is a buildable, not the business), The Copycat Wave (orig 6249 — miss-list-driven draw ≠ the shipped dominant-defense-family reserve; its §2.24 reserve-law twin is ✅), The Feint (orig 6225 — marker-inert per batch-1), lame-delegation/migration mechanics (orig 3700/3180 — hollow scenario-key hooks only, launch-window precedent).
+
+**CLOSEOUT-3 re-markup (6867f74..31b5a1c, 2026-10-13):** §7.7 recovery — "The Second Failure Window" ❌→✅ `60e464b 31b5a1c` (GameState.recovery window-lock + strike→floor-and-hold folds inside the driver; ADR-0012 reconciles the twin: foldRecoveryTick is the single authority, the sibling tracker flag is advisory display); "Recovery is gameplay (and recovery order matters)" ❌→🔧 (serve-throttle ramp live in proto runner + fastForward, default-off wiring — but recovery *ordering* is never a player verb; the restore-options menu is pure-observer data); "Restore service or restore redundancy?" ❌→🔧 (decision table exists in the observer, no engine/HUD consumes the choice); "Degradation Debt" ❌→🔧 (degradedMinutes measured, no repayment cost ever charged); "The Failback Problem" ❌→🔧 (acceptsFailback/secondFailureWindowActive surfaced on observer outputs awaiting host adoption); "Published Post-Mortem Credibility" 🔧→✅ `57ea80e 60e464b 31b5a1c` (honest filings fold to reputation via honestHostFloor §5.10 halving; blame-style files zero; >1-change ambiguity files zero credit). §6.10 deaths — Bankruptcy, Churn Spiral and Covenant Default 🔧→✅ `ab0bf5c 984759b f9ea470 0b35b15` (all three causes run warning→dissolution end-to-end with HUD deathWatch rows, pinned alertStack severities and LossCard cause-narrated epilogues — the batch-2 "win/lose screens, HUD surfacing, narrated endings" hold is cleared). Still outstanding inside those rows: escape/turnaround play after warning, full escalation ladders, the spiral cross-reference diagram (23863 holds 🔧). §1.5 scenarios — `The Long Weekend` 🔧→✅, `Deadbeat Quarter` ❌→✅, `The Angry Whale` ❌→✅ `10f1d36`; `Collections Week` 🔧→✅, `Metastable` 🔧→✅ `cdb2bc5` (runScenario composes unattended mints + the real pipeline driver + the economy money lane; win goldens + one-flip lose probes + ×100 byte-identity pinned); section row "1.5 Scenario library" ❌→🔧 (5 missions of the ~25–30 §1.5 headlines runnable on today's ten-predicate objective vocab). §6.5 — "The Price Dial + Demand Ghost" ❌→🔧 (billing really moves now: AdjustPrice verb 0032a21 + elasticity 5781335 + host forwarding 8994f96 + PricingDial commit-confirmation UI f9ea470 + causeId authority 0b35b15 — the demand-ghost preview and live readout remain unbuilt). §7.5 — "Grace Windows → the Triage Window / the Attention Grace" 🔧→✅ `eff5694 8994f96 0b35b15` (attention pool, bounded window entry, debt, loan ledger and month-roll repayment live in engine + door, AttentionSummary rides the projection wire). No "Safe mode"/"Gradual restoration" headings exist to move. Holds with reason: the price slider (22957) and "Difficulty Dial the Player Turns" (4657) stay 🔧 — the new-contract-vs-renewal two-number display and 12-month renewal lag are not modeled (L1 factors apply at once, not per cohort; PricingDial confirms before commit, no ghost); "Price Increase" (23079) stays 🔧 (only the size param of its four shipped); door-verb attention-cost selection rows stay 🔧 (per-verb attentionCost is host-chosen config, owner taste owed).
 
 Historical record: reports/audit/outline.md (structure), reports/audit/AUDIT-BRIEF.md (contract), reports/audit/group-01..25.md (per-group evidence, frozen at ef74a2f), reports/audit/SUMMARY.md (regenerated post-wave).

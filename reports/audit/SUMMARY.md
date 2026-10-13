@@ -859,22 +859,63 @@ REVIEW OUTCOME: nine commits (batch-2 lanes + fix lane) — zero critical/major 
 
 hosting_game.md line count unchanged at 35,557 — all edits in-place (5 heading lines + appendix prose), zero insertions.
 
-## WAVE-3 ADDENDUM — recovery reconciliation (2026-10-13, ADR-0012, this lane; hosting_game.md NOT touched — closeout lane owns marker edits)
+## WAVE-3 ADDENDUM — recovery reconciliation (2026-10-13, ADR-0012, this lane; APPLIED by CLOSEOUT-3 — dispositions below are now disk truth, with the two deviations noted)
 
-The §7.7 recovery half shipped as two coexisting designs — the pure OBSERVER (`6867f74`) and the stateful ENGINE (`60e464b`) — with a dual second-failure-window authority between them. ADR-0012 makes the ENGINE canonical and demotes the OBSERVER to digest-neutral advisory/opex; both shipped hosts now wire the engine behind optional config (absent = byte-identical). Statuses below are PROPOSED flips for the closeout lane, located by heading TEXT; disk markers still read as before (census unchanged: ✅290 🔧997 ⚠️1 ❌2271 📝30).
+The §7.7 recovery half shipped as two coexisting designs — the pure OBSERVER (`6867f74`) and the stateful ENGINE (`60e464b`) — with a dual second-failure-window authority between them. ADR-0012 makes the ENGINE canonical and demotes the OBSERVER to digest-neutral advisory/opex; both shipped hosts now wire the engine behind optional config (absent = byte-identical). Deviations applied at closeout: "The Second Failure Window" advanced ❌→✅ (not 🔧 — single reconciled authority + live strike/lock folding is the heading's whole demand); "Partial restore and prioritised recovery" held ❌ (not 🔧 — engine floor→full is recorded on the ✅ window row, but no player-facing prioritisation shipped, conservative posture per closeout instruction).
 
 | heading (disk line) | flip | disposition after ADR-0012 |
 |---|---|---|
-| The Second Failure Window (27513) | ❌→🔧 | engine windows/strikes/locks are the single authority (`GameState.recovery.windows`); the amber bar `secondFailureWindowActive` is now a pure READ of it; strikes re-anchor and lock at the safe-mode floor; no HUD timer surfacing yet |
+| The Second Failure Window (27513) | ❌→**✅** `60e464b 31b5a1c` | engine windows/strikes/locks are the single authority (`GameState.recovery.windows`); the amber bar `secondFailureWindowActive` is now a pure READ of it; strikes re-anchor and lock at the floor and hold the window |
 | Recovery is gameplay (and recovery order matters) (27530) | ❌→🔧 | ramp-back one arm per `rampMinutes` moves REAL serves via `throttleServeNodes`; observer crew allocation orders by priority/fail-time as advisory queue; player-chosen recovery order (verbs/HUD) unowned |
 | Restore service or restore redundancy? (the recovery decision nobody states) (27561) | ❌→🔧 | `restoreOptions` decision table + `RECOVERY_ACTIONS` opex menu shipped as advisory decision-support reads; nothing states the choice in HUD/play flow yet (E2b) |
 | The cold-cache thundering herd (27569) | 🔧 holds | strengthens: slow-start admission is now LIVE ground truth (`effectiveSlots` climbing = cold-cache ramp on the engine's clamped board); the cache tier itself remains absent |
 | Degradation Debt (27577) | ❌→🔧 | `degradedMinutes` accrual meter shipped observer-side; strike memory (`strikesByNode`) is engine state; catch-up-overload repayment remains unimplemented |
-| Partial restore and prioritised recovery (27612) | ❌→🔧 | partial restore is engine law (floor→full arm-by-arm, occupied arms never evicted); `setRecoveryPriority` queue override shipped advisory; player-facing prioritisation UI unowned |
+| Partial restore and prioritised recovery (27612) | ❌ holds | partial restore is engine law (floor→full arm-by-arm, occupied arms never evicted — recorded on the ✅ window row); `setRecoveryPriority` queue override advisory-only; player-facing prioritisation UI unowned → demeral not earned |
 | The Failback Problem (27620) | ❌→🔧 | `acceptsFailback` hold predicate (completion + failback delay) shipped advisory on the observer's `recoveredAtMinute` anchor; secondary-site failback authority absent |
 | The Post-Mortem (screen, sheet, and progression hook) (27674) | 🔧 holds | strengthens: filing fold + single-source reputation credit (`economy/postmortem.ts`, `cfg.reputation.honestPostmortemBps` — ADR-0012 verified the observer's `markBlamelessPostmortem` mints NO money/reputation, only halves its own advisory escalation excess) — screen/progression-hook half still absent |
 | Root cause vs band-aid (27687) | ❌ holds | band-aid-vs-root tracking not implemented by either design; unchanged |
 
 UNCHANGED honestly ❌ in the same section: The Failover Handoff (27523), The cold-start dependency cycle (27549), Data loss is permanent (27596), The Corruption Horizon (27604), The Reboot Roulette (27629), The rollback one-way doors (27643), Salvage and the rebuild (27667).
 
-If the closeout lane adopts: Δ = six ❌→🔧 flips → ✅290 🔧1003 ❌2265 (total 3,589 unchanged).
+Adopted at closeout with the noted deviations — full register in CLOSEOUT-3 below.
+
+## CLOSEOUT-3 — re-markup applied (2026-10-13, tip 31b5a1c, lane commits 6867f74..31b5a1c)
+
+Battery before markup (serial, unloaded, all green): sim-core 136 files / 1,984 tests exit 0 · `pnpm -r typecheck` 5/5 rc 0 · proto 79 files / 847 tests exit 0 + typecheck + build · headless 53/5 **parity b0162ab5/a9b4b7b8 held** · api-verify PASS 16 modules / 1,533 names · content validate PASS · canary PASS 127 files · ci-verify 5/5.
+
+**Flips applied (17 heading lines, in-place, zero insertions):**
+
+| heading | flip | cite |
+|---|---|---|
+| The Second Failure Window | ❌→✅ | `60e464b 31b5a1c` |
+| Recovery is gameplay (and recovery order matters) | ❌→🔧 | ramp live both hosts, order not a verb |
+| Restore service or restore redundancy? | ❌→🔧 | observer decision-table only |
+| Degradation Debt | ❌→🔧 | meter accrues, nothing charges repayment |
+| The Failback Problem | ❌→🔧 | `acceptsFailback` advisory, hosts silent |
+| Published Post-Mortem Credibility | 🔧→✅ | `57ea80e 60e464b 31b5a1c` |
+| Bankruptcy / cash zero (Insolvency) | 🔧→✅ | `ab0bf5c 984759b f9ea470 0b35b15` |
+| Churn Spiral / Mass churn cascade | 🔧→✅ | same cites — batch-2 hold cleared |
+| Covenant Default | 🔧→✅ | same cites |
+| `The Angry Whale` / Concentration Crisis | ❌→✅ | `10f1d36` |
+| `Deadbeat Quarter` (§1.5) | ❌→✅ | `10f1d36` |
+| `The Long Weekend` / No Hands | 🔧→✅ | `10f1d36` |
+| `Collections Week` | 🔧→✅ | `cdb2bc5` |
+| `Metastable` | 🔧→✅ | `cdb2bc5` |
+| 1.5 Scenario library (section) | ❌→🔧 | 5 of ~25–30 headlines runnable |
+| The Price Dial + Demand Ghost | ❌→🔧 | billing moves end-to-end; ghost preview unbuilt |
+| Grace Windows → Triage Window / Attention Grace | 🔧→✅ | `eff5694 8994f96 0b35b15` |
+
+**Holds recorded (no marker move):** price slider (22957) + "Difficulty Dial the Player Turns" (4657) stay 🔧 — new-vs-renewal two-number display / 12-month renewal lag unmodeled, PricingDial confirms before commit (no ghost); "Price Increase" (23079) 🔧 (size param only of four); per-verb attention-cost selection rows 🔧 (host-chosen config, owner taste owed); postmortem screen (24199/27674), spiral diagram (23863), CEO Override (27023), XP writeup (20221) hold; no "Safe mode"/"Gradual restoration" headings exist; data-loss/cold-start/corruption/partial-restore/blast-door/herd rows unchanged.
+
+**Marker census before→after (recomputed from disk):**
+
+| bucket | before | after |
+|---|---|---|
+| ✅ DONE | 290 | **301** |
+| 🔧 PARTIAL | 997 | **995** |
+| ⚠️ PROBLEM | 1 | **1** (unchanged: 31543 readability — OD-10/12 open) |
+| ❌ MISSING | 2,271 | **2,262** |
+| 📝 NA | 30 | 30 |
+| **total marked** | **3,589** | **3,589** |
+
+hosting_game.md stays 35,557 lines — 17 heading lines edited in place + one appendix paragraph appended before "Historical record:".
