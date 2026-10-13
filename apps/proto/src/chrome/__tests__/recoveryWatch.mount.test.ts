@@ -79,12 +79,65 @@ describe("RecoveryWatch.vue", () => {
     w.unmount();
   });
 
-  it("the honesty footer names the advisory-OUT gap (engine slice only, v0)", () => {
+  it("the honesty footer names the advisory arm and its non-authority (gap CLOSED)", () => {
     const w = mount(RecoveryWatch);
     const text = w.get('[data-test="recovery-honesty"]').text();
     expect(text).toContain("recoveryCapacityBps");
     expect(text).toContain("degradedMinutes");
-    expect(text).toContain("stay unsurfaced");
+    expect(text).toContain("lastTickFacts");
+    expect(text).toContain("serve clamp stays authoritative");
+    expect(text).not.toContain("stay unsurfaced"); // the old gap line is gone, pinned gone
+    w.unmount();
+  });
+
+  it("the advisory arm is honest-offline: unrendered while the fold is unarmed", async () => {
+    const w = mount(RecoveryWatch);
+    expect(w.find('[data-test="recovery-advisory"]').exists()).toBe(false);
+    for (let i = 0; i < 60; i++) await w.get('[data-test="recovery-step"]').trigger("click");
+    expect(w.find('[data-test="recovery-advisory"]').exists()).toBe(false);
+    w.unmount();
+  });
+
+  it("the live advisory arc: edge surfaces at the episode, capacity dips, failback flips after clear", async () => {
+    const w = mount(RecoveryWatch);
+    await w.get('[data-test="recovery-arm"]').trigger("click");
+    expect(w.get('[data-test="recovery-advisory-authority"]').text()).toContain("engine clamp authoritative");
+    expect(w.find('[data-test="recovery-advisory-quiet"]').exists()).toBe(true);
+    await w.get('[data-test="recovery-run-first"]').trigger("click");
+    // advisory threshold 2 opens edge the SAME minute the engine speaks its episode (m45)
+    expect(w.get('[data-test="recovery-minute"]').text()).toContain("m45");
+    const row = w.get('[data-test="advisory-row-edge"]');
+    expect(row.find('[data-test="advisory-phase"]').text()).toContain("Down");
+    expect(row.find('[data-test="advisory-capacity-pct"]').text()).toBe("0%");
+    expect(row.find('[data-test="advisory-failback"]').text()).toBe("hold");
+    // step to the engine's lock minute (53): advisory is mid-crew-delay/ramp — below full
+    let guard = 0;
+    while (w.get('[data-test="recovery-minute"]').text().indexOf("m53") === -1 && guard < 20) {
+      await w.get('[data-test="recovery-step"]').trigger("click");
+      guard += 1;
+    }
+    const mid = w.get('[data-test="advisory-row-edge"]');
+    expect(mid.find('[data-test="advisory-capacity-pct"]').text()).toBe("33%"); // 3250 bps ramping
+    expect(mid.find('[data-test="advisory-degraded"]').text()).toBe("8m");
+    expect(mid.find('[data-test="advisory-crew"]').text()).toContain("ramping #1");
+    // run past the advisory's own story: completed @80, failback hold, ready @95
+    await w.get('[data-test="recovery-run-cleared"]').trigger("click"); // engine clears @78
+    let steps = 0;
+    while (
+      !w.findAll('[data-test="advisory-failback"]').some((f) => f.text() === "ready") &&
+      steps < 40
+    ) {
+      await w.get('[data-test="recovery-step"]').trigger("click");
+      steps += 1;
+    }
+    const done = w.get('[data-test="advisory-row-edge"]');
+    expect(done.find('[data-test="advisory-phase"]').text()).toContain("Recovered");
+    expect(done.find('[data-test="advisory-capacity-pct"]').text()).toBe("100%");
+    expect(w.get('[data-test="recovery-minute"]').text()).toContain("m95");
+    expect(done.find('[data-test="advisory-failback"]').text()).toBe("ready");
+    // rows linger after recovery — the observer MEMORY, not a live outage
+    expect(w.get('[data-test="recovery-advisory-meter"]').text()).toContain("open 0");
+    expect(w.get('[data-test="recovery-advisory-meter"]').text()).toContain("degraded-minutes 35");
     w.unmount();
   });
 

@@ -8,16 +8,33 @@
  * Two honest arms, one render path:
  *  - OFF (default): an unarmed runner — `recoveryState()` is undefined and
  *    `recoveryNotices()` stays empty forever, because ADR-0012 keeps the fold
- *    out of the sim entirely. The panel says so instead of faking calm.
+ *    out of the sim entirely. The panel says so instead of faking calm, and
+ *    the ADVISORY section below stays unrendered too: offline means offline.
  *  - ON: the same runner built with `recovery: defaultRecoveryConfig()`. The
  *    seeded demo board struggles on `edge`, so the full story (episode →
  *    shadow window → second failure → lock → cleared) is reachable with the
  *    buttons below. No timers: every minute advance is a click.
+ *
+ * The ADVISORY section (the observer half, ADR-0012 demoted authority) rides
+ * the armed arm: every step feeds `runner.lastTickFacts()` — the raw tick's
+ * SimEvent stream + post-advance GameState — into the pipeline observer and
+ * surfaces its OUTs (degradedMinutes meter, capacity gauge, failback flag,
+ * crew queue). Presentation only, labelled so: the engine clamp up top is
+ * what the node actually serves.
  */
 import { computed, onBeforeUnmount, ref } from "vue";
-import { defaultRecoveryConfig } from "@hh/sim-core/pipeline";
+import { createRecoveryTracker, defaultRecoveryConfig } from "@hh/sim-core/pipeline";
+import type { RecoveryTrackerState } from "@hh/sim-core/pipeline";
 import { SimCoreRunner } from "../runner/simCoreRunner";
-import { buildRecoveryRows, buildRecoveryTape, RECOVERY_WATCH_KINDS } from "./recoveryWatch";
+import {
+  ADVISORY_TUNING,
+  advisoryTotals,
+  buildAdvisoryRows,
+  buildRecoveryRows,
+  buildRecoveryTape,
+  observeAdvisoryTick,
+  RECOVERY_WATCH_KINDS,
+} from "./recoveryWatch";
 
 const props = withDefaults(defineProps<{ seed?: number }>(), { seed: 905 });
 
@@ -27,6 +44,9 @@ const STEP_CAP = 240; // one demo board's patience — never an unbounded loop
 const armed = ref(false);
 const minute = ref(0);
 const seq = ref(0);
+/* The observer snapshot advances ONLY inside step() — one composition per
+   click, so the section is button-driven like the rest of the panel. */
+const advisory = ref<RecoveryTrackerState>(createRecoveryTracker());
 let runner = createRunner();
 
 function createRunner(): SimCoreRunner {
@@ -43,12 +63,25 @@ function rebuild(): void {
   runner = createRunner();
   minute.value = 0;
   seq.value = 0;
+  advisory.value = createRecoveryTracker(); // no memory crosses an arm flip
 }
 
 function step(): void {
   const frame = runner.headlessStep(1000);
   seq.value = frame.seq;
   minute.value = frame.minute;
+  if (armed.value) {
+    /* Advisory composition: the tick-facts seam (raw driver events + the
+       post-advance GameState authority) feeds the demoted observer, one
+       observation per click. lastTickFacts is a single-slot reference — the
+       observer consumes it synchronously here, nothing is retained. */
+    const facts = runner.lastTickFacts();
+    advisory.value = observeAdvisoryTick(advisory.value, {
+      minute: frame.minute,
+      events: facts.events,
+      engine: facts.game,
+    }).state;
+  }
 }
 
 function toggleArm(): void {
@@ -90,6 +123,14 @@ const tape = computed(() => {
   void seq.value;
   return buildRecoveryTape(runner.recoveryNotices(), TAPE_LIMIT);
 });
+
+/* Advisory arm: rows over EVERY tracked node (the observer keeps incident
+   memory after recovery — phases cool, rows linger). Unarmed the tracker is
+   never advanced and never was, so it answers zero rows by construction; the
+   section itself is v-if'd on arming: default-off renders nothing. */
+const advisoryRows = computed(() => buildAdvisoryRows(advisory.value, minute.value, ADVISORY_TUNING));
+
+const advisoryMeter = computed(() => advisoryTotals(advisoryRows.value));
 
 const kindSeen = computed(() => {
   void seq.value;
@@ -197,6 +238,62 @@ onBeforeUnmount(() => runner.stop());
       </tbody>
     </table>
 
+    <!-- ADVISORY arm: the demoted observer (ADR-0012) composed from the
+         runner's tick-facts seam. Presentation — the clamp above is law. -->
+    <section v-if="armed" class="advisory" data-test="recovery-advisory">
+      <p class="advisory-authority" data-test="recovery-advisory-authority">
+        advisory — engine clamp authoritative (ADR-0012)
+      </p>
+      <p class="advisory-meter" data-test="recovery-advisory-meter">
+        tracked {{ advisoryMeter.tracked }} · open {{ advisoryMeter.openIncidents }} ·
+        degraded-minutes {{ advisoryMeter.degradedMinutes }}
+      </p>
+      <table v-if="advisoryRows.length > 0" class="rows advisory-rows" data-test="recovery-advisory-rows">
+        <thead>
+          <tr>
+            <th scope="col">observer node</th>
+            <th scope="col">phase</th>
+            <th scope="col">capacity</th>
+            <th scope="col">degraded</th>
+            <th scope="col">crew · queue</th>
+            <th scope="col">failback</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in advisoryRows" :key="row.nodeId" :data-test="`advisory-row-${row.nodeId}`">
+            <td class="node">
+              {{ row.nodeId }}
+              <span v-if="row.secondFailure" class="flag flag--second" data-test="advisory-second">2nd</span>
+              <span v-if="row.postmortemCredit" class="flag" data-test="advisory-postmortem">PM</span>
+            </td>
+            <td>
+              <span :class="`chip chip--${row.tone}`" data-test="advisory-phase">{{ row.phaseLabel }}</span>
+            </td>
+            <td class="ramp-cell">
+              <span class="ramp-track" aria-hidden="true"
+                ><span class="ramp-fill" :class="`ramp-fill--${row.tone}`" :style="{ width: row.capacityPct + '%' }"
+              /></span>
+              <span class="num" data-test="advisory-capacity-pct">{{ row.capacityPct }}%</span>
+            </td>
+            <td class="num" data-test="advisory-degraded">{{ row.degradedMinutes }}m</td>
+            <td class="num" data-test="advisory-crew">
+              <template v-if="row.crew === null">—</template>
+              <template v-else-if="row.crew === 'ramping'">ramping #{{ row.queuePosition }}</template>
+              <template v-else-if="row.crew === 'waiting'">queued #{{ row.queuePosition }}</template>
+              <template v-else>standby {{ row.minutesToDispatch }}m</template>
+            </td>
+            <td class="num">
+              <span v-if="row.acceptsFailback" class="flag flag--ready" data-test="advisory-failback">ready</span>
+              <span v-else class="flag flag--hold" data-test="advisory-failback">hold</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="advisory-quiet" data-test="recovery-advisory-quiet">
+        observer quiet — no bounce cluster has crossed its threshold yet.
+      </p>
+    </section>
+
     <ul v-if="tape.length > 0" class="tape" data-test="recovery-tape" aria-live="polite">
       <li v-for="line in tape" :key="line.causeId" :class="{ 'tape--unrecognised': !line.recognised }">
         <strong data-test="recovery-tape-headline">{{ line.headline }}</strong>
@@ -210,11 +307,13 @@ onBeforeUnmount(() => runner.stop());
     </p>
 
     <p class="honesty" data-test="recovery-honesty">
-      Engine slice only (v0). The advisory observer OUTs — recoveryCapacityBps,
-      the degradedMinutes lifetime meter, acceptsFailback and the crew queue —
-      need the raw per-tick event stream the runner does not expose, so they
-      stay unsurfaced. "In window" counts from the engine's own open anchor,
-      not the observer meter.
+      Engine slice + advisory mirror (v1 of this panel). The advisory arm —
+      recoveryCapacityBps, the degradedMinutes lifetime meter, acceptsFailback
+      and the crew queue — is the demoted ADR-0012 observer composed from the
+      runner's per-tick event stream (`lastTickFacts()`); its knobs are
+      PROVISIONAL and its readings are presentation — the engine's serve clamp
+      stays authoritative. "In window" in the slice rows counts from the
+      engine's own open anchor, not the observer meter.
     </p>
   </div>
 </template>
@@ -250,11 +349,23 @@ button[aria-pressed="true"] { border: 1px solid var(--hh-hue-cyan); color: var(-
 .chip { display: inline-block; font-size: 10px; padding: 1px 8px; border-radius: 999px; }
 .chip--amber { color: var(--hh-hue-amber); border: 1px solid var(--hh-hue-amber); }
 .chip--alarm { color: var(--hh-hue-alarm); border: 1px solid var(--hh-hue-alarm); }
+.chip--green { color: var(--hh-hue-green); border: 1px solid var(--hh-hue-green); }
+.chip--grey { color: var(--hh-hue-grey); border: 1px solid var(--hh-hue-grey); }
 .ramp-cell { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
 .ramp-track { display: inline-block; width: 56px; height: 6px; background: color-mix(in srgb, var(--hh-accent) 16%, transparent); border-radius: 3px; overflow: hidden; }
 .ramp-fill { display: block; height: 100%; }
 .ramp-fill--amber { background: var(--hh-hue-amber); }
 .ramp-fill--alarm { background: var(--hh-hue-alarm); }
+.ramp-fill--green { background: var(--hh-hue-green); }
+.ramp-fill--grey { background: var(--hh-hue-grey); }
+.advisory { display: grid; gap: 6px; border-left: 2px solid color-mix(in srgb, var(--hh-hue-grey) 60%, transparent); padding-left: 8px; }
+.advisory-authority { margin: 0; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--hh-hue-grey); }
+.advisory-meter { margin: 0; font-size: 10px; color: var(--hh-hue-azure); font-variant-numeric: tabular-nums; }
+.advisory-quiet { margin: 0; font-size: 10px; opacity: .55; }
+.flag { display: inline-block; font-size: 9px; padding: 0 5px; border-radius: 999px; border: 1px solid currentColor; margin-left: 4px; }
+.flag--second { color: var(--hh-hue-alarm); }
+.flag--ready { color: var(--hh-hue-green); }
+.flag--hold { color: var(--hh-hue-grey); }
 .tape { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 11px; }
 .tape li { border-left: 2px solid color-mix(in srgb, var(--hh-hue-azure) 55%, transparent); padding-left: 7px; }
 .tape--unrecognised { border-left: 2px solid var(--hh-hue-alarm); }

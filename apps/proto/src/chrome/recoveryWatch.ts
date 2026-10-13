@@ -6,14 +6,13 @@
  * ramp fraction the serve clamp actually applies (`effectiveSlots /
  * fullSlots`).
  *
- * Advisory-OUT ledger (honest v0 gap): the demoted OBSERVER
- * (`pipeline/recovery/tracker.ts`) still computes `recoveryCapacityBps`,
+ * Advisory-OUT ledger (CLOSED by the tick-facts seam): the demoted OBSERVER
+ * (`pipeline/recovery/tracker.ts`) computes `recoveryCapacityBps`,
  * `acceptsFailback`, the `degradedMinutes` lifetime meter and the crew/
- * priority queue — but composing those needs the raw per-tick SimEvent stream
- * and the full GameState, neither of which the runner exposes. They stay
- * UNSURFACED until a host seam carries them; the "minutes in window" number
- * below is derived from the engine's own `openedAtMinute` anchor, NOT the
- * observer's lifetime meter, and is labelled so.
+ * priority queue from the raw per-tick SimEvent stream + full GameState —
+ * which `SimCoreRunner.lastTickFacts()` now carries. The ADVISORY arm below
+ * composes that observer per button-step; ADR-0012 rules, so every advisory
+ * reading is labelled presentation-only: the ENGINE clamp stays authoritative.
  *
  * Voice law (noticeSurface pattern): every headline/line first asks the pack
  * (`alert.recovery-<kind>`, zero-slot) and falls back to the PROVISIONAL
@@ -21,8 +20,21 @@
  * test proves the provisional genuinely answers, so when an author adds the
  * key the fallback retires itself without touching this file.
  */
+import {
+  acceptsFailback,
+  defaultRecoveryTuning,
+  observeRecoveryTick,
+  recoveryCapacityBps,
+} from "@hh/sim-core/pipeline";
+import type {
+  ObserveResult,
+  RecoveryObservation,
+  RecoveryPhase,
+  RecoveryTrackerState,
+  RecoveryTuning,
+} from "@hh/sim-core/pipeline";
 import type { RecoveryNotice } from "@hh/sim-core/pipeline";
-import type { RecoveryState, RecoveryWindowPhase, RecoveryWindowRecord } from "@hh/sim-core/types";
+import type { EntityId, RecoveryState, RecoveryWindowPhase, RecoveryWindowRecord } from "@hh/sim-core/types";
 import { hasKey, t } from "../i18n/packStore";
 import { compareCodeUnits } from "./textLaw";
 
@@ -270,4 +282,195 @@ export function buildRecoveryTape(
       });
     });
   return Object.freeze(rows);
+}
+
+/* ═══════════════════════════ ADVISORY arm (observer half) ═══════════════════════════
+ * The second arm the panel wears: the ADR-0012 DEMOTED observer
+ * (`pipeline/recovery/tracker.ts`) composed from the runner's `lastTickFacts()`
+ * seam — raw per-tick SimEvent stream + the post-advance GameState authority.
+ * Everything below is PRESENTATION: the engine's serve clamp is the only
+ * authority on capacity, and the drift-pins keep the mirror honest.
+ */
+
+/** Host-side advisory tuning (PROVISIONAL, owner-ratify batch). The engine
+ *  observer's own default `failureBounceThreshold: 4` is calibrated for a full
+ *  session clock; on this 240-click demo weekend no single tick ever clusters
+ *  four bounced units for one node (seed 905 probe: max 3/tick), so a
+ *  default-tuned advisory would render an honest-but-empty panel. A PAIR of
+ *  same-tick bounces is the smallest signal that reads as a pattern rather
+ *  than one retrying unit — and one bounce alone would over-report solo
+ *  retries as incidents. Every other knob stays at the observer default.
+ *  The live-arc test pins this exact choice: engine default 4 stays in source
+ *  (drift-pinned), advisory answers at 2. */
+export const ADVISORY_TUNING: RecoveryTuning = Object.freeze({
+  ...defaultRecoveryTuning(),
+  failureBounceThreshold: 2,
+});
+
+/** The observer's four phases → chip vocabulary. Keys are pinned against the
+ *  tracker source's RECOVERY_PHASES literal by the drift-pin test; an engine
+ *  sixth phase would surface as a THROWS-at-render bug (loud), never a guess.
+ *  Tones reuse ONLY census-audited text hues (grey/alarm/amber/green). */
+export interface AdvisoryPhaseView {
+  readonly label: string;
+  readonly tone: "grey" | "alarm" | "amber" | "green";
+  readonly narrative: string;
+}
+
+export const ADVISORY_PHASE_VIEWS: Readonly<Record<RecoveryPhase, AdvisoryPhaseView>> =
+  Object.freeze({
+    healthy: Object.freeze({
+      label: "At peace",
+      tone: "grey" as const,
+      narrative: "tracked, no open incident — the observer remembers the failures, not a outage",
+    }),
+    failed: Object.freeze({
+      label: "Down · crew queue",
+      tone: "alarm" as const,
+      narrative: "advisory: observer counts a thresholded bounce cluster — the ENGINE clamp, not this row, decides what the node serves",
+    }),
+    recovering: Object.freeze({
+      label: "Restoring · safe mode",
+      tone: "amber" as const,
+      narrative: "advisory: crew ramp modelled floor→full — the engine's own restore ladder lives in the slice rows above",
+    }),
+    recovered: Object.freeze({
+      label: "Recovered · failback hold",
+      tone: "green" as const,
+      narrative: "advisory: ramp closed; failback waits out the observer's hold — steering stays engine law",
+    }),
+  });
+
+export function advisoryPhaseView(phase: RecoveryPhase): AdvisoryPhaseView {
+  const view = ADVISORY_PHASE_VIEWS[phase];
+  if (view === undefined) {
+    throw new RangeError(`recovery-watch[bad-advisory-phase] '${String(phase)}' is not an observer phase`);
+  }
+  return view;
+}
+
+/** Where a tracked node stands in the advisory crew picture. A PRESENTATION
+ *  mirror of the observer's private allocateCrew order law
+ *  (priority desc, failedAt asc, nodeId asc) — re-implemented here at read
+ *  time because the tracker state is a snapshot, not a queue object. The
+ *  drift-pin test quotes the comparator source; if the engine order changes,
+ *  this mirror must change in the same commit. */
+export type AdvisoryCrewStatus = "ramping" | "waiting" | "standby";
+
+export interface AdvisoryRow {
+  readonly nodeId: string;
+  readonly phase: RecoveryPhase;
+  readonly phaseLabel: string;
+  readonly tone: AdvisoryPhaseView["tone"];
+  readonly narrative: string;
+  readonly failures: number;
+  readonly secondFailure: boolean;
+  readonly postmortemCredit: boolean;
+  readonly degradedMinutes: number;
+  readonly priority: number;
+  /** Observer-modelled capacity, 0–10_000 bps as a plain number. */
+  readonly capacityBps: number;
+  readonly capacityPct: number;
+  readonly acceptsFailback: boolean;
+  readonly crew: AdvisoryCrewStatus | null;
+  readonly queuePosition: number | null;
+  /** Minutes left of the dispatch delay while on standby (0 otherwise). */
+  readonly minutesToDispatch: number;
+}
+
+/** Crew status for one record at `minute` — pure read, no state touched. */
+function crewStatusOf(
+  record: { phase: RecoveryPhase; failedAtMinute: number | null },
+  minute: number,
+  cfg: RecoveryTuning,
+): AdvisoryCrewStatus | null {
+  if (record.phase === "recovering") return "ramping";
+  if (record.phase !== "failed" || record.failedAtMinute === null) return null;
+  return minute - record.failedAtMinute >= cfg.autoRecoverDelayMinutes ? "waiting" : "standby";
+}
+
+/**
+ * Advisory rows for EVERY tracked node (the observer keeps its incident
+ * memory after recovery — rows linger, phases cool), sorted code-unit by
+ * node id. Queue positions are assigned over the crew-relevant set
+ * (ramping + waiting + standby, so the ordering law is a single total
+ * order the eye can follow): the engine would only start ramps from the
+ * ELIGIBLE (waiting) head of that same order, so a standby row can never
+ * out-queue a waiting one by accident — same comparator, wider window.
+ */
+export function buildAdvisoryRows(
+  state: RecoveryTrackerState,
+  minute: number,
+  cfg: RecoveryTuning = ADVISORY_TUNING,
+): readonly AdvisoryRow[] {
+  const records = [...state.nodes.values()].sort((a, b) => compareCodeUnits(a.nodeId, b.nodeId));
+  const queueOrder = records
+    .filter((r) => r.phase === "failed" || r.phase === "recovering")
+    .sort(
+      (a, b) =>
+        b.priority - a.priority ||
+        (a.failedAtMinute ?? Number.MAX_SAFE_INTEGER) - (b.failedAtMinute ?? Number.MAX_SAFE_INTEGER) ||
+        compareCodeUnits(a.nodeId, b.nodeId),
+    );
+  const positionById = new Map<EntityId, number>();
+  queueOrder.forEach((r, i) => positionById.set(r.nodeId, i + 1));
+  const rows = records.map((record) => {
+    const view = advisoryPhaseView(record.phase);
+    const bps = Number(recoveryCapacityBps(state, record.nodeId, minute, cfg));
+    const crew = crewStatusOf(record, minute, cfg);
+    return Object.freeze({
+      nodeId: record.nodeId,
+      phase: record.phase,
+      phaseLabel: view.label,
+      tone: view.tone,
+      narrative: view.narrative,
+      failures: record.failures,
+      secondFailure: record.secondFailure,
+      postmortemCredit: record.postmortemCredit,
+      degradedMinutes: record.degradedMinutes,
+      priority: record.priority,
+      capacityBps: bps,
+      capacityPct: Math.min(100, Math.max(0, Math.round(bps / 100))),
+      acceptsFailback: acceptsFailback(state, record.nodeId, minute),
+      crew,
+      queuePosition: crew === null ? null : (positionById.get(record.nodeId) ?? null),
+      minutesToDispatch:
+        crew === "standby" && record.failedAtMinute !== null
+          ? Math.max(0, cfg.autoRecoverDelayMinutes - (minute - record.failedAtMinute))
+          : 0,
+    });
+  });
+  return Object.freeze(rows);
+}
+
+/** Header meter over the advisory rows: tracked population, open incidents
+ *  (failed + recovering), and the summed degraded-minutes lifetime debt. */
+export interface AdvisoryTotals {
+  readonly tracked: number;
+  readonly openIncidents: number;
+  readonly degradedMinutes: number;
+}
+
+export function advisoryTotals(
+  rows: readonly AdvisoryRow[],
+): AdvisoryTotals {
+  let open = 0;
+  let degraded = 0;
+  for (const row of rows) {
+    if (row.phase === "failed" || row.phase === "recovering") open += 1;
+    degraded += row.degradedMinutes;
+  }
+  return Object.freeze({ tracked: rows.length, openIncidents: open, degradedMinutes: degraded });
+}
+
+/** One-step advisory advance over the runner's tick facts. Thin wrapper —
+ *  the observer stays the single implementation; this exists so the component
+ *  side reads as dataflow (facts in, new state out) and the host default
+ *  tuning binds HERE, not at every call site. */
+export function observeAdvisoryTick(
+  state: RecoveryTrackerState,
+  observation: RecoveryObservation,
+  cfg: RecoveryTuning = ADVISORY_TUNING,
+): ObserveResult {
+  return observeRecoveryTick(state, observation, cfg);
 }

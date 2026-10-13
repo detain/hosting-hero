@@ -90,6 +90,7 @@ import {
   type RouteIn,
   type RouteOut,
   type RunSeed,
+  type SimEvent,
   type SimTick,
   type ThreatFamily,
   type TickStep,
@@ -666,6 +667,29 @@ const NOTICE_FOR_TERMINAL = Object.freeze({
 
 /* ═══════════════════════════ the runner ═══════════════════════════ */
 
+/**
+ * One completed tick's RAW ground truth for advisory observers (ADR-0012's
+ * demoted half). `pipeline/recovery/tracker.ts` composes only from these:
+ * the `degradedMinutes` meter needs the per-tick `bounced` events, and the
+ * single-authority second-failure verdict needs the post-advance GameState
+ * whose `recovery` slice the observer READS (never re-derives).
+ *
+ * This is a LOCAL accessor — like `recoveryState()`/`attentionState()` it
+ * never touches the frozen `SimProjection` wire (protocol-v1 law, @0b35b15
+ * precedent): zero protocol churn, zero golden churn, both armed and unarmed
+ * frames encode byte-identically whether or not anyone reads the facts.
+ */
+export interface TickFacts {
+  /** The driver's frozen per-tick event stream (door → arrival → outcome →
+   *  backpressure → economics order; never mutated, never copied). */
+  readonly events: readonly SimEvent[];
+  /** The FULL post-advance GameState of that tick (observed merge, cash
+   *  mirror and attention roll included). */
+  readonly game: GameState;
+}
+
+const TICK_ZERO_EVENTS: readonly SimEvent[] = Object.freeze([]);
+
 export interface SimCoreRunnerOptions {
   /** Deterministic run seed (whole number; the worker boot message carries it). */
   readonly seed: number;
@@ -769,6 +793,14 @@ export class SimCoreRunner implements SimRunner {
      read via recoveryNotices(). Deliberately NOT on the frozen
      SimProjection wire: zero protocol churn, zero golden churn. */
   private readonly recoveryNoticeLog: RecoveryNotice[] = [];
+  /* Tick-facts seam for advisory observers (ADR-0012): a SINGLE-SLOT
+     reference replaced on every completed headlessStep — the memory posture
+     is one tick deep, never an unbounded log. The events array is the
+     driver's own frozen per-tick stream (bounded by that tick's throughput)
+     and the GameState is the SAME frozen object every other accessor reads;
+     nothing accumulates across ticks here. Before the first step the slot
+     answers the tick-0 world: zero events, the minted initial state. */
+  private tickFacts: TickFacts;
   private seq = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private speedX: 1 | 2 | 4 = 1;
@@ -862,6 +894,9 @@ export class SimCoreRunner implements SimRunner {
       chain.push(director);
     }
     this.directorChain = Object.freeze(chain);
+    /* Tick-0 facts: the minted state with an empty event stream — reading
+       the seam before the first step answers the starting world, not a lie. */
+    this.tickFacts = Object.freeze({ events: TICK_ZERO_EVENTS, game: this.game });
   }
 
   /** Lazily plan + label window `w` with the host signals LIVE AT ENTRY.
@@ -1041,6 +1076,17 @@ export class SimCoreRunner implements SimRunner {
    *  empty on every unarmed runner (the witness channel stays honest). */
   recoveryNotices(): readonly RecoveryNotice[] {
     return Object.freeze([...this.recoveryNoticeLog]);
+  }
+
+  /** The raw facts of the LATEST completed tick for advisory observers
+   *  (ADR-0012's demoted half — `pipeline/recovery/tracker.ts` composes from
+   *  exactly this). Single-slot reference, replaced every `headlessStep`:
+   *  memory posture is ONE tick deep (see the `tickFacts` field docblock),
+   *  never an unbounded log. LOCAL accessor only: the frozen SimProjection
+   *  wire gains nothing (protocol-v1 law @0b35b15). Before the first step it
+   *  answers the tick-0 world — zero events, the minted initial state. */
+  lastTickFacts(): TickFacts {
+    return this.tickFacts;
   }
 
   /** The business-calendar month a state's clock points INTO (economy's
@@ -1320,6 +1366,12 @@ export class SimCoreRunner implements SimRunner {
        Aggregates only (capacity/debt/window/loanCount): the HandTokens and the
        ledger rows stay engine-side, the HUD sees what §7.5 makes observable. */
     const attention = this.game.attention;
+
+    /* Tick-facts seam (ADR-0012 advisory observers): stamp the single slot
+       with this tick's frozen driver events + the FINAL completed-tick
+       state (post observed-merge, cash mirror and attention roll) — replaced
+       next step, so the posture stays one tick deep. */
+    this.tickFacts = Object.freeze({ events: result.events, game: this.game });
 
     return Object.freeze({
       seq: this.seq,
