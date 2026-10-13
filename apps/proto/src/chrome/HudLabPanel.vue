@@ -21,6 +21,7 @@ import StatusChip from "./StatusChip.vue";
 import AlertStack from "./AlertStack.vue";
 import PanicLayout from "./PanicLayout.vue";
 import PricingDial from "./PricingDial.vue";
+import RecoveryWatch from "./RecoveryWatch.vue";
 import { buildHudCandidates, formatMicroUsd, formatRunClock, hudPermanentRows, rhoDisplayOf } from "./metrics";
 import { planPromotion, toggleUserPin, type MetricCandidate } from "./promotion";
 import { globalExplain } from "./explainRegistry";
@@ -239,6 +240,11 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
         <section class="card" data-hud-optional="true" data-test="lab-pricing">
           <h4>Pricing dial — adjust-price through the door (OD-24(a))</h4>
           <PricingDial />
+        </section>
+
+        <section class="card" data-hud-optional="true" data-test="lab-recovery">
+          <h4>Recovery watch — §7.7 engine windows, strikes and ramp (ADR-0012)</h4>
+          <RecoveryWatch />
         </section>
       </div>
     </div>
