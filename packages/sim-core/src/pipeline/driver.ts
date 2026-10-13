@@ -533,11 +533,12 @@ export function createTickDriver(
 
     /* ── step 1 · arrival (re-entries arrive THROUGH the same roster as
        fresh spawns — R-12: storms re-enter as new arrivals) ────────────── */
-    /* population channel (audit g09 repel loop): the count of units already
-       in the system when this tick's arrivals judge it — last tick's roster
-       plus the re-entries that just matured. Stamped ALWAYS (one number;
-       foreign steps ignore it, the default step reads it only when the host
-       authored populationEffects — presence gate keeps every golden). */
+    /* population channel (audit g09 repel loop + attract half): the count of
+       units already in the system when this tick's arrivals judge it — last
+       tick's roster plus the re-entries that just matured. Stamped ALWAYS
+       (one number; foreign steps ignore it, the default step reads it only
+       when the host authored populationEffects — presence gate keeps every
+       golden). */
     const arrivalIn: ArrivalInExt = {
       context,
       envelopes: inputs.envelopes,

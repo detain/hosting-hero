@@ -149,11 +149,22 @@ export interface DefaultPipelineConfig {
    *  LUT path, byte-identical. Semantics per mode in the step-9 docstring. */
   readonly patienceModeByType?: Readonly<Record<string, PatienceMode>>;
   /** AUDIT FIX (g09 TOP-PROBLEM #2: "populationEffect is a lying field"):
-   *  the Empty Server Spiral repel loop (§2.13 "The Population Effect" /
-   *  Herding), keyed by `Unit.type`. The host derives each row from
-   *  LoadedVisitor when `populationEffect && herdingEnabled`
+   *  the Population Effect feedback curve (§2.13 "The Population Effect" /
+   *  Herding / Empty Server Spiral), keyed by `Unit.type`. The host derives
+   *  each row from LoadedVisitor when `populationEffect && herdingEnabled`
    *  (coefficient = herdingCoefficient; floor = authored capacity anchor).
-   *  Absent/empty ⇒ zero draws, byte-identical arrivals. */
+   *  The coefficient is SIGNED — one parameter carries the whole curve:
+   *  • positive 0..1 Fixed → REPEL half: below the floor each candidate
+   *    rolls a disgust draw (the shipped spiral, audit g09).
+   *  • negative -1..0 Fixed → ATTRACT half: above the floor each candidate
+   *    rolls a cohort-gravity draw; on success ONE bonus unit mints beside
+   *    it (population attracts population, word-of-mouth). Magnitude =
+   *    pull strength, p grows linearly with the surplus over the floor.
+   *  • zero → inert (the row rolls nothing in either direction).
+   *  Absent/empty ⇒ zero draws, byte-identical arrivals. The loader already
+   *  tolerates a negative herding.coefficient (toFixed/decimalRatioFromText
+   *  accept the sign; only assertFixedDomain bounds it), so the host pipes
+   *  herdingCoefficient through untouched. */
   readonly populationEffects?: Readonly<
     Record<string, { readonly coefficient: Fixed; readonly floor: number }>
   >;
@@ -164,25 +175,38 @@ export interface DefaultPipelineConfig {
 /** Envelope rate → whole + fractional units this sim-minute; the fraction is
  *  one Bernoulli on the "arrival" stream (exact Fixed comparison). Ids are
  *  minted `${tableId}@${tick}#${envelopeIndex}.${unitIndex}` — unique across
- *  the run because the tick embeds.
+ *  the run because the tick embeds. The population ATTRACT half mints cohort
+ *  bonuses with unitIndex continuing past the envelope's authored count
+ *  (`count + bonusSequence`) — same grammar, same uniqueness, ordinary
+ *  "arrival" events (the frozen SimEvent union gains no new kind).
  *
  *  ⚠ CONSUMER NOTE (F2): retry/referral re-entries do NOT flow through this
  *  step. The driver mints their ids (`re<n>@${tick}`) and appends matured
  *  drafts straight into the roster BETWEEN steps — no arrival envelope, no
  *  arrival events, and the re-entry delay is the backoff schedule (≥1 tick,
  *  arbitrary multiples). Arrival-counting consumers therefore miss retry
- *  storms; count `SimEvent` arrivals or roster growth, not this step alone. */
+ *  storms; count `SimEvent` arrivals or roster growth, not this step alone.
+ *
+ *  ⚠ CONSERVATION NOTE (population halves): the envelope-rate law (Σ
+ *  ratePerMin ≈ minted arrivals) is APPROXIMATE, by design, once a
+ *  `populationEffects` row is configured for a table — the repel half mints
+ *  FEWER units than the envelope authored (skipped candidates), the attract
+ *  half mints MORE (cohort bonuses beside surviving candidates). Absent/
+ *  empty config ⇒ exact-rate behavior, every golden kept. */
 /** Driver-stamped extension of the frozen ArrivalIn: the count of units
  *  ALREADY in the system when this tick's arrivals are drawn (pre-tick
  *  roster + matured re-entries). Invisible to foreign steps; read ONLY when
- *  the host configured `populationEffects` (presence gate). */
+ *  the host configured `populationEffects` (presence gate) — it judges both
+ *  halves of the curve: below the floor the herd repels, above it the herd
+ *  attracts. */
 export interface ArrivalInExt extends ArrivalIn {
   readonly inFlightUnits?: number;
 }
 
 /** Boundary parse (Laws 2/4): closed-key Map with every row validated once
- *  — coefficient a 0..1 Fixed, floor a positive safe integer. An empty/
- *  absent table returns an empty Map: the step then never reads
+ *  — coefficient a SIGNED Fixed in [-1, 1] (positive repels below the floor,
+ *  negative attracts above it, 0 inert), floor a positive safe integer. An
+ *  empty/absent table returns an empty Map: the step then never reads
  *  `inFlightUnits` and never rolls. */
 function parsePopulationEffects(
   table: DefaultPipelineConfig["populationEffects"],
@@ -191,8 +215,8 @@ function parsePopulationEffects(
   if (table === undefined) return out;
   for (const type of Object.keys(table).sort()) {
     const row = table[type] as { readonly coefficient: Fixed; readonly floor: number };
-    if (typeof row.coefficient !== "bigint" || row.coefficient < FIXED_ZERO || row.coefficient > FIXED_UNIT) {
-      throw new Error(`arrival: populationEffects["${type}"].coefficient must be a 0..1 Fixed, got ${String(row.coefficient)}`);
+    if (typeof row.coefficient !== "bigint" || row.coefficient < -FIXED_UNIT || row.coefficient > FIXED_UNIT) {
+      throw new Error(`arrival: populationEffects["${type}"].coefficient must be a signed Fixed in -1..1 (positive repels below the floor, negative attracts above it), got ${String(row.coefficient)}`);
     }
     if (!Number.isSafeInteger(row.floor) || row.floor < 1) {
       throw new Error(`arrival: populationEffects["${type}"].floor must be a positive safe integer (the herd anchor population), got ${String(row.floor)}`);
@@ -231,27 +255,13 @@ export function createArrivalStep(
       let count = Math.max(0, wholeOf(envelope.ratePerMin));
       const frac = fracRawOfUnit(envelope.ratePerMin);
       if (frac > 0n && rollUnder(frac, rng.nextU32())) count += 1;
-      for (let i = 0; i < count; i += 1) {
-        /* THE REPEL LOOP (§2.13 "The Population Effect" / Herding, audit
-           g09 TOP-PROBLEM #2): a herding population judges the server
-           BEFORE visiting. Below the authored floor, P(skip) grows linearly
-           with the shortfall — a half-empty game server repels half its
-           would-be players, and every repelled arrival deepens the spiral.
-           Above the floor p = 0: the v0 consumer implements the spiral's
-           REPULSE half only (the attract half would mint units the envelope
-           never authored — conservation-law territory, reported). The draw
-           rides the "arrival" stream FIRST for the candidate, before its
-           jitter/source rolls; repelled visitors simply never come — no
-           unit, no event (diegetically honest: you cannot observe someone
-           who stayed home). Retries/re-entries skip this step entirely
-           (⚠ consumer note above). */
-        const effect = population.get(envelope.tableId);
-        if (effect !== undefined && inFlight !== undefined && inFlight < effect.floor) {
-          const shortfall = BigInt(effect.floor - inFlight);
-          const repelP = (effect.coefficient * shortfall) / BigInt(effect.floor);
-          if (repelP > FIXED_ZERO && rollUnder(repelP, rng.nextU32())) continue;
-        }
-        const unitId = asEntityId(`${envelope.tableId}@${context.tick}#${e}.${i}`);
+      /* Mint closure — one candidate unit, rolls in the fixed order
+         jitter → sourceBucket → family → reputation. Authored candidates AND
+         attracted cohort bonuses mint through this SAME path, so a bonus unit
+         is diegetically indistinguishable from an envelope arrival (frozen
+         SimEvent union — kind "arrival", no new event kinds). */
+      const mintUnit = (unitIndex: number): void => {
+        const unitId = asEntityId(`${envelope.tableId}@${context.tick}#${e}.${unitIndex}`);
         const jitterPct = jitterSpread === 1 ? 100 : 100 - config.patienceJitterPct + rng.range(jitterSpread);
         const sourceBucket = rng.range(1024);
         // familyMix die (audit fix 3): rolled ONLY when the bundle authors a
@@ -288,6 +298,54 @@ export function createArrivalStep(
             envelopeTableId: envelope.tableId,
           }) satisfies SimEvent,
         );
+      };
+      /* Cohort bonuses continue the unit-index numbering AFTER the authored
+         count (`${e}.${count + b}`), preserving the id grammar and per-tick
+         uniqueness without disturbing authored candidates' ids. */
+      let bonusMints = 0;
+      for (let i = 0; i < count; i += 1) {
+        /* THE POPULATION LOOP (§2.13 "The Population Effect" / Herding —
+           audit g09 TOP-PROBLEM #2 repel half, attract half completed this
+           wave): a herding population judges the server BEFORE visiting.
+           ROLL BUDGET (determinism law, auditable): each candidate consumes
+           AT MOST ONE population draw on the "arrival" stream, positioned
+           FIRST for the candidate — before its jitter/source rolls — and the
+           two halves are disjoint by construction (sign × side-of-floor), so
+           a repel-configured run can never shift an attract stream position
+           and vice versa:
+           • BELOW the floor, positive coefficient → disgust draw:
+             p = coefficient × shortfall / floor. A hit SKIPS the candidate
+             entirely (repelled visitors simply never come — no unit, no
+             event; diegetically honest: you cannot observe someone who
+             stayed home).
+           • ABOVE the floor, negative coefficient → cohort-gravity draw:
+             p = |coefficient| × surplus / floor (rollUnder clamps, so a
+             surplus ≥ floor/(|coefficient|) makes the bonus certain — word-
+             of-mouth saturation, honest v0). A hit mints the candidate PLUS
+             ONE bonus unit brought in by the crowd. The bonus does NOT re-
+             roll gravity (ONE generation per tick — the fixed budget is what
+             keeps the stream position auditable; no branching process).
+           • At/above floor with a positive row, or at/below floor with a
+             negative row, or coefficient 0 → ZERO draws, mints unchanged.
+           Retries/re-entries skip this step entirely (⚠ consumer note above). */
+        const effect = population.get(envelope.tableId);
+        let attracted = false;
+        if (effect !== undefined && inFlight !== undefined) {
+          if (effect.coefficient > FIXED_ZERO && inFlight < effect.floor) {
+            const shortfall = BigInt(effect.floor - inFlight);
+            const repelP = (effect.coefficient * shortfall) / BigInt(effect.floor);
+            if (repelP > FIXED_ZERO && rollUnder(repelP, rng.nextU32())) continue;
+          } else if (effect.coefficient < FIXED_ZERO && inFlight > effect.floor) {
+            const surplus = BigInt(inFlight - effect.floor);
+            const attractP = (-effect.coefficient * surplus) / BigInt(effect.floor);
+            attracted = rollUnder(attractP, rng.nextU32());
+          }
+        }
+        mintUnit(i);
+        if (attracted) {
+          mintUnit(count + bonusMints);
+          bonusMints += 1;
+        }
       }
     }
     return Object.freeze({ units: Object.freeze(units), events: Object.freeze(events) });
