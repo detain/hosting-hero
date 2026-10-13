@@ -43,21 +43,21 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 
 | Subpath specifier | Resolves to | Ships |
 |---|---|---|
-| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 13 module barrels **incl. `save` (2026-10-06), `versus` + `coverage` + `unattended` (2026-10-07), `unlocks` (2026-10-09), zero name collisions — native names ride the star** |
-| `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (171 exports; intent-door arm landed 2026-10-06, +20; OD-24(a) pricing arm 2026-10-09, +4) |
+| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 14 module barrels **incl. `save` (2026-10-06), `versus` + `coverage` + `unattended` (2026-10-07), `unlocks` (2026-10-09), `scenario` (2026-10-10), zero name collisions — native names ride the star** |
+| `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (178 exports; intent-door arm landed 2026-10-06, +20; OD-24(a) pricing arm 2026-10-09, +4; later-state arms rode the row un-updated — count re-pinned at the 2026-10-13 docs-currency sweep) |
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
-| `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (60 exports incl. the intent-door surface + the OD-24(a) adjust-price additions, +5; `internal.ts` private) |
+| `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (115 exports incl. the intent-door surface, the OD-24(a)/attention/engine-recovery/observer surfaces — count re-pinned at the 2026-10-13 docs-currency sweep; `internal.ts` private) |
 | `@hh/sim-core/policy` | `src/policy/index.ts` | ✅ 90 exports (P1/P3/P4/P7 fixer-lane additions) |
-| `@hh/sim-core/economy` | `src/economy/index.ts` | ✅ 196 exports (journal chunking + invoice retention landed 2026-10-07, +13; `registerContractsEconomy` batch API landed 2026-10-09, +1) |
+| `@hh/sim-core/economy` | `src/economy/index.ts` | ✅ 278 exports (journal chunking + invoice retention landed 2026-10-07, +13; `registerContractsEconomy` batch API landed 2026-10-09, +1; the reputation/death/elasticity/post-mortem/recovery-observer arms rode the row un-updated — count re-pinned at the 2026-10-13 docs-currency sweep) |
 | `@hh/sim-core/observed` | `src/observed/index.ts` | ✅ 49 exports (composite-cell fold family) |
 | `@hh/sim-core/topology` | `src/topology/index.ts` | ✅ 99 exports (round-2 fixes incl. `domains.projectionVersion`) |
-| `@hh/sim-core/waves` | `src/waves/index.ts` | ✅ 74 exports |
+| `@hh/sim-core/waves` | `src/waves/index.ts` | ✅ 88 exports (contention/families/wave-rules arms landed after this row's compile — count re-pinned at the 2026-10-13 docs-currency sweep) |
 | `@hh/sim-core/replay` | `src/replay/index.ts` | ✅ 59 exports (barrel is an EXPLICIT name list) |
 | `@hh/sim-core/loader` | `src/loader/index.ts` | ✅ 89 exports |
-| `@hh/sim-core/save` | `src/save/index.ts` | ✅ 183 exports — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
+| `@hh/sim-core/save` | `src/save/index.ts` | ✅ 191 exports (later save-lane additions rode the row un-updated — count re-pinned at the 2026-10-13 docs-currency sweep) — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
 | `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 71 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names (count re-pinned for the fingerprint-flip lane's `cardContentFingerprint` + the versus-pin-fix lane's `defaultPolicyCardIndex`, 2026-10-09) |
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
-| `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 69 exports — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
+| `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 70 exports (count re-pinned at the 2026-10-13 docs-currency sweep) — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 49 exports (29 values + 20 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 11 shipped missions with one-flip lose probes + corpus tableId traffic seam (`corpus.ts`); EXPLICIT barrel, zero root collisions |
 

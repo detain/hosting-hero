@@ -13,7 +13,7 @@ Phase-1 packages).
 ```
 packages/
   sim-core/      @hh/sim-core — the whole deterministic engine, one package,
-                 one directory per module (14: the 13 below + internal/),
+                 one directory per module (16: the 15 below + internal/),
                  each consumed via subpath exports:
                    ./types      shared contract (branded ids, GameState, slots)
                    ./kernel     Q16.16 fixed-point · three clocks · counter RNG
@@ -29,14 +29,17 @@ packages/
                    ./coverage   12×9 threat×defense grid · dark-cell teaching
                    ./versus     ADR-0004 async Red-vs-Blue decks · draft · match
                    ./unattended Long-Weekend fast-forward · guardrails · what-if
+                   ./scenario   §1.5 mission runner — hh-scenario@1 wall · objectives · corpus seam
+                   ./unlocks    hg §5 unlock-trigger engine (digest-neutral observer)
                  `internal/` (canonical-codec home) is barrel-invisible by
                  design. Root "." barrel re-exports everything flat.
                  Resolution law: all runtime imports carry explicit `.ts`
                  specifiers so the SAME sources load under vitest/Vite, tsc
                  (allowImportingTsExtensions), and plain Node
                  `--experimental-transform-types` (Node-port parity, RISK-1).
-  content/       authored g1 content corpus (schema + waves/threats/visitors
-                 registries + wave slices + 2 i18n packs + validators).
+  content/       authored g1 content corpus (schemas + 5 type bundles +
+                 waves/threats/visitors/palettes registries +
+                 5 i18n packs + validators).
 apps/
   proto/         Phase-1 prototype app (Vite + Vue 3 + PixiJS v8): worker
                  protocol, Pixi world + budget/hue law, the ADR-0008
