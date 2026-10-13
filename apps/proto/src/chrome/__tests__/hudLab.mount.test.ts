@@ -238,6 +238,19 @@ describe("HudLabPanel.vue — the whole kit on the live engine", () => {
 });
 
 describe("HUD-LAB mount manifest (integrator contract)", () => {
+  it("carries the attention ledger and corpus mission cards (this wave)", () => {
+    const w = mount(HudLabPanel, { props: { seed: 904 } });
+    // E2a seam (b): the OD-6 denomination gets its own card, not a TopBar row
+    expect(w.find('[data-test="lab-attention"]').exists()).toBe(true);
+    expect(w.find('[data-test="attention-card"]').exists()).toBe(true);
+    expect(w.findAll('[data-test="hud-permanent"]').length).toBe(2); // four-id law holds
+    // proto host leg of the corpus seam (@5df5586): the 11th mission, button-driven
+    expect(w.find('[data-test="lab-corpus"]').exists()).toBe(true);
+    expect(w.find('[data-test="corpus-mission"]').exists()).toBe(true);
+    expect(w.find('[data-test="corpus-quiet"]').exists()).toBe(true); // nothing runs at mount
+    w.unmount();
+  });
+
   it("is frozen in the exact GATE_MOUNTS shape", () => {
     expect(Object.isFrozen(GATE_MOUNTS)).toBe(true);
     expect(GATE_MOUNTS.length).toBe(1);

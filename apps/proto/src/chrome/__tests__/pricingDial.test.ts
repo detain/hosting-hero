@@ -11,8 +11,14 @@ import type { EntityId } from "@hh/sim-core";
 import { SimCoreRunner } from "../../runner/simCoreRunner";
 import {
   ADJUST_PRICE,
+  BILLING_PROOF_PLAN,
+  BILLING_PROOF_STEPS,
   DEMO_PLANS,
+  HOURLY_CONTRACT_ID,
   INVALID_PRICE_PROBE,
+  billingDeltaLine,
+  billingProofKey,
+  billingProofPriceKeys,
   buildAdjustPriceIntent,
   priceLadder,
   receiptLine,
@@ -120,4 +126,63 @@ describe("the mainline door accepts the dial (live SimCoreRunner)", () => {
     const pricing = frame.notices.filter((n) => (n.detail ?? "").startsWith(`${ADJUST_PRICE}:`));
     expect(pricing.filter((n) => n.kind === "intent-executed")).toHaveLength(2);
   });
+});
+
+describe("billing proof (the card's evidence section, @8994f96 pattern)", () => {
+  it("classifies the hourly contract under the proof plan's door key", () => {
+    const keys = billingProofPriceKeys();
+    expect([...keys.entries()]).toEqual([
+      [HOURLY_CONTRACT_ID, "plan:plan/shared-web-basic"],
+    ]);
+    expect(billingProofKey(BILLING_PROOF_PLAN.id)).toBe("plan:plan/shared-web-basic");
+    expect(BILLING_PROOF_PLAN).toBe(DEMO_PLANS[0]);
+    expect(BILLING_PROOF_STEPS).toBe(20);
+  });
+
+  it("billingDeltaLine signs the gap and never eats the minus", () => {
+    const fmt = (v: bigint) => `${v}µ`;
+    expect(billingDeltaLine(asMoney(100n), asMoney(160n), fmt)).toEqual({
+      deltaMicroUsd: 60n,
+      deltaText: "+60µ",
+      nonzero: true,
+    });
+    expect(billingDeltaLine(asMoney(100n), asMoney(40n), fmt).deltaText).toBe("-60µ");
+    expect(billingDeltaLine(asMoney(100n), asMoney(100n), fmt)).toEqual({
+      deltaMicroUsd: 0n,
+      deltaText: "0µ",
+      nonzero: false,
+    });
+  });
+
+  it("the twin experiment on the panel seed: keyed dial moves cash, unkeyed stays byte-inert", () => {
+    const keys = billingProofPriceKeys();
+    const run = (mutate?: (treated: SimCoreRunner) => void): { control: bigint; treated: bigint } => {
+      const control = new SimCoreRunner({ seed: 905, priceKeys: keys });
+      const treated = new SimCoreRunner({ seed: 905, priceKeys: keys });
+      mutate?.(treated);
+      let c = 0n;
+      let t = 0n;
+      for (let i = 0; i < BILLING_PROOF_STEPS; i += 1) {
+        c = control.headlessStep(1000).freeCashMicroUsd;
+        t = treated.headlessStep(1000).freeCashMicroUsd;
+      }
+      control.stop();
+      treated.stop();
+      return { control: c, treated: t };
+    };
+    const inert = run();
+    expect(inert.treated).toBe(inert.control); // order-less twin == control law
+
+    const keyed = run((t) =>
+      t.submit(buildAdjustPriceIntent({ seq: 1, targetId: BILLING_PROOF_PLAN.id, newPriceMicroUsd: priceLadder(BILLING_PROOF_PLAN.baseMicroUsd)[1]! })),
+    );
+    expect(keyed.control).toBe(inert.control); // control is order-independent
+    expect(keyed.treated).not.toBe(keyed.control); // the fold MOVED — real µ$
+    expect(keyed.treated).toBe(24_994_926_732n); // probe-derived 2026-10-13 literal
+
+    const unkeyed = run((t) =>
+      t.submit(buildAdjustPriceIntent({ seq: 1, targetId: DEMO_PLANS[1]!.id, newPriceMicroUsd: asMoney(123_456n) })),
+    );
+    expect(unkeyed.treated).toBe(inert.control); // neutral-twin law: no contract, no delta
+  }, 30_000);
 });

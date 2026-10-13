@@ -54,6 +54,34 @@ describe("PricingDial", () => {
     const w = mount(PricingDial);
     // E2b copy flip: the old footer denied money moving; @8994f96 forwarding
     // made that denial false, so the pinned claim is the accurate one.
-    expect(w.get('[data-test="dial-honesty"]').text()).toContain("forwards it into every economy fold");
+    const footer = w.get('[data-test="dial-honesty"]').text();
+    expect(footer).toContain("forwards it into every economy fold");
+    // tripwire: the f9ea470-era denial must never return to the card copy
+    expect(footer).not.toContain("not the billing");
   });
+
+  it("the billing proof prints real twin cash and a signed delta", async () => {
+    const w = mount(PricingDial);
+    await w.get('[data-test="dial-billing-proof"]').trigger("click");
+    // default dial: base rung of the keyed plan ($9.90) — probe literal 2026-10-13
+    expect(w.get('[data-test="dial-proof-books"]').text()).toContain(
+      "plan:plan/shared-web-basic → $9.90",
+    );
+    expect(w.get('[data-test="dial-proof-control"]').text()).toContain("25,023.42");
+    expect(w.get('[data-test="dial-proof-treated"]').text()).toContain("24,994.92");
+    expect(w.get('[data-test="dial-proof-delta"]').text()).toContain("-$28.49");
+    expect(w.get('[data-test="dial-proof-honesty"]').text()).toContain("PROVISIONAL");
+    expect(projection.value).toBeNull();
+  }, 30_000);
+
+  it("dialing an UNKEYED plan proves the neutral-twin law in print", async () => {
+    const w = mount(PricingDial);
+    await w.get('[data-test="dial-plan-plan/shared-web-pro"]').trigger("click");
+    await w.get('[data-test="dial-billing-proof"]').trigger("click");
+    const delta = w.get('[data-test="dial-proof-delta"]').text();
+    expect(delta).toContain("0 µ$ — no contract under plan:plan/shared-web-pro");
+    // control and treated print identical cash — the inert-twin witness
+    expect(w.get('[data-test="dial-proof-control"]').text()).toContain("25,023.42");
+    expect(w.get('[data-test="dial-proof-treated"]').text()).toContain("25,023.42");
+  }, 30_000);
 });

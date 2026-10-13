@@ -12,7 +12,10 @@
  * `<verb>: <reason>` on a refusal.
  *
  * Honest scope ledger, E2b edition (all three original seams CLOSED):
- *  - the runner exposes `pricingState()` / `attentionState()` readbacks (E1);
+ *  - the pricing book reads back through `runner.lastTickFacts().game.pricing`
+ *    (there is no `pricingState()` accessor — the TickFacts seam is the
+ *    single-slot authority; `attentionState()`/`recoveryState()` are the
+ *    named accessors that DO exist);
  *  - the runner forwards `GameState.pricing.overrides` into the economy
  *    fold every tick (@8994f96) — an executed order DOES move the invoices
  *    of contracts classified under its key (the forwarding suite pins the
@@ -96,4 +99,61 @@ export function buildAdjustPriceIntent(input: {
 export function receiptLine(detail: string | undefined, outcome: "executed" | "refused"): string {
   if (detail === undefined) return outcome === "executed" ? ADJUST_PRICE : `${ADJUST_PRICE}: (no reason on wire)`;
   return detail;
+}
+
+/* ─────────────────────────── billing proof ───────────────────────────
+ * The card copy CLAIMS the forwarded book moves money; this section lets
+ * the card PROVE it. The controlled experiment mirrors the host-forwarding
+ * suite (@8994f96, simCoreRunner.forwarding.test.ts): two fresh runners on
+ * one seed, the SAME priceKeys classification, one of them takes a single
+ * adjust-price order at m0; both step a fixed horizon; the cash difference
+ * IS the billing delta. No fake arithmetic anywhere in the row.
+ *
+ * Classification law on THIS board: the demo runner's only contract that
+ * settles inside a 20-minute horizon is the hourly SMB contract
+ * (ctr-hourly-1, one cycle per 60 business minutes; the monthly $5M giant
+ * cycles at month roll, far past the horizon). We classify it under the
+ * FIRST demo plan's key, so dialing that plan moves real invoices and
+ * dialing any other key demonstrates the neutral-twin law: a book entry
+ * with no contract under its key changes NOTHING (byte-ident cash).
+ * Elasticity churn effects may or may not ride inside the horizon — the
+ * row reports raw µ$ deltas only, never a causal story beyond "billed at
+ * the dialed price". */
+
+/** The one contract the proof classifies (runner MONEY_CONTRACTS member). */
+export const HOURLY_CONTRACT_ID: EntityId = asEntityId("ctr-hourly-1");
+
+/** Fixed horizon of the proof — same window the forwarding suite pins. */
+export const BILLING_PROOF_STEPS = 20;
+
+/** The plan the hourly contract rides under (the catalog's first entry). */
+export const BILLING_PROOF_PLAN: DemoPlan = DEMO_PLANS[0]!;
+
+/** The door's override-book key for a plan target: `${targetKind}:${targetId}`. */
+export function billingProofKey(planId: EntityId): string {
+  return `plan:${planId}`;
+}
+
+/** Runner-construction classification: hourly contract → the proof plan's key. */
+export function billingProofPriceKeys(): ReadonlyMap<EntityId, string> {
+  return new Map([[HOURLY_CONTRACT_ID, billingProofKey(BILLING_PROOF_PLAN.id)]]);
+}
+
+/** Signed µ$ delta line, ASCII sign, absolute value formatted by the panel's
+ *  own money law. Zero is told apart from the unkeyed case by `keyed`:
+ *  a zero on a KEY the board bills would be a broken claim, so the caller
+ *  passes keyed=false only for the unbilled-target honesty line. */
+export function billingDeltaLine(
+  controlCashMicroUsd: MoneyUnit,
+  treatedCashMicroUsd: MoneyUnit,
+  format: (microUsd: MoneyUnit) => string,
+): { readonly deltaMicroUsd: MoneyUnit; readonly deltaText: string; readonly nonzero: boolean } {
+  const deltaMicroUsd = treatedCashMicroUsd - controlCashMicroUsd;
+  const sign = deltaMicroUsd > 0n ? "+" : deltaMicroUsd < 0n ? "-" : "";
+  const absolute = asMoney(deltaMicroUsd < 0n ? -deltaMicroUsd : deltaMicroUsd);
+  return Object.freeze({
+    deltaMicroUsd: asMoney(deltaMicroUsd),
+    deltaText: `${sign}${format(absolute)}`,
+    nonzero: deltaMicroUsd !== 0n,
+  });
 }

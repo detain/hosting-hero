@@ -22,6 +22,8 @@ import AlertStack from "./AlertStack.vue";
 import PanicLayout from "./PanicLayout.vue";
 import PricingDial from "./PricingDial.vue";
 import RecoveryWatch from "./RecoveryWatch.vue";
+import AttentionCard from "./AttentionCard.vue";
+import CorpusMissionCard from "./CorpusMissionCard.vue";
 import { buildHudCandidates, formatMicroUsd, formatRunClock, hudPermanentRows, rhoDisplayOf } from "./metrics";
 import { planPromotion, toggleUserPin, type MetricCandidate } from "./promotion";
 import { globalExplain } from "./explainRegistry";
@@ -245,6 +247,16 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
         <section class="card" data-hud-optional="true" data-test="lab-recovery">
           <h4>Recovery watch — §7.7 engine windows, strikes and ramp (ADR-0012)</h4>
           <RecoveryWatch />
+        </section>
+
+        <section class="card" data-hud-optional="true" data-test="lab-attention">
+          <h4>Attention ledger — OD-6 focus-hand loans, wire roll-up + bounded law</h4>
+          <AttentionCard />
+        </section>
+
+        <section class="card" data-hud-optional="true" data-test="lab-corpus">
+          <h4>Corpus mission — the g1 wave table through the scenario seam (proto host leg)</h4>
+          <CorpusMissionCard />
         </section>
       </div>
     </div>

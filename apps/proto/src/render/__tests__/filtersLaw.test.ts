@@ -47,9 +47,19 @@ function listSources(dir: string): string[] {
   return found;
 }
 
-/** file:line report of code-form `.filters =` writes in one source. */
+/** file:line report of code-form `.filters =` writes in one source.
+ *  ENOENT-tolerant: a sibling law test (audioLaw) plants a LIVE probe file in
+ *  src/chrome/ while parallel workers run; if a listed file vanished between
+ *  readdir and read, it was that transient probe, never a shipping source. */
 function filtersWrites(path: string): string[] {
-  const code = stripComments(readFileSync(path, "utf8"));
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (error) {
+    if ((error as { code?: string }).code === "ENOENT") return [];
+    throw error;
+  }
+  const code = stripComments(raw);
   return code
     .split("\n")
     .map((line, i) => (FILTERS_WRITE.test(line) ? `${path}:${i + 1}` : null))
