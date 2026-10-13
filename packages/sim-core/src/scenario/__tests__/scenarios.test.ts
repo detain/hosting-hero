@@ -21,6 +21,7 @@ const SPEC_HEADINGS: Readonly<Record<string, string>> = {
   "the-angry-whale": "The Angry Whale",
   "collections-week": "Collections Week",
   metastable: "Metastable",
+  "metastable-corpus": "Metastable",
   "launch-day": "Launch Day",
   "ddos-season": "DDoS Season",
   "runway-six-weeks": "Runway: 6 Weeks",
@@ -29,13 +30,14 @@ const SPEC_HEADINGS: Readonly<Record<string, string>> = {
 };
 
 describe("the shipped set", () => {
-  it("is exactly the ten authored §1.5 missions", () => {
+  it("is exactly the eleven shipped §1.5 wires (ten missions; Metastable ships twice)", () => {
     expect(SHIPPED_SCENARIO_IDS).toEqual([
       "the-long-weekend",
       "deadbeat-quarter",
       "the-angry-whale",
       "collections-week",
       "metastable",
+      "metastable-corpus",
       "launch-day",
       "ddos-season",
       "runway-six-weeks",

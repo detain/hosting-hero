@@ -22,13 +22,22 @@ export {
 export type {
   ObjectivePredicate,
   ScenarioContractSpec,
+  ScenarioCorpusTraffic,
   ScenarioDeathCause,
   ScenarioDoc,
   ScenarioErrorCode,
   ScenarioLimits,
   ScenarioPredicateKind,
+  ScenarioSegmentsTraffic,
   ScenarioTraffic,
 } from "./doc.ts";
+
+export {
+  DEFAULT_CORPUS_GEOMETRY,
+  DEFAULT_CORPUS_TYPE_BUNDLE_ID,
+  resolveCorpusWindows,
+} from "./corpus.ts";
+export type { CorpusAuthority, CorpusGeometry, CorpusWaveWindow } from "./corpus.ts";
 
 export {
   EMPTY_OBSERVATION,

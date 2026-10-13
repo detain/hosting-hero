@@ -38,6 +38,8 @@ import type {
 } from "../types.ts";
 import { FIXED_ZERO, fromInt } from "../kernel/fixed.ts";
 import { streamFor } from "../kernel/rng.ts";
+import { resolveCorpusWindows } from "./corpus.ts";
+import type { CorpusAuthority, CorpusWaveWindow } from "./corpus.ts";
 import { createDefaultSlots, createTickDriver, digestState } from "../pipeline/index.ts";
 import type { DefaultPipelineConfig } from "../pipeline/index.ts";
 import { createRulePhaseStep } from "../policy/index.ts";
@@ -85,7 +87,7 @@ import {
   type TickFacts,
 } from "../internal/tickFold.ts";
 import type { ObjectivePredicate, ScenarioDoc } from "./doc.ts";
-import { scenarioSeed } from "./doc.ts";
+import { ScenarioError, scenarioSeed } from "./doc.ts";
 import type { ObjectiveProgress, ScenarioObservation } from "./objectives.ts";
 import { objectiveHolds, objectiveLine, progressAll } from "./objectives.ts";
 
@@ -101,6 +103,10 @@ export interface ScenarioRunConfig {
   readonly seedOffset?: number;
   /** Hard shorten of limits.maxSimMinutes (≥ 1). */
   readonly tickCap?: number;
+  /** Required when traffic.profile === "corpus": the shipped wave-table
+   *  slices + registry meta the citation resolves against (see corpus.ts
+   *  — the browser-safe seam; sim-core never reads fs). */
+  readonly corpus?: CorpusAuthority;
 }
 
 /** Cumulative trace census — the report's "what happened" roll-up. */
@@ -160,25 +166,59 @@ function parseDeathCause(causeId: string): CompanyDeathCause | null {
   return (COMPANY_DEATH_CAUSES as readonly string[]).includes(cause) ? (cause as CompanyDeathCause) : null;
 }
 
-/** The traffic envelope for one sim-minute: the piecewise plateau from the
- *  doc, minted the way fastForward mints its baseline (same five fields). */
-function envelopesAtMinute(doc: ScenarioDoc, minute: SimMinute): readonly WaveEnvelope[] {
+const EMPTY_WINDOWS: readonly CorpusWaveWindow[] = Object.freeze([]);
+
+function requireCorpusAuthority(tableId: string, authority: CorpusAuthority | undefined): CorpusAuthority {
+  if (authority === undefined) {
+    throw new ScenarioError(
+      "CORPUS_UNRESOLVED",
+      "config.corpus",
+      `traffic cites corpus table "${tableId}" but no CorpusAuthority was injected — the host must pass config.corpus (slices + threatMeta); sim-core never reads the filesystem`,
+    );
+  }
+  return authority;
+}
+
+/** The traffic envelopes for one sim-minute.
+ *  - segments profile: the piecewise plateau from the doc, minted the way
+ *    fastForward mints its baseline (same five fields). UNMOVED law.
+ *  - corpus profile: the shipped-citation windows from resolveCorpusWindows
+ *    (active by [start, start+window)) stacked on the scenario's own
+ *    baseline trickle (minted like a segments plateau). Both ride the SAME
+ *    driver arrival-mint path — the seam adds data, not machinery. */
+function envelopesAtMinute(
+  doc: ScenarioDoc,
+  minute: SimMinute,
+  corpusWindows: readonly CorpusWaveWindow[],
+): readonly WaveEnvelope[] {
+  if (doc.traffic.profile === "corpus") {
+    const active: WaveEnvelope[] = [];
+    for (const w of corpusWindows) {
+      if (minute >= w.startMinute && minute < w.startMinute + w.windowMinutes) active.push(w.envelope);
+    }
+    if (doc.traffic.baselineRatePerMin > 0) {
+      active.push(baselineEnvelope(doc.traffic.tableId, doc.traffic.baselineRatePerMin));
+    }
+    return Object.freeze(active);
+  }
   const segments = doc.traffic.segments;
   let rate = segments[0]!.ratePerMin;
   for (const segment of segments) {
     if (segment.fromMinute <= minute) rate = segment.ratePerMin;
   }
   if (rate === 0) return Object.freeze([]);
-  return Object.freeze([
-    Object.freeze({
-      tableId: doc.traffic.tableId,
-      role: "baseline" as const,
-      shape: "plateau" as const,
-      ratePerMin: fromInt(rate),
-      telegraphed: true,
-      dominantFamily: "organic" as const,
-    }),
-  ]);
+  return Object.freeze([baselineEnvelope(doc.traffic.tableId, rate)]);
+}
+
+function baselineEnvelope(tableId: string, ratePerMin: number): WaveEnvelope {
+  return Object.freeze({
+    tableId,
+    role: "baseline" as const,
+    shape: "plateau" as const,
+    ratePerMin: fromInt(ratePerMin),
+    telegraphed: true,
+    dominantFamily: "organic" as const,
+  });
 }
 
 /* dependencyEdgesFor / TickFacts / collectFacts / buildSample /
@@ -269,6 +309,14 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
   }
   const runSeed = scenarioSeed(seed, offset);
   const totalTicks = Math.min(cap, doc.limits.maxSimMinutes);
+  /* Corpus citations resolve through the shipped waves pipeline against
+     the host-injected slices, on THIS run's seed (the same (seed, waveN,
+     cursor) dice fastForward rolls). Fail-loud if the wire cites without
+     supplying the authority. */
+  const corpusWindows =
+    doc.traffic.profile === "corpus"
+      ? resolveCorpusWindows(doc.traffic, runSeed, requireCorpusAuthority(doc.traffic.tableId, config.corpus))
+      : EMPTY_WINDOWS;
 
   /* ── mint the world (the unattended assembly, from doc data) ── */
   const uaConfig: RunUnattendedConfig = Object.freeze({
@@ -370,7 +418,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     const result = driver.advance(
       game,
       Object.freeze({
-        envelopes: envelopesAtMinute(doc, minute),
+        envelopes: envelopesAtMinute(doc, minute, corpusWindows),
         evidence: Object.freeze([]),
         classes: UNATTENDED_CLASSES,
         dependencyEdges,

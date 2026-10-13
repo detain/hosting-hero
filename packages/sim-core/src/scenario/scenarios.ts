@@ -1,5 +1,6 @@
-/** Ten shipped §1.5 scenarios — the library grows toward the full playable
- *  census.
+/** Eleven shipped §1.5 scenarios — the library grows toward the full
+ *  playable census (ten missions; Metastable ships twice, once per traffic
+ *  profile, the corpus twin proving the waves-tableId seam).
  *
  *  Every document here is WIRE DATA (JSON-safe literals: money rides
  *  strings for the big µ$ values) parsed through the same wall external
@@ -22,6 +23,10 @@
  *  - metastable        → "Metastable" (~line 4076): a surge whose duration
  *    decides whether the queue drains or locks — the retry-storm idea the
  *    seed lane wanted; shipped via traffic segments, no waves corpus needed.
+ *  - metastable-corpus → same "Metastable" heading (§1.5): the waves-tableId
+ *    seam PROOF twin. Same board/objectives, but the storm is a citation of
+ *    the shipped g1 quarter (waves [1] win, [1,5] lose) instead of authored
+ *    ladders — content retunes flow into the mission through planWave.
  *  - launch-day        → "Launch Day" / "Hug of Death" / "The Slashdotting"
  *    (~line 3145): a spike arrives; the bounce budget is the conversion
  *    proxy — spend it and the launch converts nothing.
@@ -282,6 +287,45 @@ const METASTABLE_WIRE = {
       { fromMinute: 30, ratePerMin: 16 },
       { fromMinute: 33, ratePerMin: 4 },
     ],
+  },
+  objectives: {
+    win: [{ kind: "survive-minutes", minutes: 240 }],
+    lose: [],
+  },
+  limits: {
+    maxSimMinutes: 240,
+    guardrails: [{ type: "cascadeCollapse", degradedPctGt: 50, sustainedMin: 10 }],
+  },
+} satisfies ScenarioWire;
+
+/* ─────────────────────── Metastable — corpus twin ─────────────────────── */
+
+/** The same §1.5 mission, driven through the waves-tableId seam instead
+ *  of hand-typed plateaus: the quiet hum stays authored (baselineRatePerMin
+ *  4, the segments twin's calm), while the STORM is a citation of the
+ *  shipped g1 quarter — wave 1 (scanner drizzle) at the half-hour mark,
+ *  and in the lose arm wave 5 (layer-7 mimic, the quarter's 30/min
+ *  finale) stacks behind it through the content's own planWave law. The
+ *  rates are the content's; if the corpus retunes, this mission retunes
+ *  with it. Witness ticks are probe-derived (see corpusTwin tests). */
+const METASTABLE_CORPUS_WIRE = {
+  schema: "hh-scenario@1",
+  id: "metastable-corpus",
+  name: "Metastable (Corpus Twin)",
+  brief:
+    "The eight-slot edge node hums at half load, then cites the shipped quarter: a scanner drizzle at the half-hour mark is weatherable; stack the finale behind it and backlog plus retries lock capacity past the degraded wall — the storm rides the content's schedule.",
+  specRef: "§1.5 Metastable",
+  specLine: 4076,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "g1-shared-web-first-quarter",
+    waves: [1],
+    waveStartMinute: 30,
+    baselineRatePerMin: 4,
   },
   objectives: {
     win: [{ kind: "survive-minutes", minutes: 240 }],
@@ -565,6 +609,7 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [ANGRY_WHALE_WIRE.id]: ANGRY_WHALE_WIRE,
   [COLLECTIONS_WEEK_WIRE.id]: COLLECTIONS_WEEK_WIRE,
   [METASTABLE_WIRE.id]: METASTABLE_WIRE,
+  [METASTABLE_CORPUS_WIRE.id]: METASTABLE_CORPUS_WIRE,
   [LAUNCH_DAY_WIRE.id]: LAUNCH_DAY_WIRE,
   [DDOS_SEASON_WIRE.id]: DDOS_SEASON_WIRE,
   [RUNWAY_SIX_WEEKS_WIRE.id]: RUNWAY_SIX_WEEKS_WIRE,
@@ -584,6 +629,7 @@ export const deadbeatQuarterDoc: ScenarioDoc = parseScenarioDoc(DEADBEAT_QUARTER
 export const theAngryWhaleDoc: ScenarioDoc = parseScenarioDoc(ANGRY_WHALE_WIRE);
 export const collectionsWeekDoc: ScenarioDoc = parseScenarioDoc(COLLECTIONS_WEEK_WIRE);
 export const metastableDoc: ScenarioDoc = parseScenarioDoc(METASTABLE_WIRE);
+const metastableCorpusDoc: ScenarioDoc = parseScenarioDoc(METASTABLE_CORPUS_WIRE);
 const launchDayDoc: ScenarioDoc = parseScenarioDoc(LAUNCH_DAY_WIRE);
 const ddosSeasonDoc: ScenarioDoc = parseScenarioDoc(DDOS_SEASON_WIRE);
 const runwaySixWeeksDoc: ScenarioDoc = parseScenarioDoc(RUNWAY_SIX_WEEKS_WIRE);
@@ -597,6 +643,7 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   theAngryWhaleDoc.id,
   collectionsWeekDoc.id,
   metastableDoc.id,
+  metastableCorpusDoc.id,
   launchDayDoc.id,
   ddosSeasonDoc.id,
   runwaySixWeeksDoc.id,
@@ -611,6 +658,7 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [theAngryWhaleDoc.id]: theAngryWhaleDoc,
   [collectionsWeekDoc.id]: collectionsWeekDoc,
   [metastableDoc.id]: metastableDoc,
+  [metastableCorpusDoc.id]: metastableCorpusDoc,
   [launchDayDoc.id]: launchDayDoc,
   [ddosSeasonDoc.id]: ddosSeasonDoc,
   [runwaySixWeeksDoc.id]: runwaySixWeeksDoc,

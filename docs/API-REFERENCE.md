@@ -17,7 +17,9 @@ SCENARIO-LANE pass 2026-10-10 (`## scenario` section + import row, +39 names —
 hg §1.5 declarative missions + runScenario over the existing engine; the
 api-verify module map gained its `scenario` line); 2026-10-13 collision
 adjudication (`docs/adr/0011`, +2 names — 41 total: the salvaged
-`collectionsWeekDoc` + `metastableDoc` re-authored inline). Ground truth = source
+`collectionsWeekDoc` + `metastableDoc` re-authored inline); CORPUS-SEAM pass
+2026-10-13 (waves-tableId traffic adapter — `corpus.ts` rows + 8 names → 49
+scenario exports). Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
 `docs/api-verify.test.mjs` (run `node docs/api-verify.test.mjs` — it fails if
@@ -57,7 +59,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 | `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 69 exports — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
-| `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 41 exports (26 values + 15 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 10 shipped missions with one-flip lose probes; EXPLICIT barrel, zero root collisions |
+| `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 49 exports (29 values + 20 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 11 shipped missions with one-flip lose probes + corpus tableId traffic seam (`corpus.ts`); EXPLICIT barrel, zero root collisions |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -1300,25 +1302,32 @@ runner exists — save/modes.ts is schema-only"). One declarative document
 format (`hh-scenario@1` strict JSON behind a closed-vocabulary wall) plus a
 deterministic mission loop that COMPOSES the existing engine — mint helpers and
 traffic constants from `unattended/`, `createTickDriver` from `pipeline/`, the
-money lane from `economy/` (registerContractsEconomy + runEconomyTick, the F4
-refusal law mirrored from `fastForward.ts` and source-pinned by test) — and adds
+money lane from `economy/` through the single-home fold `internal/tickFold.ts`
+(@9bb6329 — the F4 refusal law lives only there; a single-home guard pins that
+neither host re-mirrors it) — and adds
 the one thing a weekend does not have: OBJECTIVE CHECKING at tick boundaries
 (terminal order guard → lose → win; a lose landing on a full-win tick is a
 LOSE). Output-side only: GameState is never widened, zero digests move; the
 `ScenarioReport` is a fold over TickResults + EconomyTickOuts whose `endDigest`
-is the house `digestState` of the tick-final state. Ten missions ship
+is the house `digestState` of the tick-final state. Eleven missions ship
 (§1.5 `The Long Weekend` :3646, `Deadbeat Quarter` :3790, `The Angry Whale`
 :3408, the ADR-0011 salvages `Collections Week` :3778 and `Metastable`
 :4076, plus the wave-two five `Launch Day` :3145, `DDoS Season` :3978,
 `Runway: 6 Weeks` :3753, `The Price Hike` :3802 and `The Quiet Month`
-:3463), each authored winnable as shipped and proven losable by flipping ONE
-wire field at the same seed. Traffic is segments-only in v0 — segments open and
-close storm windows (that is how `Metastable` ships: a ×4 surge from three
-wire-authored plateaus); naming a waves-corpus `tableId` for ramp shapes,
-telegraphs, and dominant-family labels remains the documented seam
-(gap-registered). Pure: no wall-clock, no Date,
-no I/O inside a run; `runScenario(doc, seed, config)` ×100 is byte-identical
-(`src/scenario/__tests__/runner.test.ts`). Import: `@hh/sim-core/scenario`.
+:3463, plus `Metastable (Corpus Twin)` `metastable-corpus` re-using the same
+:4076 heading through corpus traffic), each authored winnable as shipped and
+proven losable by flipping ONE wire field at the same seed. Traffic ships in
+two profiles: `segments` (piecewise plateaus — how `Metastable` storms: a ×4
+surge from three wire-authored steps) and `corpus` (the waves-tableId seam,
+now LIVE): a `{tableId, waves: [4]}` block resolves through the shipped
+foreign-slice pipeline — `parseForeignWaveSlice` → the same director/`planWave`
+window law `fastForward.ts` uses → per-minute arrival envelopes with real ramp
+shapes, telegraphs, and dominant-family labels — so engine content changes
+flow into scenarios instead of being re-typed (see `corpus.ts` below; the host
+injects the slice JSON via `config.corpus`, sim-core never reads files). Pure:
+no wall-clock, no Date, no I/O inside a run; `runScenario(doc, seed, config)`
+×100 is byte-identical (`src/scenario/__tests__/runner.test.ts`).
+Import: `@hh/sim-core/scenario`.
 
 ### doc.ts — the document wall
 
@@ -1332,10 +1341,12 @@ no I/O inside a run; `runScenario(doc, seed, config)` ×100 is byte-identical
 | `ScenarioDeathCause` | `CompanyDeathCause \| "any"` | OD-25(a) causes (float-insolvency / covenant-default / churn-collapse) plus the wildcard | type-only |
 | `ObjectivePredicate` | discriminated union (10 arms) | One parsed, frozen win/lose condition | type-only |
 | `ScenarioContractSpec` | `interface { id; contract: Contract; termMonths; commitmentBps: bigint }` | One signed customer: author's wire fields + the fully minted Contract (tcv/acv/SLA derived to the proven unattended fixture shape, never author-editable in v0) | type-only |
-| `ScenarioTraffic` | `interface { tableId: string; segments: readonly { fromMinute; ratePerMin }[] }` | Piecewise plateau arrivals over sim-minutes; rate 0 = silence; first segment must open at 0 | type-only |
+| `ScenarioTraffic` | `ScenarioSegmentsTraffic \| ScenarioCorpusTraffic` | Discriminated on `profile` (`"segments"` \| `"corpus"`), inferred from which of `segments`/`waves` the wire names — both together is a `BAD_TRAFFIC` refusal | type-only |
+| `ScenarioSegmentsTraffic` | `interface { profile: "segments"; tableId; segments: readonly { fromMinute; ratePerMin }[] }` | Piecewise plateau arrivals over sim-minutes; rate 0 = silence; first segment must open at 0 | type-only |
+| `ScenarioCorpusTraffic` | `interface { profile: "corpus"; tableId; waves: readonly number[]; waveStartMinute; baselineRatePerMin }` | Storm windows cited from a SHIPPED corpus wave table by 1-based wave number (ascending, unique, 1..1000); `waveStartMinute` defaults 2, `baselineRatePerMin` defaults 0 (quiet floor between waves) | type-only |
 | `ScenarioLimits` | `interface { maxSimMinutes; initialFreeMicroUsd: bigint; opex: readonly UnattendedOpexDraft[]; dunningEngineOwned; handCapacity; guards: readonly ParsedGuard[] }` | What bounds the run: clock, opening balance, scheduled burns, dunning ownership, door capacity, catastrophe-guard passthrough (closed unattended vocabulary) | type-only |
 | `ScenarioDoc` | `interface { schemaVersion: 1; id; name; brief; specRef; specLine: number \| null; board: UnattendedBoardCast; contracts; traffic; objectives: { win; lose }; limits }` | THE trusted, deep-frozen mission document — only reachable through `parseScenarioDoc` | type-only |
-| `ScenarioErrorCode` | 18-arm string union (`BAD_RECORD` … `DUPLICATE`) | Closed error taxonomy of the wall | type-only |
+| `ScenarioErrorCode` | 19-arm string union (`BAD_RECORD` … `CORPUS_UNRESOLVED` … `DUPLICATE`) | Closed error taxonomy of the wall; `CORPUS_UNRESOLVED` = corpus traffic cannot be resolved against the injected slices (bad stem, unshipped wave number, missing `config.corpus`) | type-only |
 | `ScenarioError` | `class extends Error { code: ScenarioErrorCode; path: string }` | Message grammar `scenario[CODE] at 'path': detail` (versus/unlocks family); `path` names the offending wire node | deterministic throw |
 | `parseMoneyWire` | `(value: unknown, path: string, code: ScenarioErrorCode) => bigint` | µ$ on the wire: non-negative safe integer or its decimal string; everything else (floats, negatives, `"42.0"`, booleans) throws with the caller's code | pure |
 | `parseScenarioDoc` | `(raw: unknown) => ScenarioDoc` | THE sanctioned entry to the type — closed records (unknown key = refusal), cross-section law (burns AND contract cliffs must land inside the clock: sim = biz × 7/720), win list non-empty, lose list may be empty; result deep-frozen | pure |
@@ -1360,24 +1371,36 @@ no I/O inside a run; `runScenario(doc, seed, config)` ×100 is byte-identical
 | --- | --- | --- | --- |
 | `SCENARIO_OUTCOMES` | `readonly ["won","lost","timeout"]` | Closed verdict vocabulary | frozen array |
 | `ScenarioOutcome` | union of the three | — | type-only |
-| `ScenarioRunConfig` | `interface { seedOffset?: number; tickCap?: number }` | Probe knobs: `tickCap` can only SHORTEN the declared clock, never extend; `seedOffset` walks the seed | type-only |
+| `ScenarioRunConfig` | `interface { seedOffset?: number; tickCap?: number; corpus?: CorpusAuthority }` | Probe knobs: `tickCap` can only SHORTEN the declared clock, never extend; `seedOffset` walks the seed; `corpus` is the slice authority corpus-traffic missions resolve against (missing while the doc names corpus traffic → `CORPUS_UNRESOLVED`, fail-loud before tick 1) | type-only |
 | `ScenarioTrace` | `interface { arrivals; served; bounced; landed; falsePositives; economyRounds; economyRefusals; eventsByKind; noticesByKind }` | Cumulative census roll-up; F4 voids + F5 bounces combined as the refusal count; Record keys code-unit sorted | type-only |
 | `ScenarioReport` | `interface { scenarioId; runSeed; outcome; stopReason; endTick; endMinute; endDigest; observation; objectives: { win; lose }; trace; cashStartMicroUsd; cashEndMicroUsd }` | The mission verdict record, frozen, bigint-bearing — hosts serialize with the house canonical codec like UnattendedReport | type-only |
 | `SCENARIO_ENGINE_VERSION` | `"scenario-v0"` | engineVersion stamp inside every scenario-minted state (digest-visible) | frozen constant |
-| `runScenario` | `(doc: ScenarioDoc, seed: RunSeed, config?: ScenarioRunConfig) => ScenarioReport` | Assembly over the existing engine: mintInitialState/board/envelope-cadence from unattended, money lane per the fastForward F4/F5 law, opex burns posted by (atMinute, memo) order, guard/lose/win evaluated at EVERY tick boundary in terminal order; stopReason grammar `win@240` / `lose:<line>@<min>` / `guard:<reason>@<min>` / `timeout@<min>` | ×100 byte-identical (pinned); refuse-regex mirrors source-pinned against fastForward.ts |
+| `runScenario` | `(doc: ScenarioDoc, seed: RunSeed, config?: ScenarioRunConfig) => ScenarioReport` | Assembly over the existing engine: mintInitialState/board/envelope-cadence from unattended (corpus traffic resolves its storm windows once per run via `resolveCorpusWindows` from the run seed), money lane via `foldMoneyLaneTick` (internal/tickFold.ts single home), opex burns posted by (atMinute, memo) order, guard/lose/win evaluated at EVERY tick boundary in terminal order; stopReason grammar `win@240` / `lose:<line>@<min>` / `guard:<reason>@<min>` / `timeout@<min>` | ×100 byte-identical (pinned); refuse-regex mirrors source-pinned against fastForward.ts |
+
+### corpus.ts — the waves-corpus traffic adapter
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+| --- | --- | --- | --- |
+| `CorpusGeometry` | `interface { windowMinutes; rampMin; plateauMin; decayMin }` | The foreign-slice geometry knobs (per-wave `par`/`trough` ride the slice; geometry only sets window lengths) | type-only |
+| `CorpusAuthority` | `interface { slices: ReadonlyMap<string, unknown>; threatMeta: (id) => {family, denomination} \| undefined; typeBundleId?; geometry?; invitations? }` | What the HOST injects into `runScenario`'s `config.corpus`: tableId stem → raw slice JSON, threat registry labels, optional type-bundle/geometry/invitation overrides. sim-core never touches the filesystem — content reading stays a host concern (waveRules/fastForward pattern) | type-only |
+| `CorpusWaveWindow` | `interface { waveN; startMinute; windowMinutes; envelope: WaveEnvelope }` | One resolved storm window: `startMinute` includes the director placement dice, `envelope` is planWave's own `waveEnvelope` (ramp shape, telegraph, dominant family) | type-only |
+| `DEFAULT_CORPUS_GEOMETRY` | `CorpusGeometry` (12 / 3 / 3 / 2) | The G1 geometry the proto host's `waveRules.ts` uses — mirrored as the default so scenario storms match host storms | frozen constant |
+| `DEFAULT_CORPUS_TYPE_BUNDLE_ID` | `"official:shared-web"` | Default component-bundle lineage for `parseForeignWaveSlice` | frozen constant |
+| `resolveCorpusWindows` | `(traffic: ScenarioCorpusTraffic, runSeed: RunSeed, authority: CorpusAuthority) => readonly CorpusWaveWindow[]` | THE seam — replays the shipped `fastForward.buildWaveWindows` cursor law (start at `waveStartMinute`, `waveStream` rng, `directorPropose`, `planWave` with empty ledger/invitations, advance by `windowMinutes`) for ONLY the cited waves, then `runScenario` mints per-minute from each active window's `envelope.ratePerMin` through the same arrival step segments use. Unknown stem / unshipped wave number / slice parse failure → `ScenarioError CORPUS_UNRESOLVED` naming the tableId | pure in (traffic, runSeed, authority); ×100 byte-identical (pinned) |
 
 ### scenarios.ts — the shipped library
 
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 | --- | --- | --- | --- |
 | `ScenarioWire` | `interface` (JSON-shaped pre-parse doc) | The authored wire form: plain JSON, safe to ship in files or over the wall | type-only |
-| `SHIPPED_SCENARIO_WIRES` | `Readonly<Record<string, ScenarioWire>>` | The ten missions as plain-JSON literals — test surgery (one-field flips) happens HERE, then re-parses through the wall | frozen |
+| `SHIPPED_SCENARIO_WIRES` | `Readonly<Record<string, ScenarioWire>>` | The eleven missions as plain-JSON literals — test surgery (one-field flips) happens HERE, then re-parses through the wall | frozen |
 | `theLongWeekendDoc` | `ScenarioDoc` | §1.5 :3646 — 240 sim-min of calm hourly revenue vs a payroll drip; win = survive + zero churn + no death; freeCashDepleted guard is the catastrophe halt | parsed at import (fail-loud) |
 | `deadbeatQuarterDoc` | `ScenarioDoc` | §1.5 :3790 — 300 sim-min where revenue books but cash lags (monthly invoices, net-terms delay); win = invoices-settled 4 + cash-above + full clock | parsed at import |
 | `theAngryWhaleDoc` | `ScenarioDoc` | §1.5 :3408 — a 400 Mµ$/hr whale cliffs at biz-minute 11 400 (≈ sim t111) inside a 200-minute clock; win = keep it (auto-renew) + cash-above 60 M; lose = churn-above 0 | parsed at import |
 | `collectionsWeekDoc` | `ScenarioDoc` | §1.5 :3778 (ADR-0011 salvage) — six hourly accounts, two auto-renew anchors + a four-account dice book; hourly invoices settle from t≈1 (~1,500 by t240); win = survive + invoices-settled 1 + no-death; the one-flip loss `contracts: []` → churn-collapse@44 (engine truth: cliff dice cannot force a deterministic walk-out — see ADR) | parsed at import |
 | `metastableDoc` | `ScenarioDoc` | §1.5 :4076 (ADR-0011 salvage) — 8-slot node at ρ .50, a ×4 surge for 3 min via traffic segments; win = survive 240 (drains inside the 10-min cascade wall); the one-flip loss `segments[2].fromMinute 33→36` → `guard:cascadeCollapse@39`; the intermediate arm is genuinely seed-divergent (9W/6L over offsets 0–14, pinned) | parsed at import |
-| `SHIPPED_SCENARIO_IDS` | `readonly string[]` | The ten ids in author order | frozen array |
+| `metastable-corpus` | via `shippedScenario` | §1.5 :4076 again — the corpus twin: same board, same 8 slots at 20 s, same cascade guard, but the storm is the SHIPPED g1-shared-web wave 1 (3.125/min ramp at sim-min 30) over a baselineRate 4/min floor. Win = survive 240 (offsets 0–4); the one-flip loss `waves: [1] → [1, 5]` stacks the corpus layer-7 mimic storm (30/min) → `guard:cascadeCollapse@80` at offset 0 | parsed at import (module-private doc const; id is public) |
+| `SHIPPED_SCENARIO_IDS` | `readonly string[]` | The eleven ids in author order (`metastable-corpus` rides directly after its segments twin) | frozen array |
 | `SHIPPED_SCENARIOS` | `Readonly<Record<string, ScenarioDoc>>` | id → parsed, frozen doc | frozen |
 | `shippedScenario` | `(id: string) => ScenarioDoc` | Registry read; unknown id throws `BAD_ID` enumerating the legal set | pure |
 

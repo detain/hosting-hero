@@ -41,6 +41,7 @@ import {
   shippedScenario,
 } from "../index.ts";
 import { parseScenarioDoc } from "../doc.ts";
+import { corpusAuthority } from "./corpusFixtures.ts";
 import type { ScenarioReport, ScenarioWire } from "../index.ts";
 
 const BASE_SEED = asRunSeed(904n);
@@ -75,7 +76,7 @@ describe("shipped missions — win side (as authored)", () => {
   for (const id of [...SHIPPED_SCENARIO_IDS]) {
     it(`${id} is won end-to-end on three seed offsets`, () => {
       for (const offset of [0, 1, 2]) {
-        const report = runScenario(shippedScenario(id), BASE_SEED, { seedOffset: offset });
+        const report = runScenario(shippedScenario(id), BASE_SEED, { seedOffset: offset, corpus: corpusAuthority() });
         expect(report.outcome, `${id}@${offset} → ${report.stopReason}`).toBe("won");
         expect(report.stopReason).toBe(`win@${report.endMinute}`);
         expect(report.endDigest).toMatch(/^[0-9a-f]{32}$/);
@@ -380,7 +381,7 @@ describe("determinism", () => {
       const doc = shippedScenario(id);
       const digests = new Set<string>();
       for (let i = 0; i < 100; i += 1) {
-        digests.add(reportIdentity(runScenario(doc, BASE_SEED, { tickCap: 12 })));
+        digests.add(reportIdentity(runScenario(doc, BASE_SEED, { tickCap: 12, corpus: corpusAuthority() })));
       }
       expect(digests.size).toBe(1);
     });

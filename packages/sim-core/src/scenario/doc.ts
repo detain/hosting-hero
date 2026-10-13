@@ -88,15 +88,39 @@ export interface ScenarioContractSpec {
   readonly commitmentBps: bigint;
 }
 
-/** Traffic: a piecewise plateau over sim-minutes. `segments` is total —
- *  the first starts at minute 0, each later one opens where its
- *  predecessor closed; rate 0 is silence (no envelope that minute).
- *  WAVE-TABLE SEAM (v0): a scenario cannot yet name a waves-corpus
- *  tableId — the ramp/storm shapes of §1.5 arrive with that seam. */
-export interface ScenarioTraffic {
+/** Hand-authored traffic: a piecewise plateau over sim-minutes.
+ *  `segments` is total — the first starts at minute 0, each later one
+ *  opens where its predecessor closed; rate 0 is silence (no envelope
+ *  that minute). */
+export interface ScenarioSegmentsTraffic {
+  readonly profile: "segments";
   readonly tableId: string;
   readonly segments: readonly { readonly fromMinute: number; readonly ratePerMin: number }[];
 }
+
+/** Corpus traffic: a storm schedule that NAMES a shipped
+ *  `packages/content/waves/` slice by tableId (the file stem, e.g.
+ *  "g1-shared-web-first-quarter") and picks waves by number. The rates,
+ *  families, and telegraphs are the content's, never re-typed here —
+ *  `corpus.ts` resolves each wave through the shipped
+ *  parseForeignWaveSlice → planWave pipeline (the same authority
+ *  `fastForward.ts` uses), so engine content edits flow into scenarios.
+ *  `baselineRatePerMin` is the calm under the storm (the scenario's own
+ *  organic trickle, minted as one plateau envelope like segments do);
+ *  `waveStartMinute` is where the wave schedule begins (default 2 —
+ *  fastForward's cursor law). */
+export interface ScenarioCorpusTraffic {
+  readonly profile: "corpus";
+  readonly tableId: string;
+  /** Shipped wave numbers to schedule, strictly ascending, ≥ 1. */
+  readonly waves: readonly number[];
+  readonly waveStartMinute: number;
+  readonly baselineRatePerMin: number;
+}
+
+/** Traffic is either hand-authored plateaus or a corpus citation —
+ *  exactly one form on the wire (`segments` XOR `waves` present). */
+export type ScenarioTraffic = ScenarioSegmentsTraffic | ScenarioCorpusTraffic;
 
 /** Everything the run is bounded by. */
 export interface ScenarioLimits {
@@ -151,6 +175,7 @@ export type ScenarioErrorCode =
   | "BAD_INT"
   | "BAD_ENUM"
   | "BAD_GUARDRAIL"
+  | "CORPUS_UNRESOLVED"
   | "DUPLICATE";
 
 export class ScenarioError extends Error {
@@ -418,10 +443,27 @@ function parseContract(raw: unknown, path: string): ScenarioContractSpec {
 
 /* ── traffic ── */
 
+const TRAFFIC_FIELDS = ["tableId", "segments", "waves", "waveStartMinute", "baselineRatePerMin"] as const;
+
 function parseTraffic(raw: unknown, path: string): ScenarioTraffic {
   const src = asRecord(raw, path, "BAD_TRAFFIC");
-  requireKeys(src, ["tableId", "segments"], ["tableId", "segments"], path, "BAD_TRAFFIC");
+  for (const key of Object.keys(src)) {
+    if (!TRAFFIC_FIELDS.includes(key as (typeof TRAFFIC_FIELDS)[number])) {
+      bad("BAD_TRAFFIC", `${path}.${key}`, `unknown field — legal fields: ${TRAFFIC_FIELDS.join(", ")}`);
+    }
+  }
   const tableId = readString(src, "tableId", path, "BAD_TRAFFIC");
+  const hasSegments = src.segments !== undefined;
+  const hasWaves = src.waves !== undefined;
+  if (hasSegments && hasWaves) {
+    bad("BAD_TRAFFIC", path, "traffic names both `segments` and `waves` — pick one profile: hand-authored plateaus OR a corpus citation");
+  }
+  if (hasWaves) return parseCorpusTraffic(src, tableId, path);
+  if (!hasSegments) bad("BAD_TRAFFIC", `${path}.segments`, "required field is missing (or name `waves` for a corpus citation)");
+  return parseSegmentsTraffic(src, tableId, path);
+}
+
+function parseSegmentsTraffic(src: Record<string, unknown>, tableId: string, path: string): ScenarioSegmentsTraffic {
   if (!Array.isArray(src.segments) || src.segments.length === 0) bad("BAD_TRAFFIC", `${path}.segments`, "expected a non-empty array");
   const segments = (src.segments as readonly unknown[]).map((rawSegment, i) => {
     const segPath = `${path}.segments[${i}]`;
@@ -442,7 +484,26 @@ function parseTraffic(raw: unknown, path: string): ScenarioTraffic {
       bad("BAD_TRAFFIC", `${path}.segments`, `segment ${i} opens at m${here.fromMinute} but segment ${i - 1} already opened at m${prior.fromMinute} — fromMinute must strictly increase`);
     }
   }
-  return Object.freeze({ tableId, segments: Object.freeze(segments) });
+  return Object.freeze({ profile: "segments", tableId, segments: Object.freeze(segments) });
+}
+
+function parseCorpusTraffic(src: Record<string, unknown>, tableId: string, path: string): ScenarioCorpusTraffic {
+  if (!Array.isArray(src.waves) || src.waves.length === 0) bad("BAD_TRAFFIC", `${path}.waves`, "expected a non-empty array of shipped wave numbers");
+  const waves = (src.waves as readonly unknown[]).map((raw, i) =>
+    readInt({ wave: raw } as Record<string, unknown>, "wave", `${path}.waves[${i}]`, "BAD_TRAFFIC", 1, 1_000)
+  );
+  for (let i = 1; i < waves.length; i++) {
+    if (waves[i]! <= waves[i - 1]!) {
+      bad("BAD_TRAFFIC", `${path}.waves`, `wave ${waves[i]} does not ascend after wave ${waves[i - 1]} — schedule waves in shipped order`);
+    }
+  }
+  return Object.freeze({
+    profile: "corpus",
+    tableId,
+    waves: Object.freeze(waves),
+    waveStartMinute: optInt(src, "waveStartMinute", path, "BAD_TRAFFIC", 0, 1_000_000, 2),
+    baselineRatePerMin: optInt(src, "baselineRatePerMin", path, "BAD_TRAFFIC", 0, 32_767, 0),
+  });
 }
 
 /* ── objectives ── */
