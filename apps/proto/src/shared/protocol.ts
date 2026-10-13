@@ -24,6 +24,8 @@ import {
   type LaneStats,
   type ObservedCell,
   type ObservedKey,
+  type PlayerIntent,
+  type PlayerVerbArgs,
   type SimMinute,
   type SimTick,
   type SimTimeUs,
@@ -89,8 +91,10 @@ export type NoticeKind =
   | "landed"
   | "rule-fired"
   /** Intent-door receipts (contract #10): one per fed external intent, the
-   *  verdict roll-up the host HUD ticks. `detail` carries "<verb>" on an
-   *  execution and "<verb>: <reason>" on a refusal. */
+   *  verdict roll-up the host HUD ticks. `detail` carries "<verb>" (or,
+   *  since E2b, "<verb>: <handler-detail>" when the handler booked one —
+   *  adjust-price names target+price) on an execution and
+   *  "<verb>: <reason>" on a refusal. */
   | "intent-executed"
   | "intent-refused"
   /** Runner money-lane roll-up (REST-PROTO-FINAL): one notice per
@@ -119,6 +123,27 @@ export interface EventNotice {
   /** Optional plain-text rider (door receipts). Absent = nothing to render;
    *  omitted from the WIRE when unset, so pre-door frames encode byte-identically. */
   readonly detail?: string;
+  /** Engine attribution for money-lane riders (E2b additive seam): the
+   *  EconomyNotice's own causeId (e.g. `economy:death:dissolved:churn-collapse:5760`),
+   *  so chrome narrators (LossCard) can name the real mechanism without
+   *  parsing it out of a two-segment detail. Optional: pre-E2b producers set
+   *  nothing, the wire OMITS the key when unset, and decode tolerates both —
+   *  legacy frames round-trip exactly as before (PROTOCOL_VERSION stays 1). */
+  readonly causeId?: string;
+}
+
+/** Attention-pool roll-up on the wire (E2b additive seam, §7.5/OD-6(a)): the
+ *  OBSERVABLE aggregates of `GameState.attention` — capacity, unrepaid debt,
+ *  the monotonic window ordinal, and the ledger row count. Deliberately
+ *  plain numbers (JSON-safe, zero bigints): the individual HandTokens stay
+ *  engine-side, only what a HUD can show crosses. Present ONLY when the host
+ *  minted the pool (the runner's `options.attention`); absent ⇒ key omitted
+ *  on the wire ⇒ legacy frames byte-identical. */
+export interface AttentionSummary {
+  readonly capacity: number;
+  readonly debt: number;
+  readonly window: number;
+  readonly loanCount: number;
 }
 
 /** The G1 outcome counters (three terminals + false-positive ticker). */
@@ -142,6 +167,9 @@ export interface SimProjection {
   /** Free bucket only at P0 (full six-bucket stack arrives with G5). Signed
    *  integer µ$ — same MoneyUnit discipline as sim-core. */
   readonly freeCashMicroUsd: bigint;
+  /** Attention readback (E2b): the loan-pool roll-up when the runner planted
+   *  the special hand; undefined on every default run (never-minted law). */
+  readonly attention?: AttentionSummary;
 }
 
 /* ═══════════════════════════ Wire forms ═══════════════════════════ */
@@ -177,6 +205,7 @@ export interface EventNoticeWire {
   readonly laneId: string | null;
   readonly atUs: WireUs;
   readonly detail?: string;
+  readonly causeId?: string;
 }
 
 export interface ProjectionWire {
@@ -190,6 +219,10 @@ export interface ProjectionWire {
   readonly notices: readonly EventNoticeWire[];
   readonly counters: OutcomeCounters;
   readonly freeCashMicroUsd: WireUs;
+  /** Attention roll-up — structurally identical to the trusted form (all
+   *  plain numbers), so no separate wire type is invented. Omitted when the
+   *  runner never minted the pool. */
+  readonly attention?: AttentionSummary;
   /** Renderer heartbeat frequency (§4.7 item 1.2: global ~0.5 Hz sync). */
   readonly heartbeatHz: number;
 }
@@ -314,9 +347,11 @@ export function encodeProjection(p: SimProjection): ProjectionWire {
       laneId: n.laneId,
       atUs: n.atUs.toString(),
       ...(n.detail === undefined ? {} : { detail: n.detail }),
+      ...(n.causeId === undefined ? {} : { causeId: n.causeId }),
     })),
     counters: { ...p.counters },
     freeCashMicroUsd: p.freeCashMicroUsd.toString(),
+    ...(p.attention === undefined ? {} : { attention: { ...p.attention } }),
     heartbeatHz: HEARTBEAT_HZ_WIRE,
   };
 }
@@ -376,11 +411,29 @@ function decodeNotice(raw: unknown, index: number): EventNotice {
   if (detailRaw !== undefined && typeof detailRaw !== "string") {
     throw new ProtocolError(`${path}.detail`, "string rider or absent", detailRaw);
   }
+  const causeRaw = rec["causeId"];
+  if (causeRaw !== undefined && typeof causeRaw !== "string") {
+    throw new ProtocolError(`${path}.causeId`, "string causeId or absent", causeRaw);
+  }
   return {
     kind: parseLiteral(`${path}.kind`, rec["kind"], NOTICE_KINDS),
     laneId: laneRaw === null ? null : asEntityId(parseString(`${path}.laneId`, laneRaw)),
     atUs: parseUs(`${path}.atUs`, rec["atUs"]),
     ...(detailRaw === undefined ? {} : { detail: detailRaw }),
+    ...(causeRaw === undefined ? {} : { causeId: causeRaw }),
+  };
+}
+
+/** Tolerant-optional parse of the attention roll-up (E2b): absent key ⇒
+ *  absent field; a PRESENT record is validated field-wise (a half-shaped
+ *  attention block is a producer bug, fail loud per Law 4). */
+function decodeAttention(raw: unknown): AttentionSummary {
+  const rec = isRecord("attention", raw);
+  return {
+    capacity: parseNumber("attention.capacity", rec["capacity"]),
+    debt: parseNumber("attention.debt", rec["debt"]),
+    window: parseNumber("attention.window", rec["window"]),
+    loanCount: parseNumber("attention.loanCount", rec["loanCount"]),
   };
 }
 
@@ -427,6 +480,7 @@ export function decodeProjection(raw: unknown): SimProjection {
       landed: parseNumber("counters.landed", countersRaw["landed"]),
     },
     freeCashMicroUsd: parseUs("freeCashMicroUsd", rec["freeCashMicroUsd"]),
+    ...(rec["attention"] === undefined ? {} : { attention: decodeAttention(rec["attention"]) }),
   };
 }
 
@@ -496,6 +550,95 @@ function decodeIntentPayload(raw: unknown): WireIntentPayload {
     kind,
     control: parseString(`${path}.control`, rec["control"]),
     value: parseString(`${path}.value`, rec["value"]),
+  };
+}
+
+/* ═══════════════ main→worker intent materialization (E2b bigint revival) ═══════════ */
+
+/** Closed mirror of the door's `VERB_ARG_SHAPES` bigint-typed fields (the
+ *  table itself stays private in pipeline/intent-door.ts). A drift-pin test
+ *  (chrome/__tests__/wireIntent.test.ts) greps the engine source and reddens
+ *  the day a second bigint arg appears without joining this list. */
+export const BIGINT_ARG_FIELDS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  "adjust-price": Object.freeze(["newPriceMicroUsd"]),
+});
+
+const INT_STRING_RE = /^-?\d+$/;
+
+/** Revive one player-verb args record: fields the door parses as `bigint`
+ *  (MoneyUnit / SimTimeUs wire family) cross the JSON hop as decimal strings
+ *  — the same law `WireUs`/`WireFixed` already obey — and become REAL bigints
+ *  here, at the boundary, before the door's requireBigint sees them. A
+ *  non-integer shape on a bigint-typed field is structural garbage → loud
+ *  ProtocolError (never a silent number → door throws a vaguer error deeper). */
+function reviveWireArgs(
+  args: Readonly<Record<string, string | number | null>>,
+): Readonly<Record<string, string | number | bigint | null>> {
+  const verb = args["verb"];
+  const bigintFields = typeof verb === "string" ? BIGINT_ARG_FIELDS[verb] : undefined;
+  if (bigintFields === undefined) return args;
+  const revived: Record<string, string | number | bigint | null> = { ...args };
+  for (const field of bigintFields) {
+    const raw = revived[field];
+    if (typeof raw !== "string" || !INT_STRING_RE.test(raw)) {
+      throw new ProtocolError(`intent.payload.args.${field}`, "decimal-string bigint (wire law)", raw);
+    }
+    revived[field] = BigInt(raw);
+  }
+  return Object.freeze(revived);
+}
+
+/** A parsed main→worker intent envelope (the `intent` arm of `ToWorker`,
+ *  structurally). */
+export interface WireIntentEnvelope {
+  readonly seq: number;
+  readonly clock: ClockKind;
+  readonly atUs: WireUs;
+  readonly origin: "player" | "rule";
+  readonly payload: WireIntentPayload;
+}
+
+/** THE worker-side materialization (E2b): flat wire scalars → trusted
+ *  `PlayerIntent`. One shared implementation for both runner hosts — the real
+ *  `sim.worker.ts` and the in-process `fakeWorker.ts` — so the bigint revival
+ *  law cannot drift between them (the seam this closes: adjust-price threw
+ *  IntentDoorError over the worker path while headless worked, because both
+ *  hosts cast the scalar record blindly). The door still owns per-verb
+ *  semantics; this only restores the JSON-impossible bigint type. */
+export function wireIntentToPlayerIntent(message: WireIntentEnvelope): PlayerIntent {
+  const { payload } = message;
+  const atUs = BigInt(message.atUs);
+  if (payload.kind === "slider") {
+    return {
+      seq: message.seq,
+      clock: message.clock,
+      atUs,
+      origin: message.origin,
+      payload: { kind: "slider", control: payload.control, value: BigInt(payload.value) },
+    };
+  }
+  if (payload.kind === "player-verb") {
+    // Codec proved args is a flat scalar record with a closed `verb`
+    // discriminant; per-verb structural typing stays the door's boundary.
+    return {
+      seq: message.seq,
+      clock: message.clock,
+      atUs,
+      origin: message.origin,
+      payload: { kind: "player-verb", args: reviveWireArgs(payload.args) as unknown as PlayerVerbArgs },
+    };
+  }
+  return {
+    seq: message.seq,
+    clock: message.clock,
+    atUs,
+    origin: message.origin,
+    payload: {
+      kind: "verb",
+      verb: payload.verb,
+      target: payload.target === null ? null : asEntityId(payload.target),
+      value: payload.value === null ? null : BigInt(payload.value),
+    },
   };
 }
 

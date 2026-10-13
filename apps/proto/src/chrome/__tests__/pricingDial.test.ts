@@ -75,13 +75,16 @@ describe("the mainline door accepts the dial (live SimCoreRunner)", () => {
     } };
   }
 
-  it("a clean order EXECUTES — receipt notice detail is the bare verb", () => {
+  it("a clean order EXECUTES — receipt notice detail names verb, target and booked price", () => {
     const { submit } = dial();
     const receipts = submit(19_800_000n);
     expect(receipts).toHaveLength(1);
     expect(receipts[0]!.kind).toBe("intent-executed");
-    expect(receipts[0]!.detail).toBe(ADJUST_PRICE);
-    expect(receiptLine(receipts[0]!.detail, "executed")).toBe("adjust-price");
+    // E2b seam 4: the executed rider carries the handler's booked detail.
+    expect(receipts[0]!.detail).toBe("adjust-price: target=plan:plan/shared-web-basic,price=19800000");
+    expect(receiptLine(receipts[0]!.detail, "executed")).toBe(
+      "adjust-price: target=plan:plan/shared-web-basic,price=19800000",
+    );
   });
 
   it("0 µ$ is a value-domain REFUSAL — the door consumes nothing", () => {
@@ -112,7 +115,9 @@ describe("the mainline door accepts the dial (live SimCoreRunner)", () => {
       );
     }
     const frame = runner.headlessStep(1000);
-    const pricing = frame.notices.filter((n) => n.detail === ADJUST_PRICE);
+    // E2b: executed details are `adjust-price: target=…`; the pricing lane is
+    // every notice whose detail opens with the verb + colon.
+    const pricing = frame.notices.filter((n) => (n.detail ?? "").startsWith(`${ADJUST_PRICE}:`));
     expect(pricing.filter((n) => n.kind === "intent-executed")).toHaveLength(2);
   });
 });

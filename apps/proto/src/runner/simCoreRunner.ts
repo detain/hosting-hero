@@ -85,6 +85,7 @@ import {
   type PlayerIntent,
   type PriceOverrideBook,
   type QosClassDef,
+  type RecoveryState,
   type RetryPolicy,
   type RouteIn,
   type RouteOut,
@@ -111,6 +112,8 @@ import {
   makeSlots,
   replenishAtBusinessMonth,
   type DefaultPipelineConfig,
+  type RecoveryConfig,
+  type RecoveryNotice,
   type TickDriver,
   type TickInputs,
 } from "@hh/sim-core/pipeline";
@@ -699,6 +702,13 @@ export interface SimCoreRunnerOptions {
    *  keys without a book never see an override — both no-ops by the
    *  elasticity resolve law). */
   readonly priceKeys?: ReadonlyMap<EntityId, string>;
+  /** §7.7 recovery engine (ADR-0012 wiring, mirrors fastForward.config.
+   *  recovery): arms the driver's recovery fold — windows, strikes, locks
+   *  and gradual-restoration throttling run inside the SIM. ABSENT ⇒ the
+   *  driver never folds recovery and every frame stays byte-identical to
+   *  the pre-recovery runner (the SimProjection wire is untouched either
+   *  way; hosts read the story through recoveryState()/recoveryNotices()). */
+  readonly recovery?: RecoveryConfig;
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -754,6 +764,11 @@ export class SimCoreRunner implements SimRunner {
      fold consumes the witness (clears), a void keeps it — the next call
      carries the retried refusal again, same as the money it never moved. */
   private readonly pendingRefusalWitness: RefusedSettlement[] = [];
+  /* ADR-0012 host witness: recovery notices in emission order — stays empty
+     on every unarmed runner (the driver only fills the channel when armed),
+     read via recoveryNotices(). Deliberately NOT on the frozen
+     SimProjection wire: zero protocol churn, zero golden churn. */
+  private readonly recoveryNoticeLog: RecoveryNotice[] = [];
   private seq = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private speedX: 1 | 2 | 4 = 1;
@@ -817,7 +832,11 @@ export class SimCoreRunner implements SimRunner {
         split: this.split,
       }),
     });
-    this.driver = createTickDriver(slots, streamFor(this.runSeed, "root", 0), this.game.context.clocks);
+    this.driver = createTickDriver(slots, streamFor(this.runSeed, "root", 0), this.game.context.clocks,
+      /* ADR-0012: absent ⇒ no options key ⇒ the driver folds no recovery
+         slice ⇒ frame-for-frame byte-identical to the pre-recovery runner. */
+      options.recovery !== undefined ? { recovery: options.recovery } : {},
+    );
     this.store = new ObservedStore();
 
     // Money lane priming (mirrors fastForward's register-fold): opening float
@@ -1010,6 +1029,20 @@ export class SimCoreRunner implements SimRunner {
     return this.game.attention;
   }
 
+  /** The live recovery slice (ADR-0012 host seam) — undefined on every
+   *  unarmed runner AND when every window has closed (the engine slice
+   *  self-clears). Chrome/tests read window state here, same pattern as
+   *  attentionState() reads the loan ledger. */
+  recoveryState(): RecoveryState | undefined {
+    return this.game.recovery;
+  }
+
+  /** Recovery notices emitted by the armed engine this run, in order —
+   *  empty on every unarmed runner (the witness channel stays honest). */
+  recoveryNotices(): readonly RecoveryNotice[] {
+    return Object.freeze([...this.recoveryNoticeLog]);
+  }
+
   /** The business-calendar month a state's clock points INTO (economy's
    *  monthIndexOf law — floorDiv over the 43,200-minute month, tick.ts:152
  *    — applied straight to the host clock). Mirrors fastForward's
@@ -1042,6 +1075,11 @@ export class SimCoreRunner implements SimRunner {
     const priorUnitIds = new Set<EntityId>(this.game.units.keys());
     const result = this.driver.advance(this.game, inputs);
     this.game = result.state;
+    /* Recovery notices ride their own channel (TickResult.recoveryNotices,
+       present only when the driver was armed) — witness, not wire. */
+    if (result.recoveryNotices !== undefined) {
+      this.recoveryNoticeLog.push(...result.recoveryNotices);
+    }
 
     /* step-12 observed layer: renderer-facing lane cells DERIVED FROM REAL
        driver outputs (honest entry accounting — arrival events PLUS the F2
@@ -1199,13 +1237,21 @@ export class SimCoreRunner implements SimRunner {
       notices.push({ kind: "arrival-surge", laneId: LANE_ID, atUs: tickUs });
     }
     /* door verdicts ride the same seam (contract #10 receipts): one notice
-       per fed intent, detail "<verb>" executed / "<verb>: <reason>" refused. */
+       per fed intent. E2b: an EXECUTED receipt now carries the handler's
+       detail when it has one — "<verb>: <target=…,price=…>" mirrors the
+       refused "<verb>: <reason>" shape (the adjust-price confirmation line
+       in PricingDial reads target+price off this wire). */
     for (const receipt of result.doorReceipts) {
       notices.push({
         kind: receipt.outcome === "executed" ? "intent-executed" : "intent-refused",
         laneId: null,
         atUs: tickUs,
-        detail: receipt.reason === null ? receipt.verb : `${receipt.verb}: ${receipt.reason}`,
+        detail:
+          receipt.reason !== null
+            ? `${receipt.verb}: ${receipt.reason}`
+            : receipt.detail === undefined
+              ? receipt.verb
+              : `${receipt.verb}: ${receipt.detail}`,
       });
     }
     for (const outcome of result.outcomes) {
@@ -1233,13 +1279,16 @@ export class SimCoreRunner implements SimRunner {
        notice per EconomyNotice the tick emitted, detail carrying the
        engine-kind + contract so chrome/i18n consumers split on the first
        colon without a 25-member union crossing the seam. Order = engine
-       order (deterministic). */
+       order (deterministic). E2b: the engine's OWN causeId rides as the
+       structured `causeId` field (LossCard narrates the real death cause —
+       `economy:death:dissolved:<cause>:<minute>` — without colon-guessing). */
     for (const notice of economyNotices) {
       notices.push({
         kind: "economy-notice",
         laneId: null,
         atUs: tickUs,
         detail: `${notice.kind}:${notice.contractId}`,
+        causeId: notice.causeId,
       });
     }
 
@@ -1265,6 +1314,13 @@ export class SimCoreRunner implements SimRunner {
     const observed = new Map<ObservedKey, ProtoCell>();
     for (const [key, cell] of this.game.observed) observed.set(key, toProtoCell(key, cell));
 
+    /* Attention readback (E2b seam 3): the loan-pool roll-up crosses the wire
+       ONLY when the host planted the pool (options.attention) — every default
+       runner omits the key entirely, so legacy frames encode byte-identically.
+       Aggregates only (capacity/debt/window/loanCount): the HandTokens and the
+       ledger rows stay engine-side, the HUD sees what §7.5 makes observable. */
+    const attention = this.game.attention;
+
     return Object.freeze({
       seq: this.seq,
       tick: this.game.context.tick,
@@ -1275,6 +1331,16 @@ export class SimCoreRunner implements SimRunner {
       notices: Object.freeze(notices),
       counters: Object.freeze({ ...this.counters }),
       freeCashMicroUsd: this.game.cash.free,
+      ...(attention === undefined
+        ? {}
+        : {
+            attention: {
+              capacity: attention.capacity,
+              debt: attention.debt,
+              window: attention.window,
+              loanCount: attention.loanLedger.length,
+            },
+          }),
     });
   }
 

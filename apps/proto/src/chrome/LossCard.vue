@@ -11,9 +11,10 @@
  * The voice stack, in priority order: the ZERO-SLOT pack line
  * (alert.death-imminent / alert.company-dissolved, lane L4) resolved through
  * the shared era toggle, then the sober provisional consts behind `??`.
- * The per-cause epilogue needs the CAUSE, which today's two-segment wire
- * does not carry (seam reported to the runner lane) — so the card says so
- * honestly and points at the replay instead of guessing.
+ * E2b closed the cause seam: the wire carries the engine's causeId as a
+ * structured field, extractDeathCause resolves the real mechanism from it,
+ * and the per-cause epilogue renders whenever the ledger names its cause
+ * (CAUSE_UNKNOWN_EPILOGUE stays the honest floor for older frames).
  *
  * Budget law: claims NOTHING from globalBudget — a terminal full-screen
  * presentation is a mode (PanicLayout precedent), not a competing admission;

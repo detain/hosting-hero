@@ -23,12 +23,12 @@ describe("PricingDial", () => {
     expect(w.find('[data-test="dial-send"]').text()).toContain(String(Number(base) / 1_000_000));
   });
 
-  it("submit lands an EXECUTED receipt line naming the verb", async () => {
+  it("submit lands an EXECUTED receipt line naming verb, target and booked price", async () => {
     const w = mount(PricingDial);
     await w.get('[data-test="dial-send"]').trigger("click");
     const log = w.get('[data-test="dial-log"]').text();
-    expect(log).toContain("adjust-price");
-    expect(log).not.toContain(":"); // executed detail is the bare verb
+    // E2b seam 4: the executed rider carries the handler's booked detail.
+    expect(log).toContain("adjust-price: target=plan:plan/shared-web-basic,price=9900000");
     // the dial never writes the shell's store
     expect(projection.value).toBeNull();
   });
@@ -50,8 +50,10 @@ describe("PricingDial", () => {
     expect(w.get('[data-test="dial-tick"]').text()).toContain("door tick");
   });
 
-  it("honesty footer is rendered — no claim that money moved", () => {
+  it("honesty footer states what the order DOES — forwarded into the economy fold", () => {
     const w = mount(PricingDial);
-    expect(w.get('[data-test="dial-honesty"]').text()).toContain("host seam");
+    // E2b copy flip: the old footer denied money moving; @8994f96 forwarding
+    // made that denial false, so the pinned claim is the accurate one.
+    expect(w.get('[data-test="dial-honesty"]').text()).toContain("forwards it into every economy fold");
   });
 });

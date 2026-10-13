@@ -6,11 +6,11 @@
  * notices; the proto runner rolls every EconomyNotice onto the projection as
  * an `economy-notice` whose detail is `<engineKind>:<contractId>` — so a
  * death rider looks like `death-imminent:company` or
- * `company-dissolved:company`. The engine's causeId
- * (`economy:death:{imminent|dissolved}:<cause>:<minute>`) does NOT cross the
- * wire today (SEAM reported: EventNotice has no causeId field and the runner
- * detail is two segments) — so chrome derives what it can from what the
- * wire carries and stays honest about the rest.
+ * `company-dissolved:company`. E2b CLOSED the seam: the wire now carries the
+ * engine's own `causeId` (`economy:death:{imminent|dissolved}:<cause>:<minute>`)
+ * as a structured field on every economy-notice rider, and parseDeathRider
+ * reads the cause from it first, falling back to detail-shape detection for
+ * older producers.
  *
  * §9.9 "Failure is Narrated, Not Punished": the copy here is the fallback
  * voice — dry, accurate, never comedic at the moment of loss. The pack line
@@ -49,8 +49,9 @@ export interface DeathRider {
   readonly detail: string;
   /** Contract the engine attached — "company" for both rungs by design. */
   readonly contractId: string;
-  /** Cause when a richer wire ever carries it (three-segment detail or a
-   *  future causeId field); null on today's two-segment seam. */
+  /** The canonical cause. E2b: resolved from the notice's structured
+   *  `causeId` first (the runner forwards every EconomyNotice.causeId),
+   *  then from a widened detail shape, else null — never guessed. */
   readonly cause: CompanyDeathCause | null;
 }
 
@@ -62,14 +63,16 @@ function causeOf(token: string | undefined): CompanyDeathCause | null {
     : null;
 }
 
-/** Parse one wire notice; null unless it is a death rider. Forward-compat:
- *  a three-segment detail `death-imminent:company:<cause>` (or the exact
- *  causeId shape riding the wire) resolves the cause without any chrome
- *  change the day the runner lane widens the seam. */
-/** Input is the WIDEST-NARROW shape: only `kind` + `detail` are ever read, so
- *  callers holding a rendered StackAlert row (plain-string lane) can re-parse
- *  without forging an EntityId. */
-export function parseDeathRider(notice: Pick<EventNotice, "kind" | "detail">): DeathRider | null {
+/** Parse one wire notice; null unless it is a death rider. The structured
+ *  `causeId` (E2b) is the first authority; a widened detail
+ *  `death-imminent:company:<cause>` (or a causeId-shaped tail concatenated
+ *  into the detail by older runner builds) still resolves without change. */
+/** Input is the WIDEST-NARROW shape: only `kind`, `detail` and `causeId` are
+ *  ever read, so callers holding a rendered StackAlert row (plain-string
+ *  lane) can re-parse without forging an EntityId. */
+export function parseDeathRider(
+  notice: Pick<EventNotice, "kind" | "detail" | "causeId">,
+): DeathRider | null {
   if (notice.kind !== "economy-notice") return null;
   const detail = notice.detail;
   if (detail === undefined) return null;
@@ -82,11 +85,12 @@ export function parseDeathRider(notice: Pick<EventNotice, "kind" | "detail">): D
   const second = rest.indexOf(":");
   const contractId = second === -1 ? rest : rest.slice(0, second);
   const fromDetail = second === -1 ? null : causeOf(rest.slice(second + 1));
+  const fromCauseId = notice.causeId === undefined ? null : causeOf(CAUSE_IN_DETAIL.exec(notice.causeId)?.[1]);
   return Object.freeze({
     phase,
     detail,
     contractId,
-    cause: fromDetail ?? causeOf(CAUSE_IN_DETAIL.exec(detail)?.[1]),
+    cause: fromCauseId ?? fromDetail ?? causeOf(CAUSE_IN_DETAIL.exec(detail)?.[1]),
   });
 }
 
@@ -147,9 +151,10 @@ export const CAUSE_UNKNOWN_EPILOGUE =
 /* ───────────────────────── pricing rider mirror (report-only reader) ───────────────────────── */
 
 /** Receipt details the door's verdicts carry for the 9th verb (chrome reads
- *  them off intent-executed / intent-refused notices; the executed receipt is
- *  verb-named only — the handler's target=/price= detail evaporates into
- *  SimEvents. SEAM reported). */
+ *  them off intent-executed / intent-refused notices). E2b CLOSED the seam:
+ *  an executed adjust-price receipt rides `<verb>: target=<kind>:<id>,
+ *  price=<µ$>` — the handler's detail crossed the wire on the receipt
+ *  (IntentReceipt.detail), mirroring the refused `<verb>: <reason>` shape. */
 export const ADJUST_PRICE_VERB = "adjust-price";
 
 /** Does this receipt notice talk about pricing? */

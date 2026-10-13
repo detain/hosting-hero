@@ -7,11 +7,11 @@
  * 9th verb.
  *
  * What you see is the door's VERDICT off the wire (intent-executed /
- * intent-refused notices). What you do NOT see, and this panel says so:
- * the money. The book is written into the runner's private GameState.pricing;
- * the runner has no readback accessor and no priceOverrides forwarding into
- * the economy tick yet (seams reported to the E1/L1 lanes). A green "executed"
- * here means STRUCTURALLY LANDED, not "invoices moved".
+ * intent-refused notices; since E2b the executed line names the target and
+ * the price the door booked). What happens behind it, stated honestly: the
+ * order lands in the runner's GameState.pricing AND, since @8994f96, that
+ * book is forwarded into every economy fold as `priceOverrides` — invoices
+ * on contracts classified under the touched key bill at the new price.
  */
 import { computed, onBeforeUnmount, ref } from "vue";
 import { SimCoreRunner } from "../runner/simCoreRunner";
@@ -133,8 +133,9 @@ onBeforeUnmount(() => runner.stop());
 
     <p class="honesty" data-test="dial-honesty">
       Verdicts are the real intent door on a private runner. The override book
-      lands in GameState.pricing; invoice wiring is an unsettled host seam —
-      “executed” means the order held, not that the money moved.
+      lands in GameState.pricing and the runner forwards it into every economy
+      fold — an “executed” order bills the next invoices on contracts under
+      that key at the new price.
     </p>
   </div>
 </template>

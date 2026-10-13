@@ -359,6 +359,13 @@ export interface IntentReceipt {
   readonly verb: string;
   readonly outcome: "executed" | "refused";
   readonly reason: string | null;
+  /** The handler's detail rider on an EXECUTION (E2b additive seam — mirrors
+   *  the `detail` field of the intent-executed SimEvent, e.g. adjust-price
+   *  carries `target=<kind>:<id>,price=<µ$>`). Absent when the handler
+   *  returned no detail; refused receipts never carry one (their truth is
+   *  `reason`). Hosts map fields field-wise — no consumer deep-equals the
+   *  whole receipt, so the extra key is wire- and digest-inert. */
+  readonly detail?: string;
 }
 
 export interface IntentDoorResult {
@@ -1158,7 +1165,16 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
       detail: verdict.detail,
     }),
   );
-  draft.receipts.push(Object.freeze({ submittedTick: entry.tick, seq, verb: label, outcome: "executed" as const, reason: null }));
+  draft.receipts.push(
+    Object.freeze({
+      submittedTick: entry.tick,
+      seq,
+      verb: label,
+      outcome: "executed" as const,
+      reason: null,
+      ...(verdict.detail === null ? {} : { detail: verdict.detail }),
+    }),
+  );
 }
 
 /**

@@ -4,8 +4,8 @@
  * when Worker construction fails. The runner advances synchronously on
  * `pump()` so tests never depend on timers.
  */
-import { assertToWorker, encodeProjection } from "../shared/protocol";
-import { asEntityId, type PlayerIntent, type PlayerVerbArgs } from "@hh/sim-core";
+import { assertToWorker, encodeProjection, wireIntentToPlayerIntent } from "../shared/protocol";
+import type { PlayerIntent } from "@hh/sim-core";
 import { createRunner, type SimRunner } from "../runner";
 
 export class FakeWorkerLike {
@@ -57,25 +57,10 @@ export class FakeWorkerLike {
       return;
     }
     if (message.kind === "intent") {
-      const payload = message.payload;
-      const intent: PlayerIntent = {
-        seq: message.seq,
-        clock: message.clock,
-        atUs: BigInt(message.atUs),
-        origin: message.origin,
-        payload:
-          payload.kind === "slider"
-            ? { kind: "slider", control: payload.control, value: BigInt(payload.value) }
-            : payload.kind === "player-verb"
-              ? // Codec proved flat scalar args + closed verb; the door owns typing.
-                { kind: "player-verb", args: payload.args as unknown as PlayerVerbArgs }
-              : {
-                  kind: "verb",
-                  verb: payload.verb,
-                  target: payload.target === null ? null : asEntityId(payload.target),
-                  value: payload.value === null ? null : BigInt(payload.value),
-                },
-      };
+      // ONE shared materialization with the real worker (E2b): the flat wire
+      // record becomes a PlayerIntent with bigint args revived — the fake and
+      // the browser worker cannot drift on the revival law.
+      const intent = wireIntentToPlayerIntent(message);
       this.lastIntent = intent;
       this.runner.submit(intent);
       return;

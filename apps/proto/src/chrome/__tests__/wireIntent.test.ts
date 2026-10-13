@@ -1,0 +1,205 @@
+/**
+ * E2b seam 1 — the bigint wire. A price is a MoneyUnit bigint; JSON cannot
+ * carry one. The law mirrors the projection direction (WireUs/WireFixed):
+ * stringify at SEND (SimClient), revive at the WORKER boundary
+ * (wireIntentToPlayerIntent), fail loud on a non-integer shape. Both runner
+ * hosts (sim.worker.ts, fakeWorker.ts) share the ONE materialization, and
+ * the BIGINT_ARG_FIELDS mirror is drift-pinned against the door's private
+ * VERB_ARG_SHAPES table below.
+ */
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+import {
+  BIGINT_ARG_FIELDS,
+  ProtocolError,
+  assertToWorker,
+  wireIntentToPlayerIntent,
+  type SimProjection,
+  type WireIntentEnvelope,
+} from "../../shared/protocol";
+import { FakeWorkerLike } from "../../bridge/fakeWorker";
+import { SimClient } from "../../bridge/simClient";
+
+/** Wire envelope builder — the exact shape `assertToWorker` releases. */
+function envelope(args: Record<string, string | number | null>): WireIntentEnvelope {
+  const parsed = assertToWorker({
+    kind: "intent",
+    protocol: 1,
+    seq: 1,
+    clock: "business",
+    atUs: "0",
+    origin: "player",
+    payload: { kind: "player-verb", args },
+  });
+  if (parsed.kind !== "intent") throw new Error("unreachable");
+  return parsed;
+}
+
+const ADJUST_ARGS = {
+  verb: "adjust-price",
+  targetKind: "sku",
+  targetId: "hourly-smb",
+  newPriceMicroUsd: "19800000",
+  effectiveAtBusinessMinute: null,
+};
+
+describe("BIGINT_ARG_FIELDS mirror vs the ENGINE (drift pin)", () => {
+  it("every VERB_ARG_SHAPES bigint field is covered; the mirror adds none", () => {
+    const door = readFileSync(
+      fileURLToPath(new URL("../../../../../packages/sim-core/src/pipeline/intent-door.ts", import.meta.url)),
+      "utf8",
+    );
+    const types = readFileSync(
+      fileURLToPath(new URL("../../../../../packages/sim-core/src/types.ts", import.meta.url)),
+      "utf8",
+    );
+    // Enum member → wire label (PlayerVerb.AdjustPrice = "adjust-price").
+    const labelOf = new Map<string, string>();
+    for (const m of types.matchAll(/^\s{2}(\w+) = "([a-z0-9-]+)",$/gm)) {
+      labelOf.set(m[1]!, m[2]!);
+    }
+    const enginePairs: string[] = [];
+    const table = /const VERB_ARG_SHAPES[\s\S]*?\n\}\);/.exec(door);
+    expect(table).not.toBeNull();
+    for (const row of table![0]!.matchAll(/\[PlayerVerb\.(\w+)\]: Object\.freeze\(\{([^}]*)\}\)/g)) {
+      const verb = labelOf.get(row[1]!);
+      expect(verb, `unknown PlayerVerb member ${row[1]}`).toBeTruthy();
+      for (const field of row[2]!.matchAll(/(\w+): "bigint"/g)) {
+        enginePairs.push(`${verb}#${field[1]}`);
+      }
+    }
+    const mirrorPairs = Object.entries(BIGINT_ARG_FIELDS).flatMap(([verb, fields]) =>
+      fields.map((f) => `${verb}#${f}`),
+    );
+    expect(enginePairs.sort()).toEqual(mirrorPairs.sort());
+    expect(enginePairs.length).toBeGreaterThanOrEqual(1); // the pin itself must not rot empty
+  });
+});
+
+describe("wireIntentToPlayerIntent — boundary revival", () => {
+  it("revives the decimal string into a REAL bigint and keeps the rest verbatim", () => {
+    const intent = wireIntentToPlayerIntent(envelope(ADJUST_ARGS));
+    if (intent.payload.kind !== "player-verb") throw new Error("unreachable");
+    const args = intent.payload.args;
+    if (args.verb !== "adjust-price") throw new Error("unreachable");
+    expect(typeof args.newPriceMicroUsd).toBe("bigint");
+    expect(args.newPriceMicroUsd).toBe(19_800_000n);
+    expect(args.targetId).toBe("hourly-smb");
+    expect(args.effectiveAtBusinessMinute).toBeNull();
+  });
+
+  it("a fractional string on a bigint field dies at the boundary, not in the door", () => {
+    expect(() => wireIntentToPlayerIntent(envelope({ ...ADJUST_ARGS, newPriceMicroUsd: "9.25" }))).toThrow(
+      ProtocolError,
+    );
+    expect(() => wireIntentToPlayerIntent(envelope({ ...ADJUST_ARGS, newPriceMicroUsd: "9.25" }))).toThrow(
+      /args\.newPriceMicroUsd/,
+    );
+    // A raw JSON number is equally structural garbage (wire law: strings).
+    expect(() => wireIntentToPlayerIntent(envelope({ ...ADJUST_ARGS, newPriceMicroUsd: 9.25 }))).toThrow(
+      /args\.newPriceMicroUsd/,
+    );
+  });
+
+  it("verbs without bigint fields pass through untouched", () => {
+    const intent = wireIntentToPlayerIntent(envelope({ verb: "communicate", note: "hi", target: null }));
+    if (intent.payload.kind !== "player-verb") throw new Error("unreachable");
+    expect(intent.payload.args).toEqual({ verb: "communicate", note: "hi", target: null });
+  });
+
+  it("slider and legacy-verb arms BigInt() their string values too", () => {
+    const slider = assertToWorker({
+      kind: "intent",
+      protocol: 1,
+      seq: 2,
+      clock: "sim",
+      atUs: "5000000",
+      origin: "player",
+      payload: { kind: "slider", control: "defense.aggression", value: "32768" },
+    });
+    if (slider.kind !== "intent") throw new Error("unreachable");
+    const materialized = wireIntentToPlayerIntent(slider);
+    expect(materialized.atUs).toBe(5_000_000n);
+    if (materialized.payload.kind !== "slider") throw new Error("unreachable");
+    expect(materialized.payload.value).toBe(32_768n);
+  });
+});
+
+describe("full bridge — a bigint price survives SimClient → wire → worker-host → door", () => {
+  function bridge() {
+    const fake = new FakeWorkerLike();
+    const frames: SimProjection[] = [];
+    const client = new SimClient(fake, { onProjection: (p) => frames.push(p) });
+    client.boot("bridge-seed", 1, "sim-core");
+    return { fake, client, frames };
+  }
+
+  it("sendPlayerVerb(bigint) EXECUTES over the worker path (the seam this lane closes)", () => {
+    const { fake, client, frames } = bridge();
+    client.sendPlayerVerb(
+      {
+        verb: "adjust-price",
+        targetKind: "sku",
+        targetId: "bridge-sku",
+        newPriceMicroUsd: 19_800_000n, // a REAL bigint client-side
+        effectiveAtBusinessMinute: null,
+      },
+      "business",
+    );
+    fake.pump(2);
+    // Boundary proof: the worker host materialized a bigint BEFORE the door.
+    const last = fake.lastIntent;
+    expect(last).not.toBeNull();
+    if (last === null || last.payload.kind !== "player-verb") throw new Error("worker never saw the intent");
+    expect((last.payload.args as unknown as Record<string, unknown>)["newPriceMicroUsd"]).toBe(19_800_000n);
+    // End-to-end proof off the DECODED projection wire (both directions):
+    const receipts = frames
+      .flatMap((f) => f.notices)
+      .filter((n) => n.kind === "intent-executed" || n.kind === "intent-refused");
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]!.kind).toBe("intent-executed");
+    expect(receipts[0]!.detail).toBe("adjust-price: target=sku:bridge-sku,price=19800000");
+    client.destroy();
+  });
+
+  it("a revived 0 µ$ reaches the door's VALUE domain (refusal, not IntentDoorError)", () => {
+    const { fake, client, frames } = bridge();
+    client.sendPlayerVerb(
+      {
+        verb: "adjust-price",
+        targetKind: "sku",
+        targetId: "bridge-sku",
+        newPriceMicroUsd: 0n,
+        effectiveAtBusinessMinute: null,
+      },
+      "business",
+    );
+    fake.pump(2);
+    const refused = frames.flatMap((f) => f.notices).filter((n) => n.kind === "intent-refused");
+    expect(refused).toHaveLength(1);
+    expect(refused[0]!.detail).toMatch(/^adjust-price: invalid-price/);
+    client.destroy();
+  });
+
+  it("a non-decimal-string price is rejected LOUD at the worker boundary (pump throws)", () => {
+    const fake = new FakeWorkerLike();
+    const client = new SimClient(fake, {});
+    client.boot("bridge-seed", 1, "sim-core");
+    // Bypass the client's stringify law with a hand-forged wire frame:
+    fake.postMessage({
+      kind: "intent",
+      protocol: 1,
+      seq: 99,
+      clock: "business",
+      atUs: "0",
+      origin: "player",
+      payload: {
+        kind: "player-verb",
+        args: { ...ADJUST_ARGS, newPriceMicroUsd: "1e7" },
+      },
+    });
+    expect(() => fake.pump(1)).toThrow(/args\.newPriceMicroUsd/);
+    client.destroy();
+  });
+});

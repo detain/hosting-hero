@@ -230,6 +230,92 @@ describe("envelope assertions", () => {
   });
 });
 
+/* ------------------------------------------------------------------ *
+ * E2b seam 2+3: additive-optional wire fields (notice causeId,
+ * attention roll-up) with PROTOCOL_VERSION still 1 — proved by
+ * legacy-frame tolerance in BOTH directions.
+ * ------------------------------------------------------------------ */
+
+describe("E2b additive wire fields (causeId, attention) — version stays 1", () => {
+  it("encode OMITS causeId/attention when unset; set values round-trip", () => {
+    const base = sampleProjection();
+    const withExtras: SimProjection = {
+      ...base,
+      attention: { capacity: 2, debt: 1, window: 2, loanCount: 2 },
+      notices: [
+        ...base.notices,
+        {
+          kind: "economy-notice",
+          laneId: null,
+          atUs: 12n,
+          detail: "company-dissolved:company",
+          causeId: "economy:death:dissolved:churn-collapse:5760",
+        },
+      ],
+    };
+    const wire = encodeProjection(withExtras);
+    const decoded = decodeProjection(throughJson(wire));
+    expect(decoded.attention).toEqual({ capacity: 2, debt: 1, window: 2, loanCount: 2 });
+    const rider = decoded.notices[decoded.notices.length - 1]!;
+    expect(rider.causeId).toBe("economy:death:dissolved:churn-collapse:5760");
+    // The pre-E2b sample carries neither key on the wire at all.
+    const plainWire = JSON.parse(JSON.stringify(encodeProjection(base))) as {
+      notices: Record<string, unknown>[];
+      attention?: unknown;
+    };
+    expect("attention" in plainWire).toBe(false);
+    for (const row of plainWire.notices) expect("causeId" in row).toBe(false);
+  });
+
+  it("LEGACY frame (no causeId, no attention keys) decodes unchanged — back-compat", () => {
+    const modern = encodeProjection({
+      ...sampleProjection(),
+      attention: { capacity: 3, debt: 0, window: 1, loanCount: 0 },
+    });
+    // Hand-strip every E2b addition to rebuild a v1-pre-E2b frame.
+    const legacyWire = JSON.parse(JSON.stringify(modern)) as {
+      attention?: unknown;
+      notices: Record<string, unknown>[];
+    };
+    delete legacyWire.attention;
+    for (const row of legacyWire.notices) delete row.causeId;
+    const decoded = decodeProjection(legacyWire);
+    expect("attention" in decoded).toBe(false);
+    for (const notice of decoded.notices) expect(notice.causeId).toBeUndefined();
+  });
+
+  it("unknown extra keys on a notice and on the projection are TOLERATED (forward-compat)", () => {
+    const wire = JSON.parse(JSON.stringify(encodeProjection(sampleProjection()))) as {
+      notices: Record<string, unknown>[];
+      [extra: string]: unknown;
+    };
+    wire.notices[0]!["tomorrowField"] = { nested: true };
+    wire["futureRollup"] = "whatever";
+    const decoded = decodeProjection(wire);
+    expect(decoded.notices.length).toBeGreaterThan(0);
+    expect("futureRollup" in decoded).toBe(false);
+  });
+
+  it("attention decode is fail-loud per field, like every other boundary", () => {
+    const wire = encodeProjection({
+      ...sampleProjection(),
+      attention: { capacity: 2, debt: 1, window: 2, loanCount: 2 },
+    }) as unknown as Record<string, unknown>;
+    expect(() => decodeProjection({ ...wire, attention: { capacity: "x", debt: 1, window: 2, loanCount: 2 } })).toThrow(
+      /attention\.capacity/,
+    );
+    expect(() => decodeProjection({ ...wire, attention: { capacity: 2 } })).toThrow(/attention\.debt/);
+  });
+
+  it("a non-string causeId on the wire dies with its field path", () => {
+    const wire = JSON.parse(JSON.stringify(encodeProjection(sampleProjection()))) as {
+      notices: Record<string, unknown>[];
+    };
+    wire.notices[0]!["causeId"] = 42;
+    expect(() => decodeProjection(wire)).toThrow(/notices\[0\]\.causeId/);
+  });
+});
+
 describe("display helpers", () => {
   it("fixed ↔ display round-trips at cent precision", () => {
     const value = displayToFixed(0.7);

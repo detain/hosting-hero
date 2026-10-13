@@ -82,6 +82,20 @@ export function rhoDisplayOf(projection: SimProjection): number | null {
     : fixedToDisplay(cell.value);
 }
 
+/**
+ * Attention roll-up reader (E2b seam 3): the loan-pool summary the runner
+ * surfaces on the projection when the host planted `options.attention`; null
+ * on every default run. Display-side only — a HUD surface (Triage Window
+ * chip) formats "window N · debt D of capacity C" from this. The permanent
+ * four top-bar rows are §1.4 law, so attention deliberately does NOT join
+ * HUD_PERMANENT_METRICS; it rides its own instrument when one is authored.
+ */
+export function attentionSummaryOf(
+  projection: SimProjection,
+): { readonly capacity: number; readonly debt: number; readonly window: number; readonly loanCount: number } | null {
+  return projection.attention ?? null;
+}
+
 /* ═══════════════════ top-bar threshold registry (§1.4) ═══════════════════ */
 
 /**

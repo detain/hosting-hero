@@ -136,6 +136,39 @@ describe("runner attention month-roll forwarding (host seam @eff5694)", () => {
   });
 });
 
+/* ──────────────── seam 3 (E2b): attention on the wire ──────────────── */
+
+describe("runner attention roll-up rides the projection (E2b readback)", () => {
+  it("planted pool: every frame carries {capacity, debt, window, loanCount}", () => {
+    const frames = runFrames({ seed: 42, attention: plantLoans(2) }, 3);
+    for (const f of frames) {
+      expect(f.attention).toEqual({ capacity: 2, debt: 2, window: 2, loanCount: 2 });
+    }
+    // Wire truth: the key is present and JSON-safe (plain numbers, no bigint).
+    const raw = JSON.parse(JSON.stringify(encodeProjection(frames[0] as SimProjection))) as {
+      attention?: unknown;
+    };
+    expect(raw.attention).toEqual({ capacity: 2, debt: 2, window: 2, loanCount: 2 });
+  });
+
+  it("the month roll moves the roll-up: the oldest loan repays on the wire", () => {
+    const frames = runFrames({ seed: 42, attention: plantLoans(2) }, POST_ROLL_STEPS + 1);
+    // frames[i] is the OUTPUT of step i+1; the roll crosses at tick 420, so
+    // step 419's frame (index 418) is the last strictly pre-roll witness.
+    const before = frames[PRE_ROLL_STEPS - 1]?.attention;
+    const after = frames[frames.length - 1]?.attention;
+    expect(before).toEqual({ capacity: 2, debt: 2, window: 2, loanCount: 2 });
+    expect(after).toEqual({ capacity: 2, debt: 1, window: 2, loanCount: 2 });
+  });
+
+  it("default runners mint NOTHING — key absent from projection AND wire", () => {
+    const frames = runFrames({ seed: 42 }, 5);
+    for (const f of frames) expect("attention" in f).toBe(false);
+    const raw = JSON.parse(JSON.stringify(encodeProjection(frames[0] as SimProjection))) as Record<string, unknown>;
+    expect("attention" in raw).toBe(false);
+  });
+});
+
 /* ──────────────────────── seam 2: pricing ──────────────────────── */
 
 describe("runner pricing override forwarding (host seam @5781335)", () => {
@@ -162,7 +195,8 @@ describe("runner pricing override forwarding (host seam @5781335)", () => {
     const receipts = frames[0]?.notices.filter((n) => n.kind.startsWith("intent-")) ?? [];
     expect(receipts).toHaveLength(1);
     expect(receipts[0]?.kind).toBe("intent-executed");
-    expect(receipts[0]?.detail).toBe("adjust-price");
+    // E2b: executed receipts carry the handler detail — target + booked price.
+    expect(receipts[0]?.detail).toBe("adjust-price: target=sku:hourly-smb,price=1440000000");
     /* The doubling override lifted the hourly settlements: probe literal +
        strict inequality against the bare twin (25_034_848_900 µ$). */
     expect(frames[19]?.freeCashMicroUsd).toBe(25_064_561_500n);

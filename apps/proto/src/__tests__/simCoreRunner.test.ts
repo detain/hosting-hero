@@ -106,7 +106,9 @@ describe("intent-door wiring (contract #10: execute-or-refuse, never silence)", 
     const receipts = intentNotices(projection);
     expect(receipts).toHaveLength(1);
     expect(receipts[0]?.kind).toBe("intent-executed");
-    expect(receipts[0]?.detail).toBe("communicate");
+    // E2b: the handler's booked detail rides the executed receipt — the
+    // communicate handler names the estate note it delivered.
+    expect(receipts[0]?.detail).toBe('communicate: estate:"drill"');
     runner.stop();
   });
 

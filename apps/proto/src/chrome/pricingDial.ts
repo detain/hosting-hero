@@ -7,19 +7,20 @@
  * `player-verb` PlayerIntent is submitted through `SimCoreRunner.submit()`,
  * stamped for tick+1, and fed EXACTLY once through TickInputs.externalIntents
  * (contract #10). The verdict comes back on the wire as an
- * intent-executed / intent-refused notice whose detail is `<verb>` (executed)
- * or `<verb>: <reason>` (refused).
+ * intent-executed / intent-refused notice whose detail is
+ * `<verb>: <target=…,price=…>` on an execution (E2b receipt-detail seam) and
+ * `<verb>: <reason>` on a refusal.
  *
- * Honest scope ledger for v0 (seams reported to the runner/economy lanes):
- *  - the door WRITES the override book (GameState.pricing) but the proto
- *    runner keeps `game` private — no readback accessor exists yet;
- *  - the runner does not forward state.pricing.overrides into
- *    EconomyTickIn.priceOverrides (batch-D/E wiring), so an executed order
- *    changes the BOOK, not yet the invoices, in this build;
- *  - the executed receipt names only the verb — the handler's
- *    `target=<kind>:<id>,price=<µ$>` detail lives in SimEvents, off-wire.
- * So the dial shows the door's VERDICT honestly and never claims the money
- * moved.
+ * Honest scope ledger, E2b edition (all three original seams CLOSED):
+ *  - the runner exposes `pricingState()` / `attentionState()` readbacks (E1);
+ *  - the runner forwards `GameState.pricing.overrides` into the economy
+ *    fold every tick (@8994f96) — an executed order DOES move the invoices
+ *    of contracts classified under its key (the forwarding suite pins the
+ *    exact cash delta);
+ *  - the executed receipt names target + price on the wire, so the panel's
+ *    confirmation line shows what the door actually booked.
+ * Over the WORKER path the bigint price now revives at the boundary too
+ * (`wireIntentToPlayerIntent`, E2b) — headless and worker are symmetric.
  */
 import { asEntityId, asMoney, PlayerVerb } from "@hh/sim-core";
 import type { EntityId, MoneyUnit, PlayerIntent } from "@hh/sim-core";
@@ -60,9 +61,10 @@ export const INVALID_PRICE_PROBE: MoneyUnit = asMoney(0n);
 /** One wire-shaped adjust-price intent. `clock: "business"` is the Dual-Clock
  *  law (§4.4): repricing is a business action, not a packet. atUs is the
  *  intent's own-clock stamp; the door schedules by the runner's tick stamp.
- *  The bigint is a REAL bigint — over the JSON worker path today this would
- *  throw IntentDoorError at requireBigint (seam reported: worker must revive
- *  bigint-typed args per verb); the in-process runner path takes it verbatim. */
+ *  The bigint is a REAL bigint — in-process the door takes it verbatim; over
+ *  the JSON worker path `SimClient.sendPlayerVerb` stringifies it on send and
+ *  `wireIntentToPlayerIntent` revives it at the boundary (E2b closed what used
+ *  to be a throw-IntentDoorError seam). */
 export function buildAdjustPriceIntent(input: {
   readonly seq: number;
   readonly targetId: EntityId;
@@ -89,7 +91,8 @@ export function buildAdjustPriceIntent(input: {
 
 /** Receipt line for the panel: detail of the pricing notice, verbatim wire
  *  text with the verb front-and-centre. Refusals read
- *  `adjust-price: <reason>` (the door's reason rides after the colon). */
+ *  `adjust-price: <reason>`; executions read
+ *  `adjust-price: target=<kind>:<id>,price=<µ$>` (E2b). */
 export function receiptLine(detail: string | undefined, outcome: "executed" | "refused"): string {
   if (detail === undefined) return outcome === "executed" ? ADJUST_PRICE : `${ADJUST_PRICE}: (no reason on wire)`;
   return detail;

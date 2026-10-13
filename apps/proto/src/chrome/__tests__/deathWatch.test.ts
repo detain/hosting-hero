@@ -21,8 +21,14 @@ import {
   parseDeathRider,
 } from "../deathWatch";
 
-function rider(kind: NoticeKind, detail?: string): EventNotice {
-  return { kind, laneId: null, atUs: 1000n, ...(detail === undefined ? {} : { detail }) };
+function rider(kind: NoticeKind, detail?: string, causeId?: string): EventNotice {
+  return {
+    kind,
+    laneId: null,
+    atUs: 1000n,
+    ...(detail === undefined ? {} : { detail }),
+    ...(causeId === undefined ? {} : { causeId }),
+  };
 }
 
 describe("parseDeathRider", () => {
@@ -61,6 +67,30 @@ describe("parseDeathRider", () => {
     expect(
       parseDeathRider(rider("economy-notice", "death-imminent:company:whatever"))!.cause,
     ).toBeNull();
+  });
+
+  it("E2b: the structured causeId field is the FIRST authority", () => {
+    // Today's real wire: two-segment detail + the engine's own causeId.
+    const dead = parseDeathRider(
+      rider("economy-notice", "company-dissolved:company", "economy:death:dissolved:churn-collapse:5760"),
+    )!;
+    expect(dead.cause).toBe("churn-collapse");
+    expect(dead.contractId).toBe("company"); // detail still owns the contract
+    // A causeId that names no canonical cause stays honest — and the detail
+    // fallback underneath still gets its chance.
+    expect(
+      parseDeathRider(rider("economy-notice", "death-imminent:company", "economy:whatever:x:1"))!.cause,
+    ).toBeNull();
+    // causeId wins over a widened detail when both speak (structured truth).
+    expect(
+      parseDeathRider(
+        rider(
+          "economy-notice",
+          "company-dissolved:company:float-insolvency",
+          "economy:death:dissolved:churn-collapse:9",
+        ),
+      )!.cause,
+    ).toBe("churn-collapse");
   });
 });
 

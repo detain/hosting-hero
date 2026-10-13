@@ -6,8 +6,7 @@
  * owns exactly one `SimRunner`, and replies with `ProjectionWire` batches only.
  * It never receives DOM, canvas or Vue — same file runs under any WorkerHost.
  */
-import { assertToWorker, encodeProjection, type WireIntentPayload } from "../shared/protocol";
-import { asEntityId, type PlayerIntent, type PlayerVerbArgs } from "@hh/sim-core";
+import { assertToWorker, encodeProjection, wireIntentToPlayerIntent } from "../shared/protocol";
 import { createRunner, type SimRunner } from "../runner";
 
 const host = self as unknown as DedicatedWorkerGlobalScope;
@@ -16,47 +15,6 @@ let runner: SimRunner | null = null;
 
 function post(message: unknown): void {
   host.postMessage(message);
-}
-
-function parseWireIntent(
-  seq: number,
-  clock: "sim" | "business" | "wall",
-  atUs: bigint,
-  origin: "player" | "rule",
-  payload: WireIntentPayload,
-): PlayerIntent {
-  if (payload.kind === "slider") {
-    return {
-      seq,
-      clock,
-      atUs,
-      origin,
-      payload: { kind: "slider", control: payload.control, value: BigInt(payload.value) },
-    };
-  }
-  if (payload.kind === "player-verb") {
-    // Codec proved args is a flat scalar record with a closed `verb`
-    // discriminant; per-verb structural typing is the door's own boundary.
-    return {
-      seq,
-      clock,
-      atUs,
-      origin,
-      payload: { kind: "player-verb", args: payload.args as unknown as PlayerVerbArgs },
-    };
-  }
-  return {
-    seq,
-    clock,
-    atUs,
-    origin,
-    payload: {
-      kind: "verb",
-      verb: payload.verb,
-      target: payload.target === null ? null : asEntityId(payload.target),
-      value: payload.value === null ? null : BigInt(payload.value),
-    },
-  };
 }
 
 host.onmessage = (event: MessageEvent): void => {
@@ -87,7 +45,7 @@ host.onmessage = (event: MessageEvent): void => {
         post({ kind: "fault", protocol: 1, message: "intent before boot" });
         return;
       }
-      runner.submit(parseWireIntent(message.seq, message.clock, BigInt(message.atUs), message.origin, message.payload));
+      runner.submit(wireIntentToPlayerIntent(message));
       return;
     }
     case "speed": {

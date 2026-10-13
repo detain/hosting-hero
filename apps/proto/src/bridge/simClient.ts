@@ -70,9 +70,20 @@ export class SimClient {
 
   /** Door-bound player verb (contract #10): the args record crosses as flat
    *  scalars and the runner stamps it for the NEXT macro-tick — execute-or-
-   *  refuse at the intent door, never a silent drop. */
-  sendPlayerVerb(args: Readonly<Record<string, string | number | null>>, clock: ClockKind = "sim"): void {
-    this.sendIntent(clock, { kind: "player-verb", args });
+   *  refuse at the intent door, never a silent drop.
+   *
+   *  E2b bigint-wire law: a caller may hand a REAL bigint (MoneyUnit-family
+   *  fields like `newPriceMicroUsd`); it is stringified HERE, at the send
+   *  boundary — the same decimal-string discipline `sendSlider`/`sendVerb`
+   *  already apply — and the worker side revives it through
+   *  `wireIntentToPlayerIntent`. JSON can carry no bigint; both directions of
+   *  this seam are what makes a price survive the hop. */
+  sendPlayerVerb(args: Readonly<Record<string, string | number | bigint | null>>, clock: ClockKind = "sim"): void {
+    const wire: Record<string, string | number | null> = {};
+    for (const [field, value] of Object.entries(args)) {
+      wire[field] = typeof value === "bigint" ? value.toString() : value;
+    }
+    this.sendIntent(clock, { kind: "player-verb", args: Object.freeze(wire) });
   }
 
   halt(): void {
