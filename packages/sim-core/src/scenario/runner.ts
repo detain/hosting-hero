@@ -203,23 +203,123 @@ function envelopesAtMinute(
   }
   const segments = doc.traffic.segments;
   let rate = segments[0]!.ratePerMin;
+  let family: WaveEnvelope["dominantFamily"] = segments[0]!.family ?? "organic";
   for (const segment of segments) {
-    if (segment.fromMinute <= minute) rate = segment.ratePerMin;
+    if (segment.fromMinute <= minute) {
+      rate = segment.ratePerMin;
+      family = segment.family ?? "organic";
+    }
   }
   if (rate === 0) return Object.freeze([]);
-  return Object.freeze([baselineEnvelope(doc.traffic.tableId, rate)]);
+  return Object.freeze([baselineEnvelope(doc.traffic.tableId, rate, family)]);
 }
 
-function baselineEnvelope(tableId: string, ratePerMin: number): WaveEnvelope {
+function baselineEnvelope(
+  tableId: string,
+  ratePerMin: number,
+  family: WaveEnvelope["dominantFamily"] = "organic",
+): WaveEnvelope {
   return Object.freeze({
     tableId,
     role: "baseline" as const,
     shape: "plateau" as const,
     ratePerMin: fromInt(ratePerMin),
     telegraphed: true,
-    dominantFamily: "organic" as const,
+    dominantFamily: family,
   });
 }
+
+/** Ladder rung 3: attribute one minted arrival to the family label of the
+ *  envelope that minted it. The default arrival step stamps every event
+ *  `arrival:<tableId>:<tick>:<envelopeIndex>`; the familyMix die is never
+ *  configured on the scenario lane (buildPipelineConfig ships no family
+ *  table), so the envelope's dominantFamily IS the minted unit's family —
+ *  exact, not approximate. Cohort-bonus mints share their envelope index,
+ *  so herded visitors are labeled diegetically too. */
+function countArrivalFamily(
+  causeId: string,
+  envelopes: readonly WaveEnvelope[],
+  sink: Map<string, number>,
+): void {
+  const tail = causeId.slice(causeId.lastIndexOf(":") + 1);
+  const index = Number(tail);
+  const envelope = Number.isInteger(index) && index >= 0 ? envelopes[index] : undefined;
+  if (envelope === undefined) {
+    throw new Error(
+      `scenario[BAD_STATE] at 'runScenario': arrival event "${causeId}" names envelope ${tail} but this minute minted ${String(envelopes.length)} envelopes`,
+    );
+  }
+  sink.set(envelope.dominantFamily, (sink.get(envelope.dominantFamily) ?? 0) + 1);
+}
+
+/** Ladder rung 2: the windows THIS doc cites (win + lose lists, deduped by
+ *  the shared key grammar). The runner pre-computes exactly these — the
+ *  observation carries no uncited comparison the objectives never asked
+ *  for (parse-don't-validate: the predicate list is the query). */
+interface CitedWindow {
+  readonly key: string;
+  readonly metric: "arrivals" | "served" | "bounced" | "invoices-settled";
+  readonly windowMinutes: number;
+}
+
+function collectCitedWindows(doc: ScenarioDoc): readonly CitedWindow[] {
+  const byKey = new Map<string, CitedWindow>();
+  for (const predicate of [...doc.objectives.win, ...doc.objectives.lose]) {
+    if (predicate.kind !== "metric-delta-over-window") continue;
+    const key = `${predicate.metric}:${predicate.windowMinutes}`;
+    if (!byKey.has(key)) {
+      byKey.set(key, { key, metric: predicate.metric, windowMinutes: predicate.windowMinutes });
+    }
+  }
+  return Object.freeze([...byKey.values()]);
+}
+
+/** One minute of service truth, recorded for the window comparisons. */
+interface MinuteRow {
+  readonly arrivals: number;
+  readonly served: number;
+  readonly bounced: number;
+  readonly settled: number;
+}
+
+function minuteValue(row: MinuteRow, metric: CitedWindow["metric"]): number {
+  switch (metric) {
+    case "arrivals":
+      return row.arrivals;
+    case "served":
+      return row.served;
+    case "bounced":
+      return row.bounced;
+    case "invoices-settled":
+      return row.settled;
+  }
+}
+
+function sumWindow(ledger: readonly MinuteRow[], metric: CitedWindow["metric"], from: number, to: number): number {
+  let total = 0;
+  for (let i = Math.max(0, from); i < Math.min(ledger.length, to); i++) total += minuteValue(ledger[i]!, metric);
+  return total;
+}
+
+function windowSumsAt(
+  ledger: readonly MinuteRow[],
+  elapsedMin: number,
+  cited: readonly CitedWindow[],
+): Readonly<Record<string, { readonly current: number; readonly baseline: number; readonly complete: boolean }>> {
+  if (cited.length === 0) return EMPTY_WINDOW_SUMS;
+  const out: Record<string, { current: number; baseline: number; complete: boolean }> = {};
+  for (const window of cited) {
+    const w = window.windowMinutes;
+    out[window.key] = Object.freeze({
+      current: sumWindow(ledger, window.metric, elapsedMin - w, elapsedMin),
+      baseline: sumWindow(ledger, window.metric, elapsedMin - 2 * w, elapsedMin - w),
+      complete: elapsedMin >= 2 * w,
+    });
+  }
+  return Object.freeze(out);
+}
+
+const EMPTY_WINDOW_SUMS: ScenarioObservation["windowSums"] = Object.freeze({});
 
 /* dependencyEdgesFor / TickFacts / collectFacts / buildSample /
    withCashMirror all live in internal/tickFold.ts (imported above) — the
@@ -252,6 +352,8 @@ interface Accumulator {
   falsePositives: number;
   arrivals: number;
   deaths: CompanyDeathCause[];
+  /** Rung 3: envelope-label census, counted at mint (see countArrivalFamily). */
+  arrivalsByFamily: Map<string, number>;
 }
 
 function foldNoticeCensus(
@@ -271,7 +373,12 @@ function foldNoticeCensus(
   }
 }
 
-function snapshotObservation(facts: TickFacts, elapsedMin: number, acc: Accumulator): ScenarioObservation {
+function snapshotObservation(
+  facts: TickFacts,
+  elapsedMin: number,
+  acc: Accumulator,
+  windowSums: ScenarioObservation["windowSums"],
+): ScenarioObservation {
   return Object.freeze({
     elapsedMin,
     cashFreeMicroUsd: facts.cashFreeMicroUsd,
@@ -280,6 +387,8 @@ function snapshotObservation(facts: TickFacts, elapsedMin: number, acc: Accumula
     writtenOffCustomers: acc.writtenOffCustomers,
     bounces: acc.bounces,
     deaths: Object.freeze([...acc.deaths]),
+    arrivalsByFamily: sortedCensus(acc.arrivalsByFamily),
+    windowSums,
   });
 }
 
@@ -382,11 +491,16 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     falsePositives: 0,
     arrivals: 0,
     deaths: [],
+    arrivalsByFamily: new Map(),
   };
   const eventsByKind = new Map<string, number>();
   const noticesByKind = new Map<string, number>();
   const sustainRuns = new Map<string, number>();
   const window: TickFacts[] = [];
+  /* Rung 2 bookkeeping: the per-minute service ledger + the window keys the
+     doc actually cites (pre-computed at every boundary, nothing else). */
+  const citedWindows = collectCitedWindows(doc);
+  const minuteLedger: MinuteRow[] = [];
   const refusalWitness: RefusedSettlement[] = [];
   let economyRounds = 0;
   let economyRefusals = 0;
@@ -411,14 +525,15 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     degradedNodes: 0,
     nodeCount: game.nodes.size,
   });
-  let lastObs = snapshotObservation(mintFacts, 0, acc);
+  let lastObs = snapshotObservation(mintFacts, 0, acc, windowSumsAt(minuteLedger, 0, citedWindows));
 
   for (let t = 1; t <= totalTicks; t++) {
     const minute = game.context.minute + 1;
+    const envelopes = envelopesAtMinute(doc, minute, corpusWindows);
     const result = driver.advance(
       game,
       Object.freeze({
-        envelopes: envelopesAtMinute(doc, minute, corpusWindows),
+        envelopes,
         evidence: Object.freeze([]),
         classes: UNATTENDED_CLASSES,
         dependencyEdges,
@@ -429,7 +544,10 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     );
     game = result.state;
 
-    for (const e of result.events) eventsByKind.set(e.kind, (eventsByKind.get(e.kind) ?? 0) + 1);
+    for (const e of result.events) {
+      eventsByKind.set(e.kind, (eventsByKind.get(e.kind) ?? 0) + 1);
+      if (e.kind === "arrival") countArrivalFamily(e.causeId, envelopes, acc.arrivalsByFamily);
+    }
 
     /* money lane: the shared tick fold (internal/tickFold.ts, one home
        with fastForward) runs opex → economy fold → refusal witnesses with
@@ -440,6 +558,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
        host that reaches this block mirrors — the pinned divergence from
        fastForward's mirror-only-on-success law, see the fold docblock). */
     let refusedBurnsThisTick = 0;
+    let settledThisTick = 0;
     if (econ !== null) {
       const lane = foldMoneyLaneTick({
         game,
@@ -460,7 +579,9 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
       const out = lane.fold;
       if (out !== null) {
         economyRounds += 1;
+        const settledBefore = acc.settledInvoices;
         foldNoticeCensus(out.notices, acc, noticesByKind);
+        settledThisTick = acc.settledInvoices - settledBefore;
       }
       game = withCashMirror(game, econ);
     }
@@ -472,7 +593,18 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     acc.landed += facts.landed;
     acc.falsePositives += facts.falsePositive;
     acc.arrivals += facts.arrivals;
-    const obs = snapshotObservation(facts, Number(game.context.minute), acc);
+    minuteLedger.push({
+      arrivals: facts.arrivals,
+      served: facts.served,
+      bounced: facts.bounced,
+      settled: settledThisTick,
+    });
+    const obs = snapshotObservation(
+      facts,
+      Number(game.context.minute),
+      acc,
+      windowSumsAt(minuteLedger, Number(game.context.minute), citedWindows),
+    );
     lastObs = obs;
 
     /* terminal order: guards → lose → win (all at the boundary). */

@@ -1,4 +1,4 @@
-/** runner.test.ts — the mission loop proven on the ten shipped §1.5
+/** runner.test.ts — the mission loop proven on the fifteen shipped §1.5
  *  scenarios: every doc wins as authored, every doc loses when exactly one
  *  wire input is flipped (same seed), timeout is honest, and a run is
  *  byte-identical ×100 by construction.
@@ -6,16 +6,16 @@
  *  VOCAB-EXPANSION LADDER — the §1.5 missions still unrunnable, ranked by
  *  the ONE predicate or input each needs (do NOT bolt them on; each is a
  *  deliberate future ticket):
- *  1. written-off-count observation predicate → "Post-Breach" (~:3213) and
- *     the "Covenant" (:3772) family: their drama is accounts the dunning
- *     ladder kills, which today is invisible to the objective vocab (the
- *     observation carries writtenOffCustomers — no predicate reads it).
- *  2. metrics-delta/window predicate → "Contract Recompete" (~:3839, dropped
- *     from this wave) and "Sev-0" (~:3240): both hinge on a metric MOVING
- *     visibly within a window; static thresholds cannot express "improved".
- *  3. family-labeled arrivals in the observation → "Free Tier Flood"
- *     (~:3574): the runner pins dominantFamily "organic" for every segment,
- *     so a free-tier/malicious mix cannot be told apart at the objective.
+ *  1. CONSUMED (wave three, 2026-10-13): written-off-count observation
+ *     predicate → "Post-Breach Aftermath" (:3213) shipped. The "Covenant"
+ *     family (:3772) STILL waits on rung 4 — its drama is covenant terms
+ *     the wire cannot feed, not the count.
+ *  2. CONSUMED (wave three, 2026-10-13): metrics-delta/window predicate →
+ *     "Contract Recompete" (:3839) and "The Sev-0" (:3240, partial: the
+ *     recovery curve is expressible, the restraint sequence is not).
+ *  3. CONSUMED (wave three, 2026-10-13): family-labeled arrivals →
+ *     "Free Tier Flood" (:3574); segments carry an optional dominantFamily
+ *     and the runner counts mint-time arrivals per family.
  *  4. covenant inputs on the wire → "Covenant" (:3772) proper: the death
  *     cause exists (covenant-default) but the runner feeds no covenant terms,
  *     so death-by-cause:"covenant-default" is permanently unfalsifiable.
@@ -284,6 +284,167 @@ describe("shipped missions — lose side (ONE flipped wire input, same seed)", (
       expect(quiet.stopReason).toBe("win@480");
       expect(quiet.observation.bounces).toBe(0);
     }
+  });
+
+  it("Post-Breach Aftermath when the disclosure reaches the rest of the base → the ceiling breaks", () => {
+    // ONE idea, expressed as one wire push: the breached book is six hourly
+    // accounts; the flip signs six more before the board meeting. The dunning
+    // ladder kills them at the SAME 7% card-failure dice, so the cascade
+    // crosses the written-off ceiling (7) in the last hour of the clock —
+    // the exact tick is dice-bound per seed, the LOSS is not.
+    const disclosed = flip("post-breach-aftermath", (wire) => {
+      for (let i = 7; i <= 12; i += 1) {
+        wire.contracts.push({
+          id: `pb-0${String(i)}`,
+          customer: `Copycat Host ${String(i)}`,
+          mrcMicroUsd: 18_000_000,
+          billingCycle: "hourly",
+          termMonths: 12,
+          termStartMin: 0,
+          termEndMin: 30_000,
+          autoRenew: true,
+        });
+      }
+    });
+    const loseTicks: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(disclosed, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toMatch(/^lose:written-off-above:6@\d+$/);
+      loseTicks.push(Number(report.endMinute));
+    }
+    expect(loseTicks).toEqual([301, 313, 311, 307, 297]); // seed 904..908
+    // discriminating pair: the shipped book never crosses the ceiling.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("post-breach-aftermath"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@320");
+      expect(calm.observation.writtenOffCustomers).toBeLessThan(7);
+    }
+  });
+
+  it("Contract Recompete with the doubled fourth wave → the bounce budget is spent", () => {
+    // ONE field: the recovery ladder's closing step doubles 14 → 28 visits/min.
+    // The tenant arm converts (≤24 terminal bounces across five seeds); the
+    // flooded arm crosses the 25-bounce budget within a few minutes of the
+    // step — the recompete the player wins by SPENDING, not shouting.
+    const flooded = flip("contract-recompete", (wire) => {
+      wire.traffic.segments[3] = { fromMinute: 180, ratePerMin: 28 };
+    });
+    const loseTicks: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(flooded, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toMatch(/^lose:bounces-above:25@\d+$/);
+      loseTicks.push(Number(report.endMinute));
+    }
+    expect(loseTicks).toEqual([200, 199, 202, 198, 202]); // seed 904..908
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("contract-recompete"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@240");
+      expect(calm.observation.bounces).toBeLessThanOrEqual(24);
+    }
+  });
+
+  it("Free Tier Flood with the abuse wave at 40/min → the malicious ceiling breaks", () => {
+    // ONE field: the flood step goes 26 → 40 malicious visits/min. Integer
+    // rates mint deterministically, so the 3,200-ceiling breach lands at the
+    // EXACT same tick on all five seeds — the census law made visible.
+    const inundated = flip("free-tier-flood", (wire) => {
+      wire.traffic.segments[2] = { fromMinute: 120, ratePerMin: 40, family: "malicious" };
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(inundated, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:family-arrivals-above:malicious:3200@200");
+      expect(report.observation.arrivalsByFamily["malicious"]).toBe(3240);
+    }
+    // discriminator: the tuned-controls arm keeps the abusers under the line
+    for (const offset of [0, 1, 2]) {
+      const calm = runScenario(shippedScenario("free-tier-flood"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@240");
+      expect(calm.observation.arrivalsByFamily["malicious"]).toBe(3146);
+    }
+  });
+
+  it("The Sev-0 with a six-fold escalation → the bounce scar crosses the mandate", () => {
+    // ONE field: the post-incident step goes 14 → 60 visits/min (the
+    // un-mitigated escalation instead of the repaired climb). The 30-bounce
+    // mandate is crossed within minutes of the step, seed-jittered by the
+    // retry dice — same story the calm arm never tells (≤29 bounces ×5).
+    const escalated = flip("the-sev-0", (wire) => {
+      wire.traffic.segments[2] = { fromMinute: 150, ratePerMin: 60 };
+    });
+    const loseTicks: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(escalated, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toMatch(/^lose:bounces-above:30@\d+$/);
+      loseTicks.push(Number(report.endMinute));
+    }
+    expect(loseTicks).toEqual([162, 163, 162, 163, 160]); // seed 904..908
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("the-sev-0"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@240");
+      expect(calm.observation.bounces).toBeLessThanOrEqual(29);
+    }
+  });
+});
+
+describe("wave-three missions — engine truth (2026-10-13)", () => {
+  it("Post-Breach: the dunning ladder grinds the six-account book to its full kill by the meeting", () => {
+    // The rung-1 witness: writtenOffCustomers is not decorative. The final
+    // terminations are card-failure dice armed, so the count still CREEPS in
+    // the last hours — pinned per seed (four to six of the shaken accounts
+    // are dead by t320, never the whole ceiling of seven), and every book
+    // has converged to all-six by the cascade that follows.
+    const woAtMeeting = [6, 5, 6, 4, 6];
+    woAtMeeting.forEach((expected, offset) => {
+      const report = runScenario(shippedScenario("post-breach-aftermath"), BASE_SEED, { seedOffset: offset });
+      expect(report.stopReason).toBe("win@320");
+      expect(report.observation.writtenOffCustomers).toBe(expected);
+      expect(report.observation.deaths).toEqual([]);
+    });
+    // past the board meeting the same book dies of its own cascade —
+    // falsifier that survive:320 is load-bearing: stretch the meeting to
+    // seven hours (clock AND its survive line, one idea) and the churn-
+    // collapse the terminations sustain arrives first, on every seed.
+    const stretched = JSON.parse(JSON.stringify(SHIPPED_SCENARIO_WIRES["post-breach-aftermath"])) as {
+      limits: { maxSimMinutes: number };
+      objectives: { win: Record<string, unknown>[] };
+    };
+    stretched.limits.maxSimMinutes = 420;
+    stretched.objectives.win[0] = { kind: "survive-minutes", minutes: 420 };
+    const beyond = runScenario(parseScenarioDoc(stretched as unknown as ScenarioWire), BASE_SEED, {
+      seedOffset: 0,
+    });
+    expect(beyond.stopReason).toBe("lose:death-by-cause:any@358");
+    expect(beyond.observation.deaths).toEqual(["churn-collapse"]);
+    expect(beyond.observation.writtenOffCustomers).toBe(6);
+  });
+
+  it("Free Tier Flood: mint-time family census is dice-free at integer rates", () => {
+    // Rung-3 witness: organic and malicious arrivals are counted from the
+    // arrival events' envelope attribution, so the SAME counts stand on all
+    // five seeds — the ceiling that breaks at t200 is arithmetic, not luck.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(shippedScenario("free-tier-flood"), BASE_SEED, { seedOffset: offset });
+      expect(report.observation.arrivalsByFamily["organic"]).toBe(1672);
+      expect(report.observation.arrivalsByFamily["malicious"]).toBe(3146);
+      expect(report.observation.settledInvoices).toBe(0); // no contracts: pure traffic story
+    }
+  });
+
+  it("delta witnesses: the served window actually moved in both rung-2 missions", () => {
+    // Contract Recompete: recovery ladder 6→8→10→14/min makes the last
+    // 60 minutes of service 840 against the opening 600 (+40%, asked +25%).
+    const recompete = runScenario(shippedScenario("contract-recompete"), BASE_SEED);
+    const crSums = recompete.observation.windowSums["served:60"];
+    expect(crSums).toEqual({ current: 840, baseline: 600, complete: true });
+    // The Sev-0: the incident crater (10→2/min) followed by the repaired
+    // climb (14/min) reads 840 against 480 (+75%, asked +30%).
+    const sev0 = runScenario(shippedScenario("the-sev-0"), BASE_SEED);
+    const svSums = sev0.observation.windowSums["served:60"];
+    expect(svSums).toEqual({ current: 840, baseline: 480, complete: true });
   });
 });
 

@@ -1,6 +1,9 @@
-/** Eleven shipped §1.5 scenarios — the library grows toward the full
- *  playable census (ten missions; Metastable ships twice, once per traffic
- *  profile, the corpus twin proving the waves-tableId seam).
+/** Fifteen shipped §1.5 scenarios — the library grows toward the full
+ *  playable census (fourteen missions; Metastable ships twice, once per
+ *  traffic profile, the corpus twin proving the waves-tableId seam).
+ *  Wave three rides the predicate ladder rungs 1–3 (written-off-count,
+ *  metrics-delta-over-window, family-labeled arrivals): Post-Breach
+ *  Aftermath, Contract Recompete, Free Tier Flood, and the partial Sev-0.
  *
  *  Every document here is WIRE DATA (JSON-safe literals: money rides
  *  strings for the big µ$ values) parsed through the same wall external
@@ -42,6 +45,14 @@
  *  - the-quiet-month   → "The Quiet Month" / "Reverse Wave" / "The Good
  *    Problem" (~line 3463): no threats; the budget is the live antagonist
  *    and the only wrong move is the extra row of servers.
+ *  - post-breach-aftermath → "Post-Breach" / "The Breach" / "The Suspicious
+ *    Login" (~line 3213): the write-off column is the antagonist — rung 1.
+ *  - contract-recompete → "Contract Recompete" / "The Renewal" (~line 3839):
+ *    the metric must be seen MOVING, not merely high — rung 2.
+ *  - free-tier-flood   → "Free Tier Flood" / "Free Tier Abuse" / "Free Tier
+ *    Invaded" (~line 3574): the stream is counted BY FAMILY — rung 3.
+ *  - the-sev-0         → "The Sev-0" (~line 3240): the runbook's scar as a
+ *    recovery delta; the restraint sequence ships as a recorded gap.
  */
 
 import type { ScenarioDoc } from "./doc.ts";
@@ -601,6 +612,255 @@ const QUIET_MONTH_WIRE = {
   },
 } satisfies ScenarioWire;
 
+/* ─────────────────────── Post-Breach Aftermath ────────────────────────── */
+
+/** §1.5 "Post-Breach / The Breach / The Suspicious Login" — rung 1 of the
+ *  vocab ladder (written-off-count). The spec frames the breach as
+ *  symptoms-only forensics the player merely survives while trust drains;
+ *  the CEO variant's drama is the churn cascade AFTER disclosure. What the
+ *  engine can say: a book whose payments start failing after the news, the
+ *  dunning ladder walking the unrecoverable accounts off the books
+ *  (`written-off` notices, first terminations ≈ day-20-past-due ≈ the
+ *  t310s on hourly paper), and a written-off CEILING as the objective the
+ *  old vocab could not state. NON-EXPRESSIBLE (recorded, not faked): the
+ *  forensics timeline, the disclosure choice, and the blame dial — no
+ *  decision door on the scenario wire (same ruling as Runway/Price Hike).
+ *  ENGINE TRUTH (probe-pinned): the natural six-account book writes off
+ *  EXACTLY one invoice per shaken account — six terminations converging by
+ *  t320 on every probed seed — and the sustained churn window then churn-
+ *  collapses the company at t331–378. The board meeting (the clock) is at
+ *  t320: the mission is judged while the write-off column is still the
+ *  story, not after the funeral the column guarantees. NON-EXPRESSIBLE:
+ *  the disclosure decision tree and the blame dial stay fiction (no
+ *  decision door on the wire — the Runway/Price-Hike ruling). Flip: the
+ *  disclosure reaches the REST of the base — six more delinquent accounts
+ *  start billing on the same dice (12-book cascade). Written-offs reach
+ *  8–12 and cross the ceiling of six at t[301,313,311,307,297] probe-pinned
+ *  per offset — the cascade the ceiling exists to catch. */
+const POST_BREACH_WIRE = {
+  schema: "hh-scenario@1",
+  id: "post-breach-aftermath",
+  name: "Post-Breach Aftermath",
+  brief:
+    "The breach is public and wallets remember. Six hourly accounts keep billing while their payment dice go bad, the dunning ladder starts terminating what it cannot save, and the board demands the write-off column stay under seven at the meeting in five-and-a-half hours.",
+  specRef: "§1.5 Post-Breach / The Breach / The Suspicious Login",
+  specLine: 3213,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "pb-01", mrcMicroUsd: 60_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Shaken Startup" },
+    { id: "pb-02", mrcMicroUsd: 48_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Forum Refugees LLC" },
+    { id: "pb-03", mrcMicroUsd: 36_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Podcast Barn" },
+    { id: "pb-04", mrcMicroUsd: 30_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Indie Game Ring" },
+    { id: "pb-05", mrcMicroUsd: 24_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Newsletter Nest" },
+    { id: "pb-06", mrcMicroUsd: 18_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Hobby Shop Online" },
+  ],
+  traffic: {
+    tableId: "aftermath-plateau",
+    segments: [{ fromMinute: 0, ratePerMin: 6 }],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 320 },
+      { kind: "invoices-settled", count: 1 },
+      { kind: "written-off-below", count: 7 },
+      { kind: "no-death-cause", cause: "any" },
+    ],
+    lose: [
+      { kind: "written-off-above", count: 6 },
+      { kind: "death-by-cause", cause: "any" },
+    ],
+  },
+  limits: {
+    maxSimMinutes: 320,
+    initialFreeMicroUsd: 1_000_000_000,
+    opex: Array.from({ length: 10 }, (_unused, i) => ({
+      atMinute: (i + 1) * 30,
+      amountMicroUsd: 12_000_000,
+      memo: `aftermath-${String(i + 1).padStart(2, "0")}`,
+    })),
+    dunningEngineOwned: true,
+  },
+} satisfies ScenarioWire;
+
+/* ──────────────────────── Contract Recompete ──────────────────────────── */
+
+/** §1.5 "Contract Recompete / The Renewal" — rung 2 of the vocab ladder
+ *  (metrics-delta-over-window). The spec's demand is the one thing static
+ *  thresholds could never say: the metric must MOVE visibly before the
+ *  renewal decision. v0 reading: a four-step service ladder (6→8→10→14
+ *  visits/min on a sixteen-slot edge) where each hour must beat the hour
+ *  before by a quarter of served traffic — the `served:60:+25` row holds
+ *  only once TWO full windows exist (elapsed ≥ 2W) and compares the
+ *  trailing hour against the one before it: 840/600 = +40% at the t240
+ *  board read — while the bounce budget keeps the improvement HONEST
+ *  (growth you cannot serve is just a queue). The whale's cliff lands at
+ *  t234 inside the clock and auto-renews deterministically (the
+ *  collections precedent); the walk-out itself is retention dice (§6.12
+ *  matrix), not scripted. NON-EXPRESSIBLE: the negotiation minigame,
+ *  competitor bids, and the RFP theatre — no decision door in v0.
+ *  Flip: the closing step doubles 14→28 past
+ *  capacity — the recompete you "won" by promising traffic you eat. */
+const CONTRACT_RECOMPETE_WIRE = {
+  schema: "hh-scenario@1",
+  id: "contract-recompete",
+  name: "Contract Recompete",
+  brief:
+    "Your biggest tenant is testing the market and the clause is explicit: show measurable service improvement hour over hour or lose the account. Climb the ladder, prove the delta, and do not buy the trend line with a bounce storm.",
+  specRef: "§1.5 Contract Recompete / The Renewal",
+  specLine: 3839,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 16, serviceTimeUs: 3_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "cr-01", mrcMicroUsd: 900_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 12, autoRenew: true, customer: "Marketplace Prime" },
+    { id: "cr-02", mrcMicroUsd: 60_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 12, autoRenew: true, customer: "Ledger Annex" },
+    { id: "cr-03", mrcMicroUsd: 60_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 12, autoRenew: true, customer: "Signals Bureau" },
+  ],
+  traffic: {
+    tableId: "recompete-ladder",
+    segments: [
+      { fromMinute: 0, ratePerMin: 6 },
+      { fromMinute: 60, ratePerMin: 8 },
+      { fromMinute: 120, ratePerMin: 10 },
+      { fromMinute: 180, ratePerMin: 14 },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 25 },
+      { kind: "bounces-below", count: 25 },
+    ],
+    lose: [
+      { kind: "bounces-above", count: 25 },
+      { kind: "death-by-cause", cause: "any" },
+    ],
+  },
+  limits: {
+    maxSimMinutes: 240,
+    initialFreeMicroUsd: 300_000_000,
+    dunningEngineOwned: true,
+  },
+} satisfies ScenarioWire;
+
+/* ────────────────────────── Free Tier Flood ───────────────────────────── */
+
+/** §1.5 "Free Tier Flood / Free Tier Abuse / Free Tier Invaded" — rung 3
+ *  of the vocab ladder (family-labeled arrivals). The spec's arc is a MIX
+ *  problem: thousands of low-value signups, and within two days ninety
+ *  percent turn out to be miners and relays. Segments now carry the
+ *  envelope's dominantFamily label, so the objective can count the abuse
+ *  stream by NAME: the organic window (calm, then the launch trickle)
+ *  must keep producing genuine signups ABOVE its floor, while malicious
+ *  mints during the flood window stay BELOW the abuse ceiling the free-
+ *  tier controls were tuned to. Whole-number rates make the mint census
+ *  exactly deterministic (the arrival dice only rolls on fractional
+ *  rates), so the flipped flood crosses its ceiling at the same tick on
+ *  every seed — the cleanest discriminating witness in the library.
+ *  NON-EXPRESSIBLE: the one-envelope-per-minute segments law means the
+ *  flood phase replaces the organic label rather than diluting it — the
+ *  ninety-percent mix is fiction; the wire counts the label that dominates
+ *  the minute. Payment-KYC walls and crypto-payout bans need the defense
+ *  board slice, not the traffic dial. Flip: the flood step 26→40/min —
+ *  the malicious census hits 3,200 mints at EXACTLY t200 on all five
+ *  probed offsets (integer rates never roll the dice): the library's
+ *  first seed-invariant losing witness. */
+const FREE_TIER_FLOOD_WIRE = {
+  schema: "hh-scenario@1",
+  id: "free-tier-flood",
+  name: "Free Tier Flood",
+  brief:
+    "The free tier launches to a trickle of genuine blogs, then the flood: two hours in, the stream turns into miners and relays. Keep the abuse ceiling under control WITHOUT strangling the genuine signups that made the tier worth running.",
+  specRef: "§1.5 Free Tier Flood / Free Tier Abuse / Free Tier Invaded",
+  specLine: 3574,
+  board: {
+    nodes: [{ id: "edge-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "freetier-mix",
+    segments: [
+      { fromMinute: 0, ratePerMin: 8, family: "organic" },
+      { fromMinute: 60, ratePerMin: 20, family: "organic" },
+      { fromMinute: 120, ratePerMin: 26, family: "malicious" },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "family-arrivals-above", family: "organic", count: 1200 },
+      { kind: "family-arrivals-below", family: "malicious", count: 3201 },
+    ],
+    lose: [{ kind: "family-arrivals-above", family: "malicious", count: 3200 }],
+  },
+  limits: { maxSimMinutes: 240 },
+} satisfies ScenarioWire;
+
+/* ───────────────────────────── The Sev-0 ──────────────────────────────── */
+
+/** §1.5 "The Sev-0" — rung 2's recovery reading (partial by mandate). The
+ *  spec's level is a RUNBOOK: preserve → isolate → document → notify →
+ *  remediate, scored for RESTRAINT. The v0 wire has no decision door and no
+ *  evidence-preservation mechanic (NON-EXPRESSIBLE, recorded loudly — the
+ *  same ruling as every option-tree mission this wave). What IS expressible
+ *  is the incident's scar on the service curve: arrivals collapse at the
+ *  disclosure hour (t60: 10→2/min), crawl through the isolation window,
+ *  then the remediated reopen lands at t150 — deliberately INSIDE the
+ *  trailing window so the t240 board read compares a half-recovered hour
+ *  (840 served) against a quarter-recovered one (480): +75% on a +30%
+ *  clause, the recovery MADE VISIBLE (metric-delta) with the bounce
+ *  ledger still inside the incident budget. Flip: the reopen floods in at
+ *  60/min onto twenty-four slots — the un-isolated relapse, crossing the
+ *  bounce ceiling at t[162,163,162,163,160] probe-pinned per offset,
+ *  the recovery bounced before it can ever be measured. */
+const SEV0_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-sev-0",
+  name: "The Sev-0",
+  brief:
+    "Regulated data, midnight page, the whole sequence lit: preserve, isolate, notify, remediate. v0 plays the scar, not the runbook — arrivals crater at the disclosure and the mission ends when the served curve visibly recovers without eating the bounce budget.",
+  specRef: "§1.5 The Sev-0",
+  specLine: 3240,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 24, serviceTimeUs: 3_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "sv-01", mrcMicroUsd: 120_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 12, autoRenew: true, customer: "Compliance-Critical SaaS" },
+    { id: "sv-02", mrcMicroUsd: 120_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 12, autoRenew: true, customer: "Records Vault Ltd" },
+  ],
+  traffic: {
+    tableId: "sev0-arc",
+    segments: [
+      { fromMinute: 0, ratePerMin: 10 },
+      { fromMinute: 60, ratePerMin: 2 },
+      { fromMinute: 150, ratePerMin: 14 },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 30 },
+      { kind: "bounces-below", count: 31 },
+      { kind: "invoices-settled", count: 1 },
+    ],
+    lose: [
+      { kind: "bounces-above", count: 30 },
+      { kind: "death-by-cause", cause: "any" },
+    ],
+  },
+  limits: {
+    maxSimMinutes: 240,
+    initialFreeMicroUsd: 500_000_000,
+    dunningEngineOwned: true,
+  },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -615,6 +875,10 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [RUNWAY_SIX_WEEKS_WIRE.id]: RUNWAY_SIX_WEEKS_WIRE,
   [PRICE_HIKE_WIRE.id]: PRICE_HIKE_WIRE,
   [QUIET_MONTH_WIRE.id]: QUIET_MONTH_WIRE,
+  [POST_BREACH_WIRE.id]: POST_BREACH_WIRE,
+  [CONTRACT_RECOMPETE_WIRE.id]: CONTRACT_RECOMPETE_WIRE,
+  [FREE_TIER_FLOOD_WIRE.id]: FREE_TIER_FLOOD_WIRE,
+  [SEV0_WIRE.id]: SEV0_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
@@ -622,8 +886,9 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
 /** The shipped documents, parsed at module load — authored drift
  *  dies HERE, loudly, before any test or host can consume it. The first
  *  five carry named exports (hosts import them directly); the wave-two
- *  five are reachable through SHIPPED_SCENARIOS / shippedScenario(id)
- *  only — no new export names by design (docs/api-verify is name-based). */
+ *  five and the wave-three four are reachable through SHIPPED_SCENARIOS /
+ *  shippedScenario(id) only — no new export names by design (docs/
+ *  api-verify is name-based). */
 export const theLongWeekendDoc: ScenarioDoc = parseScenarioDoc(LONG_WEEKEND_WIRE);
 export const deadbeatQuarterDoc: ScenarioDoc = parseScenarioDoc(DEADBEAT_QUARTER_WIRE);
 export const theAngryWhaleDoc: ScenarioDoc = parseScenarioDoc(ANGRY_WHALE_WIRE);
@@ -635,6 +900,10 @@ const ddosSeasonDoc: ScenarioDoc = parseScenarioDoc(DDOS_SEASON_WIRE);
 const runwaySixWeeksDoc: ScenarioDoc = parseScenarioDoc(RUNWAY_SIX_WEEKS_WIRE);
 const priceHikeDoc: ScenarioDoc = parseScenarioDoc(PRICE_HIKE_WIRE);
 const quietMonthDoc: ScenarioDoc = parseScenarioDoc(QUIET_MONTH_WIRE);
+const postBreachAftermathDoc: ScenarioDoc = parseScenarioDoc(POST_BREACH_WIRE);
+const contractRecompeteDoc: ScenarioDoc = parseScenarioDoc(CONTRACT_RECOMPETE_WIRE);
+const freeTierFloodDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_WIRE);
+const sev0Doc: ScenarioDoc = parseScenarioDoc(SEV0_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -649,6 +918,10 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   runwaySixWeeksDoc.id,
   priceHikeDoc.id,
   quietMonthDoc.id,
+  postBreachAftermathDoc.id,
+  contractRecompeteDoc.id,
+  freeTierFloodDoc.id,
+  sev0Doc.id,
 ]);
 
 /** id → trusted doc. */
@@ -664,6 +937,10 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [runwaySixWeeksDoc.id]: runwaySixWeeksDoc,
   [priceHikeDoc.id]: priceHikeDoc,
   [quietMonthDoc.id]: quietMonthDoc,
+  [postBreachAftermathDoc.id]: postBreachAftermathDoc,
+  [contractRecompeteDoc.id]: contractRecompeteDoc,
+  [freeTierFloodDoc.id]: freeTierFloodDoc,
+  [sev0Doc.id]: sev0Doc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */

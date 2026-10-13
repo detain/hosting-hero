@@ -210,6 +210,112 @@ describe("parseScenarioDoc — the wall refuses", () => {
   });
 });
 
+describe("wave-three predicates — rungs 1–3 keep the closed-vocab wall", () => {
+  function win(wire: MutableWire, predicate: unknown): void {
+    wire.objectives.win = [predicate];
+  }
+
+  it("a written-off-below of zero (vacuous ceiling, same law as churn)", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "written-off-below", count: 0 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("count");
+  });
+
+  it("a written-off-above of minus one", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "written-off-above", count: -1 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("count");
+  });
+
+  it("a delta window naming a metric that is not on the trusted record", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "metric-delta-over-window", metric: "revenue", windowMinutes: 60, minDeltaPct: 25 });
+    expect(wall("BAD_ENUM", () => parseScenarioDoc(wire)).message).toContain("arrivals");
+  });
+
+  it("a delta window of zero minutes", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "metric-delta-over-window", metric: "served", windowMinutes: 0, minDeltaPct: 25 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("windowMinutes");
+  });
+
+  it("a delta window wider than the module cap", () => {
+    const wire = minimalWire();
+    win(wire, {
+      kind: "metric-delta-over-window",
+      metric: "served",
+      windowMinutes: SCENARIO_MAX_MINUTES_CAP + 1,
+      minDeltaPct: 25,
+    });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("windowMinutes");
+  });
+
+  it("a delta that demands zero improvement (an always-true objective)", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 0 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("minDeltaPct");
+  });
+
+  it("a delta past ten thousand percent", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 10_001 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("minDeltaPct");
+  });
+
+  it("a family predicate with an off-registry family", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "family-arrivals-below", family: "extraterrestrial", count: 10 });
+    expect(wall("BAD_ENUM", () => parseScenarioDoc(wire)).message).toContain("customerAsThreat");
+  });
+
+  it("a family-arrivals-below of zero (vacuous, same law)", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "family-arrivals-below", family: "organic", count: 0 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("count");
+  });
+
+  it("a stray field on a delta row (the wall covers the new shapes too)", () => {
+    const wire = minimalWire();
+    win(wire, {
+      kind: "metric-delta-over-window",
+      metric: "served",
+      windowMinutes: 60,
+      minDeltaPct: 25,
+      smoothing: "ewma",
+    });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("smoothing");
+  });
+
+  it("a traffic segment with an unknown family label", () => {
+    const wire = minimalWire();
+    wire.traffic = {
+      tableId: "drill",
+      segments: [{ fromMinute: 0, ratePerMin: 10, family: "chaos" }],
+    };
+    expect(wall("BAD_ENUM", () => parseScenarioDoc(wire)).message).toContain("malicious");
+  });
+
+  it("accepts the honest shapes and defaults the segment family to organic", () => {
+    const wire = minimalWire();
+    wire.traffic = {
+      tableId: "drill",
+      segments: [
+        { fromMinute: 0, ratePerMin: 10 },
+        { fromMinute: 30, ratePerMin: 20, family: "malicious" },
+      ],
+    };
+    win(wire, { kind: "metric-delta-over-window", metric: "invoices-settled", windowMinutes: 45, minDeltaPct: 500 });
+    wire.objectives.lose = [
+      { kind: "written-off-above", count: 6 },
+      { kind: "family-arrivals-above", family: "malicious", count: 3200 },
+    ];
+    const doc = parseScenarioDoc(wire);
+    if (doc.traffic.profile !== "segments") throw new Error("expected segments");
+    expect(doc.traffic.segments[0]?.family).toBeUndefined(); // absent means organic at the envelope
+    expect(doc.traffic.segments[1]?.family).toBe("malicious");
+  });
+});
+
 describe("parseMoneyWire", () => {
   it("accepts safe ints and digit strings, rejects the rest", () => {
     expect(parseMoneyWire(0, "p", "BAD_MONEY")).toBe(0n);

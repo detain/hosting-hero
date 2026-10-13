@@ -19,7 +19,7 @@
  *  unattended lane would produce.
  */
 
-import type { Contract, EntityId, RunSeed, SlaTerms } from "../types.ts";
+import type { Contract, EntityId, RunSeed, SlaTerms, ThreatFamily } from "../types.ts";
 import { asEntityId, asMoney, asRunSeed } from "../types.ts";
 import { FIXED_ZERO, fromInt } from "../kernel/fixed.ts";
 import { MICROS_PER_MIN } from "../kernel/time.ts";
@@ -44,19 +44,43 @@ export const SCENARIO_BRIEF_MAX_CHARS = 280;
  *  CLOSED authored mission, not an open-ended weekend. */
 export const SCENARIO_MAX_MINUTES_CAP = 2880;
 
-/** The ten legal objective predicates (§1.5 mission verbs, mapped onto
- *  observables that EXIST today — see objectives.ts for each reading). */
+/** The fifteen legal objective predicates (§1.5 mission verbs, mapped onto
+ *  observables that EXIST today — see objectives.ts for each reading).
+ *  Rungs 1–3 of the vocab ladder (runner.test.ts header) shipped here:
+ *  written-off-count, metrics-delta-over-window, family-labeled arrivals. */
 export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "survive-minutes",
   "cash-above",
   "cash-below",
   "churn-below",
   "churn-above",
+  "written-off-below",
+  "written-off-above",
   "invoices-settled",
   "bounces-below",
   "bounces-above",
+  "metric-delta-over-window",
+  "family-arrivals-below",
+  "family-arrivals-above",
   "no-death-cause",
   "death-by-cause",
+] as const);
+
+/** The closed metric vocab a `metric-delta-over-window` predicate may name
+ *  (local constant by design — the barrel stays name-frozen). */
+const DELTA_METRICS = Object.freeze(["arrivals", "served", "bounced", "invoices-settled"] as const);
+
+/** The closed arrival-label vocab: the five threat families plus the
+ *  benign "organic" label the envelope type carries (types.ts
+ *  WaveEnvelope.dominantFamily). Segments mint under these labels; the
+ *  corpus profile inherits its labels from the shipped wave content. */
+const ARRIVAL_FAMILIES = Object.freeze([
+  "organic",
+  "malicious",
+  "human",
+  "entropic",
+  "systemic",
+  "customerAsThreat",
 ] as const);
 
 export type ScenarioPredicateKind = (typeof SCENARIO_PREDICATE_KINDS)[number];
@@ -71,8 +95,28 @@ export type ObjectivePredicate =
   | { readonly kind: "survive-minutes"; readonly minutes: number }
   | { readonly kind: "cash-above" | "cash-below"; readonly microUsd: bigint }
   | { readonly kind: "churn-below" | "churn-above"; readonly count: number }
+  | { readonly kind: "written-off-below" | "written-off-above"; readonly count: number }
   | { readonly kind: "invoices-settled"; readonly count: number }
   | { readonly kind: "bounces-below" | "bounces-above"; readonly count: number }
+  | {
+      readonly kind: "metric-delta-over-window";
+      /** What to compare across the two windows (closed DELTA_METRICS vocab). */
+      readonly metric: "arrivals" | "served" | "bounced" | "invoices-settled";
+      /** Width W of each window, in sim-minutes. The predicate needs 2W of
+       *  history before it can judge anything — before that it never holds. */
+      readonly windowMinutes: number;
+      /** Required improvement, whole percent: current ≥ baseline×(1+P/100).
+       *  A dead-zero baseline counts as beaten by ANY current > 0 (growth
+       *  from silence is a visible improvement; 0 vs 0 never holds). */
+      readonly minDeltaPct: number;
+    }
+  | {
+      readonly kind: "family-arrivals-below" | "family-arrivals-above";
+      /** The envelope family label arrivals were minted under (closed
+       *  ARRIVAL_FAMILIES vocab — organic + the five threat families). */
+      readonly family: "organic" | ThreatFamily;
+      readonly count: number;
+    }
   | { readonly kind: "no-death-cause" | "death-by-cause"; readonly cause: ScenarioDeathCause };
 
 /** One signed contract of the mission: the wire fields the author names
@@ -91,11 +135,17 @@ export interface ScenarioContractSpec {
 /** Hand-authored traffic: a piecewise plateau over sim-minutes.
  *  `segments` is total — the first starts at minute 0, each later one
  *  opens where its predecessor closed; rate 0 is silence (no envelope
- *  that minute). */
+ *  that minute). `family` (rung-3 ladder vocab, default "organic") stamps
+ *  the envelope's dominantFamily so the family-arrivals predicates can
+ *  tell a flood's mix apart; absent keeps the pre-rung-3 byte shape. */
 export interface ScenarioSegmentsTraffic {
   readonly profile: "segments";
   readonly tableId: string;
-  readonly segments: readonly { readonly fromMinute: number; readonly ratePerMin: number }[];
+  readonly segments: readonly {
+    readonly fromMinute: number;
+    readonly ratePerMin: number;
+    readonly family?: "organic" | ThreatFamily;
+  }[];
 }
 
 /** Corpus traffic: a storm schedule that NAMES a shipped
@@ -468,10 +518,19 @@ function parseSegmentsTraffic(src: Record<string, unknown>, tableId: string, pat
   const segments = (src.segments as readonly unknown[]).map((rawSegment, i) => {
     const segPath = `${path}.segments[${i}]`;
     const seg = asRecord(rawSegment, segPath, "BAD_TRAFFIC");
-    requireKeys(seg, ["fromMinute", "ratePerMin"], ["fromMinute", "ratePerMin"], segPath, "BAD_TRAFFIC");
+    requireKeys(seg, ["fromMinute", "ratePerMin", "family"], ["fromMinute", "ratePerMin"], segPath, "BAD_TRAFFIC");
+    const familyRaw = seg.family;
+    let family: "organic" | ThreatFamily | undefined;
+    if (familyRaw !== undefined) {
+      if (typeof familyRaw !== "string" || !(ARRIVAL_FAMILIES as readonly string[]).includes(familyRaw)) {
+        bad("BAD_ENUM", `${segPath}.family`, `expected one of ${ARRIVAL_FAMILIES.join(", ")}, got ${String(familyRaw)}`);
+      }
+      family = familyRaw as "organic" | ThreatFamily;
+    }
     return Object.freeze({
       fromMinute: readInt(seg, "fromMinute", segPath, "BAD_TRAFFIC", 0, 1_000_000),
       ratePerMin: readInt(seg, "ratePerMin", segPath, "BAD_TRAFFIC", 0, 32_767),
+      ...(family === undefined ? {} : { family }),
     });
   });
   if (segments[0]?.fromMinute !== 0) {
@@ -514,9 +573,14 @@ const PREDICATE_FIELDS: Readonly<Record<ScenarioPredicateKind, readonly string[]
   "cash-below": ["kind", "microUsd"],
   "churn-below": ["kind", "count"],
   "churn-above": ["kind", "count"],
+  "written-off-below": ["kind", "count"],
+  "written-off-above": ["kind", "count"],
   "invoices-settled": ["kind", "count"],
   "bounces-below": ["kind", "count"],
   "bounces-above": ["kind", "count"],
+  "metric-delta-over-window": ["kind", "metric", "windowMinutes", "minDeltaPct"],
+  "family-arrivals-below": ["kind", "family", "count"],
+  "family-arrivals-above": ["kind", "family", "count"],
   "no-death-cause": ["kind", "cause"],
   "death-by-cause": ["kind", "cause"],
 });
@@ -542,12 +606,42 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 1, 1_000_000) });
     case "churn-below":
     case "bounces-below":
+    case "written-off-below":
       // count 0 would be "hold the line at below zero" — vacuous by
       // construction; the honest spelling of that fear is churn-above:0.
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 1, 1_000_000) });
     case "churn-above":
     case "bounces-above":
+    case "written-off-above":
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 0, 1_000_000) });
+    case "metric-delta-over-window": {
+      const metric = readString(src, "metric", path, "BAD_PREDICATE");
+      if (!(DELTA_METRICS as readonly string[]).includes(metric)) {
+        bad("BAD_ENUM", `${path}.metric`, `expected one of ${DELTA_METRICS.join(", ")}, got ${metric}`);
+      }
+      return Object.freeze({
+        kind: typedKind,
+        metric: metric as (typeof DELTA_METRICS)[number],
+        windowMinutes: readInt(src, "windowMinutes", path, "BAD_PREDICATE", 1, SCENARIO_MAX_MINUTES_CAP),
+        // 0% would ask for "no regression", not "visible improvement" —
+        // the improvement vocabulary starts at one whole percent.
+        minDeltaPct: readInt(src, "minDeltaPct", path, "BAD_PREDICATE", 1, 10_000),
+      });
+    }
+    case "family-arrivals-below":
+    case "family-arrivals-above": {
+      const family = readString(src, "family", path, "BAD_PREDICATE");
+      if (!(ARRIVAL_FAMILIES as readonly string[]).includes(family)) {
+        bad("BAD_ENUM", `${path}.family`, `expected one of ${ARRIVAL_FAMILIES.join(", ")}, got ${family}`);
+      }
+      // Same vacuity law as the churn pair: below-0 is a fear, not a goal.
+      const min = typedKind === "family-arrivals-below" ? 1 : 0;
+      return Object.freeze({
+        kind: typedKind,
+        family: family as "organic" | ThreatFamily,
+        count: readInt(src, "count", path, "BAD_PREDICATE", min, 1_000_000),
+      });
+    }
     case "no-death-cause":
     case "death-by-cause": {
       const cause = readString(src, "cause", path, "BAD_PREDICATE");

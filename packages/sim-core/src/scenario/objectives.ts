@@ -33,6 +33,21 @@ export interface ScenarioObservation {
   readonly bounces: number;
   /** Canonical company deaths seen (OD-25(a)), first-seen order, deduped. */
   readonly deaths: readonly CompanyDeathCause[];
+  /** Ladder rung 3: cumulative arrival mints by the dominantFamily label of
+   *  the envelope that minted them (organic + the five threat families).
+   *  Counted at MINT — re-entries carry no new arrival event, so retries
+   *  never double-count a cohort the visitor stream already named. Keys are
+   *  code-unit sorted; an unseen family is simply absent (reads as zero). */
+  readonly arrivalsByFamily: Readonly<Record<string, number>>;
+  /** Ladder rung 2: window comparisons the runner pre-computed for the
+   *  metric-delta predicates THIS doc cites — key `${metric}:${windowMinutes}`
+   *  (the objectiveLine carrier). `current` sums the last W minutes,
+   *  `baseline` the W minutes before them; until 2W minutes of history
+   *  exist `complete` is false and the predicate never holds (the partial
+   *  sums ride along so a HUD can still draw the trajectory). */
+  readonly windowSums: Readonly<
+    Record<string, { readonly current: number; readonly baseline: number; readonly complete: boolean }>
+  >;
 }
 
 /** A fresh, honest zero-observation (used before the first tick). */
@@ -44,7 +59,33 @@ export const EMPTY_OBSERVATION: ScenarioObservation = Object.freeze({
   writtenOffCustomers: 0,
   bounces: 0,
   deaths: Object.freeze([]),
+  arrivalsByFamily: Object.freeze({}),
+  windowSums: Object.freeze({}),
 });
+
+/** Shared carrier between the runner's pre-computation and the predicate
+ *  reading — one key grammar, never re-derived differently. */
+function windowKey(metric: string, windowMinutes: number): string {
+  return `${metric}:${windowMinutes}`;
+}
+
+function familyArrivals(obs: ScenarioObservation, family: string): number {
+  return obs.arrivalsByFamily[family] ?? 0;
+}
+
+/** The rung-2 law, in one place: two full windows of history, then
+ *  current ≥ baseline×(100+P)/100 in exact bigint arithmetic. A dead-zero
+ *  baseline is beaten by ANY visible current (growth from silence); 0 vs 0
+ *  is silence matching silence — never an improvement. */
+function metricDeltaHolds(
+  obs: ScenarioObservation,
+  predicate: Extract<ObjectivePredicate, { kind: "metric-delta-over-window" }>,
+): boolean {
+  const sums = obs.windowSums[windowKey(predicate.metric, predicate.windowMinutes)];
+  if (sums === undefined || !sums.complete) return false;
+  if (sums.baseline === 0) return sums.current > 0;
+  return BigInt(sums.current) * 100n >= BigInt(sums.baseline) * BigInt(100 + predicate.minDeltaPct);
+}
 
 function deathsInclude(deaths: readonly CompanyDeathCause[], cause: ScenarioDeathCause): boolean {
   return cause === "any" ? deaths.length > 0 : deaths.includes(cause);
@@ -64,12 +105,22 @@ export function objectiveHolds(obs: ScenarioObservation, predicate: ObjectivePre
       return obs.churnedCustomers < predicate.count;
     case "churn-above":
       return obs.churnedCustomers > predicate.count;
+    case "written-off-below":
+      return obs.writtenOffCustomers < predicate.count;
+    case "written-off-above":
+      return obs.writtenOffCustomers > predicate.count;
     case "invoices-settled":
       return obs.settledInvoices >= predicate.count;
     case "bounces-below":
       return obs.bounces < predicate.count;
     case "bounces-above":
       return obs.bounces > predicate.count;
+    case "metric-delta-over-window":
+      return metricDeltaHolds(obs, predicate);
+    case "family-arrivals-below":
+      return familyArrivals(obs, predicate.family) < predicate.count;
+    case "family-arrivals-above":
+      return familyArrivals(obs, predicate.family) > predicate.count;
     case "no-death-cause":
       return !deathsInclude(obs.deaths, predicate.cause);
     case "death-by-cause":
@@ -107,10 +158,17 @@ export function objectiveLine(predicate: ObjectivePredicate): string {
       return `${predicate.kind}:${predicate.microUsd.toString()}`;
     case "churn-below":
     case "churn-above":
+    case "written-off-below":
+    case "written-off-above":
     case "invoices-settled":
     case "bounces-below":
     case "bounces-above":
       return `${predicate.kind}:${predicate.count}`;
+    case "metric-delta-over-window":
+      return `${predicate.kind}:${predicate.metric}:${predicate.windowMinutes}:${predicate.minDeltaPct}`;
+    case "family-arrivals-below":
+    case "family-arrivals-above":
+      return `${predicate.kind}:${predicate.family}:${predicate.count}`;
     case "no-death-cause":
     case "death-by-cause":
       return `${predicate.kind}:${predicate.cause}`;
@@ -137,12 +195,30 @@ function progressOf(obs: ScenarioObservation, predicate: ObjectivePredicate): Fi
       return clampRatio(BigInt(predicate.count - obs.churnedCustomers), BigInt(predicate.count));
     case "churn-above":
       return clampRatio(BigInt(obs.churnedCustomers), BigInt(predicate.count + 1));
+    case "written-off-below":
+      return clampRatio(BigInt(predicate.count - obs.writtenOffCustomers), BigInt(predicate.count));
+    case "written-off-above":
+      return clampRatio(BigInt(obs.writtenOffCustomers), BigInt(predicate.count + 1));
     case "invoices-settled":
       return clampRatio(BigInt(obs.settledInvoices), BigInt(predicate.count));
     case "bounces-below":
       return clampRatio(BigInt(predicate.count - obs.bounces), BigInt(predicate.count));
     case "bounces-above":
       return clampRatio(BigInt(obs.bounces), BigInt(predicate.count + 1));
+    case "metric-delta-over-window": {
+      // attainment toward the required improvement: current over the target
+      // the delta law demands (a zero baseline needs exactly one visible
+      // unit). Ramps while the windows fill; holds only when complete.
+      const sums = obs.windowSums[windowKey(predicate.metric, predicate.windowMinutes)];
+      if (sums === undefined) return FIXED_ZERO;
+      const target =
+        sums.baseline === 0 ? 1 : Math.ceil((sums.baseline * (100 + predicate.minDeltaPct)) / 100);
+      return clampRatio(BigInt(sums.current), BigInt(target));
+    }
+    case "family-arrivals-below":
+      return clampRatio(BigInt(predicate.count - familyArrivals(obs, predicate.family)), BigInt(predicate.count));
+    case "family-arrivals-above":
+      return clampRatio(BigInt(familyArrivals(obs, predicate.family)), BigInt(predicate.count + 1));
     case "no-death-cause":
       return holds0(obs, predicate) ? FIXED_ONE : FIXED_ZERO;
     case "death-by-cause":

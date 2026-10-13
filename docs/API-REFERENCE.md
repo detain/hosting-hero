@@ -59,7 +59,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 | `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 70 exports (count re-pinned at the 2026-10-13 docs-currency sweep) — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
-| `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 49 exports (29 values + 20 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 11 shipped missions with one-flip lose probes + corpus tableId traffic seam (`corpus.ts`); EXPLICIT barrel, zero root collisions |
+| `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 49 exports (29 values + 20 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 15 shipped missions with one-flip lose probes + corpus tableId traffic seam (`corpus.ts`) + 15-predicate vocab (wave three: written-off / delta-window / family-arrivals rungs) ; EXPLICIT barrel, zero root collisions |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -1309,13 +1309,19 @@ the one thing a weekend does not have: OBJECTIVE CHECKING at tick boundaries
 (terminal order guard → lose → win; a lose landing on a full-win tick is a
 LOSE). Output-side only: GameState is never widened, zero digests move; the
 `ScenarioReport` is a fold over TickResults + EconomyTickOuts whose `endDigest`
-is the house `digestState` of the tick-final state. Eleven missions ship
+is the house `digestState` of the tick-final state. Fifteen missions ship
 (§1.5 `The Long Weekend` :3646, `Deadbeat Quarter` :3790, `The Angry Whale`
 :3408, the ADR-0011 salvages `Collections Week` :3778 and `Metastable`
 :4076, plus the wave-two five `Launch Day` :3145, `DDoS Season` :3978,
 `Runway: 6 Weeks` :3753, `The Price Hike` :3802 and `The Quiet Month`
 :3463, plus `Metastable (Corpus Twin)` `metastable-corpus` re-using the same
-:4076 heading through corpus traffic), each authored winnable as shipped and
+:4076 heading through corpus traffic), plus the wave-three four on predicate-
+ladder rungs 1–3 — `post-breach-aftermath` (`Post-Breach` :3213, written-off
+ceiling vs the dunning ladder), `contract-recompete` (`Contract Recompete`
+:3839, +25% served-window delta before the cliff), `free-tier-flood` (`Free
+Tier Flood` :3574, malicious family census), `the-sev-0` (`The Sev-0` :3240,
+PARTIAL — recovery delta measurable, the restraint sequence not expressible
+without a decision door on the wire) — each authored winnable as shipped and
 proven losable by flipping ONE wire field at the same seed. Traffic ships in
 two profiles: `segments` (piecewise plateaus — how `Metastable` storms: a ×4
 surge from three wire-authored steps) and `corpus` (the waves-tableId seam,
@@ -1336,13 +1342,13 @@ Import: `@hh/sim-core/scenario`.
 | `SCENARIO_SCHEMA` | `"hh-scenario@1"` | The only wire version the wall accepts; anything else throws `BAD_VERSION` | frozen constant |
 | `SCENARIO_BRIEF_MAX_CHARS` | `280` | Mission-blurb length wall (a brief is a pitch, not a novel) | frozen constant |
 | `SCENARIO_MAX_MINUTES_CAP` | `2880` | Longest clock any scenario may declare (two business weeks at 1 tick ≡ 1 min) | frozen constant |
-| `SCENARIO_PREDICATE_KINDS` | `readonly ScenarioPredicateKind[]` (10) | The CLOSED objective vocabulary; the wall's error text enumerates it so an author never guesses | frozen array |
-| `ScenarioPredicateKind` | `"survive-minutes" \| "cash-above" \| "cash-below" \| "churn-below" \| "churn-above" \| "invoices-settled" \| "bounces-below" \| "bounces-above" \| "no-death-cause" \| "death-by-cause"` | One predicate tag per §1.5 mechanic the current observables can actually express | type-only |
+| `SCENARIO_PREDICATE_KINDS` | `readonly ScenarioPredicateKind[]` (15) | The CLOSED objective vocabulary; the wall's error text enumerates it so an author never guesses | frozen array |
+| `ScenarioPredicateKind` | `"survive-minutes" \| "cash-above" \| "cash-below" \| "churn-below" \| "churn-above" \| "written-off-below" \| "written-off-above" \| "invoices-settled" \| "bounces-below" \| "bounces-above" \| "metric-delta-over-window" \| "family-arrivals-below" \| "family-arrivals-above" \| "no-death-cause" \| "death-by-cause"` | One predicate tag per §1.5 mechanic the observables express — wave three consumed vocab-ladder rungs 1–3 (written-off count, delta-over-window, family-labeled arrivals); rungs 4 (covenant inputs) / 5 (reputation) remain | type-only |
 | `ScenarioDeathCause` | `CompanyDeathCause \| "any"` | OD-25(a) causes (float-insolvency / covenant-default / churn-collapse) plus the wildcard | type-only |
-| `ObjectivePredicate` | discriminated union (10 arms) | One parsed, frozen win/lose condition | type-only |
+| `ObjectivePredicate` | discriminated union (15 arms) | One parsed, frozen win/lose condition; `metric-delta-over-window` carries `{metric: "arrivals"\|"served"\|"bounced"\|"invoices-settled", windowMinutes: 1..2880, minDeltaPct: 1..10000}` and the family pair carries `{family: "organic"\|ThreatFamily, count}` | type-only |
 | `ScenarioContractSpec` | `interface { id; contract: Contract; termMonths; commitmentBps: bigint }` | One signed customer: author's wire fields + the fully minted Contract (tcv/acv/SLA derived to the proven unattended fixture shape, never author-editable in v0) | type-only |
 | `ScenarioTraffic` | `ScenarioSegmentsTraffic \| ScenarioCorpusTraffic` | Discriminated on `profile` (`"segments"` \| `"corpus"`), inferred from which of `segments`/`waves` the wire names — both together is a `BAD_TRAFFIC` refusal | type-only |
-| `ScenarioSegmentsTraffic` | `interface { profile: "segments"; tableId; segments: readonly { fromMinute; ratePerMin }[] }` | Piecewise plateau arrivals over sim-minutes; rate 0 = silence; first segment must open at 0 | type-only |
+| `ScenarioSegmentsTraffic` | `interface { profile: "segments"; tableId; segments: readonly { fromMinute; ratePerMin; family? }[] }` | Piecewise plateau arrivals over sim-minutes; rate 0 = silence; first segment must open at 0; optional `family` ("organic"\|ThreatFamily, closed enum — absent means organic) stamps the envelope's `dominantFamily` so the family-arrivals predicates can tell abusers from signups | type-only |
 | `ScenarioCorpusTraffic` | `interface { profile: "corpus"; tableId; waves: readonly number[]; waveStartMinute; baselineRatePerMin }` | Storm windows cited from a SHIPPED corpus wave table by 1-based wave number (ascending, unique, 1..1000); `waveStartMinute` defaults 2, `baselineRatePerMin` defaults 0 (quiet floor between waves) | type-only |
 | `ScenarioLimits` | `interface { maxSimMinutes; initialFreeMicroUsd: bigint; opex: readonly UnattendedOpexDraft[]; dunningEngineOwned; handCapacity; guards: readonly ParsedGuard[] }` | What bounds the run: clock, opening balance, scheduled burns, dunning ownership, door capacity, catastrophe-guard passthrough (closed unattended vocabulary) | type-only |
 | `ScenarioDoc` | `interface { schemaVersion: 1; id; name; brief; specRef; specLine: number \| null; board: UnattendedBoardCast; contracts; traffic; objectives: { win; lose }; limits }` | THE trusted, deep-frozen mission document — only reachable through `parseScenarioDoc` | type-only |
@@ -1357,9 +1363,9 @@ Import: `@hh/sim-core/scenario`.
 
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 | --- | --- | --- | --- |
-| `ScenarioObservation` | `interface { elapsedMin; cashFreeMicroUsd: bigint; settledInvoices; churnedCustomers; writtenOffCustomers; bounces; deaths: readonly CompanyDeathCause[] }` | What a mission is allowed to SEE — a fold of TickResults + EconomyTickOuts, nothing else | type-only |
+| `ScenarioObservation` | `interface { elapsedMin; cashFreeMicroUsd: bigint; settledInvoices; churnedCustomers; writtenOffCustomers; bounces; deaths: readonly CompanyDeathCause[]; arrivalsByFamily: Readonly<Record<string, number>>; windowSums: Readonly<Record<string, { current; baseline; complete }>> }` | What a mission is allowed to SEE — a fold of TickResults + EconomyTickOuts, nothing else. `arrivalsByFamily` is the mint-time family census (arrival events attributed through the envelope index; re-entries emit no event and are honestly absent); `windowSums` is keyed `${metric}:${windowMinutes}` and computed ONLY for windows a doc cites, over half-open minute rows `[t−W, t)` vs `[t−2W, t−W)` | type-only |
 | `EMPTY_OBSERVATION` | `ScenarioObservation` | Honest zero point before the first tick | frozen constant |
-| `objectiveHolds` | `(obs, predicate) => boolean` | The closed truth table; boundary strictness: cash-above is `≥`, cash-below `<`, churn/bounces-below `<`, -above `>`, invoices-settled/survive `≥` | pure |
+| `objectiveHolds` | `(obs, predicate) => boolean` | The closed truth table; boundary strictness: cash-above is `≥`, cash-below `<`, churn/written-off/bounces-below `<`, -above `>`, invoices-settled/survive `≥`; metric-delta needs a COMPLETE window pair — `current×100 ≥ baseline×(100+P)` in BigInt, and a zero baseline demands one visible unit (0-vs-0 is silence, not improvement); family pair reads a missing key as zero arrivals | pure |
 | `ObjectiveProgress` | `interface { predicate; holds; progress: Fixed }` | Q16.16 in [0,1]: attainment predicates count UP toward the line, safety predicates count their HEADROOM DOWN to it; death-by-cause latches | type-only |
 | `objectiveLine` | `(predicate) => string` | Stable `kind:value` rendering (rides stopReason — never reword without moving the pins) | pure |
 | `objectiveProgress` | `(obs, predicate) => ObjectiveProgress` | hold + progress in one row | pure |
@@ -1393,14 +1399,14 @@ Import: `@hh/sim-core/scenario`.
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 | --- | --- | --- | --- |
 | `ScenarioWire` | `interface` (JSON-shaped pre-parse doc) | The authored wire form: plain JSON, safe to ship in files or over the wall | type-only |
-| `SHIPPED_SCENARIO_WIRES` | `Readonly<Record<string, ScenarioWire>>` | The eleven missions as plain-JSON literals — test surgery (one-field flips) happens HERE, then re-parses through the wall | frozen |
+| `SHIPPED_SCENARIO_WIRES` | `Readonly<Record<string, ScenarioWire>>` | The fifteen missions as plain-JSON literals — test surgery (one-field flips) happens HERE, then re-parses through the wall | frozen |
 | `theLongWeekendDoc` | `ScenarioDoc` | §1.5 :3646 — 240 sim-min of calm hourly revenue vs a payroll drip; win = survive + zero churn + no death; freeCashDepleted guard is the catastrophe halt | parsed at import (fail-loud) |
 | `deadbeatQuarterDoc` | `ScenarioDoc` | §1.5 :3790 — 300 sim-min where revenue books but cash lags (monthly invoices, net-terms delay); win = invoices-settled 4 + cash-above + full clock | parsed at import |
 | `theAngryWhaleDoc` | `ScenarioDoc` | §1.5 :3408 — a 400 Mµ$/hr whale cliffs at biz-minute 11 400 (≈ sim t111) inside a 200-minute clock; win = keep it (auto-renew) + cash-above 60 M; lose = churn-above 0 | parsed at import |
 | `collectionsWeekDoc` | `ScenarioDoc` | §1.5 :3778 (ADR-0011 salvage) — six hourly accounts, two auto-renew anchors + a four-account dice book; hourly invoices settle from t≈1 (~1,500 by t240); win = survive + invoices-settled 1 + no-death; the one-flip loss `contracts: []` → churn-collapse@44 (engine truth: cliff dice cannot force a deterministic walk-out — see ADR) | parsed at import |
 | `metastableDoc` | `ScenarioDoc` | §1.5 :4076 (ADR-0011 salvage) — 8-slot node at ρ .50, a ×4 surge for 3 min via traffic segments; win = survive 240 (drains inside the 10-min cascade wall); the one-flip loss `segments[2].fromMinute 33→36` → `guard:cascadeCollapse@39`; the intermediate arm is genuinely seed-divergent (9W/6L over offsets 0–14, pinned) | parsed at import |
 | `metastable-corpus` | via `shippedScenario` | §1.5 :4076 again — the corpus twin: same board, same 8 slots at 20 s, same cascade guard, but the storm is the SHIPPED g1-shared-web wave 1 (3.125/min ramp at sim-min 30) over a baselineRate 4/min floor. Win = survive 240 (offsets 0–4); the one-flip loss `waves: [1] → [1, 5]` stacks the corpus layer-7 mimic storm (30/min) → `guard:cascadeCollapse@80` at offset 0 | parsed at import (module-private doc const; id is public) |
-| `SHIPPED_SCENARIO_IDS` | `readonly string[]` | The eleven ids in author order (`metastable-corpus` rides directly after its segments twin) | frozen array |
+| `SHIPPED_SCENARIO_IDS` | `readonly string[]` | The fifteen ids in author order (`metastable-corpus` rides directly after its segments twin) | frozen array |
 | `SHIPPED_SCENARIOS` | `Readonly<Record<string, ScenarioDoc>>` | id → parsed, frozen doc | frozen |
 | `shippedScenario` | `(id: string) => ScenarioDoc` | Registry read; unknown id throws `BAD_ID` enumerating the legal set | pure |
 

@@ -16,7 +16,7 @@ function obs(patch: Partial<ScenarioObservation>): ScenarioObservation {
   return Object.freeze({ ...EMPTY_OBSERVATION, ...patch });
 }
 
-describe("objectiveHolds — the ten predicates at their boundaries", () => {
+describe("objectiveHolds — the fifteen predicates at their boundaries", () => {
   const table: readonly [ObjectivePredicate, ScenarioObservation, boolean][] = [
     [{ kind: "survive-minutes", minutes: 60 }, obs({ elapsedMin: 59 }), false],
     [{ kind: "survive-minutes", minutes: 60 }, obs({ elapsedMin: 60 }), true],
@@ -45,6 +45,62 @@ describe("objectiveHolds — the ten predicates at their boundaries", () => {
       true,
     ],
     [{ kind: "death-by-cause", cause: "any" }, obs({}), false],
+    // rung 1 — the written-off pair mirrors the churn pair exactly.
+    [{ kind: "written-off-below", count: 2 }, obs({ writtenOffCustomers: 1 }), true],
+    [{ kind: "written-off-below", count: 2 }, obs({ writtenOffCustomers: 2 }), false],
+    [{ kind: "written-off-above", count: 0 }, obs({ writtenOffCustomers: 0 }), false],
+    [{ kind: "written-off-above", count: 0 }, obs({ writtenOffCustomers: 1 }), true],
+    // rung 2 — the delta window: incomplete rows NEVER hold, and the
+    // from-s silence case is a REAL rule (growth out of zero is visible).
+    [
+      { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 25 },
+      obs({
+        windowSums: { "served:60": { current: 100, baseline: 100, complete: false } },
+      }),
+      false,
+    ],
+    [
+      { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 25 },
+      obs({ windowSums: { "served:60": { current: 0, baseline: 0, complete: true } } }),
+      false, // 0 vs 0 is silence, not improvement
+    ],
+    [
+      { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 25 },
+      obs({ windowSums: { "served:60": { current: 1, baseline: 0, complete: true } } }),
+      true, // growth out of nothing IS the improvement the player was asked for
+    ],
+    [
+      { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 25 },
+      obs({ windowSums: { "served:60": { current: 124, baseline: 100, complete: true } } }),
+      false, // 24% short of the promised 25%
+    ],
+    [
+      { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 25 },
+      obs({ windowSums: { "served:60": { current: 125, baseline: 100, complete: true } } }),
+      true, // exact +25% holds (>= law)
+    ],
+    [
+      { kind: "metric-delta-over-window", metric: "bounced", windowMinutes: 30, minDeltaPct: 10 },
+      obs({}), // cited but never computed → absent key → false, never a crash
+      false,
+    ],
+    // rung 3 — family census: a missing family key is ZERO arrivals.
+    [{ kind: "family-arrivals-below", family: "organic", count: 10 }, obs({}), true],
+    [
+      { kind: "family-arrivals-below", family: "malicious", count: 10 },
+      obs({ arrivalsByFamily: { malicious: 10 } }),
+      false,
+    ],
+    [
+      { kind: "family-arrivals-above", family: "malicious", count: 0 },
+      obs({ arrivalsByFamily: { organic: 5 } }),
+      false, // other families never bleed into the probe's counter
+    ],
+    [
+      { kind: "family-arrivals-above", family: "malicious", count: 0 },
+      obs({ arrivalsByFamily: { malicious: 1 } }),
+      true,
+    ],
   ];
   for (const [predicate, observation, expected] of table) {
     it(`${objectiveLine(predicate)} ⇒ ${String(expected)}`, () => {
@@ -82,6 +138,31 @@ describe("objectiveProgress — Q16.16 in [0,1] under both counting laws", () =>
     ).toBe(FIXED_ONE);
   });
 
+  it("delta attainment measures current against the demanded target", () => {
+    const delta = { kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 100 } as const;
+    // target = ceil(100 × 200 / 100) = 200; half the climb reads 0.5.
+    const climbing = objectiveProgress(
+      obs({ windowSums: { "served:60": { current: 100, baseline: 100, complete: true } } }),
+      delta,
+    );
+    expect(climbing.progress).toBe(32768n);
+    expect(climbing.holds).toBe(false);
+    const done = objectiveProgress(
+      obs({ windowSums: { "served:60": { current: 200, baseline: 100, complete: true } } }),
+      delta,
+    );
+    expect(done.progress).toBe(FIXED_ONE);
+    expect(done.holds).toBe(true);
+    // a zero baseline demands exactly one visible unit…
+    const fromSilence = objectiveProgress(
+      obs({ windowSums: { "served:60": { current: 0, baseline: 0, complete: true } } }),
+      delta,
+    );
+    expect(fromSilence.progress).toBe(FIXED_ZERO);
+    // …and an absent (never-cited) window is flat zero, never a crash.
+    expect(objectiveProgress(obs({}), delta).progress).toBe(FIXED_ZERO);
+  });
+
   it("progressAll keeps author order (narrative emphasis, never sorted)", () => {
     const rows = progressAll(obs({ elapsedMin: 12 }), [
       { kind: "invoices-settled", count: 2 },
@@ -96,5 +177,12 @@ describe("objectiveProgress — Q16.16 in [0,1] under both counting laws", () =>
       "death-by-cause:float-insolvency",
     );
     expect(objectiveLine({ kind: "cash-above", microUsd: 42n })).toBe("cash-above:42");
+    expect(objectiveLine({ kind: "written-off-below", count: 7 })).toBe("written-off-below:7");
+    expect(
+      objectiveLine({ kind: "metric-delta-over-window", metric: "served", windowMinutes: 60, minDeltaPct: 25 }),
+    ).toBe("metric-delta-over-window:served:60:25");
+    expect(objectiveLine({ kind: "family-arrivals-above", family: "malicious", count: 3200 })).toBe(
+      "family-arrivals-above:malicious:3200",
+    );
   });
 });
