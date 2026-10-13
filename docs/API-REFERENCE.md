@@ -57,7 +57,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 | `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 69 exports — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
-| `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 41 exports (26 values + 15 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 5 shipped missions with one-flip lose probes; EXPLICIT barrel, zero root collisions |
+| `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 41 exports (26 values + 15 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 10 shipped missions with one-flip lose probes; EXPLICIT barrel, zero root collisions |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -1306,10 +1306,12 @@ the one thing a weekend does not have: OBJECTIVE CHECKING at tick boundaries
 (terminal order guard → lose → win; a lose landing on a full-win tick is a
 LOSE). Output-side only: GameState is never widened, zero digests move; the
 `ScenarioReport` is a fold over TickResults + EconomyTickOuts whose `endDigest`
-is the house `digestState` of the tick-final state. Five missions ship
+is the house `digestState` of the tick-final state. Ten missions ship
 (§1.5 `The Long Weekend` :3646, `Deadbeat Quarter` :3790, `The Angry Whale`
-:3408, plus the ADR-0011 salvages `Collections Week` :3778 and `Metastable`
-:4076), each authored winnable as shipped and proven losable by flipping ONE
+:3408, the ADR-0011 salvages `Collections Week` :3778 and `Metastable`
+:4076, plus the wave-two five `Launch Day` :3145, `DDoS Season` :3978,
+`Runway: 6 Weeks` :3753, `The Price Hike` :3802 and `The Quiet Month`
+:3463), each authored winnable as shipped and proven losable by flipping ONE
 wire field at the same seed. Traffic is segments-only in v0 — segments open and
 close storm windows (that is how `Metastable` ships: a ×4 surge from three
 wire-authored plateaus); naming a waves-corpus `tableId` for ramp shapes,
@@ -1369,13 +1371,13 @@ no I/O inside a run; `runScenario(doc, seed, config)` ×100 is byte-identical
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 | --- | --- | --- | --- |
 | `ScenarioWire` | `interface` (JSON-shaped pre-parse doc) | The authored wire form: plain JSON, safe to ship in files or over the wall | type-only |
-| `SHIPPED_SCENARIO_WIRES` | `Readonly<Record<string, ScenarioWire>>` | The five missions as plain-JSON literals — test surgery (one-field flips) happens HERE, then re-parses through the wall | frozen |
+| `SHIPPED_SCENARIO_WIRES` | `Readonly<Record<string, ScenarioWire>>` | The ten missions as plain-JSON literals — test surgery (one-field flips) happens HERE, then re-parses through the wall | frozen |
 | `theLongWeekendDoc` | `ScenarioDoc` | §1.5 :3646 — 240 sim-min of calm hourly revenue vs a payroll drip; win = survive + zero churn + no death; freeCashDepleted guard is the catastrophe halt | parsed at import (fail-loud) |
 | `deadbeatQuarterDoc` | `ScenarioDoc` | §1.5 :3790 — 300 sim-min where revenue books but cash lags (monthly invoices, net-terms delay); win = invoices-settled 4 + cash-above + full clock | parsed at import |
 | `theAngryWhaleDoc` | `ScenarioDoc` | §1.5 :3408 — a 400 Mµ$/hr whale cliffs at biz-minute 11 400 (≈ sim t111) inside a 200-minute clock; win = keep it (auto-renew) + cash-above 60 M; lose = churn-above 0 | parsed at import |
 | `collectionsWeekDoc` | `ScenarioDoc` | §1.5 :3778 (ADR-0011 salvage) — six hourly accounts, two auto-renew anchors + a four-account dice book; hourly invoices settle from t≈1 (~1,500 by t240); win = survive + invoices-settled 1 + no-death; the one-flip loss `contracts: []` → churn-collapse@44 (engine truth: cliff dice cannot force a deterministic walk-out — see ADR) | parsed at import |
 | `metastableDoc` | `ScenarioDoc` | §1.5 :4076 (ADR-0011 salvage) — 8-slot node at ρ .50, a ×4 surge for 3 min via traffic segments; win = survive 240 (drains inside the 10-min cascade wall); the one-flip loss `segments[2].fromMinute 33→36` → `guard:cascadeCollapse@39`; the intermediate arm is genuinely seed-divergent (9W/6L over offsets 0–14, pinned) | parsed at import |
-| `SHIPPED_SCENARIO_IDS` | `readonly string[]` | The five ids in author order | frozen array |
+| `SHIPPED_SCENARIO_IDS` | `readonly string[]` | The ten ids in author order | frozen array |
 | `SHIPPED_SCENARIOS` | `Readonly<Record<string, ScenarioDoc>>` | id → parsed, frozen doc | frozen |
 | `shippedScenario` | `(id: string) => ScenarioDoc` | Registry read; unknown id throws `BAD_ID` enumerating the legal set | pure |
 

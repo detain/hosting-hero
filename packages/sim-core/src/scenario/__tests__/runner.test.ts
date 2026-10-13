@@ -1,7 +1,31 @@
-/** runner.test.ts — the mission loop proven on the five shipped §1.5
+/** runner.test.ts — the mission loop proven on the ten shipped §1.5
  *  scenarios: every doc wins as authored, every doc loses when exactly one
  *  wire input is flipped (same seed), timeout is honest, and a run is
- *  byte-identical ×100 by construction. */
+ *  byte-identical ×100 by construction.
+ *
+ *  VOCAB-EXPANSION LADDER — the §1.5 missions still unrunnable, ranked by
+ *  the ONE predicate or input each needs (do NOT bolt them on; each is a
+ *  deliberate future ticket):
+ *  1. written-off-count observation predicate → "Post-Breach" (~:3213) and
+ *     the "Covenant" (:3772) family: their drama is accounts the dunning
+ *     ladder kills, which today is invisible to the objective vocab (the
+ *     observation carries writtenOffCustomers — no predicate reads it).
+ *  2. metrics-delta/window predicate → "Contract Recompete" (~:3839, dropped
+ *     from this wave) and "Sev-0" (~:3240): both hinge on a metric MOVING
+ *     visibly within a window; static thresholds cannot express "improved".
+ *  3. family-labeled arrivals in the observation → "Free Tier Flood"
+ *     (~:3574): the runner pins dominantFamily "organic" for every segment,
+ *     so a free-tier/malicious mix cannot be told apart at the objective.
+ *  4. covenant inputs on the wire → "Covenant" (:3772) proper: the death
+ *     cause exists (covenant-default) but the runner feeds no covenant terms,
+ *     so death-by-cause:"covenant-default" is permanently unfalsifiable.
+ *  5. reputation in the observation → "Review Bomb" (~:3870): the economy
+ *     publishes company::reputation; the scenario observation does not read
+ *     it yet.
+ *  Adjacent known seams (same spirit): hands/door intents on the wire would
+ *  unlock "Understaffed Sunday" (~:3657); alternate-path routing → "The
+ *  Fiber Cut" (~:3368); chargeback/rolling-reserve inputs → "The Chargeback
+ *  Wave" (~:3721). */
 import { describe, expect, it } from "vitest";
 
 import { readFileSync } from "node:fs";
@@ -143,6 +167,140 @@ describe("shipped missions — lose side (ONE flipped wire input, same seed)", (
     expect(lockedProbe.trace.eventsByKind["bounced"] ?? 0).toBeGreaterThanOrEqual(10);
     expect(lockedProbe.trace.eventsByKind["retry"] ?? 0).toBeGreaterThanOrEqual(10);
   });
+
+  it("Launch Day with the spike twice as loud → the bounce budget is spent", () => {
+    // ONE field: the hug-of-death step goes 40 → 80 visits/min. The calm
+    // arm converts (≤29 terminal bounces across five seeds); the loud arm
+    // crosses the 40-bounce budget at the same ticks on every offset —
+    // the launch that rate-limits its own audience into the floor.
+    const overwhelmed = flip("launch-day", (wire) => {
+      wire.traffic.segments[1] = { fromMinute: 30, ratePerMin: 80 };
+    });
+    const loseTicks: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(overwhelmed, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toMatch(/^lose:bounces-above:40@\d+$/);
+      loseTicks.push(Number(report.endMinute));
+    }
+    expect(loseTicks).toEqual([36, 38, 37, 36, 36]); // seed 904..908
+    // discriminating pair: the shipped arm never spends the budget it cites
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("launch-day"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@240");
+      expect(calm.observation.bounces).toBeLessThanOrEqual(29);
+    }
+  });
+
+  it("DDoS Season whose gradient keeps climbing → the sustained wall closes", () => {
+    // ONE field: the closing ladder step doubles 8 → 16 visits/min. The
+    // season-as-curve arm runs four hours at ZERO bounces; the rude season
+    // pins the node past ρ .9 and the 10-minute degraded wall halts it at
+    // the same tick on every seed — the guard is the level ending.
+    const rude = flip("ddos-season", (wire) => {
+      wire.traffic.segments[3] = { fromMinute: 180, ratePerMin: 16 };
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(rude, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("guard:cascadeCollapse@189");
+      expect(report.trace.eventsByKind["bounced"] ?? 0).toBeGreaterThanOrEqual(8);
+    }
+    // discriminator: the polite season never bounces a visitor at all
+    for (const offset of [0, 1, 2]) {
+      const calm = runScenario(shippedScenario("ddos-season"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@240");
+      expect(calm.observation.bounces).toBe(0);
+    }
+  });
+
+  it("Runway: 6 Weeks with the anchor deal slipping → float-insolvency at the gate", () => {
+    // ONE field pair (one wire idea: the deal's start): both anchor accounts
+    // slip 32,400 → 36,000 biz-minutes. The settle lands after the 43-minute
+    // zero-cash spell closes, and the company dies of float-insolvency at
+    // t343 on all five seeds — clock-bound, so the tick is exact.
+    const slipped = flip("runway-six-weeks", (wire) => {
+      for (const contract of wire.contracts) contract.termStartMin = 36_000;
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(slipped, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:death-by-cause:float-insolvency@343");
+      expect(report.observation.deaths).toEqual(["float-insolvency"]);
+      expect(report.trace.economyRefusals).toBe(2); // the t315 + t330 payrolls
+    }
+    // the win arm survives with the SAME razor, rescued: fixed final cash,
+    // exactly two anchor settles, and one refused burn on the way down.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const saved = runScenario(shippedScenario("runway-six-weeks"), BASE_SEED, { seedOffset: offset });
+      expect(saved.stopReason).toBe("win@600");
+      expect(saved.observation.cashFreeMicroUsd).toBe(71_630_000n);
+      expect(saved.observation.settledInvoices).toBe(2);
+      expect(saved.trace.economyRefusals).toBe(1);
+    }
+  });
+
+  it("The Price Hike at a 300% jump → the board mandate is crossed", () => {
+    // ONE idea, applied where the spec applies it (every vendor bill): the
+    // hike-tier burns go 15 Mµ$ → 45 Mµ$. The eaten-margin arm bottoms out
+    // above the 50 Mµ$ line (cash never dips near it); the jumped arm crosses
+    // the mandate at t310 on all five seeds — same burn memo, same clock.
+    const jumped = flip("the-price-hike", (wire) => {
+      const rows = wire.limits.opex as { memo: string; amountMicroUsd: number }[];
+      for (const row of rows) if (row.memo.startsWith("hike-")) row.amountMicroUsd = 45_000_000;
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(jumped, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:cash-below:50000000@310");
+      expect(report.observation.cashFreeMicroUsd).toBe(21_762_000n);
+    }
+    for (const offset of [0, 1, 2]) {
+      const eaten = runScenario(shippedScenario("the-price-hike"), BASE_SEED, { seedOffset: offset });
+      expect(eaten.stopReason).toBe("win@480");
+      expect(eaten.observation.cashFreeMicroUsd).toBe(133_524_000n);
+    }
+  });
+
+  it("The Quiet Month buying the extra row of servers → the mandate blinks", () => {
+    // ONE field: the temptation memo keeps its slot at t120 and its
+    // 3 Mµ$ line becomes what a row of servers actually costs, 120 Mµ$.
+    // The level dies at the purchase tick on every seed — the budget was
+    // always the antagonist; this wave proves it.
+    const cramming = flip("the-quiet-month", (wire) => {
+      const rows = wire.limits.opex as { memo: string; amountMicroUsd: number }[];
+      const temptation = rows.find((row) => row.memo === "the-extra-row-of-servers");
+      if (temptation !== undefined) temptation.amountMicroUsd = 120_000_000;
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(cramming, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:cash-below:150000000@120");
+      expect(report.observation.cashFreeMicroUsd).toBe(134_938_000n);
+    }
+    for (const offset of [0, 1, 2]) {
+      const quiet = runScenario(shippedScenario("the-quiet-month"), BASE_SEED, { seedOffset: offset });
+      expect(quiet.stopReason).toBe("win@480");
+      expect(quiet.observation.bounces).toBe(0);
+    }
+  });
+});
+
+describe("wave-two missions — engine truth (2026-10-13)", () => {
+  it("Runway: 6 Weeks is a cash-TIMING razor, not a cash-LEVEL one", () => {
+    // The mission's soul, pinned mid-run: the payroll drain reaches EXACTLY
+    // zero at t300 (nothing else moves the ledger), the anchor settle lands
+    // inside the insolvency window at t315, and the float gate (zero + a
+    // refused settlement + 43 min) is what the slipped-deal flip dies to.
+    const doc = shippedScenario("runway-six-weeks");
+    const atZero = runScenario(doc, BASE_SEED, { tickCap: 300 });
+    expect(atZero.stopReason).toBe("timeout@300");
+    expect(atZero.observation.cashFreeMicroUsd).toBe(0n);
+    const rescued = runScenario(doc, BASE_SEED, { tickCap: 315 });
+    expect(rescued.observation.cashFreeMicroUsd).toBeGreaterThan(0n);
+    expect(rescued.observation.settledInvoices).toBe(2); // both anchors pay inside the window
+    expect(rescued.trace.economyRefusals).toBe(1); // the t315 payroll bounced first
+  });
 });
 
 describe("salvage missions — engine truth (ADR-0011)", () => {
@@ -217,17 +375,19 @@ describe("timeout and caps", () => {
 });
 
 describe("determinism", () => {
-  it("a 12-minute arm is byte-identical ×100", () => {
-    const doc = shippedScenario("the-long-weekend");
-    const digests = new Set<string>();
-    for (let i = 0; i < 100; i += 1) {
-      digests.add(reportIdentity(runScenario(doc, BASE_SEED, { tickCap: 12 })));
-    }
-    expect(digests.size).toBe(1);
-  });
+  for (const id of [...SHIPPED_SCENARIO_IDS]) {
+    it(`${id}: 12-minute arm is byte-identical ×100`, () => {
+      const doc = shippedScenario(id);
+      const digests = new Set<string>();
+      for (let i = 0; i < 100; i += 1) {
+        digests.add(reportIdentity(runScenario(doc, BASE_SEED, { tickCap: 12 })));
+      }
+      expect(digests.size).toBe(1);
+    });
+  }
 
   it("full-length shipped runs agree across fresh calls and fresh parses", () => {
-    for (const id of ["the-long-weekend", "the-angry-whale"] as const) {
+    for (const id of ["the-long-weekend", "the-angry-whale", "runway-six-weeks", "the-price-hike", "the-quiet-month", "ddos-season", "launch-day"] as const) {
       const wire = JSON.parse(JSON.stringify(SHIPPED_SCENARIO_WIRES[id]));
       const a = runScenario(parseScenarioDoc(wire), BASE_SEED, { tickCap: 60 });
       const b = runScenario(shippedScenario(id), BASE_SEED, { tickCap: 60 });
