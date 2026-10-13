@@ -1,4 +1,4 @@
-# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b, wave-3 batch-1 closeout 2026-10-10, wave-3 batch-2 closeout 2026-10-10b, wave-5 closeout re-markup 2026-10-13, wave-6 closeout re-markup 2026-10-13b)
+# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b, wave-3 batch-1 closeout 2026-10-10, wave-3 batch-2 closeout 2026-10-10b, wave-5 closeout re-markup 2026-10-13, wave-6 closeout re-markup 2026-10-13b, wave-7 closeout re-markup 2026-10-13c)
 
 Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3, then **updated in place on disk after the 2026-10-09 fix wave** (16 commits d8fc8ec..a98fd55; per-row dispositions in the hosting_game.md Appendix), then re-markuped for the **2026-10-09b session-2 owner rulings** (see SESSION-2 RE-MARKUP below + `docs/adr/0010-taxonomy-and-stacking-contradictions.md` Accepted), then flipped again for the **wave-3 batch-1 closeout** (0032a21..2ef5cae; see WAVE-3 BATCH-1 below), then for the **wave-3 batch-2 closeout** (a79402c..05ecf97; see WAVE-3 BATCH-2 below). The tallies below are computed from the **current marked hosting_game.md**, not the original manifests — they include the 23 fix-wave flips, the session-2 flips, the batch-1 flips, and the small set of marker/manifest drift realignments disclosed in the Appendix.
 
@@ -1006,3 +1006,56 @@ Rung 4 `covenant-inputs` → `Covenant` :3772 ❌ · Rung 5 `reputation` → `Re
 Missing-seams register (recorded, not queued): mid-run attention window-entry · attention borrowing verb · Sev-0 restraint decision door · pricing demand-ghost preview.
 
 hosting_game.md grows by the appendix paragraph only (4 heading lines edited in place); "Historical record:" footer kept last.
+
+---
+
+## WAVE-7 closeout — covenant + review-bomb missions marked, attention borrow seam landed (2026-10-13c)
+
+Lanes under markup (both already on master; this wave only marks and records):
+
+| Commit | Lane | Shipped |
+|---|---|---|
+| `e1786fc` | proto attention seam | `SimCoreRunner.enterAttentionWindow(kind)` — the WRITE twin of the @`8994f96` `attentionState()` readback; mints-or-refuses through the PUBLIC pipeline functions only, host business-minute stamp, protocol-v1 `SimProjection` shape untouched. `AttentionCard.vue` borrow is now LIVE: empty planted pool → borrow mid-run → month roll services it on ONE continuous runner, clock never resets. Closes both wave-6 held gaps (mid-run window-entry + borrowing verb). Door and TopBar untouched. |
+| `957ffcf` | scenario predicate ladder | Rungs 4–5 CONSUMED — `covenant-breached-count-below/above` (reads `EconomyState.covenantBreachLog`) + `reputation-below/above` (reads `EconomyState.reputation.overallBps`); first wire the parser can even CARRY covenant terms (`limits.covenants` closed rows `{id, metricId ∈ {runwayMonthsBps, errorBudgetHealthBps}, floorBps, direction}`, dup refused); `COVENANT_METRICS` wall refuses EBITDA until a producer exists. Two §1.5 wave-four missions: `the-covenant` :3772, `review-bomb` :3870. Runner re-anchors covenant `freeAtMonthStart` to the opening bankroll (else month-1 burn closes 0 → null runway → every min-covenant silently met; 15 pre-wave-4 docs `covenants:[]` byte-ident). 19-predicate vocab. Scenario suite 192→228 tests. |
+
+### Marker flips applied (both asserted against pre-write `❌` markers; rungs 4–5 were the last two on the ladder)
+
+| Spec line | Heading | Before | After | Witness (seed 904..908, ×100 byte-identity) |
+|---|---|---|---|---|
+| 3772 | `Covenant` | ❌ | ✅ `957ffcf` | clean win@480, zero breach rows, five offsets byte-ident stop line; ONE-FLIP lose = the single 70B µ$ growth-buildout opex row @min 100 breaches `runwayMonthsBps ≥ 60_000` at EXACTLY tick 420 (the one month-roll review inside the 480-clock), all five offsets |
+| 3870 | `Review Bomb` / `The Viral Competitor Smear` / `Media Attention` | ❌ | ✅ `957ffcf` | rating is the lives counter — win@320 rating 6,550–7,750 bps never touching the 1,500 floor; ONE-FLIP lose = the six-account book doubles to eighteen delinquent hourly accounts, write-offs stack 15–17, crater crosses 1,500 bps at t[310,300,292,299,292]; board is a red herring BY DESIGN (`bounced=0` both arms — "damage regardless of actual uptime" made mechanical) |
+
+### Held rows — appendix-noted, no marker move
+
+- 14436 "The attention budget" stays 🔧: `e1786fc` **LANDS the borrow seam** (window-entry + live AttentionCard borrow), clearing the two wave-6 held gaps. What keeps it 🔧 now: **per-verb door cost selection is owner taste** — the door carries an `attentionCost` config but no shipped verb opts in (the intent door still has no borrowing), and the **TopBar four-id law** pin. The host seam is now complete end-to-end; the mechanic simply has no player-facing verb that spends a hand yet.
+- Umbrella "§1.5 Scenario library" stays 🔧 — no inline count exists on disk; appendix tally now **17 missions / 16 distinct headings** (`metastable-corpus` twins `Metastable`; the-sev-0 holds 🔧 separately).
+
+### Predicate ladder — EXHAUSTED
+
+All five rungs consumed (1 `written-off`, 2 `metric-delta`, 3 `family-arrivals`, 4 `covenant-inputs`, 5 `reputation`) on a **19-predicate vocab ceiling**. Remaining §1.5 headline conversions are NOT vocab gaps — they need new INPUT channels: **door-intents** (a spending verb that consumes an attention hand), **routing alternates**, and the **`majorIncidents` / `postMortems` / `chargeback` INPUTS** the scenario money lane does not yet forward (`foldMoneyLaneTick` feeds only outage seconds, price overrides and refused settlements). Recorded as next-ladder candidates.
+
+### Closeout battery — COMBINED tree (re-verified on final master tip `957ffcf`, serial/unloaded)
+
+| Gate | Result |
+|---|---|
+| sim-core serial (`--no-file-parallelism`) | **137 files / 2,139 tests, exit 0** (244s) |
+| proto `vitest run` | **86 / 935, exit 0** |
+| `pnpm -r typecheck` | **5/5 Done** |
+| `docs/api-verify.test.mjs` | **PASS — 1,541 names**, import map consistent |
+| `scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) |
+| headless `vitest run` | **53/53, exit 0** — parity REAL `b0162ab5` / STUB `a9b4b7b8` held |
+
+### Census (recomputed from disk, heading lines only)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 310 | **312** |
+| 🔧 PARTIAL | 995 | **995** (unchanged — attention seam landed, marker held) |
+| ⚠️ PROBLEM | 1 | **1** (unchanged: 31543 readability — OD-10/12 open) |
+| ❌ MISSING | 2,253 | **2,251** |
+| 📝 NA | 30 | 30 |
+| **total marked** | **3,589** | **3,589** |
+
+Missing-seams register (recorded, not queued): ~~mid-run attention window-entry~~ ~~attention borrowing verb~~ (both CLEARED by `e1786fc`) · Sev-0 restraint decision door · pricing demand-ghost preview · per-verb attention door cost (owner taste) · door-intent / routing-alternate / `majorIncidents`·`postMortems`·`chargeback` INPUT channels for the next ladder.
+
+hosting_game.md grows by the appendix paragraph only (2 heading lines edited in place); "Historical record:" footer kept last.
