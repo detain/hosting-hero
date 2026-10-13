@@ -1,4 +1,4 @@
-/** runner.test.ts — the mission loop proven on the three shipped §1.5
+/** runner.test.ts — the mission loop proven on the five shipped §1.5
  *  scenarios: every doc wins as authored, every doc loses when exactly one
  *  wire input is flipped (same seed), timeout is honest, and a run is
  *  byte-identical ×100 by construction. */
@@ -9,7 +9,13 @@ import { fileURLToPath } from "node:url";
 
 import { encodeTaggedTree } from "../../internal/canonical.ts";
 import { asRunSeed } from "../../types.ts";
-import { SHIPPED_SCENARIO_WIRES, runScenario, scenarioSeed, shippedScenario } from "../index.ts";
+import {
+  SHIPPED_SCENARIO_IDS,
+  SHIPPED_SCENARIO_WIRES,
+  runScenario,
+  scenarioSeed,
+  shippedScenario,
+} from "../index.ts";
 import { parseScenarioDoc } from "../doc.ts";
 import type { ScenarioReport, ScenarioWire } from "../index.ts";
 
@@ -20,8 +26,9 @@ const BASE_SEED = asRunSeed(904n);
  *  byte-identical to the shipped mission. */
 /** Surgery mirror — mutate plain JSON, re-cross the wall (readonly by law). */
 type MutableWire = {
-  limits: { opex: unknown[]; initialFreeMicroUsd: unknown };
+  limits: { opex: unknown[]; initialFreeMicroUsd: unknown; guardrails?: unknown[] };
   contracts: Record<string, unknown>[];
+  traffic: { tableId: string; segments: Record<string, unknown>[] };
 };
 
 function flip(id: string, mutate: (wire: MutableWire) => void): ReturnType<typeof shippedScenario> {
@@ -41,7 +48,7 @@ function reportIdentity(report: ScenarioReport): string {
 }
 
 describe("shipped missions — win side (as authored)", () => {
-  for (const id of ["the-long-weekend", "deadbeat-quarter", "the-angry-whale"] as const) {
+  for (const id of [...SHIPPED_SCENARIO_IDS]) {
     it(`${id} is won end-to-end on three seed offsets`, () => {
       for (const offset of [0, 1, 2]) {
         const report = runScenario(shippedScenario(id), BASE_SEED, { seedOffset: offset });
@@ -95,6 +102,92 @@ describe("shipped missions — lose side (ONE flipped wire input, same seed)", (
     expect(Number(report.endMinute)).toBeLessThan(shippedScenario("the-angry-whale").limits.maxSimMinutes);
     const keep = report.objectives.win.find((row) => row.predicate.kind === "churn-below");
     expect(keep?.holds ?? true).toBe(false); // the "keep them" row is broken
+  });
+
+  it("Collections Week with an empty book → churn-collapse at the sustain wall", () => {
+    // The seed design died at the tick-252 cliffs; the committed engine's
+    // cliff dice cannot be forced to walk the whole book out (best ~45 %),
+    // so the one-flip loss is the honest collapse: no contracts arms the
+    // churn floor immediately — clock-bound, so identical on every offset.
+    const hollow = flip("collections-week", (wire) => {
+      wire.contracts = [];
+    });
+    for (const offset of [0, 1, 2]) {
+      const report = runScenario(hollow, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:death-by-cause:churn-collapse@44");
+      expect(report.observation.deaths).toEqual(["churn-collapse"]);
+    }
+  });
+
+  it("Metastable surge running three minutes longer locks the node → guard halt", () => {
+    // ONE field: the surge's closing segment starts at 36 instead of 33.
+    // Backlog + retries hold every slot past the 10-minute degraded wall —
+    // on every seed offset, because the locked state is self-sustaining.
+    const locked = flip("metastable", (wire) => {
+      wire.traffic.segments[2] = { fromMinute: 36, ratePerMin: 4 };
+    });
+    for (const offset of [0, 1, 2]) {
+      const report = runScenario(locked, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("guard:cascadeCollapse@39");
+    }
+    // §1.5's premise is retries SUSTAINING the overload: the locked arm
+    // accumulates bounce/retry traffic, the win arm drains almost none —
+    // the pair is the discriminating pin (calm full-run ≤ 5 bounces vs
+    // locked-by-t39 ≥ 10).
+    const calm = runScenario(shippedScenario("metastable"), BASE_SEED);
+    expect(calm.stopReason).toBe("win@240");
+    expect(calm.trace.eventsByKind["bounced"] ?? 0).toBeLessThanOrEqual(5);
+    const lockedProbe = runScenario(locked, BASE_SEED);
+    expect(lockedProbe.trace.eventsByKind["bounced"] ?? 0).toBeGreaterThanOrEqual(10);
+    expect(lockedProbe.trace.eventsByKind["retry"] ?? 0).toBeGreaterThanOrEqual(10);
+  });
+});
+
+describe("salvage missions — engine truth (ADR-0011)", () => {
+  it("Collections Week: hourly invoices land from the first hour, anchors renew, dice thin the small book", () => {
+    // settledInvoices >= 1000 falsifies the pre-salvage assumption that
+    // hourly billing resembles monthly (first settle near t214 — it does not).
+    // churnedCustomers is dice-bound per seed: the exact walk-out counts are
+    // deterministic for (doc, seed+0..2) and pinned here.
+    const churnByOffset: number[] = [];
+    for (const offset of [0, 1, 2]) {
+      const report = runScenario(shippedScenario("collections-week"), BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("won");
+      expect(report.stopReason).toBe("win@240");
+      expect(report.observation.settledInvoices).toBeGreaterThanOrEqual(1000);
+      // six accounts, two anchors renewing — at most the four dice can leave
+      expect(report.observation.churnedCustomers).toBeLessThanOrEqual(4);
+      churnByOffset.push(report.observation.churnedCustomers);
+    }
+    expect(churnByOffset).toEqual([0, 2, 1]); // seed 904/905/906 walk-outs
+  });
+
+  it("Metastable: the intermediate trigger IS the metastable band — some seeds drain, some cascade", () => {
+    // The spec's whole premise: identical inputs, divergent fates by dice.
+    // The shipped win arm and the flipped lose arm sit OUTSIDE the band
+    // (deterministic on every offset); this middle arm sits inside it.
+    const middle = parseScenarioDoc({
+      ...(JSON.parse(JSON.stringify(SHIPPED_SCENARIO_WIRES.metastable)) as ScenarioWire),
+      traffic: {
+        tableId: "metastable-storm",
+        segments: [
+          { fromMinute: 0, ratePerMin: 5 },
+          { fromMinute: 30, ratePerMin: 10 },
+          { fromMinute: 36, ratePerMin: 5 },
+        ],
+      },
+    });
+    const outcomes = new Set<string>();
+    for (let offset = 0; offset < 15; offset += 1) {
+      const report = runScenario(middle, BASE_SEED, { seedOffset: offset });
+      outcomes.add(report.outcome);
+      expect(["won", "lost"]).toContain(report.outcome);
+      if (report.outcome === "lost") expect(report.stopReason).toMatch(/^guard:cascadeCollapse@\d+$/);
+      else expect(report.stopReason).toBe("win@240");
+    }
+    expect(outcomes.size).toBe(2); // both fates occur — metastability, pinned
   });
 });
 

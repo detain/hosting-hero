@@ -44,7 +44,7 @@ export * from "./unattended/index.ts";
 export * from "./unlocks/index.ts";
 /* scenario (2026-10-10): explicit-named barrel (hg §1.5 scenario library v0 —
  * declarative mission docs + runScenario over the existing engine); the star
- * ride is proven collision-free by tsc — all 39 scenario names (24 values +
+ * ride is proven collision-free by tsc — all 41 scenario names (26 values +
  * 15 types) stay native on the root. */
 export * from "./scenario/index.ts";
 
