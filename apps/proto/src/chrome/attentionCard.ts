@@ -12,11 +12,12 @@
  * seam, crossing the business-month grid at tick 420).
  *
  * Honest seam ledger:
- *  - entry is host-called at CONSTRUCTION only. The runner has no mid-run
- *    `attentionWindowEntry` forwarding and the intent door has no borrowing
- *    verb — "take a loan" rebuilds the private runner at minute 0 with one
- *    more planted row (the RecoveryWatch arm-flip law: mid-run minting would
- *    fake an entry that wasn't there for the digests already played);
+ *  - entry is host-called at CONSTRUCTION (`plantAttentionPool`, public
+ *    pipeline API) AND MID-RUN through the runner's `enterAttentionWindow`
+ *    seam (E2a seam (a) CLOSED — the @8994f96 `attentionState()` readback
+ *    gained its write twin: action-on-state between ticks, mint-or-refuse
+ *    through `attentionWindowEntry` only). The intent door still has NO
+ *    borrowing verb — loans are planted by the host, not paid for with hands;
  *  - repayment authority is the runner's month-roll forward; the card only
  *    READS `runner.attentionState()` + the wire's AttentionSummary (@0b35b15).
  */
@@ -26,10 +27,6 @@ import type { AttentionSummary } from "../shared/protocol";
 
 /** The door-side default capacity the pool is minted at (two focus hands). */
 export const ATTENTION_CARD_CAPACITY = 2;
-
-/** Loans the borrow button may queue up to: capacity + 1, so the (capacity+1)
- *  -th construction hits the bounded refusal and the card can show it. */
-export const ATTENTION_BORROW_CAP = ATTENTION_CARD_CAPACITY + 1;
 
 /** The month roll the runner's business-calendar grid crosses at tick 420 —
  *  the step cap for "run the month roll" gets a small margin. */

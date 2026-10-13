@@ -5,7 +5,6 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  ATTENTION_BORROW_CAP,
   ATTENTION_CARD_CAPACITY,
   attentionRows,
   attentionSummaryOf,
@@ -14,7 +13,7 @@ import {
   plantAttentionPool,
 } from "../attentionCard";
 
-describe("plantAttentionPool (construction-only entry, host law)", () => {
+describe("plantAttentionPool (construction planting, public pipeline API)", () => {
   it("zero loans mints an empty pool — the window entry is the ONLY hand event", () => {
     const { state, refusal } = plantAttentionPool(0);
     expect(refusal).toBeNull();
@@ -44,7 +43,7 @@ describe("plantAttentionPool (construction-only entry, host law)", () => {
     const full = plantAttentionPool(ATTENTION_CARD_CAPACITY);
     expect(full.refusal).toBeNull();
     expect(full.state.debt).toBe(2);
-    const over = plantAttentionPool(ATTENTION_BORROW_CAP);
+    const over = plantAttentionPool(ATTENTION_CARD_CAPACITY + 1);
     expect(over.state.debt).toBe(2); // identity past the bound — never 3
     expect(over.state.loanLedger.length).toBe(2);
     expect(over.refusal).toContain("attention-debt: 2 unrepaid focus-hand loan(s) of capacity 2");

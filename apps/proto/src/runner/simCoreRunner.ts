@@ -69,6 +69,7 @@ import {
   asMoney,
   asRunSeed,
   observedKey,
+  type AttentionLoanKind,
   type AttentionState,
   type ClockState,
   type Contract,
@@ -107,11 +108,14 @@ import {
   sub,
 } from "@hh/sim-core/kernel";
 import {
+  attentionWindowEntry,
+  createAttentionState,
   createDefaultSlots,
   createInitialState,
   createTickDriver,
   makeSlots,
   replenishAtBusinessMonth,
+  type AttentionWindowResult,
   type DefaultPipelineConfig,
   type RecoveryConfig,
   type RecoveryNotice,
@@ -1062,6 +1066,40 @@ export class SimCoreRunner implements SimRunner {
    *  economyInvoiceRefusals() reads the F4 census. */
   attentionState(): AttentionState | undefined {
     return this.game.attention;
+  }
+
+  /** MID-RUN WINDOW ENTRY (closes the E2a seam (a) the AttentionCard
+   *  gap-noted @5b19a04): the host-side action-on-state between ticks for
+   *  `attentionWindowEntry` — the pipeline's ONLY hand-creation event. Same
+   *  prerogative the month-roll forward already exercises: the roll is an
+   *  ACTION on state between ticks, not a step input (frozen TickInputs
+   *  contract, @eff5694 docblock). No door verb is involved — the door still
+   *  has no borrowing verb; this seam is the host planting the loan, mint or
+   *  refuse, strictly through the public pipeline functions:
+   *
+   *  · pool present → `attentionWindowEntry(pool, kind, businessMinute)`;
+   *  · pool ABSENT  → mint the pipeline's own default pool
+   *    (`createAttentionState()`, capacity `ATTENTION_CAPACITY_DEFAULT`) and
+   *    plant the first entry on it — nothing is invented, the denomination
+   *    simply comes into play at the call;
+   *  · opened       → the new frozen pool is written onto `GameState.attention`
+   *    (digest-switch law: frames from here on carry the wire AttentionSummary
+   *    roll-up; the SHAPE is untouched — protocol-v1 law @0b35b15);
+   *  · bounded      → `debt >= capacity` answers the pipeline's refusal text
+   *    verbatim with the input state's IDENTITY and `this.game` untouched —
+   *    the refusal never forges a state change (never-silent-loss law).
+   *
+   *  The minute stamped on the row is the host business clock at the call
+   *  (same `businessUs / MICROS_PER_MIN` authority the month-roll block
+   *  reads), so a mid-run loan visibly carries a mid-run timestamp. */
+  enterAttentionWindow(kind: AttentionLoanKind): AttentionWindowResult {
+    const pool = this.game.attention ?? createAttentionState();
+    const businessMinute = Number(this.game.context.clocks.businessUs / MICROS_PER_MIN);
+    const result = attentionWindowEntry(pool, kind, businessMinute);
+    if (result.state !== this.game.attention) {
+      this.game = Object.freeze({ ...this.game, attention: result.state });
+    }
+    return result;
   }
 
   /** The live recovery slice (ADR-0012 host seam) — undefined on every

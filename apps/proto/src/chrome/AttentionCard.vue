@@ -1,22 +1,24 @@
 <script setup lang="ts">
 /**
- * AttentionCard — the OD-6 second denomination gets a HUD (E2a seam (b),
+ * AttentionCard — the OD-6 second denomination gets a HUD (E2a seams (a)+(b),
  * thin static panel: zero declared motion). Self-contained by law
  * (PricingDial/RecoveryWatch pattern): private SimCoreRunner, NEVER writes
  * the global observed store, no TopBar row (the §1.4 four-id permanent-row
  * law keeps the denominations OUT of the TopBar).
  *
- * The pool is planted at runner CONSTRUCTION through the public pipeline API
- * (`createAttentionState` + `attentionWindowEntry`). Borrowing rebuilds the
- * runner at minute 0 — the runner has no mid-run window-entry seam and the
- * door has no borrowing verb, so mid-run minting is honestly unavailable
- * (footer gap-note). Servicing is the runner's host-forwarded month roll
- * (business-calendar grid, tick 420): one oldest loan repaid per roll.
+ * The pool starts EMPTY (planted at construction through the public pipeline
+ * API, `createAttentionState` capacity 2, zero rows) and EVERY loan on the
+ * ledger is opened LIVE mid-run via the runner's `enterAttentionWindow` seam
+ * (E2a seam (a) closed — the card no longer rebuilds at minute 0 to borrow).
+ * The bounded law is the pipeline's own: once debt reaches capacity the next
+ * borrow answers the verbatim refusal and the clock keeps running. Servicing
+ * is the runner's host-forwarded month roll (business-calendar grid, tick
+ * 420): one oldest loan repaid per roll.
  */
 import { computed, onBeforeUnmount, ref } from "vue";
+import type { AttentionLoanKind } from "@hh/sim-core";
 import { SimCoreRunner } from "../runner/simCoreRunner";
 import {
-  ATTENTION_BORROW_CAP,
   ATTENTION_CARD_CAPACITY,
   ATTENTION_MONTH_ROLL_STEP_CAP,
   attentionRows,
@@ -25,39 +27,27 @@ import {
   loanRows,
   plantAttentionPool,
 } from "./attentionCard";
-import type { PlantedPool } from "./attentionCard";
 import type { AttentionSummary } from "../shared/protocol";
 
 const props = withDefaults(defineProps<{ seed?: number }>(), { seed: 905 });
 
-const loans = ref(1); // start already in debt: one triage-window taken at m0
 const minute = ref(0);
 const seq = ref(0);
-/* The WIRE roll-up (@0b35b15) once a step has landed; before the first click
-   the panel renders the pure `attentionSummaryOf` mirror of the planted
-   state — the same fields the runner will stamp, not an invented story. */
-let planted: PlantedPool = plantAttentionPool(loans.value);
+const planted = plantAttentionPool(0); // empty pool, capacity 2 — zero planted rows
+/* The WIRE roll-up (@0b35b15) once a step has landed; until then the panel
+   renders the pure `attentionSummaryOf` mirror of the live pool — the same
+   fields the runner stamps, not an invented story. */
 const wire = ref<AttentionSummary>(attentionSummaryOf(planted.state));
-let runner = createRunner();
-/* `planted` and `runner` are plain lets (component-lifetime singletons), so
-   computeds cannot see the swap — this counter is the reactivity pulse every
-   mutation bumps. */
+const runner = createRunner();
+/* The runner is a component-lifetime singleton; this counter is the
+   reactivity pulse every mutation (step AND live borrow) bumps. */
 const revision = ref(0);
+/** Refusal from the LAST live borrow attempt (null when it opened) — the
+ *  bounded law surfaced verbatim, never swallowed. */
+const liveRefusal = ref<string | null>(null);
 
 function createRunner(): SimCoreRunner {
   return new SimCoreRunner({ seed: props.seed, attention: planted.state });
-}
-
-/** Rebuild at minute 0 — minting a loan mid-run would fake an entry that
- *  wasn't there for the digests already played (RecoveryWatch arm law). */
-function rebuild(): void {
-  runner.stop();
-  planted = plantAttentionPool(loans.value);
-  runner = createRunner();
-  wire.value = attentionSummaryOf(planted.state);
-  minute.value = 0;
-  seq.value = 0;
-  revision.value += 1;
 }
 
 function step(): void {
@@ -68,10 +58,14 @@ function step(): void {
   revision.value += 1;
 }
 
-function borrow(): void {
-  if (loans.value >= ATTENTION_BORROW_CAP) return;
-  loans.value += 1;
-  rebuild();
+/** LIVE window entry — the runner's mid-run seam (@E2a (a) closed). The
+ *  wire mirror advances to the pipeline's own new state; the NEXT step
+ *  replaces it with the runner's stamped roll-up (same fields, same law). */
+function borrow(kind: AttentionLoanKind): void {
+  const result = runner.enterAttentionWindow(kind);
+  liveRefusal.value = result.refusal;
+  wire.value = attentionSummaryOf(result.state);
+  revision.value += 1;
 }
 
 /** Advance until the month roll services the oldest row (debt drops) or the
@@ -87,18 +81,13 @@ function runMonthRoll(): void {
 }
 
 const summaryRows = computed(() => {
-  void revision.value; // re-read on every mutation (steps AND rebuilds)
+  void revision.value; // re-read on every mutation (steps AND live borrows)
   return attentionRows(wire.value, runner.attentionState());
 });
 
 const rows = computed(() => {
   void revision.value;
   return loanRows(runner.attentionState());
-});
-
-const borrowRefusal = computed(() => {
-  void revision.value;
-  return planted.refusal;
 });
 
 /** Bounded law made visible without any runner: capacity+1 entries and the
@@ -114,13 +103,11 @@ onBeforeUnmount(() => runner.stop());
   <div class="attention-card" data-test="attention-card">
     <div class="controls">
       <button type="button" data-test="attention-step" @click="step()">step +1m</button>
-      <button
-        type="button"
-        data-test="attention-borrow"
-        :disabled="loans >= ATTENTION_BORROW_CAP"
-        @click="borrow()"
-      >
-        borrow triage-window loan (construction-only seam)
+      <button type="button" data-test="attention-borrow" @click="borrow('triage-window')">
+        borrow triage-window loan (live seam)
+      </button>
+      <button type="button" data-test="attention-borrow-grace" @click="borrow('grace')">
+        borrow grace loan (live seam)
       </button>
       <button type="button" data-test="attention-roll" @click="runMonthRoll()">
         run the month roll (≤ {{ ATTENTION_MONTH_ROLL_STEP_CAP }} steps)
@@ -165,8 +152,8 @@ onBeforeUnmount(() => runner.stop());
       serviced by month rolls: {{ servicedCount }} of {{ rows.length }} · capacity law: {{ ATTENTION_CARD_CAPACITY }}
     </p>
 
-    <p v-if="borrowRefusal !== null" class="refusal" data-test="attention-borrow-refusal">
-      bounded refusal (this construction): {{ borrowRefusal }}
+    <p v-if="liveRefusal !== null" class="refusal" data-test="attention-borrow-refusal">
+      bounded refusal (live attempt): {{ liveRefusal }}
     </p>
     <p v-else class="probe" data-test="attention-probe">
       bound probe (public API, no runner): {{ probeRefusal }}
@@ -175,11 +162,13 @@ onBeforeUnmount(() => runner.stop());
     <p class="honesty" data-test="attention-honesty">
       Wire authority: the AttentionSummary block (@0b35b15) rides every frame
       of this pooled runner; the ledger and replenish stamp read the runner's
-      local attentionState(). GAP, stated honestly: the pipeline's window-entry
-      seam is host-called and the intent door has no borrowing verb, so
-      "borrow" rebuilds this private runner at minute 0 instead of extending a
-      loan mid-run — repayment is the runner's forwarded month roll, one
-      oldest loan per roll. Thresholds are PROVISIONAL (ratify-on-playtest).
+      local attentionState(). Every loan here opened LIVE mid-run through the
+      runner's host-forwarded `enterAttentionWindow` seam (E2a seam (a) closed
+      — it was a rebuild-at-minute-0 before). GAP that REMAINS, stated
+      honestly: the intent door has no borrowing verb, so a loan is a HOST
+      action-on-state between ticks, not a hand-paid player verb — and
+      repayment is the runner's forwarded month roll, one oldest loan per
+      roll. Thresholds are PROVISIONAL (ratify-on-playtest).
     </p>
   </div>
 </template>
@@ -199,7 +188,8 @@ button {
 }
 button:hover { background: color-mix(in srgb, var(--hh-accent) 14%, transparent); }
 button:disabled { opacity: .4; cursor: default; }
-[data-test="attention-borrow"] { border-color: color-mix(in srgb, var(--hh-hue-azure) 55%, transparent); }
+[data-test="attention-borrow"],
+[data-test="attention-borrow-grace"] { border-color: color-mix(in srgb, var(--hh-hue-azure) 55%, transparent); }
 .clock { margin-left: auto; opacity: .5; font-size: 10px; font-variant-numeric: tabular-nums; }
 .rows { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 11px; }
 .rows th { text-align: left; font-weight: 500; opacity: .6; font-size: 10px; padding: 2px 6px 2px 0; }
