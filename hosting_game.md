@@ -1610,7 +1610,7 @@ tactile verb). The look is *interchangeable parts*. Signature meter: **Overcommi
 visually clipping through each other. Catastrophe: noisy-neighbour bleed, one VM swelling and
 physically crushing its neighbours' volumes. Chord: slate · ice blue · white · graphite · cyan.
 
-### "Root Is Theirs" — Dedicated servers / bare metal ❌
+### "Root Is Theirs" — Dedicated servers / bare metal 🔧 7afa038
 The level's twist: **you cannot fix your customers' boxes.**
 
 **How it works:** You can only see traffic, power, and IPMI. When a customer's server starts
@@ -3142,7 +3142,7 @@ phase and a resolution) · Siege (30–45 min, multi-phase, multi-system). Ship 
 every two levels, one scenario every three, and one siege per act. Every scenario also gets an
 **Objective Totem** and a **Scenario Icon** — see §1.10.*
 
-### `Launch Day` / `Hug of Death` / `The Slashdotting` ❌
+### `Launch Day` / `Hug of Death` / `The Slashdotting` ✅ 80e7473
 A client's product goes live, or a page hits the front page of an aggregator. Traffic ramps 40–200×.
 **Archetype: Convert. Length: Scenario.**
 
@@ -3460,7 +3460,7 @@ attack are both live**, and the player must determine which is causing the error
 choosing. **Rolling back a good deploy during a real attack wastes six minutes and the attack
 window.** That turns the stated tension into actual play.
 
-### `The Quiet Month` / `Reverse Wave` / `The Good Problem` ❌
+### `The Quiet Month` / `Reverse Wave` / `The Good Problem` ✅ 80e7473
 No threats at all. Only cash flow, upkeep, funnel efficiency, and the temptation to over-build.
 **Archetype: Shrink/Convert. Length: Scenario.**
 
@@ -3750,7 +3750,7 @@ failure mode is that **40% of your direct-debit customers' mandates don't re-aut
 elsewhere.
 **Interacts with:** §6.10 lose conditions — **add "no banking relationship" as a distinct one.**
 
-### `Runway: 6 Weeks` / `Insolvency Run` / `Payroll Friday` ❌
+### `Runway: 6 Weeks` / `Insolvency Run` / `Payroll Friday` ✅ 80e7473
 Cash crisis. You're profitable on paper but the annual prepays were spent. **Archetype: Negotiate.
 Length: Scenario.**
 
@@ -3799,7 +3799,7 @@ A non-paying customer's data is suspended. **Archetype: Negotiate. Length: Inter
 **How it works:** The PR risk of deleting it versus the cost of keeping it. **One wrong move = a viral
 thread.**
 
-### `The Price Hike` / `Vendor Shock` / `The Relicense` ❌
+### `The Price Hike` / `Vendor Shock` / `The Relicense` ✅ 80e7473
 Your control-panel, hypervisor, or licensing vendor raises prices 300–400% with 60 days' notice — or
 the open-source component your platform is built on changes its licence. **Archetype: Negotiate.
 Length: Scenario.**
@@ -3975,7 +3975,7 @@ security patch for a known RAID-controller vulnerability is behind a paywall you
 level about the difference between owning hardware and being allowed to maintain it.** Lesson:
 stagger your refresh.
 
-### `DDoS Season` ❌
+### `DDoS Season` ✅ 80e7473
 Persistent elevated attack baseline for a whole level. **Archetype: Endure. Length: Modifier.**
 
 **How it works:** Rendered as a permanent magenta haze at the map edges and a **pressure gradient**
@@ -9468,7 +9468,7 @@ different, and they cost nothing to balance.
 itself. Keep every entry written here; the pruning rule governs *which get their own balance
 numbers*, not which get written.
 
-### The Population Effect (generalise the Empty Server Spiral) 🔧
+### The Population Effect (generalise the Empty Server Spiral) ✅ 626d2a7 09d6adc
 "Visitors affect other visitors" is too strong a mechanic to use once.
 
 **How it works:** A positive-feedback curve with **a floor below which it inverts**, applied wherever
@@ -35555,5 +35555,7 @@ Other fix-wave uplifts (non-⚠️ rows flipped): §5 unlock lattice/trigger row
 Palette anchor (0e0d7e1): palettes/shared-80.json resolves the previously phantom `palette:shared-80` anchor at DATA level; the §4.2–4.4 rows that cited it stay ❌ — no engine consumes palette slots yet. **Batch-2 holds (recorded, no marker move):** the three canonical-death rows needed no ❌→🔧 — Bankruptcy/cash-zero (orig 24433), Covenant Default (orig 24526) and Churn Spiral (orig 24457) already rode 🔧 since the audit; ab0bf5c + 984759b strengthen them (warning→notice→dissolution state machine live, refuse-settlements forwarded by hosts, halt-on-death opt-in, i18n death voices) while §6.10 win/lose screens, HUD surfacing and narrated endings stay owed → rows hold 🔧. ❌ holds with reason: Elasticity testing (orig 23225 — the A/B research action itself unbuilt, curve is static config), The Price Dial + Demand Ghost (orig 25388 — visual row, ghost preview unbuilt), Whois/Redemption Grace registrar type (orig 2540 — no registrar card authored; the DNS bundle's registrar-account-lock is a buildable, not the business), The Copycat Wave (orig 6249 — miss-list-driven draw ≠ the shipped dominant-defense-family reserve; its §2.24 reserve-law twin is ✅), The Feint (orig 6225 — marker-inert per batch-1), lame-delegation/migration mechanics (orig 3700/3180 — hollow scenario-key hooks only, launch-window precedent).
 
 **CLOSEOUT-3 re-markup (6867f74..31b5a1c, 2026-10-13):** §7.7 recovery — "The Second Failure Window" ❌→✅ `60e464b 31b5a1c` (GameState.recovery window-lock + strike→floor-and-hold folds inside the driver; ADR-0012 reconciles the twin: foldRecoveryTick is the single authority, the sibling tracker flag is advisory display); "Recovery is gameplay (and recovery order matters)" ❌→🔧 (serve-throttle ramp live in proto runner + fastForward, default-off wiring — but recovery *ordering* is never a player verb; the restore-options menu is pure-observer data); "Restore service or restore redundancy?" ❌→🔧 (decision table exists in the observer, no engine/HUD consumes the choice); "Degradation Debt" ❌→🔧 (degradedMinutes measured, no repayment cost ever charged); "The Failback Problem" ❌→🔧 (acceptsFailback/secondFailureWindowActive surfaced on observer outputs awaiting host adoption); "Published Post-Mortem Credibility" 🔧→✅ `57ea80e 60e464b 31b5a1c` (honest filings fold to reputation via honestHostFloor §5.10 halving; blame-style files zero; >1-change ambiguity files zero credit). §6.10 deaths — Bankruptcy, Churn Spiral and Covenant Default 🔧→✅ `ab0bf5c 984759b f9ea470 0b35b15` (all three causes run warning→dissolution end-to-end with HUD deathWatch rows, pinned alertStack severities and LossCard cause-narrated epilogues — the batch-2 "win/lose screens, HUD surfacing, narrated endings" hold is cleared). Still outstanding inside those rows: escape/turnaround play after warning, full escalation ladders, the spiral cross-reference diagram (23863 holds 🔧). §1.5 scenarios — `The Long Weekend` 🔧→✅, `Deadbeat Quarter` ❌→✅, `The Angry Whale` ❌→✅ `10f1d36`; `Collections Week` 🔧→✅, `Metastable` 🔧→✅ `cdb2bc5` (runScenario composes unattended mints + the real pipeline driver + the economy money lane; win goldens + one-flip lose probes + ×100 byte-identity pinned); section row "1.5 Scenario library" ❌→🔧 (5 missions of the ~25–30 §1.5 headlines runnable on today's ten-predicate objective vocab). §6.5 — "The Price Dial + Demand Ghost" ❌→🔧 (billing really moves now: AdjustPrice verb 0032a21 + elasticity 5781335 + host forwarding 8994f96 + PricingDial commit-confirmation UI f9ea470 + causeId authority 0b35b15 — the demand-ghost preview and live readout remain unbuilt). §7.5 — "Grace Windows → the Triage Window / the Attention Grace" 🔧→✅ `eff5694 8994f96 0b35b15` (attention pool, bounded window entry, debt, loan ledger and month-roll repayment live in engine + door, AttentionSummary rides the projection wire). No "Safe mode"/"Gradual restoration" headings exist to move. Holds with reason: the price slider (22957) and "Difficulty Dial the Player Turns" (4657) stay 🔧 — the new-contract-vs-renewal two-number display and 12-month renewal lag are not modeled (L1 factors apply at once, not per cohort; PricingDial confirms before commit, no ghost); "Price Increase" (23079) stays 🔧 (only the size param of its four shipped); door-verb attention-cost selection rows stay 🔧 (per-verb attentionCost is host-chosen config, owner taste owed).
+
+**WAVE-5 re-markup (1a1d15a..c082a64, 2026-10-13):** §1.5 scenario library — `Launch Day`/`Hug of Death`/`The Slashdotting`, `DDoS Season`, `Runway: 6 Weeks`, `The Price Hike`, `The Quiet Month` all ❌→✅ `80e7473` (five `runScenario` missions, each won-as-authored + lost-by-ONE-wire-flip, ×100 byte-identity pinned; objective vocab widened to ten predicates). Runnable §1.5 missions now **11** across 10 distinct headings (closeout-3's umbrella tally of 5 runnable missions is superseded: +5 wave-two = 10, +1 corpus twin = 11; section row stays 🔧 — 11 of the ~25–30 §1.5 headlines runnable on today's vocab). `Metastable` ✅ `cdb2bc5` **marker unchanged — twin coverage recorded:** wave-three `5df5586` added `metastable-corpus`, re-storming the same heading from the SHIPPED g1 wave table through the new corpus `{tableId, waves:[N]}` traffic seam (`corpus.ts` `resolveCorpusWindows` replays the fastForward director/planWave cursor law; win waves [1], one-flip lose waves [1,5] → layer-7 storm). §1.3 "Root Is Theirs" ❌→🔧 `7afa038` (official:dedicated ships as DATA per the mail/DNS clone pattern — bundle + first-quarter slice + 66-template pack; 5/9 §7.8 hooks vs anchor; scarce `rack-space` with crash-cart/provisioning-time meter, `setup-fee-level` commercial slider, keyhole-mode + R20 pip row verbatim from §7.8f; no runtime surface changes, so partial). §0.3 scarcity table row has no marker (review-minor #4 email precedent — table rows carry none): data-level fact recorded here — the Dedicated / bare metal row is now backed by a shipped bundle (scarce.resourceId `rack-space` @7afa038). §2.12 "The Population Effect" 🔧→✅ `626d2a7 09d6adc` (the g09 note's "zero consumers"/"floor-inversion unmodeled" are retired: the coefficient is SIGNED with both halves live — positive rows draw the below-floor disgust cut [repel, 626d2a7], negative rows draw above-floor cohort gravity minting ONE bonus arrival per hit [attract, 09d6adc]; at most ONE population roll per candidate, disjoint by sign × side-of-floor, one generation per tick; config-absent byte-identity re-pinned, zero shipped-bundle behavior change). §7.7 recovery — **no marker move:** `dce511b` gave the engine slice a HUD (`chrome/RecoveryWatch` — windows, locks, strikes, the clamp's ramp fraction, five-kind notice tape; default-off honest + armed seed-905 demo), but "Recovery is gameplay (and recovery order matters)" stays 🔧 (ordering is still never a player verb) and the advisory-OUT rows stay 🔧 (`recoveryCapacityBps`/`acceptsFailback`/`degradedMinutes`/crew queue remain unsurfaced — the runner must first forward the per-tick event stream/GameState the observer needs; gap row tracks it). Consolidation: `9bb6329` moved the money-lane fold (F4 insolvent-settle boundary, refusal witnesses, opex drafts, notary mirror, facts→GuardrailSample) into ONE home `internal/tickFold.ts` consumed by both fastForward and the scenario runner — every shipped digest byte-ident (ledger topic rides a parameter); the old mirror pin became a single-home guard. Verb-exhaustion finding (MODULE-STATUS gap row): the variety engine has run out of distinct dominant verbs — `Observe` is now named by three cards (dedicated @7afa038, VoIP, object-storage; pairwise VERB_SHIFT blocks the latter two from the shared-web anchor) and NO card names `Diagnose`, so types 6+ are owner-gated behind ADR-0005 per-tier verb extension or new-card authoring. Census after this re-markup: ✅307 🔧995 ⚠️1 ❌2256 📝30 — total 3,589 unchanged.
 
 Historical record: reports/audit/outline.md (structure), reports/audit/AUDIT-BRIEF.md (contract), reports/audit/group-01..25.md (per-group evidence, frozen at ef74a2f), reports/audit/SUMMARY.md (regenerated post-wave).

@@ -1,4 +1,4 @@
-# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b, wave-3 batch-1 closeout 2026-10-10, wave-3 batch-2 closeout 2026-10-10b)
+# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b, wave-3 batch-1 closeout 2026-10-10, wave-3 batch-2 closeout 2026-10-10b, wave-5 closeout re-markup 2026-10-13)
 
 Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3, then **updated in place on disk after the 2026-10-09 fix wave** (16 commits d8fc8ec..a98fd55; per-row dispositions in the hosting_game.md Appendix), then re-markuped for the **2026-10-09b session-2 owner rulings** (see SESSION-2 RE-MARKUP below + `docs/adr/0010-taxonomy-and-stacking-contradictions.md` Accepted), then flipped again for the **wave-3 batch-1 closeout** (0032a21..2ef5cae; see WAVE-3 BATCH-1 below), then for the **wave-3 batch-2 closeout** (a79402c..05ecf97; see WAVE-3 BATCH-2 below). The tallies below are computed from the **current marked hosting_game.md**, not the original manifests — they include the 23 fix-wave flips, the session-2 flips, the batch-1 flips, and the small set of marker/manifest drift realignments disclosed in the Appendix.
 
@@ -919,3 +919,34 @@ Battery before markup (serial, unloaded, all green): sim-core 136 files / 1,984 
 | **total marked** | **3,589** | **3,589** |
 
 hosting_game.md stays 35,557 lines — 17 heading lines edited in place + one appendix paragraph appended before "Historical record:".
+
+## WAVE-5 (closeout re-markup 2026-10-13, seven commits 7afa038..c082a64 atop 1a1d15a)
+
+| Commit | Headline |
+|---|---|
+| `7afa038` | feat(content): hosting type 5 — Root Is Theirs (official:dedicated bundle + g1-dedicated wave slice + 66-template pack; 5/9 §7.8 hooks; data-only, zero src/ engine change) |
+| `80e7473` | feat(scenario): five more §1.5 missions — Launch Day, DDoS Season, Runway: 6 Weeks, The Price Hike, The Quiet Month (each won-as-authored + lost-by-ONE-wire-flip, ×100 byte-identity legs; scenario suite 85→120) |
+| `dce511b` | feat(proto): chrome/RecoveryWatch — the §7.7 engine slice gets a HUD (default-off honest + armed five-kind demo; proto-only, sim-core untouched) |
+| `09d6adc` | feat(pipeline): populationEffect attract half — signed coefficient completes the §2.13 curve (above-floor cohort gravity mints one bonus arrival per hit; repel draw byte-stable; config-absent byte-identity re-pinned) |
+| `9bb6329` | refactor(sim-core): shared tick fold — internal/tickFold.ts is the ONE money-fold home consumed by fastForward + scenario runner (ledger topic parameterized; every shipped digest byte-ident) |
+| `5df5586` | feat(scenario): corpus `{tableId, waves:[N]}` traffic seam — resolveCorpusWindows replays the fastForward director/planWave cursor law over host-injected slice JSON; 11th mission `metastable-corpus` re-storms §1.5 Metastable from shipped g1 data |
+| `c082a64` | docs(scenario): stamp the corpus-seam SHA in the MODULE-STATUS gap row |
+
+**Marker flips (this wave):** `Launch Day`, `DDoS Season`, `Runway: 6 Weeks`, `The Price Hike`, `The Quiet Month` ❌→✅ `80e7473` · "Root Is Theirs — Dedicated servers / bare metal" ❌→🔧 `7afa038` (data-shipped, mail/DNS clone precedent) · "The Population Effect" 🔧→✅ `626d2a7 09d6adc` (both halves of the curve live; g09 notes "zero consumers"/"floor-inversion unmodeled" retired) · §0.3 scarcity table row carries no marker (review-minor #4 precedent) — data fact noted in the hosting_game.md appendix · `Metastable` ✅ marker UNCHANGED, corpus twin recorded in the appendix · §7.7 recovery: NO heading moved (RecoveryWatch renders the engine slice; ordering-puzzle + advisory-OUT rows stay 🔧) · §1.5 umbrella: no count row exists on disk — appendix reflects 5→11 runnable missions.
+
+**Zero-golden proofs:** 7afa038 disclosed "136 files/1,986 exit 0, zero goldens moved, parity b0162ab5/a9b4b7b8 held" · 09d6adc "serial 2,031/136 exit 0, ZERO goldens moved, parity HELD" · 9bb6329 "136/2,031 exit 0, zero golden/digest moves (×100 determinism, drain 78dc6556, g4 13ba145f …), parity held, canary 129" · 5df5586 "FULL SERIAL 137/2,049 exit 0, api-verify 1,541, parity held, content validate PASS" · 80e7473/dce511b added tests only (suite counts rode the footer re-pins above; dce511b is proto-chrome, structurally sim-core-golden-inert) · **this closeout re-verified the FULL battery on the final tree** (sim-core serial 137 files/2,049 exit 0 — the exact footer pin — plus typecheck/api-verify/ci-verify/proto/headless; see the wave-5 commit note).
+
+**Verb-exhaustion finding (`7afa038`, gap row added to docs/MODULE-STATUS.md):** `official:dedicated` takes `Observe` as dominant verb — THIRD card naming it (VoIP + object-storage also do; pairwise VERB_SHIFT blocks those two) — and NO card names `Diagnose`. Hosting types 6+ are blocked on ADR-0005 per-tier verb extension or new-card authoring within the existing vocabulary. **Owner.**
+
+**Marker census before→after (recomputed from disk, heading lines only):**
+
+| bucket | before | after |
+|---|---|---|
+| ✅ DONE | 301 | **307** |
+| 🔧 PARTIAL | 995 | **995** (Root Is Theirs in, Population Effect out) |
+| ⚠️ PROBLEM | 1 | **1** (unchanged: 31543 readability — OD-10/12 open) |
+| ❌ MISSING | 2,262 | **2,256** |
+| 📝 NA | 30 | 30 |
+| **total marked** | **3,589** | **3,589** |
+
+hosting_game.md grows by the appendix paragraph only (7 heading lines edited in place); "Historical record:" footer kept last.
