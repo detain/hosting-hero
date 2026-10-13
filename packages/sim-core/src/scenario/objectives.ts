@@ -11,6 +11,7 @@
 
 import type { Fixed } from "../types.ts";
 import type { CompanyDeathCause } from "../economy/index.ts";
+import { REPUTATION_INITIAL_BPS } from "../economy/index.ts";
 import { FIXED_ONE, FIXED_ZERO, fromRatio } from "../kernel/fixed.ts";
 import type { ObjectivePredicate, ScenarioDeathCause } from "./doc.ts";
 
@@ -33,6 +34,15 @@ export interface ScenarioObservation {
   readonly bounces: number;
   /** Canonical company deaths seen (OD-25(a)), first-seen order, deduped. */
   readonly deaths: readonly CompanyDeathCause[];
+  /** Ladder rung 4: rows in the money lane's `covenantBreachLog` (one per
+   *  NEW breach edge at a bank review — economy/runway.ts latch: recovery
+   *  clears, relapse re-logs). 0 while no covenant is breached or no bank
+   *  card is on the wire. */
+  readonly covenantBreaches: number;
+  /** Ladder rung 5: the §2.10 reputation ledger's overall score in bps
+   *  (0..10,000 — the same authority that publishes `company::reputation`).
+   *  Pre-money-lane reads the initial 5,000 bps (economy/reputation.ts). */
+  readonly reputationBps: bigint;
   /** Ladder rung 3: cumulative arrival mints by the dominantFamily label of
    *  the envelope that minted them (organic + the five threat families).
    *  Counted at MINT — re-entries carry no new arrival event, so retries
@@ -59,6 +69,10 @@ export const EMPTY_OBSERVATION: ScenarioObservation = Object.freeze({
   writtenOffCustomers: 0,
   bounces: 0,
   deaths: Object.freeze([]),
+  covenantBreaches: 0,
+  // The fresh company has the ledger's opening score (single source: the
+  // economy constant, never a re-typed 5000).
+  reputationBps: REPUTATION_INITIAL_BPS,
   arrivalsByFamily: Object.freeze({}),
   windowSums: Object.freeze({}),
 });
@@ -125,6 +139,14 @@ export function objectiveHolds(obs: ScenarioObservation, predicate: ObjectivePre
       return !deathsInclude(obs.deaths, predicate.cause);
     case "death-by-cause":
       return deathsInclude(obs.deaths, predicate.cause);
+    case "covenant-breached-count-below":
+      return obs.covenantBreaches < predicate.count;
+    case "covenant-breached-count-above":
+      return obs.covenantBreaches > predicate.count;
+    case "reputation-below":
+      return obs.reputationBps < BigInt(predicate.bps);
+    case "reputation-above":
+      return obs.reputationBps >= BigInt(predicate.bps);
   }
 }
 
@@ -172,6 +194,12 @@ export function objectiveLine(predicate: ObjectivePredicate): string {
     case "no-death-cause":
     case "death-by-cause":
       return `${predicate.kind}:${predicate.cause}`;
+    case "covenant-breached-count-below":
+    case "covenant-breached-count-above":
+      return `${predicate.kind}:${predicate.count}`;
+    case "reputation-below":
+    case "reputation-above":
+      return `${predicate.kind}:${predicate.bps}`;
   }
 }
 
@@ -223,6 +251,16 @@ function progressOf(obs: ScenarioObservation, predicate: ObjectivePredicate): Fi
       return holds0(obs, predicate) ? FIXED_ONE : FIXED_ZERO;
     case "death-by-cause":
       return deathsInclude(obs.deaths, predicate.cause) ? FIXED_ONE : FIXED_ZERO;
+    case "covenant-breached-count-below":
+      return clampRatio(BigInt(predicate.count - obs.covenantBreaches), BigInt(predicate.count));
+    case "covenant-breached-count-above":
+      return clampRatio(BigInt(obs.covenantBreaches), BigInt(predicate.count + 1));
+    case "reputation-above":
+      // balance headroom, cash-above shape: the score as a share of the line.
+      return clampRatio(obs.reputationBps, BigInt(predicate.bps));
+    case "reputation-below":
+      // attainment of the danger: the shortfall below the line, as a share.
+      return clampRatio(BigInt(predicate.bps) - obs.reputationBps, BigInt(predicate.bps));
   }
 }
 

@@ -1,31 +1,38 @@
-/** runner.test.ts — the mission loop proven on the fifteen shipped §1.5
+/** runner.test.ts — the mission loop proven on the seventeen shipped §1.5
  *  scenarios: every doc wins as authored, every doc loses when exactly one
  *  wire input is flipped (same seed), timeout is honest, and a run is
  *  byte-identical ×100 by construction.
  *
- *  VOCAB-EXPANSION LADDER — the §1.5 missions still unrunnable, ranked by
- *  the ONE predicate or input each needs (do NOT bolt them on; each is a
- *  deliberate future ticket):
+ *  VOCAB-EXPANSION LADDER — all five rungs are now CONSUMED. The §1.5
+ *  missions still unrunnable sit in the adjacent-seams list below (do NOT
+ *  bolt them on; each is a deliberate future ticket):
  *  1. CONSUMED (wave three, 2026-10-13): written-off-count observation
- *     predicate → "Post-Breach Aftermath" (:3213) shipped. The "Covenant"
- *     family (:3772) STILL waits on rung 4 — its drama is covenant terms
- *     the wire cannot feed, not the count.
+ *     predicate → "Post-Breach Aftermath" (:3213) shipped.
  *  2. CONSUMED (wave three, 2026-10-13): metrics-delta/window predicate →
  *     "Contract Recompete" (:3839) and "The Sev-0" (:3240, partial: the
  *     recovery curve is expressible, the restraint sequence is not).
  *  3. CONSUMED (wave three, 2026-10-13): family-labeled arrivals →
  *     "Free Tier Flood" (:3574); segments carry an optional dominantFamily
  *     and the runner counts mint-time arrivals per family.
- *  4. covenant inputs on the wire → "Covenant" (:3772) proper: the death
- *     cause exists (covenant-default) but the runner feeds no covenant terms,
- *     so death-by-cause:"covenant-default" is permanently unfalsifiable.
- *  5. reputation in the observation → "Review Bomb" (~:3870): the economy
- *     publishes company::reputation; the scenario observation does not read
- *     it yet.
- *  Adjacent known seams (same spirit): hands/door intents on the wire would
- *  unlock "Understaffed Sunday" (~:3657); alternate-path routing → "The
- *  Fiber Cut" (~:3368); chargeback/rolling-reserve inputs → "The Chargeback
- *  Wave" (~:3721). */
+ *  4. CONSUMED (wave four, 2026-10-13): covenant terms on the wire
+ *     (limits.covenants) + the breach-count predicate → "The Covenant"
+ *     (:3772) shipped. The runner now seeds the money lane with the terms
+ *     (and re-anchors freeAtMonthStart to the opening bankroll — without
+ *     that, month-one burn closes at zero and the runway readout is
+ *     forever the met-sentinel). death-by-cause:"covenant-default" stays
+ *     unfalsifiable INSIDE an interlude clock: the grace machinery needs
+ *     ~140+ more sim-minutes than the review gives it.
+ *  5. CONSUMED (wave four, 2026-10-13): reputation in the observation
+ *     (EconomyState.reputation.overallBps, published since 57ea80e) →
+ *     "Review Bomb" (:3870) shipped.
+ *  VOCAB CEILING: the fifteen→nineteen predicate set now covers every
+ *  §1.5 drama the money lane can even see. Remaining known seams (same
+ *  spirit): hands/door intents on the wire would unlock "Understaffed
+ *  Sunday" (~:3657); alternate-path routing → "The Fiber Cut" (~:3368);
+ *  chargeback/post-mortem/major-incident INPUTS (the reputation deltas
+ *  exist in economy, foldMoneyLaneTick forwards none of them) → "The
+ *  Chargeback Wave" (~:3721) and the transparency half of the Review-Bomb
+ *  family. */
 import { describe, expect, it } from "vitest";
 
 import { readFileSync } from "node:fs";
@@ -388,6 +395,70 @@ describe("shipped missions — lose side (ONE flipped wire input, same seed)", (
       expect(calm.observation.bounces).toBeLessThanOrEqual(29);
     }
   });
+
+  it("The Covenant with one growth-buildout invoice → the breach row lands AT the roll", () => {
+    // ONE wire push: a 70B µ$ buildout opex row at minute 100. The lean
+    // book's month-one runway is ≈8.1 months; the buildout drags the burn
+    // denominator to ≈80B and the same t420 review reads ≈0.25 months —
+    // under the 6-month covenant. The breach is CALENDAR-bound, so unlike
+    // every dice-bound flip above, all five seeds stop at the same tick.
+    const levered = flip("the-covenant", (wire) => {
+      wire.limits.opex.push({ atMinute: 100, amountMicroUsd: 70_000_000_000, memo: "growth-buildout" });
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(levered, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:covenant-breached-count-above:0@420");
+      expect(report.observation.covenantBreaches).toBe(1);
+      expect(report.observation.deaths).toEqual([]); // the interlude ends before the grace machinery
+    }
+    // discriminating pair: the lean book meets the covenant at every seed.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const lean = runScenario(shippedScenario("the-covenant"), BASE_SEED, { seedOffset: offset });
+      expect(lean.stopReason).toBe("win@480");
+      expect(lean.observation.covenantBreaches).toBe(0);
+    }
+  });
+
+  it("Review Bomb with twelve astroturf accounts signed → the rating crater crosses the floor", () => {
+    // ONE idea, expressed as one wire push: the smear wave arrives as
+    // twelve more delinquent hourly accounts (the astroturf campaign made
+    // mechanical — see the wire's NON-EXPRESSIBLE note). The dunning
+    // ladder kills 15–17 of the eighteen by the end; each write-off is a
+    // −600 bps review, and the 1,500-bps floor is crossed in the last
+    // half-hour — dice-bound per seed, the LOSS is not.
+    const bombed = flip("review-bomb", (wire) => {
+      const ladder = [60_000_000, 48_000_000, 36_000_000, 30_000_000, 24_000_000, 18_000_000];
+      for (let i = 6; i < 18; i += 1) {
+        wire.contracts.push({
+          id: `rb-${String(i + 1).padStart(2, "0")}`,
+          customer: `Astroturf Account ${String(i + 1)}`,
+          mrcMicroUsd: ladder[i % 6],
+          billingCycle: "hourly",
+          termMonths: 12,
+          termStartMin: 0,
+          termEndMin: 30_000,
+          autoRenew: true,
+        });
+      }
+    });
+    const loseTicks: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(bombed, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toMatch(/^lose:reputation-below:1500@\d+$/);
+      loseTicks.push(Number(report.endMinute));
+    }
+    expect(loseTicks).toEqual([310, 300, 292, 299, 292]); // seed 904..908
+    // discriminating pair: the six-account book never touches the floor.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const survived = runScenario(shippedScenario("review-bomb"), BASE_SEED, { seedOffset: offset });
+      expect(survived.stopReason).toBe("win@320");
+      expect(survived.observation.reputationBps >= 6000n).toBe(true);
+    }
+    // the eighteen-account flip is the heaviest money lane in the suite —
+    // hourly invoices × 18 books × 10 runs; wall-clock budget, not a flake.
+  }, 30_000);
 });
 
 describe("wave-three missions — engine truth (2026-10-13)", () => {
@@ -445,6 +516,74 @@ describe("wave-three missions — engine truth (2026-10-13)", () => {
     const sev0 = runScenario(shippedScenario("the-sev-0"), BASE_SEED);
     const svSums = sev0.observation.windowSums["served:60"];
     expect(svSums).toEqual({ current: 840, baseline: 480, complete: true });
+  });
+});
+
+describe("wave-four missions — engine truth (2026-10-13)", () => {
+  it("The Covenant: the review is calendar-bound — first business-month roll is EXACTLY t420", () => {
+    // The money clock crosses 43,200 biz-min at tick 420 (102.857 biz-min
+    // per tick), and covenant review runs ONLY inside rollBusinessMonth.
+    // So the levered arm's breach row cannot land at any other tick —
+    // witness the row AND the notice move together (log/notice law at
+    // tick.ts:1194-1204), while the lean arm stays at zero through the
+    // whole interlude.
+    const levered = flip("the-covenant", (wire) => {
+      wire.limits.opex.push({ atMinute: 100, amountMicroUsd: 70_000_000_000, memo: "growth-buildout" });
+    });
+    const before = runScenario(levered, BASE_SEED, { tickCap: 419 });
+    expect(before.stopReason).toBe("timeout@419");
+    expect(before.observation.covenantBreaches).toBe(0); // no review has EVER run
+    const after = runScenario(levered, BASE_SEED, { tickCap: 420 });
+    expect(after.observation.covenantBreaches).toBe(1); // the roll judged
+    expect(after.trace.noticesByKind["covenant-breached"]).toBe(1);
+    const lean = runScenario(shippedScenario("the-covenant"), BASE_SEED);
+    expect(lean.observation.covenantBreaches).toBe(0);
+    expect(lean.observation.deaths).toEqual([]); // breach ≠ death inside an interlude
+  });
+
+  it("Review Bomb: the rating dies while the board never bounces a request", () => {
+    // "Reputation damage happens regardless of actual uptime", made
+    // mechanical: 100 slots × 2 s service on a 6/min street — every visit
+    // is served on BOTH arms to the end. What differs is only the ledger:
+    // write-off −600 bps vs recovery +150 bps dice. The bouncer never
+    // arrives; the mob is arithmetic.
+    const bombed = flip("review-bomb", (wire) => {
+      const ladder = [60_000_000, 48_000_000, 36_000_000, 30_000_000, 24_000_000, 18_000_000];
+      for (let i = 6; i < 18; i += 1) {
+        wire.contracts.push({
+          id: `rb-${String(i + 1).padStart(2, "0")}`,
+          customer: `Astroturf Account ${String(i + 1)}`,
+          mrcMicroUsd: ladder[i % 6],
+          billingCycle: "hourly",
+          termMonths: 12,
+          termStartMin: 0,
+          termEndMin: 30_000,
+          autoRenew: true,
+        });
+      }
+    });
+    const calm = runScenario(shippedScenario("review-bomb"), BASE_SEED);
+    const storm = runScenario(bombed, BASE_SEED, { tickCap: 320 }); // cap: it loses at 310
+    expect(calm.trace.bounced).toBe(0);
+    expect(storm.trace.bounced).toBe(0);
+    expect(calm.observation.reputationBps).toBe(6850n); // dice-pinned: −600×WO +150×REC −200×CH
+    expect(storm.observation.reputationBps).toBeLessThan(1500n); // crossed the floor
+  }, 30_000);
+
+  it("the rung-4 seeding re-anchor: covenant docs measure month-one burn honestly", () => {
+    // Without the runner's freeAtMonthStart re-anchor, emptyEconomyState
+    // starts at zero, month-one burn closes NEGATIVE (clamped to 0), the
+    // runway readout is null forever, and EVERY min-direction covenant is
+    // silently met. The levered arm IS the falsifier: a breach row exists.
+    const levered = flip("the-covenant", (wire) => {
+      wire.limits.opex.push({ atMinute: 100, amountMicroUsd: 70_000_000_000, memo: "growth-buildout" });
+    });
+    const lost = runScenario(levered, BASE_SEED);
+    expect(lost.stopReason).toBe("lose:covenant-breached-count-above:0@420");
+    // and the lean arm's review read ≈8.1 months of runway (≥6): same
+    // calendar, opposite verdict — the measurement is live, not canned.
+    const lean = runScenario(shippedScenario("the-covenant"), BASE_SEED);
+    expect(lean.outcome).toBe("won");
   });
 });
 

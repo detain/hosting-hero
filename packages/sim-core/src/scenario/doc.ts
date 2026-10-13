@@ -30,8 +30,12 @@ import type {
   UnattendedOpexDraft,
 } from "../unattended/index.ts";
 import { parseGuardList, type ParsedGuard } from "../unattended/index.ts";
-import type { CompanyDeathCause } from "../economy/index.ts";
-import { COMPANY_DEATH_CAUSES } from "../economy/index.ts";
+import type { CompanyDeathCause, Covenant } from "../economy/index.ts";
+import {
+  COMPANY_DEATH_CAUSES,
+  COVENANT_METRIC_ERROR_BUDGET_HEALTH_BPS,
+  COVENANT_METRIC_RUNWAY_MONTHS_BPS,
+} from "../economy/index.ts";
 
 /** Wire schema version stamped on every scenario document. */
 export const SCENARIO_SCHEMA = "hh-scenario@1" as const;
@@ -44,10 +48,13 @@ export const SCENARIO_BRIEF_MAX_CHARS = 280;
  *  CLOSED authored mission, not an open-ended weekend. */
 export const SCENARIO_MAX_MINUTES_CAP = 2880;
 
-/** The fifteen legal objective predicates (§1.5 mission verbs, mapped onto
+/** The nineteen legal objective predicates (§1.5 mission verbs, mapped onto
  *  observables that EXIST today — see objectives.ts for each reading).
  *  Rungs 1–3 of the vocab ladder (runner.test.ts header) shipped here:
- *  written-off-count, metrics-delta-over-window, family-labeled arrivals. */
+ *  written-off-count, metrics-delta-over-window, family-labeled arrivals.
+ *  Rungs 4–5 (wave four): the covenant-breach count reads the economy's
+ *  latched `covenantBreachLog`; the reputation pair reads the §2.10 ledger's
+ *  overall bps — both straight off the tick-final EconomyState. */
 export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "survive-minutes",
   "cash-above",
@@ -64,6 +71,10 @@ export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "family-arrivals-above",
   "no-death-cause",
   "death-by-cause",
+  "covenant-breached-count-below",
+  "covenant-breached-count-above",
+  "reputation-below",
+  "reputation-above",
 ] as const);
 
 /** The closed metric vocab a `metric-delta-over-window` predicate may name
@@ -82,6 +93,20 @@ const ARRIVAL_FAMILIES = Object.freeze([
   "systemic",
   "customerAsThreat",
 ] as const);
+
+/** The closed covenant-metric vocab a wire `limits.covenants` row may name:
+ *  exactly the two readouts the economy produces on its own
+ *  (economy/runway.ts `buildCovenantReadoutsBps`). EBITDA stays NON-
+ *  EXPRESSIBLE until a producer exists — the doc wall refuses the invention. */
+const COVENANT_METRICS = Object.freeze([
+  COVENANT_METRIC_RUNWAY_MONTHS_BPS,
+  COVENANT_METRIC_ERROR_BUDGET_HEALTH_BPS,
+] as const);
+
+/** floorBps ceiling: the unbounded-runway sentinel (1,000,000 months of
+ *  bps) is the largest honest reading on the wire — nothing above it can
+ *  ever be met, so the wall refuses it. */
+const COVENANT_FLOOR_BPS_MAX = 1_000_000_000_000;
 
 export type ScenarioPredicateKind = (typeof SCENARIO_PREDICATE_KINDS)[number];
 
@@ -117,7 +142,21 @@ export type ObjectivePredicate =
       readonly family: "organic" | ThreatFamily;
       readonly count: number;
     }
-  | { readonly kind: "no-death-cause" | "death-by-cause"; readonly cause: ScenarioDeathCause };
+  | { readonly kind: "no-death-cause" | "death-by-cause"; readonly cause: ScenarioDeathCause }
+  | {
+      readonly kind: "covenant-breached-count-below" | "covenant-breached-count-above";
+      /** Rows in EconomyState.covenantBreachLog — the latched bank-review
+       *  ledger (economy/runway.ts): one row per NEW breach edge at a month
+       *  roll; recovery clears the latch, a relapse logs again. */
+      readonly count: number;
+    }
+  | {
+      readonly kind: "reputation-below" | "reputation-above";
+      /** Threshold on the §2.10 reputation ledger's overallBps (0..10,000
+       *  scale — EconomyState.reputation.overallBps, the same authority
+       *  that publishes `company::reputation`). */
+      readonly bps: number;
+    };
 
 /** One signed contract of the mission: the wire fields the author names
  *  plus the fully-minted Contract record the economy registers verbatim
@@ -183,6 +222,10 @@ export interface ScenarioLimits {
   readonly handCapacity: number;
   /** Parsed catastrophe guards (CLOSED unattended vocabulary, passthrough). */
   readonly guards: readonly ParsedGuard[];
+  /** Ladder rung 4: the bank's cards (economy/runway.ts Covenant records),
+   *  seeded into the money lane's state once at mint. Empty = no covenant
+   *  review ever runs (the pre-rung-4 byte shape). */
+  readonly covenants: readonly Covenant[];
 }
 
 /** The trusted, deep-frozen scenario document. */
@@ -583,6 +626,10 @@ const PREDICATE_FIELDS: Readonly<Record<ScenarioPredicateKind, readonly string[]
   "family-arrivals-above": ["kind", "family", "count"],
   "no-death-cause": ["kind", "cause"],
   "death-by-cause": ["kind", "cause"],
+  "covenant-breached-count-below": ["kind", "count"],
+  "covenant-breached-count-above": ["kind", "count"],
+  "reputation-below": ["kind", "bps"],
+  "reputation-above": ["kind", "bps"],
 });
 
 function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
@@ -607,12 +654,14 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
     case "churn-below":
     case "bounces-below":
     case "written-off-below":
+    case "covenant-breached-count-below":
       // count 0 would be "hold the line at below zero" — vacuous by
       // construction; the honest spelling of that fear is churn-above:0.
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 1, 1_000_000) });
     case "churn-above":
     case "bounces-above":
     case "written-off-above":
+    case "covenant-breached-count-above":
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 0, 1_000_000) });
     case "metric-delta-over-window": {
       const metric = readString(src, "metric", path, "BAD_PREDICATE");
@@ -650,6 +699,18 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
       }
       return Object.freeze({ kind: typedKind, cause: cause as ScenarioDeathCause });
     }
+    case "reputation-below":
+    case "reputation-above":
+      // Balance semantics, mirroring the cash pair (≥ for above, < for
+      // below — the two are exact complements at the same line). The ledger
+      // is clamped to [0, 10 000] by construction, so below-0 could never
+      // hold: the honest spelling of that fear is reputation-below:1.
+      // above:10_000 stays legal — it asks for the impossible-to-keep
+      // PERFECT score, which the clamped ledger can genuinely show.
+      return Object.freeze({
+        kind: typedKind,
+        bps: readInt(src, "bps", path, "BAD_PREDICATE", typedKind === "reputation-below" ? 1 : 0, 10_000),
+      });
   }
 }
 
@@ -680,6 +741,34 @@ function parseObjectives(raw: unknown, path: string): ScenarioDoc["objectives"] 
 
 const OPEX_FIELDS = ["atMinute", "amountMicroUsd", "memo"] as const;
 
+const COVENANT_FIELDS = ["id", "metricId", "floorBps", "direction"] as const;
+const COVENANT_DIRECTIONS = ["min", "max"] as const;
+
+/** The bank's card on the wire (rung 4): a closed metric name, a bps floor,
+ *  a direction. `floorBps` for runwayMonthsBps is bps OF MONTHS — the
+ *  canonical "min 6 months" card writes 60 000 (economy/runway.ts). */
+function parseCovenant(raw: unknown, path: string): Covenant {
+  const src = asRecord(raw, path, "BAD_LIMITS");
+  requireKeys(src, COVENANT_FIELDS, ["id", "metricId", "floorBps", "direction"], path, "BAD_LIMITS");
+  const id = readString(src, "id", path, "BAD_LIMITS");
+  if (!ID_SHAPE.test(id)) bad("BAD_LIMITS", `${path}.id`, `"${id}" is not a [a-z0-9-] slug`);
+  const metricId = readString(src, "metricId", path, "BAD_LIMITS");
+  if (!(COVENANT_METRICS as readonly string[]).includes(metricId)) {
+    bad("BAD_ENUM", `${path}.metricId`, `expected one of ${COVENANT_METRICS.join(", ")}, got ${metricId}`);
+  }
+  const floorBps = readInt(src, "floorBps", path, "BAD_LIMITS", 0, COVENANT_FLOOR_BPS_MAX);
+  const directionRaw = readString(src, "direction", path, "BAD_LIMITS");
+  if (!(COVENANT_DIRECTIONS as readonly string[]).includes(directionRaw)) {
+    bad("BAD_ENUM", `${path}.direction`, `expected one of ${COVENANT_DIRECTIONS.join(", ")}, got ${directionRaw}`);
+  }
+  return Object.freeze({
+    id,
+    metricId,
+    floorBps: BigInt(floorBps),
+    direction: directionRaw as Covenant["direction"],
+  });
+}
+
 function parseOpex(raw: unknown, path: string): UnattendedOpexDraft {
   const src = asRecord(raw, path, "BAD_LIMITS");
   requireKeys(src, OPEX_FIELDS, ["atMinute", "amountMicroUsd", "memo"], path, "BAD_LIMITS");
@@ -696,7 +785,7 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
   const src = asRecord(raw, path, "BAD_LIMITS");
   requireKeys(
     src,
-    ["maxSimMinutes", "initialFreeMicroUsd", "opex", "dunningEngineOwned", "handCapacity", "guardrails"],
+    ["maxSimMinutes", "initialFreeMicroUsd", "opex", "dunningEngineOwned", "handCapacity", "guardrails", "covenants"],
     ["maxSimMinutes"],
     path,
     "BAD_LIMITS",
@@ -718,6 +807,14 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
   } catch (err) {
     bad("BAD_GUARDRAIL", `${path}.guardrails`, err instanceof Error ? err.message : String(err));
   }
+  const covenantsRaw = src.covenants ?? [];
+  if (!Array.isArray(covenantsRaw)) bad("BAD_LIMITS", `${path}.covenants`, "expected an array");
+  const covenants = (covenantsRaw as readonly unknown[]).map((draft, i) => parseCovenant(draft, `${path}.covenants[${i}]`));
+  const covenantIds = new Set<string>();
+  for (const covenant of covenants) {
+    if (covenantIds.has(covenant.id)) bad("DUPLICATE", `${path}.covenants`, `duplicate covenant id "${covenant.id}"`);
+    covenantIds.add(covenant.id);
+  }
   return Object.freeze({
     maxSimMinutes: readInt(src, "maxSimMinutes", path, "BAD_LIMITS", 1, SCENARIO_MAX_MINUTES_CAP),
     initialFreeMicroUsd: src.initialFreeMicroUsd === undefined ? 0n : parseMoneyWire(src.initialFreeMicroUsd, `${path}.initialFreeMicroUsd`, "BAD_LIMITS"),
@@ -725,6 +822,7 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
     dunningEngineOwned: readBool(src, "dunningEngineOwned", path, "BAD_LIMITS", true),
     handCapacity: optInt(src, "handCapacity", path, "BAD_LIMITS", 0, 16, 2),
     guards,
+    covenants: Object.freeze(covenants),
   });
 }
 

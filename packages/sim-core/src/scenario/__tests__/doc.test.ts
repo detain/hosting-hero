@@ -316,6 +316,88 @@ describe("wave-three predicates — rungs 1–3 keep the closed-vocab wall", () 
   });
 });
 
+describe("wave-four walls — rungs 4–5 (covenant terms, reputation lines)", () => {
+  function win(wire: MutableWire, predicate: unknown): void {
+    wire.objectives.win = [predicate];
+  }
+
+  function withCovenant(wire: MutableWire, covenant: unknown): void {
+    (wire.limits as unknown as { covenants: unknown[] }).covenants = [covenant];
+  }
+
+  it("a covenant-breached-count-below of zero (vacuous ceiling, same law)", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "covenant-breached-count-below", count: 0 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("count");
+  });
+
+  it("a covenant-breached-count-above of minus one", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "covenant-breached-count-above", count: -1 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("count");
+  });
+
+  it("a reputation-below of zero (an always-false floor is fear without a line)", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "reputation-below", bps: 0 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("bps");
+  });
+
+  it("a reputation line past the ten-thousand-bps wall", () => {
+    const wire = minimalWire();
+    win(wire, { kind: "reputation-above", bps: 10_001 });
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(wire)).path).toContain("bps");
+  });
+
+  it("a covenant naming a metric the engine cannot read out", () => {
+    const wire = minimalWire();
+    withCovenant(wire, { id: "min-ebitda", metricId: "ebitdaBps", floorBps: 1, direction: "min" });
+    expect(wall("BAD_ENUM", () => parseScenarioDoc(wire)).message).toContain("runwayMonthsBps");
+  });
+
+  it("a covenant whose direction is neither min nor max", () => {
+    const wire = minimalWire();
+    withCovenant(wire, { id: "min-runway", metricId: "runwayMonthsBps", floorBps: 60_000, direction: "sideways" });
+    expect(wall("BAD_ENUM", () => parseScenarioDoc(wire)).path).toContain("direction");
+  });
+
+  it("two covenants sharing an id", () => {
+    const wire = minimalWire();
+    const row = { id: "min-runway", metricId: "runwayMonthsBps", floorBps: 60_000, direction: "min" };
+    (wire.limits as unknown as { covenants: unknown[] }).covenants = [row, { ...row }];
+    expect(wall("DUPLICATE", () => parseScenarioDoc(wire)).message).toContain("min-runway");
+  });
+
+  it("a covenant floor past the sentinel ceiling (1e12 bps is the unbounded mark)", () => {
+    const wire = minimalWire();
+    withCovenant(wire, { id: "min-runway", metricId: "runwayMonthsBps", floorBps: 1_000_000_000_001, direction: "min" });
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(wire)).path).toContain("floorBps");
+  });
+
+  it("a covenant missing its direction (all four fields are load-bearing)", () => {
+    const wire = minimalWire();
+    withCovenant(wire, { id: "min-runway", metricId: "runwayMonthsBps", floorBps: 60_000 });
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(wire)).message).toContain("direction");
+  });
+
+  it("a covenant with a stray field (closed record)", () => {
+    const wire = minimalWire();
+    withCovenant(wire, { id: "min-runway", metricId: "runwayMonthsBps", floorBps: 60_000, direction: "min", grace: 3 });
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(wire)).path).toContain("grace");
+  });
+
+  it("the honest covenant wire parses to a frozen BigInt floor, and defaults to none", () => {
+    const wire = minimalWire();
+    withCovenant(wire, { id: "min-runway", metricId: "runwayMonthsBps", floorBps: 60_000, direction: "min" });
+    win(wire, { kind: "covenant-breached-count-below", count: 1 });
+    const doc = parseScenarioDoc(wire);
+    expect(doc.limits.covenants).toHaveLength(1);
+    expect(doc.limits.covenants[0]?.floorBps).toBe(60_000n);
+    expect(Object.isFrozen(doc.limits.covenants[0])).toBe(true);
+    expect(parseScenarioDoc(minimalWire()).limits.covenants).toEqual([]); // absent means the bank is silent
+  });
+});
+
 describe("parseMoneyWire", () => {
   it("accepts safe ints and digit strings, rejects the rest", () => {
     expect(parseMoneyWire(0, "p", "BAD_MONEY")).toBe(0n);

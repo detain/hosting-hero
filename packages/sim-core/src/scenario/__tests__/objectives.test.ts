@@ -16,7 +16,7 @@ function obs(patch: Partial<ScenarioObservation>): ScenarioObservation {
   return Object.freeze({ ...EMPTY_OBSERVATION, ...patch });
 }
 
-describe("objectiveHolds — the fifteen predicates at their boundaries", () => {
+describe("objectiveHolds — the nineteen predicates at their boundaries", () => {
   const table: readonly [ObjectivePredicate, ScenarioObservation, boolean][] = [
     [{ kind: "survive-minutes", minutes: 60 }, obs({ elapsedMin: 59 }), false],
     [{ kind: "survive-minutes", minutes: 60 }, obs({ elapsedMin: 60 }), true],
@@ -101,6 +101,26 @@ describe("objectiveHolds — the fifteen predicates at their boundaries", () => 
       obs({ arrivalsByFamily: { malicious: 1 } }),
       true,
     ],
+    // rung 4 — the covenant pair mirrors the written-off pair exactly; the
+    // count is EconomyState.covenantBreachLog rows (one per breach EDGE,
+    // relatches count again — the latch lifecycle of 57ea80e).
+    [{ kind: "covenant-breached-count-below", count: 1 }, obs({ covenantBreaches: 0 }), true],
+    [{ kind: "covenant-breached-count-below", count: 1 }, obs({ covenantBreaches: 1 }), false],
+    [{ kind: "covenant-breached-count-above", count: 0 }, obs({ covenantBreaches: 0 }), false],
+    [{ kind: "covenant-breached-count-above", count: 0 }, obs({ covenantBreaches: 1 }), true],
+    // rung 5 — the reputation pair rides overallBps. ASYMMETRIC by law:
+    // reputation-above is a balance (cash-above shape, >= holds ON the
+    // line), reputation-below is a danger gauge (cash-below shape, < holds
+    // strictly under). Same B is a strict complement: exactly one holds.
+    [{ kind: "reputation-above", bps: 1500 }, obs({ reputationBps: 1499n }), false],
+    [{ kind: "reputation-above", bps: 1500 }, obs({ reputationBps: 1500n }), true],
+    [{ kind: "reputation-below", bps: 1500 }, obs({ reputationBps: 1500n }), false],
+    [{ kind: "reputation-below", bps: 1500 }, obs({ reputationBps: 1499n }), true],
+    [
+      { kind: "reputation-above", bps: 5000 },
+      obs({}), // EMPTY_OBSERVATION starts at the economy's opening 5,000 bps
+      true,
+    ],
   ];
   for (const [predicate, observation, expected] of table) {
     it(`${objectiveLine(predicate)} ⇒ ${String(expected)}`, () => {
@@ -136,6 +156,25 @@ describe("objectiveProgress — Q16.16 in [0,1] under both counting laws", () =>
     expect(
       objectiveProgress(obs({ deaths: ["covenant-default"] }), { kind: "death-by-cause", cause: "any" }).progress,
     ).toBe(FIXED_ONE);
+  });
+
+  it("rung 4–5: the breach pair counts like the others; the rating rides both laws", () => {
+    // safety headroom, churn shape: one of two allowed breaches spent.
+    expect(
+      objectiveProgress(obs({ covenantBreaches: 1 }), { kind: "covenant-breached-count-below", count: 2 }).progress,
+    ).toBe(32768n);
+    // balance headroom, cash-above shape: half the floor still stands.
+    expect(objectiveProgress(obs({ reputationBps: 1500n }), { kind: "reputation-above", bps: 3000 }).progress).toBe(
+      32768n,
+    );
+    // danger attainment, cash-below shape: a quarter of the fall to the floor.
+    expect(objectiveProgress(obs({ reputationBps: 1500n }), { kind: "reputation-below", bps: 2000 }).progress).toBe(
+      16384n,
+    );
+    // above the danger line the shortfall is negative → zero, never a wedge.
+    const safe = objectiveProgress(obs({ reputationBps: 2500n }), { kind: "reputation-below", bps: 2000 });
+    expect(safe.progress).toBe(FIXED_ZERO);
+    expect(safe.holds).toBe(false);
   });
 
   it("delta attainment measures current against the demanded target", () => {
@@ -184,5 +223,9 @@ describe("objectiveProgress — Q16.16 in [0,1] under both counting laws", () =>
     expect(objectiveLine({ kind: "family-arrivals-above", family: "malicious", count: 3200 })).toBe(
       "family-arrivals-above:malicious:3200",
     );
+    expect(objectiveLine({ kind: "covenant-breached-count-above", count: 0 })).toBe(
+      "covenant-breached-count-above:0",
+    );
+    expect(objectiveLine({ kind: "reputation-below", bps: 1500 })).toBe("reputation-below:1500");
   });
 });

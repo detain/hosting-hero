@@ -57,6 +57,7 @@ import {
   emptyEconomyState,
   postEntry,
   registerContractsEconomy,
+  REPUTATION_INITIAL_BPS,
 } from "../economy/index.ts";
 import {
   UNATTENDED_AGGRESSION,
@@ -378,6 +379,7 @@ function snapshotObservation(
   elapsedMin: number,
   acc: Accumulator,
   windowSums: ScenarioObservation["windowSums"],
+  econ: EconomyState | null,
 ): ScenarioObservation {
   return Object.freeze({
     elapsedMin,
@@ -387,6 +389,12 @@ function snapshotObservation(
     writtenOffCustomers: acc.writtenOffCustomers,
     bounces: acc.bounces,
     deaths: Object.freeze([...acc.deaths]),
+    // Rung 4: the bank's own ledger (state, not notice-counting — the
+    // breach row and its notice are minted together per edge, tick.ts).
+    covenantBreaches: econ?.covenantBreachLog.length ?? 0,
+    // Rung 5: the §2.10 score straight off the lane; pre-money reads the
+    // opening 5,000 bps the fresh ledger always carries.
+    reputationBps: econ?.reputation.overallBps ?? REPUTATION_INITIAL_BPS,
     arrivalsByFamily: sortedCensus(acc.arrivalsByFamily),
     windowSums,
   });
@@ -450,7 +458,11 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
   const ecoCfg: EconomyConfig = defaultEconomyConfig();
   let econ: EconomyState | null = null;
   const contractsBook = new Map<EntityId, Contract>();
-  const moneyOn = doc.contracts.length > 0 || doc.limits.opex.length > 0 || doc.limits.initialFreeMicroUsd !== 0n;
+  const moneyOn =
+    doc.contracts.length > 0 ||
+    doc.limits.opex.length > 0 ||
+    doc.limits.initialFreeMicroUsd !== 0n ||
+    doc.limits.covenants.length > 0;
   if (moneyOn) {
     econ = emptyEconomyState();
     if (doc.limits.initialFreeMicroUsd !== 0n) {
@@ -472,6 +484,24 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
       );
       econ = registerContractsEconomy(econ, inputs, ecoCfg);
       for (const spec of doc.contracts) contractsBook.set(spec.contract.id, spec.contract);
+    }
+    /* Rung 4 wire: seed the bank's cards into the lane's state ONCE. The
+       month roll carries them forward (`input.covenants ?? prior.covenants`)
+       and reviews them every business month; an empty list means the
+       review never runs at all (pre-rung-4 byte shape, kept exact).
+       The paired `freeAtMonthStart` re-anchor is why the seed is scoped:
+       the lane's pre-existing month-1 burn closes against the 0-cash empty
+       state (probe-discovered engine fact — first-month runway always reads
+       unbounded). Existing missions are authored and pinned on that exact
+       calendar, so it stays untouched; but a bank CANNOT review a company
+       whose opening balance sheet starts at the credit it actually drew —
+       when the wire names covenants, month 1 burns from the minted cash. */
+    if (doc.limits.covenants.length > 0) {
+      econ = Object.freeze({
+        ...econ,
+        covenants: doc.limits.covenants,
+        freeAtMonthStart: econ.cash.free,
+      });
     }
   }
   const opexByMinute = new Map<SimMinute, readonly UnattendedOpexDraft[]>();
@@ -525,7 +555,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     degradedNodes: 0,
     nodeCount: game.nodes.size,
   });
-  let lastObs = snapshotObservation(mintFacts, 0, acc, windowSumsAt(minuteLedger, 0, citedWindows));
+  let lastObs = snapshotObservation(mintFacts, 0, acc, windowSumsAt(minuteLedger, 0, citedWindows), econ);
 
   for (let t = 1; t <= totalTicks; t++) {
     const minute = game.context.minute + 1;
@@ -604,6 +634,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
       Number(game.context.minute),
       acc,
       windowSumsAt(minuteLedger, Number(game.context.minute), citedWindows),
+      econ,
     );
     lastObs = obs;
 

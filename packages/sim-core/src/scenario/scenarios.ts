@@ -1,9 +1,11 @@
-/** Fifteen shipped §1.5 scenarios — the library grows toward the full
- *  playable census (fourteen missions; Metastable ships twice, once per
+/** Seventeen shipped §1.5 scenarios — the library grows toward the full
+ *  playable census (sixteen missions; Metastable ships twice, once per
  *  traffic profile, the corpus twin proving the waves-tableId seam).
  *  Wave three rides the predicate ladder rungs 1–3 (written-off-count,
  *  metrics-delta-over-window, family-labeled arrivals): Post-Breach
  *  Aftermath, Contract Recompete, Free Tier Flood, and the partial Sev-0.
+ *  Wave four consumes the LAST two rungs (covenant wire inputs, the
+ *  reputation observation): The Covenant and Review Bomb.
  *
  *  Every document here is WIRE DATA (JSON-safe literals: money rides
  *  strings for the big µ$ values) parsed through the same wall external
@@ -53,6 +55,13 @@
  *    Invaded" (~line 3574): the stream is counted BY FAMILY — rung 3.
  *  - the-sev-0         → "The Sev-0" (~line 3240): the runbook's scar as a
  *    recovery delta; the restraint sequence ships as a recorded gap.
+ *  - the-covenant      → "Covenant" (~line 3772): the bank as antagonist
+ *    with no attacker on screen; growth vs solvency at the month roll —
+ *    rung 4 (covenant terms ride the wire).
+ *  - review-bomb       → "Review Bomb" / "The Viral Competitor Smear" /
+ *    "Media Attention" (~line 3870): the rating is the lives counter and
+ *    the dunning ladder is the mob — rung 5 (reputation rides the
+ *    observation).
  */
 
 import type { ScenarioDoc } from "./doc.ts";
@@ -861,6 +870,189 @@ const SEV0_WIRE = {
   },
 } satisfies ScenarioWire;
 
+/** The Covenant — spec §1.5 "Covenant" (~line 3772): "Your lender requires
+ *  EBITDA above X. Archetype: Negotiate. Length: Interlude. Certain
+ *  otherwise-correct investments will trip the covenant. Growth vs
+ *  solvency, explicitly, with the bank as the antagonist and no attacker
+ *  on screen."
+ *
+ *  RUNG 4: this is the first wire the parser can even CARRY covenant terms
+ *  (limits.covenants), so the bank finally has a voice on the ladder. The
+ *  calendar does the rest: the money clock crosses the FIRST business-month
+ *  roll at exactly tick 420 (43,200 biz-min ÷ 102.857 biz-min/tick), the
+ *  roll is where covenant review runs, and the clock of 480 lets the story
+ *  end one breath after judgment. A 6-month minimum-runway covenant
+ *  (runwayMonthsBps ≥ 60,000 bps of months) is MET by the lean book
+ *  (burn ≈ 11B µ$ vs cash ≈ 89B ⇒ runway ≈ 8.1 months at review) and
+ *  BREACHED by the growth buildout (burn ≈ 80B ⇒ runway ≈ 0.25 months).
+ *
+ *  NON-EXPRESSIBLE, recorded honestly:
+ *  - EBITDA itself. The engine's sanctioned covenant readouts are only
+ *    runwayMonthsBps and errorBudgetHealthBps (docs in economy/runway.ts
+ *    — "so a host-authored covenant can reference them without inventing
+ *    a producer"); runway is the solvency proxy for the lender's clause.
+ *  - The Negotiate archetype: there is no decision door in v0, so the
+ *    wire plays the OUTCOME of the negotiation (the terms), not the
+ *    minigame. Same ruling that scoped the price-hike lever.
+ *  - The bank's remedy after breach (calling the loan) — the covenant
+ *    latch records the breach; the grace-window death machinery needs
+ *    ~140+ more sim-minutes than this interlude has.
+ *
+ *  Book choice is load-bearing: ANNUAL contracts, because an hourly book
+ *  on this clock is annihilated by the dunning ladder before t420
+ *  (payment dice → fatal runs → 0 customers → churn-collapse dissolution,
+ *  and dissolution is TERMINAL — the review never runs). The annual cliff
+ *  (termEndMin 30,000 biz ≈ sim 292) sits inside the clock per the term
+ *  wall, and auto-renew holds the book. dunningEngineOwned:false — the
+ *  bank cares about the balance sheet, not collection mechanics.
+ *
+ *  Win (probe-pinned, seed 904, offsets 0–4): the lean book survives 480
+ *  with ZERO breach rows — cash never approaches depletion, the roll
+ *  passes clean at all five offsets, byte-identical stop line win@480.
+ *  ONE-FLIP lose: add the single growth-buildout opex row (70B µ$ at
+ *  minute 100) — at the t420 review the burn denominator has exploded and
+ *  the breach row lands at EXACTLY tick 420, all five offsets:
+ *  lose:covenant-breached-count-above:0@420. */
+const COVENANT_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-covenant",
+  name: "The Covenant",
+  brief:
+    "The lender's covenant rides the wire: minimum six months of runway at the monthly review. Lean ops sail through the roll; one growth-buildout invoice turns the same board into a default — the bank is the antagonist, and no attacker is on screen.",
+  specRef: "§1.5 Covenant",
+  specLine: 3772,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "cv-01", mrcMicroUsd: 720_000_000, billingCycle: "annual", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Ledger Anchor Corp" },
+    { id: "cv-02", mrcMicroUsd: 576_000_000, billingCycle: "annual", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Steady State Systems" },
+    { id: "cv-03", mrcMicroUsd: 432_000_000, billingCycle: "annual", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Quiet Ledger Ltd" },
+    { id: "cv-04", mrcMicroUsd: 360_000_000, billingCycle: "annual", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Boring & Reliable" },
+  ],
+  traffic: {
+    tableId: "bank-quiet",
+    segments: [{ fromMinute: 0, ratePerMin: 4 }],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 480 },
+      { kind: "covenant-breached-count-below", count: 1 },
+      { kind: "no-death-cause", cause: "any" },
+    ],
+    lose: [{ kind: "covenant-breached-count-above", count: 0 }],
+  },
+  limits: {
+    maxSimMinutes: 480,
+    initialFreeMicroUsd: 100_000_000_000,
+    opex: [
+      { atMinute: 40, amountMicroUsd: 1_000_000_000, memo: "ops-01" },
+      { atMinute: 80, amountMicroUsd: 1_000_000_000, memo: "ops-02" },
+      { atMinute: 120, amountMicroUsd: 1_000_000_000, memo: "ops-03" },
+      { atMinute: 160, amountMicroUsd: 1_000_000_000, memo: "ops-04" },
+      { atMinute: 200, amountMicroUsd: 1_000_000_000, memo: "ops-05" },
+      { atMinute: 240, amountMicroUsd: 1_000_000_000, memo: "ops-06" },
+      { atMinute: 280, amountMicroUsd: 1_000_000_000, memo: "ops-07" },
+      { atMinute: 320, amountMicroUsd: 1_000_000_000, memo: "ops-08" },
+      { atMinute: 360, amountMicroUsd: 1_000_000_000, memo: "ops-09" },
+      { atMinute: 400, amountMicroUsd: 1_000_000_000, memo: "ops-10" },
+      { atMinute: 440, amountMicroUsd: 1_000_000_000, memo: "ops-11" },
+      { atMinute: 480, amountMicroUsd: 1_000_000_000, memo: "ops-12" },
+    ],
+    dunningEngineOwned: false,
+    covenants: [
+      { id: "min-runway-6m", metricId: "runwayMonthsBps", floorBps: 60_000, direction: "min" },
+    ],
+  },
+} satisfies ScenarioWire;
+
+/** Review Bomb — spec §1.5 "Review Bomb / The Viral Competitor Smear /
+ *  Media Attention" (~line 3870): "One bad outage plus an astroturf
+ *  campaign tanks your public rating... Reputation damage happens
+ *  regardless of actual uptime."
+ *
+ *  RUNG 5: the rating is finally a LIVE predicate — reputation-below /
+ *  reputation-above read EconomyState.reputation.overallBps through the
+ *  observation, and this mission makes the rating the lives counter. The
+ *  antagonist is the dunning ladder: each written-off account is a −600
+ *  bps review with no star filter, each voluntary churn −200, and only
+ *  dunning recoveries (+150) push back. The board itself is a red
+ *  herring BY DESIGN — 100 slots serve the quiet street flawlessly while
+ *  the ledger bleeds stars: "damage regardless of actual uptime" made
+ *  mechanical.
+ *
+ *  NON-EXPRESSIBLE, recorded honestly: the astroturf CAMPAIGN (no
+ *  fake-review input exists), the journalist modifier (every incident
+ *  counts double — no scenario-side damage multiplier), the buy-fake-
+ *  reviews choice and the transparency response both ride channels
+ *  foldMoneyLaneTick does not forward — majorIncidents, postMortems and
+ *  chargebacks reach the rating only through host wiring (economy/reputation
+ *  signals exist; the scenario money lane feeds it outage seconds, price
+ *  overrides and refused settlements ONLY). So the smear lands as the
+ *  arrival of delinquent accounts: the flip IS the campaign, as one
+ *  authoring change.
+ *
+ *  Win (probe-pinned, seed 904, offsets 0–4): the six-account book
+ *  weathered by the dunning ladder ends the 320-minute scenario with the
+ *  rating standing at 6,550–7,750 bps — recoveries out-earn the write-
+ *  offs — and it never touches the 1,500-bps floor on the way: five
+ *  offsets, win@320 byte-stable. ONE-FLIP lose: the astroturf wave
+ *  arrives as twelve more delinquent hourly accounts (one change: the
+ *  book doubles to eighteen). Write-offs stack to 15–17, the rating
+ *  crater crosses 1,500 bps at t[310,300,292,299,292] probe-pinned per
+ *  offset: lose:reputation-below:1500@tick. */
+const REVIEW_BOMB_WIRE = {
+  schema: "hh-scenario@1",
+  id: "review-bomb",
+  name: "Review Bomb",
+  brief:
+    "A smear wave of delinquent accounts lands on the ledger and the public rating becomes the lives counter — every write-off is a one-star review. The board serves the quiet street flawlessly the whole time: the damage is real regardless of uptime.",
+  specRef: "§1.5 Review Bomb",
+  specLine: 3870,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "rb-01", mrcMicroUsd: 60_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Blasted by the Bomb" },
+    { id: "rb-02", mrcMicroUsd: 48_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Star Rating Casualty" },
+    { id: "rb-03", mrcMicroUsd: 36_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Thread Ninja Tourist" },
+    { id: "rb-04", mrcMicroUsd: 30_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Viral Tweet Referral" },
+    { id: "rb-05", mrcMicroUsd: 24_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Screenshot Traffic" },
+    { id: "rb-06", mrcMicroUsd: 18_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Sympathy Signup" },
+  ],
+  traffic: {
+    tableId: "bomb-quiet",
+    segments: [{ fromMinute: 0, ratePerMin: 6 }],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 320 },
+      { kind: "reputation-above", bps: 1500 },
+      { kind: "no-death-cause", cause: "any" },
+    ],
+    lose: [{ kind: "reputation-below", bps: 1500 }],
+  },
+  limits: {
+    maxSimMinutes: 320,
+    initialFreeMicroUsd: 1_000_000_000,
+    opex: [
+      { atMinute: 30, amountMicroUsd: 12_000_000, memo: "ops-01" },
+      { atMinute: 60, amountMicroUsd: 12_000_000, memo: "ops-02" },
+      { atMinute: 90, amountMicroUsd: 12_000_000, memo: "ops-03" },
+      { atMinute: 120, amountMicroUsd: 12_000_000, memo: "ops-04" },
+      { atMinute: 150, amountMicroUsd: 12_000_000, memo: "ops-05" },
+      { atMinute: 180, amountMicroUsd: 12_000_000, memo: "ops-06" },
+      { atMinute: 210, amountMicroUsd: 12_000_000, memo: "ops-07" },
+      { atMinute: 240, amountMicroUsd: 12_000_000, memo: "ops-08" },
+      { atMinute: 270, amountMicroUsd: 12_000_000, memo: "ops-09" },
+      { atMinute: 300, amountMicroUsd: 12_000_000, memo: "ops-10" },
+    ],
+    dunningEngineOwned: false,
+  },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -879,6 +1071,8 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [CONTRACT_RECOMPETE_WIRE.id]: CONTRACT_RECOMPETE_WIRE,
   [FREE_TIER_FLOOD_WIRE.id]: FREE_TIER_FLOOD_WIRE,
   [SEV0_WIRE.id]: SEV0_WIRE,
+  [COVENANT_WIRE.id]: COVENANT_WIRE,
+  [REVIEW_BOMB_WIRE.id]: REVIEW_BOMB_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
@@ -886,7 +1080,8 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
 /** The shipped documents, parsed at module load — authored drift
  *  dies HERE, loudly, before any test or host can consume it. The first
  *  five carry named exports (hosts import them directly); the wave-two
- *  five and the wave-three four are reachable through SHIPPED_SCENARIOS /
+ *  five, the wave-three four and the wave-four two are reachable through
+ *  SHIPPED_SCENARIOS /
  *  shippedScenario(id) only — no new export names by design (docs/
  *  api-verify is name-based). */
 export const theLongWeekendDoc: ScenarioDoc = parseScenarioDoc(LONG_WEEKEND_WIRE);
@@ -904,6 +1099,8 @@ const postBreachAftermathDoc: ScenarioDoc = parseScenarioDoc(POST_BREACH_WIRE);
 const contractRecompeteDoc: ScenarioDoc = parseScenarioDoc(CONTRACT_RECOMPETE_WIRE);
 const freeTierFloodDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_WIRE);
 const sev0Doc: ScenarioDoc = parseScenarioDoc(SEV0_WIRE);
+const theCovenantDoc: ScenarioDoc = parseScenarioDoc(COVENANT_WIRE);
+const reviewBombDoc: ScenarioDoc = parseScenarioDoc(REVIEW_BOMB_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -922,6 +1119,8 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   contractRecompeteDoc.id,
   freeTierFloodDoc.id,
   sev0Doc.id,
+  theCovenantDoc.id,
+  reviewBombDoc.id,
 ]);
 
 /** id → trusted doc. */
@@ -941,6 +1140,8 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [contractRecompeteDoc.id]: contractRecompeteDoc,
   [freeTierFloodDoc.id]: freeTierFloodDoc,
   [sev0Doc.id]: sev0Doc,
+  [theCovenantDoc.id]: theCovenantDoc,
+  [reviewBombDoc.id]: reviewBombDoc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */
