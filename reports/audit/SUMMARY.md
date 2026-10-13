@@ -1,4 +1,4 @@
-# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b, wave-3 batch-1 closeout 2026-10-10, wave-3 batch-2 closeout 2026-10-10b, wave-5 closeout re-markup 2026-10-13)
+# AUDIT SUMMARY — heading status roll-up (markup applied 2026-10-09, re-markup post-fix-wave 2026-10-09, session-2 rulings re-markup 2026-10-09b, wave-3 batch-1 closeout 2026-10-10, wave-3 batch-2 closeout 2026-10-10b, wave-5 closeout re-markup 2026-10-13, wave-6 closeout re-markup 2026-10-13b)
 
 Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Tables 2+3, then **updated in place on disk after the 2026-10-09 fix wave** (16 commits d8fc8ec..a98fd55; per-row dispositions in the hosting_game.md Appendix), then re-markuped for the **2026-10-09b session-2 owner rulings** (see SESSION-2 RE-MARKUP below + `docs/adr/0010-taxonomy-and-stacking-contradictions.md` Accepted), then flipped again for the **wave-3 batch-1 closeout** (0032a21..2ef5cae; see WAVE-3 BATCH-1 below), then for the **wave-3 batch-2 closeout** (a79402c..05ecf97; see WAVE-3 BATCH-2 below). The tallies below are computed from the **current marked hosting_game.md**, not the original manifests — they include the 23 fix-wave flips, the session-2 flips, the batch-1 flips, and the small set of marker/manifest drift realignments disclosed in the Appendix.
 
@@ -950,3 +950,59 @@ hosting_game.md stays 35,557 lines — 17 heading lines edited in place + one ap
 | **total marked** | **3,589** | **3,589** |
 
 hosting_game.md grows by the appendix paragraph only (7 heading lines edited in place); "Historical record:" footer kept last.
+
+---
+
+## WAVE-6 closeout — four wave-three missions marked, dial billing-truth, attention card seams (2026-10-13b)
+
+Lanes under markup (both already on master; this wave only marks and records):
+
+| Commit | Lane | Shipped |
+|---|---|---|
+| `b5017df` | scenario predicate ladder | Rungs 1–3 consumed — `written-off-below/above`, `metric-delta-over-window`, `family-arrivals-below/above` (ZERO new export names; 15-predicate vocab) + four §1.5 wave-three missions: post-breach-aftermath :3213, contract-recompete :3839, free-tier-flood :3574, the-sev-0 :3240 PARTIAL. Scenario suite 138→192 tests. |
+| `5b19a04` | proto surfaces | PricingDial moves REAL billing — control/treated twin on the @`8994f96` forwarding pattern, −$28.49 grouped-cash pin (`pricingDial.mount.test.ts:72`); AttentionCard (E2a denominations surface at chrome level, pool planted via PUBLIC pipeline API); CorpusMissionCard — proto host leg of @`5df5586`, win@240 digests byte-match the sim-core suite pins, missing authority fails loud `CORPUS_UNRESOLVED`. Proto 890/81→928/85. |
+
+### Marker flips applied (all four asserted against pre-write markers; `Contract Recompete` was 🔧, not ❌, as the brief assumed — audit had already flipped it PARTIAL)
+
+| Spec line | Heading | Before | After | Witness (seed 904..908, ×100 byte-identity) |
+|---|---|---|---|---|
+| 3213 | `Post-Breach` / `The Breach` / `The Suspicious Login` | ❌ | ✅ `b5017df` | win@320 ×5; one-flip loses `written-off-above:6` @[301,313,311,307,297]; stretched-clock falsifier proves survive:320 load-bearing (death@358) |
+| 3839 | `Contract Recompete` / `The Renewal` | 🔧 | ✅ `b5017df` | metric-delta witness served 840/600 (+40% vs the asked +25%); one-flip 14→28 loses `bounces-above:25` @[200,199,202,198,202] |
+| 3574 | `Free Tier Flood` / `Free Tier Abuse` / `Free Tier Invaded` | ❌ | ✅ `b5017df` | dice-free family census 1672 organic / 3146 malicious; one-flip 26→40 breaches the 3200 ceiling at EXACT tick t200 on all five seeds |
+| 3240 | `The Sev-0` | ❌ | 🔧 | PARTIAL — mission runs and wins (crater-recovery delta 840/480; one-flip 14→60 loses @[162,163,162,163,160]); the spec's restraint sequence is non-expressible (no decision door on the wire) |
+
+### Held rows — appendix-noted, no marker move
+
+- 14436 "The attention budget" + 27023 "Executive attention as a tiny pool, and the CEO Override" stay 🔧: `5b19a04` shipped the AttentionCard surface (wire `AttentionSummary` per step, loan ledger + repaid chips, month-roll services oldest loan at tick 420, bounded window-entry refusal visible) but there is **NO mid-run window-entry seam and NO borrowing verb** (borrow rebuilds at minute 0 — RecoveryWatch arm law). 26656 "Pause with orders" already ✅ — unchanged.
+- 22957 "The price slider (difficulty as a dial the player sets)" stays 🔧: the dial now moves real billing (−$28.49 twin pin), but the demand-ghost preview, live elasticity readout and cohort-lag asymmetry remain unmodeled.
+- Umbrella 3135 "§1.5 Scenario library" stays 🔧 — no inline count exists on disk; appendix tally: **15 missions / 14 distinct headings** (`metastable-corpus` twins `Metastable`).
+
+### Predicate ladder remaining
+
+Rung 4 `covenant-inputs` → `Covenant` :3772 ❌ · Rung 5 `reputation` → `Review Bomb` / `The Viral Competitor Smear` / `Media Attention` :3870 ❌.
+
+### Closeout battery — COMBINED tree (coexistence proven; proto lane had only run isolated pre-merge)
+
+| Gate | Result |
+|---|---|
+| sim-core serial (`--no-file-parallelism`) | **137 files / 2,103 tests, exit 0** (237s) |
+| proto `vitest run` | **85 / 928, exit 0** — first post-battery run showed 2 load flakes at hand-off; three subsequent runs green |
+| `pnpm -r typecheck` | **5/5 Done** |
+| `docs/api-verify.test.mjs` | **PASS — 1,541 names**, import map consistent |
+| `scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) |
+| headless `vitest run` | **53/53, exit 0** — parity REAL `b0162ab5` / STUB `a9b4b7b8` held |
+
+### Census (recomputed from disk, heading lines only)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 307 | **310** |
+| 🔧 PARTIAL | 995 | **995** (Sev-0 in, Contract Recompete out) |
+| ⚠️ PROBLEM | 1 | **1** (unchanged: 31543 readability — OD-10/12 open) |
+| ❌ MISSING | 2,256 | **2,253** |
+| 📝 NA | 30 | 30 |
+| **total marked** | **3,589** | **3,589** |
+
+Missing-seams register (recorded, not queued): mid-run attention window-entry · attention borrowing verb · Sev-0 restraint decision door · pricing demand-ghost preview.
+
+hosting_game.md grows by the appendix paragraph only (4 heading lines edited in place); "Historical record:" footer kept last.
