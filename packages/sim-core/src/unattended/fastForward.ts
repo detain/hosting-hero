@@ -38,7 +38,15 @@
  * `INVOICE-UNCOVERABLE`) instead of crashing the weekend — and every
  * refusal tick ARMS the freeCashDepleted sustain chain, because a burn you
  * could not pay IS inability to pay even while stray cash rides above
- * zero (review F4/F5; see the boundary doc at the runEconomyTick call).
+ * zero (review F4/F5; see the boundary doc at `foldMoneyLaneTick`).
+ *
+ * The fold MECHANISM (opex post/bounce, the F4 insolvent-settle boundary,
+ * the F5 witness stream, the guardrail sampling) lives in ONE internal
+ * home — `internal/tickFold.ts` — shared with scenario/runner.ts
+ * (MODULE-STATUS "scenario-runner-consolidation"). This lane keeps only
+ * its POLICY: the refusal/notice census, observedWrites forwarding, and
+ * the pinned mirror-only-on-success law (a voided tick must not move the
+ * digested state; the scenario lane mirrors unconditionally).
  *
  * Honesty, not enforcement: running with `guards: []` is legal; the report
  * then carries warn `NO-GUARDS`. The guard list IS the nothing-catastrophic
@@ -53,9 +61,7 @@
 import type {
   AttentionState,
   BoardRelation,
-  ClockState,
   Contract,
-  DependencyEdge,
   EntityId,
   Fixed,
   GameState,
@@ -67,14 +73,13 @@ import type {
   QosClassDef,
   RetryPolicy,
   RunSeed,
-  SimEvent,
   SimMinute,
   SimTick,
   SimTimeUs,
   ThreatFamily,
   WaveEnvelope,
 } from "../types.ts";
-import { asCauseId, asEntityId, asMetricId, asMoney, observedKey, ResolutionBand } from "../types.ts";
+import { asCauseId, asEntityId, asMetricId, observedKey, ResolutionBand } from "../types.ts";
 import type { BoardEdgeRecord } from "../types.ts";
 import { FIXED_ONE, FIXED_ZERO, compare, fromInt, fromRatio, mul } from "../kernel/fixed.ts";
 import { MICROS_PER_MIN, initialClocks } from "../kernel/time.ts";
@@ -96,17 +101,15 @@ import {
   mintHandState,
   replenishAtBusinessMonth,
 } from "../pipeline/index.ts";
-import type { DefaultPipelineConfig, IntentDoorConfig, IntentReceipt, RecoveryConfig, RecoveryNotice } from "../pipeline/index.ts";
+import type { DefaultPipelineConfig, IntentDoorConfig, RecoveryConfig, RecoveryNotice } from "../pipeline/index.ts";
 import { createRulePhaseStep } from "../policy/index.ts";
 import { ObservedStore } from "../observed/index.ts";
-import type { EconomyState, EntryDraft, EconomyConfig, EconomyNoticeKind, RevenueColourTags } from "../economy/index.ts";
+import type { EconomyState, EconomyConfig, EconomyNoticeKind, RevenueColourTags } from "../economy/index.ts";
 import {
   defaultEconomyConfig,
   emptyEconomyState,
   postEntry,
   registerContractEconomy,
-  remainingSec,
-  runEconomyTick,
   type RefusedSettlement,
 } from "../economy/index.ts";
 import { compareCodeUnits } from "../internal/canonical.ts";
@@ -115,10 +118,21 @@ import {
   evaluateGuardrail,
   parseGuardList,
   type GuardEvaluation,
-  type GuardMetric,
-  type GuardrailSample,
   type ParsedGuard,
 } from "./guardrails.ts";
+import {
+  DEFAULT_REVENUE_TAGS,
+  GUARD_TRAILING_WINDOW_MIN,
+  NODE_DEGRADED_RHO_GTE,
+  budgetMinRemainingSec,
+  buildSample,
+  collectFacts,
+  dependencyEdgesFor,
+  foldMoneyLaneTick,
+  openingDraftFor,
+  withCashMirror,
+  type TickFacts,
+} from "../internal/tickFold.ts";
 
 /* ═══════════════════════════ tunables (exported, frozen) ═══════════════════════════ */
 
@@ -131,51 +145,17 @@ export const DEFAULT_CHECKPOINT_EVERY = 60;
  *  is a legitimate longer run) rather than refusing. */
 export const LONG_WEEKEND_MAX_TICKS = 2880;
 
-/** The economy's negative-bucket law signature (economy/buckets.ts +
- *  economy/money.ts share the "(had … µ$) would go negative" message
- *  family). The insolvent-settle boundary (review F4) catches ONLY
- *  RangeErrors whose message matches — everything else rethrows. */
-const NEGATIVE_BUCKET_LAW = /would go negative/;
-
-/* ─── OD-25(a) refuse-settlements witness lane ───────────────────────────
-   The economy's float-insolvency death watch reads `EconomyTickIn.
-   refusedSettlements` — evidence the ledger said NO. Every refusal THIS
-   host already counts (the F4/F5 census) is folded into that witness
-   stream; nothing new is invented. Two shapes:
-   • opex bounce: identity + amount are KNOWN here (the host minted the
-     draft) → exact record, contractId `unattended:opex:<memo>`.
-   • voided settle: the refusal surfaces as the buckets-law throw, whose
-     text embeds `settle <invoiceId>: -<amount> µ$ on '<bucket>'` — the
-     attempted movement's magnitude is PARSED, never guessed. An
-     unparseable message (money.ts-family wording) rides count-only:
-     amount 0n under the neutral id `ledger:unattributed`. Honest best
-     effort: death.ts advanceDeathWatch persists only COUNT + SUM of the
-     evidence, so a coarse identity costs nothing downstream.
-    • For a voided settle the INVOICE id rides `RefusedSettlement.contractId`
-      (harmless by the count+sum law above — nothing resolves it as a contract).
-    • `refusedMicroUsd` sums per-fold retries of the same invoice: the total
-      reads as evidence magnitude, not outstanding debt — duration, not sum,
-      gates the float death. */
-const SETTLE_REFUSAL_SHAPE = /settle (\S+): -(\d+) µ\$ on '/;
-
-function invoiceRefusalWitness(message: string): RefusedSettlement {
-  const shape = SETTLE_REFUSAL_SHAPE.exec(message);
-  if (shape === null) {
-    return Object.freeze({
-      contractId: asEntityId("ledger:unattributed"),
-      amountMicroUsd: asMoney(0n),
-    });
-  }
-  return Object.freeze({
-    contractId: asEntityId(shape[1] as string),
-    amountMicroUsd: asMoney(BigInt(shape[2] as string)),
-  });
-}
-
-/** Trailing window (sim-minutes) for the servedRate / ruleFiringsPerMin
- *  metrics — one empty tick is a hiccup, five is a catastrophe
- *  (PROVISIONAL owner taste). */
-export const GUARD_TRAILING_WINDOW_MIN = 5;
+/* The negative-bucket law, the OD-25(a) settle-refusal witness shapes, and
+   the trailing-window tunable moved to their single home,
+   internal/tickFold.ts (shared with scenario/runner.ts — the consolidation
+   this lane's header docblock records). The names below ride back out of
+   this module so the unattended barrel and its consumers resolve exactly
+   as before (zero export-name churn downstream). */
+export {
+  GUARD_TRAILING_WINDOW_MIN,
+  NODE_DEGRADED_RHO_GTE,
+  budgetMinRemainingSec,
+};
 
 /** QoS cast for the weekend — versus's proven two-class shape. Real sold
  *  per-board classes ride in through hosts later (OD seam). */
@@ -216,21 +196,8 @@ export const UNATTENDED_BASELINE_RATE_PER_MIN = 40;
 export const UNATTENDED_AGGRESSION: Fixed = fromRatio(7n, 10n);
 export const UNATTENDED_EXPRESS_MAX_CONFIDENCE: Fixed = fromRatio(6n, 10n);
 
-/** §6.13 degraded reading for the cascadeCollapse census: ρ at/above this
- *  marks a node degraded (PROVISIONAL owner taste — the ρ/(1−ρ) knee R-07
- *  lives lower; 0.9 reads "dying", not "busy"). */
-export const NODE_DEGRADED_RHO_GTE: Fixed = fromRatio(9n, 10n);
-
-/** Neutral revenue-colour census for registered contracts (PROVISIONAL:
- *  the five-axis RevenueColourTags default — mid-band "blue" everywhere;
- *  hosts with real tags override via money.revenueTags). */
-const DEFAULT_REVENUE_TAGS: RevenueColourTags = Object.freeze({
-  margin: "blue",
-  churnRisk: "blue",
-  term: "blue",
-  concentration: "blue",
-  abuse: "blue",
-} as const);
+/* NODE_DEGRADED_RHO_GTE and DEFAULT_REVENUE_TAGS now live in
+   internal/tickFold.ts (re-exported above / imported below). */
 
 /** Patience budget for weekend traffic (PROVISIONAL: 120 sim-minutes,
  *  gate-fixture shape; real per-population patience is the bundle's). */
@@ -488,148 +455,9 @@ export interface UnattendedReport {
   readonly recoveryNotices?: readonly RecoveryNotice[];
 }
 
-/* ═══════════════════════════ per-tick facts + sampling ═══════════════════════════ */
-
-interface TickFacts {
-  readonly minute: SimMinute;
-  readonly served: number;
-  readonly bounced: number;
-  readonly falsePositive: number;
-  readonly landed: number;
-  readonly arrivals: number;
-  readonly ruleFirings: number;
-  readonly intentsExecuted: number;
-  readonly intentsRefused: number;
-  readonly cashFreeMicroUsd: bigint;
-  readonly economyAvailable: boolean;
-  readonly errorBudgetMinSec: bigint | null;
-  readonly meanRho: Fixed;
-  readonly degradedNodes: number;
-  readonly nodeCount: number;
-}
-
-/** Closed-vocab metric fold for one tick-boundary sample. Money rides raw
- *  µ$ in the Fixed carrier (`µ$ × 65536` — plain bigint math, no range
- *  ceiling; sign and threshold comparison are exact). `refusedBurns` is the
- *  ledger-refusal count for THIS tick (opex bounces + voided settles);
- *  `windowArrivals` carries the trailing window's demand evidence (F2). */
-function buildSample(
-  facts: TickFacts,
-  window: readonly TickFacts[],
-  tick: SimTick,
-  clocks: ClockState,
-  refusedBurns: number,
-): GuardrailSample {
-  const metrics = new Map<GuardMetric, Fixed>();
-  metrics.set("cash.free", facts.cashFreeMicroUsd * FIXED_ONE);
-  metrics.set("servedRate", trailingRate(window, (f) => f.served));
-  metrics.set("ruleFiringsPerMin", trailingRate(window, (f) => f.ruleFirings));
-  metrics.set(
-    "nodesDegradedPct",
-    facts.nodeCount === 0 ? FIXED_ZERO : (BigInt(facts.degradedNodes) * 100n * FIXED_ONE) / BigInt(facts.nodeCount),
-  );
-  if (facts.errorBudgetMinSec !== null) metrics.set("errorBudgetSec", facts.errorBudgetMinSec * FIXED_ONE);
-  return Object.freeze({
-    tick,
-    minute: facts.minute,
-    clocks,
-    businessMinute: Number(clocks.businessUs / MICROS_PER_MIN),
-    metrics,
-    economyAvailable: facts.economyAvailable,
-    errorBudgetAvailable: facts.errorBudgetMinSec !== null,
-    windowArrivals: windowArrivalsOf(window),
-    refusedBurns,
-  });
-}
-
-function trailingRate(window: readonly TickFacts[], pick: (f: TickFacts) => number): Fixed {
-  if (window.length === 0) return FIXED_ZERO;
-  // The SUM rides raw bigint through one divideRoundHalfAway (fromRatio).
-  // Review F1: feeding a busy weekend's 5-minute total through
-  // guardFixedFromInt hit the ±32767 INPUT wall and surfaced as a
-  // mislabeled GUARD_PARSE. Algebra for in-range totals is unchanged (the
-  // old div(guardFixedFromInt(t), guardFixedFromInt(n)) folds to the same
-  // round-half-away quotient), so every pre-existing Fixed value rides on
-  // byte-ident. The RESULT still obeys the kernel's Q16.16 range law — a
-  // mean too large to represent is a genuine fail-loud, not a carrier
-  // conversion artifact.
-  let total = 0n;
-  for (const f of window) total += BigInt(pick(f));
-  return fromRatio(total, BigInt(window.length));
-}
-
-function windowArrivalsOf(window: readonly TickFacts[]): number {
-  let arrivals = 0;
-  for (const f of window) arrivals += f.arrivals;
-  return arrivals;
-}
-
-interface TickOutcomeLike {
-  readonly outcomes: readonly { readonly terminal: string | null }[];
-  readonly ruleFirings: readonly unknown[];
-  readonly doorReceipts: readonly IntentReceipt[];
-  readonly events: readonly SimEvent[];
-}
-
-function collectFacts(game: GameState, result: TickOutcomeLike, econ: EconomyState | null): TickFacts {
-  let served = 0;
-  let bounced = 0;
-  let falsePositive = 0;
-  let landed = 0;
-  for (const o of result.outcomes) {
-    if (o.terminal === "served") served += 1;
-    else if (o.terminal === "bounced") bounced += 1;
-    else if (o.terminal === "blocked-false-positive") falsePositive += 1;
-    else if (o.terminal === "landed") landed += 1;
-  }
-  let arrivals = 0;
-  let executed = 0;
-  let refused = 0;
-  for (const e of result.events) if (e.kind === "arrival") arrivals += 1;
-  for (const r of result.doorReceipts) {
-    if (r.outcome === "executed") executed += 1;
-    else refused += 1;
-  }
-  let rhoSum = 0n;
-  let degraded = 0;
-  const nodeCount = game.nodes.size;
-  for (const node of game.nodes.values()) {
-    rhoSum += node.utilizationRho;
-    if (compare(node.utilizationRho, NODE_DEGRADED_RHO_GTE) >= 0) degraded += 1;
-  }
-  const meanRho: Fixed = nodeCount === 0 ? FIXED_ZERO : rhoSum / BigInt(nodeCount);
-  const errorBudgetMinSec = econ !== null && econ.errorBudgets.size > 0 ? budgetMinRemainingSec(econ) : null;
-  const cashFree: bigint = econ !== null ? econ.cash.free : game.cash.free;
-  return Object.freeze({
-    minute: game.context.minute,
-    served,
-    bounced,
-    falsePositive,
-    landed,
-    arrivals,
-    ruleFirings: result.ruleFirings.length,
-    intentsExecuted: executed,
-    intentsRefused: refused,
-    cashFreeMicroUsd: cashFree,
-    economyAvailable: econ !== null,
-    errorBudgetMinSec,
-    meanRho,
-    degradedNodes: degraded,
-    nodeCount,
-  });
-}
-
-/** Min remaining SLA budget (whole seconds) across contracts — sorted walk
- *  so the scan order itself is total (future census reuse). */
-export function budgetMinRemainingSec(econ: EconomyState): bigint {
-  let min: bigint | null = null;
-  const entries = [...econ.errorBudgets.entries()].sort((a, b) => compareCodeUnits(String(a[0]), String(b[0])));
-  for (const [, budget] of entries) {
-    const remaining = remainingSec(budget);
-    if (min === null || remaining < min) min = remaining;
-  }
-  return min ?? 0n;
-}
+/* ═══ per-tick facts + sampling ═══ minted in internal/tickFold.ts (the
+   single home shared with scenario/runner.ts); imported above. The
+   foldHour aggregate below stays weekend-report policy, not fold law. */
 
 /* ═══════════════════════════ minting (exported for whatIf + hosts) ═══════════════════════════ */
 
@@ -732,30 +560,8 @@ export function buildPipelineConfig(config: RunUnattendedConfig, nodes: readonly
   });
 }
 
-function dependencyEdgesFor(nodes: readonly NodeRecord[], deepPath: readonly string[] | undefined): readonly DependencyEdge[] {
-  const out: DependencyEdge[] = [];
-  const chain = deepPath ?? [];
-  for (let i = 1; i < chain.length; i++) {
-    const upstream = chain[i - 1];
-    const downstream = chain[i];
-    if (upstream === undefined || downstream === undefined) continue;
-    out.push(Object.freeze({
-      upstreamNodeId: asEntityId(upstream),
-      downstreamNodeId: asEntityId(downstream),
-      correlation: "software" as const,
-    }));
-  }
-  for (const node of nodes) {
-    if (node.dependencyNodeId === null) continue;
-    if (out.some((e) => String(e.downstreamNodeId) === String(node.id))) continue;
-    out.push(Object.freeze({
-      upstreamNodeId: node.dependencyNodeId,
-      downstreamNodeId: node.id,
-      correlation: "software" as const,
-    }));
-  }
-  return Object.freeze(out);
-}
+/* dependencyEdgesFor lives in internal/tickFold.ts (imported above) —
+   the deep-path chain plus the node-cast edges, one home for both lanes. */
 
 function baselineEnvelope(config: RunUnattendedConfig): WaveEnvelope | null {
   const rate = config.traffic?.baselineRatePerMin;
@@ -990,7 +796,7 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
     econ = emptyEconomyState();
     const opening = config.money.initialFreeMicroUsd ?? 0n;
     if (opening !== 0n) {
-      const posted = postEntry(econ.journal, econ.cash, openingDraft(opening));
+      const posted = postEntry(econ.journal, econ.cash, openingDraftFor("unattended", opening));
       econ = Object.freeze({ ...econ, journal: posted.journal, cash: posted.cash });
     }
     for (const contract of config.money.contracts) {
@@ -1119,76 +925,41 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
     );
     game = Object.freeze({ ...game, observed: mergeObserved(game.observed, store) });
 
-    /* money lane: opex at exact sim-minutes, economy tick, notary mirror.
-       `refusedBurnsThisTick` counts THIS tick's ledger refusals (opex
-       bounces + voided settles) for the guard sample — inability-to-pay
-       evidence (review F5). */
+    /* money lane: the shared tick fold (internal/tickFold.ts) runs the
+       mechanism — opex at exact sim-minutes with the bounce witness, the
+       F4 insolvent-settle boundary, the F5 refusedBurns count, the
+       seq-clear. The weekend keeps its POLICY here: the refusal/notice
+       census, observedWrites forwarding, and the mirror-only-on-success
+       law — a voided tick must not move the digested state (the scenario
+       lane mirrors unconditionally; that divergence is pinned per-host). */
     let refusedBurnsThisTick = 0;
     let dissolvedThisTick = false;
     if (econ !== null) {
-      for (const draft of opexByMinute.get(minute) ?? []) {
-        if (econ.cash.free < draft.amountMicroUsd) {
-          refusals.opexCount += 1;
-          if (refusals.opexFirstMinute < 0) refusals.opexFirstMinute = minute;
-          refusedBurnsThisTick += 1;
-          refusalWitness.push(Object.freeze({
-            contractId: asEntityId(`unattended:opex:${draft.memo}`),
-            amountMicroUsd: asMoney(draft.amountMicroUsd),
-          }));
-          continue;
-        }
-        const posted = postEntry(econ.journal, econ.cash, opexLedgerDraft(draft, minute, game.context.clocks));
-        econ = Object.freeze({ ...econ, journal: posted.journal, cash: posted.cash });
+      const lane = foldMoneyLaneTick({
+        game,
+        econ,
+        minute,
+        runSeed: seed,
+        cfg: ecoCfg,
+        contracts: contractsBook,
+        opexDrafts: opexByMinute.get(minute) ?? [],
+        topic: "unattended",
+        dunningEngineOwned: config.money?.dunningEngineOwned ?? false,
+        witness: refusalWitness,
+        outcomes: result.outcomes,
+      });
+      econ = lane.econ;
+      refusedBurnsThisTick = lane.refusedBurnsThisTick;
+      if (lane.opexBounces > 0) {
+        refusals.opexCount += lane.opexBounces;
+        if (refusals.opexFirstMinute < 0) refusals.opexFirstMinute = minute;
       }
-      const outage = outageSecondsFromLanded(result.outcomes, config);
-      /* ─── INSOLVENT-SETTLE BOUNDARY (review F4) ────────────────────────
-         economy/ refuses negative buckets by THROWING a raw RangeError
-         from deep inside settle → draftEntry → applyBucketDelta when a
-         due invoice's NET would drive 'free' below zero (credit-heavy
-         settles included). A clean pre-check is not expressible here
-         without duplicating economy's accrual/catch-up/credit arithmetic
-         — that would fork the settle law into a second, drift-prone copy.
-         So the weekend converts the ledger's own refusal into a typed,
-         counted event at THIS call site, and nothing else is swallowed:
-         ONLY `RangeError` whose message carries the negative-bucket
-         family ("(had … µ$) would go negative" — buckets.ts + money.ts
-         law text) is caught; every other error rethrows untouched.
-
-         Why catch-and-keep-prior is STATE-CONSISTENT: runEconomyTick
-         copies input.prior into a fresh working state before mutating
-         (economy/tick.ts) — a mid-tick throw leaves `prior` untouched,
-         so retaining `econ` forfeits exactly this tick's economy
-         progress (its notices included) and the SAME due invoice retries
-         next tick with the SAME refusal. That is deterministic
-         livelock-by-design: the run neither crashes nor silently
-         "succeeds" — the warn census plus the chain-armed money guard
-         (a burn the ledger refused IS inability to pay) is the answer.
-
-         OWNER QUESTION (economy lane): expose a queryable `canSettle()`
-         so this lane can pre-check at notice level and this catch can
-         retire. Until then the boundary lives HERE, documented loudly. */
-      let econAdvanced = false;
-      try {
-        const out = runEconomyTick(Object.freeze({
-          context: game.context,
-          runSeed: seed,
-          contracts: contractsBook,
-          prior: econ,
-          cfg: ecoCfg,
-          dunningEngineOwned: config.money?.dunningEngineOwned ?? false,
-          ...(outage !== null ? { outageSecs: outage } : {}),
-          /* Pricing forward (lane @5781335 host seam): the embedded book's
-             override map IS EconomyTickIn.priceOverrides' type. Absent book
-             ⇒ key omitted ⇒ empty⇒omitted byte-identity (@984759b law). */
-          ...(game.pricing !== undefined ? { priceOverrides: game.pricing.overrides } : {}),
-          /* Empty buffer ⇒ key omitted ⇒ every pre-existing input shape
-             (and every witness riding it) byte-identical. */
-          ...(refusalWitness.length > 0
-            ? { refusedSettlements: Object.freeze([...refusalWitness]) }
-            : {}),
-        }));
-        econ = out.state;
-        refusalWitness.length = 0; // the fold consumed the evidence
+      if (lane.invoiceVoided) {
+        refusals.invoiceCount += 1;
+        if (refusals.invoiceFirstMinute < 0) refusals.invoiceFirstMinute = minute;
+      }
+      const out = lane.fold;
+      if (out !== null) {
         if (deathHaltsRun) {
           dissolvedThisTick = out.notices.some((n) => n.kind === "company-dissolved");
         }
@@ -1203,17 +974,8 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
           store.applyObservedWrites(out.observedWrites, game.context.clocks.simUs);
           game = Object.freeze({ ...game, observed: mergeObserved(game.observed, store) });
         }
-        econAdvanced = true;
-      } catch (err) {
-        if (!(err instanceof RangeError) || !NEGATIVE_BUCKET_LAW.test(err.message)) throw err;
-        refusals.invoiceCount += 1;
-        if (refusals.invoiceFirstMinute < 0) refusals.invoiceFirstMinute = minute;
-        refusedBurnsThisTick += 1;
-        /* The voided fold consumed nothing — this refusal (plus whatever
-           was already pending) rides the NEXT call's witness stream. */
-        refusalWitness.push(invoiceRefusalWitness(err.message));
+        game = withCashMirror(game, econ);
       }
-      if (econAdvanced) game = withCashMirror(game, econ);
     }
 
     /* ── attention month-roll (lane @eff5694 host-forwarded seam) ──────
@@ -1329,10 +1091,8 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
 
 /* ═══════════════════════════ report plumbing ═══════════════════════════ */
 
-function withCashMirror(game: GameState, econ: EconomyState | null): GameState {
-  if (econ === null) return game;
-  return Object.freeze({ ...game, cash: econ.cash, ledgerSeq: econ.journal.nextSeq });
-}
+/* withCashMirror / openingDraftFor / the opex drafts / the outage fan-out
+   all live in internal/tickFold.ts now (imported at the header). */
 
 /** The business-calendar month a state's clock points INTO — economy's
  *  monthIndexOf law (floorDiv over the 43,200-minute month, tick.ts:152)
@@ -1349,42 +1109,6 @@ function mergeObserved(existing: GameState["observed"], store: ObservedStore): R
   const merged = new Map<ObservedKey, ObservedCell<unknown>>(existing);
   for (const [key, cell] of store.toObservedMap()) merged.set(key, cell);
   return Object.freeze(merged);
-}
-
-function openingDraft(amountMicroUsd: bigint): EntryDraft {
-  return Object.freeze({
-    causeId: asCauseId("unattended:opening-balance"),
-    atBusinessMin: 0,
-    moneyColour: "gold" as const,
-    delta: Object.freeze({ free: asMoney(amountMicroUsd) }),
-    context: "unattended opening balance",
-  });
-}
-
-function opexLedgerDraft(draft: UnattendedOpexDraft, minute: SimMinute, clocks: ClockState): EntryDraft {
-  return Object.freeze({
-    causeId: asCauseId(`unattended:opex:${minute}:${draft.memo}`),
-    atBusinessMin: Number(clocks.businessUs / MICROS_PER_MIN),
-    moneyColour: "red" as const,
-    delta: Object.freeze({ free: asMoney(-draft.amountMicroUsd) }),
-    context: `unattended opex ${draft.memo}`,
-  });
-}
-
-/** Landed breaches burn EVERY contract's SLA budget (company-wide reading;
- *  per-contract target attribution is an OD open item — PROVISIONAL).
- *  One landed unit = one sim-minute = 60 s of outage seconds. */
-function outageSecondsFromLanded(
-  outcomes: readonly { readonly terminal: string | null }[],
-  config: RunUnattendedConfig,
-): ReadonlyMap<EntityId, bigint> | null {
-  if (config.money === undefined || config.money.contracts.length === 0) return null;
-  let landedSec = 0n;
-  for (const o of outcomes) if (o.terminal === "landed") landedSec += 60n;
-  if (landedSec === 0n) return null;
-  const map = new Map<EntityId, bigint>();
-  for (const contract of config.money.contracts) map.set(contract.id, landedSec);
-  return map;
 }
 
 function guardRidesMoney(guard: ParsedGuard): boolean {

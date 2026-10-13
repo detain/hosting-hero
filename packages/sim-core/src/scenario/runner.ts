@@ -21,28 +21,22 @@
  *    authoring contract.
  *  - REFUSAL HONESTY: the ledger's negative-bucket throws (F4) and the
  *    opex bounces (F5) are forwarded as the float-death witness stream
- *    exactly as fastForward does; the regexes are pinned against the
- *    unattended source by test so the mirrored law can never drift quiet.
+ *    through the SHARED tick fold (`internal/tickFold.ts`, one home with
+ *    fastForward — the consolidation closing the scenario-runner gap row;
+ *    the single-home source pin retires the old mirrored-regex drift test).
  */
 
 import type {
   BoardEdgeRecord,
-  ClockState,
   Contract,
-  DependencyEdge,
   EntityId,
-  Fixed,
   GameState,
-  NodeRecord,
   RunSeed,
-  SimEvent,
   SimMinute,
   SimTick,
   WaveEnvelope,
 } from "../types.ts";
-import { asCauseId, asEntityId, asMoney } from "../types.ts";
-import { FIXED_ONE, FIXED_ZERO, compare, fromInt, fromRatio } from "../kernel/fixed.ts";
-import { MICROS_PER_MIN } from "../kernel/time.ts";
+import { FIXED_ZERO, fromInt } from "../kernel/fixed.ts";
 import { streamFor } from "../kernel/rng.ts";
 import { createDefaultSlots, createTickDriver, digestState } from "../pipeline/index.ts";
 import type { DefaultPipelineConfig } from "../pipeline/index.ts";
@@ -50,10 +44,8 @@ import { createRulePhaseStep } from "../policy/index.ts";
 import type {
   CompanyDeathCause,
   EconomyConfig,
-  RevenueColourTags,
   EconomyNoticeKind,
   EconomyState,
-  EntryDraft,
   RegisterContractInput,
   RefusedSettlement,
 } from "../economy/index.ts";
@@ -63,16 +55,12 @@ import {
   emptyEconomyState,
   postEntry,
   registerContractsEconomy,
-  runEconomyTick,
 } from "../economy/index.ts";
 import {
-  GUARD_TRAILING_WINDOW_MIN,
-  NODE_DEGRADED_RHO_GTE,
   UNATTENDED_AGGRESSION,
   UNATTENDED_CLASSES,
   UNATTENDED_EXPRESS_MAX_CONFIDENCE,
   UNATTENDED_RETRY,
-  budgetMinRemainingSec,
   buildPipelineConfig,
   evaluateGuardrail,
   mintBoardEdges,
@@ -81,12 +69,21 @@ import {
 } from "../unattended/index.ts";
 import type {
   GuardEvaluation,
-  GuardMetric,
-  GuardrailSample,
   ParsedGuard,
   RunUnattendedConfig,
   UnattendedOpexDraft,
 } from "../unattended/index.ts";
+import {
+  DEFAULT_REVENUE_TAGS,
+  GUARD_TRAILING_WINDOW_MIN,
+  buildSample,
+  collectFacts,
+  dependencyEdgesFor,
+  foldMoneyLaneTick,
+  openingDraftFor,
+  withCashMirror,
+  type TickFacts,
+} from "../internal/tickFold.ts";
 import type { ObjectivePredicate, ScenarioDoc } from "./doc.ts";
 import { scenarioSeed } from "./doc.ts";
 import type { ObjectiveProgress, ScenarioObservation } from "./objectives.ts";
@@ -146,61 +143,15 @@ export interface ScenarioReport {
   readonly cashEndMicroUsd: bigint;
 }
 
-/* Ledger-refusal + death-witness mirrors of the unattended lane, pinned to
-   fastForward.ts's private constants by the scenario-laws source-scan test. */
-const NEGATIVE_BUCKET_LAW = /would go negative/;
-const SETTLE_REFUSAL_SHAPE = /settle (\S+): -(\d+) µ\$ on '/;
+/* The F4/F5 refusal law (negative-bucket regex, settle-shape parse, opex
+   and opening drafts, the notary mirror, facts + guardrail sampling) lives
+   in ONE home: internal/tickFold.ts — imported above. What stays HERE is
+   scenario-report policy only: the dissolved-cause parse below. */
 const DISSOLVED_CAUSE_SHAPE = /economy:death:dissolved:([a-z-]+):/;
-
-const DEFAULT_REVENUE_TAGS: RevenueColourTags = Object.freeze({
-  margin: "blue",
-  churnRisk: "blue",
-  term: "blue",
-  concentration: "blue",
-  abuse: "blue",
-} as const);
 
 /** The engine stamp inside every scenario-minted state (digest-visible). */
 export const SCENARIO_ENGINE_VERSION = "scenario-v0" as const;
 const SCENARIO_RULE_BOOK_HASH = "scenario-empty-v0" as const;
-
-function openingDraft(amountMicroUsd: bigint): EntryDraft {
-  return Object.freeze({
-    causeId: asCauseId("scenario:opening-balance"),
-    atBusinessMin: 0,
-    moneyColour: "gold" as const,
-    delta: Object.freeze({ free: asMoney(amountMicroUsd) }),
-    context: "scenario opening balance",
-  });
-}
-
-function opexLedgerDraft(draft: UnattendedOpexDraft, minute: SimMinute, clocks: ClockState): EntryDraft {
-  return Object.freeze({
-    causeId: asCauseId(`scenario:opex:${minute}:${draft.memo}`),
-    atBusinessMin: Number(clocks.businessUs / MICROS_PER_MIN),
-    moneyColour: "red" as const,
-    delta: Object.freeze({ free: asMoney(-draft.amountMicroUsd) }),
-    context: `scenario opex ${draft.memo}`,
-  });
-}
-
-function opexWitness(draft: UnattendedOpexDraft): RefusedSettlement {
-  return Object.freeze({
-    contractId: asEntityId(`scenario:opex:${draft.memo}`),
-    amountMicroUsd: asMoney(draft.amountMicroUsd),
-  });
-}
-
-function invoiceRefusalWitness(message: string): RefusedSettlement {
-  const shape = SETTLE_REFUSAL_SHAPE.exec(message);
-  if (shape === null) {
-    return Object.freeze({ contractId: asEntityId("ledger:unattributed"), amountMicroUsd: asMoney(0n) });
-  }
-  return Object.freeze({
-    contractId: asEntityId(shape[1] as string),
-    amountMicroUsd: asMoney(BigInt(shape[2] as string)),
-  });
-}
 
 function parseDeathCause(causeId: string): CompanyDeathCause | null {
   const shape = DISSOLVED_CAUSE_SHAPE.exec(causeId);
@@ -230,123 +181,10 @@ function envelopesAtMinute(doc: ScenarioDoc, minute: SimMinute): readonly WaveEn
   ]);
 }
 
-/** Same shape as fastForward's private dependencyEdgesFor, minus the
- *  deepPath chain (scenarios route express-only until the maze seam). */
-function dependencyEdgesFor(nodes: readonly NodeRecord[]): readonly DependencyEdge[] {
-  const out: DependencyEdge[] = [];
-  for (const node of nodes) {
-    if (node.dependencyNodeId === null) continue;
-    out.push(
-      Object.freeze({
-        upstreamNodeId: node.dependencyNodeId,
-        downstreamNodeId: node.id,
-        correlation: "software" as const,
-      }),
-    );
-  }
-  return Object.freeze(out);
-}
-
-interface TickFacts {
-  readonly minute: SimMinute;
-  readonly arrivals: number;
-  readonly served: number;
-  readonly bounced: number;
-  readonly landed: number;
-  readonly falsePositive: number;
-  readonly ruleFirings: number;
-  readonly cashFreeMicroUsd: bigint;
-  readonly economyAvailable: boolean;
-  readonly errorBudgetMinSec: bigint | null;
-  readonly degradedNodes: number;
-  readonly nodeCount: number;
-}
-
-interface TickResultLike {
-  readonly outcomes: readonly { readonly terminal: string | null }[];
-  readonly events: readonly SimEvent[];
-  readonly ruleFirings: readonly unknown[];
-}
-
-function collectFacts(game: GameState, result: TickResultLike, econ: EconomyState | null): TickFacts {
-  let served = 0;
-  let bounced = 0;
-  let landed = 0;
-  let falsePositive = 0;
-  for (const o of result.outcomes) {
-    if (o.terminal === "served") served += 1;
-    else if (o.terminal === "bounced") bounced += 1;
-    else if (o.terminal === "landed") landed += 1;
-    else if (o.terminal === "blocked-false-positive") falsePositive += 1;
-  }
-  let arrivals = 0;
-  for (const e of result.events) if (e.kind === "arrival") arrivals += 1;
-  let degraded = 0;
-  const nodeCount = game.nodes.size;
-  for (const node of game.nodes.values()) {
-    if (compare(node.utilizationRho, NODE_DEGRADED_RHO_GTE) >= 0) degraded += 1;
-  }
-  return Object.freeze({
-    minute: game.context.minute,
-    arrivals,
-    served,
-    bounced,
-    landed,
-    falsePositive,
-    ruleFirings: result.ruleFirings.length,
-    cashFreeMicroUsd: econ !== null ? econ.cash.free : game.cash.free,
-    economyAvailable: econ !== null,
-    errorBudgetMinSec: econ !== null && econ.errorBudgets.size > 0 ? budgetMinRemainingSec(econ) : null,
-    degradedNodes: degraded,
-    nodeCount,
-  });
-}
-
-/* ── guardrail sampling: the closed unattended vocabulary, fed from THIS
-   loop's facts (buildSample mirror of fastForward, pinned by test) ── */
-
-function trailingRate(window: readonly TickFacts[], pick: (f: TickFacts) => number): Fixed {
-  if (window.length === 0) return FIXED_ZERO;
-  let total = 0n;
-  for (const f of window) total += BigInt(pick(f));
-  return fromRatio(total, BigInt(window.length));
-}
-
-function buildSample(
-  facts: TickFacts,
-  window: readonly TickFacts[],
-  tick: SimTick,
-  clocks: ClockState,
-  refusedBurns: number,
-): GuardrailSample {
-  const metrics = new Map<GuardMetric, Fixed>();
-  metrics.set("cash.free", facts.cashFreeMicroUsd * FIXED_ONE);
-  metrics.set("servedRate", trailingRate(window, (f) => f.served));
-  metrics.set("ruleFiringsPerMin", trailingRate(window, (f) => f.ruleFirings));
-  metrics.set(
-    "nodesDegradedPct",
-    facts.nodeCount === 0 ? FIXED_ZERO : (BigInt(facts.degradedNodes) * 100n * FIXED_ONE) / BigInt(facts.nodeCount),
-  );
-  if (facts.errorBudgetMinSec !== null) metrics.set("errorBudgetSec", facts.errorBudgetMinSec * FIXED_ONE);
-  let windowArrivals = 0;
-  for (const f of window) windowArrivals += f.arrivals;
-  return Object.freeze({
-    tick,
-    minute: facts.minute,
-    clocks,
-    businessMinute: Number(clocks.businessUs / MICROS_PER_MIN),
-    metrics,
-    economyAvailable: facts.economyAvailable,
-    errorBudgetAvailable: facts.errorBudgetMinSec !== null,
-    windowArrivals,
-    refusedBurns,
-  });
-}
-
-function withCashMirror(game: GameState, econ: EconomyState | null): GameState {
-  if (econ === null) return game;
-  return Object.freeze({ ...game, cash: econ.cash, ledgerSeq: econ.journal.nextSeq });
-}
+/* dependencyEdgesFor / TickFacts / collectFacts / buildSample /
+   withCashMirror all live in internal/tickFold.ts (imported above) — the
+   scenario lane reads the express board with no deepPath chain, so it
+   calls the shared home with one argument. */
 
 function sortedCensus(counts: Map<string, number>): Readonly<Record<string, number>> {
   const out: Record<string, number> = {};
@@ -459,7 +297,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
   if (moneyOn) {
     econ = emptyEconomyState();
     if (doc.limits.initialFreeMicroUsd !== 0n) {
-      const posted = postEntry(econ.journal, econ.cash, openingDraft(doc.limits.initialFreeMicroUsd));
+      const posted = postEntry(econ.journal, econ.cash, openingDraftFor("scenario", doc.limits.initialFreeMicroUsd));
       econ = Object.freeze({ ...econ, journal: posted.journal, cash: posted.cash });
     }
     if (doc.contracts.length > 0) {
@@ -516,9 +354,12 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     landed: 0,
     falsePositive: 0,
     ruleFirings: 0,
+    intentsExecuted: 0,
+    intentsRefused: 0,
     cashFreeMicroUsd: cashStart,
     economyAvailable: econ !== null,
     errorBudgetMinSec: null,
+    meanRho: FIXED_ZERO,
     degradedNodes: 0,
     nodeCount: game.nodes.size,
   });
@@ -542,50 +383,36 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
 
     for (const e of result.events) eventsByKind.set(e.kind, (eventsByKind.get(e.kind) ?? 0) + 1);
 
-    /* money lane: opex → economy fold → refusal witnesses (the F4/F5 law,
-       mirrored from fastForward; a voided fold keeps its witness pending). */
+    /* money lane: the shared tick fold (internal/tickFold.ts, one home
+       with fastForward) runs opex → economy fold → refusal witnesses with
+       topic "scenario" — the `scenario:opex:<minute>:<memo>` cause ids the
+       shipped missions digest are minted verbatim there. The mission lane
+       keeps its own census + mirror policy: `economyRounds` counts ONLY
+       successful folds, and the cash mirror rides UNCONDITIONALLY (every
+       host that reaches this block mirrors — the pinned divergence from
+       fastForward's mirror-only-on-success law, see the fold docblock). */
     let refusedBurnsThisTick = 0;
     if (econ !== null) {
-      for (const draft of opexByMinute.get(minute) ?? []) {
-        if (econ.cash.free < draft.amountMicroUsd) {
-          economyRefusals += 1;
-          refusedBurnsThisTick += 1;
-          refusalWitness.push(opexWitness(draft));
-          continue;
-        }
-        const posted = postEntry(econ.journal, econ.cash, opexLedgerDraft(draft, minute, game.context.clocks));
-        econ = Object.freeze({ ...econ, journal: posted.journal, cash: posted.cash });
-      }
-      let landedSec = 0n;
-      for (const o of result.outcomes) if (o.terminal === "landed") landedSec += 60n;
-      let outage: ReadonlyMap<EntityId, bigint> | null = null;
-      if (landedSec !== 0n && contractsBook.size > 0) {
-        const map = new Map<EntityId, bigint>();
-        for (const id of contractsBook.keys()) map.set(id, landedSec);
-        outage = map;
-      }
-      try {
-        const out = runEconomyTick(
-          Object.freeze({
-            context: game.context,
-            runSeed,
-            contracts: contractsBook,
-            prior: econ,
-            cfg: ecoCfg,
-            dunningEngineOwned: doc.limits.dunningEngineOwned,
-            ...(outage !== null ? { outageSecs: outage } : {}),
-            ...(refusalWitness.length > 0 ? { refusedSettlements: Object.freeze([...refusalWitness]) } : {}),
-          }),
-        );
-        econ = out.state;
-        refusalWitness.length = 0;
+      const lane = foldMoneyLaneTick({
+        game,
+        econ,
+        minute,
+        runSeed,
+        cfg: ecoCfg,
+        contracts: contractsBook,
+        opexDrafts: opexByMinute.get(minute) ?? [],
+        topic: "scenario",
+        dunningEngineOwned: doc.limits.dunningEngineOwned,
+        witness: refusalWitness,
+        outcomes: result.outcomes,
+      });
+      econ = lane.econ;
+      refusedBurnsThisTick = lane.refusedBurnsThisTick;
+      economyRefusals += lane.opexBounces + (lane.invoiceVoided ? 1 : 0);
+      const out = lane.fold;
+      if (out !== null) {
         economyRounds += 1;
         foldNoticeCensus(out.notices, acc, noticesByKind);
-      } catch (err) {
-        if (!(err instanceof RangeError) || !NEGATIVE_BUCKET_LAW.test(err.message)) throw err;
-        economyRefusals += 1;
-        refusedBurnsThisTick += 1;
-        refusalWitness.push(invoiceRefusalWitness(err.message));
       }
       game = withCashMirror(game, econ);
     }

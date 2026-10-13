@@ -411,12 +411,22 @@ describe("determinism", () => {
   });
 });
 
-describe("mirrored refusal law (pinned against the unattended source)", () => {
-  it("runner.ts and fastForward.ts carry the identical settle-refusal regex", () => {
-    const here = readFileSync(fileURLToPath(new URL("../runner.ts", import.meta.url)), "utf8");
-    const there = readFileSync(fileURLToPath(new URL("../../unattended/fastForward.ts", import.meta.url)), "utf8");
+describe("shared tick fold (single home)", () => {
+  it("the settle-refusal law lives ONLY in internal/tickFold.ts — both hosts call it", () => {
+    const home = readFileSync(fileURLToPath(new URL("../../internal/tickFold.ts", import.meta.url)), "utf8");
+    const scenario = readFileSync(fileURLToPath(new URL("../runner.ts", import.meta.url)), "utf8");
+    const weekend = readFileSync(fileURLToPath(new URL("../../unattended/fastForward.ts", import.meta.url)), "utf8");
     const shape = `settle (\\S+): -(\\d+) µ\\$ on '`;
-    expect(here).toContain(shape);
-    expect(there).toContain(shape);
+    // The law text has exactly one home…
+    expect(home).toContain(shape);
+    // …and must NEVER reappear in a host (that would be the pre-
+    // consolidation mirror — the third copy this guard exists to refuse).
+    expect(scenario).not.toContain(shape);
+    expect(weekend).not.toContain(shape);
+    // Both hosts route through the shared fold.
+    expect(scenario).toContain("foldMoneyLaneTick");
+    expect(weekend).toContain("foldMoneyLaneTick");
+    expect(scenario).toContain("../internal/tickFold.ts");
+    expect(weekend).toContain("../internal/tickFold.ts");
   });
 });
