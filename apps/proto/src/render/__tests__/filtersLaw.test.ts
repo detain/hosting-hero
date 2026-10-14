@@ -48,11 +48,11 @@ function listSources(dir: string): string[] {
 }
 
 /** file:line report of code-form `.filters =` writes in one source.
- *  ENOENT-tolerant: a sibling law test (a11yRoster) plants a LIVE probe file
- *  under src/ while parallel workers run; if a listed file vanished between
- *  readdir and read, it was that transient probe, never a shipping source.
- *  (audioLaw's probe moved under __tests__/ in 2026-10-14 — invisible to this
- *  walk — but the guard stays for any future planted file.) */
+ *  ENOENT-tolerant: law tests have historically planted LIVE probe files under
+ *  src/ while parallel workers ran; if a listed file vanished between readdir
+ *  and read, it was such a transient probe, never a shipping source.
+ *  (audioLaw's and a11yRoster's probes moved under __tests__/ in 2026-10-14 —
+ *  invisible to this walk — but the guard stays for any future planted file.) */
 function filtersWrites(path: string): string[] {
   let raw: string;
   try {

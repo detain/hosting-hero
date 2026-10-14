@@ -11,9 +11,9 @@
  *     probe; if anyone builds the gate without flipping the ledger, the probe
  *     fires. An armed planted probe proves the detector is not decoration.
  */
-import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { CHROME_CONTRAST_SPECS, buildChromeInventory, findAaViolations, parseEraTokens } from "../a11y/contrastAudit";
 import { CHROME_MOTION_SPECS, findStrobeViolations } from "../a11y/motionAudit";
 import {
@@ -27,6 +27,17 @@ import { STATUS_VALUES, statusChipFor } from "../statusChip";
 
 const SRC_DIR = join(process.cwd(), "src");
 const SPEC_MD = join(process.cwd(), "..", "..", "hosting_game.md");
+/** Exact basename of the transient live-proof probe. PROBE PLACEMENT LAW
+ *  (mirrors audioLaw.test.ts, file-parallel race fix 2026-10-14): the probe
+ *  is planted under src/chrome/__tests__/, never directly in src/. Every
+ *  sibling law-walker (audioLaw, filtersLaw, substrateLaw, hueLaw,
+ *  hueLawGates, motion/contrast audits) skips the `__tests__` directory name
+ *  BEFORE stat-ing or reading its entries, so the transient probe can never
+ *  collide with a parallel walk (ENOENT flake). This scan descends into
+ *  __tests__ ONLY to recover the probe by exact name — the live proof still
+ *  plants a real file, re-walks the real tree through the real scanner, and
+ *  goes red if discovery or reporting ever breaks. */
+const PROBE_NAME = "__a11y_scan_probe_tmp.ts";
 
 /* ---------------------------------------------- 1. the ledger mirrors the spec */
 
@@ -182,7 +193,15 @@ function walkSrc(): ScannedFile[] {
   const walk = (dir: string, prefix: string): void => {
     for (const name of readdirSync(dir)) {
       const full = join(dir, name);
-      if (name === "__tests__" || name === "node_modules") continue;
+      if (name === "node_modules") continue;
+      if (name === "__tests__") {
+        // Test files quote the probes they police — skipped as sources.
+        // The single carve-in: the transient live-proof probe lives under a
+        // __tests__ dir (race-free placement), so recover it by exact name.
+        const probe = join(full, PROBE_NAME);
+        if (existsSync(probe)) out.push({ rel: `${prefix}${name}/${PROBE_NAME}`, text: readFileSync(probe, "utf8") });
+        continue;
+      }
       if (statSync(full).isDirectory()) {
         walk(full, `${prefix}${name}/`);
         continue;
@@ -212,6 +231,16 @@ function probeHits(probe: string, files: readonly ScannedFile[]): string[] {
 }
 
 describe("roster ledger — absent gates cannot be silently built", () => {
+  // Under __tests__/ on purpose: sibling law-walkers stat/read src/** while
+  // file-parallel workers run, and every one of them skips __tests__ before
+  // touching entries — planting outside their glob kills the ENOENT race.
+  const probePath = join(SRC_DIR, "chrome", "__tests__", PROBE_NAME);
+
+  afterAll(() => {
+    rmSync(probePath, { force: true }); // belt and braces — never leave a planted file
+    expect(existsSync(probePath)).toBe(false);
+  });
+
   it("every absent row has a probe, and every probe is currently quiet", () => {
     const absent = ACCEPTANCE_ROSTER.filter((r) => r.status === "absent").map((r) => r.id);
     expect(absent).toHaveLength(7);
@@ -228,13 +257,13 @@ describe("roster ledger — absent gates cannot be silently built", () => {
   });
 
   it("ARMED — a planted quiet-frame harness IS detected by the guard", () => {
-    const probeFile = join(SRC_DIR, "__a11y_scan_probe_tmp.ts");
+    expect(existsSync(probePath)).toBe(false); // clean tree before planting
     try {
-      writeFileSync(probeFile, "export const QuietFrameTestHarness = 1; // planted\n", "utf8");
+      writeFileSync(probePath, "export const QuietFrameTestHarness = 1; // planted\n", "utf8");
       const hits = probeHits(ABSENT_GATE_PROBES["quiet-frame"] ?? "", walkSrc());
-      expect(hits.some((h) => h.startsWith("__a11y_scan_probe_tmp.ts"))).toBe(true);
+      expect(hits.some((h) => h.startsWith(`chrome/__tests__/${PROBE_NAME}`))).toBe(true);
     } finally {
-      rmSync(probeFile, { force: true });
+      rmSync(probePath, { force: true });
     }
     // and after removal the guard is quiet again (falsifiable in both directions)
     expect(probeHits(ABSENT_GATE_PROBES["quiet-frame"] ?? "", walkSrc())).toStrictEqual([]);
