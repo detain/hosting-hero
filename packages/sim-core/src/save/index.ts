@@ -10,6 +10,7 @@
 export * from "./errors.ts";
 export * from "./canonical.ts";
 export * from "./node.ts";
+export * from "./coop.ts";
 export * from "./lineage.ts";
 export * from "./treatment.ts";
 export * from "./streaks.ts";

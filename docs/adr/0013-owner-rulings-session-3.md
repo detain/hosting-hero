@@ -33,6 +33,12 @@ new decision rather than a pre-existing recommendation.
    branch node holds museum artifacts + scars per participant and **never** customers or cash — the
    ledger stays single-authored, mirroring the ratified Matrix-B shadow-instance law (OD-8/`74f157b`).
    Implementation queued: the co-op save slice lane follows this encoding.
+   > **IMPLEMENTED 2026-10-14 (contract v0):** `save/coop.ts` + `CompanyNode.coop?:
+   > {seatHolders:[{participantId, joinedAtTick, leftAtTick?}]}` (additive-optional — single-player
+   > wires byte-identical), per-participant `attributedParticipantId` stamps riding the EXISTING
+   > scar/museum records (museum reused, never forked), `guardCoopAttributionBatch` refusing any
+   > non-branch facet by name. VALIDATOR, not runtime — sim-core has no live MP host; the Workerman
+   > relay stays PHP-side out of repo (transport gap, MODULE-STATUS save/mp row).
 3. **OD-10 — clock instruments: ONE unified time-service presentation.** The Clock Ribbon is the
    primary surface; the dials are instruments of the *same* service, not rivals (no dual authority over
    "what time is it"). **Max LEGIBLE speed = 2× until G1 playtest data** — the SpeedX door's 1|2|4
@@ -71,6 +77,12 @@ new decision rather than a pre-existing recommendation.
    one event stream, both seats read the same ordered log (consistent with OD-5(b) portable-sim + the
    single-event-log determinism law). Option C (duplicate-action interference) is noted as a future
    opt-in twist, not built.
+   > **IMPLEMENTED 2026-10-14 (contract v0):** `replay/coopTimeline.ts` — `CoopTimelineRecord`
+   > {participantId, tick, seq, kind ∈ action|sightline|note, payload opaque} in a global (tick, seq)
+   > total order; `digestCoopTimeline` orders before hashing through the existing replay canonical
+   > machinery, so two seats' arrival interleavings of the same logical log derive ONE digest (proved
+   > in `coop-timeline.test.ts`). The relay that stamps (tick, seq) is the PHP-side transport lane —
+   > out of repo.
 9. **OD-18 — rule-masking: adopted as an AUTHORING law** (the WS-3 pruning-law family). Appendix A
    gains an optional `lookalikeOf` reference on threats; **one mimic-seed per shipped type bundle** —
    the 5 shipped bundles: shared-web, game-servers, mail, dns, dedicated. Build gap row added; schema

@@ -66,3 +66,15 @@ export {
 } from "./causality.ts";
 export { assertCompactionSafe, compactBundle, type CompactionOptions, type CompactionResult } from "./compact.ts";
 export { captureRun, createHarness, type CaptureOptions, type Harness } from "./harness.ts";
+export {
+  COOP_TIMELINE_KINDS,
+  assertCoopTimelineAppendOrder,
+  canonicalCoopTimeline,
+  coopTimelineRecordToWire,
+  coopTimelineToWire,
+  digestCoopTimeline,
+  orderCoopTimeline,
+  parseCoopTimelineRecord,
+  type CoopTimelineKind,
+  type CoopTimelineRecord,
+} from "./coopTimeline.ts";

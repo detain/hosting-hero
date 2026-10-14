@@ -27,6 +27,7 @@
 import type { EntityId } from "../types.ts";
 import { asEntityId, asMoney } from "../types.ts";
 import { fail, requireDefined } from "./errors.ts";
+import { validateCoopSeatLedger } from "./coop.ts";
 import type { CompanyNode, DoctrineEntry, PlaybookSlotRecord } from "./node.ts";
 import { newCompanyNode, NAMED_CUSTOMER_CAP, parseCompanyNode, parseDoctrine, parsePlaybookSlot, PLAYBOOK_CARRY_CAP } from "./node.ts";
 
@@ -432,6 +433,9 @@ export function assertLineageIntegrity(graph: LineageGraph): void {
     if (node.customerBooks.length > NAMED_CUSTOMER_CAP) {
       fail(`assertLineageIntegrity: node "${node.id}" exceeds named-customer cap`);
     }
+    // ADR-0013 ruling 2: a co-op node's seat ledger is load-bearing history —
+    // re-check its laws on every parsed graph, same door as the caps above.
+    if (node.coop !== undefined) validateCoopSeatLedger(node.coop);
     if (node.parentId === null) {
       if (!graph.roots.includes(node.id)) fail(`assertLineageIntegrity: orphan root "${node.id}"`);
       continue;

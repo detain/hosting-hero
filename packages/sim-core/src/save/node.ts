@@ -156,6 +156,10 @@ export interface ScarRecord {
   /** Burned rack position (U7 one-key blueprint export). Whole-grid cells —
    *  safe integers (S-4). */
   readonly mapPosition: { readonly x: number; readonly y: number } | null;
+  /** ADR-0013 ruling 2 (OD-9): which co-op participant earned this scar.
+   *  Absent in single-player saves — the key never appears on the wire, so
+   *  pre-co-op digests stay byte-identical (additive-optional law). */
+  readonly attributedParticipantId?: EntityId;
 }
 
 /** Cause refs are plain strings pre-parsed; keep loose to avoid import cycles. */
@@ -167,6 +171,9 @@ export interface RetiredScarRecord {
   readonly replacedBy: EntityId | null;
   readonly memorial: boolean;
   readonly retiredAtTick: SimTick;
+  /** ADR-0013 ruling 2: attribution survives demotion — addScar carries the
+   *  writer's participant id through when a scar overflows the active cap. */
+  readonly attributedParticipantId?: EntityId;
 }
 
 /** U9/U20 postmortem — wrong root cause is a STORED outcome, not an error. */
@@ -479,6 +486,31 @@ export interface MuseumExhibitRecord {
    *  "the museum doesn't lose an exhibit" (Appendix C §2.4). */
   readonly deprecated: boolean;
   readonly memorialNote: string | null;
+  /** ADR-0013 ruling 2 (OD-9): the co-op participant whose run donated this
+   *  exhibit to the Long Save museum. Absent = single-player (wire-stable). */
+  readonly attributedParticipantId?: EntityId;
+}
+
+/* ═══════════════════════ co-op branch-node metadata (ADR-0013 ruling 2) ═══════════════════════ */
+
+/** One seat tenure in a co-op company. A re-handoff to the same participant
+ *  is a NEW row (transport lane may dedupe later — v0 law: one row per
+ *  participant, enforced by validateCoopSeatLedger in coop.ts). */
+export interface SeatHolder {
+  readonly participantId: EntityId;
+  readonly joinedAtTick: SimTick;
+  /** Absent while seated. A explicit null on the wire is absorbed to absent
+   *  (missing-key≡null law, S-12 precedent). */
+  readonly leftAtTick?: SimTick;
+}
+
+/** Co-op metadata carried by a lineage node whose company had multiple
+ *  writers. The BRANCH NODE law (ADR-0013 ruling 2): participants write only
+ *  museum artifacts + scars (per-participant attribution on those records);
+ *  customers and cash stay company-level and single-authored — mirror of the
+ *  ratified Matrix-B shadow-instance law (OD-8/74f157b). */
+export interface CoopNodeMetadata {
+  readonly seatHolders: readonly SeatHolder[];
 }
 
 /** Policy Book snapshot ref — the rule book is state BY HASH (ARCHITECTURE
@@ -547,6 +579,10 @@ export interface CompanyNode {
   readonly researchQueue: readonly ResearchQueueRecord[];
   readonly constraintCards: readonly ConstraintCardRecord[];
   readonly museum: readonly MuseumExhibitRecord[];
+  /** ADR-0013 ruling 2 (OD-9): seat ledger for multi-writer companies.
+   *  Absent = single-authored (the overwhelming default); the key never
+   *  appears on the wire when unset, so existing save digests don't move. */
+  readonly coop?: CoopNodeMetadata;
 }
 
 /* ═══════════════════════ bounds (size discipline constants) ═══════════════════════ */
@@ -620,6 +656,8 @@ export interface NewNodeOptions {
   readonly successionType: SuccessionType;
   readonly exitKind?: string | null;
   readonly status?: NodeStatus;
+  /** ADR-0013 ruling 2: seed a co-op company with its seat ledger. */
+  readonly coop?: CoopNodeMetadata;
 }
 
 /** Fresh node with every facet at its empty-but-typed default. */
@@ -675,6 +713,9 @@ export function newCompanyNode(options: NewNodeOptions): CompanyNode {
     researchQueue: [],
     constraintCards: [],
     museum: [],
+    // Conditional spread: an unset coop never materializes as a key, so
+    // single-player node wire bytes (and their digests) are untouched.
+    ...(options.coop === undefined ? {} : { coop: options.coop }),
   };
 }
 
@@ -691,6 +732,8 @@ export function addScar(node: CompanyNode, scar: ScarRecord): CompanyNode {
     replacedBy: scar.id,
     memorial: true,
     retiredAtTick: scar.acquiredAtTick,
+    // ADR-0013 ruling 2: the writer's credit outlives the active slot.
+    ...(old.attributedParticipantId === undefined ? {} : { attributedParticipantId: old.attributedParticipantId }),
   }));
   return { ...node, scars: active, scarsRetired: [...node.scarsRetired, ...retiredRows] };
 }
@@ -874,6 +917,9 @@ function parseScar(value: unknown, where: string): ScarRecord {
     disclosure: asEnum(d.disclosure, ["disclosed", "concealed"], `${where}.disclosure`) as ScarRecord["disclosure"],
     payoffGrant,
     mapPosition,
+    ...(d.attributedParticipantId === undefined || d.attributedParticipantId === null
+      ? {}
+      : { attributedParticipantId: asId(d.attributedParticipantId, `${where}.attributedParticipantId`) }),
   };
 }
 
@@ -929,6 +975,30 @@ function parseMuseumExhibit(value: unknown, where: string): MuseumExhibitRecord 
     acquiredAtTick: asBig(d.acquiredAtTick, `${where}.acquiredAtTick`),
     deprecated: asBool(d.deprecated, `${where}.deprecated`),
     memorialNote: d.memorialNote === null || d.memorialNote === undefined ? null : asStr(d.memorialNote, `${where}.memorialNote`),
+    ...(d.attributedParticipantId === undefined || d.attributedParticipantId === null
+      ? {}
+      : { attributedParticipantId: asId(d.attributedParticipantId, `${where}.attributedParticipantId`) }),
+  };
+}
+
+/** ADR-0013 ruling 2: one seat tenure row. leftAtTick null-or-missing
+ *  absorbs to absent (missing-key≡null law); the key is only re-emitted
+ *  when a real bigint arrived, keeping re-serialization wire-stable. */
+export function parseSeatHolder(value: unknown, where: string): SeatHolder {
+  const d = asDict(value, where);
+  return {
+    participantId: asId(requireDefined(d.participantId, `${where}.participantId`), `${where}.participantId`),
+    joinedAtTick: asBig(d.joinedAtTick, `${where}.joinedAtTick`),
+    ...(d.leftAtTick === undefined || d.leftAtTick === null
+      ? {}
+      : { leftAtTick: asBig(d.leftAtTick, `${where}.leftAtTick`) }),
+  };
+}
+
+export function parseCoopNodeMetadata(value: unknown, where: string): CoopNodeMetadata {
+  const d = asDict(value, where);
+  return {
+    seatHolders: asArr(d.seatHolders, `${where}.seatHolders`).map((s, i) => parseSeatHolder(s, `${where}.seatHolders[${i}]`)),
   };
 }
 
@@ -1000,7 +1070,15 @@ export function parseCompanyNode(value: unknown, where = "node"): CompanyNode {
     scars,
     scarsRetired: asArr(d.scarsRetired, `${where}.scarsRetired`).map((s, i) => {
       const r = asDict(s, `${where}.scarsRetired[${i}]`);
-      return { id: asId(requireDefined(r.id, "id"), "id"), replacedBy: asIdOrNull(r.replacedBy ?? null, "replacedBy"), memorial: asBool(r.memorial, "memorial"), retiredAtTick: asBig(r.retiredAtTick, "retiredAtTick") };
+      return {
+        id: asId(requireDefined(r.id, "id"), "id"),
+        replacedBy: asIdOrNull(r.replacedBy ?? null, "replacedBy"),
+        memorial: asBool(r.memorial, "memorial"),
+        retiredAtTick: asBig(r.retiredAtTick, "retiredAtTick"),
+        ...(r.attributedParticipantId === undefined || r.attributedParticipantId === null
+          ? {}
+          : { attributedParticipantId: asId(r.attributedParticipantId, "attributedParticipantId") }),
+      };
     }),
     postmortems: asArr(d.postmortems, `${where}.postmortems`).map((p, i) => {
       const r = asDict(p, `${where}.postmortems[${i}]`);
@@ -1160,6 +1238,9 @@ export function parseCompanyNode(value: unknown, where = "node"): CompanyNode {
       return { legacyObjectRef: asStr(r.legacyObjectRef, "legacyObjectRef"), carriedLiability: asStr(r.carriedLiability, "carriedLiability") };
     }),
     museum: asArr(d.museum, `${where}.museum`).map((m, i) => parseMuseumExhibit(m, `${where}.museum[${i}]`)),
+    ...(d.coop === undefined || d.coop === null
+      ? {}
+      : { coop: parseCoopNodeMetadata(d.coop, `${where}.coop`) }),
   };
   return node;
 }

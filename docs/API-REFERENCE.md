@@ -834,6 +834,14 @@ list — everything below is exactly what ships).
 | `CaptureOptions` `Harness` | interfaces | runner + strides + seeds bundle | — |
 | `captureRun` | `<S>(options: CaptureOptions<S>) => ReplayBundleDoc` | run once, capture ticks = ring ∪ snapshot ∪ {0, terminal}, embed states at snapshots | — |
 | `createHarness` | `<S>(options: CaptureOptions<S>) => Harness<S>` | memoized capture + `replayFinalDigest`, `replayDigests(n)` (the ×100 gate), `verify`, `compactAndVerify` | same options ⇒ same digests |
+| `COOP_TIMELINE_KINDS` `CoopTimelineKind` | const tuple + union | OD-17 shared-timeline closed vocab: `"action" \| "sightline" \| "note"` (ADR-0013 ruling 8) | const |
+| `CoopTimelineRecord` | `{participantId, tick, seq, kind, payload}` | one line of the SHARED incident log — (tick, seq) globally unique, payload opaque (transport interprets) | — |
+| `parseCoopTimelineRecord` | `(value, where?) => CoopTimelineRecord` | strict boundary: real bigint tick (string ⇒ throw), safe-int seq ≥ 0, kind enum, plain-object payload | fail-loud |
+| `assertCoopTimelineAppendOrder` | `(records) => void` | relay's append law: strict (tick, seq) ascending; a duplicated slot throws naming BOTH positions | total-throwing |
+| `orderCoopTimeline` | `(records) => CoopTimelineRecord[]` | interleaving normalizer — sorted copy, dup (tick, seq) still throws; input untouched | pure |
+| `coopTimelineRecordToWire` `coopTimelineToWire` | `(record) => Dict`; `(records) => Dict[]` | stable key-ordered wire dicts (bigints ride raw, bundle-style) | pure |
+| `canonicalCoopTimeline` | `(records) => string` | canonical JSON of the ORDERED log — printable shared artifact | interleaving-invariant |
+| `digestCoopTimeline` | `(records) => HashHex` | THE OD-17 digest: orders first, then `digestCanonicalValue` — two seats holding the same logical events in different arrival orders derive ONE hash | interleaving-invariant |
 
 ---
 
@@ -985,6 +993,16 @@ as OPAQUE data.
 | `WallView` `readWall` `ScrapbookView` `readScrapbook` `AlmanacView` `readAlmanac` `PeopleView` `readPeople` | view interfaces + readers `(node, [streaks/globalRecords]) => view` | each face rendered from node facts | pure projections |
 | `FaceView` `FaceReadContext` `readFace` | union; interface; `(nodeId, graph, face, ctx) => FaceView` | one entry point for all faces | pure |
 | `MuseumTourView` `readMuseum` | interface; `(node, ctx) => MuseumTourView` | exhibit-guided tour read | pure |
+| `SeatHolder` `CoopNodeMetadata` | `{participantId, joinedAtTick, leftAtTick?}`; `{seatHolders}` | ADR-0013 ruling 2 (OD-9) branch-node contract: seat tenures ride `CompanyNode.coop` (additive-optional — absent key ⇒ single-authored, digests unmoved); `leftAtTick` null≡missing absorbs (S-12) | wire-stable |
+| `parseSeatHolder` `parseCoopNodeMetadata` | `(value, where) => …` | strict boundary parse of the seat ledger | fail-loud |
+| `COOP_MIN_SEAT_WRITERS` `COOP_MAX_SEAT_WRITERS` `COOP_BRANCH_FACETS` `CoopBranchFacet` | consts `2` / `4` / `["scars","museum"]` + union | the ruling verbatim in code: 2–4 writers; ONLY museum artifacts + scars are branch facets — customers/cash never | const |
+| `CoopAttributionWrite` `CoopAttributionBatch` | `{facet, participantId, record}`; `{runId, committedAtTick, writes}` | settlement-shaped co-op batch (§2.4 all-or-nothing precedent) | — |
+| `validateCoopSeatLedger` | `(ledger) => void` | seat laws: ≥1 row, one tenure per participant, joins ascend, left > joined, ≤4 simultaneous seats (half-open overlap) — called from `assertLineageIntegrity` on every parsed graph | total-throwing |
+| `seatParticipant` `vacateSeat` | `(ledger?, seat) => CoopNodeMetadata`; `(ledger, participantId, leftAtTick) => CoopNodeMetadata` | pure ledger ops, re-validated on return | pure |
+| `participantSeatedAt` | `(ledger, participantId, tick) => boolean` | half-open window `[joined, left)` — the hands-interval law reused | pure |
+| `withScarAttribution` `withMuseumAttribution` | `(record, participantId) => record` | attribution stamps (new record, Law 3); the stamp rides the existing scar/museum rows — museum and scrapbook REUSED, never forked | pure |
+| `guardCoopAttributionBatch` | `(batch, ledger?) => void` | THE ruling-2 guard (validator, not runtime — sim-core has no live MP host): refuses empty batches, ANY non-branch facet by name, unseated/ghost writers, solo ledgers, and missing/mismatched attribution stamps | total-throwing |
+| `commitCoopAttribution` | `(node, batch) => CompanyNode` | guard-then-apply: scars route through `addScar` (cap-retire law survives, attribution rides the demotion), museum appends (no-destroy §2.5) | pure |
 
 ---
 
