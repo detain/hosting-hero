@@ -14,6 +14,9 @@
  *  - the door's opt-in `attentionCost`: a listed verb pays BOTH denominations
  *    or NOTHING (normal-rail refund on attention refusal; both refunded on
  *    handler refusal). Absent config = zero behavior change — byte-identity;
+ *  - ATTENTION_DEFAULT_COSTS (ADR-0013 #12(v)): the owner's opening tax is
+ *    the communication/deal pair, hosts spread it explicitly — the door
+ *    default stays empty so every shipped run digests byte-identically;
  *  - digest-switch law: `attention` absorbed ONLY when present; the
  *    shipped-golden movement-free proof is the FULL serial suite (g4
  *    13ba145f / drain 78dc6556 / shed trio), re-pinned here for the digest
@@ -28,6 +31,7 @@ import { createInitialState } from "../driver";
 import { digestState } from "../digest";
 import { applyIntentDoor, createBoardState, IntentDoorError } from "../intent-door";
 import {
+  ATTENTION_DEFAULT_COSTS,
   attentionRelease,
   attentionSpend,
   attentionWindowEntry,
@@ -379,5 +383,66 @@ describe("determinism ×100 — attention sequences replay byte-identically", ()
     // ×100 replay stability of the terminal digest.
     const final = a[a.length - 1] as string;
     for (let n = 0; n < 100; n += 1) expect(run()[3]).toBe(final);
+  });
+});
+
+/* ═══════════ owner opening verb tax — ADR-0013 #12(v) ═══════════ */
+
+describe("ATTENTION_DEFAULT_COSTS — the owner's opening map (ADR-0013 #12(v))", () => {
+  it("roster: EXACTLY the communication/deal verbs, value 1, frozen", () => {
+    expect(ATTENTION_DEFAULT_COSTS).toEqual({
+      [PlayerVerb.Communicate]: 1,
+      [PlayerVerb.PolicyCardCommit]: 1,
+    });
+    expect(Object.isFrozen(ATTENTION_DEFAULT_COSTS)).toBe(true);
+    // every other door verb is ABSENT from the map — the ruling's
+    // "all other verbs: 0" leg (absent === zero-cost by door law).
+    for (const verb of Object.values(PlayerVerb)) {
+      const listed =
+        verb === PlayerVerb.Communicate || verb === PlayerVerb.PolicyCardCommit;
+      expect(ATTENTION_DEFAULT_COSTS[verb] !== undefined).toBe(listed);
+    }
+  });
+
+  const OWNER = { attentionCost: ATTENTION_DEFAULT_COSTS };
+
+  it("Communicate spends a focus hand under the owner map (both rails pay)", () => {
+    const s0 = doorState(true);
+    const r = applyIntentDoor(s0, ctx(1n), [ext(1n, 11, communicate("angry customer"))], OWNER);
+    expect(r.receipts[0]?.outcome).toBe("executed");
+    expect(r.state.attention?.tokens[0]?.busyCauseId).toBe("intent:11");
+  });
+
+  it("PlaceDevice does NOT spend attention under the owner map (build tax: 0)", () => {
+    const s0 = doorState(true);
+    const place: PlayerVerbArgs = {
+      verb: PlayerVerb.PlaceDevice,
+      nodeId: "web-9",
+      deviceKind: "web",
+      template: null,
+    } as PlayerVerbArgs;
+    const r = applyIntentDoor(s0, ctx(1n), [ext(1n, 11, place)], OWNER);
+    expect(r.receipts[0]?.outcome).toBe("executed");
+    // The pool is identity-untouched — a build verb never reaches the rail.
+    expect(r.state.attention).toBe(s0.attention);
+  });
+
+  it("absent-pool law holds under the owner map: tax BITES as a refusal, never mints", () => {
+    const s0 = doorState(false);
+    const r = applyIntentDoor(s0, ctx(1n), [ext(1n, 11, communicate("deal talk"))], OWNER);
+    expect(r.receipts[0]?.reason).toMatch(/^attention-debt:/);
+    expect(r.state.attention).toBeUndefined();
+    expect(r.state.hands).toBe(s0.hands); // normal-rail refund — nothing spent
+  });
+
+  it("BYTE-IDENTITY of the DEFAULT door config: empty map + owner pool ⇒ no tax", () => {
+    // The opt-in law (eff5694 discipline): hosts that do NOT spread the
+    // owner map keep the shipped empty default — same state, same digest.
+    const s0 = doorState(true);
+    const plain = applyIntentDoor(s0, ctx(1n), [ext(1n, 11, communicate("x"))], {});
+    const taxed = applyIntentDoor(s0, ctx(1n), [ext(1n, 11, communicate("x"))], OWNER);
+    expect(plain.receipts[0]?.outcome).toBe("executed");
+    expect(plain.state.attention).toBe(s0.attention); // never materialized
+    expect(taxed.state.attention).not.toBe(s0.attention); // the twin DID pay
   });
 });

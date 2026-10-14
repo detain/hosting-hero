@@ -42,6 +42,7 @@
  * mutation, no RNG, no platform APIs.
  */
 
+import { PlayerVerb } from "../types.ts";
 import type {
   AttentionLoanKind,
   AttentionLoanRecord,
@@ -313,3 +314,48 @@ export function replenishAtBusinessMonth(
     lastReplenishBusinessMinute: atBusinessMinute,
   });
 }
+
+/* ═══════════════ Owner opening verb-cost map (ADR-0013 #12(v)) ═══════════ */
+
+/**
+ * THE OWNER'S OPENING ATTENTION TAX — ADR-0013 ruling 12(v): "attention cost
+ * per verb is now an OWNER DECISION. Opening default {Communicate: 1,
+ * ticket-class handling: 1, all other verbs: 0}."
+ *
+ * MAPPING CHOICE (documented per the ruling's INTENT — attention tax on the
+ * communication/deal verbs, never on build verbs). §7.5's CEO-Override passage
+ * names exactly what the focus hand is for: "close the whale deal personally,
+ * handle the angry customer yourself". The door's per-verb granularity needs
+ * a SECOND verb distinct from Communicate to carry "ticket-class handling",
+ * and the engine has no ticket verb — the deal/signing verb is
+ * `PolicyCardCommit` (committing a policy card IS the commercial close), so:
+ *
+ *   - `Communicate`      → 1  (talking to humans: angry customers, the
+ *                              support-ticket channel per §7.6's vocabulary —
+ *                              covers BOTH ruling legs' communication class)
+ *   - `PolicyCardCommit` → 1  (the deal verb: signing/committing — "ticket-
+ *                              class handling" folded onto the commercial
+ *                              close, the only non-communication verb the
+ *                              CEO-Override passage singles out)
+ *   - every other verb   → 0  (Place / Connect / Disconnect / Configure /
+ *                              Shed / ToggleSpeed / AdjustPrice — building
+ *                              and operating stay on the everyday rail)
+ *
+ * OD-23's support-ticket tax seam (a dedicated ticket verb-class) remains
+ * OPEN; when that verb lands, its cost row joins this map — this constant is
+ * the single home for the owner's opening positions.
+ *
+ * OPT-IN LAW (byte-identity, the eff5694 discipline): the door's
+ * `attentionCost` config default stays EMPTY — shipping runs digest
+ * byte-identically until a host deliberately adopts the owner default. Hosts
+ * opt in by spreading this map into `IntentDoorConfig.attentionCost` (the
+ * proto runner and unattended fastForward do it exactly when the attention
+ * denomination is in play, i.e. a seeded attention pool). Absent-pool law
+ * unchanged: a taxed verb against no pool refuses `attention-debt` and never
+ * mints — so the map only ever bites planted pools.
+ */
+export const ATTENTION_DEFAULT_COSTS: Readonly<Partial<Record<PlayerVerb, 0 | 1>>> =
+  Object.freeze({
+    [PlayerVerb.Communicate]: 1,
+    [PlayerVerb.PolicyCardCommit]: 1,
+  });

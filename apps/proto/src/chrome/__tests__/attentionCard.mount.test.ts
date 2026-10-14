@@ -8,6 +8,8 @@
  * services the oldest LIVE-borrowed row. The global observed store stays
  * untouched (self-containment law).
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
 import AttentionCard from "../AttentionCard.vue";
@@ -100,5 +102,41 @@ describe("AttentionCard", () => {
     expect(text).not.toContain("rebuilds this private runner at minute 0");
     // the runner-less bound probe line renders while no live refusal stands
     expect(w.get('[data-test="attention-probe"]').text()).toContain("replenish seam must service a row");
+  });
+});
+
+/* ═════ OD-12c (ADR-0013 #5(c)) — the Hands Dock is bottom-left law ═════ */
+
+describe("Hands Dock placement law (OD-12c)", () => {
+  it("the card DOM carries the dock identity: hands dock, bottom-left anchor", () => {
+    const w = mount(AttentionCard);
+    const dock = w.get('[data-test="attention-card"]');
+    expect(dock.attributes("data-hud-dock")).toBe("hands");
+    expect(dock.attributes("data-dock-anchor")).toBe("bottom-left");
+    expect(dock.classes()).toContain("hands-dock");
+    // the shipped data-test identity still rides unchanged (existing pins)
+    expect(w.find('[data-test="attention-card"]').exists()).toBe(true);
+  });
+
+  it("CSS law by source scan: .hands-dock self-aligns bottom-LEFT of its grid host", () => {
+    // jsdom never injects scoped SFC styles — the honest proof is the rule.
+    const vue = readFileSync(join(process.cwd(), "src", "chrome", "AttentionCard.vue"), "utf8");
+    const rule = /\.hands-dock\s*{[^}]*}/.exec(vue);
+    expect(rule, ".hands-dock rule missing").toBeTruthy();
+    expect(rule?.[0]).toMatch(/align-self:\s*end/); // bottom
+    expect(rule?.[0]).toMatch(/justify-self:\s*start/); // left
+    // zero absolute positioning / zero motion — the thin-static law holds
+    expect(rule?.[0]).not.toMatch(/position:\s*absolute/);
+    expect(vue).not.toMatch(/transition|animation/);
+  });
+
+  it("the lab host declares the dock region: grid rows + bottom-left stamp", () => {
+    const host = readFileSync(join(process.cwd(), "src", "chrome", "HudLabPanel.vue"), "utf8");
+    expect(host).toMatch(/data-test="lab-attention"[^>]*data-dock-host="bottom-left"|data-dock-host="bottom-left"[^>]*data-test="lab-attention"/s);
+    const rule = /\.card--dock-hands\s*{[^}]*}/.exec(host);
+    expect(rule, "dock host grid rule missing").toBeTruthy();
+    expect(rule?.[0]).toMatch(/display:\s*grid/);
+    expect(rule?.[0]).toMatch(/grid-template-rows:\s*auto 1fr/);
+    expect(host).toMatch(/Hands Dock/);
   });
 });

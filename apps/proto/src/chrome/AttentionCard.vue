@@ -6,6 +6,14 @@
  * the global observed store, no TopBar row (the §1.4 four-id permanent-row
  * law keeps the denominations OUT of the TopBar).
  *
+ * THE HANDS DOCK (OD-12c, ADR-0013 ruling 5(c)): "Hands Dock placement is
+ * law — bottom-left." This card IS the dock — the executive attention
+ * window/debt summary anchored bottom-left of its host region via the
+ * `hands-dock` class (`align-self: end; justify-self: start` inside the
+ * grid host in HudLabPanel) and stamped with `data-hud-dock="hands"` /
+ * `data-dock-anchor="bottom-left"` for the DOM pin. `attention-card` stays
+ * the data-test identity (existing mounts/pins ride it unchanged).
+ *
  * The pool starts EMPTY (planted at construction through the public pipeline
  * API, `createAttentionState` capacity 2, zero rows) and EVERY loan on the
  * ledger is opened LIVE mid-run via the runner's `enterAttentionWindow` seam
@@ -100,7 +108,12 @@ onBeforeUnmount(() => runner.stop());
 </script>
 
 <template>
-  <div class="attention-card" data-test="attention-card">
+  <div
+    class="attention-card hands-dock"
+    data-test="attention-card"
+    data-hud-dock="hands"
+    data-dock-anchor="bottom-left"
+  >
     <div class="controls">
       <button type="button" data-test="attention-step" @click="step()">step +1m</button>
       <button type="button" data-test="attention-borrow" @click="borrow('triage-window')">
@@ -175,6 +188,11 @@ onBeforeUnmount(() => runner.stop());
 
 <style scoped>
 .attention-card { display: grid; gap: 8px; font-family: var(--hh-typeface); font-size: 12px; color: color-mix(in srgb, var(--hh-accent) 78%, #fff); }
+/* OD-12c (ADR-0013 #5(c)) Hands Dock law: bottom-left. The self-alignments
+   pin the card to the bottom-left cell corner of its grid host — the honest
+   CSS statement of "bottom-left" inside the dock region, no absolute
+   positioning, flow stays intact (zero-motion law holds). */
+.hands-dock { align-self: end; justify-self: start; }
 .controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 button {
   border: 1px solid color-mix(in srgb, var(--hh-accent) 35%, transparent);

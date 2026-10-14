@@ -148,6 +148,17 @@ function cycleSpeed(): void {
   clientRef.value?.setSpeed(speed.value);
 }
 const speed = ref<1 | 2 | 4>(1);
+/** OD-10 (ADR-0013 ruling 3): max-LEGIBLE clock speed is 2× until G1
+ *  playtest data exists. This changes NO legality — the SpeedX door keeps
+ *  its shipped 1|2|4 ladder (3× stays illegal in SpeedX, not here) — it
+ *  only surfaces the honesty hint once the observation dial is above the
+ *  legibility line, in the label and in a quiet chip beside it. */
+const LEGIBLE_SPEED_MAX = 2;
+const speedAria = computed(() =>
+  speed.value > LEGIBLE_SPEED_MAX
+    ? `speed ${String(speed.value)}x (observation only) — past the ${String(LEGIBLE_SPEED_MAX)}x legibility limit, anomalies hide (OD-10)`
+    : `speed ${String(speed.value)}x (observation only)`,
+);
 </script>
 
 <template>
@@ -155,9 +166,14 @@ const speed = ref<1 | 2 | 4>(1);
     <template #right>
       <div class="hud-buttons">
         <span v-if="isSandbox" class="rho-chip">{{ rhoLabel }}</span>
-        <button v-if="isSandbox" type="button" @click="cycleSpeed" :aria-label="`speed ${speed}x (observation only)`">
+        <button v-if="isSandbox" type="button" @click="cycleSpeed" :aria-label="speedAria">
           {{ speed }}×
         </button>
+        <span
+          v-if="isSandbox && speed > LEGIBLE_SPEED_MAX"
+          class="speed-hint"
+          data-test="speed-legibility-hint"
+        >past {{ LEGIBLE_SPEED_MAX }}× the log thins — legibility is on you (OD-10)</span>
         <button v-if="isSandbox" type="button" @click="setAggression(0)" aria-label="aggression min">Agg−</button>
         <button v-if="isSandbox" type="button" @click="setAggression(1)" aria-label="aggression max">Agg+</button>
         <button type="button" :aria-pressed="readout" @click="readout = !readout">Readout</button>
@@ -247,6 +263,12 @@ const speed = ref<1 | 2 | 4>(1);
   color: var(--hh-accent);
   opacity: .8;
   font-size: 12px;
+}
+.speed-hint {
+  align-self: center;
+  font-size: 10px;
+  opacity: .55;
+  color: var(--hh-accent);
 }
 .connection {
   position: absolute;

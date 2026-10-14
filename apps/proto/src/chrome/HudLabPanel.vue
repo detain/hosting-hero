@@ -249,8 +249,13 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
           <RecoveryWatch />
         </section>
 
-        <section class="card" data-hud-optional="true" data-test="lab-attention">
-          <h4>Attention ledger — OD-6 focus-hand loans, wire roll-up + bounded law</h4>
+        <section
+          class="card card--dock-hands"
+          data-hud-optional="true"
+          data-test="lab-attention"
+          data-dock-host="bottom-left"
+        >
+          <h4>Hands Dock — OD-12c bottom-left · attention window/debt, bounded law</h4>
           <AttentionCard />
         </section>
 
@@ -287,6 +292,12 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
   border-radius: var(--hh-radius);
 }
 .card h4 { margin: 0 0 8px; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .55; }
+/* OD-12c (ADR-0013 #5(c)) Hands Dock law: the attention card anchors
+   BOTTOM-LEFT of its host region. The section becomes a grid host with a
+   reserved dock height so the card's `align-self: end; justify-self: start`
+   (AttentionCard's .hands-dock rule) has a real area to sit bottom-left in —
+   flow layout preserved, zero positioning hacks, zero motion. */
+.card--dock-hands { display: grid; grid-template-rows: auto 1fr; min-height: 220px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .mono, .demo { font-size: 12px; margin: 0; color: color-mix(in srgb, var(--hh-accent) 70%, #fff); }
 </style>

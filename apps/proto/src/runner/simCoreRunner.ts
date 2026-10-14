@@ -108,6 +108,7 @@ import {
   sub,
 } from "@hh/sim-core/kernel";
 import {
+  ATTENTION_DEFAULT_COSTS,
   attentionWindowEntry,
   createAttentionState,
   createDefaultSlots,
@@ -869,9 +870,20 @@ export class SimCoreRunner implements SimRunner {
       }),
     });
     this.driver = createTickDriver(slots, streamFor(this.runSeed, "root", 0), this.game.context.clocks,
-      /* ADR-0012: absent ⇒ no options key ⇒ the driver folds no recovery
-         slice ⇒ frame-for-frame byte-identical to the pre-recovery runner. */
-      options.recovery !== undefined ? { recovery: options.recovery } : {},
+      Object.freeze({
+        /* ADR-0012: absent ⇒ no options key ⇒ the driver folds no recovery
+           slice ⇒ frame-for-frame byte-identical to the pre-recovery runner. */
+        ...(options.recovery !== undefined ? { recovery: options.recovery } : {}),
+        /* ADR-0013 #12(v) host opt-in: a runner that PLANTED the attention
+           denomination adopts the owner's opening verb tax (Communicate /
+           PolicyCardCommit spend a focus hand). No pool ⇒ key never spread ⇒
+           the door config stays the shipped empty default and every pre-
+           attention golden run is frame-for-frame byte-identical (eff5694
+           absent-pool law: costs only ever bite planted pools). */
+        ...(options.attention !== undefined
+          ? { intents: Object.freeze({ attentionCost: ATTENTION_DEFAULT_COSTS }) }
+          : {}),
+      }),
     );
     this.store = new ObservedStore();
 

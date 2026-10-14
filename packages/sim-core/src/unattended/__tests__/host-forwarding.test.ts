@@ -31,6 +31,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultEconomyConfig } from "../../economy/index.ts";
 import {
+  ATTENTION_DEFAULT_COSTS,
   attentionWindowEntry,
   createAttentionState,
   replenishAtBusinessMonth,
@@ -283,5 +284,50 @@ describe("pricing override book forwarding (lane @5781335 host seam)", () => {
     expect(cashEnd(priced)).toBe(79556000n);
     expect(cashEnd(bare)).toBe(62078000n);
     expect(priced.finalDigest).not.toBe(bare.finalDigest);
+  });
+});
+
+/* ────────── seam 1b: owner verb-tax opt-in (ADR-0013 #12(v)) ────────── */
+
+describe("door verb-tax injection is config-only — the weekend never moves", () => {
+  /* fastForward feeds the door NO player-verb intents (advisory-only law),
+     so planting the owner tax on a pooled weekend MUST be inert: same seed,
+     same report, digest-for-digest. The tax's BEHAVIOR is pinned door-side
+     (pipeline/__tests__/attention.test.ts) and runner-side (proto twin —
+     the arm that actually feeds verbs). */
+  it("adopted (injected) == opted-out (explicit empty map) == explicit owner map", () => {
+    const injected = runUnattended(
+      cfg({ ticks: ROLL_ONE_TICKS, money: calmMoney(), attention: plantLoans(2) }),
+    );
+    const optedOut = runUnattended(
+      cfg({
+        ticks: ROLL_ONE_TICKS,
+        money: calmMoney(),
+        attention: plantLoans(2),
+        door: { attentionCost: {} }, // explicit host opt-out, honored verbatim
+      }),
+    );
+    const adopted = runUnattended(
+      cfg({
+        ticks: ROLL_ONE_TICKS,
+        money: calmMoney(),
+        attention: plantLoans(2),
+        door: { attentionCost: ATTENTION_DEFAULT_COSTS }, // host spreads it itself
+      }),
+    );
+    expect(reportIdentity(injected)).toBe(reportIdentity(optedOut));
+    expect(reportIdentity(adopted)).toBe(reportIdentity(injected));
+    // Falsifier anchor: the pooled weekend's roll witness stands regardless.
+    expect(injected.finalAttention?.debt).toBe(1);
+  });
+
+  it("unpooled weekend + owner tax named explicitly still pays nothing (absent pool, no verbs fed)", () => {
+    const plain = runUnattended(cfg({ ticks: 12n, money: calmMoney() }));
+    const taxed = runUnattended(
+      cfg({ ticks: 12n, money: calmMoney(), door: { attentionCost: ATTENTION_DEFAULT_COSTS } }),
+    );
+    expect(reportIdentity(taxed)).toBe(reportIdentity(plain));
+    expect(taxed.finalAttention).toBeUndefined();
+    expect(plain.finalAttention).toBeUndefined();
   });
 });

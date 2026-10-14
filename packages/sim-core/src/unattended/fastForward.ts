@@ -92,6 +92,7 @@ import { planWave, waveStream } from "../waves/generate.ts";
 import { buildInvitations, ledgerSnapshot } from "../waves/ledger.ts";
 import { directorPropose, INITIAL_DIRECTOR_STATE, type DirectorState } from "../waves/director.ts";
 import {
+  ATTENTION_DEFAULT_COSTS,
   createBoardState,
   createDefaultSlots,
   createInitialState,
@@ -319,7 +320,12 @@ export interface RunUnattendedConfig {
   readonly checkpointEvery?: number;
   /** Intent-door wiring for hosts keeping hands live (versus recipe);
    *  default: driver's door defaults — a pure autopilot weekend feeds the
-   *  door NOTHING (advisory-only rule intents, versus friction #2). */
+   *  door NOTHING (advisory-only rule intents, versus friction #2).
+   *  ADR-0013 #12(v) opt-in: when the config also carries an `attention`
+   *  pool and this door config does NOT name `attentionCost`, the owner's
+   *  opening verb tax (`ATTENTION_DEFAULT_COSTS`) is spread in; an
+   *  explicit `attentionCost` — even `{}` — is the host's opt-out and is
+   *  honored verbatim. No pool ⇒ config untouched ⇒ byte-identical. */
   readonly door?: IntentDoorConfig;
   readonly handCapacity?: number;
   /** Routing lanes (defaults: express = every node, deep = []). */
@@ -778,8 +784,19 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
   const rulePhase = createRulePhaseStep();
   const slots = Object.freeze({ ...createDefaultSlots(pipelineConfig), rulePhase: rulePhase.step });
   const game0 = mintInitialState(config, nodes, edges);
+  /* ADR-0013 #12(v) host opt-in: a weekend that PLANTS the attention
+     denomination gets the owner's opening verb tax for free — unless the
+     host named `attentionCost` itself (explicit `{}` = deliberate opt-out,
+     honored verbatim). No pool planted ⇒ door config untouched ⇒ every
+     pre-attention weekend byte-identical. The spread is config-only: the
+     door holds the map, but a pure autopilot weekend still feeds it NO
+     intents (advisory-only law), so no shipped digest can move. */
+  const effectiveDoor: IntentDoorConfig | undefined =
+    config.attention === undefined || config.door?.attentionCost !== undefined
+      ? config.door
+      : Object.freeze({ ...(config.door ?? {}), attentionCost: ATTENTION_DEFAULT_COSTS });
   const driver = createTickDriver(slots, streamFor(seed, "root", 0), game0.context.clocks, {
-    ...(config.door !== undefined ? { intents: config.door } : {}),
+    ...(effectiveDoor !== undefined ? { intents: effectiveDoor } : {}),
     /* ADR-0012: absent ⇒ the key is never present ⇒ the driver folds no
        recovery slice ⇒ byte-identical to every pre-recovery weekend. */
     ...(config.recovery !== undefined ? { recovery: config.recovery } : {}),

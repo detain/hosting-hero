@@ -227,3 +227,56 @@ describe("runner pricing override forwarding (host seam @5781335)", () => {
     expect(seeded[19]?.freeCashMicroUsd).not.toBe(bare[19]?.freeCashMicroUsd);
   });
 });
+
+/* ────────────── seam 1b: owner verb tax (ADR-0013 #12(v)) ────────────── */
+
+function intentNotices(projection: SimProjection) {
+  return projection.notices.filter((n) => n.kind === "intent-executed" || n.kind === "intent-refused");
+}
+
+describe("runner attention verb-tax opt-in (ADR-0013 #12(v) host wiring)", () => {
+  it("planted EMPTY pool + communicate ⇒ attention-debt refusal — the tax is LIVE", () => {
+    const runner = new SimCoreRunner({ seed: 5, attention: createAttentionState(2) });
+    runner.submit(verbIntent(1, { verb: "communicate", note: "deal talk", target: null }));
+    const receipts = intentNotices(runner.headlessStep(10));
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]?.kind).toBe("intent-refused");
+    expect(receipts[0]?.detail).toMatch(/^communicate: attention-debt:/);
+    // eff5694 absent-hand law: the pool stays EMPTY — a refusal mints nothing.
+    expect(runner.attentionState()?.tokens.every((t) => t.busyCauseId === null)).toBe(true);
+    runner.stop();
+  });
+
+  it("TWIN: the SAME submit on an UNPLANTED runner executes — default stays byte-identical", () => {
+    // simCoreRunner.test.ts's shipped communicate pins ride exactly this arm:
+    // no options.attention ⇒ no intents config spread ⇒ door default EMPTY.
+    const runner = new SimCoreRunner({ seed: 5 });
+    runner.submit(verbIntent(1, { verb: "communicate", note: "deal talk", target: null }));
+    const receipts = intentNotices(runner.headlessStep(10));
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]?.kind).toBe("intent-executed");
+    expect(runner.attentionState()).toBeUndefined();
+    runner.stop();
+  });
+
+  it("planted LOAN + communicate ⇒ executed, and the focus hand books the intent", () => {
+    const runner = new SimCoreRunner({ seed: 5, attention: plantLoans(1) });
+    runner.submit(verbIntent(1, { verb: "communicate", note: "angry customer", target: null }));
+    const receipts = intentNotices(runner.headlessStep(10));
+    expect(receipts[0]?.kind).toBe("intent-executed");
+    const pool = runner.attentionState();
+    // The special rail paid for the SAME cause the everyday rail booked.
+    expect(pool?.tokens.some((t) => t.busyCauseId !== null)).toBe(true);
+    runner.stop();
+  });
+
+  it("a BUILD verb pays no tax under the owner map — place executes on a planted pool", () => {
+    const runner = new SimCoreRunner({ seed: 5, attention: createAttentionState(2) });
+    runner.submit(verbIntent(1, { verb: "place-device", nodeId: "web-9", deviceKind: "web", template: null }));
+    const receipts = intentNotices(runner.headlessStep(10));
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]?.kind).toBe("intent-executed");
+    expect(runner.attentionState()?.tokens.every((t) => t.busyCauseId === null)).toBe(true);
+    runner.stop();
+  });
+});
