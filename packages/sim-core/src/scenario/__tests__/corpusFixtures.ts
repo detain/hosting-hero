@@ -36,6 +36,12 @@ function buildThreatMeta(): (threatId: string) => ForeignThreatMeta | undefined 
 
 export const SHIPPED_G1_SLICE_STEM = "g1-shared-web-first-quarter";
 
+/** The mail-hosting quarter: the free-tier-flood corpus twin cites it
+ *  (its wave 1/2/4 compositions are the most malicious-dominant band the
+ *  shipped slices carry below the wave-5 crest). Same host-stands-in
+ *  reading as the shared-web slice — disk JSON, zero content edits. */
+export const SHIPPED_MAIL_SLICE_STEM = "g1-mail-hosting-first-quarter";
+
 let authority: CorpusAuthority | null = null;
 
 /** The single authority for every corpus probe in the suite (idempotent;
@@ -44,6 +50,7 @@ export function corpusAuthority(): CorpusAuthority {
   if (authority !== null) return authority;
   const slices = new Map<string, unknown>();
   slices.set(SHIPPED_G1_SLICE_STEM, readJson(`${CONTENT_ROOT}waves/${SHIPPED_G1_SLICE_STEM}.json`));
+  slices.set(SHIPPED_MAIL_SLICE_STEM, readJson(`${CONTENT_ROOT}waves/${SHIPPED_MAIL_SLICE_STEM}.json`));
   authority = Object.freeze({ slices, threatMeta: buildThreatMeta() });
   return authority;
 }

@@ -1,4 +1,4 @@
-/** runner.test.ts — the mission loop proven on the twenty-three shipped
+/** runner.test.ts — the mission loop proven on the twenty-six shipped
  *  §1.5 scenarios: every doc wins as authored, every doc loses when
  *  exactly one
  *  wire input is flipped (same seed), timeout is honest, and a run is
@@ -64,6 +64,23 @@
  *  gets its silent-queue level ("The Threshold Day" :4086) via the new
  *  `limits.corrupts` arm, the `corruptions` observation field, and the
  *  corruption-above/below predicate pair (vocab now twenty-nine).
+ *  WAVE-SIX ENGINE RUNGS (2026-10-14, this suite's describe "wave-six
+ *  missions") — the rungs the accepted investigation numbered past the
+ *  vocab ladder:
+ *  6. CONSUMED: attention denominations on the wire (limits.attention —
+ *     capacity + the door's attentionCost vocabulary @eff5694; the runner
+ *     mints the pool through triage-window entries at business minute 0
+ *     and mirrors the fastForward calendar roll, dead-ledger authority
+ *     @9ca31c3) → "The Founder Bus Factor" (:3880) shipped.
+ *  7. STILL OPEN: price on the wire — the L1 elasticity book (@5781335)
+ *     lives in GameState.pricing.overrides with no scenario citation yet;
+ *     deliberate future ticket, do not bolt on.
+ *  8. CONSUMED: the change-freeze band (limits.freeze answered by the
+ *     door's canPlaceDevice / canAdjustPrice host seams) → "The Change
+ *     Freeze" (:3625) shipped.
+ *  9. STILL OPEN: the familyMix census dim (generate-side mix weights have
+ *     no wire dial). NO-RUNG: "Free Tier Flood (Corpus Twin)" (:3574)
+ *     cites the shipped mail quarter through the tableId seam (@5df5586).
  *  Engine debt this lane reported but did not touch: internal/tickFold.ts
  *  still forwards no signal inputs — the scenario composes around it
  *  (rung-4 covenant precedent); a future fold pass-through retires the
@@ -93,9 +110,24 @@ const BASE_SEED = asRunSeed(904n);
  *  byte-identical to the shipped mission. */
 /** Surgery mirror — mutate plain JSON, re-cross the wall (readonly by law). */
 type MutableWire = {
-  limits: { opex: unknown[]; initialFreeMicroUsd: unknown; guardrails?: unknown[] };
+  limits: {
+    opex: unknown[];
+    initialFreeMicroUsd: unknown;
+    guardrails?: unknown[];
+    attention?: { capacity: number; cost: Record<string, number> };
+    freeze?: { fromMinute: number; toMinute: number };
+  };
   contracts: Record<string, unknown>[];
-  traffic: { tableId: string; segments: Record<string, unknown>[] };
+  traffic: {
+    tableId: string;
+    /** Segments profile only — never read for a corpus wire (the waves
+     *  field below is that shape's home; the clone is plain JSON either
+     *  way, this type is surgical convenience, not a wall). */
+    segments: Record<string, unknown>[];
+    waves?: number[];
+    waveStartMinute?: number;
+    baselineRatePerMin?: number;
+  };
   intents?: Record<string, unknown>[];
   signals?: {
     majorIncidents?: Record<string, unknown>[];
@@ -952,6 +984,106 @@ describe("wave-five conversions — outage grace, blame culture, the silent queu
       censuses.push(calm.observation.corruptions);
     }
     expect(censuses).toEqual([105, 105, 105, 105, 105]); // dice-free: the telegraph was arithmetic
+  });
+});
+
+describe("wave-six missions — the taxed rail, the tape, the cited flood", () => {
+  it("Founder Bus Factor with ONE attention hand → every second thought dies at t12", () => {
+    // ONE number: limits.attention.capacity 2 → 1. The rail is unchanged;
+    // the (communicate, configure) pairs still land at t5..t24, but now
+    // the odd-minute configure rows arrive while the handover minute owns
+    // the only token — refusals at t6, t8, t10, t12 and the authored
+    // refused-above:3 line snaps at the fourth. Pure door arithmetic
+    // (rate-0 traffic never rolls the arrival dice): identical on all
+    // five seed offsets, the understaffed-sunday :3657 @110f516 law.
+    const solo = flip("the-founder-bus-factor", (wire) => {
+      const attention = wire.limits.attention;
+      if (attention === undefined) throw new Error("wire lost its pool");
+      attention.capacity = 1;
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(solo, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:intents-refused-above:3@12");
+      expect(report.observation.intentsExecuted).toBe(4);
+      expect(report.observation.intentsRefused).toBe(4);
+    }
+    // discriminating pair: capacity 2 flows the WHOLE queue — 20 of 20
+    // rows, zero refusals, on every offset. The two hands were enough;
+    // the myth the loanLedger deepens is that they ever are again.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("the-founder-bus-factor"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@40");
+      expect(calm.observation.intentsExecuted).toBe(20);
+      expect(calm.observation.intentsRefused).toBe(0);
+    }
+  });
+
+  it("The Change Freeze deploying under the tape → the refusal lands at t75", () => {
+    // ONE number: the probe deploy moves from t20 (legal, pre-band) to
+    // t75 (under the tape, inside [60,120]). The door's canPlaceDevice
+    // host seam answers `placement-rejected: change-freeze` at the exact
+    // beat — zero dice, zero money lane, identical ×5. Everything else on
+    // the wire is byte-identical to the authored, patient mission whose
+    // knob-only fix (configure at t70, shed at t80, words at t90) is
+    // EXACTLY what the spec's day-3 break asks for.
+    const tempted = flip("the-change-freeze", (wire) => {
+      const probe = wire.intents?.[0];
+      if (probe === undefined) throw new Error("wire lost its probe deploy");
+      probe.atTick = 75;
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(tempted, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:intents-refused-above:0@75");
+      expect(report.observation.intentsRefused).toBe(1);
+    }
+    // the authored arm: deploys land OUTSIDE the band (t20 pre-freeze,
+    // t150 post-thaw), knobs land INSIDE it, and the tape never fires —
+    // the hazard-tape contract, quiet on all five offsets.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("the-change-freeze"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@240");
+      expect(calm.observation.intentsExecuted).toBe(5);
+      expect(calm.observation.intentsRefused).toBe(0);
+    }
+  });
+
+  it("Free Tier Flood (Corpus Twin) citing the brute-squad wave → the abuse ceiling snaps", () => {
+    // ONE citation added: waves [1,4] → [1,2,4] pulls the mail quarter's
+    // wave-2 storm band (vulnerable-plugin-compromise + wp-login-brute-
+    // squad, both malicious-family) into the queue. The authored band
+    // (drizzle + mimic) holds 145–149 malicious mints — twenty-five-plus
+    // of margin under the 176 ceiling; the added storm breaks the
+    // 175-floor crossing at t[39,39,38,35,35], the content's own
+    // waveStream dice deciding the beat inside a one-minute spread (the
+    // metastable-corpus banded-witness law @5df5586 — the RATES are the
+    // content's; if the corpus retunes, this mission retunes with it).
+    const flooded = flip("free-tier-flood-corpus", (wire) => {
+      wire.traffic.waves = [1, 2, 4];
+    });
+    const loseTicks: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(flooded, BASE_SEED, { seedOffset: offset, corpus: corpusAuthority() });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toMatch(/^lose:family-arrivals-above:malicious:175@\d+$/);
+      loseTicks.push(Number(report.endMinute));
+    }
+    expect(loseTicks).toEqual([39, 39, 38, 35, 35]); // seed 904..908
+    // the authored citation: every offset wins with the organic trickle
+    // fully deterministic (integer 8/min × 240 = 1,920 — the rate never
+    // rolls the dice) and the malicious census inside its probed band.
+    const censuses: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("free-tier-flood-corpus"), BASE_SEED, {
+        seedOffset: offset,
+        corpus: corpusAuthority(),
+      });
+      expect(calm.stopReason).toBe("win@240");
+      expect(calm.observation.arrivalsByFamily["organic"]).toBe(1920);
+      censuses.push(calm.observation.arrivalsByFamily["malicious"] ?? 0);
+    }
+    expect(censuses).toEqual([147, 149, 149, 145, 147]); // content-owned rates, probe-pinned
   });
 });
 

@@ -1,4 +1,4 @@
-/** scenarios.test.ts — the shipped library is twenty-three, cites §1.5
+/** scenarios.test.ts — the shipped library is twenty-six, cites §1.5
  *  verbatim, survives a JSON round-trip, and parses to the same documents
  *  it ships as frozen constants (the import-time wall is not decorative). */
 import { describe, expect, it } from "vitest";
@@ -39,10 +39,13 @@ const SPEC_HEADINGS: Readonly<Record<string, string>> = {
   "someone-elses-outage": "Someone Else's Outage",
   "the-rfo": "The RFO",
   "the-threshold-day": "The Threshold Day",
+  "the-founder-bus-factor": "The Founder Bus Factor",
+  "the-change-freeze": "The Change Freeze",
+  "free-tier-flood-corpus": "Free Tier Flood",
 };
 
 describe("the shipped set", () => {
-  it("is exactly the twenty-three shipped §1.5 wires (twenty-two missions; Metastable ships twice)", () => {
+  it("is exactly the twenty-six shipped §1.5 wires (twenty-four missions; Metastable and Free Tier Flood each ship twice)", () => {
     expect(SHIPPED_SCENARIO_IDS).toEqual([
       "the-long-weekend",
       "deadbeat-quarter",
@@ -67,6 +70,9 @@ describe("the shipped set", () => {
       "someone-elses-outage",
       "the-rfo",
       "the-threshold-day",
+      "the-founder-bus-factor",
+      "the-change-freeze",
+      "free-tier-flood-corpus",
     ]);
   });
 

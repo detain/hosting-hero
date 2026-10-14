@@ -392,6 +392,27 @@ export interface ScenarioLimits {
     readonly patienceMin: number;
     readonly probabilityBps: number;
   } | null;
+  /** Ladder rung 6: attention denominations (L2 lane @eff5694). A CLOSED
+   *  row — `capacity` is the pool size the runner mints (tokens opened via
+   *  triage-window entries at business minute 0: the handover queue IS the
+   *  triage window), and `cost` passes verbatim into the door's
+   *  `attentionCost` vocabulary (every listed verb 0|1; an absent verb is
+   *  untaxed). The key never materializes when unarmed — every pre-rung-6
+   *  doc object keeps its exact key set. */
+  readonly attention?: {
+    readonly capacity: number;
+    readonly cost: Readonly<Partial<Record<PlayerVerb, 0 | 1>>>;
+  };
+  /** Ladder rung 8: the change-freeze band (spec :3625 hazard tape). Inside
+   *  the INCLUSIVE window [fromMinute, toMinute] on the rail's tick clock,
+   *  the runner answers the door's two host-validator seams (`canPlaceDevice`,
+   *  `canAdjustPrice`) with a refusal — deploys and price moves die under the
+   *  tape; configure/shed/communicate stay legal. Absent = no validators are
+   *  wired at all (pre-rung-8 byte shape). */
+  readonly freeze?: {
+    readonly fromMinute: number;
+    readonly toMinute: number;
+  };
 }
 
 /** The trusted, deep-frozen scenario document. */
@@ -1018,11 +1039,56 @@ function parseCorrupts(raw: unknown, path: string): ScenarioLimits["corrupts"] {
   });
 }
 
+/** Rung-6 verb vocabulary: the door's PlayerVerb set, read from the one
+ *  list doc.ts already mirrors (SCENARIO_INTENT_ARG_SHAPES) — a verb the
+ *  intent rail cannot even schedule can never be taxed here either. */
+const ATTENTION_TAXABLE_VERBS: readonly string[] = Object.freeze(
+  Object.keys(SCENARIO_INTENT_ARG_SHAPES),
+);
+
+/** Ladder rung 6: `limits.attention {capacity, cost}` — CLOSED row.
+ *  `cost` is the door's `attentionCost` map verbatim: keys must be verbs,
+ *  values must be exactly 0 or 1 (the door's own resolveAttentionCost
+ *  law, enforced at the wall so a bad wire dies at parse, not mid-run). */
+function parseAttentionLimit(raw: unknown, path: string): ScenarioLimits["attention"] {
+  if (raw === null || raw === undefined) return undefined;
+  const src = asRecord(raw, path, "BAD_LIMITS");
+  requireKeys(src, ["capacity", "cost"], ["capacity", "cost"], path, "BAD_LIMITS");
+  const capacity = readInt(src, "capacity", path, "BAD_LIMITS", 1, 16);
+  const costSrc = asRecord(src.cost, `${path}.cost`, "BAD_LIMITS");
+  const cost: Record<string, 0 | 1> = {};
+  for (const [verb, value] of Object.entries(costSrc)) {
+    if (!ATTENTION_TAXABLE_VERBS.includes(verb)) {
+      bad("BAD_ENUM", `${path}.cost.${verb}`, `expected one of ${ATTENTION_TAXABLE_VERBS.join(", ")}`);
+    }
+    if (value !== 0 && value !== 1) {
+      bad("BAD_LIMITS", `${path}.cost.${verb}`, `attention cost must be 0 or 1, got ${String(value)}`);
+    }
+    cost[verb] = value as 0 | 1;
+  }
+  return Object.freeze({ capacity, cost: Object.freeze(cost) as Readonly<Partial<Record<PlayerVerb, 0 | 1>>> });
+}
+
+/** Ladder rung 8: `limits.freeze {fromMinute, toMinute}` — CLOSED row,
+ *  both ends required, inclusive, and the band must have width
+ *  (to > from — a one-minute tape is a typo, not a policy). */
+function parseFreezeLimit(raw: unknown, path: string): ScenarioLimits["freeze"] {
+  if (raw === null || raw === undefined) return undefined;
+  const src = asRecord(raw, path, "BAD_LIMITS");
+  requireKeys(src, ["fromMinute", "toMinute"], ["fromMinute", "toMinute"], path, "BAD_LIMITS");
+  const fromMinute = readInt(src, "fromMinute", path, "BAD_LIMITS", 1, SCENARIO_MAX_MINUTES_CAP);
+  const toMinute = readInt(src, "toMinute", path, "BAD_LIMITS", 1, SCENARIO_MAX_MINUTES_CAP);
+  if (toMinute <= fromMinute) {
+    bad("BAD_LIMITS", `${path}.toMinute`, `an inclusive freeze band needs toMinute > fromMinute, got ${fromMinute}..${toMinute}`);
+  }
+  return Object.freeze({ fromMinute, toMinute });
+}
+
 function parseLimits(raw: unknown, path: string): ScenarioLimits {
   const src = asRecord(raw, path, "BAD_LIMITS");
   requireKeys(
     src,
-    ["maxSimMinutes", "initialFreeMicroUsd", "opex", "dunningEngineOwned", "handCapacity", "guardrails", "covenants", "corrupts"],
+    ["maxSimMinutes", "initialFreeMicroUsd", "opex", "dunningEngineOwned", "handCapacity", "guardrails", "covenants", "corrupts", "attention", "freeze"],
     ["maxSimMinutes"],
     path,
     "BAD_LIMITS",
@@ -1052,6 +1118,8 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
     if (covenantIds.has(covenant.id)) bad("DUPLICATE", `${path}.covenants`, `duplicate covenant id "${covenant.id}"`);
     covenantIds.add(covenant.id);
   }
+  const attention = parseAttentionLimit(src.attention, `${path}.attention`);
+  const freeze = parseFreezeLimit(src.freeze, `${path}.freeze`);
   return Object.freeze({
     maxSimMinutes: readInt(src, "maxSimMinutes", path, "BAD_LIMITS", 1, SCENARIO_MAX_MINUTES_CAP),
     initialFreeMicroUsd: src.initialFreeMicroUsd === undefined ? 0n : parseMoneyWire(src.initialFreeMicroUsd, `${path}.initialFreeMicroUsd`, "BAD_LIMITS"),
@@ -1061,6 +1129,10 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
     guards,
     covenants: Object.freeze(covenants),
     corrupts: parseCorrupts(src.corrupts, `${path}.corrupts`),
+    // Rungs 6/8 ride as CONDITIONAL keys: unarmed docs never grow the key
+    // (the "their doc objects gain no keys" zero-golden law of this lane).
+    ...(attention === undefined ? {} : { attention }),
+    ...(freeze === undefined ? {} : { freeze }),
   });
 }
 

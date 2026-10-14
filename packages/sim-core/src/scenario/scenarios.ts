@@ -87,6 +87,19 @@
  *    changed; the board grew into a limit and the corrupts channel keeps
  *    the bounce meter silent while the queue rots (wave-five: corrupts
  *    arm + corruption-count predicates — the telegraph finally readable).
+ *  - the-founder-bus-factor → "The Founder Bus Factor" / "The Two Weeks'
+ *    Notice" (~line 3880): the least fungible resource is attention —
+ *    rung 6 (limits.attention) mints the taxed rail through the door's
+ *    L2 law (@eff5694): capacity 2 flows the handover queue, capacity 1
+ *    kills every second thought at EXACT ticks (calendar mirror @9ca31c3).
+ *  - the-change-freeze → "The Change Freeze" / "Read-Only Friday"
+ *    (~line 3625): the hazard tape is a validator — rung 8 (limits.freeze)
+ *    answers the door's two host seams (canPlaceDevice / canAdjustPrice)
+ *    with a refusal inside the band; knobs, steering and words stay legal.
+ *  - free-tier-flood-corpus → same "Free Tier Flood" heading (~line 3574):
+ *    the abuse-ceiling twin cited from the shipped mail-hosting quarter
+ *    (waves [1,4] under the ceiling; [1,2,4] crosses) — the tableId seam
+ *    again (@5df5586), no new rung.
  */
 
 import type { ScenarioDoc } from "./doc.ts";
@@ -1499,6 +1512,223 @@ const THE_THRESHOLD_DAY_WIRE = {
   },
 } satisfies ScenarioWire;
 
+/* ─────────────────── The Founder Bus Factor (rung 6) ─────────────────── */
+
+/** §1.5 "The Founder Bus Factor / Two Weeks' Notice" (:3880), playable core:
+ *  the least fungible resource. Ladder rung 6 (`limits.attention`) is the
+ *  engine truth here — the departing engineer's handover queue runs as
+ *  dense `communicate` + `configure-node` rows, BOTH taxed 1 (the door's
+ *  attentionCost vocabulary, L2 lane @eff5694: a taxed verb pays its normal
+ *  hand FIRST, then occupies a free attention token), while handCapacity 8
+ *  keeps the normal rail from EVER binding — the taxed rail is the level.
+ *  The runner mints the pool through triage-window entries at business
+ *  minute 0 (the resignation note IS the triage window; runner
+ *  mintAttentionPool law), and the calendar mirror (fastForward.ts:1033
+ *  @9ca31c3, dead-ledger loan-service pin) rolls month over the pool —
+ *  this clock never reaches the first roll (~t420, the covenant calendar
+ *  law @957ffcf), so no annual book is needed on this wire.
+ *  At capacity 2 the (communicate, configure) PAIRS share the two tokens:
+ *  communicate holds 2 ticks, configure 1, and the door's half-open law
+ *  (busyUntil <= tick releases) frees the pair exactly when the next pair
+ *  lands — all 20 rows execute, win@40 with zero refusals, pure arithmetic
+ *  (the understaffed-sunday :3657 @110f516 capacity precedent). Drop the
+ *  flip to capacity 1 and the queue jams deterministically: every configure
+ *  row arriving mid-handover refuses `attention-debt`, and the 4th refusal
+ *  lands at EXACTLY t12 on all five probed offsets —
+ *  `lose:intents-refused-above:3@12` ×5, seed-free. Whatever the founder
+ *  meant to hand over in the second half of every minute dies with them.
+ *  Zero dice: rate-0 segments mint no envelopes (runner envelopesAtMinute
+ *  early return), the door path is seed-free, witnesses pin exact ticks.
+ *  FOLD (docblock law): the spec's fourteen in-game days fold to the
+ *  handover SESSION its queue fits — the same compression long-weekend
+ *  (:3646) names for its four-day weekend; the un-chosen days are the
+ *  refusals. NON-EXPRESSIBLE (recorded): the DAY-BY-DAY allocation choice
+ *  (documenting vs training vs fixing vs relationships needs an
+ *  allocation ledger that does not exist), and the permanent loss of
+ *  un-chosen knowledge (no tribal-knowledge resource in the state). */
+const FOUNDER_BUS_FACTOR_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-founder-bus-factor",
+  name: "The Founder Bus Factor",
+  brief:
+    "Two weeks' notice, one senior engineer, and a handover queue that does not fit in their head. Every briefing and every knob-walk burns a real attention token: with two hands on the clock the queue flows; with one, every second thought dies with them.",
+  specRef: "§1.5 The Founder Bus Factor / Two Weeks' Notice",
+  specLine: 3880,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "bus-factor-quiet",
+    segments: [{ fromMinute: 0, ratePerMin: 0 }],
+  },
+  intents: [
+    { atTick: 5, verb: "communicate", args: { target: null, note: "handover-runbook-index" } },
+    { atTick: 6, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: "inspect", shedOrder: null } },
+    { atTick: 7, verb: "communicate", args: { target: null, note: "handover-secret-locations" } },
+    { atTick: 8, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: null, shedOrder: "qos-weighted" } },
+    { atTick: 9, verb: "communicate", args: { target: null, note: "handover-oncall-tribal-log" } },
+    { atTick: 10, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: "challenge", shedOrder: null } },
+    { atTick: 11, verb: "communicate", args: { target: null, note: "handover-whale-relationships" } },
+    { atTick: 12, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: null, shedOrder: "lowest-value-first" } },
+    { atTick: 13, verb: "communicate", args: { target: null, note: "handover-vendor-favors" } },
+    { atTick: 14, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: "sample-1-in-20", shedOrder: null } },
+    { atTick: 15, verb: "communicate", args: { target: null, note: "handover-deploy-spells" } },
+    { atTick: 16, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: null, shedOrder: "first-in-first-out" } },
+    { atTick: 17, verb: "communicate", args: { target: null, note: "handover-incident-scar-map" } },
+    { atTick: 18, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: "pass-through", shedOrder: null } },
+    { atTick: 19, verb: "communicate", args: { target: null, note: "handover-key-person-phone" } },
+    { atTick: 20, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: null, shedOrder: "last-in-first-out" } },
+    { atTick: 21, verb: "communicate", args: { target: null, note: "handover-quiet-hacks" } },
+    { atTick: 22, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: "inspect", shedOrder: null } },
+    { atTick: 23, verb: "communicate", args: { target: null, note: "handover-final-walkthrough" } },
+    { atTick: 24, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: null, shedOrder: "qos-weighted" } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 40 },
+      { kind: "intents-executed-above", count: 19 },
+    ],
+    lose: [{ kind: "intents-refused-above", count: 3 }],
+  },
+  limits: {
+    maxSimMinutes: 60,
+    handCapacity: 8,
+    attention: { capacity: 2, cost: { communicate: 1, "configure-node": 1 } },
+  },
+} satisfies ScenarioWire;
+
+/* ───────────────────── The Change Freeze (rung 8) ─────────────────────── */
+
+/** §1.5 "The Change Freeze / Frozen Change / Read-Only Friday" (:3625).
+ *  Ladder rung 8 (`limits.freeze`) wires the spec's hazard tape through the
+ *  door's two EXISTING host-validator seams — `canPlaceDevice` and
+ *  `canAdjustPrice` (intent-door.ts:170/175) — answered by the runner's
+ *  tape-band validator while the inclusive [fromMinute, toMinute] window
+ *  holds (tick-clock reading: the door runs pre-step, so its context.tick
+ *  is the rail's atTick). Deploys and price moves refuse under the tape;
+ *  the spec's "runtime knobs only" list is honored by construction —
+ *  configure-node (flags/TTLs/inspection), shed-load (traffic steering)
+ *  and communicate (announcements) carry NO validator seam and stay legal
+ *  inside the band. The win arm proves the ladder is climbable WITHOUT
+ *  flying by hand: every under-tape row executes, the pre-freeze deploy
+ *  lands, the post-thaw deploy lands, zero refusals.
+ *  HONEST v1 (recorded twice, per spec's own words): place never routed
+ *  throughput on this board anyway — the arrival step reads envelopes, not
+ *  topology — so the freeze is exactly what the spec calls it, a
+ *  SCORING-CONSTRAINT BAND ("clicking under it plays a refusal"), not a
+ *  capacity mechanic. The connect-ports verb has NO host seam on the door
+ *  in v1: dragging a cable under the tape stays legal (gap recorded for
+ *  the door lane). The "break the freeze ONCE" variant needs a one-veto
+ *  counter the observation does not carry.
+ *  Zero dice: integer segment rates mint without arrival rolls (the
+ *  free-tier-flood :3574 determinism law); the flip moves the probe row's
+ *  atTick INSIDE the band (t20 → t75) and loses
+ *  `lose:intents-refused-above:0@75` at that exact tick on all five probed
+ *  offsets — the tape refuses on the beat, every seed, like the spec's
+ *  hazard tape plays its refusal sound. */
+const CHANGE_FREEZE_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-change-freeze",
+  name: "The Change Freeze",
+  brief:
+    "The board mandated N quiet days and the tape is diagonal across the deploy button. Something breaks mid-freeze — fix it with knobs you already own: flags, steering, words. The deploy you refuse is the level; the deploy you sneak is the audit finding.",
+  specRef: "§1.5 The Change Freeze / Read-Only Friday",
+  specLine: 3625,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "freeze-weather",
+    segments: [
+      { fromMinute: 0, ratePerMin: 2 },
+      { fromMinute: 60, ratePerMin: 14 },
+      { fromMinute: 120, ratePerMin: 2 },
+    ],
+  },
+  intents: [
+    { atTick: 20, verb: "place-device", args: { nodeId: "web-2", deviceKind: "shared-web", template: null } },
+    { atTick: 70, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: "challenge", shedOrder: null } },
+    { atTick: 80, verb: "shed-load", args: { nodeId: "web-1", qosClassId: null } },
+    { atTick: 90, verb: "communicate", args: { target: null, note: "freeze-incident-sticky-note" } },
+    { atTick: 150, verb: "place-device", args: { nodeId: "web-3", deviceKind: "shared-web", template: null } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "intents-refused-below", count: 1 },
+    ],
+    lose: [{ kind: "intents-refused-above", count: 0 }],
+  },
+  limits: {
+    maxSimMinutes: 240,
+    freeze: { fromMinute: 60, toMinute: 120 },
+  },
+} satisfies ScenarioWire;
+
+/* ───────────── Free Tier Flood — corpus twin (no new rung) ───────────── */
+
+/** §1.5 "Free Tier Flood" (:3574) again, through the waves-tableId seam
+ *  (@5df5586) instead of hand-typed plateaus: the organic trickle stays
+ *  authored (the baseline envelope — the free tier's genuine signups),
+ *  while the FLOOD is a citation of the shipped g1 mail-hosting quarter —
+ *  wave 1 (scanner drizzle, all malicious) and wave 4 (layer-7 mimic +
+ *  ticket hydra, mimic-dominant) stack at the content's own rates through
+ *  the same planWave law the campaign plays. The wire cites the mail
+ *  slice because its first four waves are the quarter's most
+ *  malicious-dominant composition (registry-core families: scanner-drizzle,
+ *  vulnerable-plugin-compromise, wp-login-brute-squad, layer7-mimic all
+ *  malicious; the wave-5 crest is systemic-dominant and its storm dice are
+ *  deliberately outside this band — the metastable-corpus :4076 twin keeps
+ *  the finale for its own cascade witness).
+ *  Same abuse-ceiling reading as the segments twin (:3574), narrowed to the
+ *  malicious census pair per this lane's vocab: the citation must flood
+ *  attacks ABOVE a floor that proves the storm actually spawned, while the
+ *  whole cited band stays BELOW the abuse ceiling the free-tier controls
+ *  were tuned to (the organic baseline at 8/min × 240 = 1,920 genuine
+ *  mints rides along underneath, deterministic by the integer-rate law). The corpus
+ *  rates are the content's — they roll the waveStream dice — so the
+ *  census is seed-robust by CEILING MARGIN, not by exact arithmetic: the
+ *  win arm measures 145–149 malicious mints on all five probed offsets
+ *  (floor 120 and ceiling 176 both hold with 25+/27+ margins). Flip: cite
+ *  wave 2 (the brute squad's own storm band) into the queue — waves [1,4]
+ *  → [1,2,4] — and the abuse crosses the ceiling at t[39,39,38,35,35]
+ *  across the offsets, the dice-visible banded witness the
+ *  metastable-corpus twin's protocol (@5df5586) was built for. NON-EXPRESSIBLE rides with the segments
+ *  twin (KYC walls, payment rails — the defense board slice). */
+const FREE_TIER_FLOOD_CORPUS_WIRE = {
+  schema: "hh-scenario@1",
+  id: "free-tier-flood-corpus",
+  name: "Free Tier Flood (Corpus Twin)",
+  brief:
+    "The free tier opens to a trickle of genuine blogs; the flood is not typed in — it is whatever the quarter's own waves do to a mail box. Keep the abuse census under the ceiling the controls were tuned to without strangling the signups that made the tier worth running.",
+  specRef: "§1.5 Free Tier Flood / Free Tier Abuse / Free Tier Invaded",
+  specLine: 3574,
+  board: {
+    nodes: [{ id: "edge-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "g1-mail-hosting-first-quarter",
+    waves: [1, 4],
+    waveStartMinute: 2,
+    baselineRatePerMin: 8,
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "family-arrivals-above", family: "malicious", count: 120 },
+      { kind: "family-arrivals-below", family: "malicious", count: 176 },
+    ],
+    lose: [{ kind: "family-arrivals-above", family: "malicious", count: 175 }],
+  },
+  limits: { maxSimMinutes: 240 },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -1525,6 +1755,9 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [SOMEONE_ELSES_OUTAGE_WIRE.id]: SOMEONE_ELSES_OUTAGE_WIRE,
   [THE_RFO_WIRE.id]: THE_RFO_WIRE,
   [THE_THRESHOLD_DAY_WIRE.id]: THE_THRESHOLD_DAY_WIRE,
+  [FOUNDER_BUS_FACTOR_WIRE.id]: FOUNDER_BUS_FACTOR_WIRE,
+  [CHANGE_FREEZE_WIRE.id]: CHANGE_FREEZE_WIRE,
+  [FREE_TIER_FLOOD_CORPUS_WIRE.id]: FREE_TIER_FLOOD_CORPUS_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
@@ -1559,6 +1792,9 @@ const slowWeekAfterDoc: ScenarioDoc = parseScenarioDoc(SLOW_WEEK_AFTER_WIRE);
 const someoneElsesOutageDoc: ScenarioDoc = parseScenarioDoc(SOMEONE_ELSES_OUTAGE_WIRE);
 const theRfoDoc: ScenarioDoc = parseScenarioDoc(THE_RFO_WIRE);
 const theThresholdDayDoc: ScenarioDoc = parseScenarioDoc(THE_THRESHOLD_DAY_WIRE);
+const founderBusFactorDoc: ScenarioDoc = parseScenarioDoc(FOUNDER_BUS_FACTOR_WIRE);
+const changeFreezeDoc: ScenarioDoc = parseScenarioDoc(CHANGE_FREEZE_WIRE);
+const freeTierFloodCorpusDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_CORPUS_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -1585,6 +1821,9 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   someoneElsesOutageDoc.id,
   theRfoDoc.id,
   theThresholdDayDoc.id,
+  founderBusFactorDoc.id,
+  changeFreezeDoc.id,
+  freeTierFloodCorpusDoc.id,
 ]);
 
 /** id → trusted doc. */
@@ -1612,6 +1851,9 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [someoneElsesOutageDoc.id]: someoneElsesOutageDoc,
   [theRfoDoc.id]: theRfoDoc,
   [theThresholdDayDoc.id]: theThresholdDayDoc,
+  [founderBusFactorDoc.id]: founderBusFactorDoc,
+  [changeFreezeDoc.id]: changeFreezeDoc,
+  [freeTierFloodCorpusDoc.id]: freeTierFloodCorpusDoc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */

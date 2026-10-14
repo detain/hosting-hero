@@ -606,6 +606,51 @@ describe("wave-five conversions — the corrupts arm + corruption lines", () => 
   });
 });
 
+describe("wave-six rungs — the attention row and the freeze band", () => {
+  const withAttention = (arm: unknown): MutableWire => {
+    const wire = minimalWire();
+    (wire.limits as { attention?: unknown }).attention = arm;
+    return wire;
+  };
+  const withFreeze = (arm: unknown): MutableWire => {
+    const wire = minimalWire();
+    (wire.limits as { freeze?: unknown }).freeze = arm;
+    return wire;
+  };
+
+  it("limits.attention arms as a closed {capacity, cost} row, deep-frozen", () => {
+    const doc = parseScenarioDoc(withAttention({ capacity: 2, cost: { communicate: 1, "configure-node": 0 } }));
+    expect(doc.limits.attention).toEqual({ capacity: 2, cost: { communicate: 1, "configure-node": 0 } });
+    expect(Object.isFrozen(doc.limits.attention)).toBe(true);
+    expect(Object.isFrozen(doc.limits.attention?.cost)).toBe(true);
+  });
+
+  it("unarmed rungs never materialize (the zero-golden conditional-key law)", () => {
+    const keys = Object.keys(parseScenarioDoc(minimalWire()).limits);
+    expect(keys).not.toContain("attention");
+    expect(keys).not.toContain("freeze");
+  });
+
+  it("the attention wall refuses: capacity out of range, costs beyond 0|1, off-vocab verbs, extra keys", () => {
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withAttention({ capacity: 0, cost: {} }))).path).toContain("attention.capacity");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withAttention({ capacity: 17, cost: {} }))).path).toContain("attention.capacity");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withAttention({ capacity: 2, cost: { communicate: 2 } }))).path).toContain("cost.communicate");
+    expect(wall("BAD_ENUM", () => parseScenarioDoc(withAttention({ capacity: 2, cost: { fly: 1 } }))).path).toContain("cost.fly");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withAttention({ capacity: 2, cost: {}, windows: 1 }))).path).toContain("attention");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withAttention({ capacity: 2 }))).path).toContain("attention");
+  });
+
+  it("limits.freeze arms an inclusive band and refuses a tape without width", () => {
+    const doc = parseScenarioDoc(withFreeze({ fromMinute: 60, toMinute: 120 }));
+    expect(doc.limits.freeze).toEqual({ fromMinute: 60, toMinute: 120 });
+    expect(Object.isFrozen(doc.limits.freeze)).toBe(true);
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withFreeze({ fromMinute: 60, toMinute: 60 }))).path).toContain("toMinute");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withFreeze({ fromMinute: 60, toMinute: 59 }))).path).toContain("toMinute");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withFreeze({ fromMinute: 60 }))).path).toContain("freeze");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(withFreeze({ fromMinute: 60, toMinute: 120, verbs: [] }))).path).toContain("freeze");
+  });
+});
+
 describe("parseMoneyWire", () => {
   it("accepts safe ints and digit strings, rejects the rest", () => {
     expect(parseMoneyWire(0, "p", "BAD_MONEY")).toBe(0n);

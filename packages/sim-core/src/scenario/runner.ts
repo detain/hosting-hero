@@ -27,6 +27,7 @@
  */
 
 import type {
+  AttentionState,
   BoardEdgeRecord,
   CauseId,
   Contract,
@@ -46,8 +47,20 @@ import { MICROS_PER_MIN } from "../kernel/time.ts";
 import { streamFor } from "../kernel/rng.ts";
 import { resolveCorpusWindows } from "./corpus.ts";
 import type { CorpusAuthority, CorpusWaveWindow } from "./corpus.ts";
-import { createDefaultSlots, createTickDriver, digestState } from "../pipeline/index.ts";
-import type { DefaultPipelineConfig } from "../pipeline/index.ts";
+import {
+  attentionWindowEntry,
+  createAttentionState,
+  createDefaultSlots,
+  createTickDriver,
+  digestState,
+  replenishAtBusinessMonth,
+} from "../pipeline/index.ts";
+import type {
+  AdjustPriceQuery,
+  DefaultPipelineConfig,
+  IntentDoorConfig,
+  PlaceDeviceQuery,
+} from "../pipeline/index.ts";
 import { createRulePhaseStep } from "../policy/index.ts";
 import type {
   CompanyDeathCause,
@@ -634,6 +647,45 @@ function allHold(obs: ScenarioObservation, predicates: readonly ObjectivePredica
   return true;
 }
 
+/* ─────────────── rung 6: attention denominations (host side) ─────────────── */
+
+/* The business-minute month constant mirrors fastForward.ts:1157 by intent,
+ * not by import. The CALENDAR is the roll authority, never the folded month
+ * index — cite the host-forwarding lane's dead-ledger pin @9ca31c3: a
+ * calendar-driven roll keeps servicing attention loans past terminal company
+ * death, which a monthIndex-coupled design provably misses. The roll block
+ * below therefore sits OUTSIDE the money fold, exactly like the weekend's. */
+const ATTENTION_MONTH_MINUTES = 43_200;
+
+function attentionMonthOf(state: GameState): number {
+  return Math.floor(Number(state.context.clocks.businessUs / MICROS_PER_MIN) / ATTENTION_MONTH_MINUTES);
+}
+
+/** Rung-6 mint law: the resignation note IS the triage window. The pipeline
+ *  pool starts EMPTY (attention.ts: a window entry is the only hand-creation
+ *  event), so the runner opens `capacity` triage-window entries at business
+ *  minute 0 — capacity hands in play, each carrying one un-repaid loan
+ *  (debt = capacity), which the month rolls then service one loan at a time. */
+function mintAttentionPool(capacity: number): AttentionState {
+  let pool = createAttentionState(capacity);
+  for (let opened = 0; opened < capacity; opened += 1) {
+    pool = attentionWindowEntry(pool, "triage-window", 0).state;
+  }
+  return pool;
+}
+
+/* ─────────────── rung 8: the change-freeze validators ─────────────── */
+
+/* One shared refusal answer for both door host-validator seams — the door
+ * supplies the prefix (`placement-rejected:` / `unknown-plan:`, its
+ * requireString law). The band is INCLUSIVE on both ends and read on the
+ * rail's tick clock, the same number every intent row stamps `atTick` with. */
+const FREEZE_REJECTION: { readonly reason: string } = Object.freeze({ reason: "change-freeze" });
+
+function isUnderTheTape(freeze: { readonly fromMinute: number; readonly toMinute: number }, atTick: SimTick): boolean {
+  return atTick >= freeze.fromMinute && atTick <= freeze.toMinute;
+}
+
 /** Run one authored mission. Deterministic by construction: every random
  *  draw rides streamFor(seed, …) from the doc's engine, every mutable is
  *  minted inside, and the report is a pure fold of the run. */
@@ -659,6 +711,12 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
 
   /* ── mint the world (the unattended assembly, from doc data) ── */
   const corrupts = doc.limits.corrupts;
+  /* Rung 6: the pool is minted ONLY when the wire names it. Absent ⇒ the
+   * `attention` key never materializes in the frozen initial state (the
+   * digest absorbs it only when present), so all 23 pre-rung-6 wires ride
+   * their exact byte shape. */
+  const attentionLimit = doc.limits.attention;
+  const attentionPool = attentionLimit === undefined ? null : mintAttentionPool(attentionLimit.capacity);
   const uaConfig: RunUnattendedConfig = Object.freeze({
     runSeed,
     board: doc.board,
@@ -672,6 +730,9 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
      * the wire names it — every pre-channel mission keeps the lane's
      * 120-minute default byte-for-byte. */
     ...(corrupts === null ? {} : { defaultPatienceMin: corrupts.patienceMin }),
+    /* Rung 6: the minted pool rides the initial-state spread; absent when
+     * unarmed (mintInitialState gates the key the same way). */
+    ...(attentionPool === null ? {} : { attention: attentionPool }),
   });
   const nodes = mintNodeRecords(doc.board.nodes);
   const edges: readonly BoardEdgeRecord[] = mintBoardEdges(doc.board.edges);
@@ -700,11 +761,29 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
    * handCapacity mirrors the minted hands (the door's fallback path never
    * fires on scenario states; naming it keeps the two readings honest). */
   const intentSchedule = scheduleIntents(doc.intents);
+  /* Rungs 6/8 ride the door config as CONDITIONAL keys: an unarmed wire
+   * produces exactly the pre-rung {handCapacity} object, so every shipped
+   * mission's door behavior (and digest) is byte-stand. Taxed verbs pay the
+   * normal hand FIRST, then occupy a free attention token (door law); the
+   * freeze validators answer only under the tape, both inclusive ends. */
+  const freezeRow = doc.limits.freeze;
+  const doorIntents: IntentDoorConfig = Object.freeze({
+    handCapacity: Math.max(1, doc.limits.handCapacity),
+    ...(attentionLimit === undefined ? {} : { attentionCost: attentionLimit.cost }),
+    ...(freezeRow === undefined
+      ? {}
+      : {
+          canPlaceDevice: (query: PlaceDeviceQuery) =>
+            isUnderTheTape(freezeRow, query.context.tick) ? FREEZE_REJECTION : null,
+          canAdjustPrice: (query: AdjustPriceQuery) =>
+            isUnderTheTape(freezeRow, query.context.tick) ? FREEZE_REJECTION : null,
+        }),
+  });
   const driver = createTickDriver(
     slots,
     streamFor(runSeed, "root", 0),
     game0.context.clocks,
-    doc.intents.length > 0 ? { intents: { handCapacity: Math.max(1, doc.limits.handCapacity) } } : {},
+    doc.intents.length > 0 ? { intents: doorIntents } : {},
   );
 
   /* ── money lane (the roster registers ONCE through the batch API) ── */
@@ -815,6 +894,9 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     nodeCount: game.nodes.size,
   });
   let lastObs = snapshotObservation(mintFacts, 0, acc, windowSumsAt(minuteLedger, 0, citedWindows), econ);
+  /* Rung 6 calendar cursor (fastForward.ts:1142 law mirrored): the BUSINESS
+   * clock owns month rolls, not the economy's folded monthIndex. */
+  let attentionMonthCursor = attentionMonthOf(game);
 
   for (let t = 1; t <= totalTicks; t++) {
     const minute = game.context.minute + 1;
@@ -898,6 +980,25 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
         });
       }
       game = withCashMirror(game, econ);
+    }
+
+    /* Rung 6 host month-roll — the calendar block deliberately sits OUTSIDE
+     * the money fold above: voided settles and terminal company death never
+     * defer the clock (fastForward.ts:1033 mirror; the dead-ledger witness
+     * pin @9ca31c3 is the falsifier that proved a money-coupled roll misses
+     * service past death). One loan serviced per roll, oldest first. */
+    if (game.attention !== undefined) {
+      const monthsNow = attentionMonthOf(game);
+      const monthRolls = monthsNow - attentionMonthCursor;
+      attentionMonthCursor = monthsNow;
+      if (monthRolls > 0) {
+        const businessMinute = Number(game.context.clocks.businessUs / MICROS_PER_MIN);
+        let attention: AttentionState = game.attention;
+        for (let roll = 0; roll < monthRolls; roll += 1) {
+          attention = replenishAtBusinessMonth(attention, businessMinute, true);
+        }
+        game = Object.freeze({ ...game, attention });
+      }
     }
 
     /* tick-final observation (the ONLY thing objectives read). */
