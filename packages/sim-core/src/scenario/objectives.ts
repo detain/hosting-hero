@@ -57,6 +57,12 @@ export interface ScenarioObservation {
    *  rows credit; ambiguous and refiled rows credit 0). 0n while the
    *  channel is silent or nothing ever earned credit. */
   readonly postmortemCreditsBps: bigint;
+  /** Wave five: cumulative `CorruptOutcome`s the driver reported on
+   *  `TickResult.corruptions` — patience-exhausted completions that silently
+   *  corrupted their response instead of bouncing (the green-dashboard lie
+   *  made mechanical: bounces stay 0 while this counts up). 0 while the doc
+   *  names no `limits.corrupts` arm — the pre-channel byte shape. */
+  readonly corruptions: number;
   /** Ladder rung 3: cumulative arrival mints by the dominantFamily label of
    *  the envelope that minted them (organic + the five threat families).
    *  Counted at MINT — re-entries carry no new arrival event, so retries
@@ -91,6 +97,7 @@ export const EMPTY_OBSERVATION: ScenarioObservation = Object.freeze({
   intentsRefused: 0,
   chargebacksApplied: 0,
   postmortemCreditsBps: 0n,
+  corruptions: 0,
   arrivalsByFamily: Object.freeze({}),
   windowSums: Object.freeze({}),
 });
@@ -181,6 +188,10 @@ export function objectiveHolds(obs: ScenarioObservation, predicate: ObjectivePre
       return obs.postmortemCreditsBps >= BigInt(predicate.bps);
     case "postmortem-credits-below":
       return obs.postmortemCreditsBps < BigInt(predicate.bps);
+    case "corruption-above":
+      return obs.corruptions > predicate.count;
+    case "corruption-below":
+      return obs.corruptions < predicate.count;
   }
 }
 
@@ -244,6 +255,9 @@ export function objectiveLine(predicate: ObjectivePredicate): string {
     case "postmortem-credits-above":
     case "postmortem-credits-below":
       return `${predicate.kind}:${predicate.bps}`;
+    case "corruption-above":
+    case "corruption-below":
+      return `${predicate.kind}:${predicate.count}`;
   }
 }
 
@@ -321,6 +335,10 @@ function progressOf(obs: ScenarioObservation, predicate: ObjectivePredicate): Fi
       return clampRatio(obs.postmortemCreditsBps, BigInt(predicate.bps));
     case "postmortem-credits-below":
       return clampRatio(BigInt(predicate.bps) - obs.postmortemCreditsBps, BigInt(predicate.bps));
+    case "corruption-below":
+      return clampRatio(BigInt(predicate.count - obs.corruptions), BigInt(predicate.count));
+    case "corruption-above":
+      return clampRatio(BigInt(obs.corruptions), BigInt(predicate.count + 1));
   }
 }
 

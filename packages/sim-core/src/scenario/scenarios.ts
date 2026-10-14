@@ -74,6 +74,19 @@
  *  - the-slow-week-after → "The Slow Week After" (~line 4025): the level
  *    after the outage; the blameless write-up is the gameplay (channels
  *    ladder: signal major incidents + post-mortem adjudication).
+ *  - someone-elses-outage → "Someone Else's Outage" (~line 4047): the
+ *    region that died is not yours; a green board and a pure queue hour —
+ *    grace itself is the win condition (wave-five: door channel, second
+ *    story, mirror of Sunday).
+ *  - the-rfo           → "The RFO" (~line 4034): the doc's STYLE is the
+ *    move — blameless sets the floor that halves the next hit, blame pays
+ *    zero and the second outage lands full (wave-five: post-mortem style
+ *    flip + honestPostmortems channel, mirror of the Slow Week's
+ *    ambiguity flip).
+ *  - the-threshold-day → "The Threshold Day" (~line 4086): nothing
+ *    changed; the board grew into a limit and the corrupts channel keeps
+ *    the bounce meter silent while the queue rots (wave-five: corrupts
+ *    arm + corruption-count predicates — the telegraph finally readable).
  */
 
 import type { ScenarioDoc } from "./doc.ts";
@@ -1264,6 +1277,228 @@ const SLOW_WEEK_AFTER_WIRE = {
   },
 } satisfies ScenarioWire;
 
+/* ──────────────────── Someone Else's Outage ────────────────────────── */
+
+/** §1.5 "Someone Else's Outage" (:4047) — the C1 door channel's second
+ *  story, told from the OTHER side of the rail. A major region elsewhere
+ *  dies and the internet notices your status page anyway: every ticket is
+ *  about a failure you did not have. The engine says it plainly — the
+ *  board stays GREEN for the whole hour (`bounces-below:1` is not taste,
+ *  it is the premise) while the entire game is the communicate cadence.
+ *  DIFFERENT vs "Understaffed Sunday" (C1 pilot, :3657): Sunday is a
+ *  drowning sprint — one operator, a 40-minute rain of tickets, the win
+ *  is surviving refusals. Here the site is innocent, the queue is the
+ *  weather, and the WIN line itself requires grace (executed ≥ 13 AND
+ *  refused < 1) — the mission fails if you lose your temper even once.
+ *  Hand-capacity-1 arithmetic, seed-free: the 2-minute rest after each
+ *  reply always lands, so the win arm mints zero refusals across all
+ *  five seed offsets, and one spacing sin — packing burst B to one-tick
+ *  intervals the way a real inbox does at 09:00 — jams the single hand
+ *  and the door refuses its first frightened customer at t26, ending
+ *  the show there, exact ×5 (grace is a cliff, not a slope).
+ *  NON-EXPRESSIBLE (recorded, Collections-Week ruling): the sales spike
+ *  the graceful queue converts (no CRM/conversion primitive on the
+ *  wire), the ticket backlog as an entity (rows ARE the queue — Sunday
+ *  precedent), and "not your fault" as anything beyond the green-site
+ *  witness the bounces line already gives. */
+const SOMEONE_ELSES_OUTAGE_WIRE = {
+  schema: "hh-scenario@1",
+  id: "someone-elses-outage",
+  name: "Someone Else's Outage",
+  brief:
+    "A cloud region far away caught fire and your status page caught the blame. Nothing is broken here — the hour is pure queue: reply, reply, reply, and never let the one-hand door refuse a frightened customer.",
+  specRef: "§1.5 Someone Else's Outage",
+  specLine: 4047,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "borrowed-thunder",
+    segments: [{ fromMinute: 0, ratePerMin: 3 }],
+  },
+  intents: [
+    // Burst A — the morning wave, one reply per two ticks, door never jams.
+    { atTick: 5, verb: "communicate", args: { target: null, note: "r-a-1" } },
+    { atTick: 7, verb: "communicate", args: { target: null, note: "r-a-2" } },
+    { atTick: 9, verb: "communicate", args: { target: null, note: "r-a-3" } },
+    { atTick: 11, verb: "communicate", args: { target: null, note: "r-a-4" } },
+    { atTick: 13, verb: "communicate", args: { target: null, note: "r-a-5" } },
+    // Burst B — the noon surge. One-tick spacing here is the flip.
+    { atTick: 25, verb: "communicate", args: { target: null, note: "r-b-1" } },
+    { atTick: 27, verb: "communicate", args: { target: null, note: "r-b-2" } },
+    { atTick: 29, verb: "communicate", args: { target: null, note: "r-b-3" } },
+    { atTick: 31, verb: "communicate", args: { target: null, note: "r-b-4" } },
+    { atTick: 33, verb: "communicate", args: { target: null, note: "r-b-5" } },
+    // Burst C — the evening tail of "is it my site too?" tickets.
+    { atTick: 45, verb: "communicate", args: { target: null, note: "r-c-1" } },
+    { atTick: 47, verb: "communicate", args: { target: null, note: "r-c-2" } },
+    { atTick: 49, verb: "communicate", args: { target: null, note: "r-c-3" } },
+    { atTick: 51, verb: "communicate", args: { target: null, note: "r-c-4" } },
+    { atTick: 53, verb: "communicate", args: { target: null, note: "r-c-5" } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 60 },
+      { kind: "intents-executed-above", count: 13 },
+      { kind: "intents-refused-below", count: 1 },
+      { kind: "bounces-below", count: 1 },
+    ],
+    lose: [{ kind: "intents-refused-above", count: 0 }],
+  },
+  limits: { maxSimMinutes: 90, handCapacity: 1 },
+} satisfies ScenarioWire;
+
+/* ──────────────────────────── The RFO ──────────────────────────────── */
+
+/** §1.5 "The RFO" (:4034) — the signals channel's blame-culture story,
+ *  deliberately the MIRROR of "The Slow Week After" (:4025). That pilot
+ *  proved adjudication: the same filing flips on changesInFlight (one
+ *  clean change credits, two blur into ambiguity and forfeit). This one
+ *  flips on STYLE, and the wire has a word for it: `style: "blame"` is
+ *  logged, read, and pays ZERO (postmortem.ts skips uncredited rows for
+ *  reputation entirely) — a public finger-pointing doc is a document the
+ *  ledger respects and the customers do not. Both post-mortem channels
+ *  run side by side for the first time: the adjudicated filing at m40
+ *  (+250 credit via the filed-reputation splice) AND an `honestPostmortems`
+ *  transparency claim at m70 on a cause no doc adjudicated — it sets the
+ *  honest-host floor but books no credit, so `postmortem-credits-above:200`
+ *  stays a true witness of the FILING, not of the speech.
+ *  REPUTATION ARITHMETIC (economy/reputation.ts, probe-confirmed): 5000
+ *  initial → m20 major −500 → 4500 → m40 blameless +250 → 4750 → m60
+ *  second major −500, and here the floor earns its keep: honesty floor
+ *  4500 HALVES the hit to −250 → 4500. That 4500 is the knife's edge —
+ *  `reputation-above:4500` holds only because the culture was blameless.
+ *  The blame flip pays no credit, so the floor never sets, m60 lands full
+ *  −500 on 4500 → 4000 and the show ends at t60, exact ×5, seed-free
+ *  (money lane is a meter; the clip is a loss-line witness).
+ *  NON-EXPRESSIBLE (recorded, Collections-Week ruling): the RFO doc
+ *  minigame itself (writing IS filing — the style slot is the whole game
+ *  the engine can see), evidence-retention gating, the contractual
+ *  obligation clock (no per-contract deliverable rail), and per-customer
+ *  trust — reputation is one company scalar (B3 law). */
+const THE_RFO_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-rfo",
+  name: "The RFO",
+  brief:
+    "Enterprise paper demands a Reason-For-Outage after the region dies. Write it blameless and the house floor halves the next hit; print a finger-pointing doc for the logs and the second outage lands at full weight on a brand nobody trusts.",
+  specRef: "§1.5 The RFO",
+  specLine: 4034,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "rfo-01", mrcMicroUsd: 60_000_000, billingCycle: "monthly", termEndMin: 12_000, termMonths: 12, autoRenew: true, customer: "Audit Rights Inc" },
+  ],
+  traffic: {
+    tableId: "rfo-plateau",
+    segments: [{ fromMinute: 0, ratePerMin: 2 }],
+  },
+  signals: {
+    // Two majors: the outage the RFO answers, and the second one the
+    // culture decides the price of.
+    majorIncidents: [
+      { atMinute: 20, count: 1 },
+      { atMinute: 60, count: 1 },
+    ],
+    honestPostmortems: [{ atMinute: 70, cause: "rfo-second-week-transparency-claim" }],
+    postmortems: [
+      {
+        atMinute: 40,
+        incidentMinute: 20,
+        style: "blameless",
+        changesInFlight: 0,
+      },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 100 },
+      { kind: "postmortem-credits-above", bps: 200 },
+      { kind: "reputation-above", bps: 4500 },
+      { kind: "no-death-cause", cause: "any" },
+    ],
+    lose: [
+      { kind: "reputation-below", bps: 4500 },
+      { kind: "death-by-cause", cause: "any" },
+    ],
+  },
+  limits: { maxSimMinutes: 120, initialFreeMicroUsd: 10_000_000 },
+} satisfies ScenarioWire;
+
+/* ───────────────────────── Threshold Day ───────────────────────────── */
+
+/** §1.5 "The Threshold Day" (:4086) — the corrupts channel (16c6add)
+ *  gets its conversion, and the channel is LITERALLY the spec's thesis:
+ *  "nothing changed" — no attack, no deploy, no failure — the board just
+ *  grew into a limit. On a bounce-mode board a queue jam screams through
+ *  the bounces meter; on the corrupts board it makes NO NOISE AT ALL
+ *  (defaults.ts pins patienceProbabilityFor('corrupts') to FIXED_ZERO —
+ *  a patient-limit breach never bounces), so the dashboard stays green
+ *  while units silently rot past their patience and get served corrupt.
+ *  The wire arms the channel honestly: `limits.corrupts` names the
+ *  traffic table, a patience window, and probabilityBps 10000 = certainty
+ *  = the corruptionVerdictFor dice-free arithmetic path. The board is
+ *  built at EXACTLY five customers a minute — the engine's tick law is
+ *  one completion per slot per minute, so 5 slots IS the capacity line
+ *  — and phase one runs at four: the queue never stands, the graph looks
+ *  fine. The whole level is step two: the SIXTH arrival per minute, one
+ *  row the dashboard barely shows. Backlog grows a unit a minute, the
+ *  ten-minute patience window drains quietly, and from the breach
+ *  forward every served unit is corrupt while `bounces` stays flat ZERO
+ *  — the green-dashboard lie as an objective.
+ *  WITNESSES (probe-pinned, deterministic across all five seed offsets —
+ *  integer rates + certainty dial + zero retries = pure queueing math):
+ *  the win arm ends at the clock with EXACTLY 105 corruptions under the
+ *  150 ceiling, and the flip (6/min becomes 7/min) crosses it at
+ *  `lose:corruption-above:149@153` on every offset. One row of the
+ *  traffic graph doubles the census; nothing else on the wire changes.
+ *  The telegraph was the slope, and this vocab finally reads it.
+ *  NON-EXPRESSIBLE (recorded): the money consequence of corrupt serving.
+ *  The economy mints SLA credits ONLY from spends/locked-risk inputs
+ *  (economy/tick.ts:1266/1287) and internal/tickFold.ts — not this lane —
+ *  forwards no corruption→outage adapter, so a credit spiral would need
+ *  an engine fold change. The corruption COUNT is the observable truth. */
+const THE_THRESHOLD_DAY_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-threshold-day",
+  name: "The Threshold Day",
+  brief:
+    "No attack, no deploy, no drama — just the graph you stopped watching. The board serves exactly five a minute; the sixth arrival is the threshold. On a corrupts board the queue rots in silence while the bounce meter insists nothing is happening.",
+  specRef: "§1.5 The Threshold Day",
+  specLine: 4086,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 5, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "threshold-growth",
+    segments: [
+      { fromMinute: 0, ratePerMin: 4 },
+      { fromMinute: 100, ratePerMin: 6 },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 160 },
+      { kind: "bounces-below", count: 1 },
+      { kind: "corruption-below", count: 150 },
+    ],
+    lose: [
+      { kind: "corruption-above", count: 149 },
+      { kind: "bounces-above", count: 0 },
+    ],
+  },
+  limits: {
+    maxSimMinutes: 200,
+    corrupts: { tables: ["threshold-growth"], patienceMin: 10, probabilityBps: 10_000 },
+  },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -1287,6 +1522,9 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [UNDERSTAFFED_SUNDAY_WIRE.id]: UNDERSTAFFED_SUNDAY_WIRE,
   [CHARGEBACK_WAVE_WIRE.id]: CHARGEBACK_WAVE_WIRE,
   [SLOW_WEEK_AFTER_WIRE.id]: SLOW_WEEK_AFTER_WIRE,
+  [SOMEONE_ELSES_OUTAGE_WIRE.id]: SOMEONE_ELSES_OUTAGE_WIRE,
+  [THE_RFO_WIRE.id]: THE_RFO_WIRE,
+  [THE_THRESHOLD_DAY_WIRE.id]: THE_THRESHOLD_DAY_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
@@ -1294,7 +1532,7 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
 /** The shipped documents, parsed at module load — authored drift
  *  dies HERE, loudly, before any test or host can consume it. The first
  *  five carry named exports (hosts import them directly); the wave-two
- *  five, the wave-three four, the wave-four two and the wave-five three
+ *  five, the wave-three four, the wave-four two and the wave-five six
  *  are reachable through SHIPPED_SCENARIOS /
  *  shippedScenario(id) only — no new export names by design (docs/
  *  api-verify is name-based). */
@@ -1318,6 +1556,9 @@ const reviewBombDoc: ScenarioDoc = parseScenarioDoc(REVIEW_BOMB_WIRE);
 const understaffedSundayDoc: ScenarioDoc = parseScenarioDoc(UNDERSTAFFED_SUNDAY_WIRE);
 const chargebackWaveDoc: ScenarioDoc = parseScenarioDoc(CHARGEBACK_WAVE_WIRE);
 const slowWeekAfterDoc: ScenarioDoc = parseScenarioDoc(SLOW_WEEK_AFTER_WIRE);
+const someoneElsesOutageDoc: ScenarioDoc = parseScenarioDoc(SOMEONE_ELSES_OUTAGE_WIRE);
+const theRfoDoc: ScenarioDoc = parseScenarioDoc(THE_RFO_WIRE);
+const theThresholdDayDoc: ScenarioDoc = parseScenarioDoc(THE_THRESHOLD_DAY_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -1341,6 +1582,9 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   understaffedSundayDoc.id,
   chargebackWaveDoc.id,
   slowWeekAfterDoc.id,
+  someoneElsesOutageDoc.id,
+  theRfoDoc.id,
+  theThresholdDayDoc.id,
 ]);
 
 /** id → trusted doc. */
@@ -1365,6 +1609,9 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [understaffedSundayDoc.id]: understaffedSundayDoc,
   [chargebackWaveDoc.id]: chargebackWaveDoc,
   [slowWeekAfterDoc.id]: slowWeekAfterDoc,
+  [someoneElsesOutageDoc.id]: someoneElsesOutageDoc,
+  [theRfoDoc.id]: theRfoDoc,
+  [theThresholdDayDoc.id]: theThresholdDayDoc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */

@@ -10,7 +10,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import type { CorpusAuthority } from "../index.ts";
-import type { ForeignThreatMeta } from "../../waves/index.ts";
+import { buildInvitations } from "../../waves/index.ts";
+import type { BuildOp, ForeignThreatMeta } from "../../waves/index.ts";
 
 const CONTENT_ROOT = "../../../../../packages/content/";
 
@@ -46,3 +47,40 @@ export function corpusAuthority(): CorpusAuthority {
   authority = Object.freeze({ slices, threatMeta: buildThreatMeta() });
   return authority;
 }
+
+/* ─────────────── the REAL attack-surface law (wave-five join) ────────── */
+
+/** The shipped shared-web invite table, read from the content bundle the
+ *  same way a host reads it at boot: types/shared-web.json
+ *  threats.unlockedByBuildables. This is the law the synthetic SYNTH_LAW
+ *  in corpus.test.ts only imitates. */
+export function sharedWebInvitationLaw(): Readonly<Record<string, readonly string[]>> {
+  const bundle = readJson(`${CONTENT_ROOT}types/shared-web.json`) as {
+    threats?: { unlockedByBuildables?: Record<string, readonly string[]> };
+  };
+  const law = bundle.threats?.unlockedByBuildables;
+  if (law === undefined || Object.keys(law).length === 0) {
+    throw new Error("corpusFixtures: shared-web.json carries no threats.unlockedByBuildables law");
+  }
+  return law;
+}
+
+let lawAuthority: CorpusAuthority | null = null;
+
+/** The SAME slices + metadata as corpusAuthority(), but with the real
+ *  shared-web invitation law installed and an EMPTY buildLog: every
+ *  gated storm is starved until the player's surface invites it. */
+export function invitedCorpusAuthority(): CorpusAuthority {
+  if (lawAuthority !== null) return lawAuthority;
+  const base = corpusAuthority();
+  lawAuthority = Object.freeze({ ...base, invitations: buildInvitations(sharedWebInvitationLaw()) });
+  return lawAuthority;
+}
+
+/** Every buildable in the real law built at tick 0 — the fully-informed
+ *  surface. Any wave the law gates, this buildLog invites. */
+export const FULL_BUILD_LOG: readonly BuildOp[] = Object.freeze(
+  Object.keys(sharedWebInvitationLaw())
+    .sort()
+    .map((buildableId) => Object.freeze({ atTick: 0n, op: "build" as const, buildableId })),
+);

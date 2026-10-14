@@ -41,7 +41,7 @@ import type {
   WaveEnvelope,
 } from "../types.ts";
 import { asCauseId, asMoney } from "../types.ts";
-import { FIXED_ZERO, fromInt } from "../kernel/fixed.ts";
+import { FIXED_ZERO, fromInt, fromRatio } from "../kernel/fixed.ts";
 import { MICROS_PER_MIN } from "../kernel/time.ts";
 import { streamFor } from "../kernel/rng.ts";
 import { resolveCorpusWindows } from "./corpus.ts";
@@ -372,6 +372,9 @@ interface Accumulator {
   intentsExecuted: number;
   intentsRefused: number;
   chargebacksApplied: number;
+  /** Wave five: cumulative CorruptOutcomes from the driver's side channel
+   *  (result.corruptions) — 0 while no `limits.corrupts` arm exists. */
+  corruptions: number;
 }
 
 function foldNoticeCensus(
@@ -419,6 +422,7 @@ function snapshotObservation(
     intentsRefused: acc.intentsRefused,
     chargebacksApplied: acc.chargebacksApplied,
     postmortemCreditsBps: postmortemCreditsSum(econ),
+    corruptions: acc.corruptions,
     arrivalsByFamily: sortedCensus(acc.arrivalsByFamily),
     windowSums,
   });
@@ -654,6 +658,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
       : EMPTY_WINDOWS;
 
   /* ── mint the world (the unattended assembly, from doc data) ── */
+  const corrupts = doc.limits.corrupts;
   const uaConfig: RunUnattendedConfig = Object.freeze({
     runSeed,
     board: doc.board,
@@ -662,13 +667,33 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     guards: Object.freeze([]),
     handCapacity: doc.limits.handCapacity,
     engineVersion: SCENARIO_ENGINE_VERSION,
+    /* Wave five: the corrupts arm re-tunes the patience budget (queued
+     * units past patience corrupt instead of bouncing). Applied ONLY when
+     * the wire names it — every pre-channel mission keeps the lane's
+     * 120-minute default byte-for-byte. */
+    ...(corrupts === null ? {} : { defaultPatienceMin: corrupts.patienceMin }),
   });
   const nodes = mintNodeRecords(doc.board.nodes);
   const edges: readonly BoardEdgeRecord[] = mintBoardEdges(doc.board.edges);
   const pipelineConfig: DefaultPipelineConfig = buildPipelineConfig(uaConfig, nodes);
+  /* Wave five: silent corruption arming. Unit TYPES are the arrival step's
+   * tableId (defaults.ts `type: envelope.tableId`), so the wire names its
+   * own traffic table(s); certainty (10,000 bps — the parsed default)
+   * SKIPS the dice, making the corrupted census pure arithmetic. Absent ⇒
+   * the shipped patience path untouched, byte-ident. */
+  const slotsConfig: DefaultPipelineConfig =
+    corrupts === null
+      ? pipelineConfig
+      : Object.freeze({
+          ...pipelineConfig,
+          patienceModeByType: Object.freeze(
+            Object.fromEntries(corrupts.tables.map((table) => [table, "corrupts" as const])),
+          ),
+          corruptionProbability: fromRatio(BigInt(corrupts.probabilityBps), 10_000n),
+        });
   const dependencyEdges = dependencyEdgesFor(nodes);
   const rulePhase = createRulePhaseStep();
-  const slots = Object.freeze({ ...createDefaultSlots(pipelineConfig), rulePhase: rulePhase.step });
+  const slots = Object.freeze({ ...createDefaultSlots(slotsConfig), rulePhase: rulePhase.step });
   const game0 = mintInitialState(uaConfig, nodes, edges);
   /* Channels ladder: the door is wired only when the doc names a rail —
    * an empty options object keeps today's exact driver construction.
@@ -755,6 +780,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     intentsExecuted: 0,
     intentsRefused: 0,
     chargebacksApplied: 0,
+    corruptions: 0,
   };
   const eventsByKind = new Map<string, number>();
   const noticesByKind = new Map<string, number>();
@@ -813,6 +839,14 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
       eventsByKind.set(e.kind, (eventsByKind.get(e.kind) ?? 0) + 1);
       if (e.kind === "arrival") countArrivalFamily(e.causeId, envelopes, acc.arrivalsByFamily);
     }
+
+    /* Wave five: the silent corruption side channel. `TickResult.corruptions`
+       is the per-tick batch of patience-exhausted responses that completed
+       WRONG (CorruptOutcome); absent until a `limits.corrupts` arm marks a
+       unit, so every pre-channel run adds 0 and keeps the byte shape. We
+       accumulate the batch length — the same per-tick-to-cumulative law as
+       the door receipts and posted chargebacks above. */
+    acc.corruptions += result.corruptions?.length ?? 0;
 
     /* money lane: the shared tick fold (internal/tickFold.ts, one home
        with fastForward) runs opex → economy fold → refusal witnesses with

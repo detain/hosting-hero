@@ -1,5 +1,6 @@
-/** runner.test.ts — the mission loop proven on the twenty shipped §1.5
- *  scenarios: every doc wins as authored, every doc loses when exactly one
+/** runner.test.ts — the mission loop proven on the twenty-three shipped
+ *  §1.5 scenarios: every doc wins as authored, every doc loses when
+ *  exactly one
  *  wire input is flipped (same seed), timeout is honest, and a run is
  *  byte-identical ×100 by construction.
  *
@@ -45,9 +46,24 @@
  *  C3. STILL OPEN: alternate-path routing → "The Fiber Cut" (~:3368)
  *      needs mazing-in-scenario (the maze is a gate/runner composition,
  *      not a wire field) — deliberate future ticket, do not bolt on.
- *  C4. STILL OPEN: corpus invitations (attack-surface-gated storms) ride
- *      the sibling corpus lane; resolveCorpusWindows keeps its
- *      invitations-empty seam until that lands.
+ *  C4. CONSUMED (wave five, corpus invitations authority bc11697 + the
+ *      real-content gate join proved in corpus.test.ts): the shared-web
+ *      attack-surface law from packages/content now drives
+ *      gateCorpusWave over the shipped g1 slices — invitation-gated
+ *      waves leave no cursor hole, a fully invited citation replays the
+ *      authored envelopes byte-ident, and an all-starved citation fails
+ *      loud. RULING: this is proved as an authority-side gate property,
+ *      NOT as a new mission doc — invitation state lives on the host's
+ *      CorpusAuthority.buildLog, not on the wire, and the mission loop
+ *      pins every doc under the PLAIN (law-free) authority by design.
+ *  WAVE-FIVE CONVERSIONS (this suite's describe "wave-five conversions")
+ *  ride all three fresh seams: the door's communicate cadence gets its
+ *  green-site mirror ("Someone Else's Outage" :4047), the post-mortem
+ *  STYLE slot + the unused honestPostmortems channel get their blame-
+ *  culture story ("The RFO" :4034), and the corrupts channel (16c6add)
+ *  gets its silent-queue level ("The Threshold Day" :4086) via the new
+ *  `limits.corrupts` arm, the `corruptions` observation field, and the
+ *  corruption-above/below predicate pair (vocab now twenty-nine).
  *  Engine debt this lane reported but did not touch: internal/tickFold.ts
  *  still forwards no signal inputs — the scenario composes around it
  *  (rung-4 covenant precedent); a future fold pass-through retires the
@@ -834,6 +850,108 @@ describe("wave-five missions — engine truth (channels)", () => {
     expect(lw.observation.intentsRefused).toBe(0);
     expect(lw.observation.chargebacksApplied).toBe(0);
     expect(lw.observation.postmortemCreditsBps).toBe(0n);
+  });
+});
+
+describe("wave-five conversions — outage grace, blame culture, the silent queue", () => {
+  it("Someone Else's Outage packing burst B to every minute → grace snaps at t26", () => {
+    // ONE spacing sin: burst B's rows move from every-other-tick
+    // (25,27,29,31,33) to one-per-minute (25,26,27,28,29), the way a real
+    // inbox arrives when someone else's region falls. The capacity-1 hand
+    // is still busy from the t25 reply when t26 asks, and the authored
+    // refused-below:1 line makes a single refusal terminal. Hands are
+    // arithmetic: exact on all five seed offsets.
+    const packed = flip("someone-elses-outage", (wire) => {
+      const rows = wire.intents;
+      if (rows === undefined) throw new Error("wire lost its rail");
+      rows.splice(6, 4,
+        { atTick: 26, verb: "communicate", args: { target: null, note: "r-b-2" } },
+        { atTick: 27, verb: "communicate", args: { target: null, note: "r-b-3" } },
+        { atTick: 28, verb: "communicate", args: { target: null, note: "r-b-4" } },
+        { atTick: 29, verb: "communicate", args: { target: null, note: "r-b-5" } },
+      );
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(packed, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:intents-refused-above:0@26");
+      expect(report.observation.intentsExecuted).toBe(6);
+      expect(report.observation.intentsRefused).toBe(1);
+    }
+    // discriminating pair: the authored cadence answers all fifteen with
+    // a zero refusal column — AND zero bounces, the green-site premise.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("someone-elses-outage"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@60");
+      expect(calm.observation.intentsExecuted).toBe(15);
+      expect(calm.observation.intentsRefused).toBe(0);
+      expect(calm.observation.bounces).toBe(0);
+    }
+  });
+
+  it("The RFO printing a finger-pointing doc → the second outage lands at full price", () => {
+    // ONE word: style blameless → blame. The doc is still logged and
+    // read (postmortem.ts books the row), but an uncredited filing pays
+    // ZERO reputation and never stands the honest-host floor — so the
+    // m60 major lands −500 on 4,500 instead of the floored −250, and the
+    // authored reputation-above:4500 knife-edge (the halved hit) snaps
+    // the minute the second incident posts. Money is a meter here; the
+    // clip is dice-free, exact ×5.
+    const pointed = flip("the-rfo", (wire) => {
+      const row = wire.signals?.postmortems?.[0];
+      if (row === undefined) throw new Error("wire lost its filing");
+      row.style = "blame";
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(pointed, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:reputation-below:4500@60");
+      expect(report.observation.postmortemCreditsBps).toBe(0n); // blame pays nothing
+      expect(report.observation.reputationBps).toBe(4000n); // 5000 −500 −500, floor never stood
+    }
+    // the authored blameless run: the filing credits 250, the floor
+    // halves the m60 hit to −250 landing EXACTLY on 4,500 (which the
+    // below:4500 line reads as not-below), and the m70 transparency
+    // claim lifts the close to 4,750 — while postmortem-credits-above:200
+    // stays a witness of the FILING, not of the speech (the honest row
+    // books no credit).
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("the-rfo"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@100");
+      expect(calm.observation.reputationBps).toBe(4750n);
+      expect(calm.observation.postmortemCreditsBps).toBe(250n);
+      expect(calm.trace.noticesByKind["postmortem-filed"]).toBe(1);
+    }
+  });
+
+  it("The Threshold Day growing one arrival past the line → the census doubles in silence", () => {
+    // ONE row of the traffic graph: 6/min becomes 7/min at m100. The
+    // board serves five; the corrupts channel makes NO bounce noise, so
+    // the only truth is the corruption counter. Deterministic arithmetic
+    // (integer rates + certainty dial + zero retries) — the SAME census
+    // on every seed offset, and the same crossing tick.
+    const seventh = flip("the-threshold-day", (wire) => {
+      const step = wire.traffic.segments[1];
+      if (step === undefined) throw new Error("wire lost its second step");
+      step.ratePerMin = 7;
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(seventh, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:corruption-above:149@153");
+      expect(report.observation.bounces).toBe(0); // the green dashboard lies to the end
+    }
+    // the authored sixth-per-minute arm: 105 corruptions at the clock,
+    // identical on all five offsets, and still zero bounces — the whole
+    // loss is a number the bounce-era HUD never shows.
+    const censuses: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("the-threshold-day"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@160");
+      expect(calm.observation.bounces).toBe(0);
+      censuses.push(calm.observation.corruptions);
+    }
+    expect(censuses).toEqual([105, 105, 105, 105, 105]); // dice-free: the telegraph was arithmetic
   });
 });
 

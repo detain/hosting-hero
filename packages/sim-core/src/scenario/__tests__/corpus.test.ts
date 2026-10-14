@@ -28,7 +28,7 @@ import type { ScenarioReport, ScenarioWire } from "../index.ts";
 import { gateCorpusWave, resolveCorpusWindows } from "../corpus.ts";
 import type { CorpusAuthority, CorpusGeometry, CorpusWaveWindow } from "../corpus.ts";
 import type { ScenarioCorpusTraffic } from "../doc.ts";
-import { corpusAuthority, SHIPPED_G1_SLICE_STEM } from "./corpusFixtures.ts";
+import { corpusAuthority, SHIPPED_G1_SLICE_STEM, FULL_BUILD_LOG, invitedCorpusAuthority, sharedWebInvitationLaw } from "./corpusFixtures.ts";
 
 const BASE_SEED = asRunSeed(904n);
 
@@ -454,5 +454,101 @@ describe("the shipped metastable witnesses survive the gate (default-off)", () =
       corpus: synthAuthority({ invitations: SYNTH_LAW, buildLog: SYNTH_BUILD }),
     });
     expect(invited.trace.arrivals).toBeGreaterThan(starved.trace.arrivals);
+  });
+});
+
+/* ─────────── the REAL attack-surface law over the shipped g1 quarter ─────────── */
+
+describe("the real shared-web law gates the shipped quarter (wave-five join)", () => {
+  // The shipped g1 slices carry NO invitation markers in their wave
+  // entries — the law lives in the TYPE BUNDLE (packages/content/types/
+  // shared-web.json threats.unlockedByBuildables) and joins the quarter by
+  // threat-id. This block runs the gate over the REAL slice with the REAL
+  // law: waves 1–2 are fully gated storms (scanner-drizzle behind
+  // public-whois-listing; wp-login-brute-squad + hoarder-noisy-neighbor
+  // behind the cpanel/wordpress buildables), so an unbuilt surface leaves
+  // ONLY the ungated wave 3 — the packed-cursor law with the content's own
+  // numbers, not a synthetic stand-in.
+  const law = buildInvitations(sharedWebInvitationLaw());
+  const slice = (corpusAuthority().slices.get(SHIPPED_G1_SLICE_STEM) as unknown) as {
+    waves: { n: number; entries: { threat: string }[] }[];
+  };
+  const threatsOf = (waveN: number): string[] =>
+    (slice.waves.find((w) => w.n === waveN)?.entries ?? []).map((e) => e.threat);
+
+  it("the law is on disk: three gated storms the quarter can no longer open with", () => {
+    expect(threatsOf(1)).toEqual(["scanner-drizzle"]);
+    // Wave 2 is fully gated; wave 3 is the first fully-ungated storm.
+    expect(gateCorpusWave(2, threatsOf(2), 30, law, []).spawns).toBe(false);
+    expect(gateCorpusWave(3, threatsOf(3), 30, law, []).spawns).toBe(true);
+  });
+
+  it("waves [1,2,3] under the bare law schedule ONLY wave 3 — the storm season the unbuilt surface gets", () => {
+    const gated = resolveCorpusWindows(
+      { ...corpusTrafficOf("metastable-corpus"), waves: [1, 2, 3] },
+      BASE_SEED,
+      { ...corpusAuthority(), invitations: law },
+    );
+    // One window lands, and it carries WAVE 3's identity — the excluded
+    // storms leave no cursor hole, so 3 rides the cursor 1 would have had:
+    // byte-ident to a bare [3] citation on the law-free authority.
+    expect(gated.length).toBe(1);
+    expect(gated[0]?.waveN).toBe(3);
+    const solo = resolveCorpusWindows(
+      { ...corpusTrafficOf("metastable-corpus"), waves: [3] },
+      BASE_SEED,
+      corpusAuthority(),
+    );
+    expect(withoutPlans(gated)).toBe(withoutPlans(solo));
+    expect(gated[0]?.startMinute).toBe(solo[0]?.startMinute);
+    // The gated plans say WHY: wave 1 names scanner-drizzle, wave 2 its pair.
+    const plans = resolveCorpusWindows(
+      { ...corpusTrafficOf("metastable-corpus"), waves: [1, 2, 3] },
+      BASE_SEED,
+      { ...corpusAuthority(), invitations: law, buildLog: FULL_BUILD_LOG },
+    );
+    expect(plans.map((w) => w.waveN)).toEqual([1, 2, 3]);
+    expect(plans[0]?.plan?.gatedThreatIds).toEqual(["scanner-drizzle"]);
+    expect(plans[1]?.plan?.invitedThreatIds).toEqual(["hoarder-noisy-neighbor", "wp-login-brute-squad"]);
+    expect(plans[2]?.plan?.gatedThreatIds).toEqual([]); // wave 3 was never gated
+  });
+
+  it("fully built surface replays the AUTHORED quarter byte-ident (default-off honesty)", () => {
+    const plain = resolveCorpusWindows(
+      { ...corpusTrafficOf("metastable-corpus"), waves: [1, 2, 3] },
+      BASE_SEED,
+      corpusAuthority(),
+    );
+    const invited = resolveCorpusWindows(
+      { ...corpusTrafficOf("metastable-corpus"), waves: [1, 2, 3] },
+      BASE_SEED,
+      { ...corpusAuthority(), invitations: law, buildLog: FULL_BUILD_LOG },
+    );
+    // Same dice, same cursor, same envelopes — the gate only decides
+    // WHETHER a storm lands; when every storm is invited it changes nothing.
+    expect(withoutPlans(invited)).toBe(withoutPlans(plain));
+  });
+
+  it("end-to-end through the runner: the shipped twin under the bare law starves to its wave-3 citation", () => {
+    // The SHIPPED metastable-corpus doc cites waves [1] — a fully gated
+    // storm. Under the bare law that citation resolves to NOTHING, and
+    // the run fails loud pre-tick-1 (never a quiet season by accident);
+    // with the whois listing built, the authored storm lands and the run
+    // matches the plain-authority witness.
+    const starved = twinWire((w) => {
+      w.traffic.waves = [2]; // wave 2: fully gated, cites real content
+    });
+    expect(() =>
+      runScenario(parseScenarioDoc(starved as unknown as ScenarioWire), BASE_SEED, {
+        corpus: { ...invitedCorpusAuthority(), buildLog: [] },
+      }),
+    ).toThrow(/uninvited at the attack surface/);
+    const built = runScenario(parseScenarioDoc(twinWire() as unknown as ScenarioWire), BASE_SEED, {
+      corpus: { ...invitedCorpusAuthority(), buildLog: FULL_BUILD_LOG },
+    });
+    const plain = runScenario(shippedScenario("metastable-corpus"), BASE_SEED, {
+      corpus: corpusAuthority(),
+    });
+    expect(reportIdentity(built)).toBe(reportIdentity(plain)); // wave 1 invited = authored byte-ident
   });
 });

@@ -558,8 +558,51 @@ describe("wave-five walls — channels ladder (door intents, economy signals)", 
     expect(wall("BAD_PREDICATE", () => parseScenarioDoc(pastTheWall)).path).toContain("bps");
   });
 
-  it("the vocab census is twenty-seven kinds (wave-five channels +8)", () => {
-    expect(SCENARIO_PREDICATE_KINDS).toHaveLength(27);
+  it("the vocab census is twenty-nine kinds (wave-five channels +8, conversions +2)", () => {
+    expect(SCENARIO_PREDICATE_KINDS).toHaveLength(29);
+  });
+});
+
+describe("wave-five conversions — the corrupts arm + corruption lines", () => {
+  const armed = (arm: unknown): MutableWire => {
+    const wire = minimalWire();
+    (wire.limits as { corrupts?: unknown }).corrupts = arm;
+    return wire;
+  };
+
+  it("arms through limits.corrupts: dial defaults to certainty, deep-frozen", () => {
+    const doc = parseScenarioDoc(armed({ tables: ["growth-quiet"], patienceMin: 12 }));
+    expect(doc.limits.corrupts).toEqual({ tables: ["growth-quiet"], patienceMin: 12, probabilityBps: 10_000 });
+    expect(Object.isFrozen(doc.limits.corrupts)).toBe(true);
+    expect(Object.isFrozen(doc.limits.corrupts?.tables)).toBe(true);
+  });
+
+  it("stays null while the wire names nothing (the pre-channel byte shape)", () => {
+    expect(parseScenarioDoc(minimalWire()).limits.corrupts).toBeNull();
+  });
+
+  it("the wall refuses: empty/dupe/non-slug tables, patience and dial out of range", () => {
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(armed({ tables: [], patienceMin: 12 }))).path).toContain(".tables");
+    expect(wall("DUPLICATE", () => parseScenarioDoc(armed({ tables: ["g", "g"], patienceMin: 12 }))).path).toContain(".tables");
+    // The corpus tableId grammar (waves/<stem>) is deliberately NOT slug-
+    // shaped: the honest authoring path arms segments tableIds only.
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(armed({ tables: ["waves/g1"], patienceMin: 12 }))).path).toContain("tables[0]");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(armed({ tables: ["g"], patienceMin: 0 }))).path).toContain("patienceMin");
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(armed({ tables: ["g"], patienceMin: 12, probabilityBps: 10_001 }))).path).toContain("probabilityBps");
+  });
+
+  it("probabilityBps 0 is legal (the arm-and-prove-zero probe), -1 is not", () => {
+    expect(parseScenarioDoc(armed({ tables: ["g"], patienceMin: 12, probabilityBps: 0 })).limits.corrupts?.probabilityBps).toBe(0);
+    expect(wall("BAD_LIMITS", () => parseScenarioDoc(armed({ tables: ["g"], patienceMin: 12, probabilityBps: -1 }))).path).toContain("probabilityBps");
+  });
+
+  it("corruption-above accepts count 0; corruption-below refuses it (vacuity law)", () => {
+    const safe = minimalWire();
+    safe.objectives.lose = [{ kind: "corruption-above", count: 0 }];
+    expect(parseScenarioDoc(safe).objectives.lose).toHaveLength(1);
+    const vacuous = minimalWire();
+    vacuous.objectives.win = [{ kind: "corruption-below", count: 0 }];
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(vacuous)).path).toContain("count");
   });
 });
 

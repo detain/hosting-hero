@@ -48,7 +48,7 @@ export const SCENARIO_BRIEF_MAX_CHARS = 280;
  *  CLOSED authored mission, not an open-ended weekend. */
 export const SCENARIO_MAX_MINUTES_CAP = 2880;
 
-/** The twenty-seven legal objective predicates (§1.5 mission verbs, mapped
+/** The twenty-nine legal objective predicates (§1.5 mission verbs, mapped
  *  onto observables that EXIST today — see objectives.ts for each reading).
  *  Rungs 1–3 of the vocab ladder (runner.test.ts header) shipped here:
  *  written-off-count, metrics-delta-over-window, family-labeled arrivals.
@@ -61,7 +61,12 @@ export const SCENARIO_MAX_MINUTES_CAP = 2880;
  *  lane actually posted; `postmortem-credits-*` sums `creditedBps` over the
  *  adjudicated `postMortemLog` (economy/postmortem.ts). Every new reading
  *  is zero (or 0n) while its channel is absent — the pre-channel byte shape
- *  of every existing mission is untouched. */
+ *  of every existing mission is untouched.
+ *  Wave five (conversions): the `corruption-*` pair counts the silent
+ *  corruption channel — `TickResult.corruptions` marks earned by units whose
+ *  type is armed through `limits.corrupts` (pipeline corrupts-patience mode,
+ *  16c6add). Zero while no row names a table — every pre-channel mission's
+ *  observation byte-shape is untouched. */
 export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "survive-minutes",
   "cash-above",
@@ -90,6 +95,8 @@ export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "chargebacks-below",
   "postmortem-credits-above",
   "postmortem-credits-below",
+  "corruption-above",
+  "corruption-below",
 ] as const);
 
 /** The closed metric vocab a `metric-delta-over-window` predicate may name
@@ -206,6 +213,15 @@ export type ObjectivePredicate =
        *  refiled rows credit 0). Bps scale, same carrier as the reputation
        *  pair but NOT clamped to 10,000 — credits accumulate per card. */
       readonly bps: number;
+    }
+  | {
+      readonly kind: "corruption-above" | "corruption-below";
+      /** Whole-run count of `CorruptOutcome`s the driver reported
+       *  (TickResult.corruptions) — responses completed past patience and
+       *  silently corrupted instead of bouncing. Non-zero only while the
+       *  doc arms `limits.corrupts`; the corrupts mode never bounces, which
+       *  IS the green-dashboard lie this pair scores through. */
+      readonly count: number;
     };
 
 /** One signed contract of the mission: the wire fields the author names
@@ -362,6 +378,20 @@ export interface ScenarioLimits {
    *  seeded into the money lane's state once at mint. Empty = no covenant
    *  review ever runs (the pre-rung-4 byte shape). */
   readonly covenants: readonly Covenant[];
+  /** Wave five: the silent corruption arm (pipeline corrupts-patience mode,
+   *  16c6add). Null (the pre-channel byte shape) unless the wire names it;
+   *  `tables` are unit TYPES — the arrival step stamps `type = tableId`, so
+   *  a segments mission arms its own traffic tableId and a corpus mission
+   *  arms `waves/<stem>`. `patienceMin` re-arms the lane's default patience
+   *  (queue-age past which a completion is exhausted-and-corrupted, never
+   *  bounced); `probabilityBps` is the engine's damage dial — 10,000 (the
+   *  default) means certainty, which SKIPS the dice, so a corrupted census
+   *  is pure arithmetic (seed-free witnesses). */
+  readonly corrupts: {
+    readonly tables: readonly string[];
+    readonly patienceMin: number;
+    readonly probabilityBps: number;
+  } | null;
 }
 
 /** The trusted, deep-frozen scenario document. */
@@ -782,6 +812,8 @@ const PREDICATE_FIELDS: Readonly<Record<ScenarioPredicateKind, readonly string[]
   "chargebacks-below": ["kind", "count"],
   "postmortem-credits-above": ["kind", "bps"],
   "postmortem-credits-below": ["kind", "bps"],
+  "corruption-above": ["kind", "count"],
+  "corruption-below": ["kind", "count"],
 });
 
 function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
@@ -810,6 +842,7 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
     case "intents-executed-below":
     case "intents-refused-below":
     case "chargebacks-below":
+    case "corruption-below":
       // count 0 would be "hold the line at below zero" — vacuous by
       // construction; the honest spelling of that fear is churn-above:0.
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 1, 1_000_000) });
@@ -820,6 +853,7 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
     case "intents-executed-above":
     case "intents-refused-above":
     case "chargebacks-above":
+    case "corruption-above":
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 0, 1_000_000) });
     case "metric-delta-over-window": {
       const metric = readString(src, "metric", path, "BAD_PREDICATE");
@@ -949,11 +983,46 @@ function parseOpex(raw: unknown, path: string): UnattendedOpexDraft {
   });
 }
 
+/** Wave five: one `limits.corrupts` arm record. `tables` are unit TYPES
+ *  (traffic tableIds the arrival step stamps — segments carry the doc's
+ *  own tableId, corpus waves carry `waves/<stem>` which is NOT slug-shaped,
+ *  so the wall validates the slug only for the segments-style names it can
+ *  legally see; a corpus tableId would ride `waves/...` — the slash is
+ *  refused HERE and the honest authoring path is a segments tableId). */
+function parseCorrupts(raw: unknown, path: string): ScenarioLimits["corrupts"] {
+  if (raw === null || raw === undefined) return null;
+  const src = asRecord(raw, path, "BAD_LIMITS");
+  requireKeys(src, ["tables", "patienceMin", "probabilityBps"], ["tables", "patienceMin"], path, "BAD_LIMITS");
+  const tablesRaw = src.tables;
+  if (!Array.isArray(tablesRaw) || tablesRaw.length === 0) {
+    bad("BAD_LIMITS", `${path}.tables`, "expected a non-empty array of traffic-table slugs to arm");
+  }
+  const tables = (tablesRaw as readonly unknown[]).map((entry, i) => {
+    const p = `${path}.tables[${i}]`;
+    if (typeof entry !== "string" || entry.length === 0) bad("BAD_LIMITS", p, `expected a non-empty string, got ${typeof entry}`);
+    if (!ID_SHAPE.test(entry)) bad("BAD_LIMITS", p, `"${entry}" is not a [a-z0-9-] slug`);
+    return entry;
+  });
+  const seen = new Set<string>();
+  for (const table of tables) {
+    if (seen.has(table)) bad("DUPLICATE", `${path}.tables`, `table "${table}" armed twice`);
+    seen.add(table);
+  }
+  return Object.freeze({
+    tables: Object.freeze(tables),
+    patienceMin: readInt(src, "patienceMin", path, "BAD_LIMITS", 1, SCENARIO_MAX_MINUTES_CAP),
+    // 0 is legal and means "never corrupt" (the engine behaves like
+    // `resident` while still recording exhaustion) — refusing it would
+    // forbid the honest probe arm "arm the channel, prove zero damage".
+    probabilityBps: optInt(src, "probabilityBps", path, "BAD_LIMITS", 0, 10_000, 10_000),
+  });
+}
+
 function parseLimits(raw: unknown, path: string): ScenarioLimits {
   const src = asRecord(raw, path, "BAD_LIMITS");
   requireKeys(
     src,
-    ["maxSimMinutes", "initialFreeMicroUsd", "opex", "dunningEngineOwned", "handCapacity", "guardrails", "covenants"],
+    ["maxSimMinutes", "initialFreeMicroUsd", "opex", "dunningEngineOwned", "handCapacity", "guardrails", "covenants", "corrupts"],
     ["maxSimMinutes"],
     path,
     "BAD_LIMITS",
@@ -991,6 +1060,7 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
     handCapacity: optInt(src, "handCapacity", path, "BAD_LIMITS", 0, 16, 2),
     guards,
     covenants: Object.freeze(covenants),
+    corrupts: parseCorrupts(src.corrupts, `${path}.corrupts`),
   });
 }
 
