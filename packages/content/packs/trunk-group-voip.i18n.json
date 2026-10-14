@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "packId": "pack:trunk-group-voip.i18n",
+  "appliesTo": "official:trunk-group-voip",
+  "locale": "en",
+  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the VoIP trunk line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is MONEY and LEGIBILITY's — the cord that plugs itself in at 3am, the call both halves believe is fine, the invoice that arrives before the apology — and toll fraud is depicted only as consequence: the ticking meter, the advisory, the Monday dispute. No dialler instructions, no payloads, no commands, no tool names-as-how-to, no technique anywhere; the fraud's mechanics stay off-page exactly as §9.11 demands, because the level 'teaches monitoring as defense' (§1.3), not attacking.",
+  "slots": {
+    "nodeId": {
+      "kind": "entity",
+      "desc": "Board object the decision surface is about (trunk / SBC / switchboard id)."
+    },
+    "verb": {
+      "kind": "text",
+      "desc": "Engine intent verb being refused (place/connect/configure/...)."
+    },
+    "availableAtTick": {
+      "kind": "tick",
+      "desc": "Tick at which the queued intent or a freed hand presents."
+    },
+    "relationKind": {
+      "kind": "text",
+      "desc": "Board relation of a cable (data/power/control/trust)."
+    },
+    "slotName": {
+      "kind": "entity",
+      "desc": "Socket designation on a node (PSU, uplink, trunk card, jack)."
+    },
+    "callId": {
+      "kind": "entity",
+      "desc": "One live call by session id — the cord, not the wall."
+    },
+    "extensionNumber": {
+      "kind": "entity",
+      "desc": "A customer PBX extension — the door the brute squad maps."
+    },
+    "didNumber": {
+      "kind": "entity",
+      "desc": "A Direct Inward Dial number — the sold artifact §0.3 names beside the channel."
+    },
+    "destinationCountry": {
+      "kind": "text",
+      "desc": "The premium-rate destination a fraudulent call is dialling toward."
+    },
+    "fraudAmount": {
+      "kind": "money",
+      "desc": "The settlement exposure the fraud weekend accumulated (§1.3 '$60,000')."
+    },
+    "minutesFraudulent": {
+      "kind": "number",
+      "desc": "Minutes dialled without a human on either end (§6.6 'fraud (toll)')."
+    },
+    "invoiceAmount": {
+      "kind": "money",
+      "desc": "The Monday carrier-bill figure the customer is quoting back."
+    },
+    "channelsBusy": {
+      "kind": "number",
+      "desc": "Illuminated slots on the busy wall right now (§2.10 busy-wall grammar)."
+    },
+    "channelsTotal": {
+      "kind": "number",
+      "desc": "The trunk's total channel capacity — the wall's length."
+    },
+    "mosDisplay": {
+      "kind": "text",
+      "desc": "The mean-opinion-score readout — this line's nines (§1.3 meter)."
+    },
+    "cordState": {
+      "kind": "text",
+      "desc": "One of the three named cord states: Clear, Grainy, Fraying (§1.3 verbatim trio)."
+    },
+    "ticketId": {
+      "kind": "entity",
+      "desc": "Customer support ticket number."
+    },
+    "hour": {
+      "kind": "time",
+      "desc": "Clock hour a notice or ticket was filed at — the day/night band's instrument (§2.12)."
+    },
+    "minute": {
+      "kind": "time",
+      "desc": "Clock minute a notice or ticket was filed at."
+    },
+    "day": {
+      "kind": "number",
+      "desc": "Day of the quarter, for the intern's log."
+    },
+    "hostName": {
+      "kind": "entity",
+      "desc": "A competitor in press/obituary copy."
+    }
+  },
+  "decision": {
+    "type.trunk-group-voip.name": "The Switchboard",
+    "type.trunk-group-voip.codex": "The voice line: channels, not servers. Jitter and packet loss decide, not throughput — a dropped call is 'a total loss, not a slow bounce' (§1.3). The hard 9am spike was on the card all along; MOS is remembered far longer than any page load. The fastest-bleeding threat walks in at 2am Friday as dialled minutes and leaves Monday as a carrier bill. One-way audio is invisible to every uptime check; 911 is a filing regime, not a feature. There is a firewall of telephony, and a cheap cap against the single most expensive failure — skipped once. This level teaches monitoring as defense.",
+    "visitor.unit.call": "call",
+    "goal.trunk-group-voip.binding": "Jitter and packet loss, not throughput: a dropped call is a total loss, not a slow bounce, and the hands that widen the trunk before nine are the same hands that read the settlement statement on Monday.",
+    "scarce.trunk-group-voip.qos": "A seated call outranks a new one, and a new one outranks everything else — the wall sheds dials into fast-busy before it ever sheds a conversation, because the conversation is the product and the wall is the promise.",
+    "skin.trunk-group-voip.inspector": "Bakelite black and brass: the jack-field patch-panel wall, every live call drawn as a literal cord seated in its jack; a ribbon that breaks anywhere is a dropped call, a visible notch is jitter. The meter is three cord states with hard boundaries — Clear, smooth and bright; Grainy, noise in the glow; Fraying, the braid separating. Parallel cords sheath into one trunk badge, and after midnight a magenta cord plugs itself in with a ticking international-rate meter. Nothing else in the game is this unforgiving-looking, and that's the point (§1.3).",
+    "economy.trunk-group-voip.bad-month": "Toll fraud on a weekend.",
+    "relations.trunk-group-voip.mastery": "The wall reads the quarter: caps set before the first night, the SBC kept stateful, extensions unenumerable, the trunk sized for the cliff it was warned about, and the Monday settlement line boring enough to skim.",
+    "relations.trunk-group-voip.distillate": "Playbook: treat upkeep as the product — a control that must stay configured is worth more than one merely purchased; price the metered act as carefully as the rental; and remember that a call which merely sounds bad to the monitoring is a dropped call to the human on it, because binary failure with a friendly face is still binary.",
+    "verbs.trunk-group-voip.transfer.1": "Upkeep discipline transfers everywhere: any line where safety is a setting rather than a purchase now asks you the same question — who re-checks the cap, the cage, the registry, the whitelist, when nobody is on fire?",
+    "handover.trunk-group-voip.runs-out": "Your channels and your vigilance. An empty wall is a bill you can postpone paying; a Fraying cord during the cliff is a conversation ending in real time, and a busy wall with no eyes on it is a meter running.",
+    "handover.trunk-group-voip.kills-you": "Toll fraud: the magenta cord that plugs itself in at 3am and dials premium destinations all weekend — the attack that costs money directly and instantly, arriving as Monday's carrier bill (§1.3's $60,000).",
+    "handover.trunk-group-voip.customer-wants": "Published MOS and a channel-capacity guarantee — the two numbers on the page they signed. They will notice you exactly once per incident, by which ear the audio came from.",
+    "rosetta.trunk-group-voip.spendcap": "The spend cap is the cgroup cage aimed at dollars instead of tenants: the same bet that a bounded runaway is cheaper than an unbounded one, and the same admission that something will eventually run.",
+    "rosetta.trunk-group-voip.trunkmix": "The trunk capacity tier is the oversell ratio spent against an honest wall: channels sold past headroom come back at nine o'clock as visible fast-busy, not as a degraded read nobody scheduled.",
+    "scenarios.trunk-group-voip.toll-fraud": "Toll Fraud Night (§2.12): an open extension range gets walked at 2am Friday, premium minutes accrue all weekend while every dashboard sleeps, and the discovery is an invoice. The tell was the time of day; the fix was a cap; the lesson is that the fastest-bleeding threat in the game is defeated by watching, not by winning a fight.",
+    "scenarios.trunk-group-voip.one-way-audio": "One-Way Audio (§2.12): NAT or firewall misconfiguration leaves RTP flowing one direction only. Both parties' phones say connected; every probe says healthy; one human says 'can you hear me?' and is not heard. The legibility failure IS the incident — no uptime check in the game can see it.",
+    "scenarios.trunk-group-voip.jitter-storm": "Jitter Storm (§1.3 catastrophe): the cords vibrate all at once — MOS falling through the Grainy boundary toward Fraying, codec mismatch and congestion braiding into a quarter where no single call fails outright and every single call sounds wrong. Nothing to page anyone about; everyone hanging up anyway.",
+    "scenarios.trunk-group-voip.e911": "The 911 Obligation (§2.12): when a customer dials emergency from a desk you routed, the network must know where the desk is. Address registration is a filing regime with liability attached — a regulatory mechanic drawn as a jack you cannot leave unpatched.",
+    "alert.toll-fraud-window": "Extension {extensionNumber} is dialling {destinationCountry} at {hour}:{minute}. A cord nobody patched is ticking at international rates. Monitoring as defense: this alert is the level.",
+    "alert.sip-scanner-chorus": "Registration attempts on {nodeId}: {channelsBusy} tiny cords trying to seat and failing — tuneless, ambient, constant (§2.12's chorus). Weather, tonight.",
+    "alert.one-way-audio": "Call {callId} is audio one-way. Every probe on the board is green. The human on it is not.",
+    "alert.busy-wall": "The wall reads {channelsBusy} of {channelsTotal} and arrivals are bouncing visibly. The 9am cliff did not find a wider trunk.",
+    "alert.jitter-storm": "Every cord on {nodeId} is vibrating — MOS {mosDisplay}, state {cordState}. Below the boundary the braid visibly separates (§1.3). Nothing has dropped yet. That is the window.",
+    "terms.spend-cap": "A ceiling on settlement exposure per account per window: 'a cheap control that prevents the single most expensive failure' (§2.24 verbatim). The best purchase in this ruleset; skipping it is a one-time offer.",
+    "terms.trunk-capacity": "Channels sold as a tier you can size: the guarantee the sales page actually makes — 'published MOS and a channel-capacity guarantee' — the wall's length, priced before the cliff instead of during it.",
+    "terms.e911-registry": "Dispatchable-location registration for every {didNumber} and every desk behind it: the obligation that turns a phone number into an address someone can be sent to (§2.12).",
+    "refusal.hands-exhausted": "Both hands are committed. The {verb} intent is queued and presents when a hand frees at tick {availableAtTick}.",
+    "refusal.stamped-in-future": "The {verb} intent is stamped for tick {availableAtTick}, ahead of the current minute. Nothing was spent.",
+    "refusal.unknown-node": "No board object named {nodeId} exists at the current tick. Nothing was changed.",
+    "refusal.edge-exists": "A {relationKind} cable already links {nodeId} to those endpoints. The existing edge was left as it is.",
+    "refusal.slot-occupied": "{slotName} on {nodeId} is occupied. One supplier per socket; disconnect before you reconnect.",
+    "status.rung-1": "Investigating elevated error rates",
+    "status.rung-2": "Degraded performance",
+    "status.rung-3": "Partial outage",
+    "status.rung-4": "Major outage",
+    "status.rung-5": "We are aware of the fire.",
+    "cac.trunk-group-voip.todo": "§6.6 Companion B prices no VoIP acquisition channel; the §0.3 customer row ('Businesses + carriers') names WHO, not WHAT. Placeholder until the pricing pass — never invented."
+  },
+  "flavour": {
+    "ticket.subject.monday-bill": "the settlement line says {invoiceAmount} — please explain",
+    "ticket.body.monday-bill": "Ticket {ticketId}, filed {hour}:{minute} Monday. None of the calls were theirs, none of the destinations were theirs, and the voicemail tree keeps saying the fraud department is next year's budget. They want the money. The money went dialling.",
+    "ticket.subject.one-way-audio": "they can hear me but I can't hear them (call {callId})",
+    "ticket.body.one-way-audio": "The phone says connected. The monitoring says connected. Their end of the marriage proposal heard nothing, which is how they found out the service is 'up'. Ask again slowly; nothing changes; there is no packet to point at.",
+    "ticket.subject.e911": "if someone dials 911 from {didNumber}, what do you actually tell them?",
+    "ticket.body.e911": "Their compliance officer read the obligation paragraph (§2.12) and now wants the registered address for forty-seven desks, three of which moved in June. The registry has not been touched since the trunk was lit. This is the ticket where 'we route calls' stops being a complete sentence.",
+    "ticket.subject.nine-am": "your trunk fast-busied my entire sales floor at 9:00",
+    "ticket.body.nine-am": "Everyone picked up at once, the way the quarter was warned they would, and the wall was already lit. Thirty people heard the recorded tone where a company was supposed to be. They are asking what your channel guarantee covered.",
+    "press.headline.weekend": "{hostName}'s expensive weekend began, auditors say, as an extension range somebody left countable; the bill arrived Monday and the fraud had spent Saturday resting.",
+    "press.headline.storm": "{hostName} customers describe a 'tin foil quarter' — no dropped-call alarms fired while every conversation sounded wrong; the MOS graph is technically a review.",
+    "forum.thread.mos": "Anyone else's rate card promises {mosDisplay} while their own hallway phones say Grainy at 4:05 sharp? Because the cliff is forecastable and the buffer settings are not.",
+    "forum.thread.cords": "Whoever decided to draw calls as patch cords was right and I cannot unsee it. Saw a magenta one in a demo tenant at 3am and physically reached for a spend cap I did not own.",
+    "chatter.desk.dialtone": "Quiet trunk tonight. On this line 'quiet' is either good maintenance or a bleeding artery, and only the meter knows which.",
+    "chatter.wall.nine": "The wall filled at nine, every cord holding Clear, and nobody in this room had to hear a fast-busy tone. That sentence is the whole job.",
+    "codex.cord-states": "Three named states with hard boundaries (§1.3 verbatim law): Clear — smooth, bright; Grainy — visible noise in the glow, MOS 3.5 to 4.0; Fraying — the braid visibly separating, below 3.5. The meter does not negotiate with the boundary, and neither does the customer.",
+    "codex.monitoring-defense": "'This level teaches monitoring as defense' (§1.3 verbatim): the threat is not a fight you win at speed, it is a pattern you notice at 3am — the time of day, the ticking meter, the cord that nobody patched. The defense is a setting that must stay true, which is why the verb of this line is upkeep.",
+    "loading.tip.cap": "The spend cap is 'the best purchase in the VoIP ruleset, and the player who skips it will only skip it once' (§2.24). The second sentence is about the invoice.",
+    "loading.tip.nine": "Calls arrive in predictable business-hour patterns with a hard 9am spike (§1.3). Predictable is a gift. The wall is where you either unwrapped it or didn't.",
+    "intern.entry.nine": "Day {day}: watched the trunk fill at nine like a timetable. The senior tech said every other line hides its peak. This one prints it on the card and still catches people out.",
+    "intern.entry.bill": "Day {day}: saw the weekend settlement sheet. The boss read it twice, said nothing about Saturday, and made a list of every monitor that had been switched off. The list was one item: 'us'.",
+    "sticky.note.trunk": "Pinned above the SBC: 'a misconfigured trunk silently joins two networks that should never meet'. Nobody has laughed at it since June. — wall note, post-audit",
+    "abuse.canon.carrier-advisory": "Rate abuse advisory: {minutesFraudulent} fraudulent minutes toward {destinationCountry}, exposure {fraudAmount}. Your extensions did the dialling. Set a cap and a whitelist before the next quiet weekend.",
+    "abuse.canon.customer-dispute": "Formal dispute opened on ticket {ticketId}: the account denies the calls, the destinations, and the phrase 'reasonable usage'. They do not deny the phone numbers. Legal has the toner ready.",
+    "vendor.reply.firmware": "Have you tried updating to the latest firmware?",
+    "vendor.reply.log-bundle": "Please collect a full log bundle.",
+    "vendor.reply.known-issue": "This is a known issue, fixed in the next release (no ETA).",
+    "vendor.reply.inactive": "Closing due to inactivity.",
+    "achievement.clear-all-day": "Clear Air, Every Cord.",
+    "achievement.capped-the-night": "Capped The Night.",
+    "achievement.heard-both-ways": "Heard Both Ways.",
+    "canary.busy-wall-tally": "Wall {channelsBusy} of {channelsTotal}, state {cordState}, MOS {mosDisplay} — the cliff, the bleed and the storm are the same instrument, read three times."
+  },
+  "_provenance": {
+    "type.trunk-group-voip.name": "§1.3 card subtitle verbatim ('The Switchboard'); README §Key literals",
+    "type.trunk-group-voip.codex": "The voice line: channels, not servers. Jitter and packet loss decide, not throughput — 'a dropped call is a total loss, not a slow bounce' (§1.3). Calls arrive with a hard 9am spike you were told about, quality is measured in MOS and remembered far longer than any page load, and the fastest-bleeding threat in the game walks in at 2am Friday as dialled minutes and leaves Monday as a carrier bill. One-way audio is invisible to every uptime check; the 911 obligation is a filing regime, not a feature. There is a firewall of telephony, and a cheap cap that prevents the single most expensive failure — skip it once. This level teaches monitoring as defense.",
+    "visitor.unit.call": "§3.2 ledger row visitor column 'Call'; bundle key pin",
+    "goal.trunk-group-voip.binding": "§1.3 'jitter and packet loss, not throughput' + 'a dropped call is a total loss, not a slow bounce' + 9am/toll-fraud paragraphs; README §Key literals",
+    "scarce.trunk-group-voip.qos": "§1.3 total-loss clause + §2.10 busy-wall grammar (arrivals visibly bouncing when full); in-call-first law authored from both",
+    "skin.trunk-group-voip.inspector": "Bakelite black and brass: the jack-field patch-panel wall, every live call drawn as a literal cord seated in its jack; a ribbon that breaks anywhere is a dropped call, a visible notch is jitter. The meter is three cord states with hard boundaries — Clear, smooth and bright; Grainy, noise in the glow; Fraying, the braid separating. Parallel cords sheath into one trunk badge, and after midnight a magenta cord plugs itself in with a ticking international-rate meter. Nothing else in the game is this unforgiving-looking, and that's the point (§1.3).",
+    "economy.trunk-group-voip.bad-month": "§6.6 bad-month table VoIP row (verbatim: 'toll fraud on a weekend')",
+    "relations.trunk-group-voip.mastery": "§2.24 SBC/cap hygiene wins + §2.12 registration beats + §1.3 9am clause; wording authored",
+    "relations.trunk-group-voip.distillate": "§1.3 monitoring-as-defense + §2.24 cheap-control law + §3.2 binary-call clause; playbook form per §1.9 distillate law",
+    "verbs.trunk-group-voip.transfer.1": "§1.9 Portable Skill idiom applied to the upkeep posture (§2.24 hygiene-win law); authored",
+    "handover.trunk-group-voip.runs-out": "§0.3 scarce column 'Jitter + packet loss' + §2.10 busy wall + §1.3 meter law; README §Key literals",
+    "handover.trunk-group-voip.kills-you": "§0.3 failure column verbatim ('Toll fraud') + §1.3 magenta-cord and $60,000 sentences; README §Key literals",
+    "handover.trunk-group-voip.customer-wants": "§13849 sales-pitch row verbatim core ('published MOS and a channel-capacity guarantee'); README §Key literals",
+    "rosetta.trunk-group-voip.spendcap": "README §Key literals; §2.24 spend-cap law translated to the baseline cgroup-caging metric (§1.9 Rosetta law)",
+    "rosetta.trunk-group-voip.trunkmix": "README §Key literals; §1.3 9am cliff translated to the baseline oversell-ratio metric (§1.9 Rosetta law)",
+    "scenarios.trunk-group-voip.toll-fraud": "§2.12 Toll Fraud Night + §1.3 toll-fraud paragraph (verbatim cores); consequence-only framing per §9.11",
+    "scenarios.trunk-group-voip.one-way-audio": "§2.12 verbatim core ('NAT/firewall misconfiguration causing RTP to flow one direction only') + §1.3 'invisible to every uptime check'",
+    "scenarios.trunk-group-voip.jitter-storm": "§1.3 catastrophe verbatim ('a jitter storm where every cord vibrates') + cord-state boundaries + §2.12 Codec Mismatch",
+    "scenarios.trunk-group-voip.e911": "§2.12 911 Obligation beat (address registration, liability); wording authored",
+    "alert.toll-fraud-window": "§1.3 'plugging itself in at 3am with a ticking international-rate meter' verbatim core; §9.3 clause-2 sober surface",
+    "alert.sip-scanner-chorus": "§2.12 SIP Scanner Chorus verbatim imagery ('tiny cords repeatedly trying to seat and failing'); §9.3 sober surface",
+    "alert.one-way-audio": "§1.3 'invisible to every uptime check' + §2.12 one-way clause; §9.3 sober surface",
+    "alert.busy-wall": "§2.10 busy-wall grammar (lit slots, visible bounce) + §1.3 9am spike; §9.3 sober surface",
+    "alert.jitter-storm": "§1.3 meter paragraph verbatim cores (braid separating, 3.5 boundary, catastrophe); §9.3 sober surface",
+    "terms.spend-cap": "§2.24 verbatim ('a cheap control… the best purchase… only skip it once'); terms register",
+    "terms.trunk-capacity": "§13849 sales row ('published MOS and a channel-capacity guarantee') + §0.3 channel unit; terms register",
+    "terms.e911-registry": "§2.12 911 Obligation beat; terms register",
+    "refusal.hands-exhausted": "§9.3 clause-2 sober-surface law; engine door reason code; cross-pack byte-identical",
+    "refusal.stamped-in-future": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.unknown-node": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.edge-exists": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.slot-occupied": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "status.rung-1": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-2": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-3": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-4": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
+    "cac.trunk-group-voip.todo": "§6.6 Companion B (no VoIP row) + §0.3 customer column; null-provenance law — placeholder until priced",
+    "ticket.subject.monday-bill": "§1.3 Monday-carrier-bill beat; ticket register comedy",
+    "ticket.body.monday-bill": "§1.3 $60,000 sentence + §2.12 discovery-on-Monday shape; wording authored",
+    "ticket.subject.one-way-audio": "§2.12 one-way clause in customer register (the classic sentence said aloud); ticket register",
+    "ticket.body.one-way-audio": "§1.3 'invisible to every uptime check' dramatized; no technique named, §9.11",
+    "ticket.subject.e911": "§2.12 911 Obligation beat as compliance question; ticket register",
+    "ticket.body.e911": "§2.12 address-registration liability; wording authored",
+    "ticket.subject.nine-am": "§1.3 9am spike + §2.10 visible bounce; ticket register",
+    "ticket.body.nine-am": "§13849 channel-capacity guarantee quoted back; wording authored",
+    "press.headline.weekend": "§1.3 toll-fraud paragraph as press beat; §9.3 press format; consequence-only, §9.11",
+    "press.headline.storm": "§1.3 jitter-storm catastrophe; §9.3 press format; wording authored",
+    "forum.thread.mos": "§1.3 MOS clause + 9am law in forum register; §9.3 industry-forum channel",
+    "forum.thread.cords": "§1.3 patch-cord visual + magenta-cord imagery; §9.3 forum register",
+    "chatter.desk.dialtone": "§2.12 detection-posture clause; chatter channel",
+    "chatter.wall.nine": "§1.3 9am spike survived; chatter channel",
+    "codex.cord-states": "§1.3 meter paragraph verbatim trio with boundaries; codex register",
+    "codex.monitoring-defense": "§1.3 'this level teaches monitoring as defense' verbatim + §2.24 hygiene-win law; codex register",
+    "loading.tip.cap": "§2.24 verbatim core ('the best purchase… only skip it once'); loading channel",
+    "loading.tip.nine": "§1.3 9am-spike sentence verbatim core; loading channel",
+    "intern.entry.nine": "§1.3 predictable-arrival law; §9.3 Intern's Log concept",
+    "intern.entry.bill": "§1.3 Monday-bill beat; §9.3 Intern's Log; monitoring-not-mechanics framing per §9.11",
+    "sticky.note.trunk": "§2.x VoIP signature-failure language (silent network-joining misconfiguration); §9.3 sticky-note channel",
+    "abuse.canon.carrier-advisory": "§6.6 'fraud (toll)' signature cost + §2.12 counters named as remedy only; advisory-text only, §9.11",
+    "abuse.canon.customer-dispute": "§1.3 bill-discovery beat in legal register; notice-text only, §9.11",
+    "vendor.reply.firmware": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.log-bundle": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.known-issue": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.inactive": "§9.3 vendor comedy channel (verbatim)",
+    "achievement.clear-all-day": "§1.3 Clear cord state as victory; §9.3 achievement-name channel",
+    "achievement.capped-the-night": "§2.24 spend-cap hygiene win kept honest; §9.3 achievement channel",
+    "achievement.heard-both-ways": "§2.12 one-way-audio failure flipped to win condition; §9.3 achievement channel",
+    "canary.busy-wall-tally": "§2.10 busy wall + §1.3 cord states/MOS; canary-notice channel (precedent: dedicated canary.row-tally, object-storage canary.comb-tally)"
+  },
+  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66). The win threshold, every pressure mapping in the wave slice, the diurnal amplitude and the DID-as-second-unit question stay PROVISIONAL-B / owner-law until the re-author sweep; the fraud scenario deliberately carries no technique detail — its slots are consequences (amounts, destinations-as-country-names, hours), never methods, per §9.11. "
+}

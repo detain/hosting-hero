@@ -1,0 +1,337 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:trunk-group-voip",
+  "_todo": "All human strings are keys into file:packs/trunk-group-voip.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. SECOND CARD ON THE TIER-EXTENSION VERB SLOT: the §1.3 card names 'Dominant verb: Observe' verbatim — held by official:dedicated since 7afa038 — so this card is re-authored onto the ratified ADR-0005 per-tier roster as Maintain (loader lint TIER_EXTENDED_VERBS), the route ADR-0013 decision 14 opened and the type-6 notes explicitly reserved for VoIP ('VoIP (Trunk Group) is now unblocked by the same route'); see verbs._todo for the full grounding. HONEST SCAFFOLD NOTICE (type-6 notes, 2026-10-14: 'VoIP's toll-fraud mechanic, jitter/MOS scarcity and §6.6 row have no registry or dial home at all — VoIP would ship as a bigger scaffold of nulls'): that assessment is correct and this bundle ships it that way — every unauthored scalar is null with a cite, the toll-fraud money-bleed has no registry id (see threats._todo), and the economy row's unit conflict is cited-not-resolved (see economy._todo). Pack authored at file:packs/trunk-group-voip.i18n.json — cac.trunk-group-voip.todo stays a placeholder until §6.6 Companion B prices the voice channel.",
+
+  "meta": {
+    "name": "type.trunk-group-voip.name",
+    "codexSummary": "type.trunk-group-voip.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.call",
+    "durationClass": "Session",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§3.2 ledger row verbatim: 'VoIP/SIP | Call | Continuous, jitter-sensitive | Instant | Jitter, loss, one-way audio | Per-minute / per-channel' — the patience column reads 'Instant', which is a CLASS not a scalar, and the binary model below is the doc's own instrument for it ('Binary: it either connects with good audio or it doesn't. No partial credit.', §3.2 visitor-unit section); authoring a milliseconds number under 'Instant' would contradict the line's identity. value/weight/loyalty/fragility: §3.1 five-stat examples exist only for DNS/colo units; nothing authored for this line — nulls with this cite, never forged zeros."
+    },
+    "patienceModel": {
+      "mode": "binary",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "mode 'binary' (PATIENCE_MODES vocabulary; FIRST corpus use — the vocabulary has carried this mode in anticipation and §3.2 names it for this exact line): 'Binary: it either connects with good audio or it doesn't. No partial credit.' plus the card's 'a dropped call is a total loss, not a slow bounce' (§1.3) — the call either seats on a free channel with acceptable audio or it is gone; there is no queued-impatient middle. budgetMs null: 'Instant' patience prices no scalar budget, and a forged one would turn the binary law into a timer. bounceSigmoid null: there is no bounce S-curve when failure is binary and total — the WS-1 R-60 LUT applies to patience-limited lines, not connect-or-lose ones. Both nulls await the owner re-author sweep."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null
+    },
+    "populationEffect": false,
+    "retryAmplifies": false,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-minute",
+    "trustReadable": false,
+    "archetypeRefs": [],
+    "_todo": "retryAmplifies false BY CITE, not default: 'A dropped call is instantly noticed and cannot be retried invisibly the way an HTTP request can' (§3.2 visitor-unit section) — the retry pressure that amplifies HTTP storms has no invisible channel here; every redial is a visible new call attempt the player is billed attention for, and no doc'd amplification law exists for this line. trustReadable false: the card's one-way-audio clause — 'invisible to every uptime check' (§1.3) — is the line's defining unreadability: a call the monitoring believes is fine is half-dead, so the cohort's quality state is unreadable until a human complains (mirror of object-storage's invisible-product precedent, hostile in the other direction: here the product LOOKES alive). archetypeRefs empty by authoring law, not oversight: the visitor here is the call itself (same law dns cites for the query, mail for the message, object-storage for the PUT/GET); §32656 lists the SIP call among archetypes with NO visual authored — an archetype-native registry entry is the registry-owner pass, flagged there. cohortSpawn tier 3: each business/carrier account (§0.3 customer column verbatim 'Businesses + carriers') raises its own call cohort; the card's 'hard 9am spike' is cohort simultaneity, not organic drift. costPerInvocation per-minute: §3.2 pricing column 'Per-minute / per-channel' meters the act; §357 'VoIP is MRC plus per-minute settlement'. party/herding off with no doc'd call-party or herding law for this line."
+  },
+
+  "goal": {
+    "nodeType": "trunk-group",
+    "winCondition": {
+      "kind": "survive",
+      "threshold": null,
+      "_todo": "The card ships NO Win clause — verbatim absence, unlike the mail ('>98% inbox placement') and game-servers win lines. §0.3 drives the level from the failure column instead ('Toll fraud'), and the meter vocabulary is DISPLAY, not a win line: the card's cord states carry hard boundaries (Grainy 'MOS 3.5–4.0', Fraying 'below 3.5', §1.3 verbatim) but lifting 3.5 into a threshold scalar would confuse a rendering boundary with a goal the doc deliberately left unpriced. kind survive + null threshold is the object-storage honesty precedent (durability nines: 'null + this cite'); a win-scalar authoring pass may replace this."
+    },
+    "loseCondition": {
+      "kind": "toll-fraud"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3,
+      "_todo": "3 minutes matches every shipped sibling, PROVISIONAL-B. The line's own warning shape is diurnal, not minute-scale: 'Its tell is the time of day, which makes the day/night band a threat-detection tool' (§2.12 Toll Fraud Night) — the fraud runs 'at 2am Friday… all weekend' and the bill lands 'on Monday' (§1.3), so the true guard on this level is the telegraphed night band, which no loseSlowlyGuard scalar expresses. Kept at the sibling default until the owner sweep; never tuned to the story by invention."
+    },
+    "bindingConstraintLine": "goal.trunk-group-voip.binding"
+  },
+
+  "scarce": {
+    "resourceId": "jitter-and-packet-loss",
+    "meterWidget": "busy-wall",
+    "meterBoundStat": "mos-score",
+    "commercialSlider": "trunk-capacity-tier",
+    "operationalDials": [
+      "spend-cap-ceiling",
+      "destination-whitelist",
+      "sbc-statefulness",
+      "jitter-buffer-depth"
+    ],
+    "windowGrows": false,
+    "shedOrder": "in-call-first-ladder",
+    "qosAnswer": "scarce.trunk-group-voip.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly",
+      "escalator": false,
+      "grandfathering": false
+    },
+    "seasonality": [],
+    "diurnalBaseline": "nine-am-spike",
+    "_todo": "simTimeScale ms: §7.8's tempo roster names game=ms, adtech/financial µs, web=s, backup=hours, colo=years — the VoIP row is UNDATED, so this is a grounding call, not a cite: the line's whole scarcity language is per-packet milliseconds ('jitter and packet loss, not throughput', §1.3; 'Continuous, jitter-sensitive', §3.2), and jitter is invisible at coarser clocks. permanentIncidentClock false: the drama is a weekend, not a countdown — toll fraud arrives at 2am Friday and is discovered by the Monday invoice (§1.3), and §2.12 makes the day/night band the detection instrument instead of a permanent clock (contrast game-servers' authored permanent clock). contractTerms monthly, no escalator, no grandfathering: §357 'VoIP is MRC plus per-minute settlement' — the rental is monthly, the settlement is metered; §6.6 cash-timing column 'monthly + settlement'. seasonality []: no VoIP season authored anywhere; never invented. diurnalBaseline 'nine-am-spike': THIS is the one line in the launch canon whose diurnal shape the card authors verbatim — 'Calls arrive in predictable business-hour patterns with a hard 9am spike' (§1.3) — the name is the card's sentence; amplitude stays unauthored in the wave slice."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.35,
+      "human": 0.2,
+      "entropic": 0.05,
+      "systemic": 0.25,
+      "customerAsThreat": 0.15,
+      "_todo": "malicious .35 is the corpus's largest malicious share by design and by cite — this is the line where the attacker has a dollar figure: 'the attack that costs money directly and instantly — the fastest-bleeding threat in the game' (§1.3, toll fraud), under constant ambient probe ('the SIP Scanner Chorus', §2.12). systemic .25 — carrier settlement relationships, the single-vendor trunk feed, codec ladders negotiated between carriers (§2.12 'Jitter Storms, Codec Mismatch'); gear-bought-together logic per §6.6 Companion C applies to carrier routes. human .2 — one-way audio is a misconfiguration ('NAT/firewall misconfiguration causing RTP to flow one direction only', §2.12 verbatim) and Monday's ticket avalanche is human-scale anger. customerAsThreat .15 — the 9am spike and the weekend conference bridge that parks every channel are customers as load. entropic .05, the corpus floor — hardware decay exists but no card sentence prices it; kept as a weight floor and omitted from activeFamilies (dns precedent). Sum 1.00. Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "systemic",
+      "customerAsThreat"
+    ],
+    "signatureThreats": [
+      { "id": "wp-login-brute-squad", "mechanical": true },
+      { "id": "slowloris-sipper", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true },
+      { "id": "vulnerable-plugin-compromise", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "unmetered-dial-default": ["slowloris-sipper"],
+      "public-extension-range": ["wp-login-brute-squad"],
+      "flat-rate-trunk-card": ["hoarder-noisy-neighbor"]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "hands",
+      "cash",
+      "reputation"
+    ],
+    "waveTable": "file:waves/g1-trunk-group-first-quarter.json",
+    "_todo": "Threat mapping law (dns/mail/dedicated/object-storage precedent — registry ids re-framed in _todo cites, zero new registry entries): the card's threat triad is toll fraud, one-way audio, and the 911 obligation (§1.3/§2.12); none is a registry id. The mapping splits the toll-fraud STORY across existing mechanics — wp-login-brute-squad = the extension brute-force itself (Swarm against an auth endpoint, the 2am registration hammering), slowloris-sipper = the weekend bleed of premium destinations draining the trunk slowly and invisibly (Sapper; §6077's own archetype line lists 'toll fraud' as Sapper company — 'Cryptominer, bandwidth thief, toll fraud'), scanner-drizzle = the SIP Scanner Chorus ('constant, ambient, tuneless chirping of registration attempts… tiny cords repeatedly trying to seat and failing', §2.12 verbatim imagery), vulnerable-plugin-compromise = the walked-through PBX/trunk weakness (Bypass/Flyer), hoarder-noisy-neighbor = the weekend conference bridge parking every channel (Parasite), ticket-avalanche-hydra = the Monday-morning bill-discovery flood (Swarm on the help desk). WHAT NO MAPPING CAN COVER, RECORDED HONEST: (1) toll fraud's defining property — money leaving the account via dial-out settlement, '$60,000… the attack that costs money directly and instantly' — has no registry mechanic; the cost rides economy.signatureCost 'toll-fraud-exposure' (§6.6 'fraud (toll)' verbatim), the handover kills-you line, and the Monday-bill beat in the wave finale, not a fabricated threat id. (2) One-way audio has no registry home — it is a legibility failure, carried by visitor.trustReadable false and the scenarios.analogues until the registry-owner pass. (3) The jitter storm catastrophe and the 911 obligation likewise ride the meter, the skin's catastropheFx, and scenarios.analogues. The two lookalike seeds this bundle REUSES by registry inheritance (scanner-drizzle→crawler, slowloris-sipper→deep-reader) satisfy the ≥1-seed law exactly as object-storage's double-reuse precedent does. Adding native VoIP ids is forbidden here: registry entries require visual/lookalikeOf tags and a proto THREAT_CATALOG sync — outside this lane."
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "bakelite black",
+      "accent": "brass",
+      "chord": [
+        "bakelite black",
+        "brass",
+        "cream",
+        "signal red",
+        "ribbon teal"
+      ]
+    },
+    "materialPreset": "preset:bakelite-and-brass",
+    "visitorCostume": {
+      "hull": "cord",
+      "propSlot": "jack"
+    },
+    "heroSilhouette": "asset:hero.switchboard-wall",
+    "heroObject": "switchboard-wall",
+    "meterFace": "cord-state-trio",
+    "catastropheFx": "fx:jitter-storm-every-cord",
+    "ambientSoundPack": "sound:dial-tone-and-patch-clatter",
+    "densityMultiplier": null,
+    "arrivalRhythm": "nine-am-cliff",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.monday-carrier-bill",
+    "signatureMotion": "motion:patch-cord-seat",
+    "signatureFrame": "frame:cord-snap",
+    "lodContract": {
+      "full": "asset:lod.switchboard-wall.full",
+      "icon16": "asset:lod.switchboard-wall.icon16",
+      "pip": "pip:brass-jack",
+      "aggregate": "agg:trunk-bundle",
+      "inspector": "skin.trunk-group-voip.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented. Palette chord verbatim §1.3 visual: 'Bakelite black and brass… bakelite black · brass · cream · signal red · ribbon teal'; dominant/accent are the two notes the card's own first sentence names. TRAFFIC-COLOR NOTICE: the card draws toll fraud as 'a magenta cord plugging itself in at 3am' — magenta is the hue ledger's traffic color for hostile flows, NOT this palette's décor, and the chord law keeps it out of the skin (validator bans magenta chord items); the hostile cord's color is engine-side by ledger, which the §1.3 sentence happens to agree with. Hero object verbatim: the facility is the 'wall of jack-field patch panels' the operator switchboard is 'built around' (§1.3). Costume: hull 'cord' verbatim — 'calls drawn as literal patch cords… one per active call'; propSlot 'jack' from the same patch-panel sentence. Meter verbatim: the card's meter IS the cord trio — 'Clear (smooth, bright), Grainy (visible noise in the glow, MOS 3.5–4.0), Fraying (the braid visibly separates, below 3.5)' — meterFace 'cord-state-trio'. Catastrophe verbatim: 'a jitter storm where every cord vibrates' (§1.3). Signature motion: a call seating is 'a patch cord plugs into its jack' — the seat-flash; signature frame: 'a ribbon or cord that breaks anywhere is a dropped call' (§1.3) — the snap. Aggregate 'agg:trunk-bundle': §26185 'Bundling and the trunk' — parallel cables auto-merge into one thick sheathed trunk with a small '×12' badge, the positional capacity teacher this line is made of (mirrors object-storage's replica-shadow aggregate law). arrivalRhythm 'nine-am-cliff' from the card's 'hard 9am spike'; ambientSoundPack 'dial-tone-and-patch-clatter' authored (the office of 1962 that the card's switchboard metaphor keeps invoking) — both flagged for ratification. Commercial artifact icon: §1.3 'you get the carrier bill on Monday for $60,000' — the Monday bill is the line's bad-month object (§6.6 'toll fraud on a weekend')."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4 era grid does not date the VoIP/trunk line. §21516's 'Telecom / VoIP authority (ITSP, FCC 499 filer, CLEC)' is a regulatory-capability regime, not an era gate; the switchboard visual (§1.3) is a Metaphor, not a date. Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "channel",
+    "revenueShape": "per-minute-plus-rental",
+    "marginProfile": "thin-on-minutes",
+    "cashTiming": "monthly",
+    "termStructure": {
+      "typical": "monthly",
+      "churn": "business-carrier-accounts-unpriced",
+      "_todo": "§6.6 VoIP/SIP row verbatim: 'channel / minute | per-minute + rental | thin on minutes | monthly + settlement | fraud (toll)' — typical 'monthly' from the cash-timing column; churn carries a qualitative descriptor in the dns 'cheapest-sticky-product' idiom: §0.3's customer column ('Businesses + carriers') is the doc's only stickiness statement for this line and prices no rate (same law object-storage cites); never forged into a number."
+    },
+    "cacProfile": "cac.trunk-group-voip.todo",
+    "ticketsPerCustomer": null,
+    "signatureCost": "toll-fraud-exposure",
+    "badMonth": "economy.trunk-group-voip.bad-month",
+    "fifthAxisScore": {
+      "metric": "jitter-and-packet-loss",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.3 line table verbatim: 'Voice / VoIP / SIP trunking | Jitter + packet loss | Toll fraud | Businesses + carriers | A channel / a DID' — the scarce column is this line's fifth-axis frame (same law object-storage cites); R42 score weight not authored."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": true
+    },
+    "_todo": "unitOfSale 'channel' verbatim from §0.3 ('A channel / a DID') — UNIT CONFLICT CITED, NOT RESOLVED (object-storage's gb-vs-TB precedent): §6.6 prices the row 'channel / minute' (a second dimension), and the DID is a SEPARATE sold artifact (§0.3 offers it with a slash; §11685-era numbering language) that no single unitOfSale scalar can carry — the sold artifact rides the §0.3 word while costPerInvocation rides §3.2's 'per-minute'; an owner reconciliation pass must decide whether DID is a second unit-of-sale or an add-on. revenueShape/marginProfile/cashTiming verbatim §6.6 columns ('per-minute + rental', 'thin on minutes', 'monthly + settlement'); §357 'VoIP is MRC plus per-minute settlement' prices the same shape. signatureCost verbatim §6.6 signature-cost column 'fraud (toll)'. ticketsPerCustomer null: no rate authored. cacProfile: §6.6 Companion B prices no VoIP row. demandCharges TRUE — per-minute settlement IS volume billing: the money moves only while minutes burn, which is exactly why toll fraud 'costs money directly and instantly' (§1.3); p95billing false: the 95th-percentile mechanic is authored for the CDN line (§6.6), not this one."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "trunk-channels" },
+      { "archetype": "two-face-rack", "skin": "switchboard" },
+      { "archetype": "control-plane", "skin": "fraud-desk" }
+    ],
+    "distinct": [
+      "session-border-controller",
+      "spend-cap",
+      "destination-whitelist",
+      "fraud-anomaly-monitor",
+      "geo-dial-restrictions",
+      "e911-address-registry",
+      "unmetered-dial-default",
+      "public-extension-range",
+      "flat-rate-trunk-card"
+    ],
+    "nonPhysical": [
+      "carrier-settlement-relationships",
+      "dial-plan-audit-trail"
+    ],
+    "_todo": "All distinct names cite the doc. §2.24 verbatim trio: 'Session Border Controller (SBC) — the firewall of telephony: stops toll fraud and SIP scanning' and 'Spend Cap / Destination Whitelist / Fraud Anomaly Monitor — a cheap control that prevents the single most expensive failure… the best purchase in the VoIP ruleset, and the player who skips it will only skip it once. One of the ~12 sanctioned hygiene wins.' §2.12 counters: 'geo-dialling restrictions, spend caps… anomaly detection, strong extension passwords, an SBC' — geo-dial-restrictions is the regional leg; e911-address-registry is §2.12's '911 Obligation' beat (address registration and liability) made purchasable. The last three are the invitation doors in threats.unlockedByBuildables: unmetered-dial-default (a trunk plan that does not watch the meter — the slow bleed walks in), public-extension-range (extensions enumerable from the open internet — the brute squad's map), flat-rate-trunk-card (a flat trunk plan where one customer's weekend bridge is your loss — §1.3's pricing shape inverted). nonPhysical: carrier settlement is a relationship, not a box (§357 'MRC plus per-minute settlement'); the 911 filing regime is paperwork, not hardware (§2.12). The jitter-buffer-depth control is deliberately a DIAL (scarce.operationalDials), not a purchasable — it is a tradeoff knob, not a purchase. Palette law per §0.2 R7 — 80% shared, this type re-wears concurrency-pool (the busy-wall grammar's own §2.10 row lists 'VoIP channels' verbatim as an exemplar: 'a finite row of discrete slots, each lit when occupied, with arrivals visibly bouncing off when full'), two-face-rack (front = the jackfield the operator sees, back = the carrier handoff nobody sees — the one-way-audio lesson drawn in architecture), control-plane (the fraud desk)."
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§7.8c four-pip roster names managed/dedicated/colo/reseller/cloud/wholesale lines only — the VoIP pip row is unauthored. Never invented (same law dns/mail/game-servers/object-storage cite)."
+    },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+
+  "mechanics": [
+    "toll-fraud-spend-cap",
+    "mos-cord-states",
+    "one-way-audio-diagnosis",
+    "nine-am-channel-cliff",
+    "carrier-settlement-spread",
+    "e911-obligation",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Maintain",
+    "transfers": [
+      "verbs.trunk-group-voip.transfer.1"
+    ],
+    "_todo": "RE-AUTHORED IDENTITY — the §1.3 card line reads 'Dominant verb: Observe' verbatim; Observe is official:dedicated's (7afa038) and pairwise VERB_SHIFT merges duplicates — the exact exhaustion ADR-0013 decision 14 ruled open and the type-6 notes scheduled this card for: 'VoIP (Trunk Group) is now unblocked by the same route (Shield/Maintain available)'. Chosen: Maintain (the §7.8 eight-verb core PLACE·LINK·TUNE·SCALE·SHIELD·INVESTIGATE·MAINTAIN·SELL; in loader/lint.ts TIER_EXTENDED_VERBS; PLACE·LINK/TUNE/INVESTIGATE fold into the invariant six, and Shield is taken by object-storage at 2fefc60, so Maintain is the line's own remaining roster verb — the route's second card, exactly as ADR-0013 #14 anticipated). Grounding: this level is continuous upkeep against a stateful threat — the hygiene-win sentence is the purest Maintain line in the canon ('the best purchase in the VoIP ruleset, and the player who skips it will only skip it once', §2.24): spend caps must stay capped, the SBC is 'stateful' upkeep ('the firewall of telephony', §2.24), E911 addresses must be re-registered when desks move (§2.12), codec ladders and DTMF modes need keeping compatible between carriers (§2.12 'Codec Mismatch'), and the failure is the unmaintained trunk — 'a misconfigured trunk that silently joins two networks that should never meet' (§2.x VoIP signature-failure language). The card's Observe posture is not lost: it survives as the meter pair (busy-wall × mos-score) and the day/night band as detection instrument (§2.12) — what the card adds to monitoring is that you are watching cords, not servers. HONEST DOOR GAP (g16 finding, recorded as a MODULE-STATUS gap row, 'tier-extension verbs have no door mechanic'): 'Maintain' has no PlayerVerb door enum member and no acquisition mechanic ships — this dominant verb is card IDENTITY and design posture, not a door capability; every mechanic the shipped quarter slice exercises rides door verbs (configure/commit/communicate and shed-side pressure), exactly the precedent the Shield row set."
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:dns-hosting",
+        "kind": "dns-and-everything",
+        "numbers": null,
+        "_todo": "§0.2 line synergies, verbatim: 'DNS + everything (you already own the infrastructure)' — the clause is symmetric and VoIP is an everything; SIP routing is meaningless without SRV/A records, so this is the least arbitrary member of the family. No numeric benefit authored for this pair."
+      }
+    ],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [],
+      "_todo": "Empty honestly: §5.6's lattice ships no gate unlocking the VoIP/trunk line. §21516's 'Telecom / VoIP authority (ITSP, FCC 499 filer, CLEC)' is a regulatory-capability row (what you must BE to sell it), not a prereq set, and §20860 makes 'anything → VoIP' a pivot cost, not an unlock — see pivots. Nothing invented."
+    },
+    "pivots": {
+      "to": {
+        "official:shared-web": {
+          "customerOverlap": null,
+          "hardwareReuse": null,
+          "skillTransfer": null,
+          "regulatoryDelta": null,
+          "_todo": "The doc'd pivot leg is INBOUND: §20860 verbatim — 'Expensive pivots: anything → VoIP (an entirely new regulatory regime)'. The pair ships so that leg has a home: shared-web is the mass-customer neighbor whose resellers already broker voice (§5748 lists VoIP among the agency-channel resales). All four numbers null: the 'entirely new regulatory regime' names regulatoryDelta as the load-bearing value without pricing it, and §21516's ITSP/FCC-499/CLEC authority row describes the wall rather than measuring it. Outbound VoIP→X is unauthored in §20860 and is NOT fabricated here."
+        }
+      }
+    },
+    "masteryBuff": "relations.trunk-group-voip.mastery",
+    "distillate": "relations.trunk-group-voip.distillate",
+    "_todo": "antagonisms left empty honestly: the doc ships no VoIP antagonism row. The §0.2 synergy table prices no voice-specific pair beyond the symmetric 'DNS + everything' clause, so exactly one synergy is claimed — more would be invention."
+  },
+
+  "ticketPack": "file:packs/trunk-group-voip.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.trunk-group-voip.runs-out",
+    "killsYou": "handover.trunk-group-voip.kills-you",
+    "customerWants": "handover.trunk-group-voip.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "cgroup-caging",
+      "alias": "spend-cap-ceiling",
+      "line": "rosetta.trunk-group-voip.spendcap"
+    },
+    {
+      "canonical": "oversell-ratio",
+      "alias": "trunk-capacity-tier",
+      "line": "rosetta.trunk-group-voip.trunkmix"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Endure",
+      "Diagnose"
+    ],
+    "analogues": {
+      "toll-fraud-night": "scenarios.trunk-group-voip.toll-fraud",
+      "one-way-audio": "scenarios.trunk-group-voip.one-way-audio",
+      "jitter-storm": "scenarios.trunk-group-voip.jitter-storm",
+      "e911-obligation": "scenarios.trunk-group-voip.e911"
+    }
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

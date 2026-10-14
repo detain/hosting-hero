@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-trunk-group-first-quarter",
+  "type": "official:trunk-group-voip",
+  "purpose": "First-quarter wave slice for the seventh Ruleset Card — the second type grounded on ADR-0013 decision 14's tier-extension roster (7 of the 20-type launch canon; dominant verb Maintain). Slice shape mirrors the six shipped g1 siblings: a probe-drizzle opening on the ambient SIP Scanner Chorus, the 9am spike and a parked trunk as the surprise-with-composition beat (customers as load, not attackers), a hollow-quiet trough where the Friday-night bleed runs under the weather, a compound hard wave where a walked-through extension joins the hog, and a finale that is this line's signature: the magenta cord of 3am arriving as the Monday bill — cash and reputation in one envelope (§1.3/§2.12). Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "call-traffic-commute",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": 9,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. This is the ONE launch-canon line whose diurnal shape the card authors outright: 'Calls arrive in predictable business-hour patterns with a hard 9am spike' (§1.3 verbatim) — peakHourLocal 9 is that sentence, the only non-null peak hour shipped by any slice. diurnalAmplitude null: 'hard' prices a cliff's shape, not its height; the magnitude awaits the waves-lane curve catalogue; PROVISIONAL-B. neverZero: the dial tone never sleeps — even at 3am the trunk carries the scanner chorus and, on the bad nights, the fraud (§2.12).",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "fraud-window",
+      "kind": "threat",
+      "overWaves": [2, 3, 4],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "bill-arrival-tail" },
+      "amplitude": null,
+      "composition": ["wp-login-brute-squad", "slowloris-sipper"],
+      "telegraph": "the tell is the hour: registrations hammering an open extension range in the small hours, premium destinations ticking on the settlement meter while the dashboard reads idle — 'an attacker brute-forces a SIP extension at 2am Friday and dials premium-rate international numbers all weekend' (§1.3), and 'its tell is the time of day, which makes the day/night band a threat-detection tool' (§2.12)",
+      "source": "§1.3 card verbatim (toll-fraud paragraph); §2.12 Toll Fraud Night",
+      "compoundWave": "authored so the bleeding is POSITIONAL, not peaky: the fraud walks in behind the brute squad's map (wp-login pressure = the enumeration), then slowloris-sipper's Sapper drain runs the minutes meter all weekend under whatever else the quarter throws — the damage lands as Monday's settlement line, which is why the decay is a bill-arrival tail, not a traffic fade",
+      "_todo": "per-minute fraud rate → Sapper pressure mapping and the $60,000 settlement figure unauthored (economy carries it, not a scalar here); PROVISIONAL-B."
+    },
+    {
+      "id": "nine-am-cliff",
+      "kind": "customer",
+      "overWaves": [2, 4, 5],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "commute-tail" },
+      "amplitude": null,
+      "telegraph": "the business day opens all at once: every PBX on every customer account lifts its handset inside the same minute — the card's 'hard 9am spike' as a capacity exam the trunk either passes with headroom or answers with the busy wall",
+      "source": "§1.3 card verbatim: 'Calls arrive in predictable business-hour patterns with a hard 9am spike.'",
+      "compoundWave": "the forecastable catastrophe — the player is TOLD the spike is coming (§1.7 'never surprise with size; surprise with composition'), so the lesson is provisioning, and the composition that rides inside the spike (the parked bridge at w4, the Monday bill calls at w5) is the surprise",
+      "_todo": "spike multiplier over baseline unauthored (diurnalAmplitude null); PROVISIONAL-B."
+    },
+    {
+      "id": "parked-bridge",
+      "kind": "customer",
+      "overWaves": [2, 4],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "hangup-tail" },
+      "amplitude": null,
+      "telegraph": "one account starts a weekend conference bridge and never hangs up: channels light on the busy wall one by one and stay lit — a Parasite that pays its bill the entire time it is killing the trunk",
+      "source": "§1.3 line logic (channel capacity is the scarce) + hoarder-noisy-neighbor precedent (§1.3-adjacent 'noisy neighbor' family, registry human); weekend duration mirrors toll fraud's Friday-to-Monday clock (§2.12)",
+      "compoundWave": "the customer-shaped trunk catastrophe: pressure lands on bandwidth and hands (the capacity calls the player must place to widen the wall) while cash stays green — the inversion that teaches the busy wall is a quality instrument, not a revenue one",
+      "_todo": "bridge channel-count unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "monday-bill",
+      "kind": "customer",
+      "overWaves": [5],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "dispute-tail" },
+      "amplitude": null,
+      "telegraph": "discovery arrives as paperwork: the settlement statement lands Monday morning and every dispute is a call, every call is a ticket, every ticket quotes the same number back — 'you get the carrier bill on Monday for $60,000' (§1.3)",
+      "source": "§1.3 card verbatim (toll-fraud sentence); §6.6 bad-month row 'toll fraud on a weekend'; ticket-avalanche-hydra registry mechanic (Swarm/Debuffer, roles[0] Swarm)",
+      "compoundWave": "the fraud envelope's decay leg made social: the money left all weekend (fraud-window) and the REPUTATION and hands cost arrives now, in one inbox — the fastest-bleeding threat in the game is paid back slowest, which is the level's whole lesson in monitoring-as-defense",
+      "_todo": "dispute-cadence → ticket pressure mapping unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is the SIP Scanner Chorus — 'constant, ambient, tuneless chirping of registration attempts… tiny cords repeatedly trying to seat and failing' (§2.12 verbatim imagery): the whole quarter's threat surface is introduced as background weather the trunk shrugs off, because today the extension range is closed and the monitor is on.",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["hands", "cash"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the 9am cliff (nine-am-cliff envelope: the card's authored diurnal law) and the two things that ride inside a morning: the weekend conference bridge still parked on the trunk (Parasite — a paying customer killing the busy wall, §1.3 channel scarcity) and the first brute squad finding an enumerable extension range after hours (Swarm — the fraud map, §2.12). Two-Front (§2.24): bandwidth x cash. The night band is where the second entry lives, which teaches the detection law before the loss: 'its tell is the time of day' (§2.12).",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 55, "band": "storm" },
+        { "threat": "wp-login-brute-squad", "role": "Swarm", "pressurePct": 45, "band": "hunter" }
+      ],
+      "denominations": ["bandwidth", "cash"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS the maintain posture: caps kept current, SBC state kept warm, dial plans kept audited, and §1.3's monitoring-as-defense prices it."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the SBC, the spend cap, the whitelist, the second trunk all get their window here. But on the voice line the quiet weekend IS the attack surface — the Sapper's slow bleed (slowloris-sipper re-framed as premium-destination minutes, §6077's 'toll fraud' in Sapper company) runs precisely while the scanner drizzle is the only visible traffic: 'the fastest-bleeding threat in the game' (§1.3) bleeds fastest when nobody is calling.",
+      "entries": [
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 70, "band": "entropy" },
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 30, "band": "weather" }
+      ],
+      "denominations": ["hands", "cash"]
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, voice variant: a walked-through trunk weakness (Bypass/Flyer debuts here, the every-4th-wave NEW ROLE beat — unseen in waves 1-3; vulnerable-plugin-compromise re-framed per this line's threat mapping as the PBX default that shipped open, §2.12) lands on the same Friday night the parked bridge is at its weekend peak (Parasite carry), and the fraud window is still ticking underneath both, because the minutes meter does not pause for the incident you can see (second-incident multiplier applies, stated openly in the Codex, §2.24). Two fronts: reputation (a customer's calls failing at the cliff while your wall is busy) x cash (the settlement line growing during the same hours).",
+      "entries": [
+        { "threat": "vulnerable-plugin-compromise", "role": "Bypass/Flyer", "pressurePct": 55, "band": "storm" },
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 45, "band": "hunter" }
+      ],
+      "denominations": ["reputation", "cash"],
+      "secondIncident": "fraud-window minutes keep accruing inside the breach-plus-bridge incident window -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is Monday morning: the brute squad maps the range wide open tonight (Swarm returns at its most determined), the weekend's bleed finishes its tail (Sapper), and the hydra of bill-discovery arrives with the sun (ticket-avalanche-hydra, roles[0] Swarm — 'every dispute is a call', the Monday-bill envelope made mechanical; the magenta cord of 3am, §1.3, is now a queue of humans at 9:00). Hard wave draws TWO fronts — cash x reputation — per §2.24: the carrier settlement and the customer trust drain through the same envelope, which is the line's commercial identity (§6.6 bad month verbatim: 'toll fraud on a weekend'). Win check: the card ships NO win clause (§1.3) — the quarter is survived if the trunk never dropped a seated call without warning and the cap held, which the busy wall and the anomaly monitor testify to; the $60,000 lesson is priced by the economy, not this slice.",
+      "entries": [
+        { "threat": "wp-login-brute-squad", "role": "Swarm", "pressurePct": 40, "band": "storm" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 30, "band": "hunter" },
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 30, "band": "entropy" }
+      ],
+      "denominations": ["cash", "reputation"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7). On this line the queued arrivals are callers hearing a fast busy signal — 'a dropped call is a total loss' (§1.3), so the triage window is the only mercy the trunk can offer."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}
