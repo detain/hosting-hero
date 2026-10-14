@@ -174,6 +174,13 @@ export function withMuseumAttribution(exhibit: MuseumExhibitRecord, participantI
  *     distinct recorded writers) — solo runs use the ordinary settlement
  *     path, not the co-op contract;
  *  5. carry an attribution stamp on every record that equals its author.
+ *
+ * SCOPE NOTE (review m2 @8c0ff88): the guard verifies FACET, seating and
+ * stamp — NOT per-record shape. A MuseumExhibitRecord aimed at facet
+ * "scars" casts through (commitCoopAttribution's `write.record as
+ * ScarRecord`) and is only caught later by node.ts wire-parse. Per-facet
+ * record parsing is the TRANSPORT BOUNDARY's obligation (the seat wire
+ * must parse before batching); this guard owns attribution law only.
  */
 export function guardCoopAttributionBatch(batch: CoopAttributionBatch, ledger: CoopNodeMetadata | undefined): void {
   if (ledger === undefined) {
@@ -215,6 +222,8 @@ export function guardCoopAttributionBatch(batch: CoopAttributionBatch, ledger: C
  * first is committed). Scar writes route through addScar so the three-floor
  * cap-retire law survives co-op writes (attribution rides the demotion);
  * museum writes append — the museum never destroys exhibits (§2.5).
+ * Record-shape validation is NOT done here — see the scope note on
+ * guardCoopAttributionBatch (transport boundary's obligation, m2 @8c0ff88).
  */
 export function commitCoopAttribution(node: CompanyNode, batch: CoopAttributionBatch): CompanyNode {
   guardCoopAttributionBatch(batch, node.coop);
