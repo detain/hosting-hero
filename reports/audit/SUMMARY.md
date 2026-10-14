@@ -1146,7 +1146,9 @@ Lanes under markup (all eight commits on master, `48cf8c6..2fefc60` atop `1ab273
 | 2 | co-op `commitCoopAttribution` record-shape note — relay-side shape expectations should be pinned when the transport lane lands | minor | transport-lane |
 | 3 | `2fefc60` commit-message "malicious omitted" wording vs the shipped roster data disagrees | minor | docs-sweep |
 | 4 | schema `visual`/id pattern inconsistency: digit-leading ids accepted differently across the two new registry schema shells | nit | docs-sweep |
-| 5 | DECISIONS-PENDING OD-9/OD-17 rows carry bold-nesting markdown artifacts (`**…**…**`) | nit | docs-sweep |
+| 5 | DECISIONS-PENDING OD-9/OD-17 rows carry bold-nesting markdown artifacts (`**…**…**`) | nit | **CLOSED 2026-10-14 (closeout-7 follow-up docs commit)** — both cells re-nested as two sequential bolds, markdown-only |
+
+Post-closeout addendum (closeout-7): the brief's "m3" ask — a MODULE-STATUS gap row for tier-extension verbs having no door mechanic — was **verified already live** at `docs/MODULE-STATUS.md:174` ("TIER-EXTENSION VERBS HAVE NO DOOR MECHANIC", opened by VERB-UNBLOCK), so no row was added; nit #5 was fixed in the same follow-up commit. Minors #1–#3 and nit #4 keep their recorded dispositions.
 
 ### Marker flips applied (five, each asserted against its exact pre-write on-disk line before the write)
 
