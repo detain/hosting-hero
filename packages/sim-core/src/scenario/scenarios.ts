@@ -1,11 +1,14 @@
-/** Seventeen shipped §1.5 scenarios — the library grows toward the full
- *  playable census (sixteen missions; Metastable ships twice, once per
+/** Twenty shipped §1.5 scenarios — the library grows toward the full
+ *  playable census (nineteen missions; Metastable ships twice, once per
  *  traffic profile, the corpus twin proving the waves-tableId seam).
  *  Wave three rides the predicate ladder rungs 1–3 (written-off-count,
  *  metrics-delta-over-window, family-labeled arrivals): Post-Breach
  *  Aftermath, Contract Recompete, Free Tier Flood, and the partial Sev-0.
  *  Wave four consumes the LAST two rungs (covenant wire inputs, the
  *  reputation observation): The Covenant and Review Bomb.
+ *  Wave five climbs the CHANNELS ladder (input channels, not just output
+ *  vocab): the door rail (Understaffed Sunday) and the economy host-signals
+ *  (Chargeback Wave, The Slow Week After).
  *
  *  Every document here is WIRE DATA (JSON-safe literals: money rides
  *  strings for the big µ$ values) parsed through the same wall external
@@ -62,6 +65,15 @@
  *    "Media Attention" (~line 3870): the rating is the lives counter and
  *    the dunning ladder is the mob — rung 5 (reputation rides the
  *    observation).
+ *  - understaffed-sunday → "The Understaffed Sunday" (~line 3657): no
+ *    crisis, a quarter of the hands — the door rail proves cadence vs
+ *    capacity (channels ladder: door intents).
+ *  - chargeback-wave   → "The Chargeback Wave" / "Processor Freeze" /
+ *    "Rolling Reserve" (~line 3721): stage 1 only — disputes post real
+ *    fees and a real rating hit (channels ladder: signal chargebacks).
+ *  - the-slow-week-after → "The Slow Week After" (~line 4025): the level
+ *    after the outage; the blameless write-up is the gameplay (channels
+ *    ladder: signal major incidents + post-mortem adjudication).
  */
 
 import type { ScenarioDoc } from "./doc.ts";
@@ -78,6 +90,9 @@ export interface ScenarioWire {
   readonly board: unknown;
   readonly contracts: readonly unknown[];
   readonly traffic: unknown;
+  /** Channels ladder (optional — absent keeps the pre-channel byte shape). */
+  readonly intents?: readonly unknown[];
+  readonly signals?: unknown;
   readonly objectives: { readonly win: readonly unknown[]; readonly lose: readonly unknown[] };
   readonly limits: unknown;
 }
@@ -1053,6 +1068,202 @@ const REVIEW_BOMB_WIRE = {
   },
 } satisfies ScenarioWire;
 
+/* ────────────────── Channels ladder — three pilot missions ──────────────────
+ *
+ *  Each pilot proves ONE input channel family live end-to-end (spec §1.5
+ *  text → wire rows → engine effect → predicate verdict). Where a channel
+ *  falls short of the full spec stage, the docblock names it — the ladder
+ *  header records the non-expressibles, the missions stay honest blurbs.
+ */
+
+/* ─────────────────── The Understaffed Sunday ─────────────────── */
+
+/* Win arm: one communicate every two ticks (occupancy 2, capacity 1 ⇒ the
+   half-open release law frees the token exactly when the next row lands —
+   the perfect-cadence proof). Lose flip: SAME rows one tick denser — the
+   backlog story becomes refusals, and accumulation is scored as the door
+   saying no. Probed witnesses pin the exact refusal minute per seed.
+   Non-expressible in v0: "the size of the backlog you hand to Monday" is
+   not a first-class object (no ticket entity exists) — the refused-count
+   is its honest proxy, and the 40-minute span rides survive-minutes. */
+const UNDERSTAFFED_SUNDAY_WIRE = {
+  schema: "hh-scenario@1",
+  id: "understaffed-sunday",
+  name: "The Understaffed Sunday",
+  brief:
+    "No crisis — an ordinary Sunday with a quarter of the hands. Nothing dramatic happens; the routine simply outruns the roster. Keep the tickets talked-to for forty minutes without ever letting the queue of NO's pile up.",
+  specRef: "§1.5 The Understaffed Sunday",
+  specLine: 3657,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "sunday-quiet",
+    segments: [{ fromMinute: 0, ratePerMin: 4 }],
+  },
+  intents: Array.from({ length: 18 }, (_unused, i) => ({
+    atTick: 5 + i * 2,
+    verb: "communicate",
+    args: { target: null, note: `sunday-ticket-${String(i + 1).padStart(2, "0")}` },
+  })),
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 40 },
+      { kind: "intents-executed-above", count: 16 },
+      { kind: "intents-refused-below", count: 1 },
+    ],
+    lose: [{ kind: "intents-refused-above", count: 6 }],
+  },
+  limits: {
+    maxSimMinutes: 60,
+    handCapacity: 1,
+  },
+} satisfies ScenarioWire;
+
+/* ───────────────────── The Chargeback Wave ───────────────────── */
+
+/* Stage 1 of the spec's three real stages: disputes post cfg-owned fees
+   ($20 per the engine ledger — the wire names WHICH contract, never the
+   amount) and the §2.10 rating eats −400 bps per chargeback. The hourly
+   book keeps humming (review-bomb's proven dice band), so the rating is
+   disputes + dunning noise — witnesses probe the exact seed band.
+   Non-expressible in v0 (recorded in the ladder header): stage 2 the
+   monitoring-program months ($25–100 per-dispute fines have no channel),
+   stage 3 the rolling reserve (settlement holds — the money lane has no
+   hold-and-release primitive), stage 4 the >1% ratio termination (no
+   processor-relationship entity, no fourth death cause), and the "grow
+   profitable yet miss payroll" cash-flow texture needs the reserve. */
+const CHARGEBACK_WAVE_WIRE = {
+  schema: "hh-scenario@1",
+  id: "chargeback-wave",
+  name: "The Chargeback Wave",
+  brief:
+    "A carder ring paid with stolen cards and the processor is collecting. Nothing is broken, the servers are green, revenue books — and every dispute still takes its fee and its stars. Weather four disputes and keep the storefront rating alive.",
+  specRef: "§1.5 The Chargeback Wave / Processor Freeze / Rolling Reserve",
+  specLine: 3721,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "cw-01", mrcMicroUsd: 60_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Carded Cart Ltd" },
+    { id: "cw-02", mrcMicroUsd: 48_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Stolen-Card Sweep SA" },
+    { id: "cw-03", mrcMicroUsd: 36_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "Friendly Fraud LLC" },
+    { id: "cw-04", mrcMicroUsd: 24_000_000, billingCycle: "hourly", termEndMin: 30_000, termMonths: 12, autoRenew: true, customer: "BIN Attack Boutique" },
+  ],
+  traffic: {
+    tableId: "wave-quiet",
+    segments: [{ fromMinute: 0, ratePerMin: 6 }],
+  },
+  signals: {
+    chargebacks: [
+      { atMinute: 20, contractId: "cw-01" },
+      { atMinute: 60, contractId: "cw-02" },
+      { atMinute: 100, contractId: "cw-03" },
+      { atMinute: 140, contractId: "cw-04" },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 200 },
+      { kind: "chargebacks-above", count: 3 },
+      { kind: "reputation-above", bps: 2500 },
+      { kind: "no-death-cause", cause: "any" },
+    ],
+    lose: [{ kind: "reputation-below", bps: 1500 }],
+  },
+  limits: {
+    maxSimMinutes: 320,
+    initialFreeMicroUsd: 100_000_000_000,
+    /* The hourly book pays on the engine's own dice (review-bomb's proven
+       mob): its noise band sits at +1100..+3350 bps ABOVE the raw dispute
+       math. The four authored disputes can never reach the 1500 lose line
+       through that band — the lose witness is the DEEPENED wave (the flip
+       adds 20 more rows; 24 × −400 out-burns even the luckiest recovery
+       streak). That IS the spec's texture: the fight is arithmetic, not
+       uptime. */
+    opex: [
+      { atMinute: 40, amountMicroUsd: 8_000_000, memo: "ops-01" },
+      { atMinute: 80, amountMicroUsd: 8_000_000, memo: "ops-02" },
+      { atMinute: 120, amountMicroUsd: 8_000_000, memo: "ops-03" },
+      { atMinute: 160, amountMicroUsd: 8_000_000, memo: "ops-04" },
+    ],
+    dunningEngineOwned: false,
+  },
+} satisfies ScenarioWire;
+
+/* ─────────────────── The Slow Week After ─────────────────── */
+
+/* The transparency half of the review-bomb family's shadow: the outage is
+   OVER — the level is made entirely of consequences. Declared majors fold
+   the §2.10 damage (−500 bps each, halved after the honest-host floor
+   stands); the blameless write-up adjudicates through the real post-mortem
+   machinery (+250 credit, permanent floor). The lose flip files the SAME
+   card one field wrong: two changes in flight exceed the attribution
+   ceiling, the card lands ambiguous, no floor ever stands, and the second
+   bad month costs full price.
+   Non-expressible in v0: team morale (two engineers wanting to quit has no
+   entity), customer calls and review responses (no CRM verb beyond the
+   door's generic communicate), SLA credits owed to customers by choice
+   (the engine's credits ride error-budget breaches only), and the RFO
+   document minigame (its own §1.5 headline). */
+const SLOW_WEEK_AFTER_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-slow-week-after",
+  name: "The Slow Week After",
+  brief:
+    "The outage is over and nothing is broken — everything is fragile. The mechanics are all consequences: the post-mortem you file (or fudge), and the rating the next bad month tests against the floor your honesty built.",
+  specRef: "§1.5 The Slow Week After",
+  specLine: 4025,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  /* One paying customer keeps the book above the extinction floor (§6.10:
+     an EMPTY customer book arms churn-collapse from minute one and quietly
+     dissolves the company mid-window — probe-discovered, and OD-25(a) v0
+     makes dissolution silent, not terminal, so a naive mission would "win"
+     over a corpse). Monthly billing keeps every invoice beyond the business
+     roll (~tick 420) and the term cliff lands at m117 — past the m100 win
+     line — so the dunning dice never roll and the rating math stays exact. */
+  contracts: [
+    { id: "sw-01", mrcMicroUsd: 60_000_000, billingCycle: "monthly", termEndMin: 12_000, termMonths: 12, autoRenew: true, customer: "Long-Tail Labs" },
+  ],
+  traffic: {
+    tableId: "fragile-quiet",
+    segments: [{ fromMinute: 0, ratePerMin: 2 }],
+  },
+  signals: {
+    majorIncidents: [
+      { atMinute: 20, count: 1 },
+      { atMinute: 60, count: 1 },
+    ],
+    postmortems: [
+      { atMinute: 40, incidentMinute: 20, style: "blameless", changesInFlight: 0 },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 100 },
+      { kind: "postmortem-credits-above", bps: 250 },
+      { kind: "reputation-above", bps: 4400 },
+      { kind: "no-death-cause", cause: "any" },
+    ],
+    lose: [{ kind: "reputation-below", bps: 4400 }],
+  },
+  limits: {
+    maxSimMinutes: 120,
+    /* The float is not theatre either: a money lane born at ZERO free cash
+       arms the float-death watch from minute one (probe-discovered engine
+       fact — the birth-debt the OD-25(a) floor counts). One dollar of
+       cushion plus one monthly customer keeps the week honestly quiet:
+       the rating is the only living number. */
+    initialFreeMicroUsd: 1_000_000,
+  },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -1073,6 +1284,9 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [SEV0_WIRE.id]: SEV0_WIRE,
   [COVENANT_WIRE.id]: COVENANT_WIRE,
   [REVIEW_BOMB_WIRE.id]: REVIEW_BOMB_WIRE,
+  [UNDERSTAFFED_SUNDAY_WIRE.id]: UNDERSTAFFED_SUNDAY_WIRE,
+  [CHARGEBACK_WAVE_WIRE.id]: CHARGEBACK_WAVE_WIRE,
+  [SLOW_WEEK_AFTER_WIRE.id]: SLOW_WEEK_AFTER_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
@@ -1080,8 +1294,8 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
 /** The shipped documents, parsed at module load — authored drift
  *  dies HERE, loudly, before any test or host can consume it. The first
  *  five carry named exports (hosts import them directly); the wave-two
- *  five, the wave-three four and the wave-four two are reachable through
- *  SHIPPED_SCENARIOS /
+ *  five, the wave-three four, the wave-four two and the wave-five three
+ *  are reachable through SHIPPED_SCENARIOS /
  *  shippedScenario(id) only — no new export names by design (docs/
  *  api-verify is name-based). */
 export const theLongWeekendDoc: ScenarioDoc = parseScenarioDoc(LONG_WEEKEND_WIRE);
@@ -1101,6 +1315,9 @@ const freeTierFloodDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_WIRE);
 const sev0Doc: ScenarioDoc = parseScenarioDoc(SEV0_WIRE);
 const theCovenantDoc: ScenarioDoc = parseScenarioDoc(COVENANT_WIRE);
 const reviewBombDoc: ScenarioDoc = parseScenarioDoc(REVIEW_BOMB_WIRE);
+const understaffedSundayDoc: ScenarioDoc = parseScenarioDoc(UNDERSTAFFED_SUNDAY_WIRE);
+const chargebackWaveDoc: ScenarioDoc = parseScenarioDoc(CHARGEBACK_WAVE_WIRE);
+const slowWeekAfterDoc: ScenarioDoc = parseScenarioDoc(SLOW_WEEK_AFTER_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -1121,6 +1338,9 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   sev0Doc.id,
   theCovenantDoc.id,
   reviewBombDoc.id,
+  understaffedSundayDoc.id,
+  chargebackWaveDoc.id,
+  slowWeekAfterDoc.id,
 ]);
 
 /** id → trusted doc. */
@@ -1142,6 +1362,9 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [sev0Doc.id]: sev0Doc,
   [theCovenantDoc.id]: theCovenantDoc,
   [reviewBombDoc.id]: reviewBombDoc,
+  [understaffedSundayDoc.id]: understaffedSundayDoc,
+  [chargebackWaveDoc.id]: chargebackWaveDoc,
+  [slowWeekAfterDoc.id]: slowWeekAfterDoc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */

@@ -28,15 +28,21 @@
 
 import type {
   BoardEdgeRecord,
+  CauseId,
   Contract,
   EntityId,
+  ExternalIntent,
   GameState,
+  PlayerIntent,
+  PlayerVerbArgs,
   RunSeed,
   SimMinute,
   SimTick,
   WaveEnvelope,
 } from "../types.ts";
+import { asCauseId, asMoney } from "../types.ts";
 import { FIXED_ZERO, fromInt } from "../kernel/fixed.ts";
+import { MICROS_PER_MIN } from "../kernel/time.ts";
 import { streamFor } from "../kernel/rng.ts";
 import { resolveCorpusWindows } from "./corpus.ts";
 import type { CorpusAuthority, CorpusWaveWindow } from "./corpus.ts";
@@ -48,14 +54,20 @@ import type {
   EconomyConfig,
   EconomyNoticeKind,
   EconomyState,
-  RegisterContractInput,
+  PostMortemFiling,
   RefusedSettlement,
+  RegisterContractInput,
+  ReputationSignal,
 } from "../economy/index.ts";
 import {
+  applyReputationSignals,
   COMPANY_DEATH_CAUSES,
   defaultEconomyConfig,
   emptyEconomyState,
+  foldPostMortemFilings,
   postEntry,
+  postMortemNoticeCauseId,
+  postMortemReputationSignals,
   registerContractsEconomy,
   REPUTATION_INITIAL_BPS,
 } from "../economy/index.ts";
@@ -87,8 +99,8 @@ import {
   withCashMirror,
   type TickFacts,
 } from "../internal/tickFold.ts";
-import type { ObjectivePredicate, ScenarioDoc } from "./doc.ts";
-import { ScenarioError, scenarioSeed } from "./doc.ts";
+import type { ObjectivePredicate, ScenarioDoc, ScenarioIntent, ScenarioSignals } from "./doc.ts";
+import { ScenarioError, scenarioIncidentCause, scenarioSeed, scenarioSignalsActive } from "./doc.ts";
 import type { ObjectiveProgress, ScenarioObservation } from "./objectives.ts";
 import { objectiveHolds, objectiveLine, progressAll } from "./objectives.ts";
 
@@ -355,6 +367,11 @@ interface Accumulator {
   deaths: CompanyDeathCause[];
   /** Rung 3: envelope-label census, counted at mint (see countArrivalFamily). */
   arrivalsByFamily: Map<string, number>;
+  /** Channels ladder: cumulative door-receipt census + posted chargeback
+   *  fees. All zero while the doc names no channel (byte shape preserved). */
+  intentsExecuted: number;
+  intentsRefused: number;
+  chargebacksApplied: number;
 }
 
 function foldNoticeCensus(
@@ -395,9 +412,210 @@ function snapshotObservation(
     // Rung 5: the §2.10 score straight off the lane; pre-money reads the
     // opening 5,000 bps the fresh ledger always carries.
     reputationBps: econ?.reputation.overallBps ?? REPUTATION_INITIAL_BPS,
+    // Channels ladder: door-rail receipts + posted chargeback fees, both
+    // cumulative; the credit sum re-folds the adjudication log itself
+    // (single authority: EconomyState.postMortemLog, economy/postmortem.ts).
+    intentsExecuted: acc.intentsExecuted,
+    intentsRefused: acc.intentsRefused,
+    chargebacksApplied: acc.chargebacksApplied,
+    postmortemCreditsBps: postmortemCreditsSum(econ),
     arrivalsByFamily: sortedCensus(acc.arrivalsByFamily),
     windowSums,
   });
+}
+
+/** Σ creditedBps of the adjudicated post-mortem log (0n when the lane is
+ *  off or nothing has ever been credited — absent-while-idle law). */
+function postmortemCreditsSum(econ: EconomyState | null): bigint {
+  const log = econ?.postMortemLog;
+  if (log === undefined || log.length === 0) return 0n;
+  let credits = 0n;
+  for (const row of log) credits += row.creditedBps;
+  return credits;
+}
+
+/* ── Channels ladder — economy host-signals composition ─────────────────
+ *
+ *  runEconomyTick owns steps 8.5/12.45/12.5 for INPUTS the fold forwards
+ *  (outages, price overrides, refused settlements); the scenario wire's
+ *  `signals` have no pass-through there yet (tickFold is shared with
+ *  fastForward — a forward would be the engine-lanes' call, reported as
+ *  owed). So the scenario composes the SAME effects with the SAME exported
+ *  primitives, in the SAME step order, between the fold and the cash
+ *  mirror — the rung-4 covenant-seeding precedent one level deeper:
+ *  - chargebacks   = the step-8.5 trio verbatim: sorted-visit priming
+ *    guard, red post of −cfg.fees.chargebackFeeMicroUsd under the engine
+ *    cause grammar, `chargeback-posted` notice into the census, and the
+ *    `chargeback` reputation signal the 12.5 notice-scan would have made.
+ *  - postmortems   = the step-12.45 adjudication: foldPostMortemFilings
+ *    onto the live log, filed/unattributed notices, credited-blameless
+ *    signals spliced exactly as the engine splices them.
+ *  - majorIncidents/honestPostmortems = the 12.5 input vocabularies.
+ *  ONE applyReputationSignals call carries all of a minute's composed
+ *  signals in engine order [chargeback, major, honest, filed-credit]; an
+ *  empty minute never reaches this function (the schedule map holds only
+ *  minutes with rows), so every channel-off run stays byte-identical.
+ *
+ *  Deviation from the wave-5 brief, disclosed: chargeback rows carry NO
+ *  author amount — the fee is cfg-owned (cfg.fees.chargebackFeeMicroUsd),
+ *  exactly as in the engine, and an authored number would be dead weight
+ *  on the wire.
+ */
+
+interface MutableSignalRows {
+  majorIncidents: { atMinute: number; count: number }[];
+  honestPostmortems: { atMinute: number; cause: string }[];
+  postmortems: ScenarioSignals["postmortems"][number][];
+  chargebacks: { atMinute: number; contractId: EntityId }[];
+}
+
+/** Group the doc's signal rows by sim-minute. Only minutes WITH rows get
+ *  an entry — the composer's no-rows-by-construction law. */
+function scheduleSignals(signals: ScenarioSignals): Map<SimMinute, MutableSignalRows> {
+  const byMinute = new Map<SimMinute, MutableSignalRows>();
+  const bucket = (minute: number): MutableSignalRows => {
+    const existing = byMinute.get(minute);
+    if (existing !== undefined) return existing;
+    const fresh: MutableSignalRows = { majorIncidents: [], honestPostmortems: [], postmortems: [], chargebacks: [] };
+    byMinute.set(minute, fresh);
+    return fresh;
+  };
+  for (const row of signals.majorIncidents) bucket(row.atMinute).majorIncidents.push(row);
+  for (const row of signals.honestPostmortems) bucket(row.atMinute).honestPostmortems.push(row);
+  for (const row of signals.postmortems) bucket(row.atMinute).postmortems.push(row);
+  for (const row of signals.chargebacks) bucket(row.atMinute).chargebacks.push(row);
+  return byMinute;
+}
+
+/** Compose one minute's signal rows into the lane state (see the section
+ *  law above). Pure over (econ, rows) — acc/noticesByKind are the honest
+ *  census side-effects the mission report reads. */
+function composeSignalRows(input: {
+  econ: EconomyState;
+  rows: MutableSignalRows;
+  businessNow: SimMinute;
+  cfg: EconomyConfig;
+  acc: Accumulator;
+  noticesByKind: Map<string, number>;
+}): EconomyState {
+  const { rows, businessNow: now, cfg, acc, noticesByKind } = input;
+  let econ = input.econ;
+  const repSignals: ReputationSignal[] = [];
+
+  /* step 8.5 mirror — sorted-visit determinism, per-row fee post. */
+  if (rows.chargebacks.length > 0) {
+    const ordered = [...rows.chargebacks].sort((a, b) =>
+      a.contractId < b.contractId ? -1 : a.contractId > b.contractId ? 1 : 0,
+    );
+    for (const row of ordered) {
+      if (!econ.contractEconomy.has(row.contractId)) {
+        throw new ScenarioError(
+          "BAD_SIGNAL",
+          "signals.chargebacks",
+          `chargeback on un-primed contract '${row.contractId}' — the wall only admits signed contracts; the lane lost it`,
+        );
+      }
+      const causeId = asCauseId(`economy:chargeback:${row.contractId}:${now}`);
+      const posted = postEntry(econ.journal, econ.cash, {
+        causeId,
+        atBusinessMin: now,
+        moneyColour: "red",
+        delta: { free: asMoney(-cfg.fees.chargebackFeeMicroUsd) },
+        context: `chargeback ${row.contractId}`,
+      });
+      econ = Object.freeze({ ...econ, journal: posted.journal, cash: posted.cash });
+      foldNoticeCensus([{ kind: "chargeback-posted", causeId }], acc, noticesByKind);
+      repSignals.push({ kind: "chargeback", causeId, contractId: row.contractId });
+      acc.chargebacksApplied += 1;
+    }
+  }
+
+  /* step 12.45 mirror — adjudicate filings onto the live log. */
+  if (rows.postmortems.length > 0) {
+    const filings: readonly PostMortemFiling[] = Object.freeze(
+      rows.postmortems.map((row) =>
+        Object.freeze({
+          incidentCauseId: asCauseId(row.cause),
+          style: row.style,
+          changesInFlight: row.changesInFlight,
+        }),
+      ),
+    );
+    const priorLog = econ.postMortemLog ?? [];
+    const outcomes = foldPostMortemFilings({ priorLog, filings, now, cfg });
+    if (outcomes.length > 0) {
+      econ = Object.freeze({
+        ...econ,
+        postMortemLog: Object.freeze([...priorLog, ...outcomes.map((outcome) => outcome.record)]),
+      });
+      for (const outcome of outcomes) {
+        foldNoticeCensus(
+          [
+            {
+              kind: (outcome.ambiguous ? "postmortem-unattributed" : "postmortem-filed") as EconomyNoticeKind,
+              causeId: postMortemNoticeCauseId(outcome.ambiguous ? "unattributed" : "filed", outcome.record.incidentCauseId, now),
+            },
+          ],
+          acc,
+          noticesByKind,
+        );
+      }
+      repSignals.push(...postMortemReputationSignals(outcomes, (incident) => postMortemNoticeCauseId("filed", incident, now)));
+    }
+  }
+
+  /* step 12.5 input vocabularies — majors mint through the wall's shared
+     cause grammar, honest assertions carry their declared slug. */
+  for (const row of rows.majorIncidents) {
+    for (let i = 0; i < row.count; i += 1) {
+      repSignals.push({ kind: "major-incident", causeId: asCauseId(scenarioIncidentCause(row.atMinute, i)) });
+    }
+  }
+  for (const row of rows.honestPostmortems) {
+    repSignals.push({ kind: "honest-postmortem", causeId: asCauseId(row.cause) });
+  }
+
+  if (repSignals.length > 0) {
+    econ = Object.freeze({ ...econ, reputation: applyReputationSignals(econ.reputation, repSignals, cfg) });
+  }
+  return econ;
+}
+
+/* ── Channels ladder — door rail stamping ───────────────────────────────
+ *
+ *  The doc wall already checked verb + arg grammar against the door's own
+ *  VERB_ARG_SHAPES mirror (drift-pinned in __tests__/intentGrammar.test.ts).
+ *  Stamping rules: seq = the row's GLOBAL doc index (unique per run, so
+ *  the door's M4 duplicate-(tick,seq) throw can never bite authored data),
+ *  tick = atTick (the driver advances one sim minute per tick — same
+ *  numbering the door stamps receipts with), atUs = the sim-minute grid.
+ *  The door runs every tick regardless; feeding nothing keeps the exact
+ *  pre-channel byte shape (result.doorReceipts stays empty).
+ */
+function scheduleIntents(intents: readonly ScenarioIntent[]): Map<number, readonly ExternalIntent[]> {
+  const byTick = new Map<number, ExternalIntent[]>();
+  intents.forEach((row, index) => {
+    const bucket = byTick.get(row.atTick) ?? [];
+    bucket.push(
+      Object.freeze({
+        tick: BigInt(row.atTick),
+        intent: Object.freeze({
+          seq: index,
+          clock: "sim" as const,
+          atUs: BigInt(row.atTick) * MICROS_PER_MIN,
+          origin: "player" as const,
+          payload: Object.freeze({
+            kind: "player-verb" as const,
+            args: Object.freeze({ ...row.args, verb: row.verb }) as PlayerVerbArgs,
+          }),
+        }) satisfies PlayerIntent,
+      }),
+    );
+    byTick.set(row.atTick, bucket);
+  });
+  const frozen = new Map<number, readonly ExternalIntent[]>();
+  for (const [tick, rows] of byTick) frozen.set(tick, Object.freeze(rows));
+  return frozen;
 }
 
 function anyHolds(obs: ScenarioObservation, predicates: readonly ObjectivePredicate[]): ObjectivePredicate | null {
@@ -452,7 +670,17 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
   const rulePhase = createRulePhaseStep();
   const slots = Object.freeze({ ...createDefaultSlots(pipelineConfig), rulePhase: rulePhase.step });
   const game0 = mintInitialState(uaConfig, nodes, edges);
-  const driver = createTickDriver(slots, streamFor(runSeed, "root", 0), game0.context.clocks);
+  /* Channels ladder: the door is wired only when the doc names a rail —
+   * an empty options object keeps today's exact driver construction.
+   * handCapacity mirrors the minted hands (the door's fallback path never
+   * fires on scenario states; naming it keeps the two readings honest). */
+  const intentSchedule = scheduleIntents(doc.intents);
+  const driver = createTickDriver(
+    slots,
+    streamFor(runSeed, "root", 0),
+    game0.context.clocks,
+    doc.intents.length > 0 ? { intents: { handCapacity: Math.max(1, doc.limits.handCapacity) } } : {},
+  );
 
   /* ── money lane (the roster registers ONCE through the batch API) ── */
   const ecoCfg: EconomyConfig = defaultEconomyConfig();
@@ -462,7 +690,8 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     doc.contracts.length > 0 ||
     doc.limits.opex.length > 0 ||
     doc.limits.initialFreeMicroUsd !== 0n ||
-    doc.limits.covenants.length > 0;
+    doc.limits.covenants.length > 0 ||
+    scenarioSignalsActive(doc.signals);
   if (moneyOn) {
     econ = emptyEconomyState();
     if (doc.limits.initialFreeMicroUsd !== 0n) {
@@ -509,6 +738,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     const prior = opexByMinute.get(draft.atMinute) ?? [];
     opexByMinute.set(draft.atMinute, Object.freeze([...prior, draft]));
   }
+  const signalSchedule = scheduleSignals(doc.signals);
 
   /* ── accumulators ── */
   const acc: Accumulator = {
@@ -522,6 +752,9 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     arrivals: 0,
     deaths: [],
     arrivalsByFamily: new Map(),
+    intentsExecuted: 0,
+    intentsRefused: 0,
+    chargebacksApplied: 0,
   };
   const eventsByKind = new Map<string, number>();
   const noticesByKind = new Map<string, number>();
@@ -560,6 +793,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
   for (let t = 1; t <= totalTicks; t++) {
     const minute = game.context.minute + 1;
     const envelopes = envelopesAtMinute(doc, minute, corpusWindows);
+    const scheduledIntents = intentSchedule.get(t);
     const result = driver.advance(
       game,
       Object.freeze({
@@ -570,6 +804,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
         retryPolicy: UNATTENDED_RETRY,
         aggression: UNATTENDED_AGGRESSION,
         expressMaxConfidence: UNATTENDED_EXPRESS_MAX_CONFIDENCE,
+        ...(scheduledIntents === undefined ? {} : { externalIntents: scheduledIntents }),
       }),
     );
     game = result.state;
@@ -613,6 +848,21 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
         foldNoticeCensus(out.notices, acc, noticesByKind);
         settledThisTick = acc.settledInvoices - settledBefore;
       }
+      /* Channels ladder: the doc's minute rows compose into the lane with
+         the exported economy primitives (section law above) BEFORE the
+         cash mirror — a posted chargeback fee must ride the same-tick
+         mirror like any fold-minted money move. */
+      const signalRows = signalSchedule.get(minute);
+      if (signalRows !== undefined) {
+        econ = composeSignalRows({
+          econ,
+          rows: signalRows,
+          businessNow: Number(game.context.clocks.businessUs / MICROS_PER_MIN),
+          cfg: ecoCfg,
+          acc,
+          noticesByKind,
+        });
+      }
       game = withCashMirror(game, econ);
     }
 
@@ -623,6 +873,10 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     acc.landed += facts.landed;
     acc.falsePositives += facts.falsePositive;
     acc.arrivals += facts.arrivals;
+    /* Channels ladder: the door stamped a receipt for every fed intent —
+       collectFacts already split them by outcome for this tick. */
+    acc.intentsExecuted += facts.intentsExecuted;
+    acc.intentsRefused += facts.intentsRefused;
     minuteLedger.push({
       arrivals: facts.arrivals,
       served: facts.served,

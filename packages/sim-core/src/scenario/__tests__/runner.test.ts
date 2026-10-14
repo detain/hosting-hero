@@ -1,4 +1,4 @@
-/** runner.test.ts — the mission loop proven on the seventeen shipped §1.5
+/** runner.test.ts — the mission loop proven on the twenty shipped §1.5
  *  scenarios: every doc wins as authored, every doc loses when exactly one
  *  wire input is flipped (same seed), timeout is honest, and a run is
  *  byte-identical ×100 by construction.
@@ -25,14 +25,33 @@
  *  5. CONSUMED (wave four, 2026-10-13): reputation in the observation
  *     (EconomyState.reputation.overallBps, published since 57ea80e) →
  *     "Review Bomb" (:3870) shipped.
- *  VOCAB CEILING: the fifteen→nineteen predicate set now covers every
- *  §1.5 drama the money lane can even see. Remaining known seams (same
- *  spirit): hands/door intents on the wire would unlock "Understaffed
- *  Sunday" (~:3657); alternate-path routing → "The Fiber Cut" (~:3368);
- *  chargeback/post-mortem/major-incident INPUTS (the reputation deltas
- *  exist in economy, foldMoneyLaneTick forwards none of them) → "The
- *  Chargeback Wave" (~:3721) and the transparency half of the Review-Bomb
- *  family. */
+ *  CHANNELS LADDER (wave five, 2026-10-13) — the INPUT channels the vocab
+ *  ceiling named are now wired, and their three pilots shipped:
+ *  C1. CONSUMED: door intents on the wire (`intents:` rows, validated
+ *      against the door's own VERB_ARG_SHAPES by the fs drift-pin in
+ *      intentGrammar.test.ts, fed to TickInputs.externalIntents exactly
+ *      once each) + the executed/refused count predicates → "The
+ *      Understaffed Sunday" (:3657). The spec's backlog-size score is
+ *      still not an observation (§7.5 has no ticket queue), so the
+ *      accumulation ARC stands in as the refusal census.
+ *  C2. CONSUMED: economy host-signals (`signals:` rows folded per minute
+ *      through the exported engine primitives — the step-8.5/12.45/12.5
+ *      mirror) + chargeback/postmortem-credit predicates, riding the
+ *      rung-5 reputation lines → "The Chargeback Wave" (:3721) stage 1
+ *      and "The Slow Week After" (:4025). The processor side of the Wave
+ *      (monitoring-program fines, rolling reserve, termination) has no
+ *      engine field yet — stage 1 only, recorded in the wire docblock;
+ *      the Slow Week's morale/credits half stays non-expressible too.
+ *  C3. STILL OPEN: alternate-path routing → "The Fiber Cut" (~:3368)
+ *      needs mazing-in-scenario (the maze is a gate/runner composition,
+ *      not a wire field) — deliberate future ticket, do not bolt on.
+ *  C4. STILL OPEN: corpus invitations (attack-surface-gated storms) ride
+ *      the sibling corpus lane; resolveCorpusWindows keeps its
+ *      invitations-empty seam until that lands.
+ *  Engine debt this lane reported but did not touch: internal/tickFold.ts
+ *  still forwards no signal inputs — the scenario composes around it
+ *  (rung-4 covenant precedent); a future fold pass-through retires the
+ *  mirror docblock in runner.ts. */
 import { describe, expect, it } from "vitest";
 
 import { readFileSync } from "node:fs";
@@ -61,6 +80,13 @@ type MutableWire = {
   limits: { opex: unknown[]; initialFreeMicroUsd: unknown; guardrails?: unknown[] };
   contracts: Record<string, unknown>[];
   traffic: { tableId: string; segments: Record<string, unknown>[] };
+  intents?: Record<string, unknown>[];
+  signals?: {
+    majorIncidents?: Record<string, unknown>[];
+    honestPostmortems?: Record<string, unknown>[];
+    postmortems?: Record<string, unknown>[];
+    chargebacks?: Record<string, unknown>[];
+  };
 };
 
 function flip(id: string, mutate: (wire: MutableWire) => void): ReturnType<typeof shippedScenario> {
@@ -647,6 +673,167 @@ describe("salvage missions — engine truth (ADR-0011)", () => {
       else expect(report.stopReason).toBe("win@240");
     }
     expect(outcomes.size).toBe(2); // both fates occur — metastability, pinned
+  });
+});
+
+describe("wave-five missions — one-flip losses (channels ladder)", () => {
+  function drowningRail(): ReturnType<typeof shippedScenario> {
+    return flip("understaffed-sunday", (wire) => {
+      wire.intents = Array.from({ length: 36 }, (_unused, i) => ({
+        atTick: 5 + i,
+        verb: "communicate",
+        args: { target: null, note: `sunday-ticket-${String(i + 1).padStart(2, "0")}` },
+      }));
+    });
+  }
+
+  it("Understaffed Sunday answering every minute → the rail drowns in refusals", () => {
+    // ONE change: the ticket rail's cadence. Every-other-tick answering
+    // fits a capacity-1 hand's 2-tick occupation exactly; answering every
+    // minute leaves the on-call hand busy on alternate ticks and the
+    // 6-refusal ceiling snaps at the SAME tick on every seed — hands are
+    // arithmetic, not dice.
+    const drowning = drowningRail();
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(drowning, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:intents-refused-above:6@18");
+      expect(report.observation.intentsExecuted).toBe(7);
+      expect(report.observation.intentsRefused).toBe(7);
+    }
+    // discriminating pair: the authored cadence answers all eighteen with
+    // a silent refusal column — the Sunday that was, in fact, coverable.
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("understaffed-sunday"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@40");
+      expect(calm.observation.intentsExecuted).toBe(18);
+      expect(calm.observation.intentsRefused).toBe(0);
+    }
+  });
+
+  it("Chargeback Wave with twenty-four disputes → the rating floor is crossed", () => {
+    // ONE wire line: the dispute ledger gets a second page (20 more rows
+    // cycling the same four accounts). The hourly accounts keep paying —
+    // recoveries outrun terminations, which is why the authored 4-dispute
+    // arm floats at 6,100–8,350 bps — but 24 × −400 drags the rating under
+    // 1,500 in the last third. Fire minutes are dice-bound per seed; the
+    // LOSS is not.
+    const buried = flip("chargeback-wave", (wire) => {
+      const rows = wire.signals?.chargebacks;
+      if (rows === undefined) throw new Error("wire lost its signal rows");
+      for (let i = 0; i < 20; i += 1) {
+        rows.push({ atMinute: 150 + i * 2, contractId: `cw-0${String((i % 4) + 1)}` });
+      }
+    });
+    const loseTicks: number[] = [];
+    const disputesAtStop: number[] = [];
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(buried, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toMatch(/^lose:reputation-below:1500@\d+$/);
+      loseTicks.push(Number(report.endMinute));
+      disputesAtStop.push(report.observation.chargebacksApplied);
+    }
+    expect(loseTicks).toEqual([176, 170, 172, 180, 170]); // seed 904..908
+    expect(disputesAtStop).toEqual([18, 15, 16, 20, 15]); // the stop freezes the count mid-page
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const calm = runScenario(shippedScenario("chargeback-wave"), BASE_SEED, { seedOffset: offset });
+      expect(calm.stopReason).toBe("win@200");
+      expect(calm.observation.chargebacksApplied).toBe(4);
+      expect(calm.observation.reputationBps).toBeGreaterThanOrEqual(6100n);
+    }
+  }, 30_000);
+
+  it("The Slow Week After filing with two changes in flight → ambiguous card, no floor", () => {
+    // ONE field: changesInFlight 0 → 2 crosses the attribution ceiling
+    // (cfg.postMortem.maxAttributableChanges = 1). The SAME card, one
+    // field lazier, credits nothing, never stands the honest-host floor,
+    // and the second declared incident costs full price — −500 instead of
+    // the floored −250 — crossing the 4,400 line the minute it lands.
+    const fudged = flip("the-slow-week-after", (wire) => {
+      const row = wire.signals?.postmortems?.[0];
+      if (row === undefined) throw new Error("wire lost its filing");
+      row.changesInFlight = 2;
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(fudged, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:reputation-below:4400@60");
+      expect(report.observation.postmortemCreditsBps).toBe(0n);
+      expect(report.observation.reputationBps).toBe(4000n); // 5000 −500 −500, floor never stood
+      expect(report.trace.noticesByKind["postmortem-unattributed"]).toBe(1);
+    }
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const clean = runScenario(shippedScenario("the-slow-week-after"), BASE_SEED, { seedOffset: offset });
+      expect(clean.stopReason).toBe("win@100");
+      expect(clean.observation.postmortemCreditsBps).toBe(250n);
+      expect(clean.observation.reputationBps).toBe(4500n); // −500 +250 −250(halved by the floor)
+      expect(clean.observation.deaths).toEqual([]); // the monthly book keeps churn-collapse silent
+    }
+  });
+});
+
+describe("wave-five missions — engine truth (channels)", () => {
+  it("receipt counts and the event ledger agree — two authorities, one story", () => {
+    const calm = runScenario(shippedScenario("understaffed-sunday"), BASE_SEED);
+    expect(calm.trace.eventsByKind["intent-executed"]).toBe(calm.observation.intentsExecuted);
+    expect(calm.trace.eventsByKind["intent-refused"]).toBeUndefined(); // nothing refused to event
+    const drowned = runScenario(
+      flip("understaffed-sunday", (wire) => {
+        wire.intents = Array.from({ length: 12 }, (_unused, i) => ({
+          atTick: 5 + i,
+          verb: "communicate",
+          args: { target: null, note: `rail-${String(i + 1).padStart(2, "0")}` },
+        }));
+      }),
+      BASE_SEED,
+      { tickCap: 30 },
+    );
+    expect(drowned.trace.eventsByKind["intent-refused"]).toBe(drowned.observation.intentsRefused);
+    expect(drowned.observation.intentsRefused).toBeGreaterThan(0);
+  });
+
+  it("the raw assertion channel moves the rating WITHOUT the log the credits predicate reads", () => {
+    // Two doors to the same +250 and the same honest-host floor — and the
+    // ONLY difference is the adjudicated row. Swap the filing for an
+    // honestPostmortems claim of the same cause: the rating math is
+    // identical, postmortemCreditsBps stays 0, and the authored win line
+    // (postmortem-credits-above:250) can never fire.
+    const asserted = flip("the-slow-week-after", (wire) => {
+      if (wire.signals === undefined) throw new Error("wire lost its signals");
+      wire.signals.postmortems = [];
+      wire.signals.honestPostmortems = [{ atMinute: 40, cause: "scenario:incident:20:0" }];
+    });
+    const report = runScenario(asserted, BASE_SEED, { tickCap: 120 });
+    expect(report.stopReason).toBe("timeout@120"); // the credit line never closes the win
+    expect(report.observation.reputationBps).toBe(4500n);
+    expect(report.observation.postmortemCreditsBps).toBe(0n);
+    expect(report.trace.noticesByKind["postmortem-filed"]).toBeUndefined();
+  });
+
+  it("a dispute costs exactly the engine's fee — twin arm differs by 4 × 20 Mµ$", () => {
+    // The composition adds NO hidden mechanics: same seed, same books, the
+    // ONLY difference is the four signal rows. Invoice dice are cash-free,
+    // so every settle matches; cash differs by exactly 4 ×
+    // cfg.fees.chargebackFeeMicroUsd and the rating by 4 × 400 bps.
+    const bare = flip("chargeback-wave", (wire) => {
+      if (wire.signals !== undefined) wire.signals.chargebacks = [];
+    });
+    const paid = runScenario(shippedScenario("chargeback-wave"), BASE_SEED, { tickCap: 200 });
+    const twin = runScenario(bare, BASE_SEED, { tickCap: 200 });
+    expect(paid.observation.chargebacksApplied).toBe(4);
+    expect(twin.observation.chargebacksApplied).toBe(0);
+    expect(paid.observation.settledInvoices).toBe(twin.observation.settledInvoices);
+    expect(twin.observation.cashFreeMicroUsd - paid.observation.cashFreeMicroUsd).toBe(80_000_000n);
+    expect(twin.observation.reputationBps - paid.observation.reputationBps).toBe(1600n);
+  }, 30_000);
+
+  it("no intents on the wire means ZERO door traffic on a classic mission", () => {
+    const lw = runScenario(shippedScenario("the-long-weekend"), BASE_SEED, { tickCap: 30 });
+    expect(lw.observation.intentsExecuted).toBe(0);
+    expect(lw.observation.intentsRefused).toBe(0);
+    expect(lw.observation.chargebacksApplied).toBe(0);
+    expect(lw.observation.postmortemCreditsBps).toBe(0n);
   });
 });
 

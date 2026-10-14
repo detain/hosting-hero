@@ -398,6 +398,171 @@ describe("wave-four walls — rungs 4–5 (covenant terms, reputation lines)", (
   });
 });
 
+describe("wave-five walls — channels ladder (door intents, economy signals)", () => {
+  function withSignals(wire: MutableWire, signals: unknown): void {
+    (wire as unknown as { signals?: unknown }).signals = signals;
+  }
+
+  function signedWire(): MutableWire {
+    const wire = minimalWire();
+    wire.contracts = [
+      { id: "cw-01", mrcMicroUsd: 60_000_000, billingCycle: "hourly", termMonths: 12, termStartMin: 0, termEndMin: 12_000, autoRenew: true } as never,
+    ];
+    return wire;
+  }
+
+  it("absent channels parse to the silent default (every pre-channel doc is byte-stable)", () => {
+    const doc = parseScenarioDoc(minimalWire());
+    expect(doc.intents).toEqual([]);
+    expect(doc.signals.majorIncidents).toEqual([]);
+    expect(doc.signals.honestPostmortems).toEqual([]);
+    expect(doc.signals.postmortems).toEqual([]);
+    expect(doc.signals.chargebacks).toEqual([]);
+  });
+
+  it("a major-incident row parses; its minute may repeat nowhere — one row per minute", () => {
+    const wire = minimalWire();
+    withSignals(wire, { majorIncidents: [{ atMinute: 20, count: 1 }, { atMinute: 20, count: 2 }] });
+    expect(wall("DUPLICATE", () => parseScenarioDoc(wire)).message).toContain("summed count");
+  });
+
+  it("a duplicate honest claim is refused — one honest assertion per incident", () => {
+    const wire = minimalWire();
+    withSignals(wire, {
+      honestPostmortems: [
+        { atMinute: 10, cause: "incident:db" },
+        { atMinute: 30, cause: "incident:db" },
+      ],
+    });
+    expect(wall("DUPLICATE", () => parseScenarioDoc(wire)).message).toContain("one honest claim");
+  });
+
+  it("a cause id must walk the cause grammar", () => {
+    const wire = minimalWire();
+    withSignals(wire, { honestPostmortems: [{ atMinute: 10, cause: "Incident 47!" }] });
+    expect(wall("BAD_SIGNAL", () => parseScenarioDoc(wire)).path).toContain("cause");
+  });
+
+  it("a filing names EXACTLY one of cause / incidentMinute", () => {
+    const both = minimalWire();
+    withSignals(both, {
+      majorIncidents: [{ atMinute: 20, count: 1 }],
+      postmortems: [{ atMinute: 40, cause: "incident:db", incidentMinute: 20 }],
+    });
+    expect(wall("BAD_SIGNAL", () => parseScenarioDoc(both)).message).toContain("EXACTLY one");
+    const neither = minimalWire();
+    withSignals(neither, { postmortems: [{ atMinute: 40 }] });
+    expect(wall("BAD_SIGNAL", () => parseScenarioDoc(neither)).message).toContain("EXACTLY one");
+  });
+
+  it("an incident ref must name a DECLARED catastrophe, in range", () => {
+    const ghost = minimalWire();
+    withSignals(ghost, { postmortems: [{ atMinute: 40, incidentMinute: 21 }] });
+    expect(wall("BAD_SIGNAL", () => parseScenarioDoc(ghost)).message).toContain("declares no major incident");
+    const outOfRange = minimalWire();
+    withSignals(outOfRange, {
+      majorIncidents: [{ atMinute: 20, count: 2 }],
+      postmortems: [{ atMinute: 40, incidentMinute: 20, incidentIndex: 2 }],
+    });
+    expect(wall("BAD_SIGNAL", () => parseScenarioDoc(outOfRange)).message).toContain("out of range");
+  });
+
+  it("a referenced filing resolves its cause through the shared mint grammar", () => {
+    const wire = minimalWire();
+    withSignals(wire, {
+      majorIncidents: [{ atMinute: 20, count: 3 }],
+      postmortems: [{ atMinute: 40, incidentMinute: 20, incidentIndex: 2 }],
+    });
+    const doc = parseScenarioDoc(wire);
+    expect(doc.signals.postmortems[0]?.cause).toBe("scenario:incident:20:2");
+    expect(doc.signals.postmortems[0]?.style).toBe("blameless"); // the default is the honest one
+    expect(doc.signals.postmortems[0]?.changesInFlight).toBe(0);
+  });
+
+  it("a cause cannot ride BOTH the assertion channel and a filing (double-credit mirror)", () => {
+    const wire = minimalWire();
+    withSignals(wire, {
+      honestPostmortems: [{ atMinute: 10, cause: "incident:db" }],
+      postmortems: [{ atMinute: 40, cause: "incident:db" }],
+    });
+    expect(wall("BAD_SIGNAL", () => parseScenarioDoc(wire)).message).toContain("pick one channel");
+  });
+
+  it("the same filing twice in one minute is a pen accident, refused", () => {
+    const wire = minimalWire();
+    withSignals(wire, {
+      postmortems: [
+        { atMinute: 40, cause: "incident:db" },
+        { atMinute: 40, cause: "incident:db" },
+      ],
+    });
+    expect(wall("DUPLICATE", () => parseScenarioDoc(wire)).path).toContain("postmortems");
+  });
+
+  it("a style off the closed list is refused", () => {
+    const wire = minimalWire();
+    withSignals(wire, { postmortems: [{ atMinute: 40, cause: "incident:db", style: "pointed" }] });
+    expect(wall("BAD_ENUM", () => parseScenarioDoc(wire)).path).toContain("style");
+  });
+
+  it("a chargeback must name a contract this mission signed", () => {
+    const stray = signedWire();
+    withSignals(stray, { chargebacks: [{ atMinute: 20, contractId: "cw-99" }] });
+    expect(wall("BAD_SIGNAL", () => parseScenarioDoc(stray)).message).toContain("not a contract");
+    const honest = signedWire();
+    withSignals(honest, { chargebacks: [{ atMinute: 20, contractId: "cw-01" }] });
+    const doc = parseScenarioDoc(honest);
+    expect(doc.signals.chargebacks[0]?.contractId).toBe("cw-01");
+  });
+
+  it("repeat disputes on one contract are ALLOWED (the engine's own truth)", () => {
+    const wire = signedWire();
+    withSignals(wire, {
+      chargebacks: [
+        { atMinute: 20, contractId: "cw-01" },
+        { atMinute: 20, contractId: "cw-01" },
+      ],
+    });
+    expect(parseScenarioDoc(wire).signals.chargebacks).toHaveLength(2);
+  });
+
+  it("a signal scheduled after the clock stops is refused", () => {
+    const wire = minimalWire();
+    withSignals(wire, { majorIncidents: [{ atMinute: 121, count: 1 }] });
+    expect(wall("BAD_SIGNAL", () => parseScenarioDoc(wire)).message).toContain("after the clock");
+  });
+
+  it("the eight channel predicates parse, and the vacuity laws hold", () => {
+    for (const predicate of [
+      { kind: "intents-executed-above", count: 0 },
+      { kind: "intents-refused-above", count: 0 },
+      { kind: "chargebacks-above", count: 0 },
+      { kind: "intents-executed-below", count: 1 },
+      { kind: "intents-refused-below", count: 1 },
+      { kind: "chargebacks-below", count: 1 },
+      { kind: "postmortem-credits-above", bps: 0 },
+      { kind: "postmortem-credits-below", bps: 1 },
+    ]) {
+      const wire = minimalWire();
+      wire.objectives.win = [predicate];
+      expect(() => parseScenarioDoc(wire)).not.toThrow();
+    }
+    const vacuousCeiling = minimalWire();
+    vacuousCeiling.objectives.win = [{ kind: "intents-refused-below", count: 0 }];
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(vacuousCeiling)).path).toContain("count");
+    const impossibleFloor = minimalWire();
+    impossibleFloor.objectives.win = [{ kind: "postmortem-credits-below", bps: 0 }];
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(impossibleFloor)).path).toContain("bps");
+    const pastTheWall = minimalWire();
+    pastTheWall.objectives.win = [{ kind: "postmortem-credits-above", bps: 1_000_000_001 }];
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(pastTheWall)).path).toContain("bps");
+  });
+
+  it("the vocab census is twenty-seven kinds (wave-five channels +8)", () => {
+    expect(SCENARIO_PREDICATE_KINDS).toHaveLength(27);
+  });
+});
+
 describe("parseMoneyWire", () => {
   it("accepts safe ints and digit strings, rejects the rest", () => {
     expect(parseMoneyWire(0, "p", "BAD_MONEY")).toBe(0n);

@@ -16,7 +16,7 @@ function obs(patch: Partial<ScenarioObservation>): ScenarioObservation {
   return Object.freeze({ ...EMPTY_OBSERVATION, ...patch });
 }
 
-describe("objectiveHolds — the nineteen predicates at their boundaries", () => {
+describe("objectiveHolds — the twenty-seven predicates at their boundaries", () => {
   const table: readonly [ObjectivePredicate, ScenarioObservation, boolean][] = [
     [{ kind: "survive-minutes", minutes: 60 }, obs({ elapsedMin: 59 }), false],
     [{ kind: "survive-minutes", minutes: 60 }, obs({ elapsedMin: 60 }), true],
@@ -121,6 +121,27 @@ describe("objectiveHolds — the nineteen predicates at their boundaries", () =>
       obs({}), // EMPTY_OBSERVATION starts at the economy's opening 5,000 bps
       true,
     ],
+    // channels ladder — the door pair: counts of receipts, plain counting
+    // law (above is STRICT, below is STRICT — the churn family, not the
+    // balance family).
+    [{ kind: "intents-executed-above", count: 17 }, obs({ intentsExecuted: 17 }), false],
+    [{ kind: "intents-executed-above", count: 17 }, obs({ intentsExecuted: 18 }), true],
+    [{ kind: "intents-refused-below", count: 1 }, obs({ intentsRefused: 0 }), true],
+    [{ kind: "intents-refused-below", count: 1 }, obs({ intentsRefused: 1 }), false],
+    [{ kind: "intents-refused-above", count: 6 }, obs({ intentsRefused: 6 }), false],
+    [{ kind: "intents-refused-above", count: 6 }, obs({ intentsRefused: 7 }), true],
+    [{ kind: "intents-executed-below", count: 2 }, obs({ intentsExecuted: 1 }), true],
+    // channels ladder — the dispute counter is the same counting law.
+    [{ kind: "chargebacks-above", count: 3 }, obs({ chargebacksApplied: 4 }), true],
+    [{ kind: "chargebacks-above", count: 3 }, obs({ chargebacksApplied: 3 }), false],
+    [{ kind: "chargebacks-below", count: 5 }, obs({ chargebacksApplied: 5 }), false],
+    [{ kind: "chargebacks-below", count: 5 }, obs({ chargebacksApplied: 4 }), true],
+    // channels ladder — the credit balance rides the bps pair ASYMMETRIC
+    // like reputation: above is a balance (>=), below is a danger (<).
+    [{ kind: "postmortem-credits-above", bps: 250 }, obs({ postmortemCreditsBps: 250n }), true],
+    [{ kind: "postmortem-credits-above", bps: 250 }, obs({ postmortemCreditsBps: 0n }), false],
+    [{ kind: "postmortem-credits-below", bps: 250 }, obs({ postmortemCreditsBps: 250n }), false],
+    [{ kind: "postmortem-credits-below", bps: 250 }, obs({ postmortemCreditsBps: 0n }), true],
   ];
   for (const [predicate, observation, expected] of table) {
     it(`${objectiveLine(predicate)} ⇒ ${String(expected)}`, () => {
@@ -227,5 +248,39 @@ describe("objectiveProgress — Q16.16 in [0,1] under both counting laws", () =>
       "covenant-breached-count-above:0",
     );
     expect(objectiveLine({ kind: "reputation-below", bps: 1500 })).toBe("reputation-below:1500");
+  });
+});
+
+describe("channels ladder — observation defaults, lines and progress", () => {
+  it("EMPTY_OBSERVATION is silent on every channel", () => {
+    expect(EMPTY_OBSERVATION.intentsExecuted).toBe(0);
+    expect(EMPTY_OBSERVATION.intentsRefused).toBe(0);
+    expect(EMPTY_OBSERVATION.chargebacksApplied).toBe(0);
+    expect(EMPTY_OBSERVATION.postmortemCreditsBps).toBe(0n);
+  });
+
+  it("stop-reason lines carry their threshold", () => {
+    expect(objectiveLine({ kind: "intents-executed-above", count: 16 })).toBe("intents-executed-above:16");
+    expect(objectiveLine({ kind: "intents-refused-above", count: 6 })).toBe("intents-refused-above:6");
+    expect(objectiveLine({ kind: "chargebacks-below", count: 5 })).toBe("chargebacks-below:5");
+    expect(objectiveLine({ kind: "postmortem-credits-above", bps: 250 })).toBe("postmortem-credits-above:250");
+  });
+
+  it("channel progress reads under both counting laws", () => {
+    // attainment: 17 of the 18 needed to clear intents-executed-above:17.
+    const near = objectiveProgress(obs({ intentsExecuted: 17 }), { kind: "intents-executed-above", count: 17 });
+    expect(near.progress).toBe(17n * 65536n / 18n); // 61895n — Q16.16
+    expect(near.holds).toBe(false);
+    // headroom: the last refusal before the ceiling snaps shut.
+    const wobbling = objectiveProgress(obs({ intentsRefused: 0 }), { kind: "intents-refused-below", count: 1 });
+    expect(wobbling.progress).toBe(FIXED_ONE);
+    const breached = objectiveProgress(obs({ intentsRefused: 1 }), { kind: "intents-refused-below", count: 1 });
+    expect(breached.progress).toBe(FIXED_ZERO);
+    // balance: half a credit line of the way to a 500-bps filing floor.
+    const credit = objectiveProgress(obs({ postmortemCreditsBps: 250n }), {
+      kind: "postmortem-credits-above",
+      bps: 500,
+    });
+    expect(credit.progress).toBe(32768n); // exactly half of FIXED_ONE (65536)
   });
 });

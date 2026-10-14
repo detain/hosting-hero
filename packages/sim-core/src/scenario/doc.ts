@@ -19,8 +19,8 @@
  *  unattended lane would produce.
  */
 
-import type { Contract, EntityId, RunSeed, SlaTerms, ThreatFamily } from "../types.ts";
-import { asEntityId, asMoney, asRunSeed } from "../types.ts";
+import type { Contract, EntityId, PlayerVerb, RunSeed, SlaTerms, ThreatFamily } from "../types.ts";
+import { asEntityId, asMoney, asRunSeed, PLAYER_VERBS } from "../types.ts";
 import { FIXED_ZERO, fromInt } from "../kernel/fixed.ts";
 import { MICROS_PER_MIN } from "../kernel/time.ts";
 import type {
@@ -48,13 +48,20 @@ export const SCENARIO_BRIEF_MAX_CHARS = 280;
  *  CLOSED authored mission, not an open-ended weekend. */
 export const SCENARIO_MAX_MINUTES_CAP = 2880;
 
-/** The nineteen legal objective predicates (§1.5 mission verbs, mapped onto
- *  observables that EXIST today — see objectives.ts for each reading).
+/** The twenty-seven legal objective predicates (§1.5 mission verbs, mapped
+ *  onto observables that EXIST today — see objectives.ts for each reading).
  *  Rungs 1–3 of the vocab ladder (runner.test.ts header) shipped here:
  *  written-off-count, metrics-delta-over-window, family-labeled arrivals.
  *  Rungs 4–5 (wave four): the covenant-breach count reads the economy's
  *  latched `covenantBreachLog`; the reputation pair reads the §2.10 ledger's
- *  overall bps — both straight off the tick-final EconomyState. */
+ *  overall bps — both straight off the tick-final EconomyState.
+ *  Channels ladder (wave five): the intent pairs count the door receipts
+ *  this doc's `intents` schedule produced (executed + refused over the whole
+ *  run); `chargebacks-*` counts the `signals.chargebacks` rows whose fees the
+ *  lane actually posted; `postmortem-credits-*` sums `creditedBps` over the
+ *  adjudicated `postMortemLog` (economy/postmortem.ts). Every new reading
+ *  is zero (or 0n) while its channel is absent — the pre-channel byte shape
+ *  of every existing mission is untouched. */
 export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "survive-minutes",
   "cash-above",
@@ -75,6 +82,14 @@ export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "covenant-breached-count-above",
   "reputation-below",
   "reputation-above",
+  "intents-executed-above",
+  "intents-executed-below",
+  "intents-refused-above",
+  "intents-refused-below",
+  "chargebacks-above",
+  "chargebacks-below",
+  "postmortem-credits-above",
+  "postmortem-credits-below",
 ] as const);
 
 /** The closed metric vocab a `metric-delta-over-window` predicate may name
@@ -107,6 +122,12 @@ const COVENANT_METRICS = Object.freeze([
  *  bps) is the largest honest reading on the wire — nothing above it can
  *  ever be met, so the wall refuses it. */
 const COVENANT_FLOOR_BPS_MAX = 1_000_000_000_000;
+
+/** Channels-ladder ceiling for `postmortem-credits-*`: the summed
+ *  `creditedBps` of the adjudication log. One honest card earns 250 bps
+ *  (cfg.reputation.honestPostmortemBps, PROVISIONAL), so even a hundred
+ *  filings stay far below this — the wall only refuses nonsense scales. */
+const POSTMORTEM_CREDITS_BPS_MAX = 1_000_000_000;
 
 export type ScenarioPredicateKind = (typeof SCENARIO_PREDICATE_KINDS)[number];
 
@@ -155,6 +176,35 @@ export type ObjectivePredicate =
       /** Threshold on the §2.10 reputation ledger's overallBps (0..10,000
        *  scale — EconomyState.reputation.overallBps, the same authority
        *  that publishes `company::reputation`). */
+      readonly bps: number;
+    }
+  | {
+      readonly kind: "intents-executed-above" | "intents-executed-below";
+      /** Whole-run count of `intents` rows whose door receipt came back
+       *  "executed" (pipeline/intent-door.ts — one receipt per fed intent). */
+      readonly count: number;
+    }
+  | {
+      readonly kind: "intents-refused-above" | "intents-refused-below";
+      /** Whole-run count of `intents` rows refused by the door — for any
+       *  reason (hands-exhausted is the Sunday story; the vocab stays a
+       *  plain count because the wall already refuses mis-shaped verbs). */
+      readonly count: number;
+    }
+  | {
+      readonly kind: "chargebacks-above" | "chargebacks-below";
+      /** `signals.chargebacks` rows whose $-fee the lane POSTED (the engine
+       *  fee is cfg-owned — cfg.fees.chargebackFeeMicroUsd — the wire only
+       *  names WHICH contract disputes, never the amount). */
+      readonly count: number;
+    }
+  | {
+      readonly kind: "postmortem-credits-above" | "postmortem-credits-below";
+      /** Σ creditedBps over the adjudicated post-mortem log
+       *  (EconomyState.postMortemLog — blameless + attributable + first-filed
+       *  rows credit cfg.reputation.honestPostmortemBps; ambiguous or
+       *  refiled rows credit 0). Bps scale, same carrier as the reputation
+       *  pair but NOT clamped to 10,000 — credits accumulate per card. */
       readonly bps: number;
     };
 
@@ -211,6 +261,92 @@ export interface ScenarioCorpusTraffic {
  *  exactly one form on the wire (`segments` XOR `waves` present). */
 export type ScenarioTraffic = ScenarioSegmentsTraffic | ScenarioCorpusTraffic;
 
+/* ─────────────────── channels ladder — input channels ─────────────────── */
+
+/** The wire grammar a scenario author must satisfy per verb: EXACTLY the
+ *  door's own VERB_ARG_SHAPES (pipeline/intent-door.ts), copied here field
+ *  for field, with the door's `bigint` money carrier widened to "money" so
+ *  the wire stays JSON (digit strings parse to bigint at the wall). Every
+ *  listed field is REQUIRED on the wire — the door rejects an absent field
+ *  with a THROW (M2 law), so the wall refuses it too; "null|string"-style
+ *  shapes demand an explicit null, never a silent omission.
+ *
+ *  This table is a MIRROR, pinned falsifiably:
+ *  __tests__/intentGrammar.test.ts reads the door's source block with
+ *  node:fs and refuses drift in either direction. If the door's grammar
+ *  changes, that test goes red before any mission can drift. */
+type IntentArgWire = "string" | "null|string" | "number" | "null|number" | "money";
+
+/* Exported for the fs drift-pin in __tests__/intentGrammar.test.ts — the
+   barrel stays shut (doc.ts-level export = api-verify-invisible by the
+   runner.test.ts precedent). */
+export const SCENARIO_INTENT_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, IntentArgWire>>>> = Object.freeze({
+  "place-device": Object.freeze({ nodeId: "string", deviceKind: "string", template: "null|string" }),
+  "connect-ports": Object.freeze({ relation: "string", from: "string", to: "string", slot: "null|string" }),
+  "disconnect-drain": Object.freeze({ edgeId: "string" }),
+  "configure-node": Object.freeze({ nodeId: "string", inspectionDepth: "null|string", shedOrder: "null|string" }),
+  "policy-card-commit": Object.freeze({ cardHash: "string" }),
+  "shed-load": Object.freeze({ nodeId: "string", qosClassId: "null|string" }),
+  "communicate": Object.freeze({ target: "null|string", note: "string" }),
+  "toggle-speed": Object.freeze({ speedX: "number" }),
+  "adjust-price": Object.freeze({
+    targetKind: "string",
+    targetId: "string",
+    newPriceMicroUsd: "money",
+    effectiveAtBusinessMinute: "null|number",
+  }),
+});
+
+/** One scheduled player verb on the door's rail. The runner stamps seq =
+ *  the row's index in the doc (globally unique — the door's M4 duplicate
+ *  (tick,seq) law can never bite an authored schedule) and feeds the row
+ *  into TickInputs.externalIntents exactly once, at atTick. */
+export interface ScenarioIntent {
+  /** Macro tick of submission (1-based, ≤ limits.maxSimMinutes — the door
+   *  numbers one tick per sim minute, same clock the opex rows ride). */
+  readonly atTick: number;
+  readonly verb: PlayerVerb;
+  /** Door-shaped args, parsed + frozen (money fields already bigint). */
+  readonly args: Readonly<Record<string, string | number | null | bigint>>;
+}
+
+/** A blameless/blame adjudication card: filed after an incident, credited
+ *  only when attributable (changesInFlight ≤ cfg.postMortem's ceiling) and
+ *  never refiled. `cause` is RESOLVED at the wall: either an explicit slug
+ *  or derived from a declared `signals.majorIncidents` row. */
+export interface ScenarioPostmortemRow {
+  readonly atMinute: number;
+  readonly cause: string;
+  readonly style: "blameless" | "blame";
+  readonly changesInFlight: number;
+}
+
+/** The host-reported economy signals this mission folds into the money
+ *  lane (economy/tick.ts input fields that already exist — the scenario
+ *  composes them per minute with the exported primitives; nothing here
+ *  invents engine behavior):
+ *  - majorIncidents  → EconomyTickIn.majorIncidents (step 12.5, −500 bps
+ *    each; halved damage once the honest-host floor stands)
+ *  - honestPostmortems → EconomyTickIn.honestPostmortems (raw assertion
+ *    channel: signal only, never a log row)
+ *  - postmortems     → EconomyTickIn.postMortems (adjudicated filings —
+ *    the ONLY producer of postMortemLog rows the credits predicate reads)
+ *  - chargebacks     → the step-8.5 fee composition (posted red entry +
+ *    chargeback signal; fee amount is cfg-owned, wire names the victim). */
+export interface ScenarioSignals {
+  readonly majorIncidents: readonly { readonly atMinute: number; readonly count: number }[];
+  readonly honestPostmortems: readonly { readonly atMinute: number; readonly cause: string }[];
+  readonly postmortems: readonly ScenarioPostmortemRow[];
+  readonly chargebacks: readonly { readonly atMinute: number; readonly contractId: EntityId }[];
+}
+
+/** The cause id a declared major incident carries on every engine channel
+ *  (signals, filings, ledger rows) — one mint grammar, shared by the wall's
+ *  reference check and the runner's fold. */
+export function scenarioIncidentCause(atMinute: number, index: number): string {
+  return `scenario:incident:${atMinute}:${index}`;
+}
+
 /** Everything the run is bounded by. */
 export interface ScenarioLimits {
   readonly maxSimMinutes: number;
@@ -241,6 +377,12 @@ export interface ScenarioDoc {
   readonly board: UnattendedBoardCast;
   readonly contracts: readonly ScenarioContractSpec[];
   readonly traffic: ScenarioTraffic;
+  /** Channels ladder: the scheduled door rail (empty = the door never
+   *  sees a fed intent — every existing mission's byte shape). */
+  readonly intents: readonly ScenarioIntent[];
+  /** Channels ladder: host-reported economy signals folded per minute
+   *  (all rows empty = the lane composes nothing — byte shape untouched). */
+  readonly signals: ScenarioSignals;
   readonly objectives: {
     readonly win: readonly ObjectivePredicate[];
     readonly lose: readonly ObjectivePredicate[];
@@ -268,6 +410,8 @@ export type ScenarioErrorCode =
   | "BAD_INT"
   | "BAD_ENUM"
   | "BAD_GUARDRAIL"
+  | "BAD_INTENT"
+  | "BAD_SIGNAL"
   | "CORPUS_UNRESOLVED"
   | "DUPLICATE";
 
@@ -630,6 +774,14 @@ const PREDICATE_FIELDS: Readonly<Record<ScenarioPredicateKind, readonly string[]
   "covenant-breached-count-above": ["kind", "count"],
   "reputation-below": ["kind", "bps"],
   "reputation-above": ["kind", "bps"],
+  "intents-executed-above": ["kind", "count"],
+  "intents-executed-below": ["kind", "count"],
+  "intents-refused-above": ["kind", "count"],
+  "intents-refused-below": ["kind", "count"],
+  "chargebacks-above": ["kind", "count"],
+  "chargebacks-below": ["kind", "count"],
+  "postmortem-credits-above": ["kind", "bps"],
+  "postmortem-credits-below": ["kind", "bps"],
 });
 
 function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
@@ -655,6 +807,9 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
     case "bounces-below":
     case "written-off-below":
     case "covenant-breached-count-below":
+    case "intents-executed-below":
+    case "intents-refused-below":
+    case "chargebacks-below":
       // count 0 would be "hold the line at below zero" — vacuous by
       // construction; the honest spelling of that fear is churn-above:0.
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 1, 1_000_000) });
@@ -662,6 +817,9 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
     case "bounces-above":
     case "written-off-above":
     case "covenant-breached-count-above":
+    case "intents-executed-above":
+    case "intents-refused-above":
+    case "chargebacks-above":
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 0, 1_000_000) });
     case "metric-delta-over-window": {
       const metric = readString(src, "metric", path, "BAD_PREDICATE");
@@ -710,6 +868,16 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
       return Object.freeze({
         kind: typedKind,
         bps: readInt(src, "bps", path, "BAD_PREDICATE", typedKind === "reputation-below" ? 1 : 0, 10_000),
+      });
+    case "postmortem-credits-above":
+    case "postmortem-credits-below":
+      // Cumulative adjudication credit, not a clamped balance — the pair
+      // keeps the reputation family's exact-complement semantics (≥ for
+      // above, < for below). below-0 could never hold; the honest fear is
+      // postmortem-credits-below:1 (no card ever credited).
+      return Object.freeze({
+        kind: typedKind,
+        bps: readInt(src, "bps", path, "BAD_PREDICATE", typedKind === "postmortem-credits-below" ? 1 : 0, POSTMORTEM_CREDITS_BPS_MAX),
       });
   }
 }
@@ -826,6 +994,196 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
   });
 }
 
+/* ── channels ladder — intents + signals ── */
+
+const INTENT_FIELDS = ["atTick", "verb", "args"] as const;
+
+/** CAUSE-ID grammar for the signal channels: lowercase slug segments joined
+ *  by colons (the house cause-id shape — `economy:...`, `scenario:...`).
+ *  The wall refuses anything the engine could never print back. */
+const CAUSE_SHAPE = /^[a-z0-9][a-z0-9:_-]*$/;
+
+function parseIntentArg(value: unknown, wire: IntentArgWire, path: string): string | number | null | bigint {
+  if (wire === "string") {
+    if (typeof value !== "string" || value.length === 0) bad("BAD_INTENT", path, "expected a non-empty string");
+    return value;
+  }
+  if (wire === "null|string") {
+    if (value === null) return null;
+    if (typeof value !== "string" || value.length === 0) bad("BAD_INTENT", path, "expected a non-empty string or an explicit null");
+    return value;
+  }
+  if (wire === "number") {
+    if (typeof value !== "number" || !Number.isFinite(value)) bad("BAD_INTENT", path, "expected a finite number");
+    return value;
+  }
+  if (wire === "null|number") {
+    if (value === null) return null;
+    if (typeof value !== "number" || !Number.isFinite(value)) bad("BAD_INTENT", path, "expected a finite number or an explicit null");
+    return value;
+  }
+  return parseMoneyWire(value, path, "BAD_INTENT");
+}
+
+/** One rail row: verb from the closed PLAYER_VERBS vocab, args checked
+ *  against the mirrored door grammar EXACTLY (all fields present, no
+ *  extras). The wall never simulates the handler — value-domain verdicts
+ *  (unknown-node, hands-exhausted) belong to the door and ride back as
+ *  receipts the predicates count. */
+function parseIntent(raw: unknown, path: string): ScenarioIntent {
+  const src = asRecord(raw, path, "BAD_INTENT");
+  requireKeys(src, INTENT_FIELDS, ["atTick", "verb", "args"], path, "BAD_INTENT");
+  const atTick = readInt(src, "atTick", path, "BAD_INTENT", 1, 1_000_000);
+  const verbRaw = readString(src, "verb", path, "BAD_INTENT");
+  if (!(PLAYER_VERBS as readonly string[]).includes(verbRaw)) {
+    bad("UNKNOWN_KIND", `${path}.verb`, `"${verbRaw}" is not a player verb — legal: ${PLAYER_VERBS.join(", ")}`);
+  }
+  const verb = verbRaw as PlayerVerb;
+  const argsSrc = asRecord(src.args, `${path}.args`, "BAD_INTENT");
+  const shape = SCENARIO_INTENT_ARG_SHAPES[verb];
+  for (const field of Object.keys(shape)) {
+    if (!(field in argsSrc)) bad("BAD_INTENT", `${path}.args.${field}`, `${verb} requires the door-shaped field "${field}" (an explicit null is the honest omission)`);
+  }
+  for (const key of Object.keys(argsSrc)) {
+    if (!(key in shape)) bad("BAD_INTENT", `${path}.args.${key}`, `${verb} accepts only: ${Object.keys(shape).join(", ")}`);
+  }
+  const args: Record<string, string | number | null | bigint> = {};
+  for (const [field, wire] of Object.entries(shape)) {
+    args[field] = parseIntentArg(argsSrc[field], wire, `${path}.args.${field}`);
+  }
+  return Object.freeze({ atTick, verb, args: Object.freeze(args) });
+}
+
+const SIGNAL_FIELDS = ["majorIncidents", "honestPostmortems", "postmortems", "chargebacks"] as const;
+const POSTMORTEM_FIELDS = ["atMinute", "cause", "incidentMinute", "incidentIndex", "style", "changesInFlight"] as const;
+const POSTMORTEM_STYLES = ["blameless", "blame"] as const;
+const SIGNAL_AT_MINUTE_MAX = 1_000_000;
+
+function readSignalRows(raw: unknown, path: string): Record<string, unknown>[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) bad("BAD_SIGNAL", path, "expected an array");
+  return raw as Record<string, unknown>[];
+}
+
+function readSignalAtMinute(src: Record<string, unknown>, path: string): number {
+  return readInt(src, "atMinute", path, "BAD_SIGNAL", 1, SIGNAL_AT_MINUTE_MAX);
+}
+
+/** Fold the whole `signals` record. Incident refs resolve HERE (parse,
+ *  don't validate): a filing naming `incidentMinute`/`incidentIndex` gets
+ *  its cause minted through the shared `scenarioIncidentCause` grammar and
+ *  must point at a declared major incident, so the runner downstream never
+ *  re-checks and a filing can never orphan onto an unnamed catastrophe. */
+function parseSignals(raw: unknown, contractIds: ReadonlySet<string>, path: string): ScenarioSignals {
+  const src = asRecord(raw, path, "BAD_SIGNAL");
+  requireKeys(src, SIGNAL_FIELDS, [], path, "BAD_SIGNAL");
+
+  const majorRaw = readSignalRows(src.majorIncidents, `${path}.majorIncidents`);
+  const majorIncidents = majorRaw.map((row, i) => {
+    const p = `${path}.majorIncidents[${i}]`;
+    const rowSrc = asRecord(row, p, "BAD_SIGNAL");
+    requireKeys(rowSrc, ["atMinute", "count"], ["atMinute", "count"], p, "BAD_SIGNAL");
+    return Object.freeze({ atMinute: readSignalAtMinute(rowSrc, p), count: readInt(rowSrc, "count", p, "BAD_SIGNAL", 1, 1000) });
+  });
+  const majorByMinute = new Map<number, number>();
+  for (const row of majorIncidents) {
+    if (majorByMinute.has(row.atMinute)) bad("DUPLICATE", `${path}.majorIncidents`, `two incident rows at m${row.atMinute} — say it once with the summed count`);
+    majorByMinute.set(row.atMinute, row.count);
+  }
+
+  const honestRaw = readSignalRows(src.honestPostmortems, `${path}.honestPostmortems`);
+  const honestPostmortems = honestRaw.map((row, i) => {
+    const p = `${path}.honestPostmortems[${i}]`;
+    const rowSrc = asRecord(row, p, "BAD_SIGNAL");
+    requireKeys(rowSrc, ["atMinute", "cause"], ["atMinute", "cause"], p, "BAD_SIGNAL");
+    const cause = readString(rowSrc, "cause", p, "BAD_SIGNAL");
+    if (!CAUSE_SHAPE.test(cause)) bad("BAD_SIGNAL", `${p}.cause`, `"${cause}" is not a cause id ([a-z0-9][a-z0-9:_-]*)`);
+    return Object.freeze({ atMinute: readSignalAtMinute(rowSrc, p), cause });
+  });
+  const honestCauses = new Set<string>();
+  for (const row of honestPostmortems) {
+    if (honestCauses.has(row.cause)) bad("DUPLICATE", `${path}.honestPostmortems`, `cause "${row.cause}" asserted twice — one honest claim per incident`);
+    honestCauses.add(row.cause);
+  }
+
+  const filingRaw = readSignalRows(src.postmortems, `${path}.postmortems`);
+  const postmortems = filingRaw.map((row, i) => {
+    const p = `${path}.postmortems[${i}]`;
+    const rowSrc = asRecord(row, p, "BAD_SIGNAL");
+    requireKeys(rowSrc, POSTMORTEM_FIELDS, ["atMinute"], p, "BAD_SIGNAL");
+    const atMinute = readSignalAtMinute(rowSrc, p);
+    const hasCause = rowSrc.cause !== undefined;
+    const hasIncident = rowSrc.incidentMinute !== undefined;
+    if (hasCause === hasIncident) {
+      bad("BAD_SIGNAL", p, "a filing names EXACTLY one of `cause` (free slug) or `incidentMinute` (a declared major incident)");
+    }
+    let cause: string;
+    if (hasIncident) {
+      const incidentMinute = readInt(rowSrc, "incidentMinute", p, "BAD_SIGNAL", 1, SIGNAL_AT_MINUTE_MAX);
+      const count = majorByMinute.get(incidentMinute);
+      if (count === undefined) bad("BAD_SIGNAL", `${p}.incidentMinute`, `m${incidentMinute} declares no major incident to write up`);
+      const incidentIndex = optInt(rowSrc, "incidentIndex", p, "BAD_SIGNAL", 0, 999, 0);
+      if (incidentIndex >= count) bad("BAD_SIGNAL", `${p}.incidentIndex`, `m${incidentMinute} declared ${count} incident(s) — index ${incidentIndex} is out of range`);
+      cause = scenarioIncidentCause(incidentMinute, incidentIndex);
+    } else {
+      cause = readString(rowSrc, "cause", p, "BAD_SIGNAL");
+      if (!CAUSE_SHAPE.test(cause)) bad("BAD_SIGNAL", `${p}.cause`, `"${cause}" is not a cause id ([a-z0-9][a-z0-9:_-]*)`);
+    }
+    const styleRaw = rowSrc.style === undefined ? "blameless" : readString(rowSrc, "style", p, "BAD_SIGNAL");
+    if (!(POSTMORTEM_STYLES as readonly string[]).includes(styleRaw)) {
+      bad("BAD_ENUM", `${p}.style`, `expected one of ${POSTMORTEM_STYLES.join(", ")}, got ${styleRaw}`);
+    }
+    return Object.freeze({
+      atMinute,
+      cause,
+      style: styleRaw as "blameless" | "blame",
+      changesInFlight: optInt(rowSrc, "changesInFlight", p, "BAD_SIGNAL", 0, 1000, 0),
+    });
+  });
+  const filingSeen = new Set<string>();
+  for (const row of postmortems) {
+    const twin = `${row.atMinute}\u0000${row.cause}`;
+    if (filingSeen.has(twin)) bad("DUPLICATE", `${path}.postmortems`, `duplicate (atMinute,cause) filing m${row.atMinute}:${row.cause}`);
+    filingSeen.add(twin);
+  }
+  /* Double-credit mirror (economy/tick.ts step 12.45 throws when one cause
+     rides BOTH the raw-assertion channel and a filing): the wall refuses
+     the whole-run version — one channel per cause, farm nothing. */
+  for (const row of postmortems) {
+    if (honestCauses.has(row.cause)) {
+      bad("BAD_SIGNAL", `${path}.postmortems`, `cause "${row.cause}" rides both honestPostmortems and postmortems — the engine throws on double-credit; pick one channel`);
+    }
+  }
+
+  const cbRaw = readSignalRows(src.chargebacks, `${path}.chargebacks`);
+  const chargebacks = cbRaw.map((row, i) => {
+    const p = `${path}.chargebacks[${i}]`;
+    const rowSrc = asRecord(row, p, "BAD_SIGNAL");
+    requireKeys(rowSrc, ["atMinute", "contractId"], ["atMinute", "contractId"], p, "BAD_SIGNAL");
+    const contractId = readString(rowSrc, "contractId", p, "BAD_SIGNAL");
+    if (!contractIds.has(contractId)) bad("BAD_SIGNAL", `${p}.contractId`, `"${contractId}" is not a contract this mission signed — the lane would throw on an un-primed chargeback`);
+    return Object.freeze({ atMinute: readSignalAtMinute(rowSrc, p), contractId: asEntityId(contractId) });
+  });
+
+  return Object.freeze({
+    majorIncidents: Object.freeze(majorIncidents),
+    honestPostmortems: Object.freeze(honestPostmortems),
+    postmortems: Object.freeze(postmortems),
+    chargebacks: Object.freeze(chargebacks),
+  });
+}
+
+/** True when the doc carries any economy signal row — the lane must be ON
+ *  for the composition to have anywhere to fold into. */
+export function scenarioSignalsActive(signals: ScenarioSignals): boolean {
+  return (
+    signals.majorIncidents.length > 0 ||
+    signals.honestPostmortems.length > 0 ||
+    signals.postmortems.length > 0 ||
+    signals.chargebacks.length > 0
+  );
+}
+
 /* ─────────────────────────── the document wall ─────────────────────────── */
 
 const DOC_FIELDS = [
@@ -838,6 +1196,8 @@ const DOC_FIELDS = [
   "board",
   "contracts",
   "traffic",
+  "intents",
+  "signals",
   "objectives",
   "limits",
 ] as const;
@@ -877,6 +1237,10 @@ export function parseScenarioDoc(raw: unknown): ScenarioDoc {
   }
 
   const traffic = parseTraffic(src.traffic, `${path}.traffic`);
+  const intentsRaw = src.intents ?? [];
+  if (!Array.isArray(intentsRaw)) bad("BAD_INTENT", `${path}.intents`, "expected an array");
+  const intents = Object.freeze((intentsRaw as readonly unknown[]).map((row, i) => parseIntent(row, `${path}.intents[${i}]`)));
+  const signals = parseSignals(src.signals ?? {}, new Set(contracts.map((spec) => spec.id)), `${path}.signals`);
   const objectives = parseObjectives(src.objectives, `${path}.objectives`);
   const limits = parseLimits(src.limits, `${path}.limits`);
 
@@ -885,6 +1249,19 @@ export function parseScenarioDoc(raw: unknown): ScenarioDoc {
   for (const draft of limits.opex) {
     if (draft.atMinute > limits.maxSimMinutes) {
       bad("BAD_LIMITS", `${path}.limits.opex`, `burn m${draft.atMinute} (${draft.memo}) lands after the clock stops at m${limits.maxSimMinutes}`);
+    }
+  }
+  /* Channels-ladder clock law (same shape as the opex rule): a verb or a
+     signal scheduled after the clock stops can never play — refuse the
+     dead row instead of silently never firing it. */
+  for (const intent of intents) {
+    if (intent.atTick > limits.maxSimMinutes) {
+      bad("BAD_INTENT", `${path}.intents`, `${intent.verb} at tick ${intent.atTick} lands after the clock stops at m${limits.maxSimMinutes}`);
+    }
+  }
+  for (const row of [...signals.majorIncidents, ...signals.honestPostmortems, ...signals.postmortems, ...signals.chargebacks]) {
+    if (row.atMinute > limits.maxSimMinutes) {
+      bad("BAD_SIGNAL", `${path}.signals`, `signal m${row.atMinute} lands after the clock stops at m${limits.maxSimMinutes}`);
     }
   }
   for (const spec of contracts) {
@@ -909,6 +1286,8 @@ export function parseScenarioDoc(raw: unknown): ScenarioDoc {
     board,
     contracts: Object.freeze(contracts),
     traffic,
+    intents,
+    signals,
     objectives,
     limits,
   });

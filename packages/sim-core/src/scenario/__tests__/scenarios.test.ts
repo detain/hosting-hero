@@ -1,4 +1,4 @@
-/** scenarios.test.ts — the shipped library is seventeen, cites §1.5 verbatim,
+/** scenarios.test.ts — the shipped library is twenty, cites §1.5 verbatim,
  *  survives a JSON round-trip, and parses to the same documents it ships
  *  as frozen constants (the import-time wall is not decorative). */
 import { describe, expect, it } from "vitest";
@@ -33,10 +33,13 @@ const SPEC_HEADINGS: Readonly<Record<string, string>> = {
   "the-sev-0": "The Sev-0",
   "the-covenant": "Covenant",
   "review-bomb": "Review Bomb",
+  "understaffed-sunday": "The Understaffed Sunday",
+  "chargeback-wave": "The Chargeback Wave",
+  "the-slow-week-after": "The Slow Week After",
 };
 
 describe("the shipped set", () => {
-  it("is exactly the seventeen shipped §1.5 wires (sixteen missions; Metastable ships twice)", () => {
+  it("is exactly the twenty shipped §1.5 wires (nineteen missions; Metastable ships twice)", () => {
     expect(SHIPPED_SCENARIO_IDS).toEqual([
       "the-long-weekend",
       "deadbeat-quarter",
@@ -55,6 +58,9 @@ describe("the shipped set", () => {
       "the-sev-0",
       "the-covenant",
       "review-bomb",
+      "understaffed-sunday",
+      "chargeback-wave",
+      "the-slow-week-after",
     ]);
   });
 

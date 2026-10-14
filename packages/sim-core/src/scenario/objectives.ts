@@ -43,6 +43,20 @@ export interface ScenarioObservation {
    *  (0..10,000 — the same authority that publishes `company::reputation`).
    *  Pre-money-lane reads the initial 5,000 bps (economy/reputation.ts). */
   readonly reputationBps: bigint;
+  /** Channels ladder: door receipts this doc's `intents` schedule earned —
+   *  executed and refused, cumulative over the run. Both 0 while no intent
+   *  is scheduled (the pre-channel byte shape). */
+  readonly intentsExecuted: number;
+  readonly intentsRefused: number;
+  /** Channels ladder: `signals.chargebacks` rows whose cfg-owned fee the
+   *  lane POSTED (a fee the ledger refused for insolvency throws through
+   *  the run — never silently uncounted). 0 while the channel is silent. */
+  readonly chargebacksApplied: number;
+  /** Channels ladder: Σ creditedBps over the adjudicated post-mortem log
+   *  (EconomyState.postMortemLog — blameless + attributable + first-filed
+   *  rows credit; ambiguous and refiled rows credit 0). 0n while the
+   *  channel is silent or nothing ever earned credit. */
+  readonly postmortemCreditsBps: bigint;
   /** Ladder rung 3: cumulative arrival mints by the dominantFamily label of
    *  the envelope that minted them (organic + the five threat families).
    *  Counted at MINT — re-entries carry no new arrival event, so retries
@@ -73,6 +87,10 @@ export const EMPTY_OBSERVATION: ScenarioObservation = Object.freeze({
   // The fresh company has the ledger's opening score (single source: the
   // economy constant, never a re-typed 5000).
   reputationBps: REPUTATION_INITIAL_BPS,
+  intentsExecuted: 0,
+  intentsRefused: 0,
+  chargebacksApplied: 0,
+  postmortemCreditsBps: 0n,
   arrivalsByFamily: Object.freeze({}),
   windowSums: Object.freeze({}),
 });
@@ -147,6 +165,22 @@ export function objectiveHolds(obs: ScenarioObservation, predicate: ObjectivePre
       return obs.reputationBps < BigInt(predicate.bps);
     case "reputation-above":
       return obs.reputationBps >= BigInt(predicate.bps);
+    case "intents-executed-above":
+      return obs.intentsExecuted > predicate.count;
+    case "intents-executed-below":
+      return obs.intentsExecuted < predicate.count;
+    case "intents-refused-above":
+      return obs.intentsRefused > predicate.count;
+    case "intents-refused-below":
+      return obs.intentsRefused < predicate.count;
+    case "chargebacks-above":
+      return obs.chargebacksApplied > predicate.count;
+    case "chargebacks-below":
+      return obs.chargebacksApplied < predicate.count;
+    case "postmortem-credits-above":
+      return obs.postmortemCreditsBps >= BigInt(predicate.bps);
+    case "postmortem-credits-below":
+      return obs.postmortemCreditsBps < BigInt(predicate.bps);
   }
 }
 
@@ -199,6 +233,16 @@ export function objectiveLine(predicate: ObjectivePredicate): string {
       return `${predicate.kind}:${predicate.count}`;
     case "reputation-below":
     case "reputation-above":
+      return `${predicate.kind}:${predicate.bps}`;
+    case "intents-executed-above":
+    case "intents-executed-below":
+    case "intents-refused-above":
+    case "intents-refused-below":
+    case "chargebacks-above":
+    case "chargebacks-below":
+      return `${predicate.kind}:${predicate.count}`;
+    case "postmortem-credits-above":
+    case "postmortem-credits-below":
       return `${predicate.kind}:${predicate.bps}`;
   }
 }
@@ -261,6 +305,22 @@ function progressOf(obs: ScenarioObservation, predicate: ObjectivePredicate): Fi
     case "reputation-below":
       // attainment of the danger: the shortfall below the line, as a share.
       return clampRatio(BigInt(predicate.bps) - obs.reputationBps, BigInt(predicate.bps));
+    case "intents-executed-below":
+      return clampRatio(BigInt(predicate.count - obs.intentsExecuted), BigInt(predicate.count));
+    case "intents-refused-below":
+      return clampRatio(BigInt(predicate.count - obs.intentsRefused), BigInt(predicate.count));
+    case "chargebacks-below":
+      return clampRatio(BigInt(predicate.count - obs.chargebacksApplied), BigInt(predicate.count));
+    case "intents-executed-above":
+      return clampRatio(BigInt(obs.intentsExecuted), BigInt(predicate.count + 1));
+    case "intents-refused-above":
+      return clampRatio(BigInt(obs.intentsRefused), BigInt(predicate.count + 1));
+    case "chargebacks-above":
+      return clampRatio(BigInt(obs.chargebacksApplied), BigInt(predicate.count + 1));
+    case "postmortem-credits-above":
+      return clampRatio(obs.postmortemCreditsBps, BigInt(predicate.bps));
+    case "postmortem-credits-below":
+      return clampRatio(BigInt(predicate.bps) - obs.postmortemCreditsBps, BigInt(predicate.bps));
   }
 }
 
