@@ -6,7 +6,9 @@
 
 import { describe, expect, test } from "vitest";
 import {
+  INVARIANT_VERBS,
   lintRulesetCorpus,
+  TIER_EXTENDED_VERBS,
   waveRefKey,
   type LintConfig,
   type LintFinding,
@@ -139,6 +141,26 @@ describe("VERB_SHIFT — dominant verb differs, else MERGE verdict", () => {
     expect(codesOf(report)).toEqual(["VERB_SHIFT"]);
     expect(report.findings[0]?.bundles).toEqual(["test:min-beta"]);
     expect(report.findings[0]?.detail).toContain("seventh");
+  });
+
+  test("ADR-0013 #14: a ratified tier-extension verb grounds the canon leg", () => {
+    // 'Shield' (ADR-0005 per-tier set) is NOT invariant — the old canon leg
+    // convicted it; under ruling 14 it passes while the pairwise MERGE law
+    // stays untouched (beta's verb still differs from alpha's).
+    for (const verb of TIER_EXTENDED_VERBS) {
+      expect(INVARIANT_VERBS as readonly string[]).not.toContain(verb);
+    }
+    const report = lintRulesetCorpus(
+      miniCorpus({
+        bundles: [
+          ALPHA(),
+          mutatedBundle("minimal-beta.json", (raw) => {
+            (raw.verbs as Record<string, unknown>)["dominant"] = "Shield";
+          }),
+        ],
+      }),
+    );
+    expect(codesOf(report)).toEqual([]);
   });
 });
 

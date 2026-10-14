@@ -123,6 +123,34 @@ export const INVARIANT_VERBS = [
   "commit",
 ] as const;
 
+/** ADR-0005's already-ratified per-tier verb set (the §7.8 eight-verb core
+ *  PLACE·LINK·TUNE·SCALE·SHIELD·INVESTIGATE·MAINTAIN·SELL) minus every verb
+ *  §1.9 already folds into the invariant six — PLACE·LINK → "place & connect",
+ *  INVESTIGATE → "diagnose", TUNE verbatim. What remains is the tier-extension
+ *  roster ADR-0013 decision 14 adopted so type-line 6+ cards can found an
+ *  identity without touching the invariant core: the six stay six.
+ *
+ *  Honest gap (reports/audit/group-16.md g16 finding): none of these verbs
+ *  exists in the closed eight-verb PLAYER_VERBS door enum and no verb-
+ *  acquisition mechanic ships. A tier-extension dominant verb is therefore a
+ *  CONTENT IDENTITY law, not a door capability — the card declares it, while
+ *  every mechanic the quarter slice exercises still rides door verbs. The
+ *  door-side seam (or a ratified re-skin) is owed its own lane. */
+export const TIER_EXTENDED_VERBS = [
+  "scale",
+  "shield",
+  "maintain",
+  "sell",
+] as const;
+
+/** Canon-leg truth: the dominant verb is groundable in a ratified set — the
+ *  §1.9 invariant core or the ADR-0005 per-tier extension roster. */
+export function isGroundableDominantVerb(verb: string): boolean {
+  const normalized = verb.trim().toLowerCase();
+  if ((INVARIANT_VERBS as readonly string[]).includes(normalized)) return true;
+  return (TIER_EXTENDED_VERBS as readonly string[]).includes(normalized);
+}
+
 /* ═════════════════════ hook registry (§7.8 items, R15–R23) ═════════════════════
  * "A hosting type must change 3–5 of the items in this section" (§7.8).
  * Each hook reads the bundle's machine fields; a slot is UNKNOWN when null
@@ -458,13 +486,13 @@ export function lintRulesetCorpus(corpus: RulesetCorpus): LintReport {
     }
 
     /* ── VERB_SHIFT (canon leg, per bundle) ──────────────────────────── */
-    if (!(INVARIANT_VERBS as readonly string[]).includes(bundle.verbs.dominant.trim().toLowerCase())) {
+    if (!isGroundableDominantVerb(bundle.verbs.dominant)) {
       push(
         "VERB_SHIFT",
         "error",
         [bundle.id],
-        `dominant verb '${bundle.verbs.dominant}' is not one of the six invariant verbs — a type may never introduce a seventh`,
-        "hosting_game.md §1.9 The Invariant Core (R4)",
+        `dominant verb '${bundle.verbs.dominant}' is neither one of the six invariant verbs nor a ratified ADR-0005 tier-extension verb — a type may never introduce a seventh verb outside the ratified sets`,
+        "hosting_game.md §1.9 The Invariant Core (R4); docs/adr/0005 per-tier verb set; docs/adr/0013 decision 14",
       );
     }
 
