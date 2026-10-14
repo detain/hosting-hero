@@ -21,9 +21,12 @@ import { describe, expect, it } from "vitest";
 import { asRunSeed } from "../../types.ts";
 import type { RunSeed } from "../../types.ts";
 import { encodeTaggedTree } from "../../internal/canonical.ts";
+import { buildInvitations } from "../../waves/index.ts";
+import type { BuildOp, ForeignThreatMeta, ThreatInvitations } from "../../waves/index.ts";
 import { SHIPPED_SCENARIO_WIRES, ScenarioError, parseScenarioDoc, runScenario, shippedScenario } from "../index.ts";
 import type { ScenarioReport, ScenarioWire } from "../index.ts";
-import { resolveCorpusWindows } from "../corpus.ts";
+import { gateCorpusWave, resolveCorpusWindows } from "../corpus.ts";
+import type { CorpusAuthority, CorpusGeometry, CorpusWaveWindow } from "../corpus.ts";
 import type { ScenarioCorpusTraffic } from "../doc.ts";
 import { corpusAuthority, SHIPPED_G1_SLICE_STEM } from "./corpusFixtures.ts";
 
@@ -222,5 +225,234 @@ describe("Metastable corpus twin — win, one-flip-lose, determinism", () => {
     const b = runScenario(twin(), BASE_SEED, { seedOffset: 3, corpus: corpusAuthority() });
     const seedOf = (s: RunSeed) => String(s);
     expect(seedOf(a.runSeed)).not.toBe(seedOf(b.runSeed));
+  });
+});
+
+/* ─────────────── the invitation law — synthetic planted slice ─────────────── */
+/* The shipped slices carry NO invitation markers (the law lives in the
+ * type-bundle's threats.unlockedByBuildables, joined by threat-id) and
+ * packages/content/** is off-limits to this lane — so the law is proven on
+ * a synthetic slice planted right here, never on shipped JSON. */
+
+const SYNTH_STEM = "synthetic-invitation-law";
+
+/** Registry stand-in: family + denomination per synthetic threat id. */
+const SYNTH_META: Record<string, ForeignThreatMeta> = {
+  "drizzle-scout": { family: "systemic", denomination: "bandwidth" },
+  "mimic-tide": { family: "malicious", denomination: "bandwidth" },
+  "ember-siege": { family: "entropic", denomination: "concurrency" },
+  "quiet-sapper": { family: "systemic", denomination: "data-integrity" },
+  "fold-parasite": { family: "human", denomination: "cash" },
+};
+
+const SYNTH_SLICE = {
+  id: `waves/${SYNTH_STEM}`,
+  waves: [
+    // 1: ungated drizzle — lands under any law.
+    { n: 1, parPct: 25, entries: [{ threat: "drizzle-scout", role: "Stealth", pressurePct: 100, band: "weather" }] },
+    // 2: whole storm gated behind shield-station.
+    { n: 2, parPct: 50, entries: [{ threat: "mimic-tide", role: "Mimic", pressurePct: 100, band: "storm" }] },
+    // 3: mixed — ungated 60 + gated 40 (the engine's per-entry defer rides).
+    {
+      n: 3, parPct: 50, entries: [
+        { threat: "drizzle-scout", role: "Stealth", pressurePct: 60, band: "weather" },
+        { threat: "mimic-tide", role: "Mimic", pressurePct: 40, band: "storm" },
+      ],
+    },
+    // 4: FIVE entries — over the §2.24 authoring cap (4). The foreign
+    // adapter drops the cap; the seam re-enforces it.
+    {
+      n: 4, parPct: 60, entries: [
+        { threat: "drizzle-scout", role: "Stealth", pressurePct: 20, band: "weather" },
+        { threat: "mimic-tide", role: "Mimic", pressurePct: 20, band: "storm" },
+        { threat: "ember-siege", role: "Siege", pressurePct: 20, band: "hunter" },
+        { threat: "quiet-sapper", role: "Sapper", pressurePct: 20, band: "entropy" },
+        { threat: "fold-parasite", role: "Parasite", pressurePct: 20, band: "storm" },
+      ],
+    },
+  ],
+};
+
+/** The authored law: only shield-station invites mimic-tide. */
+const SYNTH_LAW: ThreatInvitations = buildInvitations({ "shield-station": ["mimic-tide"] });
+const SYNTH_BUILD: readonly BuildOp[] = [{ atTick: 36n, op: "build", buildableId: "shield-station" }];
+
+function synthAuthority(extra?: Partial<CorpusAuthority>): CorpusAuthority {
+  const base: CorpusAuthority = {
+    slices: new Map([[SYNTH_STEM, SYNTH_SLICE]]),
+    threatMeta: (threatId: string) => SYNTH_META[threatId],
+  };
+  return extra === undefined ? base : Object.freeze({ ...base, ...extra });
+}
+
+const synthTraffic = (waves: readonly number[], startMinute = 30): ScenarioCorpusTraffic =>
+  Object.freeze({ profile: "corpus", tableId: SYNTH_STEM, waves, waveStartMinute: startMinute, baselineRatePerMin: 0 });
+
+const J = (v: unknown) => JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? `${String(x)}n` : x));
+
+/** Windows minus the additive `plan` field — the exact pre-gate shape, so
+ *  the shipped witnesses can be re-asserted byte-for-byte after the seam. */
+const withoutPlans = (windows: readonly CorpusWaveWindow[]) =>
+  J(windows.map(({ plan: _plan, ...rest }) => rest));
+
+describe("gateCorpusWave — the pure decision", () => {
+  it("empty law gates nothing: spawns, no pools", () => {
+    const plan = gateCorpusWave(2, ["mimic-tide", "drizzle-scout"], 42, buildInvitations({}), []);
+    expect(plan.spawns).toBe(true);
+    expect(plan.gatedThreatIds).toEqual([]);
+    expect(plan.invitedThreatIds).toEqual([]);
+    expect(plan.scheduledStartMinute).toBe(42);
+  });
+
+  it("law without a build excludes a whole gated storm", () => {
+    const plan = gateCorpusWave(2, ["mimic-tide"], 42, SYNTH_LAW, []);
+    expect(plan.gatedThreatIds).toEqual(["mimic-tide"]);
+    expect(plan.invitedThreatIds).toEqual([]);
+    expect(plan.spawns).toBe(false);
+  });
+
+  it("a build before the gate-time invites it in; a later build does not", () => {
+    expect(gateCorpusWave(2, ["mimic-tide"], 42, SYNTH_LAW, SYNTH_BUILD).spawns).toBe(true);
+    expect(gateCorpusWave(2, ["mimic-tide"], 30, SYNTH_LAW, SYNTH_BUILD).spawns).toBe(false);
+  });
+
+  it("one spawnable entry saves the storm; ids are deduped and sorted", () => {
+    const plan = gateCorpusWave(3, ["mimic-tide", "drizzle-scout", "mimic-tide"], 54, SYNTH_LAW, []);
+    expect(plan.spawns).toBe(true); // ungated drizzle always spawnable
+    expect(plan.gatedThreatIds).toEqual(["mimic-tide"]); // dedup + code-unit sort
+  });
+});
+
+describe("resolveCorpusWindows — invitation-gated storms on the synthetic slice", () => {
+  it("default-off authority: every wave schedules, every plan is clear", () => {
+    const windows = resolveCorpusWindows(synthTraffic([1, 2, 3]), BASE_SEED, synthAuthority());
+    expect(windows.map((w) => w.waveN)).toEqual([1, 2, 3]);
+    for (const w of windows) {
+      expect(w.plan.spawns).toBe(true);
+      expect(w.plan.gatedThreatIds).toEqual([]);
+    }
+  });
+
+  it("whole-storm exclusion leaves no hole: [1,2,3] under law packs like [1,3]", () => {
+    const law = synthAuthority({ invitations: SYNTH_LAW });
+    const packed = resolveCorpusWindows(synthTraffic([1, 2, 3]), BASE_SEED, law);
+    expect(packed.map((w) => w.waveN)).toEqual([1, 3]);
+    const direct = resolveCorpusWindows(synthTraffic([1, 3]), BASE_SEED, law);
+    expect(withoutPlans(packed)).toBe(withoutPlans(direct)); // same cursor, same dice
+  });
+
+  it("every cited storm uninvited ⇒ fail-loud, never a quiet season", () => {
+    expect(() =>
+      resolveCorpusWindows(synthTraffic([2]), BASE_SEED, synthAuthority({ invitations: SYNTH_LAW })),
+    ).toThrow(/uninvited at the attack surface/);
+  });
+
+  it("the build invites the storm: fully-invited wave replays the authored envelope byte-ident", () => {
+    const authored = resolveCorpusWindows(synthTraffic([1, 2]), BASE_SEED, synthAuthority());
+    const invited = resolveCorpusWindows(
+      synthTraffic([1, 2]),
+      BASE_SEED,
+      synthAuthority({ invitations: SYNTH_LAW, buildLog: SYNTH_BUILD }),
+    );
+    expect(withoutPlans(invited)).toBe(withoutPlans(authored)); // the content-lane promise
+    const w2 = invited[1]!;
+    expect(w2.plan.gatedThreatIds).toEqual(["mimic-tide"]);
+    expect(w2.plan.invitedThreatIds).toEqual(["mimic-tide"]);
+    expect(w2.plan.spawns).toBe(true);
+  });
+
+  it("mixed wave: included by its spawnable entry, deferred remainder reshapes the envelope", () => {
+    const authored = resolveCorpusWindows(synthTraffic([3]), BASE_SEED, synthAuthority());
+    const gated = resolveCorpusWindows(synthTraffic([3]), BASE_SEED, synthAuthority({ invitations: SYNTH_LAW }));
+    expect(gated[0]!.plan.gatedThreatIds).toEqual(["mimic-tide"]);
+    expect(gated[0]!.plan.spawns).toBe(true);
+    expect(gated[0]!.startMinute).toBe(authored[0]!.startMinute);
+    // The uninvited 40% share is deferred by the engine's own gateComposition.
+    expect(String(gated[0]!.envelope.ratePerMin)).not.toBe(String(authored[0]!.envelope.ratePerMin));
+    expect(BigInt(gated[0]!.envelope.ratePerMin)).toBeLessThan(BigInt(authored[0]!.envelope.ratePerMin));
+  });
+
+  it("retirement haunting: 60-tick lag keeps the storm in at 99, out at 100", () => {
+    const log: readonly BuildOp[] = [
+      { atTick: 10n, op: "build", buildableId: "shield-station" },
+      { atTick: 40n, op: "remove", buildableId: "shield-station" },
+    ];
+    const geometry = (windowMinutes: number): CorpusGeometry =>
+      Object.freeze({ windowMinutes, rampMin: 3, plateauMin: 3, decayMin: 2 });
+    // wave 1 window 69 → wave 2 gates at 30+69=99 (< 40+60): haunted, in.
+    const haunted = resolveCorpusWindows(
+      synthTraffic([1, 2]), BASE_SEED,
+      synthAuthority({ invitations: SYNTH_LAW, buildLog: log, geometry: geometry(69) }),
+    );
+    expect(haunted.map((w) => w.waveN)).toEqual([1, 2]);
+    // window 70 → gates at exactly 100: the removal has settled, out.
+    const gone = resolveCorpusWindows(
+      synthTraffic([1, 2]), BASE_SEED,
+      synthAuthority({ invitations: SYNTH_LAW, buildLog: log, geometry: geometry(70) }),
+    );
+    expect(gone.map((w) => w.waveN)).toEqual([1]);
+  });
+
+  it("composition cap: an over-cap wave throws naming the §2.24 law", () => {
+    expect(() => resolveCorpusWindows(synthTraffic([4]), BASE_SEED, synthAuthority())).toThrow(
+      /composes 5 threats .* caps a wave at 4/,
+    );
+  });
+
+  it("gated resolution is pure: same inputs ×100, byte-ident plans", () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 100; i += 1) {
+      seen.add(J(resolveCorpusWindows(synthTraffic([1, 2, 3]), BASE_SEED,
+        synthAuthority({ invitations: SYNTH_LAW, buildLog: SYNTH_BUILD }))));
+    }
+    expect(seen.size).toBe(1);
+  });
+});
+
+/* ─────────── default-off byte-identity: the shipped witnesses ─────────── */
+
+describe("the shipped metastable witnesses survive the gate (default-off)", () => {
+  // Captured from resolveCorpusWindows BEFORE the invitation seam landed
+  // (tip 16c6add, seed 904n) — envelopes and schedule re-asserted verbatim.
+  const PRE_W1 =
+    '[{"waveN":1,"startMinute":30,"windowMinutes":12,"envelope":{"tableId":"waves/g1-shared-web-first-quarter","role":"wave","shape":"ramp","ratePerMin":"204800n","telegraphed":true,"dominantFamily":"malicious"}}]';
+  const PRE_W15 =
+    '[{"waveN":1,"startMinute":30,"windowMinutes":12,"envelope":{"tableId":"waves/g1-shared-web-first-quarter","role":"wave","shape":"ramp","ratePerMin":"204800n","telegraphed":true,"dominantFamily":"malicious"}},{"waveN":5,"startMinute":42,"windowMinutes":12,"envelope":{"tableId":"waves/g1-shared-web-first-quarter","role":"wave","shape":"ramp","ratePerMin":"1966080n","telegraphed":false,"dominantFamily":"malicious"}}]';
+
+  it("waves [1] strips to the pre-gate witness byte-for-byte; plan is clear", () => {
+    const windows = resolveCorpusWindows(corpusTrafficOf("metastable-corpus"), BASE_SEED, corpusAuthority());
+    expect(withoutPlans(windows)).toBe(PRE_W1);
+    expect(windows[0]!.plan).toEqual({
+      waveN: 1, scheduledStartMinute: 30, gatedThreatIds: [], invitedThreatIds: [], spawns: true,
+    });
+  });
+
+  it("waves [1,5] stacks to the pre-gate witness byte-for-byte", () => {
+    const stacked = resolveCorpusWindows({ ...corpusTrafficOf("metastable-corpus"), waves: [1, 5] }, BASE_SEED, corpusAuthority());
+    expect(withoutPlans(stacked)).toBe(PRE_W15);
+  });
+
+  it("end-to-end through the runner: invited storm runs, uninvited citation fails pre-tick-1", () => {
+    const toSynthetic = (wire: MutableWire) => {
+      wire.traffic.tableId = SYNTH_STEM;
+      wire.traffic.waves = [1, 2];
+    };
+    // The law alone starves wave 2; wave 1 still rides, so the run lives —
+    // and with the build, both storms land on the very same clock. Full
+    // 240-minute clock: the wave-1 storm opens at minute 30.
+    const starved = runScenario(parseScenarioDoc((twinWire(toSynthetic) as unknown) as ScenarioWire), BASE_SEED, {
+      corpus: synthAuthority({ invitations: SYNTH_LAW }),
+    });
+    expect(starved.trace.arrivals).toBeGreaterThan(0);
+    expect(() =>
+      runScenario(parseScenarioDoc((twinWire((w) => {
+        w.traffic.tableId = SYNTH_STEM;
+        w.traffic.waves = [2];
+      }) as unknown) as ScenarioWire), BASE_SEED, { corpus: synthAuthority({ invitations: SYNTH_LAW }) }),
+    ).toThrow(/uninvited at the attack surface/);
+    const invited = runScenario(parseScenarioDoc((twinWire(toSynthetic) as unknown) as ScenarioWire), BASE_SEED, {
+      corpus: synthAuthority({ invitations: SYNTH_LAW, buildLog: SYNTH_BUILD }),
+    });
+    expect(invited.trace.arrivals).toBeGreaterThan(starved.trace.arrivals);
   });
 });

@@ -35,9 +35,10 @@ export type {
 export {
   DEFAULT_CORPUS_GEOMETRY,
   DEFAULT_CORPUS_TYPE_BUNDLE_ID,
+  gateCorpusWave,
   resolveCorpusWindows,
 } from "./corpus.ts";
-export type { CorpusAuthority, CorpusGeometry, CorpusWaveWindow } from "./corpus.ts";
+export type { CorpusAuthority, CorpusGeometry, CorpusWavePlan, CorpusWaveWindow } from "./corpus.ts";
 
 export {
   EMPTY_OBSERVATION,
