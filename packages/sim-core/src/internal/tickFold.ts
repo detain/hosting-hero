@@ -200,6 +200,27 @@ function outageSecondsFromLanded(
   return map;
 }
 
+/** Union of the two outage fans keyed by contract (audit minor @16c6add):
+ *  landed violations and data corruptions burn the SAME error-budget
+ *  minutes, so their seconds ADD per contract. Either side absent returns
+ *  the other BY IDENTITY; two empties stay null — an unarmed run's
+ *  EconomyTickIn carries no `outageSecs` key at all, which is what keeps
+ *  every no-corruption digest byte-identical. The corruption side arrives
+ *  as a plain map (the host ran the pipeline adapter) because internal/
+ *  must not import the pipeline at runtime (dependency law). */
+function mergeOutageFans(
+  landed: ReadonlyMap<EntityId, bigint> | null,
+  corruption: ReadonlyMap<EntityId, bigint> | null,
+): ReadonlyMap<EntityId, bigint> | null {
+  if (corruption === null || corruption.size === 0) return landed;
+  if (landed === null) return corruption;
+  const merged = new Map<EntityId, bigint>(landed);
+  for (const [id, seconds] of corruption) {
+    merged.set(id, (merged.get(id) ?? 0n) + seconds);
+  }
+  return merged;
+}
+
 /* ═══════════════════════════ the money-lane tick fold ═════════════════════════════ */
 
 /** The successful fold's output (economy's own record — hosts read
@@ -231,6 +252,12 @@ export interface MoneyLaneTickParams {
    *  cleared when a fold consumes it. Empty ⇒ key omitted. */
   readonly witness: RefusedSettlement[];
   readonly outcomes: readonly { readonly terminal: string | null }[];
+  /** §1.7 corruption outage fan (16c6add adapter, review-recorded debt):
+   *  the pipeline's `corruptionOutageSecs(corruptions, contracts)` output
+   *  handed over by the host. ABSENT or null ⇒ the fan stays exactly the
+   *  landed fan it was before this seam existed — the default-off
+   *  byte-identity law the corruption-forwarding tests pin. */
+  readonly corruptionOutageSecs?: ReadonlyMap<EntityId, bigint> | null;
 }
 
 export interface MoneyLaneTickResult {
@@ -298,7 +325,10 @@ export function foldMoneyLaneTick(p: MoneyLaneTickParams): MoneyLaneTickResult {
     econ = Object.freeze({ ...econ, journal: posted.journal, cash: posted.cash });
   }
 
-  const outage = outageSecondsFromLanded(p.outcomes, p.contracts);
+  const outage = mergeOutageFans(
+    outageSecondsFromLanded(p.outcomes, p.contracts),
+    p.corruptionOutageSecs ?? null,
+  );
   let invoiceVoided = false;
   let fold: EconomyFoldOut | null = null;
   try {

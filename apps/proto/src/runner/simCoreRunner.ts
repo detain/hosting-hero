@@ -83,6 +83,7 @@ import {
   type ObservedKey,
   type GameState,
   type Outcome,
+  type PatienceMode,
   type PlayerIntent,
   type PriceOverrideBook,
   type QosClassDef,
@@ -110,6 +111,7 @@ import {
 import {
   ATTENTION_DEFAULT_COSTS,
   attentionWindowEntry,
+  corruptionOutageSecs,
   createAttentionState,
   createDefaultSlots,
   createInitialState,
@@ -129,6 +131,7 @@ import {
   emptyEconomyState,
   postEntry,
   registerContractEconomy,
+  remainingSec,
   runEconomyTick,
   type EconomyConfig,
   type EconomyNotice,
@@ -738,6 +741,14 @@ export interface SimCoreRunnerOptions {
    *  the pre-recovery runner (the SimProjection wire is untouched either
    *  way; hosts read the story through recoveryState()/recoveryNotices()). */
   readonly recovery?: RecoveryConfig;
+  /** TEST SEAM (§1.7, audit minor @16c6add closure, mirrors fastForward's
+   *  config.patienceModeByType): unit type → patience mode forwarded to the
+   *  pipeline door so a test can arm the `corrupts` class on the shipped
+   *  g1 arrival labels (envelope tableId = table.id, so one row arms every
+   *  wave). ABSENT ⇒ the config key is OMITTED and the corruption fan
+   *  below stays always-empty — the shipped cash goldens
+   *  (25_109_732_500n etc.) are the byte-identity proof. */
+  readonly patienceModeByType?: Readonly<Record<string, PatienceMode>> | undefined;
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -858,6 +869,11 @@ export class SimCoreRunner implements SimRunner {
       // Audit fix 3: the dice roll the bundle's mix — unless the test seam
       // forces a single family (then the stream stays pre-mix byte-identical).
       ...(options.familyOverride === undefined ? { familyMix: FAMILY_MIX } : {}),
+      /* §1.7 seam (@16c6add closure): absent ⇒ key omitted ⇒ the shipped
+         config shape byte-identical to every pre-corruption runner. */
+      ...(options.patienceModeByType === undefined
+        ? {}
+        : { patienceModeByType: options.patienceModeByType }),
     });
     const baseSlots = createDefaultSlots(config);
     const slots = Object.freeze({
@@ -1073,6 +1089,21 @@ export class SimCoreRunner implements SimRunner {
     return this.invoiceRefusals;
   }
 
+  /** §1.7 audit witness (corruption-forwarding, mirrors fastForward's
+   *  `report.finalErrorBudgetMinSec`): the money lane's minimum error-budget
+   *  remaining seconds across the three demo contracts, using the same
+   *  economy authority the guardrail sampler reads. A corruption plant moves
+   *  it by exactly 60 s per corrupted unit; a default runner never moves it
+   *  beyond the landed fan. Local accessor — zero new module exports. */
+  errorBudgetMinSec(): bigint | null {
+    let min: bigint | null = null;
+    for (const budget of this.econ.errorBudgets.values()) {
+      const remaining = remainingSec(budget);
+      if (min === null || remaining < min) min = remaining;
+    }
+    return min;
+  }
+
   /** The live attention pool (OD-6 host seam) — undefined on every default
    *  runner (never minted). Chrome/tests read the loan ledger here, like
    *  economyInvoiceRefusals() reads the F4 census. */
@@ -1252,14 +1283,25 @@ export class SimCoreRunner implements SimRunner {
        fastForward's withCashMirror: the ledger becomes the money authority
        the projection reads (the pre-lane `cash.free` was a createInitialState
        placeholder that never moved). */
+    /* Error-budget burn (audit minor @16c6add host wiring): landed
+       violations AND data corruptions both burn SLA seconds. The pipeline's
+       public `corruptionOutageSecs` fan rides the SAME EconomyTickIn
+       .outageSecs channel as the landed fan, seconds ADDING per contract.
+       Both empty ⇒ null ⇒ the key is omitted — every pre-corruption frame
+       (and the shipped cash goldens) byte-identical. */
     const landedThisTick = result.outcomes.reduce(
       (acc, outcome) => (outcome.terminal === "landed" ? acc + OUTAGE_SECONDS_PER_LANDED : acc),
       0n,
     );
-    const outage =
-      landedThisTick === 0n
-        ? null
-        : Object.freeze(new Map<EntityId, bigint>([...this.contractsBook.keys()].map((id) => [id, landedThisTick])));
+    const corruptionFan = corruptionOutageSecs(result.corruptions ?? [], this.contractsBook);
+    let outage: Map<EntityId, bigint> | null = null;
+    if (landedThisTick > 0n || corruptionFan !== null) {
+      const merged = new Map<EntityId, bigint>();
+      for (const id of this.contractsBook.keys()) {
+        merged.set(id, landedThisTick + (corruptionFan?.get(id) ?? 0n));
+      }
+      outage = Object.freeze(merged);
+    }
     const economyNotices: EconomyNotice[] = [];
     try {
       const out = runEconomyTick(

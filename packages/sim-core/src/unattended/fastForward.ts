@@ -80,7 +80,7 @@ import type {
   WaveEnvelope,
 } from "../types.ts";
 import { asCauseId, asEntityId, asMetricId, observedKey, ResolutionBand } from "../types.ts";
-import type { BoardEdgeRecord } from "../types.ts";
+import type { BoardEdgeRecord, PatienceMode } from "../types.ts";
 import { FIXED_ONE, FIXED_ZERO, compare, fromInt, fromRatio, mul } from "../kernel/fixed.ts";
 import { MICROS_PER_MIN, initialClocks } from "../kernel/time.ts";
 import { streamFor } from "../kernel/rng.ts";
@@ -93,6 +93,7 @@ import { buildInvitations, ledgerSnapshot } from "../waves/ledger.ts";
 import { directorPropose, INITIAL_DIRECTOR_STATE, type DirectorState } from "../waves/director.ts";
 import {
   ATTENTION_DEFAULT_COSTS,
+  corruptionOutageSecs,
   createBoardState,
   createDefaultSlots,
   createInitialState,
@@ -334,6 +335,12 @@ export interface RunUnattendedConfig {
   readonly expressMaxConfidence?: Fixed;
   readonly aggression?: Fixed;
   readonly defaultPatienceMin?: number;
+  /** §1.7 TEST+HOST SEAM (audit minor @16c6add closure): unit type →
+   *  patience mode, passed through to the pipeline door so a host can arm
+   *  the `corrupts` class. ABSENT ⇒ the pipeline-config key is OMITTED and
+   *  the corruption outage feed below folds an always-empty fan — every
+   *  pre-corruption digest byte-identical. */
+  readonly patienceModeByType?: Readonly<Record<string, PatienceMode>> | undefined;
   /** Autopilot gauge cell: observed property on the FIRST board node,
    *  cumulative arrivals (versus doctrineGauge). Default
    *  "unattended-arrivals". */
@@ -452,6 +459,12 @@ export interface UnattendedReport {
    *  report, so `reportIdentity` pairs stay byte-identical). Hosts read
    *  `loanLedger`/`debt` here instead of re-running the roll loop. */
   readonly finalAttention?: AttentionState;
+  /** §1.7 audit witness (corruption-forwarding): the money lane's minimum
+   *  error-budget remaining seconds after the last fold — the SAME
+   *  authority the guardrail sampler reads. Sparse: absent when no money
+   *  lane was built, so every pre-corruption report stays byte-identical.
+   *  A planted corruption moves it by exactly 60 s per corrupted unit. */
+  readonly finalErrorBudgetMinSec?: bigint;
   /** Recovery notices in emission order (window-opened / second-failure /
    *  lock-engaged / episode / window-cleared) — ONLY present when the config
    *  carried `recovery` (sparse witness law). The key rides the WIRED flag,
@@ -563,6 +576,10 @@ export function buildPipelineConfig(config: RunUnattendedConfig, nodes: readonly
     falsePositiveRatio: fromRatio(10n, 100n),
     referralProbability: FIXED_ZERO,
     returnProbability: FIXED_ZERO,
+    /* Absent ⇒ key omitted (pre-@16c6add config shape byte-identical). */
+    ...(config.patienceModeByType !== undefined
+      ? { patienceModeByType: config.patienceModeByType }
+      : {}),
   });
 }
 
@@ -964,6 +981,11 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
         dunningEngineOwned: config.money?.dunningEngineOwned ?? false,
         witness: refusalWitness,
         outcomes: result.outcomes,
+        /* §1.7 corruption fan (audit minor @16c6add host wiring): the
+           pipeline adapter returns null on an empty roster, so an unarmed
+           run merges to the landed fan BY IDENTITY — the outageSecs key
+           rides exactly as before. */
+        corruptionOutageSecs: corruptionOutageSecs(result.corruptions ?? [], contractsBook),
       });
       econ = lane.econ;
       refusedBurnsThisTick = lane.refusedBurnsThisTick;
@@ -1192,6 +1214,14 @@ function assembleReport(
        pre-attention report — and every reportIdentity pair over them —
        stays byte-identical. */
     ...(finalGame.attention !== undefined ? { finalAttention: finalGame.attention } : {}),
+    /* §1.7 audit witness (corruption-forwarding tests): the money lane's
+       minimum error-budget remaining seconds after the last fold, using the
+       SAME authority the guardrail sampler reads. Sparse like
+       finalAttention: absent when no money lane was built, so every
+       pre-existing report stays byte-identical. */
+    ...(econ !== null && econ.errorBudgets.size > 0
+      ? { finalErrorBudgetMinSec: budgetMinRemainingSec(econ) }
+      : {}),
     /* Sparse recovery witness (see UnattendedReport.recoveryNotices): the
        WIRED flag governs, not the self-clearing state slice. */
     ...(recoveryNotices !== null ? { recoveryNotices: Object.freeze([...recoveryNotices]) } : {}),
