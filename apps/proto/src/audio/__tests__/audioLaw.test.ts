@@ -27,6 +27,16 @@
  * stripComments is line-accurate: block-comment text is blanked but its
  * newlines are kept, so file:line reports name the true source line of
  * every violation.
+ *
+ * PROBE PLACEMENT LAW (file-parallel race fix, 2026-10-14): the LIVE
+ * red-tree probe is planted under src/chrome/__tests__/, not directly in
+ * src/chrome/. Every sibling law-walker (filtersLaw, substrateLaw, hueLaw,
+ * hueLawGates, a11yRoster, motion/contrast audits) skips the `__tests__`
+ * directory name BEFORE stat-ing or reading its entries, so the transient
+ * probe can never collide with a parallel walk (ENOENT flake). This scan
+ * descends into __tests__ ONLY to recover the probe by exact name — the
+ * live proof still plants a real file, re-walks the real tree through the
+ * real scanner, and goes red if discovery or reporting ever breaks.
  */
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -34,6 +44,10 @@ import { afterAll, describe, expect, it } from "vitest";
 
 const SRC = join(process.cwd(), "src");
 const AUDIO_DIR = join(SRC, "audio");
+/** Exact basename of the transient live-proof probe (see PROBE PLACEMENT LAW
+ *  in the header). Planted under src/chrome/__tests__/ — invisible to every
+ *  sibling walker, recovered here by the __tests__ carve-in below. */
+const PROBE_NAME = "__audio_scan_probe_tmp.ts";
 
 /** Law regexes — CODE form only (every scan runs on comment-stripped text,
  *  because our own docblocks must be allowed to NAME what they forbid). */
@@ -53,7 +67,14 @@ function listSources(dir: string): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) {
-      if (entry === "__tests__") continue; // test files quote the patterns to police them
+      if (entry === "__tests__") {
+        // Test files quote the patterns to police them — skipped as sources.
+        // The single carve-in: the transient live-proof probe lives under a
+        // __tests__ dir (race-free placement), so recover it by exact name.
+        const probe = join(path, PROBE_NAME);
+        if (existsSync(probe)) found.push(probe);
+        continue;
+      }
       found.push(...listSources(path));
       continue;
     }
@@ -195,7 +216,10 @@ describe("armed probes — the scanners bite (synthetic sources)", () => {
 });
 
 describe("LIVE red-tree proof — a planted file is caught in the real walk", () => {
-  const probePath = join(SRC, "chrome", "__audio_scan_probe_tmp.ts");
+  // Under __tests__/ on purpose: sibling law-walkers stat/read src/** while
+  // file-parallel workers run, and every one of them skips __tests__ before
+  // touching entries — planting outside their glob kills the ENOENT race.
+  const probePath = join(SRC, "chrome", "__tests__", PROBE_NAME);
 
   afterAll(() => {
     rmSync(probePath, { force: true }); // belt and braces — never leave a planted file
@@ -213,7 +237,7 @@ describe("LIVE red-tree proof — a planted file is caught in the real walk", ()
       const fresh = listSources(SRC); // re-walk WITH the violation present
       const vendor = hits(VENDOR_IMPORT, outsideAudioFor(fresh));
       const contexts = hits(AUDIOCONTEXT_CONSTRUCT, fresh);
-      expect(vendor).toContain(`src/chrome/__audio_scan_probe_tmp.ts:2`);
+      expect(vendor).toContain(`src/chrome/__tests__/${PROBE_NAME}:2`);
       expect(contexts).toHaveLength(2); // the real one + the planted one
       expect(contexts.some((h) => h.includes("__audio_scan_probe_tmp.ts:3"))).toBe(true);
     } finally {
