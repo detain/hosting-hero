@@ -48,4 +48,35 @@ describe("CorpusMissionCard", () => {
     await w.get('[data-test="corpus-clear"]').trigger("click");
     expect(w.find('[data-test="corpus-tape"]').exists()).toBe(false);
   });
+
+  it("the verdict panel opens on the fresh board: wave 1 excluded, refusal named", () => {
+    const w = mount(CorpusMissionCard);
+    const verdicts = w.get('[data-test="corpus-verdicts"]').text();
+    expect(verdicts).toContain("wave 1 — gated scanner-drizzle · invited 0/1 — EXCLUDED @ m30");
+    expect(verdicts).toContain("citation refused — CORPUS_UNRESOLVED");
+    // Probe truth for the flip citation: the ungated half of wave 5 packs
+    // the cursor and lands at m34.
+    expect(verdicts).toContain("LANDS @ m34");
+  });
+
+  it("the buildLog toggle re-reads the very same citation seeded", async () => {
+    const w = mount(CorpusMissionCard);
+    await w.get('[data-test="corpus-surface-seeded"]').trigger("click");
+    const verdicts = w.get('[data-test="corpus-verdicts"]').text();
+    expect(verdicts).toContain("invited 1/1 — LANDS @ m30");
+    expect(verdicts).toContain("invited 2/2 — LANDS @ m42");
+    expect(verdicts).not.toContain("EXCLUDED");
+    expect(w.get('[data-test="corpus-surface-seeded"]').attributes("aria-pressed")).toBe("true");
+    expect(w.get('[data-test="corpus-surface-empty"]').attributes("aria-pressed")).toBe("false");
+  });
+
+  it("the invitation-law probe tapes starvation, the shifted landing, and the seeded equivalence", async () => {
+    const w = mount(CorpusMissionCard);
+    await w.get('[data-test="corpus-run-law"]').trigger("click");
+    const tape = w.get('[data-test="corpus-tape"]').text();
+    expect(tape).toContain("threw CORPUS_UNRESOLVED at 'traffic.waves'");
+    expect(tape).toContain("guard:cascadeCollapse@62");
+    expect(tape).toContain("win@240");
+    expect(tape).toContain("digest 6546099a54b8b96b6f016a6795ae7beb");
+  }, 30_000);
 });
