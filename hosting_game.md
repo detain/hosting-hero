@@ -17613,6 +17613,7 @@ makes customer mood halos visible at mid-zoom. The **Greybeard** highlights the 
 symptom. **A far better expression of expertise than a percentage buff.**
 
 ### The Hands Dock 🔧
+> *[2026-10-14 ruling — ADR-0013 #5(c) (OD-12)] Placement RULED: bottom-left — the peg rail as drawn. The Hands Dock owns the bottom-left corner; no further placement dispute.*
 P4 calls attention "the scarcest resource in the game." It deserves better than tokens at the bottom of
 the screen.
 
@@ -29312,6 +29313,7 @@ too-systematic route, arrival synchrony, an absence of the small randomness real
 also the stronger design — a behavioural tell rewards *watching*, a colour tell rewards pixel-peeping.
 
 ### The Confidence Blur 🔧
+> *[2026-10-14 ruling — ADR-0013 #5(b) (OD-12)] The ⚔️ with Attachment-crispness is resolved: the Confidence Blur renders attachment-crispness where both exist — one composed presentation service, not rivals fighting for the same pixels.*
 Classification uncertainty as a continuous visual, not a binary one.
 
 **How it works:** Render uncertainty as **blur**, not as a separate icon. A unit the system is 50% sure
@@ -31556,6 +31558,7 @@ selected object's label always survives. **Never clip, never overlap, never shri
 **Label budget: 30 visible labels maximum at Z3.**
 
 ### The readability targets ⚠️
+> *[2026-10-14 ruling — ADR-0013 #3 (OD-10)] The Clock Ribbon and the dials are ONE unified time-service presentation — ribbon primary, dials its instruments, not rivals. Max LEGIBLE speed stays **2×** until G1 playtest data (P5's 3× is not law); the SpeedX door ladder 1|2|4 stands as shipped — 4× is the authored-art exception, 3× is never legal. Hardware target = current dev-box floor. ⚠️ marker kept: the figures are now blessed as targets, measurement still owed.*
 Stated numbers, because "readable at scale" is unfalsifiable without a figure.
 
 **How it works:** The game must remain legible at **2,000 discrete objects and 20,000 in-flight entities
