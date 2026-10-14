@@ -58,8 +58,12 @@ export interface WaveStormBudget {
 
 /**
  * Author-time storm budget of one wave. Uses the table's OWN tuning sheet
- * at neutral director state (trough factors only ever LOWER the budget; the
- * ×1.25 entropy uplift is emergent and caught by the plan-time clamp).
+ * at NEUTRAL (1.0) director state — the honest caveat: the director clamps
+ * BOTH subjects (sawtooth-trough-depth and entropy-budget) to
+ * [0.75, 1.25], so a trough minute can measure up to ~25% ABOVE neutral,
+ * not only below it. Any such emergent excess over the parse-time ceiling
+ * is caught by the plan-time clamp (scaleStormCounts) — that is the second
+ * door's job, exactly as for the ×1.25 entropy uplift.
  * Copycat share re-scales move at most ±1 unit per entry against this sum
  * (shares still total exactly 1e6) — any emergent excess is clamped at plan
  * time, which is the second door's job.
