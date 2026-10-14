@@ -3654,7 +3654,7 @@ happens until hour 60. **A beautiful skill check**, and the model for the recurr
 (§1.11).
 **Constraint Band:** the hands dock is greyed out with an **out-of-office sticky note** drawn over it.
 
-### `The Understaffed Sunday` ❌
+### `The Understaffed Sunday` ✅ 110f516
 Not a crisis level — an ordinary level with a quarter of your hands. **Archetype: Triage. Length:
 Scenario.**
 
@@ -3718,7 +3718,7 @@ and the glue still points at an IP that now belongs to someone else. Resolvers p
 of queries fail, which is below every alerting threshold you have.** Teaches that **partial DNS
 failure is invisible to binary monitoring** and introduces per-nameserver synthetic checks.
 
-### `The Chargeback Wave` / `Processor Freeze` / `Rolling Reserve` ❌
+### `The Chargeback Wave` / `Processor Freeze` / `Rolling Reserve` ✅ 110f516
 A carder ring signs up with 200 stolen cards — or your risk classification changes. **Archetype:
 Negotiate. Length: Scenario.**
 
@@ -4022,7 +4022,7 @@ Escort. Length: Scenario.**
 away from the parts that aren't — and **the twist: the facility is *live* with early tenants, so a
 real incident may occur with press in the room.** The tenant-tour mechanics as a set piece.
 
-### `The Slow Week After` ❌
+### `The Slow Week After` ✅ 110f516
 The level immediately following a major outage. **Archetype: Negotiate. Length: Scenario.**
 
 **How it works:** Nothing is broken. **Everything is fragile.** The mechanics are all social and
@@ -4031,7 +4031,7 @@ who want to quit, the enterprise prospect who saw the news. Scored on **retained
 morale.** **A level made entirely of consequences**, which Pillar P10 demands and never otherwise
 gets.
 
-### `The RFO` ❌
+### `The RFO` ✅ 6f92836
 Post-incident, your largest enterprise customer contractually requires a written **Reason For
 Outage** within 5 business days, signed, with a timeline, root cause, and remediation commitments.
 **Archetype: Reach-State. Length: Interlude.**
@@ -4044,7 +4044,7 @@ becomes a binding obligation on the Obligation Rail** with a deadline the custom
 **It converts postmortem-as-progression into something the business *forces* you to do, and it makes
 log retention pay off visibly.**
 
-### `Someone Else's Outage` ❌
+### `Someone Else's Outage` ✅ 6f92836
 A major cloud region dies. **You're fine.** **Archetype: Convert. Length: Interlude.**
 
 **How it works:** Your *customers'* dependencies aren't fine, and your support queue explodes with
@@ -4083,7 +4083,7 @@ load below the recovery threshold** — turning away customers to get the system
 player's instinct (add capacity) makes it worse. The best "your intuition is wrong" scenario
 available.**
 
-### `The Threshold Day` (the "nothing changed" level) ❌
+### `The Threshold Day` (the "nothing changed" level) 🔧
 No attack, no hardware failure, no deploy. Something breaks because you **grew into a limit that has
 always been there.** **Archetype: Diagnose. Length: Scenario.**
 

@@ -1059,3 +1059,65 @@ All five rungs consumed (1 `written-off`, 2 `metric-delta`, 3 `family-arrivals`,
 Missing-seams register (recorded, not queued): ~~mid-run attention window-entry~~ ~~attention borrowing verb~~ (both CLEARED by `e1786fc`) · Sev-0 restraint decision door · pricing demand-ghost preview · per-verb attention door cost (owner taste) · door-intent / routing-alternate / `majorIncidents`·`postMortems`·`chargeback` INPUT channels for the next ladder.
 
 hosting_game.md grows by the appendix paragraph only (2 heading lines edited in place); "Historical record:" footer kept last.
+
+## WAVE-8 closeout — five channel missions marked, corrupts engine-live, review GO recorded (2026-10-14)
+
+Lanes under markup (all four already on master; this wave marks and records):
+
+| Commit | Lane | Shipped |
+|---|---|---|
+| `110f516` | scenario input channels + pilots | **door-intents** and **economy-signals** channels wired into the scenario runner (the two next-ladder candidates wave-7 recorded): door verbs can spend hands mid-mission; host-signals forward the money-lane inputs the wave-7 register named. Three §1.5 pilot missions: `understaffed-sunday` :3657, `chargeback-wave` :3721, `the-slow-week-after` :4025. |
+| `16c6add` | corrupts patience mode v0 | `limits.corrupts` arm — `patienceModeByType` / `corruptionProbability` spread into serve slots, `defaultPatienceMin` pinned ONLY when armed; silent-corruption damage channel is engine-live, DEFAULT-OFF (byte-ident when absent); `corruptions` observation field + `corruption-above/below` predicates. |
+| `bc11697` | corpus invitations gate | `CorpusAuthority {invitations?, buildLog?}` — whole storms gate through exported pure `gateCorpusWave` BEFORE dice roll; excluded waves leave no cursor hole; fully-invited ⇒ authored envelope byte-ident; default-off pinned byte-ident incl literal-pinned pre-gate window JSONs. INVITATIONS leg of the wave-3 corpus seam CLOSED; packages/content untouched. |
+| `6f92836` | wave-five conversions | Three §1.5 missions on the new channels: `someone-elses-outage` :4047 (door communicate interlude, green-site `bounces=0`, packed-burst flip lose@26 ×5), `the-rfo` :4034 (`style-blame` one-field flip 4750n→4000n → lose@60 ×5 via the `honestPostmortems` assertion channel), `the-threshold-day` :4086 (`limits.corrupts` arm, dice-free 105 census ×5, flip = 7th-arrival cross@153; SLA-money leg NON-expressible — `tick.ts:1266/1287`). Vocab now **29 predicate kinds**, 23 mission wires. |
+
+**Read-only review verdict:** ALL FOUR COMMITS CLEAN — **PUSH-GO**. 1 minor + 2 nits, none blocking. Minor recorded as a debt row (not a fix-in-wave): **`corruptionOutageSecs` consumer census = zero production callers** — the engine emits it, no host consumes it yet; carried into the hosts-lane batch-E debt register below (same forwarding class as the `observedWrites` seam history).
+
+### Marker flips applied (each asserted against its pre-write `❌` on disk before the write)
+
+| Spec line | Heading | Before | After | Witness / note |
+|---|---|---|---|---|
+| 3657 | `The Understaffed Sunday` | ❌ | ✅ `110f516` | pilot on the door-intents channel — quarter-hands triage mission runs the real rail |
+| 3721 | `The Chargeback Wave` / `Processor Freeze` / `Rolling Reserve` | ❌ | ✅ `110f516` | single manifest row (group-03 :65); `chargeback-wave` ships via the economy-signals chargeback INPUT; Processor Freeze / Rolling Reserve stage naming rides the same row — content-side staging remains unbuilt, row-level flip per closeout authority, recorded here |
+| 4025 | `The Slow Week After` | ❌ | ✅ `110f516` | pilot on the same channels — social-pressure level expressible end-to-end |
+| 4034 | `The RFO` | ❌ | ✅ `6f92836` | post-mortem `style-blame` one-field flip, lose@60 ×5 seeds; document-assembly minigame stays content, engine-side evidence + obligation leg now playable |
+| 4047 | `Someone Else's Outage` | ❌ | ✅ `6f92836` | door-communicate interlude, green-site bounced=0 witness, packed-burst flip lose@26 ×5 |
+| 4086 | `The Threshold Day` (the "nothing changed" level) | ❌ | 🔧 | **no inline hash** — corrupts arm fully live (dice-free census ×5, flip cross@153) but the heading's hard-limit SLA-money leg is non-expressible (`tick.ts:1266/1287`); **Sev-0 :3240 partial-🔧 precedent** |
+
+### Held / skipped rows — appendix-noted, no marker move
+
+- 11436 **"Patience as HP" stays ✅ `8fd409a`** (already done): appendix note — the corrupts arm went ENGINE-LIVE @`16c6add` (default-off); the errorBudget fan-out awaits the hosts lane (consumer side of the corruption signal).
+- **No distinct "corrupts"/"corruption" sub-heading exists inside §3.1 or §2.13** — §3.1 scan (11434–11937) and §2.13 scan (10067–11433) find corruption only in body prose (:11269, :11341). The corruption-flavoured headings at :8157 / :9670 / :27604 / :30808 belong to other sections and stay ❌ — outside this ticket's stated scope, skip-with-note per instruction 4.
+- Umbrella "§1.5 Scenario library" stays 🔧 — appendix tally now **23 missions / 22 distinct headings** (`metastable-corpus` twins `Metastable`; threshold-day holds 🔧 separately alongside the-sev-0).
+
+### Predicate ladder — next rungs
+
+Vocab 19→**29 kinds**. The wave-7 "channels not vocab" thesis held: door-intents, `majorIncidents`-class economy signals, post-mortems and chargebacks all converted this wave. Remaining next-rungs: **routing alternates** (Suspicion-Routing lane-choice predicates), **invitations breadth** (more §1.5 storm headings converted onto the now-closed corpus invitations gate — `free-tier-flood` :3574 and `the-sev-0` :3240 are the named candidates), and **per-verb attention door cost** (owner taste; engine seam shipped @`eff5694`).
+
+### Hosts-lane batch-E debt register (carried, not queued)
+
+- **`corruptionOutageSecs` — zero production consumers** (wave-8 review minor): engine emits, hosts must forward/consume the same way `EconomyTickOut.observedWrites` required runner + fastForward + g5 forwarding @`45f0edf`. Sibling rows unchanged: proto runner price-override forwarding, corpus config.corpus injection, metricNamespaceTier schema.
+
+### Closeout battery — marked tree, serial/unloaded
+
+| Gate | Result |
+|---|---|
+| sim-core serial (`--no-file-parallelism`) | **139 files / 2,276 tests, exit 0** (255s) |
+| proto `vitest run` | **86 / 935, exit 0** |
+| `pnpm -r typecheck` | **5/5 Done** |
+| `docs/api-verify.test.mjs` | **PASS — 1,554 names**, import map consistent |
+| `scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) |
+| headless `vitest run` | **53/53, exit 0** — parity REAL `b0162ab5` / STUB `a9b4b7b8` held |
+
+### Census (recomputed from disk, heading lines only)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 312 | **317** |
+| 🔧 PARTIAL | 995 | **996** (Threshold Day ❌→🔧) |
+| ⚠️ PROBLEM | 1 | **1** (unchanged: 31543 readability — OD-10/12 open) |
+| ❌ MISSING | 2,251 | **2,245** (six heading lines flipped) |
+| 📝 NA | 30 | 30 |
+| **total marked** | **3,589** | **3,589** |
+
+hosting_game.md line count UNCHANGED (35,565 on disk, pre==post) — all six flips are in-place marker swaps, zero insertions; this SUMMARY section is the only file that grew. "Historical record:" footer kept last.
