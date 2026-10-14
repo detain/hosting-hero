@@ -229,3 +229,84 @@ describe("runUnattended — corruption outages reach the error budget (host wiri
     expect(inert.finalErrorBudgetMinSec).toBe(2592n - 60n * BigInt(inert.summary.landed));
   });
 });
+
+/* ═══════════════════ 3. severity dial (lane E1) ═══════════════════ */
+
+describe("corruptionOutageSecs — host-configurable severity dial (lane E1)", () => {
+  const corruptions = [1, 2, 3].map((i) => ({
+    unitId: asEntityId(`d-${String(i)}`),
+    atUs: 0n,
+    causeId: asCauseId(`corr:d-${String(i)}`),
+  }));
+  const book = new Map<EntityId, Contract>([[CORRUPT_CONTRACT.id, CORRUPT_CONTRACT]]);
+  const values = (fan: ReadonlyMap<EntityId, bigint> | null): bigint[] =>
+    [...(fan?.values() ?? [])];
+
+  it("omitted ≡ explicit undefined ≡ the default 60n (default-off law)", () => {
+    expect(values(corruptionOutageSecs(corruptions, book))).toEqual([180n]);
+    expect(values(corruptionOutageSecs(corruptions, book, undefined))).toEqual([180n]);
+    expect(values(corruptionOutageSecs(corruptions, book, 60n))).toEqual([180n]);
+  });
+
+  it("a dialed 120n burns exactly 2× the default severity", () => {
+    expect(values(corruptionOutageSecs(corruptions, book, 120n))).toEqual([360n]);
+  });
+
+  it("fail-loud: non-positive / non-bigint perSec throws corruption[bad-value]", () => {
+    for (const bad of [0n, -5n, 5.5, "x", null] as unknown[]) {
+      expect(() => corruptionOutageSecs(corruptions, book, bad as bigint)).toThrow(
+        /corruption\[bad-value\]/,
+      );
+    }
+    // The guard sits BEFORE the empty-input early exit: a mis-dial surfaces
+    // on the very first money tick, never as a silent zero burn.
+    expect(() => corruptionOutageSecs([], book, 0n)).toThrow(/corruption\[bad-value\]/);
+  });
+});
+
+describe("runUnattended — the dial changes ONLY the corruption burn", () => {
+  const planted: Partial<RunUnattendedConfig> = {
+    patienceModeByType: { [BASELINE_TABLE_ID]: "corrupts" },
+  };
+
+  it("dial 120n: cells burn 120 s each while the landed fan stays 60 s", () => {
+    const dialed = runUnattended(
+      corrConfig({ ...planted, corruptionOutageSecPerCorruption: 120n }),
+    );
+    const cells = corruptedCellCount(dialed);
+    expect(cells).toBeGreaterThan(0);
+    const burned = 2592n - (dialed.finalErrorBudgetMinSec ?? 2592n);
+    expect(burned).toBe(120n * BigInt(cells) + 60n * BigInt(dialed.summary.landed));
+    // The dial never mutates the simulation: same corruption/landing census
+    // as the default run, and that run keeps burning 60 s per outage.
+    const base = runUnattended(corrConfig(planted));
+    expect(corruptedCellCount(base)).toBe(cells);
+    expect(base.summary.landed).toBe(dialed.summary.landed);
+    expect(2592n - (base.finalErrorBudgetMinSec ?? 2592n)).toBe(
+      60n * (BigInt(cells) + BigInt(base.summary.landed)),
+    );
+  });
+
+  it("planted digest twin: dial omitted ≡ explicit undefined", () => {
+    const twinAbsent = runUnattended(corrConfig(planted));
+    const twinUndefined = runUnattended(
+      corrConfig({ ...planted, corruptionOutageSecPerCorruption: undefined }),
+    );
+    expect(twinUndefined.finalDigest).toBe(twinAbsent.finalDigest);
+  });
+
+  it("the dial is inert unarmed: unplanted 120n ≡ unplanted default", () => {
+    const dialed = runUnattended(corrConfig({ corruptionOutageSecPerCorruption: 120n }));
+    const bare = runUnattended(corrConfig());
+    expect(dialed.finalDigest).toBe(bare.finalDigest);
+  });
+
+  it("a mis-dial halts the host: runUnattended throws `corruption[bad-value]`", () => {
+    expect(() =>
+      runUnattended(corrConfig({ ...planted, corruptionOutageSecPerCorruption: 0n })),
+    ).toThrow(/corruption\[bad-value\]/);
+    expect(() =>
+      runUnattended(corrConfig({ corruptionOutageSecPerCorruption: 5.5 as unknown as bigint })),
+    ).toThrow(/corruption\[bad-value\]/);
+  });
+});

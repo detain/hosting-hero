@@ -341,6 +341,13 @@ export interface RunUnattendedConfig {
    *  the corruption outage feed below folds an always-empty fan — every
    *  pre-corruption digest byte-identical. */
   readonly patienceModeByType?: Readonly<Record<string, PatienceMode>> | undefined;
+  /** §1.7 SEVERITY DIAL (lane E1): outage seconds ONE corrupted response
+   *  burns, forwarded to `corruptionOutageSecs` per money-lane tick. Owner
+   *  taste lives here, not in the engine. ABSENT (or explicit `undefined`)
+   *  ⇒ the adapter's default `CORRUPTION_OUTAGE_SEC` (60n) applies — the
+   *  exact pre-dial math, every digest byte-identical. A non-bigint or
+   *  non-positive value throws `corruption[bad-value]` on the first tick. */
+  readonly corruptionOutageSecPerCorruption?: bigint | undefined;
   /** Autopilot gauge cell: observed property on the FIRST board node,
    *  cumulative arrivals (versus doctrineGauge). Default
    *  "unattended-arrivals". */
@@ -984,8 +991,14 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
         /* §1.7 corruption fan (audit minor @16c6add host wiring): the
            pipeline adapter returns null on an empty roster, so an unarmed
            run merges to the landed fan BY IDENTITY — the outageSecs key
-           rides exactly as before. */
-        corruptionOutageSecs: corruptionOutageSecs(result.corruptions ?? [], contractsBook),
+           rides exactly as before. The dial (lane E1) forwards as the
+           adapter's optional third arg: undefined ⇒ default 60n ⇒ the
+           exact pre-dial math (the host never restates the constant). */
+        corruptionOutageSecs: corruptionOutageSecs(
+          result.corruptions ?? [],
+          contractsBook,
+          config.corruptionOutageSecPerCorruption,
+        ),
       });
       econ = lane.econ;
       refusedBurnsThisTick = lane.refusedBurnsThisTick;

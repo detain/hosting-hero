@@ -112,13 +112,29 @@ export function foldCorruptionTerminals(
  * for this tick's corruptions. Shape mirrors outageSecondsFromLanded:
  * null when there is nothing to burn or nobody to bill (empty input ⇒ the
  * host's map is untouched ⇒ byte-identical economy when the mode is off).
+ *
+ * SEVERITY DIAL (lane E1): `perSec` is how many outage seconds ONE corrupted
+ * response burns — an OWNER TASTE knob, exposed so hosts can dial corruption
+ * severity without touching the engine. Its default is the PROVISIONAL 60 s
+ * lands-twin law (`CORRUPTION_OUTAGE_SEC`, the constant shipped @16c6add);
+ * omitting the argument (or passing `undefined`) keeps every pre-dial run
+ * byte-identical — the dial is law only where a host turns it. Fail-loud at
+ * the boundary (Law 4): a non-bigint or non-positive `perSec` throws
+ * `corruption[bad-value]` BEFORE the empty-input early exit, so a mis-dial
+ * surfaces on the first money-lane tick, never as a silent zero burn.
  */
 export function corruptionOutageSecs(
   corruptions: readonly CorruptOutcome[],
   contracts: ReadonlyMap<EntityId, Contract>,
+  perSec: bigint = CORRUPTION_OUTAGE_SEC,
 ): ReadonlyMap<EntityId, bigint> | null {
+  if (typeof perSec !== "bigint" || perSec <= 0n) {
+    throw new RangeError(
+      `corruption[bad-value]: perSec must be a positive bigint, got ${typeof perSec} ${String(perSec)}`,
+    );
+  }
   if (contracts.size === 0 || corruptions.length === 0) return null;
-  const corruptionSec = CORRUPTION_OUTAGE_SEC * BigInt(corruptions.length);
+  const corruptionSec = perSec * BigInt(corruptions.length);
   const map = new Map<EntityId, bigint>();
   for (const id of contracts.keys()) map.set(id, corruptionSec);
   return map;

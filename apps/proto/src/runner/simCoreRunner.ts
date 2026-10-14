@@ -749,6 +749,14 @@ export interface SimCoreRunnerOptions {
    *  below stays always-empty — the shipped cash goldens
    *  (25_109_732_500n etc.) are the byte-identity proof. */
   readonly patienceModeByType?: Readonly<Record<string, PatienceMode>> | undefined;
+  /** §1.7 SEVERITY DIAL (lane E1, mirrors fastForward's config key): outage
+   *  seconds ONE corrupted response burns, forwarded to `corruptionOutageSecs`
+   *  on every money fold. Owner taste lives here, not in the engine.
+   *  ABSENT (or explicit `undefined`) ⇒ the adapter's default
+   *  `CORRUPTION_OUTAGE_SEC` (60n) applies — the exact pre-dial math, so the
+   *  shipped cash goldens stay the byte-identity proof. A non-bigint or
+   *  non-positive value throws `corruption[bad-value]` on the first step. */
+  readonly corruptionOutageSecPerCorruption?: bigint | undefined;
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -769,6 +777,9 @@ export class SimCoreRunner implements SimRunner {
   private readonly directorChain: readonly DirectorState[];
   private readonly oversellDeclared: boolean;
   private readonly familyOverride: WaveEnvelope["dominantFamily"] | undefined;
+  /** Lane E1 severity dial, forwarded verbatim to `corruptionOutageSecs`
+   *  (undefined ⇒ the adapter's default 60n ⇒ pre-dial byte-identity). */
+  private readonly corruptionOutageSecPerCorruption: bigint | undefined;
   private readonly plans = new Map<number, WavePlan>();
   private readonly envelopes = new Map<number, WaveEnvelope>();
   /** Witness of the rule inputs each lazy plan actually rode (B4 liveness). */
@@ -917,6 +928,7 @@ export class SimCoreRunner implements SimRunner {
      * R-31), so a lazy per-wave plan is bit-identical to an eager one. */
     this.table = options.table ?? SHARED_WEB_G1_TABLE;
     this.familyOverride = options.familyOverride;
+    this.corruptionOutageSecPerCorruption = options.corruptionOutageSecPerCorruption;
     this.windows = planWaveWindowSchedule(this.table, WAVE_START_MINUTE);
     this.oversellDeclared = bundleDeclaresOversellSlider(JSON.parse(sharedWebBundleRaw));
     const chain: DirectorState[] = [];
@@ -1288,12 +1300,17 @@ export class SimCoreRunner implements SimRunner {
        public `corruptionOutageSecs` fan rides the SAME EconomyTickIn
        .outageSecs channel as the landed fan, seconds ADDING per contract.
        Both empty ⇒ null ⇒ the key is omitted — every pre-corruption frame
-       (and the shipped cash goldens) byte-identical. */
+       (and the shipped cash goldens) byte-identical. The lane E1 dial rides
+       as the third arg: undefined ⇒ default 60n ⇒ the exact pre-dial math. */
     const landedThisTick = result.outcomes.reduce(
       (acc, outcome) => (outcome.terminal === "landed" ? acc + OUTAGE_SECONDS_PER_LANDED : acc),
       0n,
     );
-    const corruptionFan = corruptionOutageSecs(result.corruptions ?? [], this.contractsBook);
+    const corruptionFan = corruptionOutageSecs(
+      result.corruptions ?? [],
+      this.contractsBook,
+      this.corruptionOutageSecPerCorruption,
+    );
     let outage: Map<EntityId, bigint> | null = null;
     if (landedThisTick > 0n || corruptionFan !== null) {
       const merged = new Map<EntityId, bigint>();

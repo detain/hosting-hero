@@ -131,3 +131,51 @@ describe("runner corruption fan → error budget (host wiring @16c6add)", () => 
     }
   });
 });
+
+/* Lane E1 severity dial: the same storm arms, one extra config key. The
+   dial burns more SLA seconds per corrupted response — 120 s keeps the
+   planted burn clear of the 2592 s clamp, and 60 s (explicit) must mint
+   the byte-identical frames of omitting it (default-off law). */
+describe("runner corruption dial (lane E1)", () => {
+  const plantedOptions: ConstructorParameters<typeof SimCoreRunner>[0] = {
+    seed: 42,
+    table: STORM_TABLE,
+    familyOverride: "organic",
+    patienceModeByType: { [STORM_TABLE.id]: "corrupts" },
+  };
+
+  it("dial 120n: cells burn 120 s each while the landed fan stays 60 s", () => {
+    const runner = new SimCoreRunner({
+      ...plantedOptions,
+      corruptionOutageSecPerCorruption: 120n,
+    });
+    let last: SimProjection | null = null;
+    for (let i = 0; i < STEPS; i += 1) last = runner.headlessStep(10);
+    const cells = corruptedCellCount(runner);
+    expect(cells).toBeGreaterThan(0);
+    const landed = BigInt(last?.counters.landed ?? 0);
+    expect(runner.errorBudgetMinSec()).toBe(
+      PRISTINE_SEC - 120n * BigInt(cells) - OUTAGE_SEC * landed,
+    );
+    runner.stop();
+  });
+
+  it("explicit default 60n mints frames identical to omitting the dial", () => {
+    const explicit = runFrames({ ...plantedOptions, corruptionOutageSecPerCorruption: 60n });
+    const defaulted = runFrames({ ...plantedOptions });
+    expect(explicit).toHaveLength(STEPS);
+    for (let i = 0; i < STEPS; i += 1) {
+      expect(frame(explicit[i] as SimProjection)).toBe(frame(defaulted[i] as SimProjection));
+    }
+  });
+
+  it("a mis-dial throws `corruption[bad-value]` on the first step", () => {
+    const runner = new SimCoreRunner({
+      seed: 42,
+      table: STORM_TABLE,
+      corruptionOutageSecPerCorruption: 0n,
+    });
+    expect(() => runner.headlessStep(10)).toThrow(/corruption\[bad-value\]/);
+    runner.stop();
+  });
+});
