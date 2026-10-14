@@ -259,10 +259,20 @@ const SYNTH_SLICE = {
         { threat: "mimic-tide", role: "Mimic", pressurePct: 40, band: "storm" },
       ],
     },
-    // 4: FIVE entries — over the §2.24 authoring cap (4). The foreign
-    // adapter drops the cap; the seam re-enforces it.
+  ],
+};
+
+/* D-7 storm cap (ADR-0013 ruling 6) promoted the §2.24 composition law to
+ * the engine's PARSE door: an over-cap slice now dies inside
+ * parseForeignWaveSlice — before any citation is even read — and the seam
+ * wraps it as CORPUS_UNRESOLVED. Planted separately so the invitation-law
+ * tests above ride a slice the parser accepts. */
+const SYNTH_OVERCAP_STEM = "synthetic-storm-over-cap";
+const SYNTH_OVERCAP_SLICE = {
+  id: `waves/${SYNTH_OVERCAP_STEM}`,
+  waves: [
     {
-      n: 4, parPct: 60, entries: [
+      n: 1, parPct: 60, entries: [
         { threat: "drizzle-scout", role: "Stealth", pressurePct: 20, band: "weather" },
         { threat: "mimic-tide", role: "Mimic", pressurePct: 20, band: "storm" },
         { threat: "ember-siege", role: "Siege", pressurePct: 20, band: "hunter" },
@@ -272,6 +282,13 @@ const SYNTH_SLICE = {
     },
   ],
 };
+
+function synthOverCapAuthority(): CorpusAuthority {
+  return {
+    slices: new Map([[SYNTH_OVERCAP_STEM, SYNTH_OVERCAP_SLICE]]),
+    threatMeta: (threatId: string) => SYNTH_META[threatId],
+  };
+}
 
 /** The authored law: only shield-station invites mimic-tide. */
 const SYNTH_LAW: ThreatInvitations = buildInvitations({ "shield-station": ["mimic-tide"] });
@@ -393,9 +410,19 @@ describe("resolveCorpusWindows — invitation-gated storms on the synthetic slic
     expect(gone.map((w) => w.waveN)).toEqual([1]);
   });
 
-  it("composition cap: an over-cap wave throws naming the §2.24 law", () => {
-    expect(() => resolveCorpusWindows(synthTraffic([4]), BASE_SEED, synthAuthority())).toThrow(
-      /composes 5 threats .* caps a wave at 4/,
+  it("composition cap: an over-cap slice dies at the parse door — D-7 moved the §2.24 law into the engine (ADR-0013 ruling 6)", () => {
+    // The throw arrives at tableFor — the parser sees the whole slice
+    // before any citation is read — and the seam wraps it as
+    // CORPUS_UNRESOLVED, naming the offending wave and the storm cap.
+    const overCapTraffic: ScenarioCorpusTraffic = Object.freeze({
+      profile: "corpus",
+      tableId: SYNTH_OVERCAP_STEM,
+      waves: [1],
+      waveStartMinute: 30,
+      baselineRatePerMin: 0,
+    });
+    expect(() => resolveCorpusWindows(overCapTraffic, BASE_SEED, synthOverCapAuthority())).toThrow(
+      /failed the shipped foreign-slice parse: .*wave 1: stacks 5 composition lines/,
     );
   });
 

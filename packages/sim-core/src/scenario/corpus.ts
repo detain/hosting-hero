@@ -214,9 +214,11 @@ export function resolveCorpusWindows(
         `corpus table "${traffic.tableId}" ships no wave ${waveN} (it ships waves 1–${table.waves[table.waves.length - 1]?.n ?? 0})`,
       );
     }
-    // The foreign adapter drops content-CI-only rules, so the seam
-    // re-enforces the composition cap itself: an over-cap wave would
-    // silently plan a table the content CI would refuse to ship.
+    // Backstop of the parse door: parseWaveTable already refuses over-cap
+    // waves since the D-7 storm cap became engine law (ADR-0013 ruling 6),
+    // so this seam check only fires for authority shapes the parser never
+    // saw. An over-cap wave must never silently plan a table the content
+    // CI would refuse to ship.
     if (wave.entries.length > AUTHORING_LAWS.maxThreatEntriesPerWave) {
       unresolved(
         "traffic.waves",

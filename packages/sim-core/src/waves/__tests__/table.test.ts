@@ -1,5 +1,6 @@
-/** parseWaveTable = structural boundary only; authoring laws live in the
- *  enforcer, so a law-breaking-but-well-formed table must PARSE fine. */
+/** parseWaveTable = structural boundary + the D-7 physical storm bounds
+ *  (ADR-0013 ruling 6); style-law breaks still live in the enforcer, so a
+ *  law-breaking-but-physically-ejectable table must PARSE fine. */
 import { describe, expect, it } from "vitest";
 import { parseWaveTable } from "../table.js";
 import { cleanTable } from "./fixtures.js";
@@ -86,7 +87,12 @@ describe("parseWaveTable", () => {
       ),
     ).toThrow(/integer/);
   });
-  it("PARSES (does not throw) a law-breaking table — that's the enforcer's job", () => {
+  it("REFUSES 5 stacked composition lines at parse — D-7 promoted the cap to engine law (ADR-0013 ruling 6)", () => {
+    // RE-CUT 2026-10-14: this pin used to assert 5 entries PARSES (the
+    // enforcer's job). ADR-0013 ruling 6 made the stacked-envelope ceiling a
+    // physical bound — like parPct ≤ 100 — so the parser now refuses it.
+    // Design-law breaks that remain style opinions (first-wave par ≤ 40,
+    // trough depth, role quotas…) still parse and report via enforcer.ts.
     const fiveEntries = mutate((t) => {
       const w = (t.waves as Record<string, unknown>[])[0]!;
       w.entries = ["a", "b", "c", "d", "e"].map((id) => ({
@@ -99,6 +105,6 @@ describe("parseWaveTable", () => {
         targets: ["t"],
       }));
     });
-    expect(() => parseWaveTable(fiveEntries)).not.toThrow();
+    expect(() => parseWaveTable(fiveEntries)).toThrow(/stacks 5 composition lines — the D-7 storm cap allows at most 4/);
   });
 });

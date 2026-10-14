@@ -37,7 +37,13 @@ import type { DirectorState } from "./director.ts";
 import { applyEntropyBudgetFactor, applyTroughDepthFactor } from "./director.ts";
 import type { PressureParams } from "./pressure.ts";
 import { TUNING_SHEETS, mulDivRound, parPressureMicro } from "./pressure.ts";
-import type { WaveDefinition, WaveRules, WaveTable } from "./table.ts";
+import type { CompositionEntry, WaveDefinition, WaveRules, WaveTable } from "./table.ts";
+import {
+  entryUnitCountMicro,
+  parseStormCeilingOverride,
+  scaleStormCounts,
+  stormPlanBudgetUnits,
+} from "./storm.ts";
 
 export interface PlannedArrival {
   readonly minute: SimMinute;
@@ -64,6 +70,11 @@ export interface WavePlan {
   readonly deferredThreatIds: readonly string[];
   readonly waveEnvelope: WaveEnvelope;
   readonly events: readonly SimEvent[];
+  /** D-7 storm clamp (ADR-0013 ruling 6): PRESENT ONLY when the emergent
+   *  mint was scaled down to respect the storm ceiling. Absent key = clamp
+   *  inert = the pre-cap object shape, byte-stable for every shipped run
+   *  (all authored + director-amplified storms sit far below the ceiling). */
+  readonly stormClamped?: true;
 }
 
 export interface WavePlanInput {
@@ -94,6 +105,10 @@ export interface WavePlanInput {
    *  family's entries reserve the lower-bound share of the wave budget —
    *  threats copy what they copy. Absent ⇒ authored shares, byte-identical. */
   readonly dominantDefenseFamily?: ThreatFamily;
+  /** D-7 storm clamp (ADR-0013 ruling 6): host/test override of
+   *  STORM_CAP.rateUnitsPerMinute for the PLAN-time door only (the parse
+   *  door always measures against the authored ceiling). Absent ⇒ STORM_CAP. */
+  readonly stormCeilingUnitsPerMinute?: number;
 }
 
 function cmpStr(a: string, b: string): number {
@@ -131,15 +146,9 @@ export function dominantFamilyOf(
 }
 
 /** Units = pressureMicro × shareMicro × unitsPerPoint ÷ 1e12, exact integer
- *  round-half-up in the micro domain (no floats touch logic). The authored
- *  integer-percent path passes shareMicro = sharePct × 10_000n, which
- *  reproduces the legacy ÷(100 × 1e6) formula EXACTLY (both terms scale
- *  by 1e4 — same half-up quotient). */
-function entryUnitCountMicro(pressureMicro: bigint, shareMicro: bigint, unitsPerPressurePoint: number): number {
-  const numerator = pressureMicro * shareMicro * BigInt(unitsPerPressurePoint);
-  const denominator = 1_000_000n * 1_000_000n;
-  return Number((2n * numerator + denominator) / (2n * denominator));
-}
+ *  round-half-up in the micro domain — the arithmetic now lives in storm.ts
+ *  (`entryUnitCountMicro`, byte-equivalent formula) so the D-7 parse ceiling,
+ *  the plan-time clamp and this generator all measure with ONE yardstick. */
 
 /* ─────────────── AUDIT FIX 4c · §2.24 copycat share rescale ─────────────── */
 
@@ -266,11 +275,44 @@ export function planWave(table: WaveTable, waveN: number, input: WavePlanInput):
   // Copycat (§2.24, audit fix 4c): null ⇒ authored shares → byte-identical.
   const copycatShares = copycatShareMicroByThreat(gated.spawnable, table.rules, input.dominantDefenseFamily);
 
-  for (const entry of gated.spawnable) {
+  // Second-incident headroom (§2.24, audit fix 4b) is resolved BEFORE
+  // minting so the follow-on copy is budgeted by the D-7 clamp instead of
+  // discovered after the body already maxed the ceiling.
+  const incident = input.incidentState ?? "quiet";
+  const siMultiplier =
+    wave.secondIncident === true
+      ? incident === "active"
+        ? table.rules?.secondIncidentMultiplierDuringIncident
+        : incident === "recovering"
+          ? table.rules?.secondIncidentMultiplierDuringRecovery
+          : undefined
+      : undefined;
+
+  // Pass 1 — existence (counts consume NO rng, so hoisting the loop out of
+  // the mint keeps every stream's per-unit roll sequence byte-identical).
+  const plannedCounts = gated.spawnable.map((entry) => {
     const shareMicro = copycatShares?.get(entry.threatId) ?? BigInt(entry.sharePct) * 10_000n;
     let count = entryUnitCountMicro(wavePressureMicro, shareMicro, table.unitsPerPressurePoint);
     const band = bandAfterMastery(entry.threatId, entry.band, mastery);
     if (band === "entropy") count = applyEntropyBudgetFactor(count, input.director.entropyBudgetFactor);
+    return { entry, count };
+  });
+
+  // D-7 storm clamp (ADR-0013 ruling 6): the plan-time door. Deterministic
+  // proportional shrink — pure function of (counts, ceiling, siMultiplier),
+  // zero RNG, so replay-logged director draws stay honest. Every shipped
+  // slice sums far below STORM_CAP, so the clamp is the identity there and
+  // no digest moves; custom pressureParams or the ×1.25 entropy band are the
+  // paths this door exists for.
+  const stormCeiling = parseStormCeilingOverride(
+    input.stormCeilingUnitsPerMinute,
+    `planWave ${table.id} wave ${waveN}`,
+  );
+  const stormScaling = scaleStormCounts(plannedCounts, stormPlanBudgetUnits(stormCeiling, siMultiplier));
+
+  // Pass 2 — mint in the original entry order with the (possibly clamped)
+  // counts. Units are the existence record; feint and follow-on read it.
+  for (const { entry, count } of stormScaling.counts) {
     // threatIds are unique per wave (parseWave rejects duplicates), so this
     // write can never clobber an earlier threat's existence record (W1).
     units[entry.threatId] = count;
@@ -301,18 +343,9 @@ export function planWave(table: WaveTable, waveN: number, input: WavePlanInput):
 
   // Second incident (§2.24, audit fix 4b): while an incident window is open,
   // a flagged wave's traffic is followed by a scaled copy AFTER the envelope
-  // — the outage that keeps arriving. Ordinals continue past the authored
+  // — the outage that keeps arriving. Ordinals continue past the (clamped)
   // count so unitIds stay unique under the existing `table~N~threat~ord`
   // grammar; the follow-on mirrors each original's minute offset and target.
-  const incident = input.incidentState ?? "quiet";
-  const siMultiplier =
-    wave.secondIncident === true
-      ? incident === "active"
-        ? table.rules?.secondIncidentMultiplierDuringIncident
-        : incident === "recovering"
-          ? table.rules?.secondIncidentMultiplierDuringRecovery
-          : undefined
-      : undefined;
   if (siMultiplier !== undefined) {
     const extraMicro = BigInt(Math.round((siMultiplier - 1) * 1_000_000));
     const originalsByThreat = new Map<string, PlannedArrival[]>();
@@ -368,6 +401,9 @@ export function planWave(table: WaveTable, waveN: number, input: WavePlanInput):
     deferredThreatIds: gated.deferred,
     waveEnvelope,
     events,
+    // Presence-only stamp: the key exists ONLY when the D-7 clamp cut the
+    // mint, so every pre-cap consumer's object shape is untouched.
+    ...(stormScaling.clamped ? { stormClamped: true as const } : {}),
   };
 }
 

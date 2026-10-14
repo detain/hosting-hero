@@ -7,6 +7,7 @@ export * from "./bands.ts";
 export * from "./envelope.ts";
 export * from "./baseline.ts";
 export * from "./pressure.ts";
+export * from "./storm.ts";
 export * from "./table.ts";
 export * from "./enforcer.ts";
 export * from "./ledger.ts";

@@ -2,17 +2,25 @@
  * Wave-table schema + boundary parser (§4.1 R-16: "randomness decides timing
  * and target, never existence" — existence lives HERE, in authored tables).
  *
- * parseWaveTable does STRUCTURE only (types, enums, sequential waves,
+ * parseWaveTable does STRUCTURE (types, enums, sequential waves,
  * shares summing to 100, unique threatIds per wave — an identity law the
- * generator and replay ordinals depend on). Design-law breaks (≤4 entries, first-wave ≤40%
+ * generator and replay ordinals depend on). Design-law breaks (first-wave ≤40%
  * par, trough depth, role quota, new-role cadence, denomination caps) are
  * NOT parser errors — they are content-CI violations returned as data by
  * enforcer.ts, so an author sees every break in one run.
+ *
+ * THE ONE PHYSICAL EXCEPTION (D-7, ADR-0013 ruling 6): the storm-severity
+ * ceiling and the ≤4 stacked-envelope composition cap ARE parser errors —
+ * an over-cap composition is not a style opinion, it is a storm the engine
+ * will not mint. Same precedent as parPct ≤ 100: a bound on what the
+ * generator can physically produce, not a design preference.
  */
 import type { ThreatFamily } from "../types.ts";
 import type { TelegraphBand } from "./bands.ts";
-import { isTelegraphBand } from "./bands.ts";
+import { STORM_CAP, isTelegraphBand } from "./bands.ts";
 import type { TuningSheetId } from "./pressure.ts";
+import { TUNING_SHEETS } from "./pressure.ts";
+import { authoredWaveStormBudget } from "./storm.ts";
 
 /** Threat Role Taxonomy, 12 roles (§2.1 line 6061). */
 export const THREAT_ROLES = [
@@ -300,6 +308,27 @@ export function parseWaveTable(raw: unknown): WaveTable {
     if (flagged > rules.feints.maxPerLevel) {
       throw new Error(
         `wave table ${id}: ${String(flagged)} feint waves exceed rules.feints.maxPerLevel ${String(rules.feints.maxPerLevel)} (§2.24 one decoy per level)`,
+      );
+    }
+  }
+  // D-7 storm ceiling (ADR-0013 ruling 6): the parser-side physical bound.
+  // (a) composition lines = stacked envelopes — the §2.24 cap promoted to
+  // engine law; (b) the authored worst-minute mint (body or second-incident
+  // follow-on, generator arithmetic) must fit under the rate ceiling. The
+  // emergent excess a director band can add on top of a legal table is the
+  // plan-time clamp's job (storm.ts); this door guards the authored number.
+  const sheetParams = TUNING_SHEETS[tuningSheet as TuningSheetId].params;
+  for (const w of waves) {
+    const where = `wave table ${id} wave ${w.n}`;
+    if (w.entries.length > STORM_CAP.maxStackedEnvelopes) {
+      throw new Error(
+        `${where}: stacks ${w.entries.length} composition lines — the D-7 storm cap allows at most ${STORM_CAP.maxStackedEnvelopes} stacked envelopes (§2.24 composition law, engine-enforced per ADR-0013 ruling 6)`,
+      );
+    }
+    const budget = authoredWaveStormBudget(w, sheetParams, unitsPerPressurePoint, rules);
+    if (budget.worstMinuteUnits > STORM_CAP.rateUnitsPerMinute) {
+      throw new Error(
+        `${where}: storm budget ${budget.worstMinuteUnits} units/minute exceeds the D-7 ceiling ${STORM_CAP.rateUnitsPerMinute} (body ${budget.bodyUnits}, follow-on ${budget.followOnUnits}) — ADR-0013 ruling 6 bounds emergent storm severity`,
       );
     }
   }
