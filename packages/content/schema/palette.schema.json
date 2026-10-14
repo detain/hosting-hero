@@ -21,6 +21,8 @@
           "object": { "type": "string" },
           "engine": { "type": "string" },
           "verbChanger": { "type": "boolean" },
+          "visual": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "codexOnly": { "type": "boolean" },
           "costumes": {
             "type": "array",
             "minItems": 1,

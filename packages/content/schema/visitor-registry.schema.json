@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hosting-hero.local/schema/visitor-registry.schema.json",
+  "title": "Visitor archetype registry (the §3.2 patience spine)",
+  "description": "Shape of packages/content/visitors/*.json. Structural shell for the §8.18 visual-coverage law (OD-12(d), ADR-0013 ruling 5d): every archetype carries a `visual` slug — the §3.1 duration-class primitive unless §3.2/§3.3 names a distinct render — or an explicit codexOnly tag. `lookalikeOf` is deliberately NOT declared here: the direction law (§2.4/OD-18) is threat-masks-visitor, never the reverse, and script/validate.mjs fails an archetype carrying it red. Legacy required keys and bounty/_todo discipline also live in validate.mjs. Interpreter subset in use: type, required, properties, items, enum, pattern, minimum, maxItems.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "description", "archetypes"],
+  "properties": {
+    "schemaVersion": { "type": ["string", "integer"] },
+    "id": { "type": "string" },
+    "description": { "type": "string" },
+    "familiesVocabulary": { "type": "array", "items": { "type": "string" } },
+    "archetypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "visual": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "codexOnly": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

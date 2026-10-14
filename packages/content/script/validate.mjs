@@ -5,6 +5,12 @@
 // (every bundle buildables.paletteRef must equal an authored palettes/*.json id
 // and every archetypeInstances name must live in that palette — audit group-13),
 // R61 verb-changer reserve budget, Second-Answer counters,
+// VISUAL-COVERAGE MANIFEST-LINT (§8.18 / OD-12(d) / ADR-0013 ruling 5d: every
+// threat, visitor archetype, and palette archetype carries a `visual` slug or an
+// explicit codexOnly tag — undrawn shipped content fails red), and the LOOKALIKE
+// LAW (§2.4 / OD-18 / ADR-0013 ruling 9: threat.lookalikeOf names the visitor
+// archetype it masks; direction checked, ids resolved, >=1 mimic-seed per shipped
+// bundle),
 // null=>_todo discipline, PROVISIONAL-[ABC] tuningSheet markers, §1.7 wave
 // authoring rules, and i18n ticket-pack conformance: packs exist for every
 // file:packs/ ref, cover every bundle-referenced key, obey the decision/flavour
@@ -54,6 +60,8 @@ const PATIENCE_MODES = ["sigmoid-budget","window","value-decay","resident","bina
 const VISITOR_FAMILIES = ["Browsers","Buyers","Machines","Amplifiers","Costs","Evaluators"];
 const TUNING_RE = /^PROVISIONAL-[ABC]$/;
 const ID_RE = /^([a-z0-9][a-z0-9-]*:)?[a-z0-9][a-z0-9-]*$/;
+const VISUAL_SLUG_RE = /^[a-z][a-z0-9-]*$/; // §8.18 manifest slug: lowercase-hyphenated render name
+const JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
 
 // ---------- i18n pack vocabulary (detailed at the packs section) ----------
 // The wall §9.3 clause 2 demands, made machine-checkable: every namespace root is
@@ -163,7 +171,21 @@ walk(ROOT);
 const schemaRel = "schema/type-bundle.schema.json";
 const schema = readJson(schemaRel);
 if (!schema) { console.error("schema unreadable; aborting"); process.exit(1); }
-if (schema.$schema !== "https://json-schema.org/draft/2020-12/schema") fail(schemaRel, "not draft 2020-12");
+if (schema.$schema !== JSON_SCHEMA_DRAFT) fail(schemaRel, "not draft 2020-12");
+
+// Registry schemas: the structural shell for the §8.18 visual / OD-18 lookalike
+// fields. The deep laws (coverage OR-tag, id resolution, seed quotas) are hand-
+// rolled below; these catch malformed shapes at the same boundary the interpreter
+// enforces for bundles, palettes, and packs.
+const threatRegistrySchemaRel = "schema/threat-registry.schema.json";
+const threatRegistrySchema = readJson(threatRegistrySchemaRel);
+if (!threatRegistrySchema) { console.error("threat registry schema unreadable; aborting"); process.exit(1); }
+if (threatRegistrySchema.$schema !== JSON_SCHEMA_DRAFT) fail(threatRegistrySchemaRel, "not draft 2020-12");
+
+const visitorRegistrySchemaRel = "schema/visitor-registry.schema.json";
+const visitorRegistrySchema = readJson(visitorRegistrySchemaRel);
+if (!visitorRegistrySchema) { console.error("visitor registry schema unreadable; aborting"); process.exit(1); }
+if (visitorRegistrySchema.$schema !== JSON_SCHEMA_DRAFT) fail(visitorRegistrySchemaRel, "not draft 2020-12");
 
 const registry = readJson("threats/registry-core.json");
 const archetypes = readJson("visitors/archetypes-core.json");
@@ -177,9 +199,12 @@ const bundleKeyRefs = new Map();
 
 const threatIds = new Set();
 const archetypeIds = new Set();
+const threatLookalikes = new Map(); // threat id -> visitor archetype id (§2.4 costume)
+let bundlesWithLookalikeSeed = 0;
 
 // ---------- registry checks ----------
 if (registry) {
+  validateAgainst(threatRegistrySchema, registry, "threats/registry-core.json");
   (registry.threats ?? []).forEach((t, i) => {
     const w = `threats[${i}](${t.id ?? "???"})`;
     ["id","family","band","roles","motion","denomination","mechanical","stats","facts","counters"].forEach((k) => {
@@ -200,12 +225,19 @@ if (registry) {
       if (!DEFENSE_ROLES.includes(c.defenseRole)) fail(`${w}.counters[${j}]`, `defenseRole '${c.defenseRole}' not one of the 9`);
     });
     if (t.mechanical !== true) warn(w, `codex-only entries do not belong in registry-core (R36) — demote to flavour`);
+    if (typeof t.lookalikeOf === "string") {
+      if (!VISUAL_SLUG_RE.test(t.lookalikeOf)) fail(`${w}.lookalikeOf`, `'${t.lookalikeOf}' is not a lowercase-hyphenated archetype id`);
+      threatLookalikes.set(t.id, t.lookalikeOf);
+    } else if (t.lookalikeOf !== undefined) {
+      fail(`${w}.lookalikeOf`, `must be a visitor archetype id string when present (§2.4)`);
+    }
   });
   scanNulls(registry, "threats/registry-core.json");
 }
 
 // ---------- archetypes checks ----------
 if (archetypes) {
+  validateAgainst(visitorRegistrySchema, archetypes, "visitors/archetypes-core.json");
   (archetypes.archetypes ?? []).forEach((a, i) => {
     const w = `archetypes[${i}](${a.id ?? "???"})`;
     ["id","family","durationClass","patienceMode","budgetMs","bounty","facts"].forEach((k) => {
@@ -218,8 +250,47 @@ if (archetypes) {
     if (!DURATION_CLASSES.includes(a.durationClass)) fail(w, `durationClass '${a.durationClass}' unknown`);
     if (!PATIENCE_MODES.includes(a.patienceMode)) fail(w, `patienceMode '${a.patienceMode}' unknown`);
     if (!(typeof a.bounty?.value === "number") && typeof a.bounty?._todo !== "string") fail(w, `bounty scalar null requires _todo cite`);
+    if ("lookalikeOf" in a) fail(`${w}.lookalikeOf`, `direction law (§2.4/OD-18): a THREAT masks a visitor, never the reverse — lookalikeOf belongs on threats/registry entries only`);
   });
   scanNulls(archetypes, "visitors/archetypes-core.json");
+}
+
+// ---------- visual-coverage + lookalike lint (§8.18 OD-12(d) / OD-18, ADR-0013 rulings 5d+9) ----------
+// Coverage leg: every shipped entity the screen must draw — threat (§2), visitor
+// archetype (§3.2), palette archetype (§4.10; the buildables leg resolves through
+// the existing archetypeInstances->palette check in the bundle loop below) —
+// carries a `visual` slug grounded in the design-doc prose, or an explicit
+// codexOnly:true tag declaring "no silhouette; codex flavour only". R36 keeps
+// registry-core mechanical, so shipped content needs zero codexOnly tags today —
+// the hatch exists for future demotions. Absence fails red: silent invisibility
+// is exactly the drift this manifest-lint was ratified to catch.
+let codexOnlyTags = 0;
+const lintVisualCoverage = (e, where) => {
+  if (e?.codexOnly === true) { codexOnlyTags++; return true; }
+  if (typeof e?.visual !== "string") {
+    fail(where, `visual-coverage (§8.18/OD-12(d)): needs a 'visual' slug or an explicit codexOnly:true tag — every shipped entry is either drawable or declares itself codex-only`);
+    return false;
+  }
+  if (!VISUAL_SLUG_RE.test(e.visual)) {
+    fail(`${where}.visual`, `'${e.visual}' is not a lowercase-hyphenated slug (^[a-z][a-z0-9-]*$)`);
+    return false;
+  }
+  return true;
+};
+let threatsVisual = 0, threatsVisualTotal = 0;
+(registry?.threats ?? []).forEach((t) => {
+  threatsVisualTotal++;
+  if (lintVisualCoverage(t, `threats(${t.id})`)) threatsVisual++;
+});
+let archetypesVisual = 0, archetypesVisualTotal = 0;
+(archetypes?.archetypes ?? []).forEach((a) => {
+  archetypesVisualTotal++;
+  if (lintVisualCoverage(a, `archetypes(${a.id})`)) archetypesVisual++;
+});
+// Resolution leg: a mask must be an authored visitor (collected above; ids exist
+// only after the archetype pass ran).
+for (const [tid, arc] of threatLookalikes) {
+  if (!archetypeIds.has(arc)) fail(`threats(${tid}).lookalikeOf`, `'${arc}' not a visitors/archetypes-core.json id — the costume must be an authored visitor (§2.4/OD-18)`);
 }
 
 // ---------- palette checks (§0.2 R7 / §4.10-R61 anchor resolution) ----------
@@ -234,6 +305,7 @@ if (paletteSchema.$schema !== "https://json-schema.org/draft/2020-12/schema") fa
 const palettesRel = dataFiles.filter((f) => f.startsWith("palettes") && f.endsWith(".json"));
 const paletteArchetypes = new Map(); // palette id -> Set<archetype id>
 const paletteIdToRel = new Map(); // palette id -> rel (orphan guard)
+let paletteArchVisual = 0, paletteArchVisualTotal = 0; // §8.18 buildables leg
 for (const rel of palettesRel) {
   const p = readJson(rel);
   if (!p) continue;
@@ -250,6 +322,8 @@ for (const rel of palettesRel) {
     if (archSet.has(a.id)) fail(w, `duplicate archetype id '${a.id}'`);
     archSet.add(a.id);
     if (a.verbChanger === true) verbSet.add(a.id);
+    paletteArchVisualTotal++;
+    if (lintVisualCoverage(a, w)) paletteArchVisual++;
   });
   const reserve = p.verbChangerReserve ?? {};
   const reserveNames = new Set();
@@ -285,6 +359,12 @@ for (const rel of bundlesRel) {
   (b.threats?.signatureThreats ?? []).forEach((s, i) => {
     if (!threatIds.has(s.id)) fail(`${rel}.threats.signatureThreats[${i}]`, `'${s.id}' not in threats/registry-core.json`);
   });
+  // Lookalike seed law (OD-18/ADR-0013 ruling 9): every shipped type bundle seeds
+  // >=1 mimic — a signature threat whose registry entry declares lookalikeOf.
+  // "Exactly one" is NOT lintable: bundles legitimately share signature ids, and
+  // masks ride the registry entry, so reuse inherits the law by design.
+  if ((b.threats?.signatureThreats ?? []).some((s) => threatLookalikes.has(s.id))) bundlesWithLookalikeSeed++;
+  else fail(`${rel}.threats.signatureThreats`, `lookalike seed (§2.4/OD-18): no signature threat carries lookalikeOf — every shipped bundle must seed at least one mimic of one of its own visitors`);
   Object.entries(b.threats?.unlockedByBuildables ?? {}).forEach(([bk, ids]) => {
     ids.forEach((id) => { if (!threatIds.has(id)) fail(`${rel}.unlockedByBuildables.${bk}`, `'${id}' not in registry`); });
   });
@@ -529,7 +609,7 @@ for (const rel of wavesRel) {
 }
 
 // ---------- report ----------
-console.log(`checked: ${[schemaRel, packSchemaRel, paletteSchemaRel, "threats/registry-core.json", "visitors/archetypes-core.json", ...bundlesRel, ...wavesRel, ...palettesRel, ...packsClaimed].length} files`);
+console.log(`checked: ${[schemaRel, threatRegistrySchemaRel, visitorRegistrySchemaRel, packSchemaRel, paletteSchemaRel, "threats/registry-core.json", "visitors/archetypes-core.json", ...bundlesRel, ...wavesRel, ...palettesRel, ...packsClaimed].length} files`);
 console.log(`bundles=${bundlesRel.length} threats=${threatIds.size} archetypes=${archetypeIds.size} palettes=${paletteArchetypes.size} waves=${wavesRel.length} packs=${parsedPacks.length}`);
 for (const { rel, pack } of parsedPacks) {
   const d = Object.keys(pack.decision ?? {}).length;
@@ -539,6 +619,7 @@ for (const { rel, pack } of parsedPacks) {
   console.log(`pack ${rel}: templates=${d + f} decision=${d} flavour=${f} slots=${Object.keys(pack.slots ?? {}).length} pinned-by-bundle=${pinned}`);
 }
 console.log(`README §Key literals: ${readmeRows} rows verbatim-synced against pack decision namespaces`);
+console.log(`visual-coverage (§8.18): threats=${threatsVisual}/${threatsVisualTotal} archetypes=${archetypesVisual}/${archetypesVisualTotal} palette-archetypes=${paletteArchVisual}/${paletteArchVisualTotal} codexOnly-tags=${codexOnlyTags} · lookalike seeds (§2.4/OD-18): tagged=${threatLookalikes.size} bundles-covered=${bundlesWithLookalikeSeed}/${bundlesRel.length}`);
 if (warnings.length) { console.log(`\nWARNINGS (${warnings.length}):`); warnings.forEach((x) => console.log(`  ~ ${x}`)); }
 if (todos.length) {
   console.log(`\nTODO INVENTORY (${todos.length} _todo markers — loader-lint fodder):`);

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "3.0",
   "id": "threats/registry-core",
-  "description": "Core threat registry for the two prototype-anchor types (gate G6). Pruning rule R36/§2.12: every entry here is MECHANICAL — it owns balance numbers and changes the player's verb, not just the noun. Demoted codex flavour (stream-sniper, competitor-sponsored attack, hype-cycle-collapse-as-text) attaches to these entries later and does not ship stats. Second Answer rule (§5.1): every threat lists >=2 viable counters at DIFFERENT prices (cheap / expensive / lateral triad). Counters name the 9 defense roles (Absorb, Classify, Meter, Contain, Detect, Recover, Deter, Divert, Negotiate, §2.1). Stats are null + _todo wherever hosting_game.md is qualitative — the loader lint must flag each TODO until the owner re-author sweep fills the numbers (owner ratified sheet B 2026-10-09, docs/adr/0009 — OD-2 CLOSED; wire markers deliberately stay PROVISIONAL-[ABC] until that sweep).",
+  "description": "Core threat registry for the two prototype-anchor types (gate G6). Pruning rule R36/§2.12: every entry here is MECHANICAL — it owns balance numbers and changes the player's verb, not just the noun. Demoted codex flavour (stream-sniper, competitor-sponsored attack, hype-cycle-collapse-as-text) attaches to these entries later and does not ship stats. Second Answer rule (§5.1): every threat lists >=2 viable counters at DIFFERENT prices (cheap / expensive / lateral triad). Counters name the 9 defense roles (Absorb, Classify, Meter, Contain, Detect, Recover, Deter, Divert, Negotiate, §2.1). Stats are null + _todo wherever hosting_game.md is qualitative — the loader lint must flag each TODO until the owner re-author sweep fills the numbers (owner ratified sheet B 2026-10-09, docs/adr/0009 — OD-2 CLOSED; wire markers deliberately stay PROVISIONAL-[ABC] until that sweep). Visual-coverage law (§8.18, OD-12(d), ADR-0013 ruling 5d): every entry carries a `visual` slug grounded in the design-doc prose (or an explicit codexOnly tag — none needed while all 16 stay mechanical); validate.mjs fails red on a gap. Lookalike law (§2.4, OD-18, ADR-0013 ruling 9): a threat may carry optional `lookalikeOf` naming the visitor archetype (§3.2) it masquerades as — the mimic's costume, not a new entity; one mimic-seed per shipped type bundle is lint-enforced.",
   "rolesVocabulary": ["Swarm", "Tank", "Sapper", "Stealth", "Splitter", "Healer/Spawner", "Bypass/Flyer", "Siege", "Debuffer", "Mimic", "Parasite", "Boss"],
   "defenseRolesVocabulary": ["Absorb", "Classify", "Meter", "Contain", "Detect", "Recover", "Deter", "Divert", "Negotiate"],
   "bandsVocabulary": ["weather", "storm", "hunter", "entropy"],
@@ -16,6 +16,8 @@
       "denomination": "data-integrity",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "violet-drizzle",
+      "lookalikeOf": "crawler",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -43,6 +45,7 @@
       "denomination": "concurrency",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "boiling-lock-picks",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -70,6 +73,8 @@
       "denomination": "reputation",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "borrowed-weapon",
+      "lookalikeOf": "api-client",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -96,6 +101,8 @@
       "denomination": "concurrency",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "quiet-thread-holders",
+      "lookalikeOf": "deep-reader",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -122,6 +129,8 @@
       "denomination": "concurrency",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "crowd-suit",
+      "lookalikeOf": "power-shopper",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -148,6 +157,7 @@
       "denomination": "data-integrity",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "defacement-ripple",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -175,6 +185,7 @@
       "denomination": "concurrency",
       "customerAsThreat": true,
       "mechanical": true,
+      "visual": "one-fat-query",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -203,6 +214,7 @@
       "denomination": "hands",
       "customerAsThreat": true,
       "mechanical": true,
+      "visual": "nine-headed-queue",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -231,6 +243,7 @@
       "denomination": "concurrency",
       "customerAsThreat": true,
       "mechanical": true,
+      "visual": "the-elbow",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -261,6 +274,7 @@
       "denomination": "bandwidth",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "crosshair-on-lobby",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -289,6 +303,7 @@
       "denomination": "bandwidth",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "slow-wall",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -319,6 +334,7 @@
       "denomination": "reputation",
       "customerAsThreat": true,
       "mechanical": true,
+      "visual": "conscripted-mirror",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -346,6 +362,8 @@
       "denomination": "reputation",
       "customerAsThreat": true,
       "mechanical": true,
+      "visual": "wrong-frames-pawn",
+      "lookalikeOf": "game-player-joining",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -372,6 +390,7 @@
       "denomination": "data-integrity",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "ninety-hundred-breaks",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -400,6 +419,7 @@
       "denomination": "reputation",
       "customerAsThreat": false,
       "mechanical": true,
+      "visual": "emptying-lobby",
       "stats": {
         "sophistication": null,
         "volume": null,
@@ -428,6 +448,7 @@
       "denomination": "cash",
       "customerAsThreat": true,
       "mechanical": true,
+      "visual": "stolen-card-signup",
       "stats": {
         "sophistication": null,
         "volume": null,

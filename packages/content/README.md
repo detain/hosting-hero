@@ -15,6 +15,8 @@ directory ships JSON.
 schema/type-bundle.schema.json      JSON Schema draft 2020-12, faithful to Appendix A (21 required keys)
 schema/i18n-pack.schema.json        ticket-pack shape (draft 2020-12 subset — deep laws live in the validator)
 schema/palette.schema.json          palette shape (draft 2020-12 subset — anchor resolution + R61 budget laws live in the validator)
+schema/threat-registry.schema.json  threat registry shape (draft 2020-12 subset — §8.18 `visual` / OD-18 `lookalikeOf` field shapes; deep laws live in the validator)
+schema/visitor-registry.schema.json visitor archetype registry shape (draft 2020-12 subset — §8.18 `visual` field; the direction law lives in the validator)
 types/shared-web.json               anchor type 1 ("The Mass Host" / Cabinet 14) — density game
 types/game-servers.json             anchor type 2 ("Prime Time") — G6 co-anchor: ms scale + permanent incident clock
 types/mail-hosting.json             type 3 ("The Post Office") — variety-engine proof: outbound defense, reputation scarcity, dominant verb Tune
@@ -112,7 +114,16 @@ Checks: every JSON parses · bundles carry all 21 schema-required keys · ids un
 authored `palettes/*.json` id and every `buildables.archetypeInstances` name is
 defined in that palette (audit group-13: the shipped `palette:shared-80` ref
 formerly resolved nowhere) · palette R61 reserve accounting: items ≤ max and
-every `verbChanger:true` archetype appears in the reserve · every threat has ≥2 counters (§5.1 Second
+every `verbChanger:true` archetype appears in the reserve · **visual-coverage
+manifest-lint** (§8.18/OD-12(d), ADR-0013 ruling 5d): every threat, visitor
+archetype, and palette archetype carries a `visual` slug (`^[a-z][a-z0-9-]*$`)
+or an explicit `codexOnly: true` tag — missing = fail, malformed slug = fail
+(the buildables leg of the law is the existing
+`archetypeInstances`→palette resolution) · **lookalike law** (§2.4/OD-18,
+ADR-0013 ruling 9): a threat's optional `lookalikeOf` must resolve to a
+`visitors/archetypes-core.json` id, archetypes carrying `lookalikeOf` fail the
+direction law, and every shipped bundle's `signatureThreats` must include ≥1
+lookalike-tagged threat (its mimic seed) · every threat has ≥2 counters (§5.1 Second
 Answer) drawn from the 9 defense roles · every object containing a `null` carries
 a non-empty `"_todo"` (two declared exemptions below) · every `tuningSheet` value
 matches `PROVISIONAL-[ABC]` · wave files re-check §1.7 authoring rules (≤4
@@ -156,6 +167,8 @@ quotes the wave-1 figure.
 | **Localisation law** | R46 + owner directive | **ALL human strings are i18n keys** resolved through the bundle's `ticketPack` file. No literal prose, no joke text in bundles. The packs ARE the authored English: `packs/*.i18n.json` carry every string, split into a sober `decision` namespace (shown while deciding or losing — §9.3 clauses 2–3) and a comedic `flavour` namespace (quiet surfaces only); the validator enforces the wall by root vocabulary and refuses any bundle-referenced key that strays into flavour. |
 | **Pruning rule R36** | WS-3, §2.12 | A threat earns a mechanical slot (stats + counters) only if it CHANGES THE PLAYER'S VERB, not just the noun. Everything else is Codex flavour attached to a mechanical entry. |
 | **Second Answer** | §5.1 | Every registry threat has ≥2 viable counters at DIFFERENT prices (cheap / expensive / lateral triad). Validator enforces. |
+| **Visual Coverage** | §8.18, OD-12(d), ADR-0013 ruling 5(d) | The screen must be able to draw every shipped entity, or the content must say otherwise: every threat, visitor archetype, and palette archetype carries a `visual` slug grounded in the design-doc prose (`the-elbow` §2.10, `slow-wall` §2.3, the §3.1 duration-class primitives) or an explicit `codexOnly: true` tag. The validator fails absence and malformed slugs red. All 16 shipped threats are mechanical (R36) and every slug is doc-grounded, so zero codexOnly tags ship today — the hatch exists for future demotions. |
+| **Lookalike (rule-masking)** | §2.4, OD-18, ADR-0013 ruling 9 | A mimic threat may declare `lookalikeOf`: the visitor archetype it masquerades as — a costume on the visitor roster, never a new entity. Direction is one-way (an archetype carrying `lookalikeOf` fails red); the id must resolve in the visitors registry. Five mimic seeds ship, one per bundle: shared-web `layer7-mimic`→`power-shopper` · game-servers `cheat-client-griefer`→`game-player-joining` · mail-hosting `xmlrpc-pingback-amplifier`→`api-client` · dns-hosting `slowloris-sipper`→`deep-reader` · dedicated `scanner-drizzle`→`crawler`. Bundles legitimately reuse signature ids, so the lint enforces ≥1 seed per bundle rather than exactly-one — the mask rides the registry entry, so reuse inherits the law by design. |
 | **Wave rules** | §1.7/§2.24 | Baseline continuous-diurnal-never-zero; events are shaped envelopes over it; ≤4 threat entries/wave; first wave ≤40% par ALWAYS; troughs ≥45% below preceding peak; ≤2 roles >30% per wave; new role every 4th wave; hard waves draw TWO denominations; entropy budget peaks in troughs = f(estate age × size × (1−maintenance spend)); second-incident ×1.8 (incident) / ×2.5 (recovery). |
 | **Hue ledger** | §1.3/§8.10 | MAGENTA is reserved for hostile traffic; no décor may use it — game-servers' palette explicitly excludes the magenta band; flow layer stays globally neutral cyan/magenta/violet. |
 
@@ -261,7 +274,12 @@ here and the pack's `decision` value.
 5. Reference threats/visitors ONLY by registry ids. New threat ⇒ add it to a
    registry file first, with ≥2 counters at different prices and a §-cite for
    every stat, or mark stats null + `_todo`. New threat must pass pruning rule
-   R36 (changes the verb, not just the noun) or it is Codex flavour.
+   R36 (changes the verb, not just the noun) or it is Codex flavour. Every new
+   registry entry needs a §8.18 `visual` slug (doc-grounded) or a `codexOnly:
+   true` tag, and a threat that wears a crowd of normal traffic as camouflage
+   should carry `lookalikeOf` naming the visitor archetype it mimics
+   (§2.4/OD-18) — if it is the bundle's only mimic, the seed lint also wants a
+   `signatureThreats` entry for it.
 6. Every number the doc doesn't give: `null` + `"_todo": "§-cite"`. Every number
    that exists only for tuning: `"tuningSheet": "PROVISIONAL-B"`.
 7. Every human string: an i18n key. Author it in the type's pack file under

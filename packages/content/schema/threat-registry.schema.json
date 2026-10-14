@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hosting-hero.local/schema/threat-registry.schema.json",
+  "title": "Threat registry (mechanical entities the waves spawn, §2)",
+  "description": "Shape of packages/content/threats/*.json. Structural shell for the §8.18 visual-coverage law (OD-12(d), ADR-0013 ruling 5d: every entry carries a `visual` slug or an explicit codexOnly tag) and the §2.4 lookalike law (OD-18, ADR-0013 ruling 9: optional `lookalikeOf` names the visitor archetype the threat masquerades as). Deep laws — coverage OR-tag, lookalike resolution against visitors/archetypes-core.json, one mimic-seed per shipped bundle, legacy required keys, Second-Answer counters — live in script/validate.mjs. Interpreter subset in use: type, required, properties, items, enum, pattern, minimum, maxItems.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "description", "threats"],
+  "properties": {
+    "schemaVersion": { "type": ["string", "integer"] },
+    "id": { "type": "string" },
+    "description": { "type": "string" },
+    "rolesVocabulary": { "type": "array", "items": { "type": "string" } },
+    "defenseRolesVocabulary": { "type": "array", "items": { "type": "string" } },
+    "bandsVocabulary": { "type": "array", "items": { "type": "string" } },
+    "denominationsVocabulary": { "type": "array", "items": { "type": "string" } },
+    "threats": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "visual": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "codexOnly": { "type": "boolean" },
+          "lookalikeOf": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+        }
+      }
+    }
+  }
+}

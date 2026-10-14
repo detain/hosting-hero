@@ -1,12 +1,13 @@
 {
   "schemaVersion": "3.0",
   "id": "visitors/archetypes-core",
-  "description": "Visitor archetypes spawned by the two prototype-anchor types (shared-web, game-servers), from the §3.2 patience spine. Five-stat unit per §3.1 (Patience/Value/Weight/Loyalty/Fragility); patienceMode per the bundle patienceModel enum; durationClass per §3.1 shapes (Instant=mote circle, Session=dot-with-thread teardrop, BatchJob=square, Resident=hexagon). bounty = expected Value on conversion (§3.1 loop: goal reached with budget left -> convert, pay Value) — doc authors bounty classes only qualitatively ('high value tiny patience'), every scalar is null + _todo until the tuning sheet. Six legibility families (§3.2): Browsers - Buyers - Machines - Amplifiers - Costs - Evaluators.",
+  "description": "Visitor archetypes spawned by the two prototype-anchor types (shared-web, game-servers), from the §3.2 patience spine. Five-stat unit per §3.1 (Patience/Value/Weight/Loyalty/Fragility); patienceMode per the bundle patienceModel enum; durationClass per §3.1 shapes (Instant=mote circle, Session=dot-with-thread teardrop, BatchJob=square, Resident=hexagon). bounty = expected Value on conversion (§3.1 loop: goal reached with budget left -> convert, pay Value) — doc authors bounty classes only qualitatively ('high value tiny patience'), every scalar is null + _todo until the tuning sheet. Six legibility families (§3.2): Browsers - Buyers - Machines - Amplifiers - Costs - Evaluators. Visual-coverage law (§8.18, OD-12(d), ADR-0013 ruling 5d): every archetype carries a `visual` slug — the §3.1 duration-class primitive unless §3.2/§3.3 names a distinct render; validate.mjs fails red on a gap (or demands an explicit codexOnly tag). Threats' optional `lookalikeOf` (OD-18) points AT these ids — the archetype is the costume the threat wears.",
   "familiesVocabulary": ["Browsers", "Buyers", "Machines", "Amplifiers", "Costs", "Evaluators"],
   "archetypes": [
     {
       "id": "skimmer-casual",
       "family": "Browsers",
+      "visual": "sparks-cyan-dart",
       "durationClass": "Instant",
       "patienceMode": "sigmoid-budget",
       "budgetMs": { "min": 800, "max": 1500 },
@@ -17,6 +18,7 @@
     {
       "id": "mobile-commuter",
       "family": "Browsers",
+      "visual": "mote-circle",
       "durationClass": "Instant",
       "patienceMode": "sigmoid-budget",
       "budgetMs": { "min": 1000, "max": 1000 },
@@ -28,6 +30,7 @@
     {
       "id": "desktop-regular",
       "family": "Browsers",
+      "visual": "mote-circle",
       "durationClass": "Instant",
       "patienceMode": "sigmoid-budget",
       "budgetMs": { "min": 3000, "max": 3000 },
@@ -39,6 +42,7 @@
     {
       "id": "deep-reader",
       "family": "Browsers",
+      "visual": "mote-circle",
       "durationClass": "Instant",
       "patienceMode": "sigmoid-budget",
       "budgetMs": { "min": 4000, "max": 4000 },
@@ -49,6 +53,7 @@
     {
       "id": "impulse-buyer",
       "family": "Buyers",
+      "visual": "mote-circle",
       "durationClass": "Instant",
       "patienceMode": "sigmoid-budget",
       "budgetMs": { "min": 1200, "max": 1200 },
@@ -59,6 +64,7 @@
     {
       "id": "power-shopper",
       "family": "Buyers",
+      "visual": "mote-circle",
       "durationClass": "Instant",
       "patienceMode": "sigmoid-budget",
       "budgetMs": { "min": 6000, "max": 6000 },
@@ -69,6 +75,7 @@
     {
       "id": "api-client",
       "family": "Machines",
+      "visual": "mote-circle",
       "durationClass": "Instant",
       "patienceMode": "binary",
       "budgetMs": { "min": 10000, "max": 10000 },
@@ -79,6 +86,7 @@
     {
       "id": "crawler",
       "family": "Machines",
+      "visual": "mote-circle",
       "durationClass": "Instant",
       "patienceMode": "value-decay",
       "budgetMs": { "min": 8000, "max": 8000 },
@@ -89,6 +97,7 @@
     {
       "id": "game-player-joining",
       "family": "Browsers",
+      "visual": "pawn-sprite",
       "durationClass": "Session",
       "patienceMode": "sigmoid-budget",
       "budgetMs": { "min": 2000, "max": 2000 },

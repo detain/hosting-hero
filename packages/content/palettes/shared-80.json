@@ -2,13 +2,14 @@
   "schemaVersion": 1,
   "id": "palette:shared-80",
   "name": "The Shared Eighty",
-  "description": "Named home for the archetype objects type-bundles compose from. Laws encoded: §0.2 R7 corollary (a new hosting type reuses >=80% known objects; genuinely-distinct stays <=20%) and §4.10 authoring rule 'skin the mechanics, never skin the silhouette' (R61: reserve the ~15 genuinely-distinct verb-changing objects game-wide; everything else is a costume on a shared-mechanics object). Both shipped prototype-anchor bundles (official:shared-web, official:game-servers) point buildables.paletteRef here; every archetype their buildables.archetypeInstances name MUST be defined in this file — the content validator makes a dangling paletteRef or an unknown archetype loud red (audit group-13: the ref previously resolved nowhere).",
+  "description": "Named home for the archetype objects type-bundles compose from. Laws encoded: §0.2 R7 corollary (a new hosting type reuses >=80% known objects; genuinely-distinct stays <=20%) and §4.10 authoring rule 'skin the mechanics, never skin the silhouette' (R61: reserve the ~15 genuinely-distinct verb-changing objects game-wide; everything else is a costume on a shared-mechanics object). Both shipped prototype-anchor bundles (official:shared-web, official:game-servers) point buildables.paletteRef here; every archetype their buildables.archetypeInstances name MUST be defined in this file — the content validator makes a dangling paletteRef or an unknown archetype loud red (audit group-13: the ref previously resolved nowhere). Visual-coverage law (§8.18, OD-12(d), ADR-0013 ruling 5d): every palette archetype carries a `visual` slug grounded in its own object prose — the buildable leg of the manifest-lint resolves through this file.",
   "archetypes": [
     {
       "id": "concurrency-pool",
       "object": "The countable concurrency pool — slots that fill, a queue that backs up, patience that drains (§4.10 names it as ONE object wearing five costumes).",
       "engine": "sim-core pipeline slot/queue/rho + patience laws (packages/sim-core/src/pipeline/)",
       "verbChanger": false,
+      "visual": "filling-slots-queue",
       "costumes": [
         "shared-web: the per-account connection-slot pool (the oversell ratio rides this same object)",
         "game-servers: the game-server slot (tick-budgeted sessions in rooms)",
@@ -22,6 +23,7 @@
       "object": "The rack vessel with an authored front and an authored back — two-face law, G6 (the back view is canonical for rack verbs).",
       "engine": "sim-core topology rack grid + blast-radius projection (packages/sim-core/src/topology/)",
       "verbChanger": false,
+      "visual": "two-face-rack-silhouette",
       "costumes": [
         "shared-web: the cabinet row (Cabinet 14)",
         "game-servers: the tick-node rack row behind the inspector's metronome panel"
@@ -32,6 +34,7 @@
       "object": "The panel the customer lives in — a cPanel-class god view over one account's slice.",
       "engine": "sim-core observed seat-scoped projection (packages/sim-core/src/observed/)",
       "verbChanger": false,
+      "visual": "god-view-panel-window",
       "costumes": [
         "shared-web: cPanel (archetypeInstance skin 'cpanel')"
       ]
@@ -41,6 +44,7 @@
       "object": "The session rendezvous object that projects players into rooms — a genuine verb-changer occupying an archetype slot (§4.10 names it in the R61 reserve).",
       "engine": "waves arrival routing + the game-servers 'matchmaker-projection' mechanic (packages/sim-core/src/waves/)",
       "verbChanger": true,
+      "visual": "matchmaker-projection",
       "costumes": [
         "game-servers: the server-browser matchmaking tier (archetypeInstance skin 'game-servers')"
       ]
