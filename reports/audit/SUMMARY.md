@@ -1102,7 +1102,7 @@ Vocab 19→**29 kinds**. The wave-7 "channels not vocab" thesis held: door-inten
 
 | Gate | Result |
 |---|---|
-| sim-core serial (`--no-file-parallelism`) | **139 files / 2,276 tests, exit 0** (255s) |
+| sim-core serial (`--no-file-parallelism`) | **139 files / 2,276 tests, exit 0** (251.5 s) |
 | proto `vitest run` | **86 / 935, exit 0** |
 | `pnpm -r typecheck` | **5/5 Done** |
 | `docs/api-verify.test.mjs` | **PASS — 1,554 names**, import map consistent |
