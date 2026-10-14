@@ -1121,3 +1121,72 @@ Vocab 19→**29 kinds**. The wave-7 "channels not vocab" thesis held: door-inten
 | **total marked** | **3,589** | **3,589** |
 
 hosting_game.md line count UNCHANGED (35,565 on disk, pre==post) — all six flips are in-place marker swaps, zero insertions; this SUMMARY section is the only file that grew. "Historical record:" footer kept last.
+
+---
+
+## WAVE-9 closeout — session-3 rulings encoded, storm cap + visual coverage live, co-op contract + type-6 anchors (2026-10-14)
+
+Lanes under markup (all eight commits on master, `48cf8c6..2fefc60` atop `1ab2738`; this wave marks and records):
+
+| Commit | Lane | Shipped |
+|---|---|---|
+| `48cf8c6` | session-3 encoding | **ADR-0013 — fourteen rulings, adopt-all** over the decision brief: OD-7/9/10/11/12/15/17/18/19/20 DECIDED, the ratify-on-read pile confirmed-provisional, canSettle stays host-forwarded, verb-exhaustion extends within ADR-0005, D-7 cap adopted **BOUNDED** (128/8 explicitly NOT blessed). Docs-only; three in-file law-notes planted (§4.8 Hands Dock :17616 bottom-left placement RULED, §8.9 Confidence Blur :29316 attachment-crispness composition, §8.18 readability :31561 2× max-legibility law + "⚠️ marker kept"). |
+| `502ca3f` | storm cap (ruling 6) | D-7 engine ceiling `STORM_CAP {≤1024 units/min, ≤4 stacked envelopes/wave}` — TWO doors: parse-time refusal naming table+wave, plus deterministic director clamp (`scaleStormCounts` floor-per-entry, no redistribution, counts clamped BEFORE mint ⇒ RNG streams byte-ident; `WavePlan.stormClamped?` presence-only). Shipped-slice census ≤25.8% of cap, clamp inert on every authored wave — **late-game sheet-B crest pins now BOUNDED** (100%-par crest crosses 1024 ~wave 17–18 and must par down). |
+| `179861d` | attention costs + Hands Dock (rulings 12(v) + 5(c)) | `ATTENTION_DEFAULT_COSTS` — the owner cost map {Communicate 1, ticket-class 1, else 0} is LAW, host opt-in into the door; fastForward forwarding twin; AttentionCard docked **bottom-left** with data-stamps; OD-10 speed-legibility source pins. |
+| `54510b1` | manifest-lint + lookalike law (rulings 5(d) + 9) | §8.18 audit becomes a CI rule: `validate.mjs` fails RED on any shipped threat/visitor/palette archetype lacking a doc-grounded `visual` slug or explicit `codexOnly:true` — **29/29 tagged** (16+9+4), five red-proofs (missing-visual / bad slug / unknown mask / archetype-carried mask / stripped seed). OD-18: registry-side `lookalikeOf` + FIVE mimic seeds (one per shipped bundle) + direction lint. |
+| `e27787c` | stamp | docs-only MODULE-STATUS gap-row closure stamps for rulings #5(d)/#9 @`54510b1`. |
+| `8c0ff88` | co-op contract v0 (rulings 2 + 8) | `save/coop.ts` shared branch node — seat ledger (2–4 writers, strictly ascending joins, overlap-capped), per-participant `attributedParticipantId` on the EXISTING scar/museum records (museum reused, never forked), `guardCoopAttributionBatch` refusing non-branch facets BY NAME ("customers/cash stay company-level"). `replay/coopTimeline.ts` — the OD-17 **shared incident timeline**: one `(tick, seq)`-ordered log, kinds action\|sightline\|note, dup stamp throws naming both positions, `digestCoopTimeline` interleaving-invariant through the replay canonical machinery. SP wires byte-ident (additive-optional). Validator, not runtime — Workerman relay stays out-of-repo. |
+| `1d7736f` + `2fefc60` | verb-unblock (ruling 14) | loader per-tier dominant-verb extension frees the type-6+ card pipeline; `official:object-storage` — the FIRST card freed: dominant verb **Shield** breaks the §7.8 Observe collision; ships as DATA (bundle + first-quarter slice + pack) per the Root-Is-Theirs mail/DNS clone precedent; THREE_CHANGE/VERB_SHIFT lints clean through the route chosen. |
+
+**Read-only review verdict:** ALL EIGHT COMMITS CLEAN — **PUSH GO**, zero critical, zero major. 3 minors + 2 nits recorded (none blocking, none fixed-in-wave):
+
+| # | Finding | Severity | Disposition |
+|---|---|---|---|
+| 1 | `STORM_CAP` derivation docblock over-claims (headroom framing vs what the constants actually prove) | minor | docs-sweep |
+| 2 | co-op `commitCoopAttribution` record-shape note — relay-side shape expectations should be pinned when the transport lane lands | minor | transport-lane |
+| 3 | `2fefc60` commit-message "malicious omitted" wording vs the shipped roster data disagrees | minor | docs-sweep |
+| 4 | schema `visual`/id pattern inconsistency: digit-leading ids accepted differently across the two new registry schema shells | nit | docs-sweep |
+| 5 | DECISIONS-PENDING OD-9/OD-17 rows carry bold-nesting markdown artifacts (`**…**…**`) | nit | docs-sweep |
+
+### Marker flips applied (five, each asserted against its exact pre-write on-disk line before the write)
+
+| Spec line | Heading | Before | After | Witness / note |
+|---|---|---|---|---|
+| 1907 | §1.3 `"Eleven Nines" / "Bucket" / "The Honeycomb" — Object storage` | ❌ | 🔧 `2fefc60` | first card freed by ruling 14; data-shipped via the DNS/Root clone pattern; **Shield-door mechanic gap keeps it off ✅** (mirror of the Root-Is-Theirs hold) |
+| 14694 | §3.12 `The Lookalike Test` | ❌ | 🔧 `54510b1 e27787c` | authoring side live (registry field + 5 mimic seeds + direction lint); runtime tell-mechanics (shared silhouettes, IDS-outline analog) absent — that is why 🔧 not ✅; e27787c's own gap-row "stays ❌ until the spec is authored" named exactly this runtime leg |
+| 32660 | §8.18 `The hand-wave detector` | ❌ | ✅ `54510b1` | ruling 5(d) re-creates the audit AS the manifest-lint — enforceable presence rule shipped, 29/29 tagged, red-proofs; honest scope note: the lint scans the CONTENT manifest, not spec prose |
+| 32815 | §9.1 `Co-op NOC (asymmetric information)` | ❌ | 🔧 `8c0ff88` | seat ledger + shared incident timeline contract v0; transport/per-seat projection/shift-handoff UX deferred — honest 🔧 |
+| 32836 | §9.1 `Co-op: Ops and Commercial ("Two Departments" / "Two-Person On-Call")` | ❌ | 🔧 `8c0ff88` | same contract base (2–4 seats); the department-partitioned views remain runtime-absent |
+
+### Held / skipped rows — appendix-noted, no marker move
+
+- **No "Emergent storms need a severity cap" heading exists** anywhere in the corpus (D-7 lived only in the decision register) — the cap shipped engine-live @`502ca3f`; recorded in the hosting_game.md appendix instead. Same for **"The Archivist"** — zero matches file-wide.
+- **§8.18 PARENT stays 📝**: the brief asserted ❌/🔧, but disk + manifest g23 (:32625, "meta-audit of the spec document itself; no code surface assigned") carry 📝 — the fail-loud law stopped the parent write; the ✅ rides the concrete child row that actually carried the MISSING verdict.
+- **`The Hands Dock` (:17615) already 🔧** since the audit sweep `ef74a2f` — the brief's ❌ premise predates the sweep; already at the target state, `179861d` strengthens it (ruled bottom-left placement + data-stamps), no move.
+- **`The attention budget` (:14436) stays 🔧**: owner cost map law + host opt-in @`179861d`, mid-run borrow seam @`e1786fc` — what remains: a player-facing verb that spends a hand (owner taste) + TopBar four-id pin.
+- **`The readability targets` (:31560) stays ⚠️** by its own session-3 law-note ("figures are now blessed as targets, measurement still owed") — conservative default honored; OD-10/12 numerics (2k/20k) unratified by measurement.
+- **"The Co-op" (:2890) untouched** — non-profit hosting-TYPE level, not a multiplayer mode. **"The Incident Timeline Strip" (:23981) untouched** — single-player replay UI, not the OD-17 shared log; no standalone "shared incident timeline" heading exists (the concept is body prose inside Co-op NOC). **CEO rows**: :27024 stays 🔧 (appendix note only per brief). **§0.3 scarcity table rows carry no marker** (email precedent) — data fact: the Object storage row is now bundle-backed @`2fefc60`.
+
+### Closeout battery — marked tree, serial/unloaded (fresh re-run on the FINAL tree, all six green, harness exit 0)
+
+| Gate | Result |
+|---|---|
+| sim-core serial (`--no-file-parallelism`) | **142 files / 2,347 tests, exit 0** (267.3 s) — zero goldens moved |
+| `pnpm -r typecheck` | **5/5 Done** |
+| `docs/api-verify.test.mjs` | **PASS — 1,594 names**, import map consistent (scenario 51/51 legible in tail) |
+| `scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) |
+| proto `vitest run` | **87 files / 947, exit 0** |
+| headless `vitest run` | **53/53, exit 0** — parity REAL `b0162ab5` / STUB `a9b4b7b8` held |
+
+### Census (recomputed from disk, heading lines only)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 317 | **318** (hand-wave detector) |
+| 🔧 PARTIAL | 996 | **1,000** (Eleven Nines + Lookalike + both co-op rows in) |
+| ⚠️ PROBLEM | 1 | **1** (unchanged: readability — OD-10/12 measurement owed) |
+| ❌ MISSING | 2,245 | **2,240** (five heading lines flipped) |
+| 📝 NA | 30 | 30 (parent §8.18 held NA — fail-loud respected) |
+| **total marked** | **3,589** | **3,589** |
+
+hosting_game.md 35,568 → **35,572** (two appendix paragraphs inserted above the "Historical record:" footer, which stays last; the five flips themselves are in-place marker swaps). This SUMMARY section is the other and only other file in the closeout commit.
