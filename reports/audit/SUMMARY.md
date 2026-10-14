@@ -1192,3 +1192,61 @@ Post-closeout addendum (closeout-7): the brief's "m3" ask — a MODULE-STATUS ga
 | **total marked** | **3,589** | **3,589** |
 
 hosting_game.md 35,568 → **35,572** (two appendix paragraphs inserted above the "Historical record:" footer, which stays last; the five flips themselves are in-place marker swaps). This SUMMARY section is the other and only other file in the closeout commit.
+
+## WAVE-10 closeout — attention/freeze/elasticity missions live, severity dial + invitations demo, four markers moved (2026-10-14b)
+
+### The six commits (stack aba8b79..1b718fb, direct-master, unpushed at closeout start)
+
+| SHA | Role | What landed |
+|---|---|---|
+| `aba8b79` | H1 race-fix | proto a11yRoster live probe relocated into `__tests__` with carve-in — the audioLaw/substrateLaw file-parallel race class CLOSED at the pin level |
+| `2d2cfca` | E2 invitations demo | proto CorpusMissionCard gains the corpus invitations authority — law-join against the sim-core twin (@bc11697 seam consumed host-side) |
+| `7d34bed` | E1 severity dial | pipeline corruption-outage severity dial, host-configurable, default = PROVISIONAL 60s (`corruptionOutageSecs` forwarded to host wiring @aa87329-era gap row) |
+| `2eeff85` | S1 rungs 6+8 | scenario: The Founder Bus Factor :3880 (`limits.attention` taxed rail), The Change Freeze :3625 (door-band refusal validators), Free Tier Flood corpus twin :3574 — three §1.5 missions, +30 scenario tests |
+| `77936e4` | H2 unlocks row | docs: unlocks module inventory row added (closes the c72aa86 observation) |
+| `1b718fb` | S2 rung 7 | scenario: price-elasticity rung 7 — The Ransom Customer :3984 (✅) and The Copycat :3429 (🔧 HONEST PARTIAL per wire docblock — 60M slug brute found no five-seed pure band crossing at 34 bps; win arm on offsets 0–2, seeds 907–908 churn under even the deep cut) |
+
+### Reviews
+
+All six lanes reviewed — **every verdict PUSH-GO, zero critical, zero major**. Four findings total; the two docs-minors are fixed in this closeout commit:
+- **F1**: `docs/MODULE-STATUS.md` footer cited `pipeline/__tests__/corruption-forwarding.test.ts` — real path is `unattended/__tests__/corruption-forwarding.test.ts` (disk-verified). Corrected.
+- **F2**: footer attribution split was `+13 / describes ×6 / +31` — executed truth `+14` (doc +3, pricingRung +4, wave-seven describe +5, win-side loop +2) `/ describes ×5 + loop / +30 @2eeff85`. The 14+30+19 arithmetic re-verifies against the 348→392 scenario-dir re-pin; aggregate `+63 / 392` and total `2,406 / 144` unchanged and correct. The scenario table row (the same stale split) was synced for internal consistency.
+The remaining two findings were non-blocking and are not docs wording.
+
+### hosting_game.md marker flips (fail-loud: each asserted heading-text + marker on disk before write)
+
+| Line | Heading | Before | After | Witness |
+|---|---|---|---|---|
+| 3880 | §1.5 `The Founder Bus Factor` / `Key Person` / `The Bus Factor` / `Two Weeks' Notice` | ❌ | ✅ `2eeff85` | intents + attention rails live on the mission wire (limits.attention taxed rail, door communicate rows) |
+| 3625 | §1.5 `The Change Freeze` / `Frozen Change` / `Read-Only Friday` | ❌ | ✅ `2eeff85` | `limits.freeze` validator seam — door-band refusal validators on the wire |
+| 3574 | §1.5 `Free Tier Flood` / `Free Tier Abuse` / `Free Tier Invaded` | ✅ `b5017df` | **SKIP — no write** | precondition check found the heading already ✅ (segments twin flipped in the wave-three/b5017df era); the `2eeff85` corpus twin adds coverage under the same ✅ — recorded here instead of double-stamping |
+| 3429 | §1.5 `The Copycat` / `The Price War` | ❌ | 🔧 `1b718fb` | PARTIAL per the wire docblock — cliff/retention-clamp 1.0 leg proven, band-crossing witness only on 3/5 standard seeds; honest 🔧, not ✅ |
+| 3984 | §1.5 `The Ransom Customer` / `Ransom DDoS` / `Extortion` | ❌ | ✅ `1b718fb` | ransom-as-opex-row mission, paid arm holds the corridor, unpaid flip crosses the 167 Mµ$ ceiling [180,185,184,182,180] ×5, arm-blind bounce control |
+
+Four writes, one precondition-skip; hosting_game.md stays **35,572 lines** (all flips in-place marker swaps, zero line delta).
+
+### Census (recomputed from disk after this closeout, `^##`/`^###` heading lines)
+
+| Class | Count |
+|---|---|
+| ✅ DONE | **321** |
+| 🔧 PARTIAL | **1,001** |
+| ⚠️ PROBLEM | **1** (unchanged: readability — OD-10/12 measurement owed) |
+| ❌ MISSING | **2,236** |
+| 📝 NA | **30** |
+| **total marked** | **3,589** |
+
+Delta vs the b69ce76-era census (318/1,000/1/2,240/30): +3 ✅, +1 🔧, −4 ❌ — exactly the four executed flips; the skipped Free Tier Flood row moved nothing.
+
+### Closeout battery — final tree (docs edits in-tree, zero code delta), serial/unloaded, one process at a time
+
+| Gate | Result |
+|---|---|
+| sim-core serial (`--no-file-parallelism`) | **144 files / 2,406 tests, exit 0** (291.2 s) — zero digest goldens moved |
+| proto serial (`--no-file-parallelism`) | **88 files / 968 tests, exit 0** (104.8 s) — NOTE: the closeout brief expected 951; disk truth at `1b718fb` re-verified 968 on a stashed clean HEAD (my docs edits touch zero proto files) — +21 rode the wave stack (a11yRoster relocation carve-in, CorpusMissionCard invitations demo, severity-dial twin pins); green at the true count, no reds |
+| `pnpm -r typecheck` | **5/5 Done** |
+| `docs/api-verify.test.mjs` | **PASS — 1,594 names** (scenario 51/51), import map consistent |
+| `scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) |
+| headless (`pnpm -F headless-tools test`) | **53/53, exit 0** — parity REAL `b0162ab5` / STUB `a9b4b7b8` literals held |
+
+Box load at battery start ~7.7 (shared 48-core) — all runs serial anyway, no flakes. This closeout touches exactly three files: `docs/MODULE-STATUS.md`, `hosting_game.md`, `reports/audit/SUMMARY.md`. media/prompts never staged.

@@ -3426,7 +3426,7 @@ failing loses the deal *and* your current regulated customers.
 **Objective Totem:** a **blank certificate in a frame on the office wall** that fills in as controls
 are satisfied, and is stamped when you pass.
 
-### `The Copycat` / `The Price War` ❌
+### `The Copycat` / `The Price War` 🔧 1b718fb
 A competitor undercuts your pricing by 40% — or a VC-funded competitor prices below your COGS for six
 months. **Archetype: Negotiate. Length: Scenario.**
 
@@ -3622,7 +3622,7 @@ cost/coverage pair):
   segment.**
 **Every answer is bad**, and patch waves run simultaneously with traffic waves.
 
-### `The Change Freeze` / `Frozen Change` / `Read-Only Friday` ❌
+### `The Change Freeze` / `Frozen Change` / `Read-Only Friday` ✅ 2eeff85
 You may not deploy anything for N in-game days. Something breaks on day 3. **Archetype:
 Hold-Without-Hands. Length: Scenario.**
 
@@ -3877,7 +3877,7 @@ post-mortem) or silence. **Reputation damage happens regardless of actual uptime
 **Modifier variant:** a journalist is writing about you — **every incident this level counts double
 against reputation; every clean shift counts double for it.**
 
-### `The Founder Bus Factor` / `Key Person` / `The Bus Factor` / `Two Weeks' Notice` ❌
+### `The Founder Bus Factor` / `Key Person` / `The Bus Factor` / `Two Weeks' Notice` ✅ 2eeff85
 Your only senior engineer (or you) becomes unavailable. **Archetype: Hold-Without-Hands. Length:
 Scenario.**
 
@@ -3981,7 +3981,7 @@ Persistent elevated attack baseline for a whole level. **Archetype: Endure. Leng
 **How it works:** Rendered as a permanent magenta haze at the map edges and a **pressure gradient**
 rather than discrete waves.
 
-### `The Ransom Customer` / `Ransom DDoS` / `Extortion` ❌
+### `The Ransom Customer` / `Ransom DDoS` / `Extortion` ✅ 1b718fb
 A demo attack, then an email with a countdown. **Archetype: Negotiate. Length: Scenario.**
 
 **How it works:** Pay (works once, is cheap, is **scored as a failure**, permanently marks you as a
