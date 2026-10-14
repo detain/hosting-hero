@@ -327,7 +327,7 @@ function censusTable(file: string): WaveTable {
 describe("shipped g1 corpus — under the D-7 ceiling, clamp inert", () => {
   const root = `${CONTENT_ROOT}/waves`;
   const files = readdirSync(root).filter((f) => f.endsWith(".json")).sort();
-  expect(files.length).toBe(5);
+  expect(files.length).toBe(6);
 
   for (const file of files) {
     it(`AUTHORS ${file} every wave at or under the ceiling`, () => {
@@ -342,8 +342,9 @@ describe("shipped g1 corpus — under the D-7 ceiling, clamp inert", () => {
   }
 
   it("the whole shipped corpus tops out at 240 authored units — 4.3× headroom under 1024", () => {
-    // Census pin (2026-10-14): every slice's worst authored minute across
-    // all five g1 tables (mail/dns wave 5, par 100). If content grows past
+    // Census pin (2026-10-14, re-cut for the type-6 object-storage slice —
+    // six g1 tables now): every slice's worst authored minute across
+    // all g1 tables (mail/dns wave 5, par 100). If content grows past
     // this, this pin MOVES — that is a deliberate re-audit trigger, not a
     // failure of the cap.
     let maxAuthored = 0;

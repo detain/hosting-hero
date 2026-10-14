@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-object-storage-first-quarter",
+  "type": "official:object-storage",
+  "purpose": "First-quarter wave slice for the sixth Ruleset Card — the first type freed by ADR-0013 decision 14 (6 of the 20-type launch canon, OD-14(a)). Slice shape mirrors the five shipped g1 siblings: a probe-drizzle opening on an invisible product, the routine catastrophe as the surprise-with-composition beat (the customer who destroys your metadata layer, not an attacker), a hollow-quiet trough where the enemy is your own scrub clock, and a finale built on the line's authored cruelty ('a rebuild storm that takes a second disk with it' + 'you lose money by succeeding', §1.3/§2.x). Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "storage-tide",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. The storage line's requests have no authored human curve — 'Customers never notice you until the day they do' (§1.3) makes the baseline deliberately flat and unlit; curve id authored from that posture, both numbers and the diurnal shape await the waves-lane curve catalogue; PROVISIONAL-B.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "rebuild-storm-clock",
+      "kind": "threat",
+      "overWaves": [3, 4, 5],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "knit-shut-tail" },
+      "amplitude": null,
+      "composition": ["slowloris-sipper", "mod-update-day"],
+      "telegraph": "the first degraded read is a background number nobody scheduled an incident for — the scrub is behind, the rebuild is slow, and 'at large enough scale you are always rebuilding something' (§1.3): the storm does not arrive, it accumulates",
+      "source": "§1.3 card verbatim: 'a rebuild storm that takes a second disk with it'; §2.x Object storage: Erasure-Coding Math Failure: 'Two simultaneous disk failures during a rebuild. A probability you can actually compute and price — which is the point of the durability dial.'",
+      "compoundWave": "authored so REBUILD BANDWIDTH is the scarce lung, not raw capacity: every degraded object spends scrub cycles, every rebuild spends the same cycles, and a second failure inside the window is a math lesson priced in customer data (§1.3 'the horrifying arithmetic of how many simultaneous failures until data loss')",
+      "_todo": "rebuild-throughput → Sapper pressure mapping and batch defect rate unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "metadata-destroyer",
+      "kind": "customer",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "shard-split-tail" },
+      "amplitude": null,
+      "telegraph": "the success arrives as a signup: one more developer uploading everything they have — 'a customer who uploads 400 million tiny files destroys your metadata layer, and this is the routine catastrophe' (§1.3)",
+      "source": "§1.3 card verbatim (metadata-layer nightmare paragraph); §2.x Object storage signature failures: 'a metadata layer dying under a million tiny objects' (Small File Apocalypse)",
+      "compoundWave": "the line's inversion of the attacker genre: the catastrophe wears a customer's face and pays monthly — Debuffer pressure lands on the metadata/index tier while the data tier keeps answering GETs happily, so the dashboard stays green exactly where nobody is looking",
+      "_todo": "small-file-count → metadata-ops pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "viral-egress-spike",
+      "kind": "customer",
+      "overWaves": [4],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "rate-limited-tail" },
+      "amplitude": null,
+      "telegraph": "one file of one customer's takes off; the egress meter climbs and the revenue sheet cannot yet tell you whether you are being rich or ruined — 'a revenue bonanza or an unpaid bandwidth catastrophe depending on which pricing model you chose in shift 1' (§1.3)",
+      "source": "§1.3 Economics paragraph verbatim ('egress billing is the main revenue line…'); §2.x Egress Bill Shock: 'A customer's content goes viral; your transit bill explodes; they're on a flat plan. You lose money by succeeding.'",
+      "_todo": "viral multiplier and flat-plan loss math unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "open-bucket-leak",
+      "kind": "threat",
+      "overWaves": [5],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "policy-closed-tail" },
+      "amplitude": null,
+      "composition": ["vulnerable-plugin-compromise", "scanner-drizzle"],
+      "telegraph": "the drizzle has been reading your bucket listings all quarter — the difference tonight is that one of them answers; a public bucket is drawn 'wide open with light spilling out of it, visible from the facility altitude' (§1.3)",
+      "source": "§1.3 Threats line verbatim: 'a misconfigured public bucket'; §2.x signature failures: 'a misconfigured public bucket leaking customer data'",
+      "compoundWave": "reputation arrives through the data front: the leak is mechanical (Bypass/Flyer through a default you shipped), the discovery is social (abuse mail, press, customers noticing on the one day they notice)",
+      "_todo": "leak-visibility → notice cadence mapping unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is the scanner drizzle reading bucket listings against a default that has not misfired yet — the product is invisible ('customers never notice you until the day they do', §1.3), so the quarter opens with the only party currently able to see you being a stranger with a script.",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["hands", "reputation"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the ROUTINE catastrophe, and it is a customer. Two-Front (§2.24): the metadata destroyer (Parasite — '400 million tiny files', §1.3) spends concurrency on the index tier while the hot-shard debuff (Debuffer — the viral object hammering one metadata partition) spends hands on the shard-split you did not pre-authorize. The data tier keeps answering; the dashboard's green half is the lie this level exists to teach (§2.x Small File Apocalypse: 'the metadata layer, not the data layer').",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 55, "band": "storm" },
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 45, "band": "hunter" }
+      ],
+      "denominations": ["concurrency", "hands"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS the scrub cycle, and the card's operational truth prices it: 'the scrub must complete faster than the failure rate' (§1.3)."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the EC planner, the placement audit, the second scrub lane all get their window here. But on the storage line the drop is not safety — it is the accumulative rebuild clock starting its climb underneath the quiet: the Sapper's drain reads as headroom while degraded objects wait for cycles that are also funding the next rebuild ('at large enough scale you are always rebuilding something', §1.3). Two fronts: data-integrity x hands — verifying everything before it changes is a scheduling argument you cannot win with hardware alone.",
+      "entries": [
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 70, "band": "entropy" },
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 30, "band": "weather" }
+      ],
+      "denominations": ["data-integrity", "hands"]
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, storage variant: the batch-failure day lands on the drive pool — one purchased firmware generation walking the racks (Splitter debuts here, the every-4th-wave NEW ROLE beat; unseen in waves 1-3, the registry's only purchased-batch mechanic reused per this line's threat-mapping law) — and the viral-egress spike arrives inside the same incident window, because a rebuild storm is exactly when the one popular file gets hottest, so the second-incident multiplier applies (stated openly in the Codex, §2.24). Two fronts: data-integrity (the nines arithmetic failing as computed, §2.x 'two simultaneous disk failures during a rebuild') x cash (the egress spike pricing the same minutes — 'you lose money by succeeding').",
+      "entries": [
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 55, "band": "hunter" },
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["data-integrity", "cash"],
+      "secondIncident": "viral egress spike arrives inside the batch-failure incident window -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the line's quiet made loud: the default that shipped on day one answers a stranger tonight (Bypass/Flyer debut — the public bucket, 'light spilling out of it', visible from facility altitude, §1.3), the batch defect keeps walking underneath the scramble (Splitter carry), and the rebuild clock is still running (Sapper), because closing the bucket and healing the comb spend the same hands. Hard wave draws TWO fronts — reputation x cash — per §2.24: the abuse mail and the disputed egress invoice (§6.6 bad month verbatim: 'an egress bill the customer disputes') arrive in the same inbox the quarter was supposed to be legible in. The signature moment fires inside this wave if the placement audit ran late all quarter: three replica shadows stacked on one rack, and the hole that will not knit. Win check: the durability hold stayed above its unauthored nines line while the comb stayed even enough to hear the fans.",
+      "entries": [
+        { "threat": "vulnerable-plugin-compromise", "role": "Bypass/Flyer", "pressurePct": 40, "band": "storm" },
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 30, "band": "hunter" },
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 30, "band": "entropy" }
+      ],
+      "denominations": ["reputation", "cash"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}

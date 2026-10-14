@@ -22,19 +22,22 @@ types/game-servers.json             anchor type 2 ("Prime Time") — G6 co-ancho
 types/mail-hosting.json             type 3 ("The Post Office") — variety-engine proof: outbound defense, reputation scarcity, dominant verb Tune
 types/dns-hosting.json              type 4 ("The Signpost Network") — variety-engine proof: correctness scarcity, anycast-PoP capacity, dominant verb Commit
 types/dedicated.json                type 5 ("Root Is Theirs") — variety-engine proof: keyhole agency, rack-space scarcity, dominant verb Observe
+types/object-storage.json           type 6 ("Eleven Nines") — durability scarcity, accretive data, dominant verb Shield (first tier-extension verb freed by ADR-0013 #14; see Type 6 notes)
 palettes/shared-80.json             the named home of buildables.paletteRef — 4 engine-backed shared archetypes (concurrency-pool, two-face-rack, control-plane, matchmaker) + the R61 ~15-slot verb-changer reserve accounting
 waves/g1-shared-web-first-quarter.json  seeded wave slice for gates G1/G5
 waves/g1-game-servers-first-quarter.json  seeded wave slice for gate G6 (same law set, type-specific DATA only)
 waves/g1-mail-hosting-first-quarter.json  type-3 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
 waves/g1-dns-hosting-first-quarter.json  type-4 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
 waves/g1-dedicated-first-quarter.json  type-5 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
-threats/registry-core.json          16 mechanical threat entries (mail-hosting, dns-hosting and dedicated each reuse 8 existing ids; native threat rosters await the registry-owner pass — the census pins live in sibling tests, see Type 3/4/5 notes)
-visitors/archetypes-core.json       9 visitor archetypes (mail-hosting, dns-hosting and dedicated reference NONE — their visitors are the message / the query / the sales inquiry itself; see Type 3/4/5 notes)
+waves/g1-object-storage-first-quarter.json  type-6 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
+threats/registry-core.json          16 mechanical threat entries (mail-hosting, dns-hosting, dedicated and object-storage each reuse 8 or fewer existing ids; native threat rosters await the registry-owner pass — the census pins live in sibling tests, see Type 3/4/5/6 notes)
+visitors/archetypes-core.json       9 visitor archetypes (mail-hosting, dns-hosting, dedicated and object-storage reference NONE — their visitors are the message / the query / the sales inquiry / the PUT-GET itself; see Type 3/4/5/6 notes)
 packs/shared-web.i18n.json          ticket pack for official:shared-web — 103 grammar templates, decision 42 / flavour 61
 packs/game.i18n.json                ticket pack for official:game-servers — 75 grammar templates, decision 34 / flavour 41
 packs/mail-hosting.i18n.json        ticket pack for official:mail-hosting — 63 grammar templates, decision 32 / flavour 31
 packs/dns-hosting.i18n.json         ticket pack for official:dns-hosting — 65 grammar templates, decision 33 / flavour 32
 packs/dedicated.i18n.json           ticket pack for official:dedicated — 66 grammar templates, decision 34 / flavour 32
+packs/object-storage.i18n.json      ticket pack for official:object-storage — 67 grammar templates, decision 36 / flavour 31
 script/validate.mjs                 Node-stdlib structural validator (no npm deps)
 ```
 
@@ -83,7 +86,8 @@ Observe — shipping either after dedicated would trip the pairwise VERB_SHIFT
 error ("merge it as a scenario, not a type"), and no §1.3 card names **Diagnose**
 as a dominant verb. So the launch canon's type 6+ is owner-gapped behind
 ADR-0005 per-tier verb extensions (or new authored cards), not behind this
-lane. Scarce = rack space + provisioning time (§0.3 verbatim pair); fatal =
+lane. *(Superseded 2026-10-14: ADR-0013 decision 14 ruled the per-tier route —
+see Type 6 notes.)* Scarce = rack space + provisioning time (§0.3 verbatim pair); fatal =
 "Capex stranded" (§2.27 Matrix A dedicated row); customer = "Technical customers
 with root"; unit = server (§6.6 Dedicated row, the only sibling with a PRICED
 CAC band — Companion B $300-900/3-6mo ships as a real cacProfile, no
@@ -100,6 +104,49 @@ doc's only authored non-shared pip row, §7.8f "Dedicated = hardware and
 network" — R21 keyhole-mode verbatim, R22 mechanics), THREE_CHANGE/VERB_SHIFT
 clean against all four siblings, waves contentInspector zero findings. The
 slice ships WITHOUT a rules block, same law as Types 3/4.
+
+### Type 6 notes (official:object-storage, 2026-10-14)
+
+The first card freed by **ADR-0013 decision 14**: the type-5 notes above recorded
+the six-verb census as exhausted, with VoIP and object-storage both blocked
+behind dedicated's verbatim claim on **Observe**. Ruling 14 adopts ADR-0005's
+already-ratified per-tier core-verb roster (PLACE·LINK·TUNE·SCALE·SHIELD·
+INVESTIGATE·MAINTAIN·SELL) as the grounding set for a new card's dominant verb —
+no ADR amendment — so the loader lint gained `TIER_EXTENDED_VERBS`
+(scale/shield/maintain/sell; investigate folds into Diagnose, place/link fold
+into Place & Connect, tune folds into Tune) and the VERB_SHIFT canon leg now
+accepts INVARIANT ∪ EXTENDED. Object storage was chosen over Trunk Group (VoIP)
+on footprint: the storage card cites shippable verbatim rows (§0.3 unit
+gb-month and the silent-data-loss failure column, §3.2's PUT/GET ledger row,
+§2.x Egress Bill Shock economics) while VoIP's toll-fraud mechanic, jitter/MOS
+scarcity and §6.6 row have no registry or dial home at all — VoIP would ship as
+a bigger scaffold of nulls. Dominant verb = **Shield**: the card's own §1.3
+posture ("durability versus entropy… you never notice you until the day they
+do") is protection-of-stored-truth, and Shield is the roster verb that names
+it; Observe stays with dedicated (pairwise MERGE law untouched). Shield is NOT
+a member of the closed 8-verb `PLAYER_VERBS` door enum, so it ships as the
+card's declared identity + a MODULE-STATUS gap row ("tier-extension verbs have
+no door mechanic", the g16 finding generalized) — every mechanic the quarter
+slice exercises (configure-node dial steps, inspect, connect/place buildables,
+sell-route sliders) rides door-supported verbs, exactly the precedent the
+keyhole-verbs gap row set. Scarce = the durability nines dial + comb fullness
+(§0.3; "the only probability you can actually compute and price", §2.x);
+fatal = silent-data-loss; win = hold verified-object fraction, threshold null
+— eleven nines is a promise the engine must not forge; unit = gb-month (§0.3
+verbatim; §6.6's TB-month magnitude conflict is cited in economy._todo, not
+resolved here). Same honest limits as Types 3/4/5: `visitor.archetypeRefs`
+`[]` (the visitor is the PUT/GET itself) and `signatureThreats` reuses 6 of
+the 16 registry ids (slowloris-sipper, mod-update-day, hoarder-noisy-neighbor,
+noisy-query-table-scan, vulnerable-plugin-compromise, scanner-drizzle) with the
+storage framing in `_todo` cites — zero registry additions; egress bill shock
+is deliberately NOT fabricated as an attacker (it is an economics failure,
+carried by demandCharges). Loader lint: 5 of 9 §7.8 hooks changed vs the
+anchor (R15 meter-swap to the durability face, R16 commercial-slider to the
+egress rate card, R17 dial roster, R18 tempo ms→hours, R22 mechanics set;
+R23 shedOrder and the §7.8d register rows UNCHANGED), THREE_CHANGE/VERB_SHIFT
+clean against all five siblings, waves contentInspector zero findings, corpus
+lint findings `[]` with six bundles. The slice ships WITHOUT a rules block,
+same law as Types 3/4/5.
 
 ## Validate
 
@@ -150,7 +197,7 @@ are approved, superseding the ≤60-per-pack task-line guidance (the validator k
 floor and sets no ceiling; most provenance cites are §9.3 verbatim doc seeds, so
 trimming would delete doc-mandated content). Pack `_todo` markers
 print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
-(133 since the type-5 dedicated authoring pass; 108 at type-4, 84 at type-3, 63 at wave-1) is untouched by
+(159 since the type-6 object-storage authoring pass; 133 at type-5, 108 at type-4, 84 at type-3, 63 at wave-1) is untouched by
 pack authoring — no test pins the printed number, though sibling lane memory
 quotes the wave-1 figure.
 
@@ -158,8 +205,8 @@ quotes the wave-1 figure.
 
 | Law | Source | In practice here |
 |---|---|---|
-| **Three-Change** | §0.2 | A type ships only if ≥3 of the six Ruleset-Card slots change vs existing types. shared-web and game-servers differ on Unit, Scarce, Patience-Analog, Threat-Mix, Look (5 of 6). mail-hosting differs on Unit (message), Scarce (ip-reputation), Goal (recipient-inbox), Threat-Mix and Look — loader lint reports 5 of 9 §7.8 hooks changed vs the anchor (within the 3–5 budget). dns-hosting differs on Unit (query), Scarce (anycast-pop-capacity), Goal (authoritative-answer), Threat-Mix and Look — likewise 5 of 9 hooks changed vs the anchor, clean pairwise against all three siblings. dedicated differs on Unit (inquiry), Scarce (rack-space), Goal (server-delivery), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all four siblings. |
-| **Verb-Shift** | R4, §0.2 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect**, mail-hosting = **Tune**, dns-hosting = **Commit**, dedicated = **Observe** (§1.3 card verbatim; one of the six invariant verbs, never a 7th, §1.9). Diagnose remains the sole unclaimed slot — see Type 5 notes for the verb-exhaustion constraint on types 6+. |
+| **Three-Change** | §0.2 | A type ships only if ≥3 of the six Ruleset-Card slots change vs existing types. shared-web and game-servers differ on Unit, Scarce, Patience-Analog, Threat-Mix, Look (5 of 6). mail-hosting differs on Unit (message), Scarce (ip-reputation), Goal (recipient-inbox), Threat-Mix and Look — loader lint reports 5 of 9 §7.8 hooks changed vs the anchor (within the 3–5 budget). dns-hosting differs on Unit (query), Scarce (anycast-pop-capacity), Goal (authoritative-answer), Threat-Mix and Look — likewise 5 of 9 hooks changed vs the anchor, clean pairwise against all three siblings. dedicated differs on Unit (inquiry), Scarce (rack-space), Goal (server-delivery), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all four siblings. object-storage differs on Unit (object request), Scarce (durability-nines), Goal (stored-object integrity), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all five siblings. |
+| **Verb-Shift** | R4, §0.2, ADR-0013 #14 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect**, mail-hosting = **Tune**, dns-hosting = **Commit**, dedicated = **Observe** (§1.3 card verbatim; one of the six invariant verbs, never a 7th, §1.9). object-storage = **Shield** — the first card grounded on ADR-0005's ratified per-tier roster via loader `TIER_EXTENDED_VERBS` (ADR-0013 decision 14); the card's §1.3 line named Observe, held by dedicated, so it re-authored onto Shield (see Type 6 notes). Shield is content identity, not a door `PLAYER_VERBS` member — the door-mechanic gap ships as a MODULE-STATUS gap row. Diagnose remains the sole unclaimed invariant slot. |
 | **Rosetta Card** | R11 | One canonical engine metric + one player-language alias + one joining line. Both anchors carry doc-verbatim lines (table below). |
 | **3–5 budget** (handover) | R10, §1.9 | `handoverNote` is EXACTLY 3 keys: runsOut / killsYou / customerWants, diegetic sheet-on-desk voice. Schema enforces maxProperties 3. |
 | **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"` — authored in `palettes/shared-80.json`, validator-enforced). All shipped types compose from the shared `concurrency-pool` + `two-face-rack` archetypes (plus `control-plane` in three skins, web's cPanel, mail's webmail and dedicated's ipmi-console); the `matchmaker` archetype is the R61 reserve's first shipped verb-changer (14 of 15 slots remain unbuilt). |
@@ -168,7 +215,7 @@ quotes the wave-1 figure.
 | **Pruning rule R36** | WS-3, §2.12 | A threat earns a mechanical slot (stats + counters) only if it CHANGES THE PLAYER'S VERB, not just the noun. Everything else is Codex flavour attached to a mechanical entry. |
 | **Second Answer** | §5.1 | Every registry threat has ≥2 viable counters at DIFFERENT prices (cheap / expensive / lateral triad). Validator enforces. |
 | **Visual Coverage** | §8.18, OD-12(d), ADR-0013 ruling 5(d) | The screen must be able to draw every shipped entity, or the content must say otherwise: every threat, visitor archetype, and palette archetype carries a `visual` slug grounded in the design-doc prose (`the-elbow` §2.10, `slow-wall` §2.3, the §3.1 duration-class primitives) or an explicit `codexOnly: true` tag. The validator fails absence and malformed slugs red. All 16 shipped threats are mechanical (R36) and every slug is doc-grounded, so zero codexOnly tags ship today — the hatch exists for future demotions. |
-| **Lookalike (rule-masking)** | §2.4, OD-18, ADR-0013 ruling 9 | A mimic threat may declare `lookalikeOf`: the visitor archetype it masquerades as — a costume on the visitor roster, never a new entity. Direction is one-way (an archetype carrying `lookalikeOf` fails red); the id must resolve in the visitors registry. Five mimic seeds ship, one per bundle: shared-web `layer7-mimic`→`power-shopper` · game-servers `cheat-client-griefer`→`game-player-joining` · mail-hosting `xmlrpc-pingback-amplifier`→`api-client` · dns-hosting `slowloris-sipper`→`deep-reader` · dedicated `scanner-drizzle`→`crawler`. Bundles legitimately reuse signature ids, so the lint enforces ≥1 seed per bundle rather than exactly-one — the mask rides the registry entry, so reuse inherits the law by design. |
+| **Lookalike (rule-masking)** | §2.4, OD-18, ADR-0013 ruling 9 | A mimic threat may declare `lookalikeOf`: the visitor archetype it masquerades as — a costume on the visitor roster, never a new entity. Direction is one-way (an archetype carrying `lookalikeOf` fails red); the id must resolve in the visitors registry. Five mimic seeds ship across the six bundles: shared-web `layer7-mimic`→`power-shopper` · game-servers `cheat-client-griefer`→`game-player-joining` · mail-hosting `xmlrpc-pingback-amplifier`→`api-client` · dns-hosting `slowloris-sipper`→`deep-reader` · dedicated `scanner-drizzle`→`crawler` — object-storage carries TWO of these seeds (`slowloris-sipper`, `scanner-drizzle`) by reuse rather than adding a sixth. Bundles legitimately reuse signature ids, so the lint enforces ≥1 seed per bundle rather than exactly-one — the mask rides the registry entry, so reuse inherits the law by design. |
 | **Wave rules** | §1.7/§2.24 | Baseline continuous-diurnal-never-zero; events are shaped envelopes over it; ≤4 threat entries/wave; first wave ≤40% par ALWAYS; troughs ≥45% below preceding peak; ≤2 roles >30% per wave; new role every 4th wave; hard waves draw TWO denominations; entropy budget peaks in troughs = f(estate age × size × (1−maintenance spend)); second-incident ×1.8 (incident) / ×2.5 (recovery). |
 | **Hue ledger** | §1.3/§8.10 | MAGENTA is reserved for hostile traffic; no décor may use it — game-servers' palette explicitly excludes the magenta band; flow layer stays globally neutral cyan/magenta/violet. |
 
@@ -258,6 +305,15 @@ here and the pack's `decision` value.
 | `economy.dedicated.bad-month` | "A hardware batch failure across gear you bought together." | §6.6 Companion C |
 | `goal.dedicated.binding` | "An empty dedicated server is pure loss every month, and the only hands that can fill a rack are the same hands that answer for the abuse it commits." | §15395/§15399 |
 | `type.dedicated.name` | "Root Is Theirs" | §1.3 |
+| `handover.object-storage.runs-out` | "Your rebuild bandwidth and your scrub clock. An empty comb is a bill you can pay down; a degraded stripe during a storm is a countdown you cannot." | §0.3/§1.3 |
+| `handover.object-storage.kills-you` | "Silent data loss: the corruption that copied itself into every replica, or the two simultaneous failures during a rebuild — the probability you could have computed and priced, and did not." | §1.3/§2.x |
+| `handover.object-storage.customer-wants` | "The nines they were sold and never asked you to show. They never noticed you for months; the day they do, they will want the object." | §1.3 |
+| `rosetta.object-storage.scrub` | "The scrub bandwidth share is the cgroup cage aimed at entropy instead of tenants: the same bet that background verification is work, and work competes for the same hands and the same drives." | §1.9 |
+| `rosetta.object-storage.egress` | "The replication mix is the oversell ratio spent the other way: capacity you buy and bill to nobody, because the copies are priced in safety, not in seats." | §1.9 |
+| `verbs.object-storage.transfer.1` | "Durability arithmetic transfers everywhere: any line where you promised more than one copy of something now asks you the same question — can I finish verifying everything before it changes?" | §1.9 Portable Skill idiom + §1.3 verbatim question (authored — see Type 6 notes) |
+| `economy.object-storage.bad-month` | "An egress bill the customer disputes." | §2.x Egress Bill Shock |
+| `goal.object-storage.binding` | "Durability is arithmetic, not vibes: the scrub must complete faster than the failure rate, and the hands that audit placement are the same hands that answer the day customers finally notice." | §1.3 |
+| `type.object-storage.name` | "Eleven Nines" | §1.3 |
 
 ## How to add a type
 
@@ -265,9 +321,13 @@ here and the pack's `decision` value.
 2. Fill the six Ruleset-Card slots first (§0.2): Unit · Goal Node · Scarce
    Resource · Patience Analog · Threat Mix · The Look. If fewer than 3 change vs
    existing bundles, STOP — the type doesn't ship (Three-Change).
-3. Prove the Verb-Shift: name the single most-performed invariant verb
-   (Observe · Diagnose · Place & Connect · Tune · Triage · Commit) that this type
-   makes dominant. If it's not a new dominant verb, merge it as a scenario, not a type.
+3. Prove the Verb-Shift: name the single most-performed verb the card makes
+   dominant — one of the six invariant verbs (Observe · Diagnose · Place &
+   Connect · Tune · Triage · Commit, §1.9) or, when the invariant six are
+   pairwise-claimed, one of ADR-0005's ratified per-tier roster verbs the loader
+   accepts via `TIER_EXTENDED_VERBS` (Scale · Shield · Maintain · Sell — ADR-0013
+   decision 14; content identity only, door support is a separate gap row).
+   If it's not a new dominant verb, merge it as a scenario, not a type.
 4. Budget the skin at exactly FIVE bespoke assets + eight parameter values
    (§8.10). Author the METER FIRST. Check the hue ledger (magenta is taken).
    New palette must reuse ≥80% of the build objects (20% rule).

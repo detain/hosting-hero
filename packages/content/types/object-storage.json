@@ -1,0 +1,336 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:object-storage",
+  "_todo": "All human strings are keys into file:packs/object-storage.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. FIRST CARD FREED BY ADR-0013 DECISION 14: the §1.3 card names 'Dominant verb: Observe' verbatim — held by official:dedicated since 7afa038 — so this card is re-authored onto the ratified ADR-0005 per-tier roster as Shield (loader lint TIER_EXTENDED_VERBS); see verbs._todo for the full route. Pack authored at file:packs/object-storage.i18n.json — cac.object-storage.todo stays a placeholder until §6.6 Companion B prices the storage channel.",
+
+  "meta": {
+    "name": "type.object-storage.name",
+    "codexSummary": "type.object-storage.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.object-request",
+    "durationClass": "Session",
+    "stats": {
+      "patience": 2000,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§3.2 ledger row verbatim: 'Object storage | PUT/GET | Variable | Seconds | 503, slow | Per-GB + per-request' — patience authored 2000ms as the low end of the doc's 'Seconds' class (the GET service itself is ladder'd 20-80ms, §3.x latency ladder); 'Variable' size and the plural 'Seconds' price no exact scalar, so PROVISIONAL-B. value/weight/loyalty/fragility: §3.1 five-stat examples exist only for DNS/colo units; nothing authored for this line — nulls with this cite, never forged zeros."
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": 2000,
+        "bounceSigmoid": [0.6, 1.0, 1.6],
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "budgetMs = the §3.2 'Seconds' patience class, same authoring pair shared-web (3000ms) and dns (100ms) use for their ledger rows. bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline. §3.2 names this line's failure readout as '503, slow' — the 503-shock subtraction is engine-side, not a bundle scalar."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null
+    },
+    "populationEffect": false,
+    "retryAmplifies": false,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-request",
+    "trustReadable": false,
+    "archetypeRefs": [],
+    "_todo": "retryAmplifies false: '503, slow' (§3.2) implies client retry pressure, but no doc'd retry-loop law exists for this line — never invented. trustReadable false: the card's own posture sentence, 'Customers never notice you until the day they do' (§1.3) — the visitor cohort is deliberately invisible until it isn't. archetypeRefs empty by authoring law, not oversight: the visitor here is the PUT/GET itself (same law dns cites for the query, mail for the message); an object-native archetype would move the registry censuses this lane is fenced off from — flagged for the registry-owner pass. cohortSpawn tier 3: each customer account (developers, backup vendors — §0.3 row verbatim) summons its own request cohort. costPerInvocation per-request: §3.2 pricing column 'Per-GB + per-request' meters the act; the GB rides the unitOfSale."
+  },
+
+  "goal": {
+    "nodeType": "stored-object",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "durability-nines",
+      "threshold": null,
+      "_todo": "The level's BRAND is the threshold — 'Eleven Nines' (§1.3 title) — and §7.8 says the meter 'shows durability nines'; but no WIN clause prices the hold, and the companion scenario makes the arithmetic the player's job instead: 'A probability you can actually compute and price — which is the point of the durability dial' (§2.x Object storage: Erasure-Coding Math Failure). Authoring 0.99999999999 as a fixed scalar from a title would be forging the doc's deliberate void; null + this cite."
+    },
+    "loseCondition": {
+      "kind": "silent-data-loss"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.object-storage.binding"
+  },
+
+  "scarce": {
+    "resourceId": "durability-nines",
+    "meterWidget": "comb-fullness",
+    "meterBoundStat": "verified-object-fraction",
+    "commercialSlider": "egress-pricing-model",
+    "operationalDials": [
+      "durability-dial",
+      "scrub-bandwidth-share",
+      "replication-ec-mix",
+      "metadata-shard-split"
+    ],
+    "windowGrows": false,
+    "shedOrder": "standard-p3-p0-ladder",
+    "qosAnswer": "scarce.object-storage.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "hours",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly",
+      "escalator": false,
+      "grandfathering": false
+    },
+    "seasonality": [],
+    "diurnalBaseline": "solid-grey-blur",
+    "_todo": "simTimeScale hours: §7.8's tempo roster places storage-family clocks in hours ('backup is hours'), and the card's operational truth is hour-scale — 'At large enough scale you are always rebuilding something… can I finish verifying everything before it changes' (§1.3). permanentIncidentClock false: 'There is no dramatic attacker' (§1.3 verbatim) — the enemy is arithmetic, not a countdown. seasonality []: §6.6 prices this line's shape 'accretive, never shrinks' — no storage season authored anywhere; never invented. diurnalBaseline 'solid-grey-blur': the grey blur never sleeps (dns precedent for an always-on substrate row); no storage curve is authored — flagged with the waves-lane curve catalogue debt."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.1,
+      "human": 0.15,
+      "entropic": 0.35,
+      "systemic": 0.25,
+      "customerAsThreat": 0.15,
+      "_todo": "entropic .35 is the corpus's largest entropic share by design and by cite — 'the enemy is entropy and your own rebuild math' (§1.3 verbatim); silent corruption and the scrub clock carry it. systemic .25 — the bad firmware batch ('gear bought together fails together' lineage, §6.6 Companion C law the batch-failure threat carries) and egress pricing set in shift 1. customerAsThreat .15 — 'a customer who uploads 400 million tiny files destroys your metadata layer… this is the routine catastrophe' (§1.3 verbatim). human .15 — console misconfigurations (the public bucket). malicious .10, the corpus's smallest — deliberate: 'There is no dramatic attacker' on this line. Sum 1.00. Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "entropic",
+      "systemic",
+      "human",
+      "customerAsThreat"
+    ],
+    "signatureThreats": [
+      { "id": "slowloris-sipper", "mechanical": true },
+      { "id": "mod-update-day", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "noisy-query-table-scan", "mechanical": true },
+      { "id": "vulnerable-plugin-compromise", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "public-read-default-bucket": ["vulnerable-plugin-compromise"],
+      "single-vendor-drive-pool": ["mod-update-day"],
+      "flat-egress-rate-card": ["noisy-query-table-scan"]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "cash",
+      "data-integrity",
+      "hands",
+      "reputation"
+    ],
+    "waveTable": "file:waves/g1-object-storage-first-quarter.json",
+    "_todo": "Threat mapping law (dns/mail/dedicated precedent — registry ids re-framed in _todo cites, zero new registry entries): the card names five threats (§1.3 'a misconfigured public bucket, egress bill shock, a hot-object problem, a bad firmware batch, a rebuild storm that takes a second disk with it'); none is a registry id, so each rides the closest existing mechanic — vulnerable-plugin-compromise = the config mistake that opens the door (Bypass/Flyer), mod-update-day = the batch defect walking a purchased fleet (Splitter), slowloris-sipper = the rebuild storm's slow capacity drain (Sapper), hoarder-noisy-neighbor = the 400-million-tiny-files metadata destroyer (Parasite), noisy-query-table-scan = the hot object hammering one shard (Debuffer), scanner-drizzle = the bucket-probe drizzle that notices before your customers do (Stealth). activeFamilies omits malicious per 'there is no dramatic attacker'. egress bill shock has no threat id at all — it is an ECONOMICS failure (§2.x Egress Bill Shock: 'You lose money by succeeding'), carried by economy.realismToggles.demandCharges and the commercial slider, not fabricated as an attacker. The card's deepest nightmare — 'a bug in the software layer that corrupts consistently across all replicas' — has no registry mechanic either (registry corruption ids are per-object entropic texture, not consistent-multi-replica events); it rides the goal's loseCondition (silent-data-loss, §0.3 failure column verbatim) and scenarios.analogues until the registry-owner pass."
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "amber hex",
+      "accent": "replication violet",
+      "chord": [
+        "amber hex",
+        "comb-shadow",
+        "replication violet",
+        "sealed-wax green",
+        "gap black"
+      ]
+    },
+    "materialPreset": "preset:wax-and-honeycomb",
+    "visitorCostume": {
+      "hull": "pebble",
+      "propSlot": "shard"
+    },
+    "heroSilhouette": "asset:hero.honeycomb-vault",
+    "heroObject": "honeycomb-vault",
+    "meterFace": "comb-fullness",
+    "catastropheFx": "fx:hole-punched-through-comb",
+    "ambientSoundPack": "sound:fan-hum-over-comb",
+    "densityMultiplier": null,
+    "arrivalRhythm": "quiet-until-they-do",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.disputed-egress-invoice",
+    "signatureMotion": "motion:replica-triple-flash",
+    "signatureFrame": "frame:hole-knitting-shut",
+    "lodContract": {
+      "full": "asset:lod.honeycomb-vault.full",
+      "icon16": "asset:lod.honeycomb-vault.icon16",
+      "pip": "pip:amber-hex",
+      "aggregate": "agg:replica-shadow",
+      "inspector": "skin.object-storage.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented. Palette chord verbatim §1.3 visual: 'amber hex · comb-shadow · replication violet · sealed-wax green · gap black'; dominant/accent are two notes lifted from that same chord, flagged for the owner's palette ratification. Hero object: the amber hex honeycomb 'that tiles outward as it grows' (§1.3) is the facility's signature shape at world altitude. Costume: hull 'pebble' verbatim ('objects are pebbles that fall into cells'); propSlot 'shard' from the §31758 codex note 'erasure-coding shown as fragments'. Meter verbatim: 'durability is expressed as how full and even the comb looks' (§1.3) — bound stat is the scrub clock's number, 'can I finish verifying everything before it changes'. Aggregate 'agg:replica-shadow' verbatim from the positional-shadow upgrade: 'durability is drawn as a count of visible replica shadows behind each object… three shadows stacked on top of each other' teaches placement better than any tutorial (§1.3). Signature motion verbatim: replication is 'the same pebble appearing in two other combs with a soft triple-flash'. Catastrophe verbatim: 'a correlated multi-drive failure punches a visible hole through the honeycomb; erasure-coding rebuild animates as the hole knitting shut' — the signature frame is the knit. Commercial artifact icon: §6.6 bad-month 'an egress bill the customer disputes'. arrivalRhythm authored from 'Customers never notice you until the day they do' — the card's own sentence as a rhythm name; ambientSoundPack authored (the quiet datacenter hum under an invisible product) — both flagged for ratification."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4 era grid does not date the object-storage line; §5.6:20785 documents it only on the PREREQUISITE side ('Object storage + verified restores → unlocks Backup/DR'). Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "gb-month",
+    "revenueShape": "accretive-never-shrinks",
+    "marginProfile": "good",
+    "cashTiming": "monthly",
+    "termStructure": {
+      "typical": "monthly",
+      "churn": "accretive-never-shrinks",
+      "_todo": "§6.6 Object storage row verbatim: 'TB-month + requests + egress | accretive, never shrinks | good | monthly | drives + egress'. typical 'monthly' from the cash-timing column; churn carries the row's own volume law ('never shrinks') — no numeric churn rate is authored for this line anywhere in §6.6/§1.3."
+    },
+    "cacProfile": "cac.object-storage.todo",
+    "ticketsPerCustomer": null,
+    "signatureCost": "drives-and-egress",
+    "badMonth": "economy.object-storage.bad-month",
+    "fifthAxisScore": {
+      "metric": "disk-and-durability-math",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.3 line table verbatim: 'Object storage / S3-alike | Disk + durability math | Silent data loss | Developers, backup vendors | A GB-month' — the scarce column is this line's fifth-axis frame; R42 score weight not authored."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": true
+    },
+    "_todo": "unitOfSale 'gb-month' verbatim from §0.3 ('A GB-month'); §6.6 prices the same row at 'TB-month + requests + egress' — the unit magnitude differs between the two tables and is NOT reconciled here (owner law); the sold artifact rides the §0.3 scalar word while costPerInvocation rides §3.2's 'per-request'. signatureCost verbatim §6.6 signature-cost column 'drives + egress'. ticketsPerCustomer: no rate authored. cacProfile: §6.6 Companion B prices no storage row. demandCharges TRUE — this line's whole commercial identity: 'egress billing is the main revenue line, so a customer whose success ruins you if you mispriced is a real failure mode — a single viral file is a revenue bonanza or an unpaid bandwidth catastrophe depending on which pricing model you chose in shift 1' (§1.3 verbatim); §2.x Egress Bill Shock: 'You lose money by succeeding.' p95billing false: the 95th-percentile mechanic is authored for the CDN line (§6.6 '95th-percentile billing as a real mechanic'), not this one."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "object-storage" },
+      { "archetype": "two-face-rack", "skin": "object-storage" },
+      { "archetype": "control-plane", "skin": "bucket-policy" }
+    ],
+    "distinct": [
+      "erasure-coding-planner",
+      "replica-placement-auditor",
+      "scrub-scheduler",
+      "durability-dial",
+      "metadata-shard-splitter",
+      "public-read-default-bucket",
+      "single-vendor-drive-pool",
+      "flat-egress-rate-card"
+    ],
+    "nonPhysical": [
+      "drive-firmware-batch-registry",
+      "transit-settlement-relationships"
+    ],
+    "_todo": "All distinct names cite §1.3: replication-vs-erasure-coding is the level's first decision; the placement auditor IS the positional-replica-shadow upgrade ('three shadows stacked on top of each other'); the scrub scheduler is 'the scrub must complete faster than the failure rate'; the durability dial is named verbatim by the §2.x erasure-coding scenario ('the point of the durability dial'); metadata shard-splitting cites 'a small-file flood, a hot shard, an index rebuild'; the last three are the three invitation doors in threats.unlockedByBuildables (public bucket / bought-together drives / flat egress plan). nonPhysical: the firmware batch needs a vendor-notice feed to be legible in-game; egress margin is a settlement relationship. Palette law per §0.2 R7 — 80% shared, this type re-wears concurrency-pool and two-face-rack."
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2 control-granularity authors only the shared-hosting profile; the object-storage pip row awaits its ruleset-card pass. Never invented (same law dns/mail/game-servers cite)."
+    },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+
+  "mechanics": [
+    "durability-arithmetic",
+    "scrub-vs-failure-rate",
+    "metadata-flood-defense",
+    "replica-placement-visibility",
+    "egress-pricing-bets",
+    "correlated-rebuild-storm",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Shield",
+    "transfers": [
+      "verbs.object-storage.transfer.1"
+    ],
+    "_todo": "RE-AUTHORED IDENTITY — the §1.3 card line reads 'Dominant verb: Observe' verbatim; Observe is official:dedicated's (7afa038) and pairwise VERB_SHIFT merges duplicates, which is exactly the exhaustion ADR-0013 decision 14 ruled open: 'extend within ADR-0005's ALREADY-RATIFIED per-tier verb sets — NO ADR amendment.' Chosen: Shield (the §7.8 eight-verb core PLACE·LINK·TUNE·SCALE·SHIELD·INVESTIGATE·MAINTAIN·SELL; in loader/lint.ts TIER_EXTENDED_VERBS; PLACE·LINK/TUNE/INVESTIGATE fold into the invariant six, so Shield is the line's own). It fits the card's whole posture: the level IS defending data against entropy ('durability is arithmetic, not vibes' §1.9/§1.3). HONEST DOOR GAP (g16 finding, recorded as a MODULE-STATUS row): 'Shield' has no PlayerVerb door enum member and no acquisition mechanic ships — this dominant verb is card IDENTITY and design posture, not a door capability; every mechanic the shipped quarter slice exercises still rides door verbs (configure/commit/communicate/shed-side pressure), and the card's spec monitoring posture survives as the meter pair (comb-fullness × verified-object-fraction), not as a verb."
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:dns-hosting",
+        "kind": "dns-and-everything",
+        "numbers": null,
+        "_todo": "§0.2 line synergies, verbatim: 'DNS + everything (you already own the infrastructure)' — the clause is symmetric; no numeric benefit authored for this pair."
+      }
+    ],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [],
+      "_todo": "Empty honestly: §5.6's lattice documents object storage only as a PREREQUISITE ('Object storage + verified restores → unlocks Backup/DR, then Offsite Tape Vaulting, then Compliance/Archival' — verbatim, :20785); no gate unlocking object storage itself is authored. The downstream Backup/DR leg awaits its own bundle and is not invented here."
+    },
+    "pivots": {
+      "to": {
+        "official:dns-hosting": {
+          "customerOverlap": null,
+          "hardwareReuse": null,
+          "skillTransfer": null,
+          "regulatoryDelta": 0,
+          "_todo": "§5.6 pivot numbers unauthored for this pair; regulatoryDelta 0 qualitative (no regulated-vertical row for storage in §2.27 Matrix C). The §0.3 customer row names 'developers, backup vendors' — overlap with the Backup/DR line is directional doc language, not a number."
+        }
+      }
+    },
+    "masteryBuff": "relations.object-storage.mastery",
+    "distillate": "relations.object-storage.distillate",
+    "_todo": "antagonisms left empty honestly: the doc ships no storage antagonism row. The §0.2 synergy table prices no storage-specific pair beyond the symmetric 'DNS + everything' clause, so exactly one synergy is claimed — more would be invention."
+  },
+
+  "ticketPack": "file:packs/object-storage.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.object-storage.runs-out",
+    "killsYou": "handover.object-storage.kills-you",
+    "customerWants": "handover.object-storage.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "cgroup-caging",
+      "alias": "scrub-bandwidth-share",
+      "line": "rosetta.object-storage.scrub"
+    },
+    {
+      "canonical": "oversell-ratio",
+      "alias": "replication-ec-mix",
+      "line": "rosetta.object-storage.egress"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Endure",
+      "Diagnose"
+    ],
+    "analogues": {
+      "consistent-corruption": "scenarios.object-storage.consistent-corruption",
+      "metadata-apocalypse": "scenarios.object-storage.metadata-apocalypse",
+      "erasure-coding-math": "scenarios.object-storage.erasure-coding-math"
+    }
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}
