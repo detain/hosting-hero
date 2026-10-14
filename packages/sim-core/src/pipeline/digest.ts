@@ -298,5 +298,21 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // §3.1 corrupts-mode — the CORRUPTION slice (digest-switch law, same embed
+  // law as hands/board/pricing/attention/recovery): absorbed ONLY when
+  // present, so every pre-corruption state (all shipped goldens) keeps
+  // byte-identical digests. Mark ids sort code-unit (insertion order NEVER
+  // read); the boolean is the exhaustion die's verdict (true = the completed
+  // response will corrupt); the lifetime count closes the ledger.
+  if (state.corruption !== undefined) {
+    sink.text("corruption");
+    const markIds = Array.from(state.corruption.marks.keys()).sort(byId);
+    sink.int(markIds.length);
+    for (const id of markIds) {
+      sink.text(id).bool(state.corruption.marks.get(id) === true);
+    }
+    sink.int(state.corruption.corruptedCount);
+  }
+
   return sink.hex() as HashHex;
 }

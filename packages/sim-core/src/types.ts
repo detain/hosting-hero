@@ -1679,6 +1679,36 @@ export interface RecoveryState {
   readonly lastStruggleMinute: ReadonlyMap<EntityId, SimMinute>;
 }
 
+/**
+ * §3.1 "corrupt-not-bounce" (R25 census) — ONE corrupted COMPLETED response,
+ * raised by the step-9 `corrupts` patience mode when a marked unit terminates
+ * `served`. It never enters the frozen SimEvent union: like
+ * `RecoveryNotice`, it rides its own `TickResult.corruptions` channel
+ * (host-forwarded, replay-visible through the state slice it mutated).
+ * `causeId` convention: `corruption:<unitId>:<minute>` (house precedent:
+ * `economy:death:{…}`, `recovery:<kind>:…`).
+ */
+export interface CorruptOutcome {
+  readonly unitId: EntityId;
+  readonly atUs: SimTimeUs;
+  readonly causeId: CauseId;
+}
+
+/** OPTIONAL `GameState` embed — the §3.1 `corrupts` patience-mode ledger.
+ *  `marks` are LIVE in-flight units whose patience budget ran out while the
+ *  type-mode was `corrupts` (the step-9 exhaustion die decides whether the
+ *  completed response will corrupt; ONE roll per unit, never re-cast; the
+ *  entry clears at the unit's terminal). `corruptedCount` is the lifetime
+ *  count of corrupted completed responses. Written ONLY by the patience step
+ *  (marks) and the driver fold (terminals), and only once a `corrupts` row
+ *  is authored — OPTIONAL, digest-switch law: `pipeline/digest.ts` absorbs
+ *  it ONLY when present, so every pre-corruption state — all shipped
+ *  goldens — digests byte-identically. */
+export interface CorruptionState {
+  readonly marks: ReadonlyMap<EntityId, boolean>;
+  readonly corruptedCount: number;
+}
+
 /* ═══════════════════════════ GameState root ═══════════════════════════ */
 
 /**
@@ -1730,4 +1760,11 @@ export interface GameState {
    *  `pipeline/digest.ts` absorbs it ONLY when present, so every pre-recovery
    *  state — all shipped goldens — digests byte-identically. */
   readonly recovery?: RecoveryState;
+  /** §3.1 corrupts-mode embed — the exhaustion marks + lifetime corrupted
+   *  response count (see `CorruptionState`). Written only when a
+   *  `patienceModeByType` row names "corrupts" and a queued unit actually
+   *  exhausts its budget. OPTIONAL, digest-switch law: `pipeline/digest.ts`
+   *  absorbs it ONLY when present, so every pre-corruption state — all
+   *  shipped goldens — digests byte-identically. */
+  readonly corruption?: CorruptionState;
 }

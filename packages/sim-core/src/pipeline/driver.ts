@@ -42,6 +42,8 @@ import type {
   ClockState,
   ConfidenceContribution,
   Contract,
+  CorruptOutcome,
+  CorruptionState,
   DependencyEdge,
   EntityId,
   ExternalIntent,
@@ -100,7 +102,17 @@ import {
   type RecoveryFoldResult,
   type RecoveryNotice,
 } from "./recovery.ts";
-import { type ArrivalInExt, UNIT_HOLD } from "./defaults.ts";
+import {
+  type ArrivalInExt,
+  type PatienceCheckInExt,
+  type PatienceCheckOutExt,
+  type StateEconomicsInExt,
+  UNIT_HOLD,
+} from "./defaults.ts";
+import {
+  foldCorruptionTerminals,
+  type CorruptionTerminal,
+} from "./corruption.ts";
 import { DEFAULT_KNEE_RHO, utilization } from "./queue.ts";
 import { applyIntentDoor, mintHandState, type IntentDoorConfig, type IntentReceipt } from "./intent-door.ts";
 
@@ -216,6 +228,14 @@ export interface TickResult {
    *  the frozen SimEvent union, or any digest — unwired results serialize
    *  exactly as before. */
   readonly recoveryNotices?: readonly RecoveryNotice[];
+  /** §3.1 corrupts-mode corrupted completions raised THIS tick (patience
+   *  exhausted → response completed WRONG; pipeline/corruption.ts).
+   *  PRESENT ONLY while the corruption slice is live (the recoveryNotices
+   *  seam law): nothing here enters GameState, the frozen SimEvent union,
+   *  or any digest — runs without authored `corrupts` rows serialize
+   *  exactly as before. Hosts forward the array to errorBudget via
+   *  `corruptionOutageSecs` (economy consume-site adapter). */
+  readonly corruptions?: readonly CorruptOutcome[];
   /** 0..1 retry-storm pressure this tick (metastability read-out). */
   readonly pressure: Fixed;
   /** Re-entries scheduled but not yet matured (storm headroom). */
@@ -835,7 +855,17 @@ export function createTickDriver(
     if (orphanHolds.length > 0) nodes = releaseHolds(nodes, orphanHolds);
 
     /* ── step 9 · patience check (R-60 LUT bounces) ───────────────────── */
-    const patienceOut = steps.patienceCheck({ context, units, waits: queueWaitOut.waits });
+    const patienceInput: PatienceCheckInExt = {
+      context,
+      units,
+      waits: queueWaitOut.waits,
+      ...(worked.corruption !== undefined ? { corruption: worked.corruption } : {}),
+    };
+    // The default patience step answers with the merged corruption slice via
+    // the out-of-band Ext field (defaults.ts module header); a swapped-in
+    // step that never learned the channel just omits it — the fold below
+    // then falls back to the carried slice, so live marks can never strand.
+    const patienceOut = steps.patienceCheck(patienceInput) as PatienceCheckOutExt;
     const bouncedSet = new Set<EntityId>();
     for (const unitId of patienceOut.bounced) {
       if (blockedByInspection.has(unitId) || !unitsById.has(unitId)) continue;
@@ -905,6 +935,24 @@ export function createTickDriver(
     const outcomeOut = steps.outcome(outcomeInput);
     const terminalById = new Map<EntityId, Outcome>();
     for (const outcome of outcomeOut.outcomes) terminalById.set(outcome.unitId, outcome);
+
+    /* ── §3.1 corrupts-mode fold (presence-gated, recovery seam twin) ──
+     * The step-9 channel is authoritative when it echoed a slice; otherwise
+     * the carried slice survives (swapped-step fallback). Serve-completed
+     * true marks become CorruptOutcomes; EVERY terminal clears its mark —
+     * the mode delays death, never prevents it, and an exit without a
+     * completed response was never corrupted. Nothing here touches the
+     * frozen SimEvent union; unwired runs skip the fold entirely. */
+    const liveCorruption: CorruptionState | undefined =
+      patienceOut.corruption ?? worked.corruption;
+    const corruptionFold = foldCorruptionTerminals(
+      liveCorruption,
+      liveCorruption === undefined
+        ? []
+        : outcomeOut.outcomes.map((o): CorruptionTerminal => ({ unitId: o.unitId, terminal: o.terminal })),
+      context.clocks.simUs,
+      context.minute,
+    );
 
     // Purge terminals from slots/queues BEFORE economics observes the nodes.
     // rec#5: walk ONLY the nodes attributed to this tick's terminals; the
@@ -986,14 +1034,16 @@ export function createTickDriver(
     }
 
     /* ── step 12 · state economics (SINGLE observed-layer writer) ─────── */
-    const economicsOut = steps.stateEconomics({
+    const economicsInput: StateEconomicsInExt = {
       context,
       prior: worked,
       outcomes: outcomeOut.outcomes,
       reentries: backpressureOut.reentries,
       nodes,
       lanes: inputs.lanes ?? worked.lanes,
-    });
+      ...(liveCorruption !== undefined ? { corruptions: corruptionFold.corruptions } : {}),
+    };
+    const economicsOut = steps.stateEconomics(economicsInput);
     const observed = new Map<ObservedKey, ObservedCell<unknown>>(worked.observed);
     for (const write of economicsOut.observedWrites) observed.set(write.key, write.cell);
     const lanes = new Map<EntityId, LaneStats>();
@@ -1041,6 +1091,13 @@ export function createTickDriver(
       const { recovery: _stale, ...carcass } = worked;
       workedBase = Object.freeze(carcass);
     }
+    /* Corruption slice lifecycle (recovery twin): when the channel ran, the
+     * FOLD owns the key — re-attached only with live marks or a nonzero
+     * lifetime count, so a fully-drained slice fossilizes never. */
+    if (liveCorruption !== undefined && workedBase.corruption !== undefined) {
+      const { corruption: _stale, ...carcass } = workedBase;
+      workedBase = Object.freeze(carcass);
+    }
     const nextUnits = new Map<EntityId, Unit>();
     for (const unit of units) {
       if (terminalById.has(unit.id)) {
@@ -1064,6 +1121,7 @@ export function createTickDriver(
       ...(recoveryOut !== undefined && recoveryOut.state !== undefined
         ? { recovery: recoveryOut.state }
         : {}),
+      ...(corruptionFold.state !== undefined ? { corruption: corruptionFold.state } : {}),
     });
 
     const events: SimEvent[] = [
@@ -1103,6 +1161,10 @@ export function createTickDriver(
       /* §7.7 seam law (unlockProposals twin): channel EXISTS iff wired, an
        * empty array is an honest "nothing recovered this minute". */
       ...(recoveryOut !== undefined ? { recoveryNotices: recoveryOut.notices } : {}),
+      /* §3.1 corruption seam (recoveryNotices twin): the channel EXISTS iff
+       * the slice ran this tick; an empty array is an honest "no corrupted
+       * completion this minute". */
+      ...(liveCorruption !== undefined ? { corruptions: corruptionFold.corruptions } : {}),
     });
   }
 

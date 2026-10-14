@@ -19,4 +19,5 @@ export * from "./intent-door.ts";
 export * from "./attention.ts";
 export * from "./recovery.ts";
 export * from "./recovery/tracker.ts";
+export * from "./corruption.ts";
 export { digestState } from "./digest.ts";

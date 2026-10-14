@@ -12,6 +12,11 @@
  * Contract deviations worked around (report, don't fix):
  *  - `PatienceCheckIn` carries no `rng` → bounce draws key off the config's
  *    runSeed directly (same R-16 key tuple, just opened here).
+ *  - `PatienceCheckIn` carries no prior corruption slice and
+ *    `PatienceCheckOut` no updated one → the driver hands `corruption` in
+ *    and reads it back out-of-band (`PatienceCheckInExt` /
+ *    `PatienceCheckOutExt`); swapped-in steps just omit the channel and the
+ *    corruption machinery stays dormant.
  *  - `ServeOut` carries no units → hop progress is derived by the driver from
  *    the assignments (serviceEndUs vs simNow, blocked flag).
  *  - `BackpressureIn` carries no units/retry-depth → driver attaches
@@ -28,6 +33,8 @@ import type {
   BackpressureIn,
   BackpressureOut,
   ConfidenceContribution,
+  CorruptOutcome,
+  CorruptionState,
   DependencyBlockIn,
   DependencyBlockOut,
   EntityId,
@@ -148,6 +155,16 @@ export interface DefaultPipelineConfig {
    *  gated like the batch-B rules: absent/empty ⇒ every type keeps today's
    *  LUT path, byte-identical. Semantics per mode in the step-9 docstring. */
   readonly patienceModeByType?: Readonly<Record<string, PatienceMode>>;
+  /** §3.1 corrupts-mode damage dial (v0): P(the exhaustion die corrupts the
+   *  completed response). Default FIXED_UNIT — certainty SKIPS the roll
+   *  entirely (the bounce-gate pattern), so an authored `corrupts` row
+   *  corrupts EVERY patience-exhausted completion without ever consulting
+   *  entropy. Sub-certainty answers draw ONE per exhausted unit on a NEW
+   *  per-unit-key "corrupt" stream (never the "bounce" stream — zero blast
+   *  radius). 0 ⇒ every mark resolves will-corrupt = false: the unit behaves
+   *  exactly like `resident` while still recording the exhaustion.
+   *  Absent ⇒ FIXED_UNIT; no corrupts row ⇒ the dial is never read. */
+  readonly corruptionProbability?: Fixed;
   /** AUDIT FIX (g09 TOP-PROBLEM #2: "populationEffect is a lying field"):
    *  the Population Effect feedback curve (§2.13 "The Population Effect" /
    *  Herding / Empty Server Spiral), keyed by `Unit.type`. The host derives
@@ -901,10 +918,16 @@ function parsePatienceModeByType(
  *    other half of resident-UNSHEDABLE binds in the serve/shed ladder
  *    (qos-class shedOrder already owns order; class-level immunity remains
  *    an open content question, reported).
- *  - corrupts — "corrupt-not-bounce": the unit stays (p = 0 here); the
- *    DAMAGE-instead-of-departure half needs a terminal/evidence channel the
- *    frozen 4-terminal Outcome set does not carry — reported for batch-E,
- *    never silently invented.
+ *  - corrupts — "corrupt-not-bounce" (R25 census; §3.1 heading "Patience as
+ *    HP — the unified visitor spec (the reverse creep)", hosting_game.md
+ *    :11436 under "## 3.1 The visitor model" :11434): the unit stays
+ *    (p = 0 here) and COMPLETES service, but a patience-exhausted
+ *    completion corrupts its response — the damage rides the side channel
+ *    this step's `corruption` output opens (CorruptOutcome + GameState
+ *    .corruption + observed cell; pipeline/corruption.ts owns the fold and
+ *    the economy adapter). The frozen 4-terminal Outcome set stays untouched:
+ *    corruption is NOT a fifth terminal, it is a mark that outlives the
+ *    queue and reports at the `served` terminal.
  */
 function patienceProbabilityFor(
   mode: PatienceMode,
@@ -942,26 +965,53 @@ function patienceProbabilityFor(
  * PRESENCE GATE: with `patienceModeByType` unset (every shipped run today)
  * every unit resolves to sigmoid-budget and the step is byte-identical to
  * its pre-fix self — pinned by the paired default-vs-empty-table test.
+ * The corruption channel follows the SAME law: it stays DORMANT until a
+ * table row actually names `corrupts`; absent that, the output is exactly
+ * the historical `{ bounced }` — no extra key, no extra entropy.
  */
 export function createPatienceCheckStep(
-  config: Pick<DefaultPipelineConfig, "runSeed" | "patienceModeByType">,
+  config: Pick<DefaultPipelineConfig, "runSeed" | "patienceModeByType" | "corruptionProbability">,
 ): TickStep<PatienceCheckIn, PatienceCheckOut> {
   const modeByType = parsePatienceModeByType(config.patienceModeByType);
+  /* ARMING census (parse-don't-validate, Law 2): one pass over the closed
+   * table decides whether the corruption machinery can EVER fire, so the
+   * per-unit loop below keeps its historical shape for every unlisted and
+   * listed-but-not-corrupts run. */
+  let corruptsAuthored = false;
+  for (const mode of modeByType.values()) {
+    if (mode === "corrupts") {
+      corruptsAuthored = true;
+      break;
+    }
+  }
+  const corruptionProbability = config.corruptionProbability ?? FIXED_UNIT;
   return (input) => {
     const waitByUnit = new Map<EntityId, SimTimeUs>();
     for (const wait of input.waits) waitByUnit.set(wait.unitId, wait.queueWaitUs);
     const bounced: EntityId[] = [];
+    const prior = corruptsAuthored ? (input as PatienceCheckInExt).corruption : undefined;
+    const marks = prior === undefined ? new Map<EntityId, boolean>() : new Map(prior.marks);
+    let markedThisTick = false;
     for (const unit of input.units) {
       const predicted = waitByUnit.get(unit.id);
       if (predicted === undefined) continue; // only queued units bounce from patience
       if (unit.waitingOn !== null || unit.routeHops.length === 0) continue;
       const elapsed = unit.accumulatedLatencyUs + unit.inspectionCostUs;
-      const probability = patienceProbabilityFor(
-        modeByType.get(unit.type) ?? "sigmoid-budget",
-        elapsed,
-        predicted,
-        unit.patienceUs,
-      );
+      const mode = modeByType.get(unit.type) ?? "sigmoid-budget";
+      if (mode === "corrupts") {
+        /* §3.1 corrupt-not-bounce: exhaustion MARKS the unit once (die cast
+         * never re-rolled — a unit already marked rides its verdict to the
+         * terminal); the bounce probability stays 0 by construction. */
+        if (marks.has(unit.id)) continue;
+        if (elapsed + predicted < unit.patienceUs) continue; // still inside budget
+        marks.set(
+          unit.id,
+          corruptionVerdictFor(corruptionProbability, config.runSeed, input.context.minute, unit.id),
+        );
+        markedThisTick = true;
+        continue;
+      }
+      const probability = patienceProbabilityFor(mode, elapsed, predicted, unit.patienceUs);
       if (probability <= FIXED_ZERO) continue;
       const certain = probability >= FIXED_UNIT;
       if (
@@ -971,8 +1021,46 @@ export function createPatienceCheckStep(
         bounced.push(unit.id);
       }
     }
-    return Object.freeze({ bounced: Object.freeze(bounced) });
+    if (prior === undefined && !markedThisTick) {
+      return Object.freeze({ bounced: Object.freeze(bounced) }); // historical shape, byte-ident
+    }
+    const out: PatienceCheckOutExt = Object.freeze({
+      bounced: Object.freeze(bounced),
+      corruption: Object.freeze({
+        marks: Object.freeze(marks),
+        corruptedCount: prior?.corruptedCount ?? 0,
+      }),
+    });
+    return out;
   };
+}
+
+/** Driver-supplied extra: the live corruption slice (absent = dormant). */
+export interface PatienceCheckInExt extends PatienceCheckIn {
+  readonly corruption?: CorruptionState;
+}
+
+/** Step-9 out-of-band answer: the merged slice whenever the channel is
+ *  live (marks in flight or a lifetime count on the books). */
+export interface PatienceCheckOutExt extends PatienceCheckOut {
+  readonly corruption?: CorruptionState;
+}
+
+/**
+ * The exhaustion die, cast ONCE per unit (stream discipline: a NEW
+ * per-unit-key "corrupt" domain — the "bounce" stream never sees it, so
+ * enabling corrupts cannot reshape any other mode's bounce pattern).
+ * Certainty and zero skip the draw, exactly like the bounce gate above.
+ */
+function corruptionVerdictFor(
+  probability: Fixed,
+  runSeed: RunSeed,
+  minute: number,
+  unitId: EntityId,
+): boolean {
+  if (probability <= FIXED_ZERO) return false;
+  if (probability >= FIXED_UNIT) return true;
+  return rollUnder(probability, streamFor(runSeed, "corrupt", minute, unitId).nextU32());
 }
 
 /* ═══════════════════════════ Step 10 · Outcome (4 terminals) ═════════════════ */
@@ -1171,6 +1259,12 @@ export function createBackpressureStep(
  * replaces this slot with real ledger/invoicing (C5 restatement) without
  * touching the driver.
  */
+/** Driver-supplied extra: this tick's corrupted completions (step 9/10
+ *  side channel). Absent/empty ⇒ zero writes — the default-off law. */
+export interface StateEconomicsInExt extends StateEconomicsIn {
+  readonly corruptions?: readonly CorruptOutcome[];
+}
+
 export function createStateEconomicsStep(estateAnchor: EntityId): TickStep<StateEconomicsIn, StateEconomicsOut> {
   const exactCell = (value: number | bigint): ObservedCell<unknown> =>
     Object.freeze({
@@ -1228,6 +1322,13 @@ export function createStateEconomicsStep(estateAnchor: EntityId): TickStep<State
     const pressureDenominator = Math.max(1, input.outcomes.length);
     const pressureKey = observedKey(estateAnchor, "retryPressure");
     publish(pressureKey, clampUnit(fromRatio(BigInt(pressureNumerator), BigInt(pressureDenominator))), "retryPressure");
+    /* §3.1 corrupts-mode truth cells: one exact int per corrupted COMPLETED
+     * response (the unit id is unique per response, so the count is 1 —
+     * presence IS the damage; absence = never corrupted). Nothing to fold,
+     * nothing written: default-off law. */
+    for (const corrupted of (input as StateEconomicsInExt).corruptions ?? []) {
+      publish(observedKey(corrupted.unitId, "corruptedCount"), 1, `${String(corrupted.unitId)}:corruptedCount`);
+    }
     return Object.freeze({
       cash: input.prior.cash,
       ledgerEntry: null,
