@@ -72,9 +72,17 @@
  *     mints the pool through triage-window entries at business minute 0
  *     and mirrors the fastForward calendar roll, dead-ledger authority
  *     @9ca31c3) → "The Founder Bus Factor" (:3880) shipped.
- *  7. STILL OPEN: price on the wire — the L1 elasticity book (@5781335)
- *     lives in GameState.pricing.overrides with no scenario citation yet;
- *     deliberate future ticket, do not bolt on.
+ *  7. CONSUMED (wave seven): price on the wire — contracts rows gained an
+ *     optional `priceKey` ('<kind>:<id>', the door's override-key grammar
+ *     mirrored module-privately in doc.ts) that registers a contract
+ *     against the L1 elasticity book (@5781335); the money lane already
+ *     consumes GameState.pricing.overrides via internal/tickFold.ts:346,
+ *     so an adjust-price intent through the rung-8 door rail moves churn
+ *     odds the moment a row names a key → "The Copycat" (:3429) shipped.
+ *     The cliff dice stay cut-proof by construction: the retention factor
+ *     clamps at exactly 1.0 under any discount (§5.11 law — no discount
+ *     ever bought certainty), so the mission's flip answers on the MONTHLY
+ *     logo-churn band alone.
  *  8. CONSUMED: the change-freeze band (limits.freeze answered by the
  *     door's canPlaceDevice / canAdjustPrice host seams) → "The Change
  *     Freeze" (:3625) shipped.
@@ -1166,5 +1174,94 @@ describe("shared tick fold (single home)", () => {
     expect(weekend).toContain("foldMoneyLaneTick");
     expect(scenario).toContain("../internal/tickFold.ts");
     expect(weekend).toContain("../internal/tickFold.ts");
+  });
+});
+
+describe("wave-seven missions — price elasticity (rung 7)", () => {
+  /* The Copycat (§1.5 :3429). The shipped wire cuts the shield plan to
+   * 85% at t30 (outside the ±10% dead band → churn floor 450→416 bps);
+   * the flip softens the SAME intent to 95% (inside the band → every
+   * elasticity factor is exactly 10_000 → applyFactorBps identity → the
+   * dice answer on the raw floor). One wire field moves; the money lane
+   * is byte-ident elsewhere. */
+
+  const CUT_15 = 30_600_000_000;
+  const CUT_5 = 34_200_000_000;
+  const flipPrice = (microUsd: number) =>
+    flip("the-copycat", (w) => {
+      const intent = w.intents?.[0] as { args: Record<string, unknown> } | undefined;
+      if (intent === undefined) throw new Error("copycat wire lost its adjust-price row");
+      intent.args.newPriceMicroUsd = microUsd;
+    });
+
+  const FLIP_TICKS = [420, 840, 1260, 1680, 2520] as const;
+
+  it("the 5% (dead-band) flip churns the whale at the raw-floor month on all five seeds", () => {
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(flipPrice(CUT_5), BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe(`lose:churn-above:0@${FLIP_TICKS[offset]}`);
+    }
+  });
+
+  it("zero-roll control — the dead-band flip behaves EXACTLY like never cutting at all", () => {
+    // Inside the band no dice is re-weighted (identity factor), so the
+    // timid cut and the silent book must answer with the same ticks.
+    // (End digests differ: the flip arm really spent the hand, wrote the
+    // book row, and bills 5% less — the CONTROL is the churn clock.)
+    const silent = flip("the-copycat", (w) => {
+      w.intents = [];
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const timid = runScenario(flipPrice(CUT_5), BASE_SEED, { seedOffset: offset });
+      const none = runScenario(silent, BASE_SEED, { seedOffset: offset });
+      expect(none.stopReason).toBe(timid.stopReason);
+    }
+  });
+
+  it("the 15% (out-of-band) cut saves the whale exactly where the die landed in the band", () => {
+    // Offsets 0-2: the shipped arm wins the full clock while the flip
+    // churns at month one/two/three — elasticity, not luck, moved that
+    // die's reach. Offsets 3-4 roll UNDER 416 too (both arms churn, the
+    // mission docblock records it; win coverage is the suite-standard
+    // offsets 0-2 loop above).
+    for (const offset of [0, 1, 2]) {
+      const brave = runScenario(flipPrice(CUT_15), BASE_SEED, { seedOffset: offset });
+      expect(brave.stopReason).toBe(`win@${brave.endMinute}`);
+      const timid = runScenario(flipPrice(CUT_5), BASE_SEED, { seedOffset: offset });
+      expect(timid.stopReason).toBe(`lose:churn-above:0@${FLIP_TICKS[offset]}`);
+    }
+  });
+
+  /* The Ransom Customer (§1.5 :3984). Paying is an opex row, refusing is
+   * deleting it; the mail-quarter storm is IDENTICAL in both worlds —
+   * response-conditional traffic is a blocking primitive (honest v1), so
+   * the flip is scored purely on the ledger corridor. */
+
+  const RANSOM_CROSSES = [180, 185, 184, 182, 180] as const;
+
+  it("dropping the ransom row crosses the 167 Mµ$ ceiling at the pinned ticks", () => {
+    const unpaid = flip("the-ransom-customer", (w) => {
+      w.limits.opex = [];
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(unpaid, BASE_SEED, { seedOffset: offset, corpus: corpusAuthority() });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe(`lose:cash-above:167000000@${RANSOM_CROSSES[offset]}`);
+    }
+  });
+
+  it("the ransom never truncates the storm — bounce census is arm-blind to the crossing tick", () => {
+    const paid = shippedScenario("the-ransom-customer");
+    const unpaid = flip("the-ransom-customer", (w) => {
+      w.limits.opex = [];
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const cap = RANSOM_CROSSES[offset] ?? RANSOM_CROSSES[0];
+      const opts = { seedOffset: offset, corpus: corpusAuthority(), tickCap: cap };
+      const p = runScenario(paid, BASE_SEED, opts);
+      const u = runScenario(unpaid, BASE_SEED, opts);
+      expect(u.observation.bounces).toBe(p.observation.bounces);
+    }
   });
 });

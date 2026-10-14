@@ -812,6 +812,10 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
             grandfather: null,
             revenueTags: DEFAULT_REVENUE_TAGS,
             commitmentBps: spec.commitmentBps,
+            // Rung 7 sparse pass-through: absent keeps the input key-free
+            // (registerContractEconomy writes ContractEconomy.priceKey only
+            // when declared), so every shipped wire registers byte-ident.
+            ...(spec.priceKey === undefined ? {} : { priceKey: spec.priceKey }),
           }),
         ),
       );

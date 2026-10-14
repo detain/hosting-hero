@@ -235,6 +235,11 @@ export interface ScenarioContractSpec {
   readonly termMonths: number;
   /** SLA commitment bps at registration (author-visible, digest-relevant). */
   readonly commitmentBps: bigint;
+  /** Rung 7: `<kind>:<id>` slot in the Iron Board's price book. Absent (the
+   *  shipped default) the contract bills at authored prices forever; present,
+   *  an adjust-price intent on this key bends this contract's churn/cliff/
+   *  dunning dice through the economy's elasticity lane. */
+  readonly priceKey?: string;
 }
 
 /** Hand-authored traffic: a piecewise plateau over sim-minutes.
@@ -656,7 +661,33 @@ const CONTRACT_FIELDS = [
   "billingCycle",
   "autoRenew",
   "commitmentBps",
+  "priceKey",
 ] as const;
+
+/** Price-key kinds a contract row may declare (rung 7). DRIFT PIN, not an
+ *  import: scenario sits above the economy leaf and must not reach into
+ *  elasticity.ts internals; this mirror is held honest by
+ *  __tests__/pricingRung.test.ts reading `PRICE_KEY_KINDS` out of
+ *  src/economy/elasticity.ts:60 by source, same law as the door-verb mirror
+ *  in SCENARIO_INTENT_ARG_SHAPES (intentGrammar.test.ts). */
+const PRICE_KEY_KINDS = Object.freeze(["plan", "contract-class", "sku"] as const);
+
+/** Parse the rung-7 `<kind>:<id>` price-key shape exactly as the door's
+ *  parsePriceOverrideKey does: split at the FIRST colon, closed kind vocab,
+ *  non-empty id. Returns the wire string verbatim — registration hands it to
+ *  RegisterContractInput.priceKey, where economy re-validates it anyway. */
+function parsePriceKeyWire(raw: unknown, path: string): string {
+  if (typeof raw !== "string") bad("BAD_CONTRACT", path, "priceKey must be a '<kind>:<id>' string");
+  const colon = raw.indexOf(":");
+  if (colon <= 0 || colon === raw.length - 1) {
+    bad("BAD_CONTRACT", path, `"${raw}" is not a '<kind>:<id>' price key`);
+  }
+  const kind = raw.slice(0, colon);
+  if (!(PRICE_KEY_KINDS as readonly string[]).includes(kind)) {
+    bad("BAD_ENUM", path, `priceKey kind "${kind}" is not one of ${PRICE_KEY_KINDS.join(", ")}`);
+  }
+  return raw;
+}
 
 /** Contract's inline billing-cycle union narrowed to the three cycles the
  *  economy's billing lane actually meters (weekly/quarterly remain legal in
@@ -711,6 +742,9 @@ function parseContract(raw: unknown, path: string): ScenarioContractSpec {
     const n = readInt(src, "commitmentBps", path, "BAD_CONTRACT", 0, 10_000);
     commitmentBps = BigInt(n);
   }
+  const priceKeyRaw = src.priceKey;
+  const priceKey =
+    priceKeyRaw === undefined ? undefined : parsePriceKeyWire(priceKeyRaw, `${path}.priceKey`);
   const contract: Contract = Object.freeze({
     id: asEntityId(id),
     customerEntityId: asEntityId(typeof customer === "string" ? customer : `customer:${id}`),
@@ -726,7 +760,16 @@ function parseContract(raw: unknown, path: string): ScenarioContractSpec {
     shedImmunityClassId: null,
     allocations: Object.freeze([]),
   });
-  return Object.freeze({ id, contract, termMonths, commitmentBps });
+  // Sparse law (rung 7): an unarmed row never materializes the key — every
+  // shipped wire parses to a byte-ident spec, and the register input below
+  // stays key-free so contract records hash exactly as before.
+  return Object.freeze({
+    id,
+    contract,
+    termMonths,
+    commitmentBps,
+    ...(priceKey === undefined ? {} : { priceKey }),
+  });
 }
 
 /* ── traffic ── */

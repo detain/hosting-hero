@@ -100,6 +100,17 @@
  *    the abuse-ceiling twin cited from the shipped mail-hosting quarter
  *    (waves [1,4] under the ceiling; [1,2,4] crosses) — the tableId seam
  *    again (@5df5586), no new rung.
+ *  - the-ransom-customer → "The Ransom Customer" / "Ransom DDoS" /
+ *    "Extortion" (~line 3984): the payoff is an opex row, the storm is a
+ *    mail-quarter citation (waves [1,4]); response-conditional traffic is
+ *    a blocking primitive, so the WIN corridor is the ledger geometry —
+ *    paid stays under the ceiling, the unpaid flip crosses it.
+ *  - the-copycat       → "The Copycat" / "The Price War" (~line 3429):
+ *    the price itself is the move — rung 7 (the contract row's optional
+ *    priceKey) registers the whale against the L1 elasticity book so the
+ *    door's adjust-price intent moves the MONTHLY churn floor (450→416
+ *    bps outside the dead band) while the cliff stays cut-proof at the
+ *    retention clamp; the 5% flip is the zero-roll control (@5781335).
  */
 
 import type { ScenarioDoc } from "./doc.ts";
@@ -1729,6 +1740,152 @@ const FREE_TIER_FLOOD_CORPUS_WIRE = {
   limits: { maxSimMinutes: 240 },
 } satisfies ScenarioWire;
 
+/* ───────────── The Ransom Customer (corpus + opex choice) ─────────────── */
+
+/** §1.5 "The Ransom Customer / Ransom DDoS / Extortion" (:3984).
+ *  The wire-level choice is the opex ledger: one row at m60 titled
+ *  "ransom-paid" for 40 Mµ$ — the exact shape of a payoff the unattended
+ *  lane already honors (a burn the company VOLUNTEERS). The storm is a
+ *  citation of the shipped g1 mail quarter (waves 1+4 — the scanner
+ *  drizzle and the layer-7 ticket hydra; the wave-5 systemic crest stays
+ *  outside this band, same reading as the free-tier-flood-corpus twin
+ *  @5df5586). HONEST v1, stated plainly: RESPONSE-CONDITIONAL traffic is
+ *  a BLOCKING primitive the engine does not have — paying the ransom does
+ *  NOT truncate the storm. What this mission scores is survival
+ *  economics: the paid arm's bounce census is IDENTICAL to the unpaid
+ *  arm's at every probed tick (the test pins it as the correlation-not-
+ *  causation control witness), so the ransom is only ever a ledger
+ *  decision. The objectives mirror the spec's own inversion: WIN holds
+ *  the paid choice inside the book's corridor — cash stays ABOVE the
+ *  60 Mµ$ floor and BELOW the 167 Mµ$ ceiling the whole clock — while
+ *  the LOSE flip DROPS the ransom row and the withheld 40 Mµ$ lets the
+ *  hourly anchor's climb cross the ceiling at the pinned per-offset tick
+ *  [180,185,184,182,180] on seeds 904–908. Refusing to pay is the
+ *  engine-legible "failure" here because the ceiling row is authored as
+ *  the losing line: the game that scores a fattened cash box as a win
+ *  cannot tell this story, so the wire names the box itself as the
+ *  losing ledger. NON-EXPRESSIBLE rides (recorded, spec :3984 body):
+ *  "paying marks you as a payer", the next-pool-worse escalation, and
+ *  law-enforcement advice arcs — none have a state channel in v0
+ *  (no payer-mark exists to carry them). Dice law: churn rolls only at
+ *  business-month rolls (first at t420 with a 240-minute clock — never);
+ *  the money lane's cash jitter across offsets comes from the clean-week
+ *  refund dice alone, which is why the crossing ticks are pinned
+ *  per-offset in the [180,185] band the probe measured. */
+const RANSOM_CUSTOMER_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-ransom-customer",
+  name: "The Ransom Customer",
+  brief:
+    "A mail box gets a note with a bitcoin address. The storm does not care whether you pay — the engine has no response-conditional traffic. The ledger remembers the 40 grand: pay and the quarter stays inside the corridor; hold and the money you kept becomes the number that loses.",
+  specRef: "§1.5 The Ransom Customer / Ransom DDoS / Extortion",
+  specLine: 3984,
+  board: {
+    nodes: [{ id: "mail-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "rc-01", mrcMicroUsd: 500_000_000, billingCycle: "hourly", termEndMin: 6_000, termMonths: 12, autoRenew: true },
+  ],
+  traffic: {
+    tableId: "g1-mail-hosting-first-quarter",
+    waves: [1, 4],
+    waveStartMinute: 2,
+    baselineRatePerMin: 8,
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "cash-above", microUsd: 60_000_000 },
+      { kind: "bounces-below", count: 150 },
+    ],
+    lose: [
+      { kind: "cash-above", microUsd: 167_000_000 },
+      { kind: "death-by-cause", cause: "any" },
+    ],
+  },
+  limits: {
+    maxSimMinutes: 240,
+    initialFreeMicroUsd: 100_000_000,
+    opex: [{ atMinute: 60, amountMicroUsd: 40_000_000, memo: "ransom-paid" }],
+    dunningEngineOwned: true,
+  },
+} satisfies ScenarioWire;
+
+/* The Copycat (§1.5 :3429) — the rung-7 price-war half. THE WIRE WIDENS:
+ *  the whale row carries `priceKey: "plan:copycat-shield"`, registering it
+ *  against the L1 elasticity book (@5781335), and the rung-8 door rail
+ *  speaks the adjust-price verb (@0032a21): at t30 the player cuts the
+ *  shield plan to 85% of MRC. A 15% deviation sits OUTSIDE the ±10% dead
+ *  band, so the churn factor is 9_250 bps (§6.4 elasticity, coefficient
+ *  150%) and the whale's monthly logo-churn floor drops 450 → 416 bps —
+ *  the discount genuinely buys odds on the MONTHLY fuse. The cliff never
+ *  moves: the retention factor clamps at exactly 1.0 under any cut
+ *  (§5.11 — "no discount ever bought certainty"), so the t1680 renewal
+ *  (autoRenew, unconditional) is calendar, not dice. THE FLIP IS THE
+ *  CONTROL: a timid 5% cut stays inside the dead band, every factor is
+ *  exactly 10_000, applyFactorBps takes its identity early-exit, and ZERO
+ *  odds change — the same whale then churns on the RAW 450 bps floor.
+ *  Witness (seeds 904–908, engine-verified, contract slug cc-klya under
+ *  the id-dice law — the slug moves BOTH the churn and the payment dice,
+ *  and twelve candidates died of dunning write-offs before this one ran
+ *  clean): the 15% arm wins at 2880 on offsets 0-2 (whale dice ≥ 450 all
+ *  seven months); the 5% flip loses `churn-above:0` at
+ *  [420,840,1260,1680,2520] — offsets 0-2 cross the strict band (dice in
+ *  [416,450): the discount is exactly what saved them) while offsets 3-4
+ *  (seeds 907-908) roll under 416 too: the discount never reaches that
+ *  far, both arms churn, recorded honestly. HONEST PARTIAL (§1.5 asks the
+ *  price war to decide every seat): a 60,000,000-slug brute force over
+ *  the shipped 34 bps band found NO seed-set where all five crossings
+ *  stay inside the band (per-seed hit rate ≈ 0.34% per month — the
+ *  geometry of a narrow dead-band edge), so the win arm is pinned on the
+ *  suite-standard three offsets and the flip table names the two loose
+ *  seeds by tick. The billing half is deterministic either way: the cut
+ *  shrinks every monthly invoice by 15% or 5% through
+ *  effectiveBaseMicroUsd (tick.ts:911) — margin destroyed is visible in
+ *  cashEnd (135.2 Bµ$ win arms vs 51–141 Bµ$ flip stops), the spec's
+ *  "respond with price (destroy margin)" leg. */
+const COPYCAT_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-copycat",
+  name: "The Copycat",
+  brief:
+    "A rival undercuts you. A 15% cut lands outside the dead band — the monthly churn dice hear it. The cliff ignores price by law: no discount ever bought certainty. The timid 5% flip rolls no dice at all, and the whale churns on the raw floor.",
+  specRef: "§1.5 The Copycat / The Price War",
+  specLine: 3429,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "cc-klya", mrcMicroUsd: 36_000_000_000, billingCycle: "monthly", termEndMin: 172_800, termMonths: 12, autoRenew: true, priceKey: "plan:copycat-shield" },
+  ],
+  traffic: {
+    tableId: "g1-shared-web-first-quarter",
+    segments: [{ fromMinute: 0, ratePerMin: 0 }],
+  },
+  intents: [
+    { atTick: 30, verb: "adjust-price", args: { targetKind: "plan", targetId: "copycat-shield", newPriceMicroUsd: 30_600_000_000, effectiveAtBusinessMinute: null } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 2880 },
+      { kind: "churn-below", count: 1 },
+      { kind: "cash-above", microUsd: 10_000_000_000 },
+      { kind: "intents-executed-above", count: 0 },
+    ],
+    lose: [
+      { kind: "churn-above", count: 0 },
+      { kind: "death-by-cause", cause: "any" },
+    ],
+  },
+  limits: {
+    maxSimMinutes: 2880,
+    initialFreeMicroUsd: 20_000_000_000,
+    dunningEngineOwned: true,
+  },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -1758,15 +1915,16 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [FOUNDER_BUS_FACTOR_WIRE.id]: FOUNDER_BUS_FACTOR_WIRE,
   [CHANGE_FREEZE_WIRE.id]: CHANGE_FREEZE_WIRE,
   [FREE_TIER_FLOOD_CORPUS_WIRE.id]: FREE_TIER_FLOOD_CORPUS_WIRE,
+  [RANSOM_CUSTOMER_WIRE.id]: RANSOM_CUSTOMER_WIRE,
+  [COPYCAT_WIRE.id]: COPYCAT_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
 
 /** The shipped documents, parsed at module load — authored drift
  *  dies HERE, loudly, before any test or host can consume it. The first
- *  five carry named exports (hosts import them directly); the wave-two
- *  five, the wave-three four, the wave-four two and the wave-five six
- *  are reachable through SHIPPED_SCENARIOS /
+ *  five carry named exports (hosts import them directly); every later
+ *  mission is reachable through SHIPPED_SCENARIOS /
  *  shippedScenario(id) only — no new export names by design (docs/
  *  api-verify is name-based). */
 export const theLongWeekendDoc: ScenarioDoc = parseScenarioDoc(LONG_WEEKEND_WIRE);
@@ -1795,6 +1953,8 @@ const theThresholdDayDoc: ScenarioDoc = parseScenarioDoc(THE_THRESHOLD_DAY_WIRE)
 const founderBusFactorDoc: ScenarioDoc = parseScenarioDoc(FOUNDER_BUS_FACTOR_WIRE);
 const changeFreezeDoc: ScenarioDoc = parseScenarioDoc(CHANGE_FREEZE_WIRE);
 const freeTierFloodCorpusDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_CORPUS_WIRE);
+const theRansomCustomerDoc: ScenarioDoc = parseScenarioDoc(RANSOM_CUSTOMER_WIRE);
+const theCopycatDoc: ScenarioDoc = parseScenarioDoc(COPYCAT_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -1824,6 +1984,8 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   founderBusFactorDoc.id,
   changeFreezeDoc.id,
   freeTierFloodCorpusDoc.id,
+  theRansomCustomerDoc.id,
+  theCopycatDoc.id,
 ]);
 
 /** id → trusted doc. */
@@ -1854,6 +2016,8 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [founderBusFactorDoc.id]: founderBusFactorDoc,
   [changeFreezeDoc.id]: changeFreezeDoc,
   [freeTierFloodCorpusDoc.id]: freeTierFloodCorpusDoc,
+  [theRansomCustomerDoc.id]: theRansomCustomerDoc,
+  [theCopycatDoc.id]: theCopycatDoc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */

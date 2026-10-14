@@ -681,3 +681,52 @@ describe("seed & id derivations", () => {
     expect(scenarioContractId(parsed, 0)).toBe("a-1");
   });
 });
+
+describe("wave-seven wall — the rung-7 priceKey on contract rows", () => {
+  function withPriceKey(priceKey: unknown): MutableWire {
+    const w = minimalWire();
+    w.contracts = [
+      {
+        id: "wk-1",
+        mrcMicroUsd: 288_000_000,
+        billingCycle: "monthly",
+        termMonths: 12,
+        termEndMin: 43_200,
+        ...(priceKey === undefined ? {} : { priceKey }),
+      } as never,
+    ];
+    w.limits.maxSimMinutes = 420;
+    return w;
+  }
+
+  it("absent keeps the parsed spec exactly the pre-rung-7 shape (sparse law)", () => {
+    const spec = parseScenarioDoc(minimalWire()).contracts;
+    expect(spec).toHaveLength(0);
+    const one = parseScenarioDoc(withPriceKey(undefined));
+    expect(one.contracts[0]).toBeDefined();
+    expect(Object.keys(one.contracts[0] as object).sort()).toEqual([
+      "commitmentBps",
+      "contract",
+      "id",
+      "termMonths",
+    ]);
+  });
+
+  it("a '<kind>:<id>' string crosses and rides the spec verbatim", () => {
+    const doc = parseScenarioDoc(withPriceKey("plan:shield-tier"));
+    expect(doc.contracts[0]?.priceKey).toBe("plan:shield-tier");
+    for (const kind of ["contract-class", "sku"]) {
+      const d = parseScenarioDoc(withPriceKey(`${kind}:x-1`));
+      expect(d.contracts[0]?.priceKey).toBe(`${kind}:x-1`);
+    }
+  });
+
+  it("refuses non-strings, colon-less shapes, empty halves and unknown kinds", () => {
+    wall("BAD_CONTRACT", () => parseScenarioDoc(withPriceKey(42)));
+    wall("BAD_CONTRACT", () => parseScenarioDoc(withPriceKey("plan")));
+    wall("BAD_CONTRACT", () => parseScenarioDoc(withPriceKey(":plan")));
+    wall("BAD_CONTRACT", () => parseScenarioDoc(withPriceKey("plan:")));
+    const enumErr = wall("BAD_ENUM", () => parseScenarioDoc(withPriceKey("bundle:shared-web")));
+    expect(enumErr.message).toContain("plan, contract-class, sku");
+  });
+});
