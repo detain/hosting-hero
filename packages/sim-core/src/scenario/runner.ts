@@ -27,6 +27,8 @@
  */
 
 import type {
+  ArrivalIn,
+  ArrivalOut,
   AttentionState,
   BoardEdgeRecord,
   CauseId,
@@ -39,6 +41,8 @@ import type {
   RunSeed,
   SimMinute,
   SimTick,
+  TickStep,
+  UnitIntent,
   WaveEnvelope,
 } from "../types.ts";
 import { asCauseId, asMoney } from "../types.ts";
@@ -257,11 +261,13 @@ function baselineEnvelope(
 
 /** Ladder rung 3: attribute one minted arrival to the family label of the
  *  envelope that minted it. The default arrival step stamps every event
- *  `arrival:<tableId>:<tick>:<envelopeIndex>`; the familyMix die is never
- *  configured on the scenario lane (buildPipelineConfig ships no family
- *  table), so the envelope's dominantFamily IS the minted unit's family —
- *  exact, not approximate. Cohort-bonus mints share their envelope index,
- *  so herded visitors are labeled diegetically too. */
+ *  `arrival:<tableId>:<tick>:<envelopeIndex>`; on an UNARMED wire (no
+ *  `limits.familyMix`, rung 10) the family die is never rolled, so the
+ *  envelope's dominantFamily IS the minted unit's family — exact, not
+ *  approximate. Cohort-bonus mints share their envelope index, so herded
+ *  visitors are labeled diegetically too. On an ARMED wire this path is
+ *  skipped entirely — the label is cover story; observeMintedFamilies below
+ *  counts the roll. */
 function countArrivalFamily(
   causeId: string,
   envelopes: readonly WaveEnvelope[],
@@ -276,6 +282,52 @@ function countArrivalFamily(
     );
   }
   sink.set(envelope.dominantFamily, (sink.get(envelope.dominantFamily) ?? 0) + 1);
+}
+
+/** Rung 10: the mint-time family observer — a pure pass-through wrapper
+ *  over the arrival slot. The inner step rolls the armed mix per unit;
+ *  this reads each returned unit's trueIntent and folds it into the census
+ *  Map, then returns the inner output object UNTOUCHED (same reference,
+ *  already frozen). No dice consumed, no state seen, no ordering imposed —
+ *  the report stays a fold, and the ×100 determinism legs ride it like any
+ *  other output-side counter. */
+function observeMintedFamilies(
+  inner: TickStep<ArrivalIn, ArrivalOut>,
+  sink: Map<string, number>,
+): TickStep<ArrivalIn, ArrivalOut> {
+  return (input) => {
+    const out = inner(input);
+    for (const unit of out.units) {
+      const family = intentToFamilyLabel(unit.trueIntent);
+      sink.set(family, (sink.get(family) ?? 0) + 1);
+    }
+    return out;
+  };
+}
+
+/** The census-label mirror of familyToIntent (pipeline/internal.ts): the
+ *  five threat families fold back to their authored wire names — that is
+ *  the whole point of the dial — while the benign intents (customer /
+ *  prospect / automaton: funnel conversions, viral drafts, health-check
+ *  bots — none of them ever minted through the arrival step under an armed
+ *  mix) keep the "organic" label the unarmed census uses. */
+function intentToFamilyLabel(intent: UnitIntent): string {
+  switch (intent) {
+    case "malicious":
+      return "malicious";
+    case "human-error":
+      return "human";
+    case "entropic":
+      return "entropic";
+    case "systemic":
+      return "systemic";
+    case "abuser":
+      return "customerAsThreat";
+    case "customer":
+    case "prospect":
+    case "automaton":
+      return "organic";
+  }
 }
 
 /** Ladder rung 2: the windows THIS doc cites (win + lose lists, deduped by
@@ -748,7 +800,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
    * own traffic table(s); certainty (10,000 bps — the parsed default)
    * SKIPS the dice, making the corrupted census pure arithmetic. Absent ⇒
    * the shipped patience path untouched, byte-ident. */
-  const slotsConfig: DefaultPipelineConfig =
+  const patienceArmed: DefaultPipelineConfig =
     corrupts === null
       ? pipelineConfig
       : Object.freeze({
@@ -758,9 +810,34 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
           ),
           corruptionProbability: fromRatio(BigInt(corrupts.probabilityBps), 10_000n),
         });
+  /* Rung 10: the composition dial. Unarmed (all pre-rung-10 wires) ⇒ the
+   * config object is byte-the-same and createArrivalStep never rolls the
+   * family die (defaults.ts:255 gates the roll on mix presence). */
+  const familyMix = doc.limits.familyMix;
+  const slotsConfig: DefaultPipelineConfig =
+    familyMix === undefined
+      ? patienceArmed
+      : Object.freeze({ ...patienceArmed, familyMix: familyMix.weights });
   const dependencyEdges = dependencyEdgesFor(nodes);
   const rulePhase = createRulePhaseStep();
-  const slots = Object.freeze({ ...createDefaultSlots(slotsConfig), rulePhase: rulePhase.step });
+  /* Armed, the census moves from the LABEL path to the ROLL path: the
+   * runner wraps the arrival slot (the sanctioned override — defaults.ts
+   * :1354 "override any slot before handing the bundle to createTickDriver")
+   * with a pure pass-through observer that counts each minted unit's rolled
+   * family at the step's OUTPUT. Output-only is load-bearing: the same-tick
+   * terminal sweep (driver.ts:957) purges completed units before the driver
+   * ever returns state, so the arrival step's return value is the ONE place
+   * the rolled identity is legible. The wrapper consumes no dice and returns
+   * the inner step's frozen output untouched. */
+  const arrivalsByFamily = new Map<string, number>();
+  const baseSlots = createDefaultSlots(slotsConfig);
+  const slots = Object.freeze({
+    ...baseSlots,
+    rulePhase: rulePhase.step,
+    ...(familyMix === undefined
+      ? {}
+      : { arrival: observeMintedFamilies(baseSlots.arrival, arrivalsByFamily) }),
+  });
   const game0 = mintInitialState(uaConfig, nodes, edges);
   /* Channels ladder: the door is wired only when the doc names a rail —
    * an empty options object keeps today's exact driver construction.
@@ -865,7 +942,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     falsePositives: 0,
     arrivals: 0,
     deaths: [],
-    arrivalsByFamily: new Map(),
+    arrivalsByFamily, // rung 10: shared with the arrival-step observer
     intentsExecuted: 0,
     intentsRefused: 0,
     intentsExecutedByVerb: new Map(),
@@ -931,7 +1008,13 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
 
     for (const e of result.events) {
       eventsByKind.set(e.kind, (eventsByKind.get(e.kind) ?? 0) + 1);
-      if (e.kind === "arrival") countArrivalFamily(e.causeId, envelopes, acc.arrivalsByFamily);
+      /* Rung 10: unarmed wires count the census by envelope LABEL (the
+       * pre-rung path, byte-ident). Armed wires already counted at the ROLL
+       * inside the observer — folding labels here too would double-count and
+       * re-import the fiction the dial retires. */
+      if (e.kind === "arrival" && familyMix === undefined) {
+        countArrivalFamily(e.causeId, envelopes, acc.arrivalsByFamily);
+      }
     }
 
     /* Wave five: the silent corruption side channel. `TickResult.corruptions`

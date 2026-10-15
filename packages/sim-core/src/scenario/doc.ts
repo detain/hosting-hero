@@ -31,6 +31,8 @@ import type {
 } from "../unattended/index.ts";
 import { parseGuardList, type ParsedGuard } from "../unattended/index.ts";
 import type { CompanyDeathCause, Covenant } from "../economy/index.ts";
+import { parseFamilyWeightsTable } from "../waves/families.ts";
+import type { FamilyShare } from "../waves/families.ts";
 import {
   COMPANY_DEATH_CAUSES,
   COVENANT_METRIC_ERROR_BUDGET_HEALTH_BPS,
@@ -430,6 +432,31 @@ export interface ScenarioLimits {
   readonly freeze?: {
     readonly fromMinute: number;
     readonly toMinute: number;
+  };
+  /** Ladder rung 10: the traffic-composition dial — the bundle-side
+   *  `threats.familyWeights` table (waves/families.ts authority) put on the
+   *  scenario wire. CLOSED row `familyMix {weights}`: weights is the five-key
+   *  table (customerAsThreat / entropic / human / malicious / systemic) in
+   *  plain-INTEGER micro-shares (0..1,000,000 — the same domain as
+   *  FamilyShare.shareMicro), sum within ±1% of 1,000,000. The wire carries
+   *  NO floats (canary determinism law; the money rows are integer µ$ for the
+   *  same reason): the wall hands each share to the authority as a Fixed
+   *  Q16.16 bigint — the ±15.26 µ Fixed granularity is re-normalised by the
+   *  authority's largest-remainder law and cannot move a census witness by
+   *  more than one unit in a thousand. All five keys required, non-null,
+   *  unknown keys refused — that grammar is the authority's, reused WHOLE
+   *  (zero duplicate law). Zero buckets are honest absences and drop out.
+   *  ENGINE TRUTH — the dial's honest v0 scope: all five families the table
+   *  can name map to ADVERSARIAL intents (familyToIntent → malicious /
+   *  human-error / entropic / systemic / abuser), so the dial controls WHICH
+   *  adversarial flavor dominates the stream; it can never express benign
+   *  traffic. The benign "organic" arm exists only on the unarmed path, as
+   *  the envelope labels. Armed wires therefore count the family census at
+   *  the ROLL (runner observes the arrival step's output units), not the
+   *  label. Absent ⇒ no family die is ever rolled and every pre-rung-10 wire
+   *  keeps its exact key set and byte shape. */
+  readonly familyMix?: {
+    readonly weights: readonly FamilyShare[];
   };
 }
 
@@ -1170,11 +1197,59 @@ function parseFreezeLimit(raw: unknown, path: string): ScenarioLimits["freeze"] 
   return Object.freeze({ fromMinute, toMinute });
 }
 
+/** Ladder rung 10: `limits.familyMix {weights}` — the composition dial.
+ *  The five-key / sum / renormalise law lives ONCE, in the waves authority
+ *  the content bundles already pass through; this wall only (a) converts the
+ *  wire's plain-INTEGER µ-share table into Fixed Q16.16 bigints (scenario
+ *  wires never carry float literals — the canary determinism law, the same
+ *  reason money rides integer µ$), and (b) wraps the authority's failures in
+ *  the house `scenario[CODE] at 'path'` grammar and drops the zero buckets
+ *  (a 0-share family is an authored absence, not a roll). The conversion is
+ *  exact for every share that is a whole multiple of 1e6/65536 ≈ 15.26 µ and
+ *  drifts by at most that elsewhere — far under the authority's own ±1%
+ *  renormalisation band, and pinned falsifiable by the wall tests. */
+const FAMILY_MIX_MICRO = 1_000_000;
+const FIXED_SCALE = 65_536;
+const FAMILY_MIX_KEYS = ["customerAsThreat", "entropic", "human", "malicious", "systemic"] as const;
+
+function parseFamilyMixLimit(raw: unknown, path: string): ScenarioLimits["familyMix"] {
+  if (raw === null || raw === undefined) return undefined;
+  const src = asRecord(raw, path, "BAD_LIMITS");
+  requireKeys(src, ["weights"], ["weights"], path, "BAD_LIMITS");
+  const weightsSrc = asRecord(src.weights, `${path}.weights`, "BAD_LIMITS");
+  for (const key of Object.keys(weightsSrc)) {
+    if (key === "_todo") continue; // the bundle convention survives the wire round-trip
+    if (!(FAMILY_MIX_KEYS as readonly string[]).includes(key)) {
+      bad("BAD_LIMITS", `${path}.weights.${key}`, `unknown family — closed set: ${FAMILY_MIX_KEYS.join(", ")}`);
+    }
+    const value = weightsSrc[key];
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 || value > FAMILY_MIX_MICRO) {
+      bad("BAD_LIMITS", `${path}.weights.${key}`, `family weights are integer micro-shares 0..1000000 (no floats on the wire), got ${String(value)}`);
+    }
+  }
+  const fixed: Record<string, bigint> = {};
+  for (const family of FAMILY_MIX_KEYS) {
+    const micro = weightsSrc[family];
+    if (typeof micro !== "number") {
+      bad("BAD_LIMITS", `${path}.weights.${family}`, "required bucket is missing — a half-authored table is a lie the dice must not smooth over");
+    }
+    fixed[family] = (BigInt(micro) * BigInt(FIXED_SCALE) + BigInt(FAMILY_MIX_MICRO / 2)) / BigInt(FAMILY_MIX_MICRO);
+  }
+  let shares: readonly FamilyShare[];
+  try {
+    shares = parseFamilyWeightsTable(fixed, `${path}.weights`);
+  } catch (err) {
+    bad("BAD_LIMITS", `${path}.weights`, err instanceof Error ? err.message : String(err));
+  }
+  const armed = shares.filter((share) => share.shareMicro > 0);
+  return Object.freeze({ weights: Object.freeze(armed) });
+}
+
 function parseLimits(raw: unknown, path: string): ScenarioLimits {
   const src = asRecord(raw, path, "BAD_LIMITS");
   requireKeys(
     src,
-    ["maxSimMinutes", "initialFreeMicroUsd", "opex", "dunningEngineOwned", "handCapacity", "guardrails", "covenants", "corrupts", "attention", "freeze"],
+    ["maxSimMinutes", "initialFreeMicroUsd", "opex", "dunningEngineOwned", "handCapacity", "guardrails", "covenants", "corrupts", "attention", "freeze", "familyMix"],
     ["maxSimMinutes"],
     path,
     "BAD_LIMITS",
@@ -1206,6 +1281,7 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
   }
   const attention = parseAttentionLimit(src.attention, `${path}.attention`);
   const freeze = parseFreezeLimit(src.freeze, `${path}.freeze`);
+  const familyMix = parseFamilyMixLimit(src.familyMix, `${path}.familyMix`);
   return Object.freeze({
     maxSimMinutes: readInt(src, "maxSimMinutes", path, "BAD_LIMITS", 1, SCENARIO_MAX_MINUTES_CAP),
     initialFreeMicroUsd: src.initialFreeMicroUsd === undefined ? 0n : parseMoneyWire(src.initialFreeMicroUsd, `${path}.initialFreeMicroUsd`, "BAD_LIMITS"),
@@ -1219,6 +1295,7 @@ function parseLimits(raw: unknown, path: string): ScenarioLimits {
     // (the "their doc objects gain no keys" zero-golden law of this lane).
     ...(attention === undefined ? {} : { attention }),
     ...(freeze === undefined ? {} : { freeze }),
+    ...(familyMix === undefined ? {} : { familyMix }),
   });
 }
 

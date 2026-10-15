@@ -96,9 +96,29 @@
  *     this is a dimension, not a kind. → "The Understaffed Sunday (Triage
  *     Twin)" (:3657) ships as the real-wire separation witness (describe
  *     "rung 9 — the per-verb intent census" below).
- *  10. STILL OPEN: the familyMix census dim (generate-side mix weights have
- *      no wire dial). NO-RUNG: "Free Tier Flood (Corpus Twin)" (:3574)
- *      cites the shipped mail quarter through the tableId seam (@5df5586).
+ *  10. CONSUMED (wave nine): the familyMix dial — `limits.familyMix` puts
+ *      the bundle's five-key familyWeights table on the wire through the
+ *      waves authority (INTEGER µ-shares 0..1e6 — no floats on any wire,
+ *      the canary law, converted to Fixed Q16.16 at the wall; the authority
+ *      reused whole: sum ±1% checked, shares renormalised to 1,000,000 µ,
+ *      zero buckets dropped as authored absences). Armed, createArrivalStep rolls identity per mint
+ *      (defaults.ts:284) and the runner counts the ROLL at the arrival
+ *      step's OUTPUT — a pure pass-through wrapper over the sanctioned slot
+ *      override (defaults.ts:1354), the one place the rolled family is
+ *      legible before the same-tick terminal purge (driver.ts:957). Engine
+ *      truth recorded at the wall (doc.ts): all five families are
+ *      adversarial — the dial steers WHICH flavor dominates, never benign
+ *      traffic; flavors are mechanistically identical through the pipeline,
+ *      so the dial's instrument is the family census itself (rung-3's own
+ *      kind of story). Vocab stays twenty-nine kinds; the wire key is
+ *      CONDITIONAL — unarmed docs never grow it and all 29 pre-rung wires
+ *      byte-stand (the original "Free Tier Flood" label twin still reads
+ *      exactly organic 1,672 / malicious 3,146 — pinned below). → "Free
+ *      Tier Flood (Mix Twin)" (:3574) ships the ninety-percent story the
+ *      one-envelope-per-minute law made fiction (describe "rung 10 — the
+ *      familyMix dial" at the foot of this file).
+ *  NO-RUNG: "Free Tier Flood (Corpus Twin)" (:3574) cites the shipped mail
+ *  quarter through the tableId seam (@5df5586).
  *  Engine debt this lane reported but did not touch: internal/tickFold.ts
  *  still forwards no signal inputs — the scenario composes around it
  *  (rung-4 covenant precedent); a future fold pass-through retires the
@@ -134,7 +154,7 @@ type MutableWire = {
     guardrails?: unknown[];
     attention?: { capacity: number; cost: Record<string, number> };
     freeze?: { fromMinute: number; toMinute: number };
-  };
+    familyMix?: { weights: Record<string, number> };  };
   contracts: Record<string, unknown>[];
   traffic: {
     tableId: string;
@@ -1336,4 +1356,107 @@ describe("wave-seven missions — price elasticity (rung 7)", () => {
       expect(u.observation.bounces).toBe(p.observation.bounces);
     }
   });
+});
+
+describe("rung 10 — the familyMix dial (composition on the wire)", () => {
+  /* The dial's honest v0 scope (doc.ts familyMix row): all five authored
+   * families are ADVERSARIAL and mechanistically identical through the
+   * pipeline — the dial steers which flavor dominates, and the family
+   * census is the instrument that reads it. These legs pin exactly that:
+   * composition arithmetic, conservation over the mint ledger, the label
+   * cover story ignored when armed, and zero movement for the 29 unarmed
+   * pre-rung wires. */
+  it("the shipped mix counts the ROLL, not the label — and conserves mints", () => {
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(shippedScenario("free-tier-flood-mix"), BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("won");
+      expect(report.stopReason).toBe("win@240");
+      const census = report.observation.arrivalsByFamily;
+      // The cover story is intact and IGNORED: the segments all say
+      // "organic", yet not one mint rolled organic — the dial rolled it.
+      expect(census.organic, `offset ${offset}`).toBeUndefined();
+      // 90/5/5 within sampling noise, every offset inside both bands.
+      expect(census.customerAsThreat).toBeGreaterThan(4000);
+      expect(census.customerAsThreat).toBeLessThan(4700);
+      expect(census.human).toBeGreaterThan(120);
+      // Conservation: the census IS the mint ledger. Integer rates make
+      // 4,818 arrivals exact; the family die re-rolls IDENTITIES only.
+      const total = Object.values(census).reduce((a, b) => a + b, 0);
+      expect(total).toBe(4818);
+      expect(report.trace.eventsByKind["arrival"]).toBe(4818);
+    }
+  }, 30_000);
+
+  it("the certainty flip crosses the ceiling at EXACTLY t236 on every seed", () => {
+    // One field — the dial itself — to certainty abuse: every mint rolls
+    // abuser, so the census equals cumulative arrivals and the crossing is
+    // dice-FROZEN arithmetic (4,688 at t235, 4,714 at t236). The flip
+    // discriminates through the elasticity of COMPOSITION, not seed luck:
+    // the same exact tick on all five probed offsets.
+    const total = flip("free-tier-flood-mix", (w) => {
+      if (w.limits.familyMix === undefined) throw new Error("wire lost its dial");
+      w.limits.familyMix.weights = { customerAsThreat: 1_000_000, entropic: 0, human: 0, malicious: 0, systemic: 0 };
+    });
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(total, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:family-arrivals-above:customerAsThreat:4700@236");
+      expect(report.observation.arrivalsByFamily).toEqual({ customerAsThreat: 4714 });
+    }
+  }, 30_000);
+
+  it("control: delete the dial and the story is untellable — labels stay organic, timeout@240", () => {
+    // The attribution is load-bearing: without limits.familyMix the same
+    // wire counts envelope LABELS (all organic), the abuse floor never
+    // closes the win, and the ceiling never opens the loss.
+    const bare = flip("free-tier-flood-mix", (w) => {
+      delete w.limits.familyMix;
+    });
+    const report = runScenario(bare, BASE_SEED);
+    expect(report.outcome).toBe("timeout");
+    expect(report.stopReason).toBe("timeout@240");
+    expect(report.observation.arrivalsByFamily).toEqual({ organic: 4818 });
+  }, 30_000);
+
+  it("the wall refuses tables it could never roll", () => {
+    // Floats never ride a scenario wire (canary determinism law, the same
+    // reason money is integer µ$): 0.9 is refused even though it is the
+    // bundle-side fraction form the waves authority itself would take.
+    expect(() =>
+      flip("free-tier-flood-mix", (w) => {
+        if (w.limits.familyMix === undefined) throw new Error("wire lost its dial");
+        w.limits.familyMix.weights = { customerAsThreat: 0.9, entropic: 0, human: 0.05, malicious: 0, systemic: 0.05 };
+      }),
+    ).toThrow(/no floats on the wire/);
+    expect(() =>
+      flip("free-tier-flood-mix", (w) => {
+        if (w.limits.familyMix === undefined) throw new Error("wire lost its dial");
+        w.limits.familyMix.weights = { customerAsThreat: 0, entropic: 0, human: 0, malicious: 0, systemic: 0 };
+      }),
+    ).toThrow(/BAD_LIMITS/);
+    expect(() =>
+      flip("free-tier-flood-mix", (w) => {
+        if (w.limits.familyMix === undefined) throw new Error("wire lost its dial");
+        w.limits.familyMix.weights = { customerAsThreat: 450_000, entropic: 0, human: 50_000, malicious: 0, systemic: 50_000 };
+      }),
+    ).toThrow(/BAD_LIMITS/);
+    expect(() =>
+      flip("free-tier-flood-mix", (w) => {
+        if (w.limits.familyMix === undefined) throw new Error("wire lost its dial");
+        (w.limits.familyMix as Record<string, unknown>).extra = true;
+      }),
+    ).toThrow(/BAD_LIMITS/);
+  });
+
+  it("sparse law: unarmed docs never grow the key — all 29 pre-rung wires byte-stand", () => {
+    for (const id of SHIPPED_SCENARIO_IDS) {
+      if (id === "free-tier-flood-mix") continue;
+      expect(shippedScenario(id).limits.familyMix, id).toBeUndefined();
+    }
+    // The rung-3 label twin reads its exact pre-rung census: the observer
+    // wrapper is not in its path at all (organic 1,672 + malicious 3,146,
+    // the b5017df figures, unmoved).
+    const label = runScenario(shippedScenario("free-tier-flood"), BASE_SEED);
+    expect(label.observation.arrivalsByFamily).toEqual({ malicious: 3146, organic: 1672 });
+  }, 30_000);
 });

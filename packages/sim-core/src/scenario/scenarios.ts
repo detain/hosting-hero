@@ -111,6 +111,11 @@
  *    door's adjust-price intent moves the MONTHLY churn floor (450→416
  *    bps outside the dead band) while the cliff stays cut-proof at the
  *    retention clamp; the 5% flip is the zero-roll control (@5781335).
+ *  - free-tier-flood-mix → same "Free Tier Flood" heading (~line 3574):
+ *    the MIX twin — rung 10 (limits.familyMix) finally tells the spec's
+ *    ninety-percent truth: the segments keep their organic cover labels
+ *    while the arrival die rolls every mint's identity from the authored
+ *    familyWeights table, and the census counts the ROLL.
  */
 
 import type { ScenarioDoc } from "./doc.ts";
@@ -1955,6 +1960,89 @@ const UNDERSTAFFED_SUNDAY_TRIAGE_WIRE = {
   },
 } satisfies ScenarioWire;
 
+/** §1.5 "Free Tier Flood / Free Tier Abuse / Free Tier Invaded" — the MIX
+ *  TWIN, rung 10 (the familyMix dial). The label twin above proved the
+ *  census could count the stream BY LABEL, and recorded loudly that the
+ *  spec's ninety-percent mix was fiction: one envelope per minute means a
+ *  segment names ONE family, so the flood REPLACED the organic label
+ *  instead of diluting it. This twin finally tells the spec's truth: the
+ *  segments stay label-less organic — two days of plausible signups, the
+ *  cover story the dashboard believed — while `limits.familyMix` rolls
+ *  every minted visitor's identity at the arrival dice: ninety percent
+ *  miners and relays (customerAsThreat → abuser), five percent careless
+ *  staff (human → human-error), five percent datacenter weather (systemic).
+ *  The runner counts the ROLL, not the label (runner.ts
+ *  observeMintedFamilies) — the ninety percent is no longer fiction.
+ *  ENGINE TRUTH (the dial's honest v0 scope, doc.ts familyMix row): all
+ *  five families the table can name are adversarial — the dial chooses
+ *  which FLAVOR dominates; it can never mint benign traffic. And the
+ *  flavors are mechanistically identical through the pipeline (same bounce,
+ *  patience and suspicion law), so what discriminates this mission is
+ *  census arithmetic over the composition — the rung-3 precedent's own kind
+ *  of story, now actually about the mix.
+ *  ARITHMETIC (clock 240; integer rates, so mint COUNTS never roll the
+ *  dice: 8/min × m1–59 + 20/min × m60–119 + 26/min × m120–240 = 4,818
+ *  mints): the shipped mix puts customerAsThreat ≈ Binomial(4818, 0.9),
+ *  mean 4,336, sd ≈ 6.4 — a mile above the detection floor 4,000 and a
+ *  mile below the control ceiling 4,700 on every probed offset; the human
+ *  minority (mean ≈ 241, sd ≈ 15) stays visible above 120. FLIP — one
+ *  field, the dial itself — to {customerAsThreat: 1, all others 0}: the
+ *  flood is TOTAL. Every mint rolls abuser, so the abuse census EQUALS
+ *  cumulative arrivals — dice forced, seed-invariant: 4,688 at t235, 4,714
+ *  at t236 — the ceiling line crosses at EXACTLY t236 on all five probed
+ *  offsets. CONTROL — delete the dial: the stream reverts to honest organic
+ *  labels, the abuse census counts zero forever, the detection floor never
+ *  closes the win (timeout@240). The mix attribution is load-bearing:
+ *  without rung 10 this mission's story is literally untellable on the wire. */
+const FREE_TIER_FLOOD_MIX_WIRE = {
+  schema: "hh-scenario@1",
+  id: "free-tier-flood-mix",
+  name: "Free Tier Flood (Mix Twin)",
+  brief:
+    "The flood again — but the truth is a mix, not a label. Signups keep their organic name on the dashboard while ninety percent roll as miners and relays. Count the stream BY IDENTITY: abuse visible above the detection floor, under the ceiling the tier controls were tuned to.",
+  specRef: "§1.5 Free Tier Flood / Free Tier Abuse / Free Tier Invaded",
+  specLine: 3574,
+  board: {
+    nodes: [{ id: "edge-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "freetier-mix-twin",
+    segments: [
+      { fromMinute: 0, ratePerMin: 8 },
+      { fromMinute: 60, ratePerMin: 20 },
+      { fromMinute: 120, ratePerMin: 26 },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      // Detection floor: ninety percent abuse must be VISIBLE by name.
+      { kind: "family-arrivals-above", family: "customerAsThreat", count: 4000 },
+      // The composition minority reads too — the dial's 5% staff sloppiness
+      // is countable, not just the 90% headline.
+      { kind: "family-arrivals-above", family: "human", count: 120 },
+    ],
+    lose: [
+      // Control ceiling: total flood — the tier controls choke at 4,700.
+      { kind: "family-arrivals-above", family: "customerAsThreat", count: 4700 },
+    ],
+  },
+  limits: {
+    maxSimMinutes: 240,
+    familyMix: {
+      weights: {
+        customerAsThreat: 900_000,
+        entropic: 0,
+        human: 50_000,
+        malicious: 0,
+        systemic: 50_000,
+      },
+    },
+  },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -1987,6 +2075,7 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [RANSOM_CUSTOMER_WIRE.id]: RANSOM_CUSTOMER_WIRE,
   [COPYCAT_WIRE.id]: COPYCAT_WIRE,
   [UNDERSTAFFED_SUNDAY_TRIAGE_WIRE.id]: UNDERSTAFFED_SUNDAY_TRIAGE_WIRE,
+  [FREE_TIER_FLOOD_MIX_WIRE.id]: FREE_TIER_FLOOD_MIX_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
@@ -2026,6 +2115,7 @@ const freeTierFloodCorpusDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_COR
 const theRansomCustomerDoc: ScenarioDoc = parseScenarioDoc(RANSOM_CUSTOMER_WIRE);
 const theCopycatDoc: ScenarioDoc = parseScenarioDoc(COPYCAT_WIRE);
 const understaffedSundayTriageDoc: ScenarioDoc = parseScenarioDoc(UNDERSTAFFED_SUNDAY_TRIAGE_WIRE);
+const freeTierFloodMixDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_MIX_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -2058,6 +2148,7 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   theRansomCustomerDoc.id,
   theCopycatDoc.id,
   understaffedSundayTriageDoc.id,
+  freeTierFloodMixDoc.id,
 ]);
 
 /** id → trusted doc. */
@@ -2091,6 +2182,7 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [theRansomCustomerDoc.id]: theRansomCustomerDoc,
   [theCopycatDoc.id]: theCopycatDoc,
   [understaffedSundayTriageDoc.id]: understaffedSundayTriageDoc,
+  [freeTierFloodMixDoc.id]: freeTierFloodMixDoc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */
