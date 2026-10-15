@@ -1394,3 +1394,63 @@ rung-10 rides already-✅ scenario headings — no new spec ground; dial is a wi
 Ladder status: **rungs 1–10 CONSUMED**. The vocabulary covers every shipped-seam heading class probed so far; further §1.5 conversions are wire authoring, not engine work.
 
 This closeout touches six files: `packages/sim-core/src/scenario/{scenarios.ts,doc.ts}`, `packages/sim-core/src/scenario/__tests__/{scenarios.test.ts,runner.test.ts}`, `docs/MODULE-STATUS.md`, `docs/API-REFERENCE.md`, plus this `reports/audit/SUMMARY.md`. media/prompts never staged; hosting_game.md markers untouched.
+
+
+## WAVE-14 closeout — type-8 spec shipped with citation re-grounding, worker-corpus leg recorded, battery re-pinned (2026-10-15)
+
+### The commits (both already on master at closeout start; closeout adds one docs/test-hygiene commit)
+
+| SHA | Role | What landed |
+|---|---|---|
+| `bfd8e1e` | content type-8 | **The Mayfly Field** ruleset card — 8th hosting type via the Scale tier-extension: first card shipping NO dominant-verb line, claims Scale verbatim-grounded on "scale to zero"; scarce warm-capacity / fatal multi-tenant blast radius; threats reuse 6 registry ids, zero additions; 68-template i18n pack; g1 wave slice at the standard par ladder (storm census UNMOVED at 240) |
+| `1165368` | proto worker-corpus | the WORKER LOOP cites the waves corpus — additive-optional `boot.corpus:{tableId,waves}` (PROTOCOL_VERSION stays 1), `shared/corpusHost.ts` the ONE builder both worker hosts share (E2b anti-drift), mirrors over ?raw content for ALL EIGHT shipped slices incl. the real `unlockedByBuildables` invitations law; law-off boot default byte-pinned, 100-frame digest twins frozen (ca8863849cb3db32 / 780b1cbc61dff760) |
+| closeout | docs + test hygiene | the two review cures below + ledger — zero machine values moved, zero test semantics moved |
+
+### Review
+
+Closeout review verdict **PUSH-GO — 0 critical / 0 major / 4 minor / 4 nit** (N1: a brief-premise correction noted for the record — the review's fix-list citations were themselves verified against `hosting_game.md` headings before applying, per the never-trust-the-brief-blindly rule). Two cheap cures applied here; m3/m4 filed as hygiene gap rows:
+- **m1 fresh mis-citations (content lane, TEXT-ONLY):** the type-8 wave had quoted `## 4.2` tier items as "§4.9", the `## 6.6` economics row as "§6.15", and the `## 3.1` LATENCY-LADDER row as "§3.4" — each re-grounded by reading the actual heading above the quote: tier quotes §4.9→**§4.2** (`### Serverless / Edge Function Tier` @15437), ladder §3.4→**§3.1** (@11434; `## 3.4` is the bounce-reasons prose that merely echoes the ladder), unit-entry §3.1→**§3.3** (`### Serverless — an invocation` @12670), one-object law §2.10→**§4.10** (ONE-OBJECT LAW @18731), economics §6.15→**§6.6** (@23277), CDN p95 §6.6→**§2.12**'s 95th-Percentile Blowout card (@9660 — no p95 exists in §6.6). Applied across `types/serverless.json` (13 sites), `packs/serverless.i18n.json` (24 sites), content `README.md` Type-8 notes (6), this file's Type-8 row; `docs/MODULE-STATUS.md` L264/265 (§3.4 bounce-shape) and L285 (§6.15 ending visuals) VERIFIED LEGIT and left standing. validate.mjs re-PASS exit 0.
+- **m2 half-lying test title:** `families.test.ts` "SHIPPED BUNDLES: both g1 type bundles…" looped a hardcoded 2-file list while 8 bundles ship. Now `readdirSync`s `packages/content/types` — every bundle auto-joins the law loop (parse through the shipped `parseFamilyWeightsTable` wall, exact-1,000,000 µ-sum, all five buckets present, no dead family), with an 8-file census pin so a new bundle forces a conscious count edit alongside its free law-check. Count-neutral: still one test, the full serial proves the widened loop green on all 8.
+- **m3 filed (gap row):** proto chunk-size strategy — ~526 KB worker / ~226 KB fakeWorker payload / ~1 MB index fine under placeholder art; decide the split before the first real atlas mounts.
+- **m4 filed (gap row):** `threatMeta` triple-copy (`chrome/corpusMission.ts` / `shared/corpusHost.ts` / `scenario/__tests__/corpusFixtures.ts`) — dedup candidate needing proto+scenario joint sign-off.
+
+### Markers / appendix
+
+| Line | Heading | State | Disposition | Note |
+|---|---|---|---|---|
+| 2223 | §1.3 `"Cold Start" / "The Mayfly Field" / "The Popcorn Pan" — Serverless / functions` | ❌ → **🔧 bfd8e1e** | flipped (fail-loud assert ❌ first) | card-identity + data shipped; the Scale door-verb gap and engine consumers of the bundle's knobs keep it off ✅ — the object-storage precedent; `bfd8e1e` stamps the data commit (stack-tip 1165368 carries no serverless content) |
+
+Worker-corpus (`1165368`): **no dedicated spec heading exists to flip** — the boot-wire corpus citation rides already-✅ scenario/runner seams; appendix note here only (rung-9 triage-twin precedent for appendix-only waves).
+
+### Census (`^##`/`^###` marked heading lines, disk recount on the closeout tree)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 321 | **321** |
+| 🔧 PARTIAL | 1,002 | **1,003** |
+| ⚠️ PROBLEM | 1 | **1** |
+| ❌ MISSING | 2,235 | **2,234** |
+| 📝 NA | 30 | **30** |
+| **total marked** | **3,589** | **3,589** |
+
+Exactly one ❌→🔧 move this wave (the Mayfly card); recount on disk wins and matches.
+
+### Battery (full, serial, one process at a time, Node 24)
+
+| Gate | Result | Wall |
+|---|---|---|
+| sim-core `npx vitest run --no-file-parallelism` | **144 files / 2,438 tests passed, exit 0** — +3 vs the wave-13 pin are `bfd8e1e`'s disk-loop auto-joins (storm-cap per-slice +1, real-content per-bundle +2), ZERO digest goldens moved; m2's widened loop count-neutral | 168s |
+| `pnpm -r typecheck` | **5/5 Done** | — |
+| `node docs/api-verify.test.mjs` | **PASS — 1,594 names**, import map consistent | <10s |
+| `node scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) | ~45s |
+| `tools/headless` | **53/5** — parity b0162ab5/a9b4b7b8 **HELD** | 6s |
+| proto `npx vitest run --no-file-parallelism` | **90 files / 990 tests passed** (matches the pinned ledger — quick re-run to be safe) | 50s |
+| `node packages/content/script/validate.mjs` | **exit 0** (bundles=8 waves=8 packs=8; 212 inventory + 10 pack markers) | <5s |
+
+Loader+waves (the m1 blast radius, 332-file pin from `bfd8e1e`'s own gate record) rode green inside the full serial — no file in either dir moved count-wise by the citation cures (text-only JSON strings).
+
+### Ledger
+
+`docs/MODULE-STATUS.md`: footer re-pinned 2,435→**2,438**/144 with the auto-join attribution; Type-8 row carries the citation re-grounding echo; worker-loop gap row stamped **@1165368**; m3/m4 added as two new gap rows.
+
+This closeout touches seven files: `packages/content/types/serverless.json`, `packages/content/packs/serverless.i18n.json`, `packages/content/README.md`, `packages/sim-core/src/waves/__tests__/families.test.ts`, `docs/MODULE-STATUS.md`, `hosting_game.md`, plus this `reports/audit/SUMMARY.md`. media/prompts never staged.

@@ -2220,7 +2220,7 @@ wave washing left-to-right across pods; a rollback is the wave visibly reversing
 places a container that immediately explodes, repeatedly, faster and faster. Chord: helm blue · pod
 teal · rollout-wave green · evicted grey · crash-loop red flicker.
 
-### "Cold Start" / "The Mayfly Field" / "The Popcorn Pan" — Serverless / functions ❌
+### "Cold Start" / "The Mayfly Field" / "The Popcorn Pan" — Serverless / functions 🔧 bfd8e1e
 Scarce: warm capacity. **Teaches: cost can be attacked without touching availability.**
 
 **How it works:** The tension between cost (scale to zero) and latency (cold starts). **Your

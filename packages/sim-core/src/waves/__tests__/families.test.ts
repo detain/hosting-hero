@@ -7,7 +7,7 @@
  * lie the dice must not smooth over.
  */
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseFamilyWeightsTable, THREAT_FAMILIES } from "../families.js";
 import { fromRatio } from "../../kernel/fixed.js";
@@ -80,13 +80,22 @@ describe("parseFamilyWeightsTable — the boundary into the dice", () => {
     expect(() => parseFamilyWeightsTable({ ...SHELL, human: -5n })).toThrow(/non-negative/);
   });
 
-  it("SHIPPED BUNDLES: both g1 type bundles parse to live tables (regression vs the null era)", () => {
-    for (const file of ["shared-web.json", "game-servers.json"]) {
-      const path = join(process.cwd(), "..", "content", "types", file);
-      const doc = JSON.parse(readFileSync(path, "utf8")) as { threats: { familyWeights: Record<string, unknown> } };
+  it("SHIPPED BUNDLES: EVERY type bundle on disk parses to a live table (regression vs the null era)", () => {
+    const bundleDir = join(process.cwd(), "..", "content", "types");
+    const files = readdirSync(bundleDir)
+      .filter((f) => f.endsWith(".json"))
+      .sort();
+    // Census pin (wave-14: 8 hosting types on disk). The law loop below auto-joins
+    // any new bundle; this pin only forces a conscious count when one lands.
+    expect(files.length).toBe(8);
+    for (const file of files) {
+      const doc = JSON.parse(readFileSync(join(bundleDir, file), "utf8")) as {
+        threats: { familyWeights: Record<string, unknown> };
+      };
       const shares = parseFamilyWeightsTable(doc.threats.familyWeights, `content/types/${file}`);
-      expect(shares.reduce((a, s) => a + s.shareMicro, 0)).toBe(1_000_000);
-      expect(shares.every((s) => s.shareMicro > 0)).toBe(true);
+      expect(shares.map((s) => s.family)).toStrictEqual([...THREAT_FAMILIES]); // all five buckets present
+      expect(shares.reduce((a, s) => a + s.shareMicro, 0)).toBe(1_000_000); // exact-micro law
+      expect(shares.every((s) => s.shareMicro > 0)).toBe(true); // no dead family in any shipped book
     }
   });
 });
