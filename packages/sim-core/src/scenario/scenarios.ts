@@ -1886,6 +1886,75 @@ const COPYCAT_WIRE = {
   },
 } satisfies ScenarioWire;
 
+/* ─────────── The Understaffed Sunday — triage twin (rung 9, wave eight) ── */
+
+/** §1.5 "The Understaffed Sunday" (:3657) re-read through the rung-9 lens.
+ *  The original counts the NO's (`intents-refused-above`); this twin asks
+ *  WHICH verb ate them. One hand, three runbook knob-walks (configure-node)
+ *  that Monday's shift depends on, and two incoming calls (communicate):
+ *  handCapacity 1 makes a collision certain, so the story is triage, not
+ *  throughput. The discriminator is a one-tick flip — arm B ANSWERS THE
+ *  SECOND CALL ON TIME (t6 → t7) and the collision moves to the first
+ *  knob-walk at t8, where the lose line kills the run. The REFUSED TOTAL
+ *  is 1 in both arms — the pre-rung-9 census reads the same single "no"
+ *  either way and any total-based refused line answers identically on
+ *  both; only the per-verb census separates "a call got dropped" (arm A,
+ *  refused {communicate:1}) from "Monday's runbook got dropped" (arm B,
+ *  refused {configure-node:1}). Arm B's executed total reads 2 only
+ *  because its death cuts the rail short at @8 — the full five-row rail
+ *  would execute 4 in both arms.
+ *  Zero dice: rate-0 traffic mints no envelopes (founder :3880 @110f516
+ *  precedent), the door path is seed-free, witnesses pin exact ticks ×5.
+ *  NON-EXPRESSIBLE (recorded): the spec's ticket-entity backlog — same note
+ *  as the original Sunday at :1123; the refused-count stays its honest
+ *  proxy, rung 9 only adds WHICH verb the proxy counted. */
+const UNDERSTAFFED_SUNDAY_TRIAGE_WIRE = {
+  schema: "hh-scenario@1",
+  id: "understaffed-sunday-triage",
+  name: "The Understaffed Sunday (Triage Twin)",
+  brief:
+    "Same Sunday, one hand, and a collision that MUST happen: two calls and three knob-walks. Something gets dropped — the mission is making sure it is a call, not Monday's runbook. Total refusals look identical either way; only the per-verb census knows which promise died.",
+  specRef: "§1.5 The Understaffed Sunday",
+  specLine: 3657,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "triage-sunday",
+    segments: [{ fromMinute: 0, ratePerMin: 0 }],
+  },
+  intents: [
+    { atTick: 5, verb: "communicate", args: { target: null, note: "sunday-call-queue-open" } },
+    { atTick: 6, verb: "communicate", args: { target: null, note: "sunday-call-overflow-01" } },
+    { atTick: 8, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: "inspect", shedOrder: null } },
+    { atTick: 10, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: null, shedOrder: "qos-weighted" } },
+    { atTick: 12, verb: "configure-node", args: { nodeId: "web-1", inspectionDepth: "sample-1-in-20", shedOrder: null } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 12 },
+      // The rung-9 line: the RUNBOOK is what must survive the Sunday.
+      { kind: "intents-executed-above", verb: "configure-node", count: 2 },
+      // Throughput floor (control-shape line, self-documenting): the plain
+      // total census still has a job — it says the rail moved — but it is
+      // NOT what tells the arms apart. The refused totals match at 1.
+      { kind: "intents-executed-above", count: 3 },
+    ],
+    lose: [
+      // Dropping a CALL is survivable noise; dropping a KNOB-WALK is the
+      // loss. The total refused census reads 1 in BOTH arms — this line is
+      // only legible with the verb dimension.
+      { kind: "intents-refused-above", verb: "configure-node", count: 0 },
+    ],
+  },
+  limits: {
+    maxSimMinutes: 60,
+    handCapacity: 1,
+  },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -1917,6 +1986,7 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [FREE_TIER_FLOOD_CORPUS_WIRE.id]: FREE_TIER_FLOOD_CORPUS_WIRE,
   [RANSOM_CUSTOMER_WIRE.id]: RANSOM_CUSTOMER_WIRE,
   [COPYCAT_WIRE.id]: COPYCAT_WIRE,
+  [UNDERSTAFFED_SUNDAY_TRIAGE_WIRE.id]: UNDERSTAFFED_SUNDAY_TRIAGE_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
@@ -1955,6 +2025,7 @@ const changeFreezeDoc: ScenarioDoc = parseScenarioDoc(CHANGE_FREEZE_WIRE);
 const freeTierFloodCorpusDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_CORPUS_WIRE);
 const theRansomCustomerDoc: ScenarioDoc = parseScenarioDoc(RANSOM_CUSTOMER_WIRE);
 const theCopycatDoc: ScenarioDoc = parseScenarioDoc(COPYCAT_WIRE);
+const understaffedSundayTriageDoc: ScenarioDoc = parseScenarioDoc(UNDERSTAFFED_SUNDAY_TRIAGE_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -1986,6 +2057,7 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   freeTierFloodCorpusDoc.id,
   theRansomCustomerDoc.id,
   theCopycatDoc.id,
+  understaffedSundayTriageDoc.id,
 ]);
 
 /** id → trusted doc. */
@@ -2018,6 +2090,7 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [freeTierFloodCorpusDoc.id]: freeTierFloodCorpusDoc,
   [theRansomCustomerDoc.id]: theRansomCustomerDoc,
   [theCopycatDoc.id]: theCopycatDoc,
+  [understaffedSundayTriageDoc.id]: understaffedSundayTriageDoc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */

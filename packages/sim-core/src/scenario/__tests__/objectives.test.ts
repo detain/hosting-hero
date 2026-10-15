@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FIXED_ONE, FIXED_ZERO, fromInt } from "../../kernel/fixed.ts";
+import { PlayerVerb } from "../../types.ts";
 import {
   EMPTY_OBSERVATION,
   objectiveHolds,
@@ -131,6 +132,32 @@ describe("objectiveHolds — the twenty-seven predicates at their boundaries", (
     [{ kind: "intents-refused-above", count: 6 }, obs({ intentsRefused: 6 }), false],
     [{ kind: "intents-refused-above", count: 6 }, obs({ intentsRefused: 7 }), true],
     [{ kind: "intents-executed-below", count: 2 }, obs({ intentsExecuted: 1 }), true],
+    // Rung 9 — the verb dim reads its own census; absent verb reads total.
+    [
+      { kind: "intents-executed-above", verb: PlayerVerb.ConfigureNode, count: 2 },
+      obs({ intentsExecuted: 4, intentsExecutedByVerb: { "configure-node": 3, communicate: 1 } }),
+      true,
+    ],
+    [
+      { kind: "intents-executed-above", verb: PlayerVerb.Communicate, count: 1 },
+      obs({ intentsExecuted: 4, intentsExecutedByVerb: { "configure-node": 3, communicate: 1 } }),
+      false,
+    ],
+    [
+      { kind: "intents-refused-above", verb: PlayerVerb.ConfigureNode, count: 0 },
+      obs({ intentsRefused: 1, intentsRefusedByVerb: { "configure-node": 1 } }),
+      true,
+    ],
+    [
+      { kind: "intents-refused-above", verb: PlayerVerb.Communicate, count: 0 },
+      obs({ intentsRefused: 1, intentsRefusedByVerb: { "configure-node": 1 } }),
+      false,
+    ],
+    [
+      { kind: "intents-refused-below", verb: PlayerVerb.ShedLoad, count: 1 },
+      obs({ intentsRefused: 5, intentsRefusedByVerb: { "configure-node": 5 } }),
+      true,
+    ],
     // channels ladder — the dispute counter is the same counting law.
     [{ kind: "chargebacks-above", count: 3 }, obs({ chargebacksApplied: 4 }), true],
     [{ kind: "chargebacks-above", count: 3 }, obs({ chargebacksApplied: 3 }), false],
@@ -264,6 +291,37 @@ describe("channels ladder — observation defaults, lines and progress", () => {
     expect(objectiveLine({ kind: "intents-refused-above", count: 6 })).toBe("intents-refused-above:6");
     expect(objectiveLine({ kind: "chargebacks-below", count: 5 })).toBe("chargebacks-below:5");
     expect(objectiveLine({ kind: "postmortem-credits-above", bps: 250 })).toBe("postmortem-credits-above:250");
+  });
+
+  it("rung 9: the verb dim names the verb in the line and reads its own census", () => {
+    expect(objectiveLine({ kind: "intents-refused-above", verb: PlayerVerb.ConfigureNode, count: 0 })).toBe(
+      "intents-refused-above:configure-node:0",
+    );
+    // Separation at the unit level — one observation, two verdicts. The
+    // refused TOTAL is 1 (both arms of the triage twin read the same "no");
+    // only the census knows whether the dropped promise was a call or a
+    // runbook. Same-shaped predicates, opposite answers.
+    const droppedCall = obs({
+      intentsRefused: 1,
+      intentsRefusedByVerb: { communicate: 1 },
+    });
+    const droppedRunbook = obs({
+      intentsRefused: 1,
+      intentsRefusedByVerb: { "configure-node": 1 },
+    });
+    const totalLine = { kind: "intents-refused-above", count: 0 } as const;
+    expect(objectiveHolds(droppedCall, totalLine)).toBe(objectiveHolds(droppedRunbook, totalLine));
+    const verbLine = { kind: "intents-refused-above", verb: PlayerVerb.ConfigureNode, count: 0 } as const;
+    expect(objectiveHolds(droppedCall, verbLine)).toBe(false);
+    expect(objectiveHolds(droppedRunbook, verbLine)).toBe(true);
+    // progress rides the same census (3 of 4 needed to clear above:3).
+    const rung = objectiveProgress(obs({ intentsExecutedByVerb: { "configure-node": 3 } }), {
+      kind: "intents-executed-above",
+      verb: PlayerVerb.ConfigureNode,
+      count: 3,
+    });
+    expect(rung.progress).toBe(49152n); // 3/4 of FIXED_ONE
+    expect(rung.holds).toBe(false);
   });
 
   it("channel progress reads under both counting laws", () => {

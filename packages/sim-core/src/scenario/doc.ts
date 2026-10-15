@@ -66,7 +66,13 @@ export const SCENARIO_MAX_MINUTES_CAP = 2880;
  *  corruption channel — `TickResult.corruptions` marks earned by units whose
  *  type is armed through `limits.corrupts` (pipeline corrupts-patience mode,
  *  16c6add). Zero while no row names a table — every pre-channel mission's
- *  observation byte-shape is untouched. */
+ *  observation byte-shape is untouched.
+ *  Rung 9 (wave eight): the intent four gained an optional `verb` dimension —
+ *  `intents-executed-above {verb: "configure-node", count: 2}` reads the
+ *  per-verb receipt census the runner folds off `TickResult.doorReceipts`, so
+ *  a mission can name WHICH verb survived, not only how many receipts came
+ *  back. A predicate with no `verb` keeps its exact whole-rail total reading;
+ *  the vocabulary stays twenty-nine kinds — this is a dimension, not a kind. */
 export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "survive-minutes",
   "cash-above",
@@ -190,6 +196,10 @@ export type ObjectivePredicate =
       /** Whole-run count of `intents` rows whose door receipt came back
        *  "executed" (pipeline/intent-door.ts — one receipt per fed intent). */
       readonly count: number;
+      /** Rung-9 dimension: restrict the count to receipts whose verb matches
+       *  (closed PLAYER_VERBS vocab, BAD_ENUM at the wall). Absent = total
+       *  over the rail, exactly the pre-rung-9 reading. */
+      readonly verb?: PlayerVerb;
     }
   | {
       readonly kind: "intents-refused-above" | "intents-refused-below";
@@ -197,6 +207,9 @@ export type ObjectivePredicate =
        *  reason (hands-exhausted is the Sunday story; the vocab stays a
        *  plain count because the wall already refuses mis-shaped verbs). */
       readonly count: number;
+      /** Rung-9 dimension: which verb's refusals to count (see the executed
+       *  pair — same wall, same absent-means-total law). */
+      readonly verb?: PlayerVerb;
     }
   | {
       readonly kind: "chargebacks-above" | "chargebacks-below";
@@ -868,10 +881,10 @@ const PREDICATE_FIELDS: Readonly<Record<ScenarioPredicateKind, readonly string[]
   "covenant-breached-count-above": ["kind", "count"],
   "reputation-below": ["kind", "bps"],
   "reputation-above": ["kind", "bps"],
-  "intents-executed-above": ["kind", "count"],
-  "intents-executed-below": ["kind", "count"],
-  "intents-refused-above": ["kind", "count"],
-  "intents-refused-below": ["kind", "count"],
+  "intents-executed-above": ["kind", "count", "verb"],
+  "intents-executed-below": ["kind", "count", "verb"],
+  "intents-refused-above": ["kind", "count", "verb"],
+  "intents-refused-below": ["kind", "count", "verb"],
   "chargebacks-above": ["kind", "count"],
   "chargebacks-below": ["kind", "count"],
   "postmortem-credits-above": ["kind", "bps"],
@@ -879,6 +892,20 @@ const PREDICATE_FIELDS: Readonly<Record<ScenarioPredicateKind, readonly string[]
   "corruption-above": ["kind", "count"],
   "corruption-below": ["kind", "count"],
 });
+
+/** Rung-9 optional per-verb dim on the intent four — parsed at the wall so
+ *  every downstream reader trusts a PlayerVerb (or nothing) from here on. */
+function parsePredicateVerb(
+  src: Record<string, unknown>,
+  path: string,
+): PlayerVerb | undefined {
+  if (src.verb === undefined) return undefined;
+  const verb = readString(src, "verb", path, "BAD_PREDICATE");
+  if (!(PLAYER_VERBS as readonly string[]).includes(verb)) {
+    bad("BAD_ENUM", `${path}.verb`, `expected one of ${PLAYER_VERBS.join(", ")}, got ${verb}`);
+  }
+  return verb as PlayerVerb;
+}
 
 function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
   const src = asRecord(raw, path, "BAD_PREDICATE");
@@ -903,22 +930,38 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
     case "bounces-below":
     case "written-off-below":
     case "covenant-breached-count-below":
-    case "intents-executed-below":
-    case "intents-refused-below":
     case "chargebacks-below":
     case "corruption-below":
       // count 0 would be "hold the line at below zero" — vacuous by
       // construction; the honest spelling of that fear is churn-above:0.
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 1, 1_000_000) });
+    case "intents-executed-below":
+    case "intents-refused-below": {
+      // Same below-zero wall as the shared family; the rung-9 verb dim only
+      // narrows WHICH receipts the count reads, never how the count is bound.
+      const verb = parsePredicateVerb(src, path);
+      return Object.freeze({
+        kind: typedKind,
+        count: readInt(src, "count", path, "BAD_PREDICATE", 1, 1_000_000),
+        ...(verb === undefined ? {} : { verb }),
+      });
+    }
     case "churn-above":
     case "bounces-above":
     case "written-off-above":
     case "covenant-breached-count-above":
-    case "intents-executed-above":
-    case "intents-refused-above":
     case "chargebacks-above":
     case "corruption-above":
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 0, 1_000_000) });
+    case "intents-executed-above":
+    case "intents-refused-above": {
+      const verb = parsePredicateVerb(src, path);
+      return Object.freeze({
+        kind: typedKind,
+        count: readInt(src, "count", path, "BAD_PREDICATE", 0, 1_000_000),
+        ...(verb === undefined ? {} : { verb }),
+      });
+    }
     case "metric-delta-over-window": {
       const metric = readString(src, "metric", path, "BAD_PREDICATE");
       if (!(DELTA_METRICS as readonly string[]).includes(metric)) {

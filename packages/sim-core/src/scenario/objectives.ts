@@ -9,7 +9,7 @@
  *  violation so the HUD can render "how close am I to losing".
  */
 
-import type { Fixed } from "../types.ts";
+import type { Fixed, PlayerVerb } from "../types.ts";
 import type { CompanyDeathCause } from "../economy/index.ts";
 import { REPUTATION_INITIAL_BPS } from "../economy/index.ts";
 import { FIXED_ONE, FIXED_ZERO, fromRatio } from "../kernel/fixed.ts";
@@ -48,6 +48,11 @@ export interface ScenarioObservation {
    *  is scheduled (the pre-channel byte shape). */
   readonly intentsExecuted: number;
   readonly intentsRefused: number;
+  /** Rung 9: the same door receipts split per PlayerVerb, code-unit sorted.
+   *  An unseen verb is simply absent (reads as zero); both maps stay empty
+   *  while the intent rail is silent — the pre-rung-9 byte shape holds. */
+  readonly intentsExecutedByVerb: Readonly<Record<string, number>>;
+  readonly intentsRefusedByVerb: Readonly<Record<string, number>>;
   /** Channels ladder: `signals.chargebacks` rows whose cfg-owned fee the
    *  lane POSTED (a fee the ledger refused for insolvency throws through
    *  the run — never silently uncounted). 0 while the channel is silent. */
@@ -95,6 +100,8 @@ export const EMPTY_OBSERVATION: ScenarioObservation = Object.freeze({
   reputationBps: REPUTATION_INITIAL_BPS,
   intentsExecuted: 0,
   intentsRefused: 0,
+  intentsExecutedByVerb: Object.freeze({}),
+  intentsRefusedByVerb: Object.freeze({}),
   chargebacksApplied: 0,
   postmortemCreditsBps: 0n,
   corruptions: 0,
@@ -110,6 +117,19 @@ function windowKey(metric: string, windowMinutes: number): string {
 
 function familyArrivals(obs: ScenarioObservation, family: string): number {
   return obs.arrivalsByFamily[family] ?? 0;
+}
+
+/** The rung-9 law, in one place: a named verb reads its own receipt census
+ *  (absent verb = zero receipts); no verb reads the whole-rail total, byte-
+ *  for-byte the pre-rung-9 predicate. */
+function intentCensus(
+  obs: ScenarioObservation,
+  side: "executed" | "refused",
+  verb: PlayerVerb | undefined,
+): number {
+  if (verb === undefined) return side === "executed" ? obs.intentsExecuted : obs.intentsRefused;
+  const census = side === "executed" ? obs.intentsExecutedByVerb : obs.intentsRefusedByVerb;
+  return census[verb] ?? 0;
 }
 
 /** The rung-2 law, in one place: two full windows of history, then
@@ -173,13 +193,13 @@ export function objectiveHolds(obs: ScenarioObservation, predicate: ObjectivePre
     case "reputation-above":
       return obs.reputationBps >= BigInt(predicate.bps);
     case "intents-executed-above":
-      return obs.intentsExecuted > predicate.count;
+      return intentCensus(obs, "executed", predicate.verb) > predicate.count;
     case "intents-executed-below":
-      return obs.intentsExecuted < predicate.count;
+      return intentCensus(obs, "executed", predicate.verb) < predicate.count;
     case "intents-refused-above":
-      return obs.intentsRefused > predicate.count;
+      return intentCensus(obs, "refused", predicate.verb) > predicate.count;
     case "intents-refused-below":
-      return obs.intentsRefused < predicate.count;
+      return intentCensus(obs, "refused", predicate.verb) < predicate.count;
     case "chargebacks-above":
       return obs.chargebacksApplied > predicate.count;
     case "chargebacks-below":
@@ -247,8 +267,14 @@ export function objectiveLine(predicate: ObjectivePredicate): string {
       return `${predicate.kind}:${predicate.bps}`;
     case "intents-executed-above":
     case "intents-executed-below":
+      return predicate.verb === undefined
+        ? `${predicate.kind}:${predicate.count}`
+        : `${predicate.kind}:${predicate.verb}:${predicate.count}`;
     case "intents-refused-above":
     case "intents-refused-below":
+      return predicate.verb === undefined
+        ? `${predicate.kind}:${predicate.count}`
+        : `${predicate.kind}:${predicate.verb}:${predicate.count}`;
     case "chargebacks-above":
     case "chargebacks-below":
       return `${predicate.kind}:${predicate.count}`;
@@ -320,15 +346,15 @@ function progressOf(obs: ScenarioObservation, predicate: ObjectivePredicate): Fi
       // attainment of the danger: the shortfall below the line, as a share.
       return clampRatio(BigInt(predicate.bps) - obs.reputationBps, BigInt(predicate.bps));
     case "intents-executed-below":
-      return clampRatio(BigInt(predicate.count - obs.intentsExecuted), BigInt(predicate.count));
+      return clampRatio(BigInt(predicate.count - intentCensus(obs, "executed", predicate.verb)), BigInt(predicate.count));
     case "intents-refused-below":
-      return clampRatio(BigInt(predicate.count - obs.intentsRefused), BigInt(predicate.count));
+      return clampRatio(BigInt(predicate.count - intentCensus(obs, "refused", predicate.verb)), BigInt(predicate.count));
     case "chargebacks-below":
       return clampRatio(BigInt(predicate.count - obs.chargebacksApplied), BigInt(predicate.count));
     case "intents-executed-above":
-      return clampRatio(BigInt(obs.intentsExecuted), BigInt(predicate.count + 1));
+      return clampRatio(BigInt(intentCensus(obs, "executed", predicate.verb)), BigInt(predicate.count + 1));
     case "intents-refused-above":
-      return clampRatio(BigInt(obs.intentsRefused), BigInt(predicate.count + 1));
+      return clampRatio(BigInt(intentCensus(obs, "refused", predicate.verb)), BigInt(predicate.count + 1));
     case "chargebacks-above":
       return clampRatio(BigInt(obs.chargebacksApplied), BigInt(predicate.count + 1));
     case "postmortem-credits-above":

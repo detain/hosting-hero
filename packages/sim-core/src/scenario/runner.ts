@@ -384,6 +384,10 @@ interface Accumulator {
    *  fees. All zero while the doc names no channel (byte shape preserved). */
   intentsExecuted: number;
   intentsRefused: number;
+  /** Rung 9: the same doorReceipts array, split per verb. No second pass,
+   *  no dice — the total fold and this census read one receipt stream. */
+  intentsExecutedByVerb: Map<string, number>;
+  intentsRefusedByVerb: Map<string, number>;
   chargebacksApplied: number;
   /** Wave five: cumulative CorruptOutcomes from the driver's side channel
    *  (result.corruptions) — 0 while no `limits.corrupts` arm exists. */
@@ -433,6 +437,8 @@ function snapshotObservation(
     // (single authority: EconomyState.postMortemLog, economy/postmortem.ts).
     intentsExecuted: acc.intentsExecuted,
     intentsRefused: acc.intentsRefused,
+    intentsExecutedByVerb: sortedCensus(acc.intentsExecutedByVerb),
+    intentsRefusedByVerb: sortedCensus(acc.intentsRefusedByVerb),
     chargebacksApplied: acc.chargebacksApplied,
     postmortemCreditsBps: postmortemCreditsSum(econ),
     corruptions: acc.corruptions,
@@ -862,6 +868,8 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     arrivalsByFamily: new Map(),
     intentsExecuted: 0,
     intentsRefused: 0,
+    intentsExecutedByVerb: new Map(),
+    intentsRefusedByVerb: new Map(),
     chargebacksApplied: 0,
     corruptions: 0,
   };
@@ -1016,6 +1024,13 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
        collectFacts already split them by outcome for this tick. */
     acc.intentsExecuted += facts.intentsExecuted;
     acc.intentsRefused += facts.intentsRefused;
+    /* Rung 9: split the very same receipt stream per verb — the per-verb
+       predicates read this census; totals above stay byte-identical. */
+    for (const receipt of result.doorReceipts) {
+      const verbCensus =
+        receipt.outcome === "executed" ? acc.intentsExecutedByVerb : acc.intentsRefusedByVerb;
+      verbCensus.set(receipt.verb, (verbCensus.get(receipt.verb) ?? 0) + 1);
+    }
     minuteLedger.push({
       arrivals: facts.arrivals,
       served: facts.served,

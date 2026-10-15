@@ -86,9 +86,19 @@
  *  8. CONSUMED: the change-freeze band (limits.freeze answered by the
  *     door's canPlaceDevice / canAdjustPrice host seams) → "The Change
  *     Freeze" (:3625) shipped.
- *  9. STILL OPEN: the familyMix census dim (generate-side mix weights have
- *     no wire dial). NO-RUNG: "Free Tier Flood (Corpus Twin)" (:3574)
- *     cites the shipped mail quarter through the tableId seam (@5df5586).
+ *  9. CONSUMED (wave eight): the per-verb intent census — the intent four
+ *     (executed/refused × above/below) gained an optional `verb` dimension
+ *     (closed PLAYER_VERBS mirror already walled in doc.ts, BAD_ENUM on an
+ *     off-roster verb). The runner folds a verb→count census off the SAME
+ *     TickResult.doorReceipts stream the totals read — zero new dice, zero
+ *     RNG change, absent verb keeps the exact pre-rung-9 whole-rail total
+ *     (sparse: shipped wires byte-ident). Vocab stays twenty-nine kinds:
+ *     this is a dimension, not a kind. → "The Understaffed Sunday (Triage
+ *     Twin)" (:3657) ships as the real-wire separation witness (describe
+ *     "rung 9 — the per-verb intent census" below).
+ *  10. STILL OPEN: the familyMix census dim (generate-side mix weights have
+ *      no wire dial). NO-RUNG: "Free Tier Flood (Corpus Twin)" (:3574)
+ *      cites the shipped mail quarter through the tableId seam (@5df5586).
  *  Engine debt this lane reported but did not touch: internal/tickFold.ts
  *  still forwards no signal inputs — the scenario composes around it
  *  (rung-4 covenant precedent); a future fold pass-through retires the
@@ -409,7 +419,7 @@ describe("shipped missions — lose side (ONE flipped wire input, same seed)", (
       expect(calm.stopReason).toBe("win@320");
       expect(calm.observation.writtenOffCustomers).toBeLessThan(7);
     }
-  });
+  }, 30_000); // twelve-account × ten 320-clock runs sit at ~5.1s on a loaded box — the Chargeback-Wave clock precedent
 
   it("Contract Recompete with the doubled fourth wave → the bounce budget is spent", () => {
     // ONE field: the recovery ladder's closing step doubles 14 → 28 visits/min.
@@ -826,6 +836,66 @@ describe("wave-five missions — one-flip losses (channels ladder)", () => {
       expect(clean.observation.reputationBps).toBe(4500n); // −500 +250 −250(halved by the floor)
       expect(clean.observation.deaths).toEqual([]); // the monthly book keeps churn-collapse silent
     }
+  });
+});
+
+describe("rung 9 — the per-verb intent census separates what the total cannot", () => {
+  // The triage twin (:3657 re-read): one hand, two calls, three runbook
+  // knob-walks. The authored arm refuses a CALL; the one-tick flip (answering
+  // the second call at t7 instead of t6) moves the collision onto the first
+  // knob-walk and dies at t8. Both arms show EXACTLY ONE refusal — every
+  // total-based `intents-refused-*` line answers identically on both (the
+  // arithmetic proof lives in objectives.test.ts); only the verb census
+  // knows which promise died. Zero dice: rate-0 traffic, door path seed-free.
+  function lateAnswerFlip(): ReturnType<typeof shippedScenario> {
+    return flip("understaffed-sunday-triage", (wire) => {
+      const rail = wire.intents;
+      if (rail === undefined) throw new Error("wire lost its rail");
+      rail[1]!.atTick = 7;
+    });
+  }
+
+  it("authored arm: runbook survives, a call drops — won@12 on five offsets", () => {
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(shippedScenario("understaffed-sunday-triage"), BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("won");
+      expect(report.stopReason).toBe("win@12");
+      expect(report.observation.intentsExecuted).toBe(4);
+      expect(report.observation.intentsRefused).toBe(1); // the TOTAL any pre-rung-9 line can see
+      expect(report.observation.intentsExecutedByVerb).toEqual({ "configure-node": 3, communicate: 1 });
+      expect(report.observation.intentsRefusedByVerb).toEqual({ communicate: 1 });
+    }
+  });
+
+  it("flipped arm: the RUNBOOK is what drops — lose@8 on five offsets, same refusal total", () => {
+    const drowned = lateAnswerFlip();
+    for (const offset of [0, 1, 2, 3, 4]) {
+      const report = runScenario(drowned, BASE_SEED, { seedOffset: offset });
+      expect(report.outcome, `offset ${offset} → ${report.stopReason}`).toBe("lost");
+      expect(report.stopReason).toBe("lose:intents-refused-above:configure-node:0@8");
+      expect(report.observation.intentsRefused).toBe(1); // identical total to the won arm
+      expect(report.observation.intentsRefusedByVerb).toEqual({ "configure-node": 1 });
+      expect(report.observation.intentsExecutedByVerb).toEqual({ communicate: 2 });
+      // the rung-9 lose row is the discriminator; the line names its verb.
+      const row = report.objectives.lose.find(
+        (r) => r.predicate.kind === "intents-refused-above" && r.predicate.verb === "configure-node",
+      );
+      expect(row?.holds).toBe(true);
+    }
+  });
+
+  it("the sparse law holds on the quiet rails: absent-verb censuses stay empty", () => {
+    // Missions with no door feed read {} on both census maps — the exact
+    // pre-rung-9 byte shape (EMPTY_OBSERVATION carries frozen empty maps).
+    const calm = runScenario(shippedScenario("the-long-weekend"), BASE_SEED);
+    expect(calm.observation.intentsExecutedByVerb).toEqual({});
+    expect(calm.observation.intentsRefusedByVerb).toEqual({});
+    // And the original Sunday's all-communicate rail reads a single-verb map
+    // whose values sum to the total — one receipt stream, two views.
+    const sunday = runScenario(shippedScenario("understaffed-sunday"), BASE_SEED);
+    const sum = Object.values(sunday.observation.intentsExecutedByVerb).reduce((a, b) => a + b, 0);
+    expect(sum).toBe(sunday.observation.intentsExecuted); // 18 — the :1025 pin's own rail
+    expect(sunday.observation.intentsExecutedByVerb).toEqual({ communicate: 18 });
   });
 });
 

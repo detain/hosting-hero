@@ -561,6 +561,40 @@ describe("wave-five walls — channels ladder (door intents, economy signals)", 
   it("the vocab census is twenty-nine kinds (wave-five channels +8, conversions +2)", () => {
     expect(SCENARIO_PREDICATE_KINDS).toHaveLength(29);
   });
+
+  it("rung 9: the intent four accept an optional verb; the wall parses it closed", () => {
+    for (const predicate of [
+      { kind: "intents-executed-above", verb: "configure-node", count: 2 },
+      { kind: "intents-executed-below", verb: "communicate", count: 1 },
+      { kind: "intents-refused-above", verb: "place-device", count: 0 },
+      { kind: "intents-refused-below", verb: "shed-load", count: 3 },
+    ]) {
+      const wire = minimalWire();
+      wire.objectives.win = [predicate];
+      const parsed = parseScenarioDoc(wire).objectives.win[0] as Record<string, unknown>;
+      expect(parsed.verb).toBe(predicate.verb);
+      expect(parsed.count).toBe(predicate.count);
+    }
+    // Sparse law: no verb on the wire → no verb key on the frozen predicate.
+    const plain = minimalWire();
+    plain.objectives.win = [{ kind: "intents-refused-above", count: 6 }];
+    expect("verb" in (parseScenarioDoc(plain).objectives.win[0] as object)).toBe(false);
+  });
+
+  it("rung 9: an off-roster verb is BAD_ENUM; a verb on a non-intent kind is an unknown field", () => {
+    const ghost = minimalWire();
+    ghost.objectives.win = [{ kind: "intents-executed-above", verb: "teleport-rack", count: 1 }];
+    const err = wall("BAD_ENUM", () => parseScenarioDoc(ghost));
+    expect(err.path).toContain("verb");
+    const misplaced = minimalWire();
+    misplaced.objectives.win = [{ kind: "churn-above", verb: "communicate", count: 1 }];
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(misplaced)).path).toContain(".verb");
+    // The below-zero binding survives the dim: verb narrows WHICH receipts,
+    // never how the count is bounded.
+    const vacuous = minimalWire();
+    vacuous.objectives.win = [{ kind: "intents-refused-below", verb: "communicate", count: 0 }];
+    expect(wall("BAD_PREDICATE", () => parseScenarioDoc(vacuous)).path).toContain("count");
+  });
 });
 
 describe("wave-five conversions — the corrupts arm + corruption lines", () => {
