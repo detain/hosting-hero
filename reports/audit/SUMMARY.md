@@ -1250,3 +1250,54 @@ Delta vs the b69ce76-era census (318/1,000/1/2,240/30): +3 ✅, +1 🔧, −4 �
 | headless (`pnpm -F headless-tools test`) | **53/53, exit 0** — parity REAL `b0162ab5` / STUB `a9b4b7b8` literals held |
 
 Box load at battery start ~7.7 (shared 48-core) — all runs serial anyway, no flakes. This closeout touches exactly three files: `docs/MODULE-STATUS.md`, `hosting_game.md`, `reports/audit/SUMMARY.md`. media/prompts never staged.
+
+## WAVE-11 closeout — VoIP card marked, rung-9 ledger, review-minor cures (2026-10-15)
+
+### The two commits (stack fb781ae..e30b75b, direct-master, unpushed at closeout start)
+
+| SHA | Role | What landed |
+|---|---|---|
+| `fb781ae` | VoIP content card | §1.3 "Trunk Group / The Switchboard" as `official:trunk-group-voip` — the SECOND card on the ADR-0013 #14 tier-extension route, re-founded on **Maintain** (Observe held by dedicated; Shield taken by object-storage @2fefc60). Type bundle + 69-template pack (38 decision / 31 flavour) + rules-free first-quarter slice; first corpus use of `visitor.patienceModel {mode:"binary"}` (§3.2 "no partial credit"); the corpus's only non-null `peakHourLocal: 9`. Content census moves bundles 6→7, waves 6→7, packs 6→7, JSON 26→29, `_todo` 159→186 (pack markers 8→9) |
+| `e30b75b` | scenario rung 9 | per-verb intent census — optional `verb` key on the intents predicates reads the new always-present `intents*ByVerb` observation maps off the door's OWN receipt stream (zero dice; absent verb = exact whole-rail total; BAD_ENUM at the wall; vocab stays 29 — a dimension, not a kind). Twin mission `understaffed-sunday-triage` :3657: refused TOTAL identically 1 in both arms — only the per-verb census separates a dropped call from a dropped runbook (win @12, one-tick flip dies @8, witnesses EXACT ×5). scenario dir 392→408, 51 exports zero delta |
+
+### Review
+
+Closeout review verdict **PUSH-GO — 0 critical / 0 major / 1 minor / 1 nit**. Both cured in this closeout commit:
+- **Minor** (comment honesty): `scenario/objectives.ts` rung-9 docblock + the `runner.test.ts` sparse-leg comment claimed "the (exact) pre-rung-9 **byte shape** holds" — imprecise: the two census maps are always-present fields, so the observation KEY SET did grow at rung 9. Reworded to "predicate **EVALUATION** shape holds" with the honest note that no digest covers the observation — which is exactly why the rung moved zero goldens. Comment-only; scenario suite re-run 408 green.
+- **Nit** (host compat): hosts consuming `runScenario` reports saw the extra observation keys with no compat note. One-line **HOST-COMPAT** note added at the restmazing handoff comment in `apps/proto/src/runner/simCoreRunner.ts` (the money-lane roster block — the single most natural host-facing site; fastForward.ts carries no scenario observation): the observation is an APPEND-ONLY record, read by name, never pin the shape.
+
+### hosting_game.md marker flips (fail-loud: asserted heading-text + current marker on disk before write; no remembered line numbers)
+
+| Line | Heading | Before | After | Witness |
+|---|---|---|---|---|
+| 1768 | §1.3 `"Trunk Group" / "The Switchboard" — VoIP / SIP trunking` | ❌ | 🔧 `fb781ae` | Eleven Nines precedent (@1907, 🔧 2fefc60): card DATA shipped (bundle + pack + slice), no door mechanic — Maintain stays card identity (tier-extension door-gap row stands) |
+| ~606 | §0.3 Scarcity Table Voice/VoIP/SIP row | — | **SKIP — no write** | the row is a table row inside the already-🔧 `## 0.3` heading; §0.3 rows carry NO markers per precedent — honestly skipped |
+| 3657 | §1.5 `The Understaffed Sunday` | ✅ `110f516` | **SKIP — no write** | precondition found it already ✅; the rung-9 triage twin rides the same ✅ — appendix note here instead of double-stamping |
+
+One write, two precondition-skips; hosting_game.md stays **35,572 lines** (flip is an in-place marker swap, zero line delta).
+
+### Census (recomputed from disk after this closeout, `^##`/`^###` heading lines)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 321 | **321** |
+| 🔧 PARTIAL | 1,001 | **1,002** |
+| ⚠️ PROBLEM | 1 | **1** |
+| ❌ MISSING | 2,236 | **2,235** |
+| 📝 NA | 30 | **30** |
+| **total marked** | **3,589** | **3,589** (3,593 heading lines, 4 unmarked table-style rows per precedent) |
+
+Delta = exactly the one executed flip (❌→🔧); the two skips moved nothing.
+
+### Closeout battery — final tree (minor/nit comment edits + docs in-tree), serial/unloaded, one process at a time
+
+| Gate | Result |
+|---|---|
+| sim-core serial (`--no-file-parallelism`) | **144 files / 2,425 tests, exit 0** (298.7 s) — the lane's 2,422 expectation retired; serial truth is 2,425 — +19 over the 2,406 wave-ten floor (the rung-9 dir view +16 plus 3 per-id loop legs), zero digest goldens moved |
+| proto serial (`--no-file-parallelism`) | **88 files / 968 tests, exit 0** (96.3 s) — 968 era count HELD (this closeout's one proto-file edit is the simCoreRunner.ts comment note; zero test delta) |
+| `pnpm -r typecheck` | **5/5 Done** |
+| `docs/api-verify.test.mjs` | **PASS — 1,594 names** (scenario 51/51), import map consistent |
+| `scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) |
+| headless (`pnpm -F headless-tools test`) | **53/53, exit 0** — parity REAL `b0162ab5` / STUB `a9b4b7b8` literals held |
+
+Targeted pre-check: `npx vitest run src/scenario --no-file-parallelism` **408/408** after the comment cures. This closeout touches six files: `packages/sim-core/src/scenario/objectives.ts`, `packages/sim-core/src/scenario/__tests__/runner.test.ts`, `apps/proto/src/runner/simCoreRunner.ts` (all three comment-only), `docs/MODULE-STATUS.md`, `hosting_game.md`, `reports/audit/SUMMARY.md`. media/prompts never staged.

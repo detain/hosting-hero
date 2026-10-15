@@ -1765,7 +1765,7 @@ Small, passionate, loud customers. One server per community.
 **How it works:** Signature mechanic: **drama.** Communities fracture, half the players leave,
 someone DDoSes their ex-guild. Non-technical threats dominate. Comedic and cheap to author.
 
-### "Trunk Group" / "The Switchboard" — VoIP / SIP trunking ❌
+### "Trunk Group" / "The Switchboard" — VoIP / SIP trunking 🔧 fb781ae
 New rule: **jitter and packet loss, not throughput.**
 
 **How it works:** Visitors are *calls* — long-lived fragile sessions; a dropped call is a total loss,

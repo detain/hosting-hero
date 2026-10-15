@@ -50,7 +50,11 @@ export interface ScenarioObservation {
   readonly intentsRefused: number;
   /** Rung 9: the same door receipts split per PlayerVerb, code-unit sorted.
    *  An unseen verb is simply absent (reads as zero); both maps stay empty
-   *  while the intent rail is silent — the pre-rung-9 byte shape holds. */
+   *  while the intent rail is silent — the predicate EVALUATION shape holds.
+   *  (Honest wording: these two keys are always present on the observation,
+   *  so the pre-rung-9 KEY SET did grow; what stays byte-for-byte identical
+   *  is every existing predicate's reading. No digest covers the observation
+   *  — that is why the rung moved zero goldens.) */
   readonly intentsExecutedByVerb: Readonly<Record<string, number>>;
   readonly intentsRefusedByVerb: Readonly<Record<string, number>>;
   /** Channels ladder: `signals.chargebacks` rows whose cfg-owned fee the

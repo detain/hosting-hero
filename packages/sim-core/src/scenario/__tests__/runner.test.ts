@@ -886,7 +886,9 @@ describe("rung 9 — the per-verb intent census separates what the total cannot"
 
   it("the sparse law holds on the quiet rails: absent-verb censuses stay empty", () => {
     // Missions with no door feed read {} on both census maps — the exact
-    // pre-rung-9 byte shape (EMPTY_OBSERVATION carries frozen empty maps).
+    // pre-rung-9 predicate-EVALUATION shape (EMPTY_OBSERVATION carries the
+    // two keys always-present with frozen empty maps; the observation key
+    // set grew at rung 9, no digest covers it — zero goldens rode the rung).
     const calm = runScenario(shippedScenario("the-long-weekend"), BASE_SEED);
     expect(calm.observation.intentsExecutedByVerb).toEqual({});
     expect(calm.observation.intentsRefusedByVerb).toEqual({});

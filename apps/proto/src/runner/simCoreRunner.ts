@@ -286,6 +286,10 @@ const CONTRACT: Contract = Object.freeze({
  * — so `company::reputation` (fix-economy @57ea80e publisher) and the money
  * notices flow live instead of reading '?'. Composition mirrors the
  * sanctioned money lane in sim-core src/unattended/fastForward.ts.
+ * HOST-COMPAT (rung-9 closeout): the scenario `runScenario` report's
+ * `observation` is an APPEND-ONLY record — rungs grow its key set (the
+ * per-verb census maps landed @e30b75b); hosts read by name, never pin
+ * the whole shape.
  *
  * The book is deliberately THREE-shaped so every v0 money surface is a
  * witness, not a placeholder:
