@@ -1301,3 +1301,41 @@ Delta = exactly the one executed flip (❌→🔧); the two skips moved nothing.
 | headless (`pnpm -F headless-tools test`) | **53/53, exit 0** — parity REAL `b0162ab5` / STUB `a9b4b7b8` literals held |
 
 Targeted pre-check: `npx vitest run src/scenario --no-file-parallelism` **408/408** after the comment cures. This closeout touches six files: `packages/sim-core/src/scenario/objectives.ts`, `packages/sim-core/src/scenario/__tests__/runner.test.ts`, `apps/proto/src/runner/simCoreRunner.ts` (all three comment-only), `docs/MODULE-STATUS.md`, `hosting_game.md`, `reports/audit/SUMMARY.md`. media/prompts never staged.
+
+## WAVE-12 closeout — corpus-mainline adoption (2026-10-15)
+
+### The commit (stack `e30b75b..007a15d` — one commit, direct-master, unpushed at closeout start)
+
+| SHA | Role | What landed |
+|---|---|---|
+| `007a15d` | proto corpus-mainline | `SimCoreRunner` gains an optional `corpus:{authority, waves}` option that routes the mainline drive through the PUBLIC scenario seam (`resolveCorpusWindows`) — null-gated default-off with byte-identity pinned as a **60-frame per-frame digest twin** vs the uncorpus'd run; the money goldens re-run untouched; the plan surfaces through LOCAL `corpusPlan()`/`corpusTraffic()` accessors, honoring the protocol-v1 **zero-wire-field law** (the wire stays v1 by design); `simCoreRunner.corpus.test.ts` 9 tests (envelope byte-identity vs a direct seam call, empty-surface no-hole exclusion pair vs seeded-surface packing, fully-starved ctor throw). Remaining owed: the worker-loop injection leg (`MODULE-STATUS:190` — protocol adoption of the citation). 4 files +413/−6, zero sim-core delta |
+
+### Review
+
+Closeout review verdict **PUSH-GO — 0 critical / 0 major / 0 minor / 3 nit**. All three accepted-adequate, no fix commits:
+- **Nit** (win-arm comment-vs-assertion strength): the win-arm test's comment claims storms "really arrive" while the assertions pin frame-advance/terminal-count — adequate: arrival truth is carried by the envelope byte-identity and exclusion-pair tests beside it.
+- **Nit** (seeded-pair `toMatchObject`): the empty/seeded exclusion pair asserts with `toMatchObject` rather than exact equality — adequate: `excluded: []` is the load-bearing key and the surrounding fields ride the seam's own pinned window shape.
+- **Nit** (unpinned ctor canary throw): the fully-starved ctor test asserts a throw without pinning the message literal — adequate: fail-loud existence is the contract; the message grammar lives scenario-side where it is pinned.
+
+### Census (unchanged this wave, `^##`/`^###` heading lines)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 321 | **321** |
+| 🔧 PARTIAL | 1,002 | **1,002** |
+| ⚠️ PROBLEM | 1 | **1** |
+| ❌ MISSING | 2,235 | **2,235** |
+| 📝 NA | 30 | **30** |
+| **total marked** | **3,589** | **3,589** |
+
+Zero `hosting_game.md` flips this wave by design: the corpus seam rides already-✅ scenario headings (the §1.5 corpus-cited missions were marked when the seam landed) and `007a15d` is host adoption only — no new spec ground opens until the worker-loop leg ships.
+
+### Gates (targeted — `007a15d` already review-passed; no full serial re-run this closeout)
+
+| Gate | Result |
+|---|---|
+| `docs/api-verify.test.mjs` | **PASS — 1,594 names**, import map consistent |
+| `scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) |
+| `pnpm -r typecheck` | **5/5 Done** |
+
+This closeout touches exactly one file: `reports/audit/SUMMARY.md`. media/prompts never staged.
