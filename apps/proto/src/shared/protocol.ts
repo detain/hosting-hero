@@ -245,8 +245,38 @@ export type WireIntentPayload =
 export type RunnerKindWire = "mock" | "sim-core";
 const RUNNER_KINDS: readonly RunnerKindWire[] = ["mock", "sim-core"];
 
+/** Worker-loop corpus citation (WORKER-CORPUS leg of the §1.5 seam — the
+ *  wire half of @007a15d's runner leg). Additive protocol-v1 law, exact
+ *  precedent of notice.causeId / attention (@0b35b15): the key is OPTIONAL,
+ *  absent ⇒ legacy boot byte-ident, present-but-malformed ⇒ ProtocolError.
+ *  The tableId is the shipped slice identity — the slice JSON's own `type`
+ *  minus the `official:` prefix — and a drift-pin test (simWorker.corpus.
+ *  test.ts) re-derives the closed list from packages/content/waves/ on disk
+ *  (era-census precedent), so a 9th hosting type cannot join the wire by
+ *  silence. Structural shape only: ≥1 / strictly-ascending wave numbers are
+ *  the runner's domain wall (mintCorpusDrive), reached through the worker's
+ *  boot-fault channel — the codec never re-invents a deeper law. */
+export const CORPUS_WIRE_TABLE_IDS = Object.freeze([
+  "shared-web",
+  "game-servers",
+  "mail-hosting",
+  "dns-hosting",
+  "dedicated",
+  "object-storage",
+  "trunk-group-voip",
+  "serverless",
+] as const);
+
+export type CorpusTableId = (typeof CORPUS_WIRE_TABLE_IDS)[number];
+
+/** Cited slice + the shipped wave numbers to schedule through the seam. */
+export interface BootCorpusWire {
+  readonly tableId: CorpusTableId;
+  readonly waves: readonly number[];
+}
+
 export type ToWorker =
-  | { readonly kind: "boot"; readonly protocol: typeof PROTOCOL_VERSION; readonly seed: string; readonly speedX: SpeedX; readonly runnerKind: RunnerKindWire }
+  | { readonly kind: "boot"; readonly protocol: typeof PROTOCOL_VERSION; readonly seed: string; readonly speedX: SpeedX; readonly runnerKind: RunnerKindWire; readonly corpus?: BootCorpusWire }
   | { readonly kind: "intent"; readonly protocol: typeof PROTOCOL_VERSION; readonly seq: number; readonly clock: ClockKind; readonly atUs: WireUs; readonly origin: "player" | "rule"; readonly payload: WireIntentPayload }
   | { readonly kind: "speed"; readonly protocol: typeof PROTOCOL_VERSION; readonly speedX: SpeedX }
   | { readonly kind: "halt"; readonly protocol: typeof PROTOCOL_VERSION };
@@ -293,6 +323,28 @@ function parseLiteral<T extends string | number>(path: string, raw: unknown, all
  *  to bigint when building sim-core types — strings survive structuredClone). */
 function parseWireUsString(path: string, raw: unknown): string {
   return parseUs(path, raw).toString();
+}
+
+/** Parse the optional boot.corpus rider (WORKER-CORPUS leg): closed tableId
+ *  enum + an array of integer wave numbers. Unknown keys inside the record are
+ *  ignored — the same tolerance the envelope parser shows every producer
+ *  (extras are the codec's blind spot BY PRECEDENT, half-values are not). */
+function parseBootCorpus(raw: unknown): BootCorpusWire {
+  const rec = isRecord("boot.corpus", raw);
+  const tableId = parseLiteral("boot.corpus.tableId", rec["tableId"], CORPUS_WIRE_TABLE_IDS);
+  const wavesRaw = rec["waves"];
+  if (!Array.isArray(wavesRaw)) {
+    throw new ProtocolError("boot.corpus.waves", "array of shipped wave numbers", wavesRaw);
+  }
+  const waves: number[] = [];
+  wavesRaw.forEach((entry, index) => {
+    const path = `boot.corpus.waves[${index}]`;
+    if (typeof entry !== "number" || !Number.isInteger(entry)) {
+      throw new ProtocolError(path, "integer wave number", entry);
+    }
+    waves.push(entry);
+  });
+  return { tableId, waves: Object.freeze(waves) };
 }
 
 /* ═══════════════════════════ Encode (trusted → wire) ═══════════════════════ */
@@ -497,6 +549,7 @@ export function assertToWorker(raw: unknown): ToWorker {
     return { kind, protocol: PROTOCOL_VERSION, speedX: parseLiteral("speedX", rec["speedX"], SPEEDS) };
   }
   if (kind === "boot") {
+    const corpusRaw = rec["corpus"];
     return {
       kind,
       protocol: PROTOCOL_VERSION,
@@ -507,6 +560,9 @@ export function assertToWorker(raw: unknown): ToWorker {
         rec["runnerKind"] === undefined
           ? "mock"
           : parseLiteral("boot.runnerKind", rec["runnerKind"], RUNNER_KINDS),
+      // Absent ⇒ no key at all on the parsed record (legacy boots stay
+      // byte-ident through this seam — WORKER-CORPUS rider law).
+      ...(corpusRaw === undefined ? {} : { corpus: parseBootCorpus(corpusRaw) }),
     };
   }
   return {

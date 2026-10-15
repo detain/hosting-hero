@@ -12,6 +12,7 @@
 import {
   assertFromWorker,
   decodeProjection,
+  type BootCorpusWire,
   type SimProjection,
   type SpeedX,
   type WireIntentPayload,
@@ -46,8 +47,24 @@ export class SimClient {
     };
   }
 
-  boot(seed: string, speedX: SpeedX = 1, runnerKind: "mock" | "sim-core" = "mock"): void {
-    this.worker.postMessage({ kind: "boot", protocol: 1, seed, speedX, runnerKind });
+  /** `corpus` (WORKER-CORPUS leg, additive protocol-v1): a shipped-slice
+   *  citation that boots a sim-core runner in corpus drive mode
+   *  (`shared/corpusHost.ts` builds the authority worker-side). Omitted ⇒
+   *  the key is never posted — legacy boots ride the identical wire. */
+  boot(
+    seed: string,
+    speedX: SpeedX = 1,
+    runnerKind: "mock" | "sim-core" = "mock",
+    corpus?: BootCorpusWire,
+  ): void {
+    this.worker.postMessage({
+      kind: "boot",
+      protocol: 1,
+      seed,
+      speedX,
+      runnerKind,
+      ...(corpus === undefined ? {} : { corpus }),
+    });
   }
 
   setSpeed(speedX: SpeedX): void {

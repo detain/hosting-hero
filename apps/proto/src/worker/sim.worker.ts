@@ -7,6 +7,7 @@
  * It never receives DOM, canvas or Vue — same file runs under any WorkerHost.
  */
 import { assertToWorker, encodeProjection, wireIntentToPlayerIntent } from "../shared/protocol";
+import { workerCorpusDrive } from "../shared/corpusHost";
 import { createRunner, type SimRunner } from "../runner";
 
 const host = self as unknown as DedicatedWorkerGlobalScope;
@@ -22,8 +23,30 @@ host.onmessage = (event: MessageEvent): void => {
   switch (message.kind) {
     case "boot": {
       if (runner !== null) runner.stop();
+      // A failed boot leaves no half-owned runner behind (and the next boot
+      // cannot stop a dead one twice).
+      runner = null;
       const seed = hashSeed(message.seed);
-      runner = createRunner(message.runnerKind, seed);
+      /* WORKER-CORPUS leg: a boot carrying `corpus` boots the runner in
+         corpus drive mode through the ONE shared builder (fakeWorker mirrors
+         this branch verbatim). Citation-domain refusals (starved-over waves,
+         non-ascending, mock+corpus wiring bug) throw at construction —
+         BEFORE tick 1 — and surface on the fault channel, never as a quiet
+         season or a dead worker. Absent corpus ⇒ byte-ident legacy boot. */
+      try {
+        runner = createRunner(
+          message.runnerKind,
+          seed,
+          message.corpus === undefined ? undefined : workerCorpusDrive(message.corpus),
+        );
+      } catch (error) {
+        post({
+          kind: "fault",
+          protocol: 1,
+          message: `boot failed: ${error instanceof Error ? error.message : String(error)}`,
+        });
+        return;
+      }
       runner.setSpeed(message.speedX);
       runner.start((projection) => {
         post({

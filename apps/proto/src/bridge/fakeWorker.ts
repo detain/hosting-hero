@@ -5,6 +5,7 @@
  * `pump()` so tests never depend on timers.
  */
 import { assertToWorker, encodeProjection, wireIntentToPlayerIntent } from "../shared/protocol";
+import { workerCorpusDrive } from "../shared/corpusHost";
 import type { PlayerIntent } from "@hh/sim-core";
 import { createRunner, type SimRunner } from "../runner";
 
@@ -23,6 +24,7 @@ export class FakeWorkerLike {
   terminate(): void {
     this.runner?.stop();
     this.runner = null;
+    this.lastRunner = null;
   }
 
   /** Deliver N projection frames synchronously (drains pending inputs first). */
@@ -44,8 +46,26 @@ export class FakeWorkerLike {
   private handleInbound(raw: unknown): void {
     const message = assertToWorker(raw);
     if (message.kind === "boot") {
-      this.runner = createRunner(message.runnerKind, 1);
+      /* Mirror of sim.worker.ts boot branch (corpus rider + boot-fault
+         channel): the SAME shared workerCorpusDrive builder feeds the SAME
+         createRunner seam, so headless bridge tests speak worker-exact
+         corpus semantics (runnerKind-honoring precedent). Seed stays the
+         fake's fixed 1 — pump()-driven determinism, share codes are the
+         real worker's concern. */
+      try {
+        this.runner = createRunner(
+          message.runnerKind,
+          1,
+          message.corpus === undefined ? undefined : workerCorpusDrive(message.corpus),
+        );
+      } catch (error) {
+        this.runner = null;
+        this.lastRunner = null;
+        this.emitFault(`boot failed: ${error instanceof Error ? error.message : String(error)}`);
+        return;
+      }
       const runner = this.runner;
+      this.lastRunner = runner;
       runner.setSpeed(message.speedX);
       // The fake does NOT start the interval loop — pump() drives it.
       this.deliver({ kind: "ready", protocol: 1, engineVersion: runner.engineVersion, runnerId: runner.runnerId });
@@ -69,10 +89,17 @@ export class FakeWorkerLike {
     if (message.kind === "halt") {
       this.runner.stop();
       this.runner = null;
+      this.lastRunner = null;
     }
   }
 
   lastIntent: PlayerIntent | null = null;
+
+  /** Runner witness (test-side twin of `lastIntent`): the runner a successful
+   *  boot minted, so corpus-mode pins can ask the LOCAL accessors
+   *  (`corpusPlan()` / `waveEnvelopes()`) on exactly the instance the wire
+   *  produced. Null before boot and after halt. */
+  lastRunner: SimRunner | null = null;
 
   private deliver(message: unknown): void {
     this.onmessage?.({ data: message });
