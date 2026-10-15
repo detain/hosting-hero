@@ -1339,3 +1339,58 @@ Zero `hosting_game.md` flips this wave by design: the corpus seam rides already-
 | `pnpm -r typecheck` | **5/5 Done** |
 
 This closeout touches exactly one file: `reports/audit/SUMMARY.md`. media/prompts never staged.
+
+## WAVE-13 closeout — rung-10 familyMix dial cured, ladder rung 10 consumed, battery recorded (2026-10-15)
+
+### The commit (lane `295b095` already on master at closeout start; closeout adds one docs-only commit)
+
+| SHA | Role | What landed |
+|---|---|---|
+| `295b095` | scenario rung 10 | the composition dial on the wire — `limits.familyMix {weights}` closed row carries the bundle's five-key familyWeights table as INTEGER µ-shares (no floats, canary law) through the waves authority `parseFamilyWeightsTable` REUSED WHOLE (Fixed Q16.16 conversion, sum ±1%, renormalised, zero buckets dropped as authored absences, `BAD_LIMITS` on every refusal). Armed: `createArrivalStep` rolls identity per mint (defaults.ts:286) and the runner counts the family census at the ROLL via a pure pass-through observer on the sanctioned arrival-slot override (defaults.ts:1354) — the one place the rolled family is legible before the same-tick terminal purge (driver.ts:957). Honest v0 at the wall: all five families adversarial — the dial steers WHICH flavor dominates, never benign traffic. 30th wire `free-tier-flood-mix` (:3574 mix twin): win @240 conserving the exact 4,818 mints ×5 with abuse census ≈4,336; the one-field certainty flip is dice-FROZEN — census equals arrivals and crosses the 4,700 ceiling at EXACTLY t236 (census 4,714) on all five offsets; the delete-dial control reverts to organic labels {organic: 4,818} and dies timeout@240 — the composition story is untellable without the dial. Sparse law: the 29 pre-rung wires byte-stand (label twin still 1,672/3,146, pinned). scenario dir 408→418, 51 exports zero delta. 7 files +398/−20 |
+| closeout | docs-only review cures | the five findings below, applied across `scenarios.ts`/`doc.ts`/`runner.test.ts`/`scenarios.test.ts`/`MODULE-STATUS.md`/`API-REFERENCE.md` — zero test semantics moved (418/418 re-proved post-cure, no source-scan pin reddened) |
+
+### Review
+
+Closeout review verdict **PUSH-GO — 0 critical / 0 major / 2 minor / 3 nit**. All five applied as doc/comment-line cures:
+- **Minor-1** (wrong Binomial sd): the wire docblock + API-REFERENCE row claimed sd ≈ 6.4 for Binomial(4818, 0.9); truth is √(4818·0.9·0.1) ≈ 20.8 — both corrected; the correct sibling "human sd ≈ 15" left standing.
+- **Minor-2** (off-by-one title census): "27 mission titles"/"twenty-seven missions" → **26** distinct §1.5 headings at 30 wires (Metastable ×2, Sunday ×2, Free Tier Flood ×3) — fixed in the roster test title, MODULE-STATUS scenario row, and API-REFERENCE `SHIPPED_SCENARIO_WIRES` row.
+- **Nit-1**: collapsed `familyMix?: {…};  };` line in the runner.test surgery mirror split one-key-per-line.
+- **Nit-2**: per-mint roll cited defaults.ts:284 (the comment above the line); the roll is :286 — both disk sites corrected (:284 survives only in the immutable commit message).
+- **Nit-3**: the familyMix wall docblock now states the sub-granularity edge — an authored µ-share <8 µ rounds to Fixed 0 and is silently dropped from the roll by the armed filter; its sliver renormalises into the survivors, bounding census drift under one mint on any shipped wire.
+
+### Markers / appendix
+
+| Line | Heading | State | Disposition | Note |
+|---|---|---|---|---|
+| 3574 | §1.5 `Free Tier Flood` | ✅ | **SKIP — no write** | precondition found it already ✅ from the rung-3 wire; the rung-10 mix twin rides the same heading — appendix note here instead of double-stamping (the rung-9 triage-twin precedent) |
+
+No `hosting_game.md` writes at all this closeout (the rung-9 precedent's appendix note lived in this SUMMARY; the Matrix-C register row :35533 already credits the familyMix consumers).
+
+### Census (unchanged this wave, `^##`/`^###` heading lines — grep -c verified on the closeout tree)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 321 | **321** |
+| 🔧 PARTIAL | 1,002 | **1,002** |
+| ⚠️ PROBLEM | 1 | **1** |
+| ❌ MISSING | 2,235 | **2,235** |
+| 📝 NA | 30 | **30** |
+| **total marked** | **3,589** | **3,589** |
+
+rung-10 rides already-✅ scenario headings — no new spec ground; dial is a wire-shape addition to a marked-live library.
+
+### Battery (full, serial, one process at a time, Node 24, box under light sibling media load)
+
+| Gate | Result | Wall |
+|---|---|---|
+| sim-core `npx vitest run --no-file-parallelism` | **144 files / 2,435 tests passed, exit 0** — zero goldens moved | 167s |
+| scenario dir scoped (post-cure re-proof) | **418/418** | 33s |
+| `pnpm -r typecheck` | **5/5 Done** | 16s |
+| `node docs/api-verify.test.mjs` | **PASS — 1,594 names** (rung-10 added zero export names), import map consistent | <10s |
+| `tools/headless` | **53/5** — parity b0162ab5/a9b4b7b8 **HELD** | 6s |
+| `node scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) | 18s |
+| proto suite | **SKIPPED per end-of-program directive** — rung-10 touched zero `apps/` files; build integrity still proven by the ci-verify proto-build gate | — |
+
+Ladder status: **rungs 1–10 CONSUMED**. The vocabulary covers every shipped-seam heading class probed so far; further §1.5 conversions are wire authoring, not engine work.
+
+This closeout touches six files: `packages/sim-core/src/scenario/{scenarios.ts,doc.ts}`, `packages/sim-core/src/scenario/__tests__/{scenarios.test.ts,runner.test.ts}`, `docs/MODULE-STATUS.md`, `docs/API-REFERENCE.md`, plus this `reports/audit/SUMMARY.md`. media/prompts never staged; hosting_game.md markers untouched.

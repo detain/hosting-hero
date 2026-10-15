@@ -1207,7 +1207,11 @@ function parseFreezeLimit(raw: unknown, path: string): ScenarioLimits["freeze"] 
  *  (a 0-share family is an authored absence, not a roll). The conversion is
  *  exact for every share that is a whole multiple of 1e6/65536 ≈ 15.26 µ and
  *  drifts by at most that elsewhere — far under the authority's own ±1%
- *  renormalisation band, and pinned falsifiable by the wall tests. */
+ *  renormalisation band, and pinned falsifiable by the wall tests. One
+ *  sub-granularity edge worth stating: an authored µ-share below the Fixed
+ *  conversion granularity (<8 µ ⇒ Fixed 0) is dropped by the armed filter and
+ *  silently leaves the roll — its sliver renormalises into the surviving
+ *  buckets, so the census drift stays under one mint on any shipped wire. */
 const FAMILY_MIX_MICRO = 1_000_000;
 const FIXED_SCALE = 65_536;
 const FAMILY_MIX_KEYS = ["customerAsThreat", "entropic", "human", "malicious", "systemic"] as const;

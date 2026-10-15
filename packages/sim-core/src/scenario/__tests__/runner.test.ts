@@ -102,7 +102,7 @@
  *      the canary law, converted to Fixed Q16.16 at the wall; the authority
  *      reused whole: sum ±1% checked, shares renormalised to 1,000,000 µ,
  *      zero buckets dropped as authored absences). Armed, createArrivalStep rolls identity per mint
- *      (defaults.ts:284) and the runner counts the ROLL at the arrival
+ *      (defaults.ts:286) and the runner counts the ROLL at the arrival
  *      step's OUTPUT — a pure pass-through wrapper over the sanctioned slot
  *      override (defaults.ts:1354), the one place the rolled family is
  *      legible before the same-tick terminal purge (driver.ts:957). Engine
@@ -154,7 +154,8 @@ type MutableWire = {
     guardrails?: unknown[];
     attention?: { capacity: number; cost: Record<string, number> };
     freeze?: { fromMinute: number; toMinute: number };
-    familyMix?: { weights: Record<string, number> };  };
+    familyMix?: { weights: Record<string, number> };
+  };
   contracts: Record<string, unknown>[];
   traffic: {
     tableId: string;

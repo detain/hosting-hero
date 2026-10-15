@@ -49,7 +49,7 @@ const SPEC_HEADINGS: Readonly<Record<string, string>> = {
 };
 
 describe("the shipped set", () => {
-  it("is exactly the thirty shipped §1.5 wires (twenty-seven missions; Metastable and The Understaffed Sunday ship twice, Free Tier Flood ships three times)", () => {
+  it("is exactly the thirty shipped §1.5 wires (twenty-six missions; Metastable and The Understaffed Sunday ship twice, Free Tier Flood ships three times)", () => {
     expect(SHIPPED_SCENARIO_IDS).toEqual([
       "the-long-weekend",
       "deadbeat-quarter",

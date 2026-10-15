@@ -1983,7 +1983,7 @@ const UNDERSTAFFED_SUNDAY_TRIAGE_WIRE = {
  *  ARITHMETIC (clock 240; integer rates, so mint COUNTS never roll the
  *  dice: 8/min × m1–59 + 20/min × m60–119 + 26/min × m120–240 = 4,818
  *  mints): the shipped mix puts customerAsThreat ≈ Binomial(4818, 0.9),
- *  mean 4,336, sd ≈ 6.4 — a mile above the detection floor 4,000 and a
+ *  mean 4,336, sd ≈ 20.8 — a mile above the detection floor 4,000 and a
  *  mile below the control ceiling 4,700 on every probed offset; the human
  *  minority (mean ≈ 241, sd ≈ 15) stays visible above 120. FLIP — one
  *  field, the dial itself — to {customerAsThreat: 1, all others 0}: the
