@@ -30,9 +30,10 @@
  * untouched and the card documents law-on vs law-off rather than breaking
  * either.
  *
- * Honest scope: the board is the mission's own 8-slot web-1, and the
- * mainline worker/table corpus adapter (simCoreRunner citing waves through
- * a CorpusAuthority) remains the one leg this batch does not wire.
+ * Honest scope: the board is the mission's own 8-slot web-1. The mainline
+ * runner leg now exists — `SimCoreRunner({corpus})` cites waves through the
+ * same public seam (`runner/simCoreRunner.ts`); the worker-loop wire leg
+ * (protocol adoption of the citation) remains owed by design (protocol-v1).
  */
 import { asRunSeed } from "@hh/sim-core";
 import sliceRaw from "../../../../packages/content/waves/g1-shared-web-first-quarter.json?raw";

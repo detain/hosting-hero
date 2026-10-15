@@ -53,6 +53,13 @@
  * All thresholds PROVISIONAL scenario rows; witnesses via wavePlan(n) /
  * incidentState() / dominantDefenseFamily().
  *
+ * CORPUS DRIVE MODE (§1.5 seam, the runner leg of @5df5586/@bc11697): an
+ * optional `corpus: {authority, waves}` option replaces the internal
+ * schedule with `resolveCorpusWindows` — cited storms from shipped slice
+ * content, invitation law riding the authority, excluded storms leaving no
+ * cursor hole. Witness via corpusPlan() / corpusTraffic() (local accessors;
+ * the wire is untouched either way). ABSENT ⇒ byte-identical runner.
+ *
  * Purity law: every per-run mutable object (driver, store, plan, counters) is
  * minted inside the constructor, so two fresh instances on one seed replay
  * byte-identically through the wire (see __tests__/simCoreRunner.test.ts).
@@ -153,6 +160,14 @@ import {
   type WavePlan,
   type WaveTable,
 } from "@hh/sim-core/waves";
+import {
+  DEFAULT_CORPUS_GEOMETRY,
+  gateCorpusWave,
+  resolveCorpusWindows,
+  type CorpusAuthority,
+  type CorpusWaveWindow,
+  type ScenarioCorpusTraffic,
+} from "@hh/sim-core/scenario";
 import {
   INCIDENT_ACTIVE_MINUTES,
   INITIAL_INCIDENT_CLOCK,
@@ -562,6 +577,173 @@ export function createMazeRouteStep(
   };
 }
 
+/* ═══════════════════ corpus-cited drive mode (§1.5 seam) ═══════════════════
+ * The MAINLINE runner leg of the waves-tableId corpus seam (@5df5586,
+ * invitations authority @bc11697) — the leg `chrome/corpusMission.ts`
+ * gap-noted as "not wired" and MODULE-STATUS recorded as
+ * "runner/worker leg owed". When `options.corpus` is present the per-minute
+ * envelope source becomes `resolveCorpusWindows(citation, runSeed,
+ * authority)` — the SAME public scenario seam the mission card and the
+ * sim-core suite drive — instead of the internal SHARED_WEB_G1 schedule:
+ * rates, families, telegraphs and the invitation gate all come from the
+ * cited slice, and the cursor law (an EXCLUDED storm leaves no hole: later
+ * storms pack tight) rides for free because it lives in the seam.
+ *
+ * v0 boundaries (honest, host-side only):
+ *  · NO wire fields (protocol-v1 law @0b35b15): the plan surfaces through
+ *    `corpusPlan()` as a local accessor, like recoveryState()/lastTickFacts().
+ *  · NO baseline trickle — scenario-runner's corpus branch stacks a
+ *    `baselineRatePerMin` plateau under the storms; the mainline demo board
+ *    reads quiet between cited windows (the internal table's back-to-back
+ *    schedule is simply replaced, not floored).
+ *  · B4 host signals (incident/copycat/oversell) stay on the INTERNAL
+ *    schedule path only — in corpus mode the plans were minted INSIDE the
+ *    seam with the authority's invitations law, so `wavePlan(n)` answers
+ *    undefined there (never a borrowed lie); `waveEnvelopes()` still
+ *    answers, and `familyOverride` still labels what actually drives.
+ *  · A citation whose EVERY storm is gated throws CORPUS_UNRESOLVED at the
+ *    constructor — never a quiet season by silence (the seam's own law).
+ */
+
+/** The shipped g1 slice stem — same file waveRules.ts adapts internally;
+ *  the corpus citation names it by content identity, not by import. */
+export const CORPUS_DRIVE_DEFAULT_TABLE_ID = "g1-shared-web-first-quarter";
+
+/** Host-supplied corpus citation: which shipped slice, which waves, and the
+ *  authority (slices + threatMeta; optionally the invitations law +
+ *  buildLog — ABSENT invitations is the law-off default: every shipped
+ *  threat spawnable, byte-ident to the pre-gate witnesses). */
+export interface CorpusDriveOptions {
+  readonly authority: CorpusAuthority;
+  /** Shipped wave numbers to schedule — strictly ascending, each ≥ 1. */
+  readonly waves: readonly number[];
+  readonly tableId?: string;
+  readonly waveStartMinute?: number;
+}
+
+/** One cited wave's placement witness (local accessor rows, protocol-v1:
+ *  nothing here rides the wire). `excluded` names the gated-but-uninvited
+ *  threat-ids at the judged minute; `scheduled:false` is the whole-storm
+ *  exclusion (cursor law: it advanced nothing for the waves after it). */
+export interface CorpusPlanRow {
+  readonly wave: number;
+  /** Packed-cursor minute the invitation gate judged this wave at. */
+  readonly judgedAtMinute: number;
+  readonly scheduled: boolean;
+  /** Placement-drawn window start (null on an excluded storm). */
+  readonly startMinute: number | null;
+  readonly windowMinutes: number;
+  /** Gated threat-ids with no inviter spawnable as-of `judgedAtMinute`. */
+  readonly excluded: readonly string[];
+}
+
+interface CorpusDriveState {
+  readonly traffic: ScenarioCorpusTraffic;
+  readonly windows: readonly CorpusWaveWindow[];
+  readonly rows: readonly CorpusPlanRow[];
+}
+
+/** The entry-word list of one cited wave, read off the authority's raw
+ *  slice — the same threat-id join the invitation law is built on (the
+ *  twin of corpusMission.sliceThreatIds; runner-side so the drive mode
+ *  never imports chrome). */
+function sliceThreatIdsOf(authority: CorpusAuthority, tableId: string, waveN: number): readonly string[] {
+  const raw = authority.slices.get(tableId) as {
+    waves?: { n: number; entries?: { threat?: string }[] }[];
+  } | undefined;
+  const wave = raw?.waves?.find((w) => w.n === waveN);
+  if (wave === undefined) {
+    throw new Error(`SimCoreRunner: corpus table "${tableId}" ships no wave ${waveN}`);
+  }
+  const ids = (wave.entries ?? []).map((entry) => entry.threat);
+  if (ids.some((id) => typeof id !== "string")) {
+    throw new Error(`SimCoreRunner: corpus table "${tableId}" wave ${waveN} has an entry without a threat id`);
+  }
+  return ids as string[];
+}
+
+/** Boundary parse (fail-fast, Law 2/4) + one seam call + the display walk.
+ *  Pure over (corpus, runSeed): the same citation resolved twice schedules
+ *  the same windows (the sim-core suite pins that ×100). */
+function mintCorpusDrive(corpus: CorpusDriveOptions, runSeed: RunSeed): CorpusDriveState {
+  const { authority } = corpus;
+  if (corpus.waves.length === 0) {
+    throw new Error("SimCoreRunner: corpus.waves must cite at least one shipped wave");
+  }
+  let previous = 0;
+  for (const waveN of corpus.waves) {
+    if (!Number.isInteger(waveN) || waveN < 1) {
+      throw new Error(`SimCoreRunner: corpus.waves must be integers ≥ 1, got ${String(waveN)}`);
+    }
+    if (waveN <= previous) {
+      throw new Error(`SimCoreRunner: corpus.waves must be strictly ascending — ${String(waveN)} follows ${String(previous)}`);
+    }
+    previous = waveN;
+  }
+  const tableId = corpus.tableId ?? CORPUS_DRIVE_DEFAULT_TABLE_ID;
+  if (tableId.length === 0) {
+    throw new Error("SimCoreRunner: corpus.tableId must be a non-empty slice stem");
+  }
+  const waveStartMinute = corpus.waveStartMinute ?? WAVE_START_MINUTE;
+  if (!Number.isInteger(waveStartMinute) || waveStartMinute < 0) {
+    throw new Error(`SimCoreRunner: corpus.waveStartMinute must be an integer ≥ 0, got ${String(waveStartMinute)}`);
+  }
+  const traffic: ScenarioCorpusTraffic = Object.freeze({
+    profile: "corpus" as const,
+    tableId,
+    waves: Object.freeze([...corpus.waves]),
+    waveStartMinute,
+    // v0 boundary: the mainline corpus drive cites STORMS only — the
+    // scenario runner's baseline plateau mint is not replicated here.
+    baselineRatePerMin: 0,
+  });
+  // The seam's own fail-loud laws (missing slice, malformed wave, over-cap
+  // composition, fully-starved citation) throw ScenarioError from here.
+  const windows = resolveCorpusWindows(traffic, runSeed, authority);
+  const invitations = authority.invitations ?? buildInvitations({});
+  const buildLog = authority.buildLog ?? [];
+  const houseWindowMinutes = (authority.geometry ?? DEFAULT_CORPUS_GEOMETRY).windowMinutes;
+  const landedByWave = new Map(windows.map((w) => [w.waveN, w]));
+  const rows: CorpusPlanRow[] = [];
+  let cursor = traffic.waveStartMinute;
+  for (const waveN of traffic.waves) {
+    const landed = landedByWave.get(waveN);
+    if (landed !== undefined) {
+      const invited = new Set(landed.plan.invitedThreatIds);
+      rows.push(
+        Object.freeze({
+          wave: waveN,
+          judgedAtMinute: landed.plan.scheduledStartMinute,
+          scheduled: true,
+          startMinute: landed.startMinute,
+          windowMinutes: landed.windowMinutes,
+          excluded: Object.freeze(landed.plan.gatedThreatIds.filter((id) => !invited.has(id))),
+        }),
+      );
+      cursor += landed.windowMinutes;
+      continue;
+    }
+    const starved = gateCorpusWave(waveN, sliceThreatIdsOf(authority, tableId, waveN), cursor, invitations, buildLog);
+    if (starved.spawns) {
+      throw new Error(
+        `SimCoreRunner: corpus drive disagrees with the seam — the cursor walk invites wave ${waveN} but resolveCorpusWindows excluded it`,
+      );
+    }
+    rows.push(
+      Object.freeze({
+        wave: waveN,
+        judgedAtMinute: cursor,
+        scheduled: false,
+        startMinute: null,
+        windowMinutes: houseWindowMinutes,
+        excluded: starved.gatedThreatIds,
+      }),
+    );
+    // CURSOR LAW: an excluded storm advances nothing.
+  }
+  return Object.freeze({ traffic, windows, rows: Object.freeze(rows) });
+}
+
 const PIPELINE_CONFIG: Omit<DefaultPipelineConfig, "runSeed"> = Object.freeze({
   dnsNodeId: null,
   // §7.10 fork: express = front door → WAF tier → service; deep = front door
@@ -761,6 +943,16 @@ export interface SimCoreRunnerOptions {
    *  shipped cash goldens stay the byte-identity proof. A non-bigint or
    *  non-positive value throws `corruption[bad-value]` on the first step. */
   readonly corruptionOutageSecPerCorruption?: bigint | undefined;
+  /** CORPUS-CITED DRIVE MODE (§1.5 seam @5df5586, invitations @bc11697): the
+   *  per-minute envelope source becomes `resolveCorpusWindows(citation,
+   *  runSeed, authority)` instead of the internal SHARED_WEB_G1 schedule —
+   *  see the corpus-drive section for the v0 boundaries. The invitations law
+   *  rides the authority (host MAY pass `invitations`/`buildLog`; absent ⇒
+   *  every shipped threat spawnable, the byte-ident pre-gate default).
+   *  ABSENT ⇒ the runner never touches the scenario seam — every existing
+   *  frame digest (money goldens 25_005_307_300n / 25_109_732_500n, mazing
+   *  arms, recovery/advisory legs) is the byte-identity proof. */
+  readonly corpus?: CorpusDriveOptions | undefined;
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -779,6 +971,9 @@ export class SimCoreRunner implements SimRunner {
   private readonly table: WaveTable;
   private readonly windows: readonly WaveWindowSpec[];
   private readonly directorChain: readonly DirectorState[];
+  /** Corpus-cited drive mode (null on every default runner): the resolved
+   *  citation + the display walk. See `mintCorpusDrive` for the laws. */
+  private readonly corpusDrive: CorpusDriveState | null;
   private readonly oversellDeclared: boolean;
   private readonly familyOverride: WaveEnvelope["dominantFamily"] | undefined;
   /** Lane E1 severity dial, forwarded verbatim to `corruptionOutageSecs`
@@ -942,6 +1137,26 @@ export class SimCoreRunner implements SimRunner {
       chain.push(director);
     }
     this.directorChain = Object.freeze(chain);
+    /* Corpus drive (options.corpus present): resolve the citation through
+       the public seam ONCE, at construction — a starved-over citation
+       throws before tick 1 (fail-loud law). The internal schedule above
+       stays minted but unreferenced in this mode (pure directorPropose
+       draws, zero shared dice state — streams are keyed per cursor), so
+       the absent-option path is byte-for-byte the pre-corpus runner. */
+    this.corpusDrive =
+      options.corpus === undefined ? null : mintCorpusDrive(options.corpus, this.runSeed);
+    if (this.corpusDrive !== null) {
+      // Pre-mint the labeled envelopes so waveEnvelopes() answers from tick 0
+      // in this mode; the familyOverride test seam labels here too.
+      for (const w of this.corpusDrive.windows) {
+        this.envelopes.set(
+          w.waveN,
+          this.familyOverride === undefined
+            ? w.envelope
+            : Object.freeze({ ...w.envelope, dominantFamily: this.familyOverride }),
+        );
+      }
+    }
     /* Tick-0 facts: the minted state with an empty event stream — reading
        the seam before the first step answers the starting world, not a lie. */
     this.tickFacts = Object.freeze({ events: TICK_ZERO_EVENTS, game: this.game });
@@ -1001,6 +1216,19 @@ export class SimCoreRunner implements SimRunner {
    *  so overlapping placements can legitimately feed two envelopes (the
    *  arrival step fans every active envelope; the quarter builds). */
   private envelopesAtMinute(minute: number): readonly WaveEnvelope[] {
+    /* Corpus drive: the seam's own active-window law (minute ∈
+       [startMinute, startMinute + window) — startMinute being the
+       placement-drawn result, same reading the scenario runner applies). */
+    if (this.corpusDrive !== null) {
+      const active: WaveEnvelope[] = [];
+      for (const w of this.corpusDrive.windows) {
+        if (minute >= w.startMinute && minute < w.startMinute + w.windowMinutes) {
+          const minted = this.envelopes.get(w.waveN);
+          active.push(minted ?? w.envelope);
+        }
+      }
+      return Object.freeze(active);
+    }
     const active: WaveEnvelope[] = [];
     for (const w of this.windows) {
       if (minute < w.cursor) continue; // not entered yet — never mint early
@@ -1042,6 +1270,22 @@ export class SimCoreRunner implements SimRunner {
    *  undefined until that window's entry minute has been stepped). */
   waveRuleInputs(n: number): WaveRuleInputs | undefined {
     return this.ruleInputs.get(n);
+  }
+
+  /** Corpus-cited drive-mode witness (LOCAL accessor, protocol-v1 law —
+   *  never on the wire): one row per CITED wave, scheduled or excluded, in
+   *  citation order. `judgedAtMinute` is the packed-cursor minute the
+   *  invitation law judged it at (an excluded storm leaves no hole, so the
+   *  rows after it prove the cursor law); `excluded` names the gated-but-
+   *  uninvited threats deferred per wave. `null` on every non-corpus runner. */
+  corpusPlan(): readonly CorpusPlanRow[] | null {
+    return this.corpusDrive === null ? null : this.corpusDrive.rows;
+  }
+
+  /** The resolved traffic citation behind `corpusPlan()` (null off-mode) —
+   *  tableId + waves + waveStartMinute the runner actually resolved. */
+  corpusTraffic(): ScenarioCorpusTraffic | null {
+    return this.corpusDrive === null ? null : this.corpusDrive.traffic;
   }
 
   start(emit: (projection: SimProjection) => void): void {
