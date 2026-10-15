@@ -1,0 +1,339 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:serverless",
+  "_todo": "All human strings are keys into file:packs/serverless.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. EIGHTH CARD, FREED BY ADR-0013 DECISION 14 VIA A NEW ROUTE: the §1.3 card ships NO dominant-verb line at all — the first such case in the corpus (object-storage and trunk-group-voip each overwrote a named 'Dominant verb: Observe' that belonged to another type; nothing here is claimed and nothing is displaced). The level is authored onto Scale, the third free slot of the ratified per-tier roster (loader lint TIER_EXTENDED_VERBS); see verbs._todo for the verbatim grounding and the honest door gap. Pack authored at file:packs/serverless.i18n.json — cac.serverless.todo stays a placeholder until §6.6 Companion B prices the serverless channel (no row exists today).",
+
+  "meta": {
+    "name": "type.serverless.name",
+    "codexSummary": "type.serverless.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.invocation",
+    "durationClass": "Instant",
+    "stats": {
+      "patience": 1500,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§3.4 latency-ladder row verbatim: 'Cold start (serverless) | 300–1,500' — patience authored at the ladder's top (1500ms), the ceiling of what the first visitor after idle actually waits; the 300ms floor is the warm-pool purchase's reward, not the patience line. The §3.1 unit entry prices the deeper truth: 'the only unit in the game whose patience cost is set by the arrival history of other units' — that arrival-history coupling is engine-side, not a bundle scalar, and carries no authored number. value/weight/loyalty/fragility: §3.1 five-stat examples exist only for DNS/colo units; nothing authored for this line — nulls with this cite, never forged zeros."
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": 1500,
+        "bounceSigmoid": [0.6, 1.0, 1.6],
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "budgetMs = the §3.4 cold-start ladder ceiling (300–1,500ms), the same ledger-row authoring pair shared-web (3000ms) and dns (100ms) use for their units; the mayfly's own life is under a second (card verbatim 'vanish in under a second') but what it WAITS for is the cold start. bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null
+    },
+    "populationEffect": false,
+    "retryAmplifies": false,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-invocation",
+    "trustReadable": false,
+    "archetypeRefs": [],
+    "_todo": "durationClass Instant: card verbatim — functions 'spawn, do one thing, and vanish in under a second'. retryAmplifies false: nothing authors a client-retry law for invocations; the runaway that matters here is RECURSION, which is a threat mechanic (threats._todo), not a patience one — never invented. trustReadable false: 'The tension between cost (scale to zero) and latency (cold starts)' (§1.3 verbatim) means the customer's own bill posture sets their cold-start exposure; the platform cannot read trust through an invocation. archetypeRefs empty by authoring law, not oversight: the visitor here IS the invocation (same law dns cites for the query, mail for the message, object-storage for the PUT/GET); an invocation-native archetype would move the registry censuses this lane is fenced off from — flagged for the registry-owner pass. cohortSpawn tier 3: each app developer (§0.3 customer column verbatim 'App devs') summons their own popping cohort. costPerInvocation 'per-invocation': §4.9 tier item verbatim 'pay-per-invoke' + §6.15 'Per-query and per-invocation pricing (DNS, serverless, IoT)'."
+  },
+
+  "goal": {
+    "nodeType": "warm-execution",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "warm-hit-fraction",
+      "threshold": null,
+      "_todo": "The hold is the line's whole product and the doc prices it in the negative: 'buying warmth is buying the absence of a stutter' (§1.3/§4.9 verbatim) — the meter is the fraction of invocations that never felt the cold. But the card carries NO Win clause, and no scalar for 'smooth' exists anywhere in §1.3/§4.9/§6.6; authoring a percentage from a metaphor would be forging the doc's deliberate void. null + this cite, same law object-storage's unauthored nines cite."
+    },
+    "loseCondition": {
+      "kind": "multi-tenant-blast-radius"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.serverless.binding"
+  },
+
+  "scarce": {
+    "resourceId": "warm-capacity",
+    "meterWidget": "chrysalis-pool",
+    "meterBoundStat": "warm-hit-fraction",
+    "commercialSlider": "reserved-warmth-level",
+    "operationalDials": [
+      "scale-to-zero-switch",
+      "invocation-timeout-budget",
+      "concurrency-shares"
+    ],
+    "windowGrows": false,
+    "shedOrder": "starved-first-ladder",
+    "qosAnswer": "scarce.serverless.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly",
+      "escalator": false,
+      "grandfathering": false
+    },
+    "seasonality": [],
+    "diurnalBaseline": "entirely-popping",
+    "_todo": "simTimeScale 'ms': the cold start IS the clock — §3.4's ladder times this line's whole drama in milliseconds (300–1,500), the same ms family dns shares; §7.8's tempo roster places no hours/day scale on the invocation line. permanentIncidentClock false: 'the pan is cold when nothing is cooking' (§4.9 verbatim) — idle is a RESTING STATE this line is paid to enter (scale to zero), not a countdown; the cold-start tax is per-arrival, never a fuse. contractTerms: §6.6 row verbatim cash-timing column 'monthly'; no escalator or grandfathering clause is authored for this line. seasonality []: no serverless season is authored anywhere — invocation volume follows the apps, and inventing a curve would move the waves-lane curve catalogue; flagged with that debt. diurnalBaseline 'entirely-popping': card verbatim 'the level's rhythm is entirely popping' — the rhythm name is the doc's own phrase; amplitude unauthored (PROVISIONAL-B, waves-lane debt)."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.15,
+      "human": 0.2,
+      "entropic": 0.05,
+      "systemic": 0.2,
+      "customerAsThreat": 0.4,
+      "_todo": "customerAsThreat .4 is the corpus's largest customer share by design and by cite — 'per-invocation billing a customer can weaponize against themselves' (§4.9 verbatim) and the card's own threat list opens with the recursion bill; on this line the meter IS the weapon and it is handed to the customer with the API key. human .2 — 'an attacker (or a bug)' (§2.12 verbatim parenthesis): the runaway is frequently the customer's own code wearing a human face. malicious .15 — 'an attacker can spend your money without taking you down' (§4.9 verbatim); Denial-of-Wallet recon rides the scanner drizzle. systemic .2 — the blast radius IS the architecture: 'Your visitor's experience depends on whether *another* visitor came recently' (§1.3 verbatim), plus the shared dependency-layer batch (mod-update). entropic .05 floor only, excluded from activeFamilies: nothing authors hardware decay for a pool of shells that live under a second — voip's no-decay precedent. Sum 1.00. Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "systemic",
+      "customerAsThreat"
+    ],
+    "signatureThreats": [
+      { "id": "xmlrpc-pingback-amplifier", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "noisy-query-table-scan", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true },
+      { "id": "slowloris-sipper", "mechanical": true },
+      { "id": "mod-update-day", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "shared-pool-no-shares": ["hoarder-noisy-neighbor"],
+      "per-invoke-open-meter": ["xmlrpc-pingback-amplifier"],
+      "zero-warm-floor": ["noisy-query-table-scan"]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "concurrency",
+      "hands",
+      "cash",
+      "reputation"
+    ],
+    "waveTable": "file:waves/g1-serverless-first-quarter.json",
+    "_todo": "Threat mapping law (dns/mail/dedicated/object-storage/voip precedent — registry ids re-framed in _todo cites, zero new registry entries): the card names two threats ('a recursive function that invokes itself and bills you $40,000 in nine minutes; a single tenant's burst starving others', §1.3 verbatim); neither is a registry id, so each rides the closest existing mechanic — xmlrpc-pingback-amplifier = self-amplification that spawns work from work and makes the meter run (the registry's one Parasite amplification engine, re-framed onto the wallet front; its lookalikeOf api-client is this bundle's mimic seed), hoarder-noisy-neighbor = the single tenant whose burst starves the pool (card sentence, near-verbatim fit), noisy-query-table-scan = the heavy invocation eating shared slots (§2.12's DBaaS sibling prices the same shape: 'One tenant's unindexed analytical query starves everyone else's transactions' — the §0.3 table gives both lines the same blast-radius family), slowloris-sipper = held-open shells draining warm capacity (Sapper), scanner-drizzle = endpoint enumeration of published function URLs (Stealth), mod-update-day = a bad dependency-layer push walking every cold start on the fleet at once (Splitter — 'a cold start is a visibly slower, duller pop', so a batch of them is a fleet-wide stutter). activeFamilies omits entropic per the floor law. The cold-start tax itself has NO attacker id: it is physics the line charges, not an enemy — carried by visitor.patienceModel and the meter pair, never fabricated as a threat. The $40,000 bill is not a bounce at all: 'a self-DDoS with a bill attached' (§4.9) spends money without touching availability, so it rides economy.realismToggles.demandCharges, the alert stream and scenarios.analogues — the registry owns no wallet-blast mechanic (flagged for the registry-owner pass)."
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "pan black",
+      "accent": "pop yellow",
+      "chord": [
+        "pan black",
+        "pop yellow",
+        "frost blue",
+        "concurrency lime",
+        "timeout red"
+      ]
+    },
+    "materialPreset": "preset:cast-iron-and-frost",
+    "visitorCostume": {
+      "hull": "mayfly",
+      "propSlot": "frost-puff"
+    },
+    "heroSilhouette": "asset:hero.chrysalis-pool",
+    "heroObject": "chrysalis-pool",
+    "meterFace": "chrysalis-pool",
+    "catastropheFx": "fx:shimmer-goes-dark-pan-overflows",
+    "ambientSoundPack": "sound:sizzle-over-a-cold-pan",
+    "densityMultiplier": null,
+    "arrivalRhythm": "entirely-popping",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.runaway-invoice-40k",
+    "signatureMotion": "motion:mayfly-pop-frost-puff",
+    "signatureFrame": "frame:dark-specks-in-the-shimmer",
+    "lodContract": {
+      "full": "asset:lod.chrysalis-pool.full",
+      "icon16": "asset:lod.chrysalis-pool.icon16",
+      "pip": "pip:pop-yellow",
+      "aggregate": "agg:shimmer-field",
+      "inspector": "skin.serverless.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented; the card DOES author a density law ('individual mayflies below ~200/s, a shimmer field above it', §1.3 verbatim) but that is a renderer LOD constant, not a bundle scalar — cited here so the render lane can find it. Palette chord verbatim §1.3 visual: 'pan black · pop yellow · frost blue · concurrency lime · timeout red'; dominant/accent are the chord's first two notes, flagged for the owner's palette ratification. Hero object: the Chrysalis Pool — 'The Chrysalis Pool of pre-warmed shells is the buildable' (§1.3 verbatim); it is the facility's signature shape at world altitude. Costume: hull 'mayfly' from 'functions are tiny creatures that spawn, do one thing, and vanish' (§1.3); propSlot 'frost-puff' from the cold start's 'little puff of frost' (verbatim). Meter: the pool's fullness against the popping — 'buying warmth is buying the absence of a stutter'; bound stat warm-hit-fraction is that absence counted. Aggregate 'agg:shimmer-field' and signature frame 'dark specks in the shimmer' are verbatim from the card's particle-budget correction — 'Cold starts as holes in the sparkle'. Catastrophe fx AUTHORED (the card ships no catastrophe sentence): the shimmer going dark while the pan overflows is the LOD law inverted — every speck is a stutter at once; flagged for ratification. ambientSoundPack authored from 'The Pan — things appear, sizzle, and vanish' (§4.9 verbatim imagery); signatureMotion authored from the pop/frost pair; commercialArtifactIcon: §2.12's recursive bill — the runaway invoice is this line's bad-month artifact (Companion C prices no serverless row, see economy._todo). arrivalRhythm 'entirely-popping' verbatim."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4 era grid does not date the serverless line; §5.6:20798 gates it by CAPABILITY, not era — 'Kubernetes competence + multi-tenant isolation → unlocks Container platform / PaaS, then Serverless' (verbatim) — a prerequisite set, recorded in relations.unlocks, not an availableFrom year. Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "invocation",
+    "revenueShape": "micro-billed-huge-volume",
+    "marginProfile": "good-at-scale",
+    "cashTiming": "monthly",
+    "termStructure": {
+      "typical": "monthly",
+      "churn": "micro-billed-huge-volume",
+      "_todo": "§6.6 Serverless row verbatim: 'invocation / GB-s | micro-billed, huge volume | good at scale | monthly | cold-start engineering'. typical 'monthly' from the cash-timing column; churn carries the row's own volume law — the invocation never renews, it just keeps popping or stops popping; no numeric churn rate is authored for this line anywhere in §6.6/§1.3."
+    },
+    "cacProfile": "cac.serverless.todo",
+    "ticketsPerCustomer": null,
+    "signatureCost": "cold-start-engineering",
+    "badMonth": "economy.serverless.bad-month",
+    "fifthAxisScore": {
+      "metric": "cold-start-latency-and-warm-pool",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.3 line table verbatim: 'Serverless / functions | Cold-start latency / warm pool | Noisy multi-tenant blast radius | App devs | An invocation' — the scarce column is this line's fifth-axis frame; R42 score weight not authored."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": true
+    },
+    "_todo": "unitOfSale 'invocation' verbatim from §0.3 ('An invocation'); §6.6 prices the same row at 'invocation / GB-s' — a second billing dimension the two tables do NOT reconcile, left unreconciled here per owner law (the gb-vs-TB storage precedent): the sold artifact rides the §0.3 scalar word while costPerInvocation rides §4.9's 'pay-per-invoke'. signatureCost verbatim §6.6 signature-cost column 'cold-start engineering'. ticketsPerCustomer: no rate authored. cacProfile: §6.6 Companion B prices no serverless row — placeholder until the pricing pass. badMonth: Companion C ships no serverless row either (storage/voip could cite theirs verbatim; this one is AUTHORED from §2.12's own signature failure — 'A function invokes itself and bills you $40,000 in nine minutes' — flagged as authored, not quoted). demandCharges TRUE: this line's whole commercial identity — 'per-invocation billing a customer can weaponize against themselves' (§4.9 verbatim); the meter answers on demand, for and against you. p95billing false: the 95th-percentile mechanic is authored for the CDN line (§6.6), not this one."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "serverless" },
+      { "archetype": "two-face-rack", "skin": "serverless" },
+      { "archetype": "control-plane", "skin": "metering-plan" }
+    ],
+    "distinct": [
+      "chrysalis-pool",
+      "scale-to-zero-switch",
+      "invocation-timeout-budget",
+      "concurrency-shares",
+      "runaway-bill-guard",
+      "shared-pool-no-shares",
+      "per-invoke-open-meter",
+      "zero-warm-floor"
+    ],
+    "nonPhysical": [
+      "metering-plan-settlements",
+      "dependency-layer-registry"
+    ],
+    "_todo": "All distinct names cite the doc: chrysalis-pool verbatim ('The Chrysalis Pool of pre-warmed shells is the buildable', §1.3); scale-to-zero-switch verbatim ('scale to zero', §1.3/§4.9); invocation-timeout-budget from the chord's 'timeout red' + the recursion's nine minutes (a timeout is the guard the doc's failure story begs for — authored name, flagged); concurrency-shares from §5.6's gate sentence 'multi-tenant isolation' (verbatim fragment — the dial that sells shares of the pool); the last three are the three invitation doors in threats.unlockedByBuildables (unshared pool / open meter / zero-warm floor). §2.10 one-object law verbatim: 'The Modem Bank, the concurrency-slot pool, the VoIP channel group, the game-server slot and the serverless warm pool are *one object* — \"a countable concurrency pool\" — with five costumes' — hence concurrency-pool re-worn as a skin, the palette law's named exemplar (§0.2 R7). nonPhysical: the metering plan settles money that is not attached to a rack (the bill IS the product's shadow); the dependency-layer registry is what makes a bad push legible before mod-update-day walks the fleet. control-plane in the metering-plan skin joins the shared control-plane lineage."
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2 control-granularity authors only the shared-hosting profile; the serverless pip row awaits its ruleset-card pass. The §7.8-family 'cloud tenant' granularity sketch describes the CUSTOMER's position on this line (software and data only) — the platform operator's own pip spread is not authored, so it is not claimed; never invented (same law dns/mail/game-servers/object-storage/voip cite)."
+    },
+    "keyhole": false,
+    "unclickableObjects": false
+  },
+
+  "mechanics": [
+    "scale-to-zero",
+    "warm-pool-purchase",
+    "cold-start-tax",
+    "runaway-recursion",
+    "burst-starvation-defense",
+    "multi-tenant-shares",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Scale",
+    "transfers": [
+      "verbs.serverless.transfer.1"
+    ],
+    "_todo": "FIRST-CASE ROUTE — the §1.3 card carries NO dominant-verb line at all (its full identity block is the two verbatim sentences 'Scarce: warm capacity. Teaches: cost can be attacked without touching availability.'). Object-storage and trunk-group-voip each had to overwrite a named 'Dominant verb: Observe' displaced from dedicated; nothing is displaced here, so ADR-0013 decision 14's per-tier roster is consumed rather than amended. Chosen: Scale — the §7.8 eight-verb core PLACE·LINK·TUNE·SCALE·SHIELD·INVESTIGATE·MAINTAIN·SELL, in loader/lint.ts TIER_EXTENDED_VERBS, and verbatim-grounded twice over: 'The tension between cost (scale to zero) and latency (cold starts)' (§1.3) and 'Infinite instant burst capacity, pay-per-invoke, no upkeep, scale to zero' (§4.9). The verb IS the card's first noun. Census at authoring: Triage=shared-web, Place&Connect=game-servers, Tune=mail, Commit=dns, Observe=dedicated, Shield=object-storage, Maintain=trunk-group-voip; Scale is this card's claim; Sell remains the tier roster's only unclaimed slot and Diagnose the invariant roster's (the wave-5 card census records NO §1.3 card naming Diagnose verbatim — held, never forged). HONEST DOOR GAP (g16 finding, recorded as a MODULE-STATUS row): 'Scale' has no PlayerVerb door enum member and no acquisition mechanic ships — this dominant verb is card IDENTITY and design posture, not a door capability; every mechanic the shipped quarter slice exercises still rides door verbs (configure/commit/communicate/shed-side pressure), and the card's elasticity posture survives as the meter pair (chrysalis-pool × warm-hit-fraction), not as a verb."
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:dns-hosting",
+        "kind": "dns-and-everything",
+        "numbers": null,
+        "_todo": "§0.2 line synergies, verbatim: 'DNS + everything (you already own the infrastructure)' — the clause is symmetric; no numeric benefit authored for this pair."
+      }
+    ],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["kubernetes-competence", "multi-tenant-isolation"],
+          "_todo": "§5.6 lattice verbatim: 'Kubernetes competence + multi-tenant isolation → unlocks Container platform / PaaS, then Serverless' (:20798) — the lattice names a PaaS intermediary hop that ships no bundle, so the gate authors as tech flags rather than type refs (same shape §5.6 writes the gate); the PaaS leg awaits its own card and is not invented here."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {
+        "official:shared-web": {
+          "customerOverlap": null,
+          "hardwareReuse": null,
+          "skillTransfer": null,
+          "regulatoryDelta": 0,
+          "_todo": "§5.6 pivot row verbatim: 'Shared/VPS → Container platform / PaaS → Serverless — gate: Kubernetes competence and multi-tenant isolation. Each step abstracts the customer further from the metal and moves the failure modes into your own control plane.' (:20923) — the doc prices no overlap numbers for the pair and routes it through the unbundled PaaS hop; regulatoryDelta 0 qualitative (no regulated-vertical row for serverless in §2.27 Matrix C)."
+        }
+      }
+    },
+    "masteryBuff": "relations.serverless.mastery",
+    "distillate": "relations.serverless.distillate",
+    "_todo": "antagonisms left empty honestly: the doc ships no serverless antagonism row. The §0.2 synergy table prices no serverless-specific pair beyond the symmetric 'DNS + everything' clause, so exactly one synergy is claimed — more would be invention."
+  },
+
+  "ticketPack": "file:packs/serverless.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.serverless.runs-out",
+    "killsYou": "handover.serverless.kills-you",
+    "customerWants": "handover.serverless.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "cgroup-caging",
+      "alias": "concurrency-shares",
+      "line": "rosetta.serverless.shares"
+    },
+    {
+      "canonical": "oversell-ratio",
+      "alias": "reserved-warmth-level",
+      "line": "rosetta.serverless.warmth"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Endure",
+      "Diagnose"
+    ],
+    "analogues": {
+      "recursive-invocation-bill": "scenarios.serverless.recursive-invocation-bill",
+      "burst-starvation": "scenarios.serverless.burst-starvation",
+      "popcorn-pan": "scenarios.serverless.popcorn-pan"
+    }
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

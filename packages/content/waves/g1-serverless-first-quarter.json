@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-serverless-first-quarter",
+  "type": "official:serverless",
+  "purpose": "First-quarter wave slice for the eighth Ruleset Card — the first card whose §1.3 identity ships NO dominant-verb line at all, authored onto Scale via the ratified ADR-0005 per-tier roster (ADR-0013 decision 14; 8 of the 20-type launch canon, OD-14(a)). Slice shape mirrors the seven shipped g1 siblings: a probe-drizzle opening on a board that only sparkles, the tenant's own burst as the surprise-with-composition beat (the catastrophe wears an API key, not a hood), a hollow-quiet trough where the enemy is the idle warmth still billing, and a finale built on the line's authored cruelty ('a recursive function that invokes itself and bills you $40,000 in nine minutes' + 'cost can be attacked without touching availability', §1.3/§2.12). Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "entirely-popping",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. The rhythm name is the card's own phrase ('the level's rhythm is entirely popping', §1.3 verbatim). Note the honest tension the doc leaves standing: never-zero is the ARRIVAL law (someone's cron always fires), while scale-to-zero is the PLAYER's policy on the WARM side — an idle pan and a zero quarter are different objects, and the slice authors no contradiction. curve id authored from the popping rhythm; both numbers and the diurnal shape await the waves-lane curve catalogue; PROVISIONAL-B.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "burst-starvation",
+      "kind": "customer",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "shares-capped-tail" },
+      "amplitude": null,
+      "telegraph": "the success arrives as a deploy: one tenant's traffic graph goes vertical, and the pool behind it does not grow with it — 'a single tenant's burst starving others' (§1.3 verbatim)",
+      "source": "§1.3 card Threats line verbatim; §0.3 failure column verbatim ('Noisy multi-tenant blast radius')",
+      "compoundWave": "the line's inversion of the attacker genre: the starvation is a customer succeeding at exactly the thing the sales page promised, and the blast radius lands on visitors whose only crime was arriving after them — §3.1's invocation law made mechanical: 'the only unit in the game whose patience cost is set by the arrival history of other units'",
+      "_todo": "burst-size → share-pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "cold-pool-spiral",
+      "kind": "threat",
+      "overWaves": [3, 4, 5],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "frost-tail" },
+      "amplitude": null,
+      "composition": ["slowloris-sipper", "mod-update-day"],
+      "telegraph": "the first degraded read is a meter nobody scheduled an incident for: the warm pool is thin, every arrival pays the frost, and 'the pan is cold when nothing is cooking' (§4.9 verbatim) — the spiral does not arrive, it accumulates between pops",
+      "source": "§1.3 card verbatim: 'A cold start is a visibly slower, duller pop with a little puff of frost'; §4.9 Warm Pool / Chrysalis Pool: 'Buying warmth is buying the absence of a stutter.'",
+      "compoundWave": "authored so WARM CAPACITY is the scarce lung, not raw compute: every cold hit spends pool cycles to become warm, every held-open shell spends them without producing, and a bad dependency layer arriving mid-spiral makes every cold start on the fleet slower at once (§1.3 'duller pop', batch-framed per threats._todo)",
+      "_todo": "pool-drain → Sapper pressure mapping and layer-batch rate unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "runaway-meter",
+      "kind": "customer",
+      "overWaves": [4],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "cap-tripped-tail" },
+      "amplitude": null,
+      "telegraph": "one function starts invoking itself, and for nine minutes nothing on the availability board moves — the only graph that reacts is the money one: '$40,000 in nine minutes' (§1.3 verbatim)",
+      "source": "§1.3 Threats line verbatim; §2.12 'Serverless: The Recursive Invocation Bill' verbatim: 'A function invokes itself and bills you $40,000 in nine minutes. \"Denial of Wallet\" in its purest form: an attacker (or a bug) spends your money without taking you down.'",
+      "_todo": "recursion depth → bill-rate mapping unauthored (no registry wallet-blast mechanic — see bundle threats._todo; the tail is the timeout/cap decision, authored); PROVISIONAL-B."
+    },
+    {
+      "id": "popcorn-herd",
+      "kind": "threat",
+      "overWaves": [5],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "pop-through-tail" },
+      "amplitude": null,
+      "telegraph": "a promoted app's users all arrive at once against a pool that just scaled down — the field goes from sparkle to hail, and behind every late mayfly sits a chrysalis that is not warm enough (§1.3's mayfly grammar, herd-framed)",
+      "source": "§1.3 card visual paragraph ('spawn, do one thing, and vanish'; 'the level's rhythm is entirely popping'); §4.9 'perfect for spikes, catastrophic when attacked' (risk/reward law of the tier)",
+      "_todo": "herd size → concurrency pressure mapping unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is a drizzle of probes walking published function endpoints while the pan is still cold — the quarter opens with the board sparkling quietly at a stranger who is the only party currently paying attention to it (§1.3's mayflies, §0.3's app-dev customers still asleep).",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["concurrency", "hands"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the ROUTINE catastrophe, and it is a customer succeeding. Two-Front (§2.24): the single tenant whose burst starves the pool (Parasite — 'a single tenant's burst starving others', §1.3 verbatim) spends concurrency on the shared shell, while the heavy invocation (Debuffer — one hot function reading everything, §2.12's DBaaS sibling: 'One tenant's unindexed analytical query starves everyone else's transactions') spends cash on the pool you refused to pre-warm. Everyone else's mayflies pay for a stranger's success — the arrival-history law as a fairness lesson.",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 55, "band": "storm" },
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 45, "band": "hunter" }
+      ],
+      "denominations": ["concurrency", "cash"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS pool warming, and the card prices it twice: 'buying warmth is buying the absence of a stutter' as the purchase, idle warmth still billing as the unforgiven version (§1.3/§4.9)."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the chrysalis pool, the share split, the timeout budget all get their window here. But on the serverless line the quiet is the bill: scale-to-zero is the reward for the pan going cold, and un-thought warmth costs idle money anyway — 'Costs idle money for latency you only notice by its absence' (§4.9 verbatim). Two fronts: hands x cash — the Sapper's held-open shells read as headroom while the meter climbs for warmth nobody summoned.",
+      "entries": [
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 70, "band": "entropy" },
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 30, "band": "weather" }
+      ],
+      "denominations": ["hands", "cash"]
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, serverless variant: a bad dependency-layer push walks the fleet (Splitter debuts here, the every-4th-wave NEW ROLE beat; unseen in waves 1-3, the registry's only purchased-batch mechanic reused per this line's threat-mapping law) — every cold start on the board turns a shade duller — and inside the same window one function finds its own endpoint and starts recursing (Parasite — 'a self-DDoS with a bill attached', §4.9 verbatim), because a fleet mid-stutter is exactly when the timeout budgets nobody tuned get their audit. Two fronts: concurrency (the pool choking on frost) x cash ('cost can be attacked without touching availability' — tonight it is only attacked).",
+      "entries": [
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 55, "band": "hunter" },
+        { "threat": "xmlrpc-pingback-amplifier", "role": "Parasite", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["concurrency", "cash"],
+      "secondIncident": "runaway recursion arrives inside the batch-stutter incident window -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the line's sparkle going dark: the herd arrives against the pool the batch push just chilled (Parasite carry — the starver from wave two is structurally back, §3.1's law now obvious to the player), held-open shells keep sipping shares (Sapper), and one tenant's table-scan-heavy function spends the last of the warm capacity (Debuffer) — the shimmer field fills with dark specks, 'holes in the sparkle' (card verbatim), and every hole is somebody's first visit. Hard wave draws TWO fronts — cash x reputation — per §2.24: the runaway invoice and the app developers whose cold openers blamed YOUR uptime page. Win check: the warm hold stayed smooth enough that nobody filed the ticket that names the stutter, while the meter stayed boring.",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 40, "band": "storm" },
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 30, "band": "entropy" },
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 30, "band": "hunter" }
+      ],
+      "denominations": ["cash", "reputation"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}
