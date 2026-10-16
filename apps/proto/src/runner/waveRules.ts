@@ -28,8 +28,8 @@
  */
 import type { Fixed, SimMinute, ThreatFamily, UnitIntent } from "@hh/sim-core/types";
 import {
+  buildThreatMetaLookup,
   parseForeignWaveSlice,
-  type DamageDenomination,
   type ForeignThreatMeta,
   type WaveTable,
 } from "@hh/sim-core/waves";
@@ -50,29 +50,22 @@ export const G1_GEOMETRY = Object.freeze({
 
 const G1_TYPE_BUNDLE_ID = "official:shared-web";
 
-interface RegistryThreatRecord {
-  readonly id: string;
-  readonly family: ThreatFamily;
-  readonly denomination: DamageDenomination;
-}
-
-function registryThreatIndex(): ReadonlyMap<string, ForeignThreatMeta> {
+/** The one registry→threatMeta authority (`buildThreatMetaLookup`,
+ *  waves/foreign.ts — the m4 fold retired this file's former frozen-map
+ *  copy). The runner's DIVERGENT EDGE stays explicit here as a pre-guard:
+ *  a non-array `threats` block is a boot-fatal census failure naming
+ *  waveRules ("census metadata unavailable"), refused BEFORE the shared
+ *  per-record law runs — the shared builder tolerates a missing key as
+ *  empty, this host refuses to build a silent census on top of one. */
+function registryThreatMeta(): (threatId: string) => ForeignThreatMeta | undefined {
   const doc = JSON.parse(registryCoreRaw) as { threats?: unknown };
-  const threats = doc.threats;
-  if (!Array.isArray(threats)) {
+  if (!Array.isArray(doc.threats)) {
     throw new Error("waveRules: registry-core.json#threats is not an array — census metadata unavailable");
   }
-  const index = new Map<string, ForeignThreatMeta>();
-  for (const raw of threats as readonly Partial<RegistryThreatRecord>[]) {
-    if (typeof raw.id !== "string" || typeof raw.family !== "string" || typeof raw.denomination !== "string") {
-      throw new Error(`waveRules: registry-core threat record missing id/family/denomination: ${JSON.stringify(raw).slice(0, 80)}`);
-    }
-    index.set(raw.id, Object.freeze({ family: raw.family, denomination: raw.denomination }));
-  }
-  return Object.freeze(index);
+  return buildThreatMetaLookup(doc, "waveRules");
 }
 
-const REGISTRY = registryThreatIndex();
+const THREAT_META = registryThreatMeta();
 
 /** Parse the shipped g1 slice (or injected slice JSON — TEST SEAM for the
  *  feint marker) into an engine WaveTable. Fail-loud via the canonical
@@ -81,7 +74,7 @@ export function buildSharedWebG1Table(sliceRaw: unknown = JSON.parse(g1SliceRaw)
   return parseForeignWaveSlice(sliceRaw, {
     typeBundleId: G1_TYPE_BUNDLE_ID,
     geometry: G1_GEOMETRY,
-    threatMeta: (threatId: string): ForeignThreatMeta | undefined => REGISTRY.get(threatId),
+    threatMeta: THREAT_META,
   });
 }
 

@@ -58,48 +58,30 @@ import type {
   ScenarioReport,
   ScenarioWire,
 } from "@hh/sim-core/scenario";
-import { buildInvitations } from "@hh/sim-core/waves";
-import type { BuildOp, ForeignThreatMeta, ThreatInvitations } from "@hh/sim-core/waves";
+import { buildInvitations, buildThreatMetaLookup } from "@hh/sim-core/waves";
+import type { BuildOp, ThreatInvitations } from "@hh/sim-core/waves";
 
 export const CORPUS_MISSION_ID = "metastable-corpus";
 export const G1_SLICE_STEM = "g1-shared-web-first-quarter";
 /** The mission's authored seed base — the scenario suite's own BASE_SEED. */
 export const CORPUS_MISSION_SEED = asRunSeed(904n);
 
-/** Registry metadata the foreign entries do not carry (family, denomination)
- *  — the browser twin of corpusFixtures.buildThreatMeta, over ?raw text. */
-function buildThreatMeta(): (threatId: string) => ForeignThreatMeta | undefined {
-  const registry = JSON.parse(registryRaw) as {
-    threats?: { id?: string; family?: string; denomination?: string }[];
-  };
-  const map = new Map<string, ForeignThreatMeta>();
-  for (const raw of registry.threats ?? []) {
-    if (
-      typeof raw.id !== "string" ||
-      typeof raw.family !== "string" ||
-      typeof raw.denomination !== "string"
-    ) {
-      throw new Error(
-        `corpusMission: registry-core threat record missing id/family/denomination: ${JSON.stringify(raw).slice(0, 80)}`,
-      );
-    }
-    map.set(raw.id, {
-      family: raw.family as ForeignThreatMeta["family"],
-      denomination: raw.denomination as ForeignThreatMeta["denomination"],
-    });
-  }
-  return (threatId: string) => map.get(threatId);
-}
-
 let authority: CorpusAuthority | null = null;
 
 /** The law-free authority (every threat spawnable) — the stance the win /
- *  lose-flip witnesses were pinned against; memoized like the fixture host. */
+ *  lose-flip witnesses were pinned against; memoized like the fixture host.
+ *  The registry lookup rides THE single authority `buildThreatMetaLookup`
+ *  (waves/foreign.ts — the m4 fold retired this card's former "browser
+ *  twin" copy); the `corpusMission` label keeps its historical throw string
+ *  verbatim. */
 export function protoCorpusAuthority(): CorpusAuthority {
   if (authority !== null) return authority;
   const slices = new Map<string, unknown>();
   slices.set(G1_SLICE_STEM, JSON.parse(sliceRaw) as unknown);
-  authority = Object.freeze({ slices, threatMeta: buildThreatMeta() });
+  authority = Object.freeze({
+    slices,
+    threatMeta: buildThreatMetaLookup(JSON.parse(registryRaw), "corpusMission"),
+  });
   return authority;
 }
 

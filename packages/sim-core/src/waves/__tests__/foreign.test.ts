@@ -23,7 +23,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseForeignWaveSlice, projectForeignRules } from "../foreign.ts";
+import { buildThreatMetaLookup, parseForeignWaveSlice, projectForeignRules } from "../foreign.ts";
 import type { ForeignThreatMeta } from "../foreign.ts";
 import { parseWaveTable } from "../table.ts";
 import type { WaveTable } from "../table.ts";
@@ -356,5 +356,65 @@ describe("presence-gating across the shipped corpus", () => {
       const active = planWave(SHARED_WEB, 4, input(seed, { incidentState: "active" }));
       expect(active.arrivals.length).toBe(quiet.arrivals.length + Math.round(quiet.arrivals.length * 0.8));
     }
+  });
+});
+
+/* ═══════════ 6 · buildThreatMetaLookup — the single m4 authority ═══════════ */
+
+describe("buildThreatMetaLookup — THE single registry→threatMeta authority (m4 fold)", () => {
+  it("maps registry records to the family/denomination pair, undefined off-registry", () => {
+    const lookup = buildThreatMetaLookup(
+      {
+        threats: [
+          { id: "a", family: "malicious", denomination: "latency" },
+          { id: "b", family: "systemic", denomination: "data-integrity" },
+        ],
+      },
+      "probe",
+    );
+    expect(lookup("a")).toEqual({ family: "malicious", denomination: "latency" });
+    expect(lookup("b")).toEqual({ family: "systemic", denomination: "data-integrity" });
+    expect(lookup("nope")).toBeUndefined();
+  });
+
+  it("a missing threats key is the empty lookup — the slice-parse miss guard stays the loud boundary", () => {
+    const lookup = buildThreatMetaLookup({}, "probe");
+    expect(lookup("scanner-drizzle")).toBeUndefined();
+  });
+
+  it("throws naming the CALLING host via where, with the record JSON truncated to 80 chars", () => {
+    const record = { id: "x", family: "malicious" }; // no denomination
+    expect(() => buildThreatMetaLookup({ threats: [record] }, "corpusMission")).toThrow(
+      new RegExp(`^corpusMission: registry-core threat record missing id/family/denomination: `),
+    );
+    try {
+      buildThreatMetaLookup({ threats: [record] }, "corpusFixtures");
+      expect.unreachable("the fold must keep the fail-loud record guard");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      expect(message.startsWith("corpusFixtures: registry-core threat record missing id/family/denomination: ")).toBe(true);
+      expect(message.endsWith(JSON.stringify(record))).toBe(true);
+    }
+  });
+
+  it("a non-string id fails the same guard (parse at the boundary, trust inside)", () => {
+    expect(() => buildThreatMetaLookup({ threats: [{ id: 5, family: "human", denomination: "cash" }] }, "probe")).toThrow(
+      /probe: registry-core threat record missing id\/family\/denomination:/,
+    );
+  });
+
+  it("shipped registry-core through the authority agrees with this file's loose reader on every threat (drift pin)", () => {
+    const lookup = buildThreatMetaLookup(readCorpusJson("threats/registry-core.json"), "probe");
+    const registry = readCorpusJson("threats/registry-core.json")["threats"] as CorpusThreat[];
+    expect(registry.length).toBe(16);
+    for (const t of registry) {
+      expect(lookup(t.id)).toEqual({
+        family: t.family as ForeignThreatMeta["family"],
+        denomination: t.denomination as ForeignThreatMeta["denomination"],
+      });
+    }
+    // the exact values the folded hosts' witnesses ride (corpusMission.test.ts
+    // loosely asserts both are strings; the scenario suite resolves this id):
+    expect(lookup("scanner-drizzle")).toEqual({ family: "malicious", denomination: "data-integrity" });
   });
 });

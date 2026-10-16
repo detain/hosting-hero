@@ -30,7 +30,7 @@
  * a PARTIAL build state on the wire is a future additive field, not this leg.
  */
 import type { CorpusAuthority } from "@hh/sim-core/scenario";
-import { buildInvitations } from "@hh/sim-core/waves";
+import { buildInvitations, buildThreatMetaLookup } from "@hh/sim-core/waves";
 import type { BuildOp, ForeignThreatMeta, ThreatInvitations } from "@hh/sim-core/waves";
 import type { CorpusDriveOptions } from "../runner/simCoreRunner";
 import type { BootCorpusWire, CorpusTableId } from "./protocol";
@@ -121,30 +121,14 @@ const CORPUS_TABLES: Readonly<Record<CorpusTableId, CorpusTableEntry>> = Object.
 let threatMetaLookup: ((threatId: string) => ForeignThreatMeta | undefined) | null = null;
 
 /** Registry metadata the foreign slice entries do not carry (family,
- *  denomination) — the browser twin of corpusFixtures.buildThreatMeta /
- *  corpusMission.buildThreatMeta, over the same ?raw registry-core. */
+ *  denomination) — the memoized worker-side wrapper over THE single
+ *  registry→threatMeta authority (`buildThreatMetaLookup`, waves/foreign.ts
+ *  — the m4 fold retired this file's former "browser twin" copy). The
+ *  cross-table closure identity stands: every table's authority shares this
+ *  one lookup over the same ?raw registry-core. */
 function workerThreatMeta(): (threatId: string) => ForeignThreatMeta | undefined {
   if (threatMetaLookup !== null) return threatMetaLookup;
-  const registry = JSON.parse(registryRaw) as {
-    threats?: { id?: string; family?: string; denomination?: string }[];
-  };
-  const map = new Map<string, ForeignThreatMeta>();
-  for (const raw of registry.threats ?? []) {
-    if (
-      typeof raw.id !== "string" ||
-      typeof raw.family !== "string" ||
-      typeof raw.denomination !== "string"
-    ) {
-      throw new Error(
-        `corpusHost: registry-core threat record missing id/family/denomination: ${JSON.stringify(raw).slice(0, 80)}`,
-      );
-    }
-    map.set(raw.id, {
-      family: raw.family as ForeignThreatMeta["family"],
-      denomination: raw.denomination as ForeignThreatMeta["denomination"],
-    });
-  }
-  threatMetaLookup = (threatId: string) => map.get(threatId);
+  threatMetaLookup = buildThreatMetaLookup(JSON.parse(registryRaw), "corpusHost");
   return threatMetaLookup;
 }
 

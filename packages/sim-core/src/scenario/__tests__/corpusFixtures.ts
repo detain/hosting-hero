@@ -10,28 +10,13 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import type { CorpusAuthority } from "../index.ts";
-import { buildInvitations } from "../../waves/index.ts";
-import type { BuildOp, ForeignThreatMeta } from "../../waves/index.ts";
+import { buildInvitations, buildThreatMetaLookup } from "../../waves/index.ts";
+import type { BuildOp } from "../../waves/index.ts";
 
 const CONTENT_ROOT = "../../../../../packages/content/";
 
 function readJson(rel: string): unknown {
   return JSON.parse(readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8")) as unknown;
-}
-
-/** Registry metadata the foreign entries do not carry (family, denomination). */
-function buildThreatMeta(): (threatId: string) => ForeignThreatMeta | undefined {
-  const registry = readJson(`${CONTENT_ROOT}threats/registry-core.json`) as {
-    threats?: { id?: string; family?: string; denomination?: string }[];
-  };
-  const map = new Map<string, ForeignThreatMeta>();
-  for (const raw of registry.threats ?? []) {
-    if (typeof raw.id !== "string" || typeof raw.family !== "string" || typeof raw.denomination !== "string") {
-      throw new Error(`corpusFixtures: registry-core threat record missing id/family/denomination: ${JSON.stringify(raw).slice(0, 80)}`);
-    }
-    map.set(raw.id, { family: raw.family as ForeignThreatMeta["family"], denomination: raw.denomination as ForeignThreatMeta["denomination"] });
-  }
-  return (threatId: string) => map.get(threatId);
 }
 
 export const SHIPPED_G1_SLICE_STEM = "g1-shared-web-first-quarter";
@@ -51,7 +36,13 @@ export function corpusAuthority(): CorpusAuthority {
   const slices = new Map<string, unknown>();
   slices.set(SHIPPED_G1_SLICE_STEM, readJson(`${CONTENT_ROOT}waves/${SHIPPED_G1_SLICE_STEM}.json`));
   slices.set(SHIPPED_MAIL_SLICE_STEM, readJson(`${CONTENT_ROOT}waves/${SHIPPED_MAIL_SLICE_STEM}.json`));
-  authority = Object.freeze({ slices, threatMeta: buildThreatMeta() });
+  const registry = readJson(`${CONTENT_ROOT}threats/registry-core.json`);
+  authority = Object.freeze({
+    slices,
+    // THE single registry→threatMeta authority (m4 fold — waves/foreign.ts);
+    // this host's label keeps its historical throw string verbatim.
+    threatMeta: buildThreatMetaLookup(registry, "corpusFixtures"),
+  });
   return authority;
 }
 

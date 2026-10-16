@@ -49,6 +49,66 @@ export interface ForeignWaveSliceOptions {
   readonly unitsPerPressurePoint?: number;
 }
 
+/**
+ * THE single registry→threatMeta authority (wave-15 review m4 hygiene fold,
+ * 2026-10-16). Turns a PARSED registry-core.json document into exactly the
+ * lookup `ForeignWaveSliceOptions.threatMeta` (and the scenario seam's
+ * `CorpusAuthority.threatMeta`) demands: threat-id → {family, denomination}.
+ *
+ * Fail-loud law: a record missing any of id/family/denomination throws,
+ * naming the CALLING host via `where` (the label pattern `projectForeignRules`
+ * already uses) so every pre-fold throw string stands verbatim. A missing
+ * `threats` key is TOLERATED as empty — `parseForeignWaveSlice`'s own
+ * entry-miss guard stays the loud boundary for citations that actually need
+ * the metadata.
+ *
+ * FOLDED here (byte-identical outputs on shipped content; each host passes
+ * its own module name):
+ *  · `apps/proto/src/shared/corpusHost.ts`      workerThreatMeta (host-side
+ *    memoization KEPT — the cross-table closure identity stands)
+ *  · `apps/proto/src/chrome/corpusMission.ts`   buildThreatMeta (authority memo)
+ *  · `scenario/__tests__/corpusFixtures.ts`     buildThreatMeta (authority memo)
+ *  · `apps/proto/src/runner/waveRules.ts`       registryThreatIndex — its
+ *    DIVERGENT edge (Array.isArray refusal on `threats`) stays EXPLICIT as a
+ *    call-site pre-guard; its frozen-map posture was internal (the map only
+ *    ever fed the threatMeta closure).
+ *
+ * NOT folded — different contract, named per the m4 row's "gate/lab readers":
+ * `gates/g6/g6Data.ts`, `gates/g6/__tests__/g6DataAdapter.test.ts`,
+ * `__tests__/gate-g2.test.ts`, `__tests__/gate-g6.test.ts` and
+ * `waves/__tests__/foreign.test.ts` index the FULL record (band included) with
+ * no per-record fail-loud — loose display-side readers, some even throwing on
+ * a MISS instead of answering undefined; `loader/registries.ts`
+ * `parseThreatRegistry` is the strict content-CI id-wall (different purpose).
+ * When the threat schema grows, fail-loud hosts change HERE; the loose
+ * readers opt in deliberately.
+ */
+export function buildThreatMetaLookup(
+  registry: unknown,
+  where: string,
+): (threatId: string) => ForeignThreatMeta | undefined {
+  const doc = registry as {
+    threats?: { id?: string; family?: string; denomination?: string }[];
+  };
+  const map = new Map<string, ForeignThreatMeta>();
+  for (const raw of doc.threats ?? []) {
+    if (
+      typeof raw.id !== "string" ||
+      typeof raw.family !== "string" ||
+      typeof raw.denomination !== "string"
+    ) {
+      throw new Error(
+        `${where}: registry-core threat record missing id/family/denomination: ${JSON.stringify(raw).slice(0, 80)}`,
+      );
+    }
+    map.set(raw.id, {
+      family: raw.family as ForeignThreatMeta["family"],
+      denomination: raw.denomination as ForeignThreatMeta["denomination"],
+    });
+  }
+  return (threatId: string) => map.get(threatId);
+}
+
 interface ForeignEntryLike {
   readonly threat?: unknown;
   readonly role?: unknown;
