@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import { asEntityId, asRunSeed, type EntityId } from "../../types";
-import type { CompanyNode, MuseumExhibitRecord, ScarRecord, SeatHolder } from "../node";
+import type { CompanyNode, CoopNodeMetadata, MuseumExhibitRecord, ScarRecord, SeatHolder } from "../node";
 import { addScar, newCompanyNode } from "../node";
 import {
   COOP_BRANCH_FACETS,
@@ -71,7 +71,7 @@ function exhibit(overrides: Omit<Partial<MuseumExhibitRecord>, "id"> & { id: str
   };
 }
 
-function coopNode(ledger = twoWriterLedger()): CompanyNode {
+function coopNode(ledger: CoopNodeMetadata = twoWriterLedger()): CompanyNode {
   return newCompanyNode({
     id: "co-coop", parentId: null, name: "Shared Pipe", eraOrigin: "dial-up",
     foundedAtTick: 0n, successionType: "found", coop: ledger,
@@ -94,14 +94,42 @@ describe("validateCoopSeatLedger — structural seat laws", () => {
     expect(() => validateCoopSeatLedger({ seatHolders: [] })).toThrow(/empty/);
   });
 
-  it("refuses the same participant twice (v0: one tenure row per participant)", () => {
-    const dup = { seatHolders: [seat("p-ana", 0n), seat("p-ana", 5n)] };
-    expect(() => validateCoopSeatLedger(dup)).toThrow(/twice/);
+  it("accepts a re-handoff: disjoint, ordered tenure rows for one participant (L-RH law 2, ADR-0014 #D6)", () => {
+    const rejoin = { seatHolders: [seat("p-ana", 0n, 4n), seat("p-ana", 5n)] };
+    expect(() => validateCoopSeatLedger(rejoin)).not.toThrow();
+    // half-open windows touching at the boundary are disjoint: [0,5) then [5,?)
+    const handoff = { seatHolders: [seat("p-ana", 0n, 5n), seat("p-ana", 5n)] };
+    expect(() => validateCoopSeatLedger(handoff)).not.toThrow();
   });
 
-  it("refuses joinedAtTick that does not ascend in array order (append-only history)", () => {
+  it("refuses a second tenure while an earlier one is still open (v0 /twice/ witness retired by L-RH)", () => {
+    const dup = { seatHolders: [seat("p-ana", 0n), seat("p-ana", 5n)] };
+    expect(() => validateCoopSeatLedger(dup)).toThrow(/one tenure at a time/);
+  });
+
+  it("refuses an overlapping re-handoff — the new tenure starts before the old one closed", () => {
+    const bad = { seatHolders: [seat("p-ana", 0n, 10n), seat("p-ana", 5n)] };
+    expect(() => validateCoopSeatLedger(bad)).toThrow(/overlaps its previous tenure/);
+  });
+
+  it("accepts same-tick joins in canonical code-unit order (L-RH law 1)", () => {
+    const sameTick = { seatHolders: [seat("p-ana", 0n), seat("p-bo", 0n)] };
+    expect(() => validateCoopSeatLedger(sameTick)).not.toThrow();
+  });
+
+  it("refuses a same-tick run that does not ascend by participantId", () => {
+    const bad = { seatHolders: [seat("p-bo", 0n), seat("p-ana", 0n)] };
+    expect(() => validateCoopSeatLedger(bad)).toThrow(/code-unit order/);
+  });
+
+  it("refuses the same participant twice at one instant (the code-unit tie-break refuses the dup)", () => {
+    const bad = { seatHolders: [seat("p-ana", 5n), seat("p-ana", 5n)] };
+    expect(() => validateCoopSeatLedger(bad)).toThrow(/code-unit order/);
+  });
+
+  it("refuses joinedAtTick that goes backwards (append-only history)", () => {
     const bad = { seatHolders: [seat("a", 9n), seat("b", 3n)] };
-    expect(() => validateCoopSeatLedger(bad)).toThrow(/not after joinedAtTick|joinedAtTick/);
+    expect(() => validateCoopSeatLedger(bad)).toThrow(/is before row 0 joinedAtTick/);
   });
 
   it("refuses a tenure that left at or before it joined", () => {
@@ -114,6 +142,11 @@ describe("validateCoopSeatLedger — structural seat laws", () => {
     expect(() => validateCoopSeatLedger(five)).toThrow(/5 simultaneous writers/);
   });
 
+  it("refuses a same-tick crowd of five — canonical order changes the sort, not the cap", () => {
+    const five = { seatHolders: [seat("a", 0n), seat("b", 0n), seat("c", 0n), seat("d", 0n), seat("e", 0n)] };
+    expect(() => validateCoopSeatLedger(five)).toThrow(/5 simultaneous writers at tick 0/);
+  });
+
   it("counts overlaps half-open: a vacated seat frees its slot before the next join", () => {
     const relay = { seatHolders: [seat("a", 0n, 10n), seat("b", 10n), seat("c", 11n), seat("d", 12n), seat("e", 13n)] };
     // a left at 10 (exclusive), so from tick 10 onward b..e = 4 open — legal.
@@ -122,13 +155,29 @@ describe("validateCoopSeatLedger — structural seat laws", () => {
 });
 
 describe("seatParticipant / vacateSeat / participantSeatedAt — pure ledger ops", () => {
-  it("seating appends and re-validates; the input ledger is never mutated", () => {
+  it("seating inserts canonically and re-validates; the input ledger is never mutated", () => {
     const base = twoWriterLedger();
     const next = seatParticipant(base, seat("p-ci", 20n));
     expect(base.seatHolders).toHaveLength(2);
     expect(next.seatHolders).toHaveLength(3);
     expect(seatParticipant(undefined, seat("solo", 0n)).seatHolders).toHaveLength(1);
-    expect(() => seatParticipant(base, seat("p-ana", 30n))).toThrow(/twice/);
+    // L-RH law 1: insertion is CANONICAL, not blind append — an earlier-tick
+    // join lands at its sorted position, so submission order cannot leak.
+    const early = seatParticipant(base, seat("p-aa", 1n));
+    expect(early.seatHolders.map((r) => r.participantId)).toEqual(["p-ana", "p-aa", "p-bo"]);
+    const zoe = seatParticipant(undefined, seat("zoe", 0n));
+    const amy = seatParticipant(zoe, seat("amy", 0n)); // same tick, later submission, earlier code-unit
+    expect(amy.seatHolders.map((r) => r.participantId)).toEqual(["amy", "zoe"]);
+    // a second tenure while the first is open still refuses — re-pinned /twice/ → /one tenure at a time/
+    expect(() => seatParticipant(base, seat("p-ana", 30n))).toThrow(/one tenure at a time/);
+  });
+
+  it("re-handoff after vacate lands a NEW tenure row (L-RH law 2)", () => {
+    const closed = vacateSeat(twoWriterLedger(), "p-ana" as EntityId, 10n);
+    const re = seatParticipant(closed, seat("p-ana", 12n));
+    expect(re.seatHolders).toHaveLength(3);
+    expect(re.seatHolders[2]?.participantId).toBe("p-ana");
+    expect(() => validateCoopSeatLedger(re)).not.toThrow();
   });
 
   it("vacate closes the open tenure; double-leave and ghost-leave throw", () => {
@@ -140,13 +189,30 @@ describe("seatParticipant / vacateSeat / participantSeatedAt — pure ledger ops
     expect(() => vacateSeat(base, "p-ana" as EntityId, 0n)).toThrow(/not after joinedAtTick/);
   });
 
-  it("seating window is half-open [joined, left)", () => {
+  it("vacate targets the OPEN tenure even when the participant has history rows", () => {
+    let ledger = vacateSeat(twoWriterLedger(), "p-ana" as EntityId, 10n); // [0,10) closed
+    ledger = seatParticipant(ledger, seat("p-ana", 20n)); // [20,?) open
+    const closedAgain = vacateSeat(ledger, "p-ana" as EntityId, 30n);
+    const anaRows = closedAgain.seatHolders.filter((r) => r.participantId === ("p-ana" as EntityId));
+    expect(anaRows.map((r) => [r.joinedAtTick, r.leftAtTick])).toEqual([[0n, 10n], [20n, 30n]]);
+    // double-leave now reports the LATEST leftAtTick
+    expect(() => vacateSeat(closedAgain, "p-ana" as EntityId, 40n)).toThrow(/already left at tick 30/);
+  });
+
+  it("seating window is half-open [joined, left) PER TENURE", () => {
     const relay = vacateSeat(twoWriterLedger(), "p-bo" as EntityId, 40n);
     expect(participantSeatedAt(relay, "p-bo" as EntityId, 5n)).toBe(true);
     expect(participantSeatedAt(relay, "p-bo" as EntityId, 39n)).toBe(true);
     expect(participantSeatedAt(relay, "p-bo" as EntityId, 40n)).toBe(false);
     expect(participantSeatedAt(relay, "p-ana" as EntityId, 10_000n)).toBe(true);
     expect(participantSeatedAt(relay, "p-ghost" as EntityId, 5n)).toBe(false);
+    // the second tenure restores the window — the gap 40→80 stays a gap (L-RH law 2)
+    const re = seatParticipant(relay, seat("p-bo", 80n));
+    expect(participantSeatedAt(re, "p-bo" as EntityId, 39n)).toBe(true);
+    expect(participantSeatedAt(re, "p-bo" as EntityId, 40n)).toBe(false);
+    expect(participantSeatedAt(re, "p-bo" as EntityId, 79n)).toBe(false);
+    expect(participantSeatedAt(re, "p-bo" as EntityId, 80n)).toBe(true);
+    expect(participantSeatedAt(re, "p-bo" as EntityId, 81n)).toBe(true);
   });
 });
 
@@ -189,6 +255,26 @@ describe("guardCoopAttributionBatch — never customers, never cash (ruling 2)",
     const solo = { seatHolders: [seat("p-ana", 0n)] };
     const b = batch(100n, [{ facet: "scars", participantId: id("p-ana"), record: withScarAttribution(scar({ id: "s1" }), "p-ana" as EntityId) }]);
     expect(() => guardCoopAttributionBatch(b, solo)).toThrow(new RegExp(`at least ${COOP_MIN_SEAT_WRITERS} recorded writers`));
+  });
+
+  it("MIN_WRITERS counts RECORDED writers — a departed co-writer keeps the company co-op (L-RH law 3, RATIFIED history law)", () => {
+    const left = vacateSeat(twoWriterLedger(), "p-ana" as EntityId, 10n); // ana departed, bo still seated
+    const live = batch(100n, [{ facet: "scars", participantId: id("p-bo"), record: withScarAttribution(scar({ id: "s1" }), "p-bo" as EntityId) }]);
+    expect(() => guardCoopAttributionBatch(live, left)).not.toThrow(); // 2 recorded, 1 live — history law passes
+    // while the departed author's OWN write stays refused by the seating leg:
+    const ghost = batch(100n, [{ facet: "scars", participantId: id("p-ana"), record: withScarAttribution(scar({ id: "s2" }), "p-ana" as EntityId) }]);
+    expect(() => guardCoopAttributionBatch(ghost, left)).toThrow(/not seated at tick 100/);
+  });
+
+  it("a re-handoff author is seated for commits inside either tenure, ghost inside the gap (L-RH law 2)", () => {
+    let ledger = vacateSeat(twoWriterLedger(), "p-ana" as EntityId, 20n); // ana [0,20)
+    ledger = seatParticipant(ledger, seat("p-ana", 30n)); // ana [30,?)
+    const write = (tick: bigint): CoopAttributionBatch => batch(tick, [
+      { facet: "scars", participantId: id("p-ana"), record: withScarAttribution(scar({ id: `s-${tick}` }), "p-ana" as EntityId) },
+    ]);
+    expect(() => guardCoopAttributionBatch(write(10n), ledger)).not.toThrow(); // inside tenure 1
+    expect(() => guardCoopAttributionBatch(write(25n), ledger)).toThrow(/not seated at tick 25/); // the gap
+    expect(() => guardCoopAttributionBatch(write(35n), ledger)).not.toThrow(); // inside tenure 2
   });
 
   it("refuses missing and mismatched attribution stamps — no forged credit", () => {
@@ -258,6 +344,20 @@ describe("wire round-trip — additive-optional, digest-stable single-player", (
     expect(back?.scars[0]?.attributedParticipantId).toBe("p-ana");
     expect(back?.museum[0]?.attributedParticipantId).toBe("p-bo");
     // re-serializing the parsed node must be byte-identical (idempotent wire)
+    expect(canonicalJson(saveFileToWire(revived))).toBe(text);
+  });
+
+  it("a re-handoff ledger survives the canonical wire round-trip (L-RH law 2 on the wire)", () => {
+    let ledger = vacateSeat(twoWriterLedger(), "p-ana" as EntityId, 20n); // ana [0,20)
+    ledger = seatParticipant(ledger, seat("p-ana", 30n)); // ana [30,?) — NEW row
+    const text = canonicalJson(saveFileToWire(saveWith(coopNode(ledger))));
+    const revived = parseSaveWire(fromCanonicalJson(text));
+    const back = revived.lineage.nodes.get("co-coop" as EntityId);
+    expect(back?.coop?.seatHolders.map((s) => [s.participantId, s.joinedAtTick, s.leftAtTick])).toEqual([
+      ["p-ana", 0n, 20n], ["p-bo", 5n, undefined], ["p-ana", 30n, undefined],
+    ]);
+    // re-serializing must be byte-identical (idempotent wire), and the parsed
+    // graph re-checks the new ledger law via assertLineageIntegrity
     expect(canonicalJson(saveFileToWire(revived))).toBe(text);
   });
 

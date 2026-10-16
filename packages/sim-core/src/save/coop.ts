@@ -16,6 +16,27 @@
  *
  * Import rule (workstream boundary): ../types + ./* only. node.ts must NEVER
  * import this file (one-way edge, no cycle).
+ *
+ * HARDENED 2026-10-16 (lane L-RH, owner session-5 agenda (e) delegation of the
+ * ADR-0014 #D6 spike frictions @9a3d508): the seat ledger now carries THREE
+ * upgraded laws —
+ *  1. SAME-TICK JOINS: a join instant may host several seats; rows sharing one
+ *     joinedAtTick are ordered by participantId code-unit (canonical, so two
+ *     hosts applying the same join set converge to byte-equal ledgers).
+ *     joinedAtTick still never decreases across rows.
+ *  2. RE-JOIN = NEW ROW (ADR-0014 #D6 verbatim "re-join-as-new-row"): a
+ *     participant may hold multiple tenure rows iff the tenures are disjoint
+ *     half-open windows in chronological order; a writer never holds two open
+ *     tenures at once. participantSeatedAt resolves per TENURE (any enclosing
+ *     window seats the author), so the attribution guard's ghost-author leg
+ *     checks the stamped tick against the enclosing tenure.
+ *  3. MIN_WRITERS counts RECORDED writers (distinct participantIds ever
+ *     seated), NOT live seats — RATIFIED history law: ruling 2's "One
+ *     Company, 2–4 writers" is a lifetime shape property of the branch node,
+ *     the ledger is append-only history, and per-write safety is already
+ *     carried by the seating check; counting live seats would couple
+ *     attribution settlement to who happens to be online (transport state),
+ *     exactly the runtime coupling this contract-law file refuses.
  */
 
 import type { EntityId, SimTick } from "../types.ts";
@@ -68,23 +89,22 @@ export interface CoopAttributionBatch {
 /**
  * Validate a seat ledger (structural law — safe to run on parsed wires):
  *  - at least one recorded writer (an empty coop node is a phantom company);
- *  - one row per participant — v0 law: a departure + re-handoff is a TRANSPORT
- *    gap, the ledger does not yet model second tenures;
- *  - joinedAtTick strictly ascending in array order (the ledger is append-
- *    only history, not a bag);
  *  - any closed tenure has leftAtTick strictly after joinedAtTick;
+ *  - CANONICAL ORDER (L-RH law 1): joinedAtTick ascends along the array — a
+ *    same-tick run is ordered by participantId code-unit. Because the order
+ *    is a function of the row SET, hosts applying the same joins in any
+ *    arrival order converge to the identical ledger (save-wire determinism);
+ *  - ONE TENURE AT A TIME + DISJOINT HANDOFF (L-RH law 2, ADR-0014 #D6
+ *    "re-join-as-new-row"): a participant's later row may only begin at or
+ *    after its previous row's leftAtTick — an open earlier tenure refuses any
+ *    newer row, an overlapping closed one refuses the re-handoff;
  *  - no tick ever has more than COOP_MAX_SEAT_WRITERS open seats — counted
  *    half-open [joined, left) at each join instant, the tightest probe set.
  */
 export function validateCoopSeatLedger(ledger: CoopNodeMetadata): void {
   const rows = ledger.seatHolders;
   if (rows.length === 0) fail("coop seat ledger is empty — a co-op company records at least one writer");
-  const seen = new Set<EntityId>();
   for (const row of rows) {
-    if (seen.has(row.participantId)) {
-      fail(`coop seat ledger lists participant "${row.participantId}" twice — v0 allows one tenure row per participant`);
-    }
-    seen.add(row.participantId);
     if (row.leftAtTick !== undefined && row.leftAtTick <= row.joinedAtTick) {
       fail(`coop seat "${row.participantId}" leftAtTick ${row.leftAtTick} is not after joinedAtTick ${row.joinedAtTick}`);
     }
@@ -92,9 +112,25 @@ export function validateCoopSeatLedger(ledger: CoopNodeMetadata): void {
   for (let i = 1; i < rows.length; i += 1) {
     const prev = requireRow(rows, i - 1);
     const cur = requireRow(rows, i);
-    if (cur.joinedAtTick <= prev.joinedAtTick) {
-      fail(`coop seat ledger row ${i} joinedAtTick ${cur.joinedAtTick} is not after row ${i - 1} joinedAtTick ${prev.joinedAtTick} — the ledger is append-only history`);
+    if (cur.joinedAtTick < prev.joinedAtTick) {
+      fail(`coop seat ledger row ${i} joinedAtTick ${cur.joinedAtTick} is before row ${i - 1} joinedAtTick ${prev.joinedAtTick} — joins ascend, the ledger is append-only history`);
     }
+    if (cur.joinedAtTick === prev.joinedAtTick && compareParticipantIds(cur.participantId, prev.participantId) <= 0) {
+      fail(`coop seat ledger row ${i} shares tick ${cur.joinedAtTick} with row ${i - 1} but participant "${cur.participantId}" does not follow "${prev.participantId}" in code-unit order — same-tick seats ascend by participantId`);
+    }
+  }
+  const previousTenure = new Map<EntityId, SeatHolder>();
+  for (const row of rows) {
+    const prior = previousTenure.get(row.participantId);
+    if (prior !== undefined) {
+      if (prior.leftAtTick === undefined) {
+        fail(`coop seat "${row.participantId}" opens a tenure at tick ${row.joinedAtTick} while its earlier tenure from tick ${prior.joinedAtTick} is still open — a writer holds one tenure at a time`);
+      }
+      if (row.joinedAtTick < prior.leftAtTick) {
+        fail(`coop seat "${row.participantId}" tenure at tick ${row.joinedAtTick} overlaps its previous tenure [${prior.joinedAtTick}, ${prior.leftAtTick}) — re-handoff tenures must be disjoint and ordered`);
+      }
+    }
+    previousTenure.set(row.participantId, row);
   }
   for (let i = 0; i < rows.length; i += 1) {
     const probe = requireRow(rows, i).joinedAtTick;
@@ -110,41 +146,85 @@ export function validateCoopSeatLedger(ledger: CoopNodeMetadata): void {
   }
 }
 
+/** Code-unit comparison — the same ordering the canonical wire sorts use. */
+function compareParticipantIds(a: EntityId, b: EntityId): number {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
+function compareSeats(a: SeatHolder, b: SeatHolder): number {
+  if (a.joinedAtTick !== b.joinedAtTick) return a.joinedAtTick < b.joinedAtTick ? -1 : 1;
+  return compareParticipantIds(a.participantId, b.participantId);
+}
+
 function requireRow(rows: readonly SeatHolder[], i: number): SeatHolder {
   const row = rows[i];
   if (row === undefined) fail(`coop seat ledger row ${i} missing`);
   return row;
 }
 
-/** Seat a new writer — pure: returns the extended ledger, re-validated. */
+/**
+ * Seat a new writer — pure: returns a ledger containing the seat at its
+ * CANONICAL position (joinedAtTick asc, participantId code-unit within one
+ * tick), re-validated. Insertion (not blind append) is what makes same-tick
+ * joins order-independent: every host folds the same tenure set to the same
+ * ledger bytes. A re-handoff for a participant with a closed tenure simply
+ * lands as a new row (L-RH law 2); overlapping or open-second rows refuse.
+ */
 export function seatParticipant(ledger: CoopNodeMetadata | undefined, seat: SeatHolder): CoopNodeMetadata {
   const base: CoopNodeMetadata = ledger ?? { seatHolders: [] };
-  const next: CoopNodeMetadata = { seatHolders: [...base.seatHolders, seat] };
+  const rows = [...base.seatHolders];
+  let insertAt = rows.length;
+  for (let i = 0; i < rows.length; i += 1) {
+    if (compareSeats(requireRow(rows, i), seat) >= 0) {
+      insertAt = i;
+      break;
+    }
+  }
+  rows.splice(insertAt, 0, seat);
+  const next: CoopNodeMetadata = { seatHolders: rows };
   validateCoopSeatLedger(next);
   return next;
 }
 
-/** Close a writer's open tenure — pure; the row must exist and be seated. */
+/** Close the participant's OPEN tenure — pure; the re-join law means a
+ *  participant may own several rows, so vacate targets the single open one
+ *  (disjointness guarantees at most one exists). */
 export function vacateSeat(ledger: CoopNodeMetadata, participantId: EntityId, leftAtTick: SimTick): CoopNodeMetadata {
-  const target = ledger.seatHolders.find((row) => row.participantId === participantId);
-  if (target === undefined) fail(`coop vacate: participant "${participantId}" has no seat row to leave`);
-  if (target.leftAtTick !== undefined) fail(`coop vacate: participant "${participantId}" already left at tick ${target.leftAtTick}`);
+  const rows = ledger.seatHolders;
+  let openIndex = -1;
+  let lastLeftAtTick: SimTick | undefined;
+  let hasRow = false;
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = requireRow(rows, i);
+    if (row.participantId !== participantId) continue;
+    hasRow = true;
+    if (row.leftAtTick === undefined) openIndex = i;
+    else lastLeftAtTick = row.leftAtTick;
+  }
+  if (!hasRow) fail(`coop vacate: participant "${participantId}" has no seat row to leave`);
+  if (openIndex < 0) fail(`coop vacate: participant "${participantId}" already left at tick ${lastLeftAtTick}`);
   const next: CoopNodeMetadata = {
-    seatHolders: ledger.seatHolders.map((row) =>
-      row.participantId === participantId ? { participantId: row.participantId, joinedAtTick: row.joinedAtTick, leftAtTick } : row,
+    seatHolders: rows.map((row, i) =>
+      i === openIndex ? { participantId: row.participantId, joinedAtTick: row.joinedAtTick, leftAtTick } : row,
     ),
   };
   validateCoopSeatLedger(next);
   return next;
 }
 
-/** Half-open seating window [joinedAtTick, leftAtTick) — same interval law
- *  as the executive-attention hands. */
+/** Half-open seating window [joinedAtTick, leftAtTick) PER TENURE (L-RH law
+ *  2) — same interval law as the executive-attention hands. A participant is
+ *  seated at a tick iff ANY of their tenure rows encloses it, which is what
+ *  makes the attribution guard's ghost-author leg resolve the author against
+ *  the tenure enclosing the stamped tick. */
 export function participantSeatedAt(ledger: CoopNodeMetadata, participantId: EntityId, tick: SimTick): boolean {
-  const row = ledger.seatHolders.find((r) => r.participantId === participantId);
-  if (row === undefined) return false;
-  if (row.joinedAtTick > tick) return false;
-  return row.leftAtTick === undefined || tick < row.leftAtTick;
+  return ledger.seatHolders.some(
+    (row) =>
+      row.participantId === participantId &&
+      row.joinedAtTick <= tick &&
+      (row.leftAtTick === undefined || tick < row.leftAtTick),
+  );
 }
 
 /* ═══════════════════════ attribution stamps ═══════════════════════ */
@@ -169,10 +249,16 @@ export function withMuseumAttribution(exhibit: MuseumExhibitRecord, participantI
  *     (customerBooks = customers, finances = cash, …) is refused by name,
  *     quoting the ruling. The batch may arrive parsed from an untrusted
  *     seat wire, so this checks the runtime value, not just the TS type;
- *  3. come from participants the ledger actually seats at committedAtTick;
+ *  3. come from participants the ledger actually seats at committedAtTick —
+ *     resolved PER TENURE (L-RH law 2): the author is checked against the
+ *     half-open window enclosing the stamped tick, so a re-handoff's second
+ *     tenure seats them again while the gap between tenures never does;
  *  4. sit in a genuinely multi-writer company (≥ COOP_MIN_SEAT_WRITERS
- *     distinct recorded writers) — solo runs use the ordinary settlement
- *     path, not the co-op contract;
+ *     distinct RECORDED writers — L-RH law 3, ratified history law: a
+ *     departed co-writer keeps counting, because the check asks what kind of
+ *     company this node's history records, not who is online; the per-write
+ *     seating check in 3 is what refuses departed authors their own writes) —
+ *     solo runs use the ordinary settlement path, not the co-op contract;
  *  5. carry an attribution stamp on every record that equals its author.
  *
  * SCOPE NOTE (review m2 @8c0ff88): the guard verifies FACET, seating and

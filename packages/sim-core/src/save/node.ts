@@ -494,8 +494,10 @@ export interface MuseumExhibitRecord {
 /* ═══════════════════════ co-op branch-node metadata (ADR-0013 ruling 2) ═══════════════════════ */
 
 /** One seat tenure in a co-op company. A re-handoff to the same participant
- *  is a NEW row (transport lane may dedupe later — v0 law: one row per
- *  participant, enforced by validateCoopSeatLedger in coop.ts). */
+ *  is a NEW tenure row (ADR-0014 #D6 "re-join-as-new-row" LANDED by lane
+ *  L-RH 2026-10-16: multiple rows per participant iff their half-open tenures
+ *  are disjoint and ordered; same-tick joins ascend by participantId —
+ *  enforced by validateCoopSeatLedger in coop.ts). */
 export interface SeatHolder {
   readonly participantId: EntityId;
   readonly joinedAtTick: SimTick;
