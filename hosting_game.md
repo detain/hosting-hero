@@ -23056,6 +23056,7 @@ seasonality.
 zone where your tenement windows start flickering. Greed and risk in one control.
 
 ### Grandfathering 🔧
+> *[2026-10-16 ruling — ADR-0014 #D4 (OD-24)] The billing ORDER is RATIFIED AS LAW: in the invoice base-resolution chain (price-override dial → escalator compounding → grandfathered concession → MFN last), a **written §6.12 concession outranks the dial** — the contract beats the price change when they disagree. Shipped resolution order @`5781335`; alongside it the elasticity set {150/80/50 %, ±10 % dead-band, [0.5×,3×] churn clamp, 0.1× retention floor — asymmetry deliberate} and oversell 8:1 are FULLY RATIFIED (confirmed-provisional retired). Law-note pass only — marker untouched.*
 Old customers on old prices.
 
 **How it works:** Raising prices creates two populations. Force-migrating grandfathered customers
@@ -31559,6 +31560,7 @@ selected object's label always survives. **Never clip, never overlap, never shri
 
 ### The readability targets ⚠️
 > *[2026-10-14 ruling — ADR-0013 #3 (OD-10)] The Clock Ribbon and the dials are ONE unified time-service presentation — ribbon primary, dials its instruments, not rivals. Max LEGIBLE speed stays **2×** until G1 playtest data (P5's 3× is not law); the SpeedX door ladder 1|2|4 stands as shipped — 4× is the authored-art exception, 3× is never legal. Hardware target = current dev-box floor. ⚠️ marker kept: the figures are now blessed as targets, measurement still owed.*
+> *[2026-10-16 ruling — ADR-0014 #D3 (OD-10/OD-12)] The figures' status SUPERSEDES: the **relative law** — legibility held against the densities the measured perf-grid baseline on the ratified hardware target actually produces — **replaces** the 2,000-object / 20,000-entity absolutes as STANDING LAW; the absolutes below remain as an **aspiration note**, not law. A measured `tools/perf` grid baseline must be appended to this record when run (build lane follows). ⚠️ marker kept through this law-note pass — measurement still owed, marker moves belong to closeout.*
 Stated numbers, because "readable at scale" is unfalsifiable without a figure.
 
 **How it works:** The game must remain legible at **2,000 discrete objects and 20,000 in-flight entities
@@ -32710,6 +32712,7 @@ in level 3 show up in level 9 as depositions. Three acts, multiple hosting types
 **Hosting types:** all — the campaign is the mechanism by which the player meets each one.
 
 ### Endless / Survival ("The NOC" / "The Long Haul" / "Keep It Running") 🔧
+> *[2026-10-16 ruling — ADR-0014 #D8 (OD-8/OD-16)] The save-side carve-out ENDS — owner: "queue the endless save slice". The 32 `PENDING_OD8` endless rows in `save/modes.ts` get a BUILD lane to flip LIVE (`writeGuard`'s throw-on-pending retired for them, mode-matrix pins re-cut). QUEUED, not built — on disk the rows stay `PENDING_OD8` until the lane lands; the Seasons run-structure below stays design content.*
 One infrastructure, escalating forever.
 
 **How it works:** Waves keep coming and keep getting harder; you build, adapt, and eventually fall.
