@@ -24,6 +24,7 @@ import PricingDial from "./PricingDial.vue";
 import RecoveryWatch from "./RecoveryWatch.vue";
 import AttentionCard from "./AttentionCard.vue";
 import CorpusMissionCard from "./CorpusMissionCard.vue";
+import FlavourFeed from "./FlavourFeed.vue";
 import { buildHudCandidates, formatMicroUsd, formatRunClock, hudPermanentRows, rhoDisplayOf } from "./metrics";
 import { planPromotion, toggleUserPin, type MetricCandidate } from "./promotion";
 import { globalExplain } from "./explainRegistry";
@@ -262,6 +263,11 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
         <section class="card" data-hud-optional="true" data-test="lab-corpus">
           <h4>Corpus mission — the g1 wave table through the scenario seam (proto host leg)</h4>
           <CorpusMissionCard />
+        </section>
+
+        <section class="card" data-hud-optional="true" data-test="lab-flavour">
+          <h4>Front of House — the flavour bank speaks, one deterministic line per tick (g24)</h4>
+          <FlavourFeed />
         </section>
       </div>
     </div>
