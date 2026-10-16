@@ -29,19 +29,34 @@
  * the driver touches neither `GameState.corruption` nor
  * `TickResult.corruptions` — byte-identical runs (pinned in
  * `__tests__/corruption.test.ts`).
+ *
+ * SHIELD PRE-ARM VETO (ADR-0014 #D2, the first tier-extension door pair):
+ * while the node at the head of a corrupts-mode unit's queue is shielded —
+ * read from the OPTIONAL door-written `GameState.shield` book via
+ * `nodeShielded`, which mirrors economy's `activePriceOverride` as-of law
+ * (null = in force; a future business-minute stamp is armed but NOT yet
+ * law) — step 9 never casts the exhaustion die: the mark never lands, and
+ * the terminal completes as a plain `served`. A mark cast BEFORE the shield
+ * armed (or before its stamp came due) rides to its terminal — a pre-arm
+ * prevents rot, it does not un-rot a response already in flight. There is
+ * no un-shield verb in v0 (last-write-wins re-arm is the only amendment).
+ * Absent book ⇒ zero reads, zero behavior change (the byte-identity gate).
  */
 
 import type {
   CauseId,
+  ClockState,
   Contract,
   CorruptOutcome,
   CorruptionState,
   EntityId,
   OutcomeTerminal,
+  ShieldBook,
   SimMinute,
   SimTimeUs,
 } from "../types.ts";
 import { asCauseId } from "../types.ts";
+import { MICROS_PER_MIN } from "../kernel/time.ts";
 
 /** PROVISIONAL (mirrors outageSecondsFromLanded @internal/tickFold.ts): one
  *  corrupted response burns 60 error-budget seconds per contract until the
@@ -53,6 +68,38 @@ export const CORRUPTION_OUTAGE_SEC = 60n;
  *  story is addressable end-to-end as `corruption:<unitId>:<minute>`. */
 export function corruptionCauseId(unitId: EntityId, minute: SimMinute): CauseId {
   return asCauseId(`corruption:${String(unitId)}:${minute}`);
+}
+
+/** Current BUSINESS-clock minute of a tick's clocks (Dual-Clock law §4.4).
+ *  Exact integer fold of `businessUs`; the economy lane owns a twin helper
+ *  (economy/state.ts `businessMinuteOf`) — the import direction forbids
+ *  sharing it, and the fold is one floor-division, so the twin is the honest
+ *  home here rather than a widened seam. */
+export function businessMinuteOf(clocks: ClockState): SimMinute {
+  const minute = Number(clocks.businessUs / MICROS_PER_MIN);
+  if (!Number.isSafeInteger(minute)) {
+    throw new RangeError(
+      `corruption[bad-value]: business minute ${String(clocks.businessUs)}µs exceeds the safe-integer range`,
+    );
+  }
+  return minute;
+}
+
+/** ADR-0014 #D2 as-of law — is `nodeId` under a live shield at
+ *  `atBusinessMinute`? Same shape as economy's `activePriceOverride`: an
+ *  absent entry = not shielded; `effectiveAtBusinessMinute === null` = in
+ *  force from the executing tick; a future stamp is armed but NOT yet law.
+ *  Accepting the optional book keeps the caller's guard flat (Law 1):
+ *  `undefined` book ⇒ false for every node — the byte-identity switch. */
+export function nodeShielded(
+  shield: ShieldBook | undefined,
+  nodeId: EntityId,
+  atBusinessMinute: SimMinute,
+): boolean {
+  if (shield === undefined) return false;
+  const entry = shield.entries.get(nodeId);
+  if (entry === undefined) return false;
+  return entry.effectiveAtBusinessMinute === null || atBusinessMinute >= entry.effectiveAtBusinessMinute;
 }
 
 /** One terminal this tick, as the driver's outcome fold sees it. */

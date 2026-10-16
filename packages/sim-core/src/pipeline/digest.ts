@@ -239,6 +239,26 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0014 #D2 — the corruption PRE-ARM book (digest-switch law, same embed
+  // law as hands/board/pricing): absorbed ONLY when present, so every
+  // pre-shield state (all shipped goldens) keeps byte-identical digests.
+  // Node ids sort code-unit (Map insertion order NEVER read); the null
+  // effective minute takes the -1 sentinel slot (business minutes are >= 0
+  // by door refusal law).
+  if (state.shield !== undefined) {
+    sink.text("shield").int(state.shield.version);
+    const shieldIds = Array.from(state.shield.entries.keys()).sort(byId);
+    sink.int(shieldIds.length);
+    for (const id of shieldIds) {
+      const rec = state.shield.entries.get(id);
+      if (rec === undefined) continue;
+      sink
+        .text(id)
+        .int(rec.shippedAtTick)
+        .int(rec.effectiveAtBusinessMinute ?? -1);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.

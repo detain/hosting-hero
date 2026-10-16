@@ -36,6 +36,9 @@
  *    configure), board (connect/disconnect), ruleBook (+hash) (commit),
  *    pricing (adjust-price — the OPTIONAL OD-24(a) part-1 override book,
  *    STATE-NEUTRAL: no revenue, no elasticity, no invoice math in the door),
+ *    shield (shield-node — the OPTIONAL ADR-0014 #D2 corruption pre-arm book,
+ *    STATE-NEUTRAL: the corrupts-channel veto is read at step 9 through
+ *    pipeline/corruption.ts, never by the door),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -98,6 +101,9 @@ import type {
   PriceTargetKind,
   ShedLoadArgs,
   ShedOrder,
+  ShieldArgs,
+  ShieldBook,
+  ShieldEntry,
   SimEvent,
   SimTick,
   SimTimeUs,
@@ -239,6 +245,10 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // OD-24(a) part 1: a price order is a decision at the desk — the COMMIT
   // class (1 tick, same window as policy-card-commit/configure-node).
   [PlayerVerb.AdjustPrice]: 1,
+  // ADR-0014 #D2: pre-arming a node is likewise a desk decision — the COMMIT
+  // class (1 tick), same hand cost. The protection itself is state-neutral
+  // here: step 9 reads the book, the door never touches units or RNG.
+  [PlayerVerb.Shield]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -251,6 +261,7 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   [PlayerVerb.Communicate]: 1,
   [PlayerVerb.ToggleSpeed]: 0,
   [PlayerVerb.AdjustPrice]: 1,
+  [PlayerVerb.Shield]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -408,6 +419,13 @@ export function createPriceOverrideBook(): PriceOverrideBook {
   return Object.freeze({ version: 0, overrides: Object.freeze(new Map<string, PriceOverrideRecord>()) });
 }
 
+/** Empty corruption pre-arm book (ADR-0014 #D2) — hosts that want the embed
+ *  present from tick 0 mint it here; the `shield-node` handler materializes
+ *  lazily without it. Node-keyed, last-write-wins per node. */
+export function createShieldBook(): ShieldBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, ShieldEntry>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -447,6 +465,8 @@ interface Draft {
   ruleBook: readonly PolicyCard[] | null;
   ruleBookHash: string | null;
   pricing: PriceOverrideBook | null;
+  /** ADR-0014 #D2 COW pre-arm book — null until a `shield-node` order lands. */
+  shield: ShieldBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -525,6 +545,7 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   [PlayerVerb.Communicate]: Object.freeze({ target: "string-or-null", note: "string" }),
   [PlayerVerb.ToggleSpeed]: Object.freeze({ speedX: "number" }),
   [PlayerVerb.AdjustPrice]: Object.freeze({ targetKind: "string", targetId: "string", newPriceMicroUsd: "bigint", effectiveAtBusinessMinute: "number-or-null" }),
+  [PlayerVerb.Shield]: Object.freeze({ targetNodeId: "string", effectiveAtBusinessMinute: "number-or-null" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -971,6 +992,39 @@ function handleAdjustPrice(draft: Draft, args: AdjustPriceArgs): HandlerVerdict 
   return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
 }
 
+/** ADR-0014 #D2 SHIELD ↔ corruption — the ONLY side effect is one frozen
+ *  entry in the OPTIONAL `GameState.shield` book (absent ⇒ every pre-shield
+ *  digest byte-identical — the same embed law as pricing). The door NEVER
+ *  touches units, corruption marks, or RNG: the veto is read at step 9
+ *  through `nodeShielded` (pipeline/corruption.ts), which holds the
+ *  as-of law (null = law from the executing tick; a future business-minute
+ *  stamp is armed but NOT YET law — `PriceOverrideRecord`'s discipline).
+ *  Last-write-wins per node: re-arming REPLACES the entry and bumps the
+ *  book version. Wire types are parse-trusted (M2): the refusals own the
+ *  value domain only — empty id, malformed minute, unknown node. */
+function handleShield(draft: Draft, args: ShieldArgs): HandlerVerdict {
+  const nodeId = args.targetNodeId as EntityId; // wire type trusted (parseEntry, M2)
+  if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
+  const base = draft.shield ?? draft.origin.shield ?? createShieldBook();
+  const entries = new Map(base.entries);
+  entries.set(
+    nodeId,
+    Object.freeze({
+      shippedAtTick: draft.context.tick,
+      effectiveAtBusinessMinute: effectiveAt,
+    }),
+  );
+  draft.shield = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  const detail = `node=${nodeId}`;
+  return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -990,7 +1044,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
   if (
     draft.nodes === null && draft.board === null && draft.hands === null &&
     draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
-    draft.attention === null
+    draft.attention === null && draft.shield === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1010,6 +1064,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.ruleBookHash !== null ? { ruleBookHash: draft.ruleBookHash } : {}),
     ...(draft.pricing !== null ? { pricing: draft.pricing } : {}),
     ...(draft.attention !== null ? { attention: draft.attention } : {}),
+    ...(draft.shield !== null ? { shield: draft.shield } : {}),
   });
 }
 
@@ -1137,6 +1192,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleToggleSpeed(draft, args as ToggleSpeedArgs);
       case PlayerVerb.AdjustPrice:
         return handleAdjustPrice(draft, args as AdjustPriceArgs);
+      case PlayerVerb.Shield:
+        return handleShield(draft, args as ShieldArgs);
     }
   })();
 
@@ -1203,6 +1260,7 @@ export function applyIntentDoor(
     ruleBook: null,
     ruleBookHash: null,
     pricing: null,
+    shield: null,
     events: [],
     receipts: [],
   };

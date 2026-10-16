@@ -1218,6 +1218,13 @@ export enum PlayerVerb {
    *  + target resolution only); elasticity, revenue and dial wiring are the
    *  queued economy/HUD lanes reading this book, not the door's job. */
   AdjustPrice = "adjust-price",
+  /** ADR-0014 #D2 tier-extension door mechanic (first pair): the 10th door
+   *  verb. PRE-ARM a node against the §3.1 corrupts channel — while a node
+   *  is shielded (as-of its effective business minute), the exhaustion die
+   *  never marks its queued units, so its served terminals stay clean. The
+   *  door writes the OPTIONAL `GameState.shield` book; the veto is read at
+   *  step 9 (pipeline/corruption.ts owns the as-of law). */
+  Shield = "shield-node",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1231,6 +1238,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.Communicate,
   PlayerVerb.ToggleSpeed,
   PlayerVerb.AdjustPrice,
+  PlayerVerb.Shield,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1324,6 +1332,21 @@ export interface AdjustPriceArgs {
   readonly effectiveAtBusinessMinute: SimMinute | null;
 }
 
+export interface ShieldArgs {
+  readonly verb: PlayerVerb.Shield;
+  /** Node to pre-arm against the corrupts channel — resolved against
+   *  `GameState.nodes` (same world-existence check as shed-load /
+   *  communicate; an absent node is the `unknown-node` refusal). */
+  readonly targetNodeId: EntityId;
+  /** Business-clock effective minute (Dual-Clock law §4.4: data rot accrues
+   *  on the macro calendar; the shield is a business action too). The null
+   *  sentinel = law from the executing tick; a future stamp is armed but NOT
+   *  yet law — the same as-of law as `PriceOverrideRecord` (economy reads
+   *  those via `activePriceOverride`; step 9 reads this book via
+   *  `nodeShielded` in pipeline/corruption.ts). */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1334,7 +1357,8 @@ export type PlayerVerbArgs =
   | ShedLoadArgs
   | CommunicateArgs
   | ToggleSpeedArgs
-  | AdjustPriceArgs;
+  | AdjustPriceArgs
+  | ShieldArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -1573,6 +1597,37 @@ export interface PriceOverrideBook {
   readonly overrides: ReadonlyMap<string, PriceOverrideRecord>;
 }
 
+/** One executed `shield-node` order, frozen into the pre-arm book. The
+ *  record is the ENTIRE door side effect (ADR-0014 #D2): the corruption
+ *  channel READS this book at step 9 (pipeline/corruption.ts
+ *  `nodeShielded` mirrors economy's `activePriceOverride` as-of law) —
+ *  nothing in the door touches units, marks, or RNG. `causeId` attribution
+ *  lives on the minting `intent-executed` event (`intent:<seq>`), mirroring
+ *  every other door verb. */
+export interface ShieldEntry {
+  /** Macro tick the door executed the order (write-order witness; the book's
+   *  Map is keyed by node, never ordered — last-write-wins per node). */
+  readonly shippedAtTick: SimTick;
+  /** null = law from `shippedAtTick`; a business-minute stamp otherwise
+   *  (armed early, effective later — the pre-arm reads its name). */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
+/** OPTIONAL `GameState` embed — the corruption pre-arm book written ONLY by
+ *  the door's `shield-node` handler (same embed law as board/hands/pricing:
+ *  absent ⇒ byte-identical digests everywhere; `pipeline/digest.ts` absorbs
+ *  it WHEN PRESENT, node ids sorted code-unit so Map insertion order never
+ *  leaks). Keyed by node id, LAST-WRITE-WINS per node (re-shielding a node
+ *  replaces its entry and bumps `version` — the topology/board memoization
+ *  convention). There is NO un-shield verb in v0: re-arming with a fresh
+ *  stamp is the only amendment, and a stamp already in force never expires
+ *  (pre-arm, not a lease — the amendment door follows its own mechanic
+ *  design per ADR-0014 #D2 mechanics order). */
+export interface ShieldBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<EntityId, ShieldEntry>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -1767,4 +1822,11 @@ export interface GameState {
    *  absorbs it ONLY when present, so every pre-corruption state — all
    *  shipped goldens — digests byte-identically. */
   readonly corruption?: CorruptionState;
+  /** ADR-0014 #D2 embed — the corruption PRE-ARM book `shield-node` writes
+   *  (see `ShieldBook`). Read at step 9 by the patience step through the
+   *  driver-forwarded input (pipeline/corruption.ts owns the as-of veto).
+   *  OPTIONAL, digest-switch law: `pipeline/digest.ts` absorbs it ONLY when
+   *  present, so every pre-shield state — all shipped goldens — digests
+   *  byte-identically. */
+  readonly shield?: ShieldBook;
 }

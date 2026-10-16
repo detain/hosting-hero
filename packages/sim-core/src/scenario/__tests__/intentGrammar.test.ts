@@ -135,6 +135,7 @@ const HONEST_ROWS: Readonly<Record<string, Record<string, unknown>>> = {
     newPriceMicroUsd: "60000000",
     effectiveAtBusinessMinute: null,
   },
+  "shield-node": { targetNodeId: "web-1", effectiveAtBusinessMinute: null },
 };
 
 describe("the wall accepts one honest row per verb", () => {

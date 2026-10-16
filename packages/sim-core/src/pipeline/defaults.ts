@@ -80,6 +80,7 @@ import type {
   ObservedCell,
   ObservedKey,
   ObservedWrite,
+  ShieldBook,
 } from "../types.ts";
 import { asCauseId, asEntityId, observedKey, ResolutionBand } from "../types.ts";
 import { FIXED_SCALE, FIXED_UNIT, FIXED_ZERO, clampUnit, fromRatio, mul, sub } from "../kernel/fixed.ts";
@@ -100,6 +101,7 @@ import {
 } from "./internal.ts";
 import { bounceProbability, patienceRatioBps } from "./bounce.ts";
 import { DEFAULT_KNEE_RHO, effectiveRho, hockeyStickWaitUs, utilization } from "./queue.ts";
+import { businessMinuteOf, nodeShielded } from "./corruption.ts";
 
 /* ═══════════════════════ Extension inputs (driver-supplied) ═════════════════ */
 
@@ -927,7 +929,10 @@ function parsePatienceModeByType(
  *    .corruption + observed cell; pipeline/corruption.ts owns the fold and
  *    the economy adapter). The frozen 4-terminal Outcome set stays untouched:
  *    corruption is NOT a fifth terminal, it is a mark that outlives the
- *    queue and reports at the `served` terminal.
+ *    queue and reports at the `served` terminal. SHIELDED queue nodes
+ *    (ADR-0014 #D2 `shield-node` pre-arm — `GameState.shield` read as-of the
+ *    business minute via corruption.ts `nodeShielded`) never cast the
+ *    exhaustion die: the mark never lands, the response serves clean.
  */
 function patienceProbabilityFor(
   mode: PatienceMode,
@@ -992,6 +997,11 @@ export function createPatienceCheckStep(
     const prior = corruptsAuthored ? (input as PatienceCheckInExt).corruption : undefined;
     const marks = prior === undefined ? new Map<EntityId, boolean>() : new Map(prior.marks);
     let markedThisTick = false;
+    /* ADR-0014 #D2 SHIELD pre-arm — the read is presence-gated: NO book on
+     * input ⇒ zero business-clock math, zero behavior change (the exact
+     * byte-identity switch, same law as the `corruption` slice above). */
+    const shield = (input as PatienceCheckInExt).shield;
+    const atBusinessMin = shield === undefined ? 0 : businessMinuteOf(input.context.clocks);
     for (const unit of input.units) {
       const predicted = waitByUnit.get(unit.id);
       if (predicted === undefined) continue; // only queued units bounce from patience
@@ -1004,6 +1014,13 @@ export function createPatienceCheckStep(
          * terminal); the bounce probability stays 0 by construction. */
         if (marks.has(unit.id)) continue;
         if (elapsed + predicted < unit.patienceUs) continue; // still inside budget
+        /* SHIELDED queue node (routeHops[0] — the FIX-8 queue-member-implies-
+         * hop invariant names it): the exhaustion die is NEVER cast, the mark
+         * never lands, the response completes as a plain served terminal.
+         * Per-unit stream discipline means skipping this unit's draw shifts
+         * nobody else's dice — the veto has zero blast radius. */
+        const queueNode = unit.routeHops[0];
+        if (queueNode !== undefined && nodeShielded(shield, queueNode, atBusinessMin)) continue;
         marks.set(
           unit.id,
           corruptionVerdictFor(corruptionProbability, config.runSeed, input.context.minute, unit.id),
@@ -1035,9 +1052,11 @@ export function createPatienceCheckStep(
   };
 }
 
-/** Driver-supplied extra: the live corruption slice (absent = dormant). */
+/** Driver-supplied extra: the live corruption slice (absent = dormant) and
+ *  the ADR-0014 #D2 pre-arm book (absent = the shield veto never reads). */
 export interface PatienceCheckInExt extends PatienceCheckIn {
   readonly corruption?: CorruptionState;
+  readonly shield?: ShieldBook;
 }
 
 /** Step-9 out-of-band answer: the merged slice whenever the channel is

@@ -860,6 +860,11 @@ export function createTickDriver(
       units,
       waits: queueWaitOut.waits,
       ...(worked.corruption !== undefined ? { corruption: worked.corruption } : {}),
+      /* ADR-0014 #D2 — the door-written pre-arm book rides the same Ext
+       * channel; ABSENT key when no shield exists, so unshielded runs are
+       * byte-identical (the step reads it only when present). A shield the
+       * door planted THIS tick guards marks from THIS tick. */
+      ...(worked.shield !== undefined ? { shield: worked.shield } : {}),
     };
     // The default patience step answers with the merged corruption slice via
     // the out-of-band Ext field (defaults.ts module header); a swapped-in
