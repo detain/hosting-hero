@@ -12,7 +12,7 @@
  * `wireIntentToPlayerIntent` in the codec, E2b).
  *
  * Content arrives as `?raw` build-time strings (the corpusMission /
- * coverage-grid pattern: vite embeds, zero fs in any thread). All NINE
+ * coverage-grid pattern: vite embeds, zero fs in any thread). All TEN
  * shipped g1 slices are wired, each paired with the MATCHING type bundle for
  * the invitation law; the wire names a table by its shipped slice identity —
  * the JSON's own `type` minus the `official:` prefix — drift-pinned against
@@ -36,6 +36,7 @@ import type { CorpusDriveOptions } from "../runner/simCoreRunner";
 import type { BootCorpusWire, CorpusTableId } from "./protocol";
 
 import registryRaw from "../../../../packages/content/threats/registry-core.json?raw";
+import bundleColoRaw from "../../../../packages/content/types/colo.json?raw";
 import bundleDedicatedRaw from "../../../../packages/content/types/dedicated.json?raw";
 import bundleDnsRaw from "../../../../packages/content/types/dns-hosting.json?raw";
 import bundleExchangeColoRaw from "../../../../packages/content/types/exchange-colo.json?raw";
@@ -45,6 +46,7 @@ import bundleObjectStorageRaw from "../../../../packages/content/types/object-st
 import bundleServerlessRaw from "../../../../packages/content/types/serverless.json?raw";
 import bundleSharedWebRaw from "../../../../packages/content/types/shared-web.json?raw";
 import bundleTrunkGroupRaw from "../../../../packages/content/types/trunk-group-voip.json?raw";
+import sliceColoRaw from "../../../../packages/content/waves/g1-colo-first-quarter.json?raw";
 import sliceDedicatedRaw from "../../../../packages/content/waves/g1-dedicated-first-quarter.json?raw";
 import sliceDnsRaw from "../../../../packages/content/waves/g1-dns-hosting-first-quarter.json?raw";
 import sliceExchangeColoRaw from "../../../../packages/content/waves/g1-exchange-colo-first-quarter.json?raw";
@@ -113,6 +115,14 @@ const CORPUS_TABLES: Readonly<Record<CorpusTableId, CorpusTableEntry>> = Object.
     sliceStem: "g1-exchange-colo-first-quarter",
     sliceRaw: sliceExchangeColoRaw,
     bundleRaw: bundleExchangeColoRaw,
+  }),
+  // The generic colo card (type 10, "Amps and Aisles") — NOT the
+  // exchange-colo sibling; the wire names the DECLARED identity both slices
+  // carry in their own JSON `type`, so the two tables cannot collide.
+  colo: Object.freeze({
+    sliceStem: "g1-colo-first-quarter",
+    sliceRaw: sliceColoRaw,
+    bundleRaw: bundleColoRaw,
   }),
 });
 

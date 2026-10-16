@@ -252,7 +252,7 @@ const RUNNER_KINDS: readonly RunnerKindWire[] = ["mock", "sim-core"];
  *  The tableId is the shipped slice identity — the slice JSON's own `type`
  *  minus the `official:` prefix — and a drift-pin test (simWorker.corpus.
  *  test.ts) re-derives the closed list from packages/content/waves/ on disk
- *  (era-census precedent), so a 9th hosting type cannot join the wire by
+ *  (era-census precedent), so a new hosting type cannot join the wire by
  *  silence. Structural shape only: ≥1 / strictly-ascending wave numbers are
  *  the runner's domain wall (mintCorpusDrive), reached through the worker's
  *  boot-fault channel — the codec never re-invents a deeper law. */
@@ -266,6 +266,7 @@ export const CORPUS_WIRE_TABLE_IDS = Object.freeze([
   "trunk-group-voip",
   "serverless",
   "exchange-colo",
+  "colo",
 ] as const);
 
 export type CorpusTableId = (typeof CORPUS_WIRE_TABLE_IDS)[number];
