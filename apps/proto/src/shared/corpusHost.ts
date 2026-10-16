@@ -12,7 +12,7 @@
  * `wireIntentToPlayerIntent` in the codec, E2b).
  *
  * Content arrives as `?raw` build-time strings (the corpusMission /
- * coverage-grid pattern: vite embeds, zero fs in any thread). All EIGHT
+ * coverage-grid pattern: vite embeds, zero fs in any thread). All NINE
  * shipped g1 slices are wired, each paired with the MATCHING type bundle for
  * the invitation law; the wire names a table by its shipped slice identity —
  * the JSON's own `type` minus the `official:` prefix — drift-pinned against
@@ -38,6 +38,7 @@ import type { BootCorpusWire, CorpusTableId } from "./protocol";
 import registryRaw from "../../../../packages/content/threats/registry-core.json?raw";
 import bundleDedicatedRaw from "../../../../packages/content/types/dedicated.json?raw";
 import bundleDnsRaw from "../../../../packages/content/types/dns-hosting.json?raw";
+import bundleExchangeColoRaw from "../../../../packages/content/types/exchange-colo.json?raw";
 import bundleGameServersRaw from "../../../../packages/content/types/game-servers.json?raw";
 import bundleMailHostingRaw from "../../../../packages/content/types/mail-hosting.json?raw";
 import bundleObjectStorageRaw from "../../../../packages/content/types/object-storage.json?raw";
@@ -46,6 +47,7 @@ import bundleSharedWebRaw from "../../../../packages/content/types/shared-web.js
 import bundleTrunkGroupRaw from "../../../../packages/content/types/trunk-group-voip.json?raw";
 import sliceDedicatedRaw from "../../../../packages/content/waves/g1-dedicated-first-quarter.json?raw";
 import sliceDnsRaw from "../../../../packages/content/waves/g1-dns-hosting-first-quarter.json?raw";
+import sliceExchangeColoRaw from "../../../../packages/content/waves/g1-exchange-colo-first-quarter.json?raw";
 import sliceGameServersRaw from "../../../../packages/content/waves/g1-game-servers-first-quarter.json?raw";
 import sliceMailHostingRaw from "../../../../packages/content/waves/g1-mail-hosting-first-quarter.json?raw";
 import sliceObjectStorageRaw from "../../../../packages/content/waves/g1-object-storage-first-quarter.json?raw";
@@ -106,6 +108,11 @@ const CORPUS_TABLES: Readonly<Record<CorpusTableId, CorpusTableEntry>> = Object.
     sliceStem: "g1-serverless-first-quarter",
     sliceRaw: sliceServerlessRaw,
     bundleRaw: bundleServerlessRaw,
+  }),
+  "exchange-colo": Object.freeze({
+    sliceStem: "g1-exchange-colo-first-quarter",
+    sliceRaw: sliceExchangeColoRaw,
+    bundleRaw: bundleExchangeColoRaw,
   }),
 });
 
