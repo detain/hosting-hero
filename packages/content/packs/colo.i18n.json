@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "packId": "pack:colo.i18n",
+  "appliesTo": "official:colo",
+  "locale": "en",
+  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the colocation landlord line — the tenth card, founded on its own verbatim §1.3 dominant verb, Negotiate, blessed by ADR-0014 #D1. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is ACCESS and ARITHMETIC — the amps you meter but cannot touch, the derate everyone forgets, the eviction question with no good answer — and the tenancy is depicted only as consequence: the meter reading, the ladder stage, the blocklist letter. No wiring diagrams, no badge-cloning how-to, no physical-security instruction anywhere; the level teaches that 'you will have to fix things you are not allowed to touch' (§1.3), not how to touch them.",
+  "slots": {
+    "nodeId": {
+      "kind": "entity",
+      "desc": "Board object the decision surface is about (cage row / floor segment / meet-me room id)."
+    },
+    "verb": {
+      "kind": "text",
+      "desc": "Engine intent verb being refused (place/connect/configure/...)."
+    },
+    "availableAtTick": {
+      "kind": "tick",
+      "desc": "Tick at which the queued intent or a freed hand presents."
+    },
+    "relationKind": {
+      "kind": "text",
+      "desc": "Board relation of a cable (data/power/control/trust)."
+    },
+    "slotName": {
+      "kind": "entity",
+      "desc": "Socket designation on a node (PSU, uplink, patch jack, cage position)."
+    },
+    "cabinetId": {
+      "kind": "entity",
+      "desc": "One cabinet by designation — half of the unit this line sells (§0.3: 'A cabinet + amps')."
+    },
+    "tenantName": {
+      "kind": "entity",
+      "desc": "A colocating customer by name — the resident, the overdrawer, the one with lawyers now."
+    },
+    "ampsCommitted": {
+      "kind": "number",
+      "desc": "Amperes a circuit is sold as committed — 'committed power that isn't consumed is nearly pure profit' (§6.x)."
+    },
+    "ampsDrawn": {
+      "kind": "number",
+      "desc": "Amperes the clamp meter actually reads — the drawn line of the sold/usable/drawn ledger."
+    },
+    "breakerId": {
+      "kind": "entity",
+      "desc": "One breaker by panel designation — the shared object the cascade travels through."
+    },
+    "overageStage": {
+      "kind": "number",
+      "desc": "Stage on the enforcement ladder, 1 through 5: notice, warning, billed overage, circuit cap, port disable (§1.3)."
+    },
+    "renewalPct": {
+      "kind": "number",
+      "desc": "Percent quoted on a renewal the doc names for this line ('+60% renewal', §1.5) — the lever, read aloud."
+    },
+    "escalatorPct": {
+      "kind": "number",
+      "desc": "Annual escalator percent baked into the lease ('3%/yr', §lease terms) — the clause that compounds."
+    },
+    "xConnects": {
+      "kind": "number",
+      "desc": "Cross-connects in the meet-me room — every one a faucet dripping gold (§6.x)."
+    },
+    "darkCabinets": {
+      "kind": "number",
+      "desc": "Cabinets billed and dark — the stranded capacity of a ramp nobody started (§ramp law)."
+    },
+    "ticketId": {
+      "kind": "entity",
+      "desc": "Customer support ticket number — this level's combat log."
+    },
+    "hour": {
+      "kind": "time",
+      "desc": "Clock hour a notice or ticket was filed at — the hour the door decisions come in."
+    },
+    "minute": {
+      "kind": "time",
+      "desc": "Clock minute a notice or ticket was filed at."
+    },
+    "day": {
+      "kind": "number",
+      "desc": "Day of the quarter, for the intern's log."
+    },
+    "hostName": {
+      "kind": "entity",
+      "desc": "A building or competitor in press/obituary copy."
+    }
+  },
+  "decision": {
+    "type.colo.name": "Amps and Aisles",
+    "type.colo.codex": "The Landlord's floor: space, power, cooling sold to other companies' engineers. The whole level runs on the new rule: 'you don't control the gear' (§1.3). You cannot see inside the cages, so you meter what you cannot touch — sold, usable, drawn. The dominant verb is Negotiate: a conversation system with tone options and a relationship meter — 'this is the level's combat' — with an enforcement ladder: notice, warning, billed overage, circuit cap, port disable. The catastrophe never breaks your uptime: a tenant trips a shared breaker and the darkness cascade goes through other people's racks.",
+    "visitor.unit.cabinet-plus-amps": "cabinet + amps",
+    "goal.colo.binding": "Amps and hands, not cores: the shortest of the space, power and cooling bars decides what you may sell, the gear you must keep happy is behind doors you cannot open, and the same hands that walk the aisle answer the ticket that means something different to everyone involved — the product is capacity you are not allowed to verify.",
+    "scarce.colo.qos": "Nothing here is sheddable, and the card counts that as the design: leases are resident and committed cabinets are capacity you sold the shadow of — 'a colo lease ... cannot be shed at all' (§3.2) — so the ladder never decides who loses bandwidth, it decides who gets the remote-hands tech and who waits behind the mantrap. The meter sells headroom, not priority: a fair clamp reading is worth more than any queue, and the shed order rides the standard P3-P0 law until the class-level resident-immunity question the engine records is owned.",
+    "skin.colo.inspector": "Concrete grey under hazard yellow: a cage row of frosted and mesh volumes with silhouettes inside, tenant gear drawn in a foreign art style — LED strips, an anime sticker on a bezel — lit only by its own LEDs. The Signature meter is the clamp meter you physically attach, three readouts on one face: sold, usable, drawn, and a dispute when someone's engineer discovers the derate for the first time. 'The darkness is the epistemic position, not a filter' (§1.3): when the bar goes wrong the aisle does not turn red, it goes quiet, and the only light is a rack you are not allowed to open.",
+    "economy.colo.bad-month": "A single tenant, not renewing: the 3–5 year cliff arriving as one signature at the renewal table, and the amps it held suddenly worth a competitor's tour group walking past your dark row.",
+    "cac.colo.tour-sales-cycle": "§6.6 Companion B prices this family row directly: 'Colocation | $2,000–15,000 (sales cycle) | 12–30 months (fit-out) | 0.05–0.2 + remote hands' (:23372) — a five-figure deal desk, a fit-out measured in years, and payback economics the remote-hands tariff tips over. The tour is the funnel: §3.3 'Tenant tour → contract | One, huge | Months | Bad tour, no power available'.",
+    "verbs.colo.transfer.1": "Negotiation-with-a-ladder-behind-it transfers everywhere: any line that sells shared capacity now asks you the same question — what do you meter when you cannot inspect, what does enforcement cost you in relationship, and what is your answer at 2am when the person at the door has a work order and no cabinet number?",
+    "relations.colo.mastery": "The building reads the calendar: escalators written before the margin leaked, meters attached before the dispute, ladders climbed one rung at a time instead of all at once, and the shortest bar so well kept that renewals arrive as signatures instead of sieges — a facility-efficiency bonus the landlord earns in boring quarters (§5.6 'Mastering Colo grants a facility-efficiency bonus').",
+    "relations.colo.distillate": "Playbook: sell the shortest bar, never the prettiest one — committed power you meter honestly is nearly pure profit, and derates you hide are disputes you schedule; meter what you cannot touch, enforce with a ladder rather than a fuse, and remember the renewal is your lever — the day you can only terminate is the day the cage was already leaving.",
+    "handover.colo.runs-out": "Your headroom and your hands. A floor sold against derated amps has no room for someone's bad Tuesday, and a desk whose hands are all walking aisles has none left for the tickets multiplying behind them — the meter does not care which obligations you chose.",
+    "handover.colo.kills-you": "The facility power event: a tenant trips a shared breaker and the cascade of darkness goes through other people's racks — the failure you did not touch, did not see and did not sell, arriving as the building's own physics through cabinets you cannot legally open.",
+    "handover.colo.customer-wants": "The gear they are not allowed to fix: 'reboot rack 7', tonight — a request that means something different to everyone involved, answered through a door you cannot open, at an hour the dock stopped counting as business.",
+    "rosetta.colo.amp-caging": "Committed-amp caging is the cgroup cage pointed at the breaker panel: the same bet that a bounded neighbour is cheaper than an unbounded one, enforced now in derated circuits instead of memory — shared-web cages what a tenant runs, this line cages what their wall outlet can give them.",
+    "rosetta.colo.renewal": "The renewal lever is the renewal cliff with the landlord's handwriting on it: shared-web's cohort leaves at the promo rate's end because renewals are cheap; a colo tenant leaves at the 3–5 year boundary because the fit-out does — and here the cliff is not weather, it is a date you can move with a signature.",
+    "scenarios.colo.renewal-squeeze": "The Landlord Renewal / Landlord Squeeze (§1.5 verbatim): the renewal quote arrives at +{renewalPct}%, and the three doors the doc names open at once — negotiate the number, sign longer for a better rate, or plan a full physical migration of everything you are not allowed to touch. The opponent is a person; the RFP is the wave; the ransom is on letterhead.",
+    "scenarios.colo.whose-cable": "Whose Cable Is That? (§1.3 signature moment): an unlabelled overhead cable runs to a cage decommissioned three years ago, the label board has no answer, the trace needs a hand from a shift that is not working, and the meeting room learns that the audit trail ends exactly where the product begins. Consequence, not instruction: the cable is drawn, never diagrammed.",
+    "scenarios.colo.blocklisted-building": "The Blocklisted Building (§1.3 second signature verbatim): a bulletproof-host tenant 'gets the ENTIRE BUILDING's IP space blocklisted', the mail from every neighbour starts dying on the same address range, and the eviction question lands on your desk with a percentage attached — 'do you evict a customer paying 30% of your revenue?'. The null-route is a choice the meter cannot make for you.",
+    "alert.circuit-overage": "{cabinetId} on {nodeId}: drawn {ampsDrawn} A against {ampsCommitted} A committed — past the derate, into the dispute the power ledger promises. Attach the meter or open the ladder; the tenants will not disagree with whichever you skipped.",
+    "alert.breaker-cascade": "{breakerId} tripped behind {nodeId}: the darkness is walking through {tenantName}'s racks now — the cascade your engineering never touched. Cold aisles first; the blame conversation is scheduled for when the fans are back.",
+    "alert.access-2am": "{hour}:{minute} at the mantrap: badge story checks out, work order does not name a cabinet. You are the one who says no — or the one who says yes and owns the silhouette that walks in.",
+    "alert.ip-taint": "Blocklist advisory: {tenantName}'s traffic is spending {nodeId}'s whole address range — neighbours' mail dying on your building's reputation. The null-route and the eviction are both on your desk; neither is on the meter.",
+    "alert.ladder-stage": "Enforcement ladder stage {overageStage} of five on {cabinetId}: notice, warning, billed overage, circuit cap, port disable — each rung has a legal cost and a relationship cost, and only the first two are cheap.",
+    "terms.committed-versus-metered": "Committed vs metered vs flat-per-cabinet — 'the colo pricing decision' (§1.3): the slider between 'committed power that isn't consumed is nearly pure profit' (§6.x) and the drawn line that ends the argument.",
+    "terms.escalator-clause": "Escalator clause — {escalatorPct}% a year written into the lease: compounding you chose; the five-year deal at three percent is fifteen percent more revenue, and the forgotten clause is the leak you re-sign every quarter.",
+    "terms.meet-me-cathedral": "Meet-me room — 'The Cathedral... the single most profitable room in a colo building' (§6.x): where carrier density becomes your product and every one of the {xConnects} cross-connects is a faucet dripping gold.",
+    "refusal.hands-exhausted": "Both hands are committed. The {verb} intent is queued and presents when a hand frees at tick {availableAtTick}.",
+    "refusal.stamped-in-future": "The {verb} intent is stamped for tick {availableAtTick}, ahead of the current minute. Nothing was spent.",
+    "refusal.unknown-node": "No board object named {nodeId} exists at the current tick. Nothing was changed.",
+    "refusal.edge-exists": "A {relationKind} cable already links {nodeId} to those endpoints. The existing edge was left as it is.",
+    "refusal.slot-occupied": "{slotName} on {nodeId} is occupied. One supplier per socket; disconnect before you reconnect.",
+    "status.rung-1": "Investigating elevated error rates",
+    "status.rung-2": "Degraded performance",
+    "status.rung-3": "Partial outage",
+    "status.rung-4": "Major outage",
+    "status.rung-5": "We are aware of the fire."
+  },
+  "flavour": {
+    "ticket.subject.overage": "we are being billed for amps we never drew — our meter says {ampsDrawn} A",
+    "ticket.body.overage": "Ticket {ticketId}, filed {hour}:{minute} morning. Your invoice says committed, our clamp says drawn, and somewhere between those two words lives a clause about derating that nobody pointed at during the tour. We are not disputing physics. We are disputing which physics your sales team described. Please attach the ledger to the invoice, or attach the salesperson to the dispute.",
+    "ticket.subject.reboot7": "reboot rack 7",
+    "ticket.body.reboot7": "That is the whole ticket. Rack 7 is, depending on which spreadsheet you trust, a cabinet, a row position, a cage designation or a vibe — and the gear inside it is not ours to describe to you. Remote hands are billable, we have read the tariff. What we have not read is which of our engineers you called at {hour}:{minute} to ask what we meant. The answer to 'reboot rack 7' means something different to everyone involved, and tonight that includes the badge reader.",
+    "ticket.subject.dock": "our delivery says seven boxes, the floor says six, and the recipient does not work here",
+    "ticket.body.dock": "The dock logged it on {day}. The driver photographed a person who was certainly wearing a lanyard. The cage with our number on it contains one box short of a deployment, and your remote-hands rate starts where my patience ends. Please tell me the building runs on more confidence than a mantrap full of strangers agreeing about furniture.",
+    "ticket.subject.untouchable": "invoice again — the rack is OURS and the power is STILL DRAWN",
+    "ticket.body.untouchable": "Yes, the account is suspended. Yes, per your own jurisdiction's little paragraph, your hands may not touch the gear for ninety days. And yes, the drawn line on your ledger disagrees with both of those facts every hour of every one of those days, at your meter, in our direction. You built a ladder with five rungs and put the one that says 'the physics is on my side' at the bottom of it.",
+    "press.headline.blocklist": "No outage at {hostName}, landlord confirms — one tenant's traffic, one address range, and every neighbour's mail queue now arrives on someone else's reputation; the incident page calls it 'a building-level event'.",
+    "press.headline.eviction": "{hostName} weighs eviction against thirty percent of revenue — the cage that pays the mortgage has stopped paying forward, and the tour group arrived anyway.",
+    "forum.thread.clamp": "Anyone else's tenants dispute the clamp before they dispute the invoice? We started attaching the sold/usable/drawn triplet to every overage notice, {ampsDrawn} A does not argue back. Bought the third meter stick this quarter. Sleeps better.",
+    "forum.thread.escalator": "Whoever invented the {escalatorPct}% escalator was right and I cannot unsee it. Watched a five-year deal quietly become a fifteen-percent deal clause by clause — and then watched the renewal thread where the same clause becomes the plaintiff's second exhibit.",
+    "chatter.desk.night": "Desk at {hour}:{minute}: badge checked out, cabinet number didn't. Said no. Said no twice. The 'yes' version of me is why they built the ladder.",
+    "chatter.desk.aisle": "Hot aisle's blocked again — somebody's switch is learning to be furniture. Fans up, amps up, bar down. The building negotiating with itself, no ticket filed.",
+    "codex.derate": "'A 20A circuit derated to 16A continuous and tenants always forget' (§1.3 verbatim): the gap between the number on the panel and the number the physics allows is the number this line bills on. The meter remembers so the lease can't have to.",
+    "codex.darkness": "'The darkness is the epistemic position, not a filter' (§1.3 verbatim): in every other level you build to be seen; here the unreadable cage IS the product — the tenant's privacy, the landlord's fog. You do not look inside. You look at the draw, the heat and the bill, and you negotiate.",
+    "loading.tip.click": "In colo you control nothing above the cabinet door (§0.2). Objects here simply cannot be clicked — you see power draw and heat, and you file a request. The request is the gameplay.",
+    "loading.tip.ladder": "Notice, warning, billed overage, circuit cap, port disable (§1.3): a ladder makes the powerlessness tense rather than flat. Each rung you skip is a rung the dispute will climb for free.",
+    "intern.entry.badge": "Day {day}: learned the mantrap says no to more contractors than intruders. The senior tech: 'a badge policy that slows your own techs is still the cheapest insurance in the building.' He said it at {hour}:{minute}, right after saying no to my badge for the fourth time.",
+    "intern.entry.tour": "Day {day}: walked the tour past the dark cabinets. The guide called the empty row 'headroom' and the invoice called it 'committed'. The drawn line called it nothing — it just kept drawing, on the rack the law says we can't touch. The meter, she told me afterward, is the only tenant advocate in the building.",
+    "sticky.note.gear": "Taped above the control desk: 'You don't control the gear.' Under it, in six hands: 'And you will have to fix things you are not allowed to touch.' Nobody has laughed at either since the breaker week. — console note, post-cascade",
+    "abuse.canon.overage": "Enforcement advisory stage {overageStage} of five on {cabinetId}: drawn history attached, derate clause cited, tone option recorded. Next rung bills; the one after that caps the circuit. This message is the notice rung, and the ladder thanks you for reading it in order.",
+    "abuse.canon.taint": "Building-level abuse advisory: a tenant on {nodeId} is spending the shared range. Port disable is rung five and it is yours to climb; null-routing the address block is not on the ladder at all — the upstream carrier wrote that rung, and it does not negotiate.",
+    "vendor.reply.firmware": "Have you tried updating to the latest firmware?",
+    "vendor.reply.log-bundle": "Please collect a full log bundle.",
+    "vendor.reply.known-issue": "This is a known issue, fixed in the next release (no ETA).",
+    "vendor.reply.inactive": "Closing due to inactivity.",
+    "achievement.shortest-bar": "The Shortest Bar Held.",
+    "achievement.ladder-in-order": "Climbed It In Order.",
+    "achievement.renewed-not-evicted": "Renewed, Not Evicted.",
+    "canary.floor-tally": "Sold {ampsCommitted} A, drawn {ampsDrawn} A, dark {darkCabinets}, faucets {xConnects} on {nodeId} — the hold, the overage and the taint are the same instrument, read three times."
+  },
+  "_provenance": {
+    "type.colo.name": "§1.3 card title first slash-segment verbatim ('Amps and Aisles'); README §Key literals",
+    "type.colo.codex": "§1.3 card paragraph cores verbatim: you-don't-control-the-gear law, meter-what-you-cannot-touch with the sold/usable/drawn ledger, dominant-verb line + 'this is the level's combat', Enforce ladder rungs, catastrophe sentence; + §0.3 row columns; README §Key literals",
+    "visitor.unit.cabinet-plus-amps": "§0.3 row unit column verbatim ('A cabinet + amps'); bundle key pin",
+    "goal.colo.binding": "§occupancy/power three-bar law + §1.3 you-don't-control-the-gear + 'reboot rack 7' clause; README §Key literals",
+    "scarce.colo.qos": "§3.2 resident-unshedable law (colo-lease exemplar verbatim) + §1.3 meter/ladder laws; standard-P3-P0 ladder ride recorded in bundle scarce._todo (no named ladder authored for this line); §9.3 clause-2 sober surface",
+    "skin.colo.inspector": "§1.3 visual paragraph verbatim cores (concrete-grey/hazard-yellow, mesh volumes and silhouettes, foreign art style, darkness-is-epistemics sentence) + §8.x clamp-meter ledger rows (sold/usable/drawn); §9.3 sober surface",
+    "economy.colo.bad-month": "§6.x Companion C family row 'a single tenant not renewing' (:23387) — this line's HOME row (type-9 carried the same family row to the variant), renewal-lever frame from :938; README §Key literals",
+    "cac.colo.tour-sales-cycle": "§6.6 Companion B family row verbatim (Colocation: sales cycle / fit-out / payback + remote hands, :23372) + §3.3 'Tenant tour → contract' funnel row (:12496); the family row this card IS — priced, not placeholder",
+    "verbs.colo.transfer.1": "§1.9 Portable Skill idiom applied to the negotiate-with-a-ladder posture; 2am clause and derate from §1.3; authored",
+    "relations.colo.mastery": "§5.6 'Mastering Colo grants a facility-efficiency bonus' (:20963) verbatim + §1.3 escalator/derate/ladder laws; wording authored",
+    "relations.colo.distillate": "§1.3 derate + Enforce ladder + §renewal-lever law (:938 'the renewal, not termination'); playbook form per §1.9 distillate law",
+    "handover.colo.runs-out": "§0.3 scarce column 'Power and cooling' + §1.3 ticket system clause; README §Key literals",
+    "handover.colo.kills-you": "§1.3 catastrophe sentence verbatim cores (shared breaker / cascade of darkness / other people's racks) + §0.3 failure column ('Facility-level power event'); README §Key literals",
+    "handover.colo.customer-wants": "§1.3 threat sentence verbatim ('a request to reboot rack 7 that means something different to everyone involved') + teaches-clause 'fix things you are not allowed to touch'; README §Key literals",
+    "rosetta.colo.amp-caging": "README §Key literals; §committed-vs-metered law (derate/committed-amps) translated to the baseline cgroup-caging metric (§1.9 Rosetta law)",
+    "rosetta.colo.renewal": "README §Key literals; §:938 'your real lever is the renewal, not termination' + §6.6 term rows translated to the baseline renewal-cliff metric (§1.9 Rosetta law)",
+    "scenarios.colo.renewal-squeeze": "§1.5 'The Landlord Renewal / Landlord Squeeze' (:3899-3901) verbatim (+60% quote; negotiate/longer-signature/migration doors); the doc's own Negotiate exemplar for this line",
+    "scenarios.colo.whose-cable": "§1.3 signature moment verbatim ('Whose Cable Is That?' / unlabelled cable / cage decommissioned three years ago); consequence-only framing per §9.11",
+    "scenarios.colo.blocklisted-building": "§1.3 second signature verbatim (bulletproof-host tenant / ENTIRE BUILDING's IP space / 30% of revenue); §Tier-4 collateral-darkening row; consequence-only, §9.11",
+    "alert.circuit-overage": "§1.3 derate sentence + §6.x committed-vs-metered law (sold/usable/drawn); §9.3 clause-2 sober surface",
+    "alert.breaker-cascade": "§1.3 catastrophe sentence verbatim cores; §9.3 sober surface",
+    "alert.access-2am": "§1.3 access-list problem verbatim cores ('no good answer' / 'You are the one who says no, at 2am'); §9.3 sober surface",
+    "alert.ip-taint": "§1.3 second signature verbatim cores (entire building's IP space blocklisted; eviction question); §9.3 sober surface",
+    "alert.ladder-stage": "§1.3 Enforce ladder verbatim (five rungs; legal cost / relationship cost); §9.3 sober surface",
+    "terms.committed-versus-metered": "§1.3 'the colo pricing decision' clause + §committed-power pure-profit sentence verbatim; terms register",
+    "terms.escalator-clause": "§1.3 escalator mechanics verbatim (3%/yr; ~15% more over five years; permanent margin leak); terms register",
+    "terms.meet-me-cathedral": "§6.x 'The Cathedral' / 'single most profitable room' verbatim + faucet image (:23471); terms register",
+    "refusal.hands-exhausted": "§9.3 clause-2 sober-surface law; engine door reason code; cross-pack byte-identical",
+    "refusal.stamped-in-future": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.unknown-node": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.edge-exists": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.slot-occupied": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "status.rung-1": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-2": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-3": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-4": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
+    "ticket.subject.overage": "§1.3 derate sentence in tenant register; ticket register comedy",
+    "ticket.body.overage": "§committed-vs-metered dispute event ('when a tenant's engineer discovers the derate for the first time') dramatized; §9.3 ticket register; no technique named, §9.11",
+    "ticket.subject.reboot7": "§1.3 threat clause verbatim ('a request to reboot rack 7...'); ticket register",
+    "ticket.body.reboot7": "§1.3 ambiguity clause + remote-hands billing law dramatized; §9.3 register; consequence-only, §9.11",
+    "ticket.subject.dock": "§1.3 delivery beat verbatim cores (person who doesn't work there / seven boxes one missing); ticket register",
+    "ticket.body.dock": "§1.3 dock paragraph dramatized as a ticket; lanyard-and-photo social logic kept consequence-side only per §9.11",
+    "ticket.subject.untouchable": "§1.3 non-paying-tenant clause verbatim core (90 days / definitely using power); ticket register",
+    "ticket.body.untouchable": "§1.3 untouchable-gear law inverted from the tenant's side; the ladder rung named back at the landlord; wording authored",
+    "press.headline.blocklist": "§1.3 second signature in §9.3 press register; consequence-only, §9.11",
+    "press.headline.eviction": "§1.3 'do you evict a customer paying 30% of your revenue?' verbatim beat as press copy; §9.3 press format",
+    "forum.thread.clamp": "§6.x sold/usable/drawn ledger in forum register; §9.3 industry-forum channel",
+    "forum.thread.escalator": "§1.3 escalator law + renewal-squeeze beat in forum register; §9.3 forum register",
+    "chatter.desk.night": "§1.3 'You are the one who says no, at 2am' survived on the desk; chatter channel",
+    "chatter.desk.aisle": "§1.3 hot-aisle threat clause as overheard floor talk; chatter channel",
+    "codex.derate": "§1.3 derate sentence verbatim; codex register",
+    "codex.darkness": "§1.3 visual-paragraph epistemics sentence verbatim; §0.2 :566 control-granularity clause; codex register",
+    "loading.tip.click": "§0.2 :566 'objects simply cannot be clicked — file a request' verbatim cores; loading channel",
+    "loading.tip.ladder": "§1.3 Enforce ladder + 'makes the powerlessness tense rather than flat' verbatim; loading channel",
+    "intern.entry.badge": "§1.3 access-list problem + §friction-unit law (:249 badge policy slows your own techs) verbatim; §9.3 Intern's Log concept",
+    "intern.entry.tour": "§ramp stranded-capacity clause + §3.3 tour row dramatized; §9.3 Intern's Log; meter-not-mechanics framing per §9.11",
+    "sticky.note.gear": "§1.3 'you don't control the gear' + teaches-clause verbatim on the console wall; §9.3 sticky-note channel",
+    "abuse.canon.overage": "§1.3 ladder rungs named as remedy sequence only; advisory-text only, §9.11",
+    "abuse.canon.taint": "§1.3 blocklist beat in abuse-desk register; the null-route rung the doc attributes to the upstream carrier; notice-text only, §9.11",
+    "vendor.reply.firmware": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.log-bundle": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.known-issue": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.inactive": "§9.3 vendor comedy channel (verbatim)",
+    "achievement.shortest-bar": "§occupancy three-bar law as victory; §9.3 achievement-name channel",
+    "achievement.ladder-in-order": "§1.3 Enforce ladder survived rung-by-rung; §9.3 achievement channel",
+    "achievement.renewed-not-evicted": "§:938 renewal-lever law + §1.3 30%-tenant question answered; §9.3 achievement channel",
+    "canary.floor-tally": "§1.3 hold/overage/taint triad; canary-notice channel (precedent: dedicated canary.row-tally, object-storage canary.comb-tally, voip canary.busy-wall-tally, serverless canary.warm-pool-tally, exchange-colo canary.coil-tally)"
+  },
+  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates the family as '2001 dot-com colo' (:651) and the era-owner pass, not this lane, decides whether the family cell becomes a bundle date). The win threshold on the shortest-bar margin, every pressure mapping in the wave slice, the diurnal amplitude, the ladder rung costs (legal and relationship), the remote-hands tariff, the escalator and renewal percentages' mechanical effect, and the §0.3 'cabinet + amps' versus §6.6 'U / kW / cross-connect' unit words (unreconciled per owner law) stay PROVISIONAL-B / owner-law until the re-author sweep; the physical-security beats deliberately carry no technique detail — their slots are consequences (amps, stages, counts, hours), never methods, per §9.11. "
+}

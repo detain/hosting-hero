@@ -1,0 +1,358 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:colo",
+  "_todo": "All human strings are keys into file:packs/colo.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. TENTH CARD of the OD-14(a) 20-launch canon: the §1.3 generic-colo card 'Amps and Aisles' / 'Cage 7' / 'The Landlord's Grid' ships a dominant-verb line VERBATIM — 'Dominant verb: Negotiate' — the FIRST card in the corpus whose named verb was off-roster at authoring and had to wait for an owner law call: ADR-0014 #D1 (2026-10-16) blessed Negotiate onto loader lint TIER_EXTENDED_VERBS (fb18c05 provenance, lane-6 of the ADR's consequence list names this lane) precisely so this card could ship founded on its own verb. This is NOT the ninth card: official:exchange-colo is the microsecond-cathedral variant (geometry-as-product, fairness fatality, Sell); this bundle is the landlord itself — the §0.3 row 'Colocation | Power and cooling | Facility-level power event | Other companies' engineers | A cabinet + amps' and the §1.3 doctrine 'you don't control the gear'. Pack authored at file:packs/colo.i18n.json — cac.colo.tour-sales-cycle is the colo family's OWN §6.6 Companion B row, priced for the first time by a colo card.",
+
+  "meta": {
+    "name": "type.colo.name",
+    "codexSummary": "type.colo.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.cabinet-plus-amps",
+    "durationClass": "Resident",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "The §3.1 five-stat ledger rows this line verbatim in QUALITATIVE terms — the colo tour entry: 'patience months / value enormous / weight one cabinet row / loyalty 5 years / fragility catastrophic' (:11463) — and the section's own law demands numbers the doc never writes. All five authored null + this cite, never forged (exchange-colo ships the same ledger for its variant; the family row is this card's home, the variant's carry was its honest borrowing). The doc's own words are the fatal shape: 'fragility catastrophic' is the qualitative read of the facility-power fatality (§0.3 failure column verbatim), and 'loyalty 5 years' is the lease clock owned by tempo/contract law, not a bounce scalar."
+    },
+    "patienceModel": {
+      "mode": "resident",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "mode 'resident' — the §3.2 exemplar is this line's unit named verbatim: 'a colo lease and a GPU training run feel identical to manage' and such a unit 'consumes committed capacity and cannot be shed at all' (:11689). First corpus USE was type-9's (credit stays there); this is the family's HOME claim of its own lease — the engine vocabulary (src/pipeline/defaults.ts PATIENCE_MODE_VOCAB: 'once it has joined a queue it WAITS — capacity is held, not abandoned') describes the tenant that plugs in and never leaves. budgetMs/bounceSigmoid null BY MODE LAW (the mode never consults a budget); the §3.1 patience word 'months' is lease-clock prose, not a LUT input — flagged for the tuning pass."
+      }
+    },
+    "party": {
+      "allOrNothing": true,
+      "size": null,
+      "_todo": "allOrNothing TRUE verbatim at the doc's OWN colo exemplar of the party-arrival law: 'Colo — a tenant's deployment (seven cabinets, or they go elsewhere)' (:11770). size null: the seven is a parenthetical example, not an authored scalar; the ramp economics ('the tenant takes 2 cabinets now, 8 in', :5600 area) live in buildables._todo and scenarios, never in a forged integer. Type-9 carried this same family law to its variant; here it names the family."
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null,
+      "_todo": "no herd law is authored for leases; the arrival clustering that matters here is the deal ramp and the tour funnel (§3.3 'Tenant tour → contract'), which are cohortSpawn laws, not herding scalars — never conflated, never invented."
+    },
+    "populationEffect": true,
+    "retryAmplifies": false,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-cabinet-amp",
+    "trustReadable": true,
+    "archetypeRefs": [],
+    "_todo": "durationClass 'Resident' verbatim (§3.2's exemplar clause names the colo lease itself, :11689); the same section's costume law feeds skin._todo ('shape encodes duration class only — ... hexagon = resident', :11695). populationEffect TRUE: the §2.12 generalization law names this line's mechanism verbatim — 'the colo meet-me room... get above the threshold fast, or don't start' (:9476) — carrier density attracts tenants and tenant density attracts carriers, one mutual attractor; the Tier-4 landlord row makes the meet-me room a first-class object of exactly that room (:932 area). retryAmplifies false: a lease does not retry. cohortSpawn tier 3: tenants arrive as deployments from customer cards (R29 cohort law; §3.3 'Tenant tour → contract | One, huge | Months'). costPerInvocation 'per-cabinet-amp' — the L3 level's own price sentence: '$180/mo colo for 2U + 1 amp + a /29' (:1105), per-U / per-amp / per-cross-connect / per-remote-hands-hour billing per §6.6's family column 'U / kW / cross-connect' (:23308); where type-9 rode the cabinet-month, this line prices the AMPS alongside the space because the §0.3 unit column sells them together: 'A cabinet + amps'. trustReadable TRUE verbatim-grounded: the card authors the meter — Negotiate runs 'through a ticket and conversation system with tone options and a relationship meter' (§1.3); 'this is the level's combat' — the tenant's trust is not inferred here, it is READ on an instrument the landlord maintains; the one line in the corpus where trust is a named piece of UI. archetypeRefs empty by authoring law: the visitor here IS the cabinet-plus-amps (§3.3's tour→contract row is lease-native; a tour archetype would move the visitor-registry censuses this lane is fenced off from — flagged for the registry-owner pass)."
+  },
+
+  "goal": {
+    "nodeType": "metered-cages",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "shortest-bar-margin",
+      "threshold": null,
+      "_todo": "The hold is the shortest bar: the occupancy/power/cooling three-bar law is verbatim — a floor's sellable capacity is 'the shortest of the three bars' and the card's whole tension is which bar binds this week (§power-as-product/§occupancy law area). Win = keep sold below usable on the binding bar while the aisles stay walkable and the ladders stay un-climbed. But the card writes NO win clause and the only scalars it authors are the catastrophe's (a tripped shared breaker, a blocklisted building) and the derate's ('20A circuit derated to 16A continuous and tenants always forget', §1.3 verbatim) — the derate is a physics fact, not a threshold for the player's success; authoring a scalar off it would forge the doc's deliberate void. threshold null + this cite, same law exchange-colo cites for its unauthored skew clause. The meter trio the doc DOES write — 'sold / usable / drawn' on the cabinet power ledger (:22508 area) — is the instrument; the held metric names what the instrument guards."
+    },
+    "loseCondition": {
+      "kind": "facility-power-event"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.colo.binding"
+  },
+
+  "scarce": {
+    "resourceId": "power-and-cooling",
+    "meterWidget": "cabinet-power-ledger",
+    "meterBoundStat": "shortest-bar-margin",
+    "commercialSlider": "power-billing-model",
+    "operationalDials": [
+      "badge-policy-strictness",
+      "enforcement-ladder-setting",
+      "remote-hands-tariff"
+    ],
+    "windowGrows": false,
+    "shedOrder": "standard-p3-p0-ladder",
+    "qosAnswer": "scarce.colo.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly-in-advance",
+      "escalator": true,
+      "grandfathering": false,
+      "_todo": "The lease block is this card's OWN family row verbatim — §6.6 'Colocation | U / kW / cross-connect | 3–5 year leases | high | monthly in advance on a multi-year term | building + power' (:23308) with the correction 'multi-year term billed monthly in advance with an escalator, a deposit and an NRC — not annual invoicing' (:23336) — and the lease-terms section names the escalator directly: '3–5 year leases with 3%/yr escalators, deposits, capitalized fit-out recovered over ~60 months'. escalator TRUE verbatim-home: the card prices the forgetting ('five-year deal ~15% more... forgetting = a permanent margin leak', §1.3) — type-9 claimed first corpus use carrying this same family row to its variant; the claim and the credit stay theirs, this is the row's home. default 'monthly-in-advance' from the correction verbatim. grandfathering FALSE: no grandfathering clause is authored for this family (§6.12 term-structure instruments — deposit, NRC, ramp-credit — are unmodeled; recorded, not invented). 'The clock is slower and each decision is heavier' (§lease-terms) is tempo prose the Resident/contract law already carries; no seasonality scalar forged."
+    },
+    "seasonality": [],
+    "diurnalBaseline": "always-on-floor-dock-daylight",
+    "_todo": "simTimeScale 'ms' — RIDE the anchor: the landlord's clock is the meter's sampling (draw, temperature, breaker state) and the negotiation is wall-clock human time; the card authors no sub-millisecond physics (its µs cousin took µs for the latency product, §tempo type-9 — this line's product is AMPS and the meter reads them in real time), and the tempo slot deliberately stays anchor-valued to hold the hook budget at five. HONEST TENSION ON RECORD: the §'Time granularity changes' roster says verbatim 'Colo runs in **years** (the lease)'. The lease clock IS real and is authored where it fits without falsifying anything: tempo.contractTerms multi-year + escalator TRUE, economy.termStructure 3–5-year leases, the lease-ramp-calendar and escalator-clause-ledger mechanics, and §3.1's 'loyalty 5 years' patience-word; what it is NOT is the tick clock of the playable quarter, which is meter samples and ticket traffic. Claiming 'years' in the simTimeScale slot would make the changed hooks six — the CHANGED_HOOKS budget (3–5) has no sixth room, and every other candidate slot (meter, slider, dials, keyhole gag, mechanics list) is card-verbatim-forced and cannot be faked to make space. permanentIncidentClock false: the incident clock is the LEASE — slow, calendared, renewable; a facility event is instantaneous and its aftermath is a negotiation, not a fuse; §2.24's keep-a-fuse-off-the-floor law rides here as on the sibling colo line. seasonality []: no colo season is authored; inventing a curve would move the waves-lane catalogue — recorded debt. diurnalBaseline 'always-on-floor-dock-daylight' AUTHORED-FLAGGED: the floor never sleeps (the residents live there — §1.3 verbatim posture) while the HUMAN rhythm the card does name runs on dock hours, tour daylight and the 2am exception ('You are the one who says no, at 2am'); the doc never writes a curve, so the name carries the shape and the waves lane owns every number (PROVISIONAL-B)."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.1,
+      "human": 0.15,
+      "entropic": 0.2,
+      "systemic": 0.2,
+      "customerAsThreat": 0.35,
+      "_todo": "customerAsThreat .35 — the card's threat sentence is TENANTS from first word to last ('a tenant overloading a circuit, a tenant blocking your hot aisle with their switch, an unsecured cabinet, a request to 'reboot rack 7' that means something different to everyone involved, the mining rig that blows the power budget, the consumer-PSU that fails violently, the space heater in the build room, the social-engineered 'I'm here for the Dell drive swap', the tailgater at the mantrap, the non-paying tenant whose gear you legally cannot touch for 90 days but who is definitely using power') and the Tier-4 landlord row states the law plain: 'abuse handling (your own customers are now a threat vector)' (:932 area). entropic .2 — the one family the fog makes REAL: gear decays inside cabinets you are not allowed to open (the consumer-PSU 'fails violently', the space heater, the breaker that trips — thermodynamics in the dark; the defining gag guarantees you learn about entropy from the meter, not the object). systemic .2 — shared infrastructure is the product and the exposure: the shared-breaker cascade darkens *other people's* racks (§1.3 catastrophe verbatim), one tenant's abuse gets 'the ENTIRE BUILDING's IP space' blocklisted (§1.3 second signature), and the three-bar law couples space, power and cooling so any one bar's failure is the building's. human .15 — the negotiation desk made flesh: tours walking the floor, dock deliveries ('gear to a person who doesn't work there, no cabinet number, seven boxes and one is missing'), the 2am contractor access decision 'with no good answer', requests whose meaning differs by reader. malicious .1 — the physical-social floor: the card's two intrusion beats are tailgating and the social-engineered drive swap, people-shaped and rare, not remote armies; the flood that darkens a row arrives as a TENANT's problem (see signatureThreats). Sum 1.00 (micro-exact 100000/150000/200000/200000/350000). Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "entropic",
+      "systemic",
+      "customerAsThreat"
+    ],
+    "signatureThreats": [
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "vulnerable-plugin-compromise", "mechanical": true },
+      { "id": "udp-amplification-barrage", "mechanical": true },
+      { "id": "empty-server-spiral", "mechanical": true },
+      { "id": "chargeback-swarm", "mechanical": true },
+      { "id": "noisy-query-table-scan", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "per-amp-circuit-map": ["hoarder-noisy-neighbor"],
+      "mantrap-and-badge-system": ["vulnerable-plugin-compromise"],
+      "meet-me-room": ["udp-amplification-barrage"]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "concurrency",
+      "data-integrity",
+      "hands",
+      "cash",
+      "reputation"
+    ],
+    "waveTable": "file:waves/g1-colo-first-quarter.json",
+    "_todo": "Threat mapping law (dns/mail/dedicated/object-storage/voip/serverless/exchange-colo precedent — registry ids re-framed in _todo cites, zero new registry entries): the card names its threats as OBJECTS and REQUESTS; none is a registry id, so each rides the closest existing mechanic — ticket-avalanche-hydra = the remote-hands ticket flood, 'a request to reboot rack 7 that means something different to everyone involved' (§1.3 verbatim) — the card's ticket-and-conversation system IS this level's combat, and the registry's one swarm-on-hands engine fights it; hoarder-noisy-neighbor = the non-paying tenant 'whose gear you legally cannot touch for 90 days but who is definitely using power' (§1.3 verbatim) plus the dark-cabinet hold — the registry's committed-capacity eater re-framed onto committed AMPS; vulnerable-plugin-compromise = the physical bypass, 'the social-engineered I'm here for the Dell drive swap', 'the tailgater at the mantrap', 'an unsecured cabinet' (§1.3 verbatim) — the registry's Bypass/Flyer entry whose software costume is re-worn as a badge story: compromise walks in through the loading dock; udp-amplification-barrage = the bulletproof-host signature — a tenant's incoming flood lands on shared upstream and 'gets the ENTIRE BUILDING's IP space blocklisted' (§1.3 verbatim; the Tier-4 row's 'a tenant gets DDoSed and the collateral row darkens left-to-right' is the same event's second frame) — the registry's one raw-volume Tank; empty-server-spiral = the grey floor of the failed ramp and the non-renewal ('a single tenant not renewing', Companion C :23387) — Healer/Spawner on reputation, the tours now walking past dark hexagons; chargeback-swarm = the enforce-ladder climbed in reverse: billed overages disputed as a crowd, the non-payer's ledger made mechanical (customerAsThreat on cash); noisy-query-table-scan = the hot-aisle block and the thermally thrashing rig — 'a tenant blocking your hot aisle with their switch' (§1.3 verbatim) — the registry's Debuffer re-framed onto cooling: their heat is everyone's throttle (fans ramp, draw climbs, every bar shortens); scanner-drizzle = the mantrap reconnaissance, the clipboard at the fence line and the caller verifying the delivery that isn't scheduled — the registry's Stealth probe wearing its crawler mask (this bundle's lookalike seed: social engineering masquerading as a visitor, OD-18 direction law satisfied by reuse, no sixth seed added). The mining rig, the failing PSU and the space heater have NO attacker id: they are the entropic weight the meter reads and the ladder answers — the darkness inside the cabinet is the epistemic position (visual paragraph verbatim), so their mechanic is the sold/usable/drawn ledger and the breaker, recorded here rather than forged into registry entries. activeFamilies carries ALL five — the one colo-family floor law the sibling variant denied itself (entropic .05 excluded because cables don't decay) does NOT hold here: gear rots in the dark by the card's own sentence, and .1 sits above the floor."
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "concrete grey",
+      "accent": "hazard yellow",
+      "chord": [
+        "concrete grey",
+        "galvanized steel",
+        "caution yellow-black hatching",
+        "cage-mesh navy",
+        "badge-reader green"
+      ]
+    },
+    "materialPreset": "preset:concrete-and-hazard-paint",
+    "visitorCostume": {
+      "hull": "hexagon-cabinet",
+      "propSlot": "badge-lanyard"
+    },
+    "heroSilhouette": "asset:hero.cage-row",
+    "heroObject": "cage-row",
+    "meterFace": "cabinet-power-ledger",
+    "catastropheFx": "fx:shared-breaker-darkness",
+    "ambientSoundPack": "sound:crac-hum-and-breaker-tension",
+    "densityMultiplier": null,
+    "arrivalRhythm": "always-on-floor-dock-daylight",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.unlabelled-cable",
+    "signatureMotion": "motion:clamp-meter-attach",
+    "signatureFrame": "frame:lit-aisle-dark-cages",
+    "lodContract": {
+      "full": "asset:lod.cage-row.full",
+      "icon16": "asset:lod.cage-row.icon16",
+      "pip": "pip:caution-yellow",
+      "aggregate": "agg:cage-mesh-silhouettes",
+      "inspector": "skin.colo.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented (the Tier-4 row puts the Z3 floor plan where 'rack is the atom' (:940 area), but that is renderer altitude-table territory, not a bundle scalar). Palette chord VERBATIM from the card's visual paragraph: 'Chord: concrete grey · galvanized steel · caution yellow-black hatching · cage-mesh navy · badge-reader green'; dominant/accent from the card's opening two words of its art direction — 'The Landlord.' concrete grey + hazard yellow' (§1.3 verbatim) — flagged for owner palette ratification (serverless/exchange-colo precedent: the chord's notes are the doc's, the dominant/accent pick is the lane's). Hero object: THE CAGE ROW — the defining gag made buildable: 'you cannot see inside the cages — frosted or mesh volumes with silhouettes inside, tenant gear drawn in a FOREIGN art style... lit only by their own LEDs and the aisle spill; the darkness is the epistemic position, not a filter' (§1.3 verbatim); hence heroSilhouette cage-row, costume hull 'hexagon-cabinet' (§3.2 duration-class shape law 'hexagon = resident', :11695, worn by the card's cabinet) and propSlot badge-lanyard (every tenant body in this level arrives through the mantrap with one). catastropheFx fx:shared-breaker-darkness — the card's catastrophe verbatim: 'a tenant trips a shared breaker and the cascade of darkness goes through OTHER PEOPLE'S racks'; the 0.5s meter animation the card demands ('the Cabinet Power Ledger should be a clamp meter you physically attach, with a click-to-inspect animation', §8.x :1683 area) is signatureMotion motion:clamp-meter-attach — 'metering a tenant IS an act, not a given. That single interaction teaches the whole colo relationship' (verbatim); commercialArtifactIcon asset:artifact.unlabelled-cable — 'Whose Cable Is That?' (§1.3 signature moment verbatim: the unlabelled overhead cable to the cage decommissioned three years ago), the bad-month artifact of the line. meterFace bound to scarce.meterWidget per the R15 pairing law. arrivalRhythm AUTHORED-FLAGGED (see tempo._todo). aggregate 'agg:cage-mesh-silhouettes' = the same defining gag at altitude — at Z2 a colo floor is a row of mesh volumes and aisle spill, and the busy floor's story is which silhouettes glow. ambientSoundPack authored from the facility rows (CRAC hum, the breaker's tension — Tier-4 names CRAC/UPS/generator as first-class :932 area); bespoke refs counted at exactly five per R48/R49 (heroSilhouette, catastropheFx, commercialArtifactIcon, lod.full, lod.icon16)."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4's era grid dates the FAMILY as '2001 dot-com colo' (:651) — this card IS that family row, yet the grid cell is a sketch, not a card clause, and every shipped bundle leaves the slot null pending the era-owner pass (R66 law: placeholder, never invented); the capability gates the doc DOES author for this line ('Your own facility + power headroom → unlocks Colocation', §5.6 :20787) ride relations.unlocks instead; status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "cabinet-and-amps",
+    "revenueShape": "multi-year-advance-with-escalator",
+    "marginProfile": "high",
+    "cashTiming": "monthly-in-advance",
+    "termStructure": {
+      "typical": "3-5-year",
+      "churn": "exit-lead-time-12-18-months",
+      "_todo": "§6.6 revenue table verbatim: 'Colocation | U / kW / cross-connect | 3–5 year leases | high | monthly in advance on a multi-year term | building + power' (:23308); Companion A: 'Colocation | 3–5 years | 0.3–0.8% [monthly churn] | +12 to +18 months (fit-out)' (:23349); Companion C bad month: 'a single tenant not renewing' (:23387). typical '3-5-year' verbatim. churn authored as the EXIT SHAPE rather than the 0.3–0.8% scalar (never forged into a bundle field): the fit-out lead-time IS why colo churn is slow — leaving costs you a new building's worth of migration, and the card's renewal lever (:938 'in colo your real lever is the renewal, not termination') is the same fact read from the landlord's side."
+    },
+    "cacProfile": "cac.colo.tour-sales-cycle",
+    "ticketsPerCustomer": null,
+    "signatureCost": "building-and-power",
+    "badMonth": "economy.colo.bad-month",
+    "fifthAxisScore": {
+      "metric": "occupancy-pue-sla-satisfaction",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.x fifth-axis row verbatim: 'Colo on occupancy, PUE, SLA adherence, and tenant satisfaction' (:637) — four instruments for one line, the widest axis entry in the corpus, so the single-metric slot carries the joined slug and the weight stays unauthored (R42 law; exchange-colo precedent for shipping the row's own frame: theirs took §0.3's scarce column, this card has a named four-fold axis and it is quoted complete)."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": true
+    },
+    "_todo": "unitOfSale 'cabinet-and-amps' — §0.3 unit column verbatim ('A cabinet + amps'); the two meters stay unreconciled into one word on purpose — §6.6 prices 'U / kW / cross-connect' (three readouts, :23308), the L3 level prices '2U + 1 amp + a /29' (:1105), and the owner law for this pair (gb-vs-TB precedent) is carry-both, forge-neither: the §0.3 pair rides the unit while costPerInvocation carries the per-amp billing. signatureCost verbatim from the revenue table's signature-cost column ('building + power'). cacProfile AUTHORED — the first colo-family card to price its own acquisition: Companion B's family row IS this line's row — 'Colocation | $2,000–15,000 (sales cycle) | 12–30 months (fit-out) | 0.05–0.2 [payback ratio] + remote hands' (:23372) — carried with the doc's own qualifiers into the pack text (dedicated/shared-web ship real slugs from their B rows; type-9 DECLINED the family carry precisely because B prices none of the exchange premium, and that refusal stays correct for the variant — this bundle is where the row lives). ticketsPerCustomer null: no rate authored (the remote-hands ticket VOLUME is the card's combat, not a per-customer scalar; the tariff dial in scarce.operationalDials is where the doc puts the knob). badMonth: Companion C's family row verbatim ('a single tenant not renewing', :23387) — this line's home row, not a carry; the variant dramatized it, the family states it. demandCharges TRUE: the power-as-product section is explicit — 'sell by circuit (committed amps... committed power that isn't consumed is nearly pure profit) vs metered' and 'choosing your billing model *is* the strategy' (§power-as-product); p95billing false: the 95th-percentile mechanic is authored for the CDN line (§2.12), not this one."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "caged-floor" },
+      { "archetype": "two-face-rack", "skin": "colo" },
+      { "archetype": "control-plane", "skin": "noc-desk" }
+    ],
+    "distinct": [
+      "per-amp-circuit-map",
+      "cabinet-power-ledger",
+      "meet-me-room",
+      "cross-connect-faucet",
+      "mantrap-and-badge-system",
+      "loading-dock-and-receiving",
+      "crac-and-ups-bank",
+      "generator-load-test-panel",
+      "escalator-clause-ledger",
+      "remote-hands-desk"
+    ],
+    "nonPhysical": [
+      "enforcement-ladder-state",
+      "lease-ramp-calendar",
+      "stranded-capacity-reservation"
+    ],
+    "_todo": "All distinct names cite the doc: per-amp-circuit-map from the power-as-product law ('sell by circuit... committed amps') + the card's derate sentence ('20A circuit derated to 16A continuous and tenants always forget', §1.3 verbatim — the map is where the forgotten fact lives); cabinet-power-ledger VERBATIM — 'the Cabinet Power Ledger should be a clamp meter you physically [attach]' (§8.x :1683 area) with the sold/usable/drawn trio (:22508 area) — the meter IS a buildable per the card's 'metering a tenant is an act' law; meet-me-room VERBATIM — 'Meet-Me Room — \"The Cathedral\"... the single most profitable room in a colo building' (:17495), Tier-4 names it ('a meet-me room', :932 area) and §5.6 gates a product on it (:20801); cross-connect-faucet VERBATIM named ('every cross-connect you sell adds a small faucet dripping gold', §6.x :23471; NRC $250–500 per the cross-connect section) — family object home-claimed here after type-9 carried it to the variant; mantrap-and-badge-system from the card's tailgater and the 2am contractor decision + Tier-4 'badge access' (:932 area) — the friction-unit law is cited too ('a badge policy that slows your own techs', :249: the door is an object precisely because it cuts both ways); loading-dock-and-receiving from the delivery beat ('gear to a person who doesn't work there, no cabinet number, seven boxes and one is missing — billable service with a cost', §1.3 verbatim); crac-and-ups-bank from Tier-4's first-class power/cooling ('CRAC, UPS' :930 area) and the §0.3 failure column's facility event; generator-load-test-panel from the Tier-4 row's generator ('fuel gauge + contract', :930 area) and its named minigame ('the generator load test', Tier-4) — the doc lets it cause a catastrophe ('you test... during the test everything falls over'); escalator-clause-ledger from §1.3's commercial mechanics ('a five-year deal is ~15% more revenue... forgetting to include one is a permanent margin leak'); remote-hands-desk from the billing verbs ('per remote-hands hour', §6.6 column) and the 'reboot rack 7' request (card verbatim). The three invitation doors in threats.unlockedByBuildables are per-amp-circuit-map (a committed-amp ledger makes the dark hold VISIBLE and billable — invites the hoarder war), mantrap-and-badge-system (every policy invites the story that defeats it — 'the social-engineered I'm here for the Dell drive swap'), meet-me-room (the shared trunk carries a tenant's flood into the building's standing — 'the entire building's IP space blocklisted'). nonPhysical: the enforcement-ladder-state is the card's Enforce verb made an object — 'notice, warning, billed overage, circuit cap, port disable — each rung has a legal cost and a relationship cost... a ladder makes the powerlessness tense rather than flat' (§1.3 verbatim); the lease-ramp-calendar is the billing calendar the ramp law runs on (:5600 area); the stranded-capacity-reservation is the doc's own cautionary artifact — 'reserve all 20 cabinets' power and space from day one' or eat '16 empty cabinets of stranded capacity for a year' (§ramp verbatim). The concurrency-pool skin 'caged-floor' is the three-bar law as capacity (sellable U = shortest bar), the two-face-rack is the cabinet DOOR — face one is yours (meter, badge, label), face two is theirs and foreign-styled and cannot be clicked (§1.3 visual paragraph verbatim; §0.2 :566 'you control nothing above the cabinet door'); the control-plane skin 'noc-desk' is the negotiation desk the relationship meter runs through. All three archetypes re-worn, zero palette additions."
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2 control-granularity authors only the shared-hosting profile; this line's pip row awaits its ruleset-card pass. The family ships TWO control sentences and this card is their home: 'In colo you control nothing above the cabinet door' (:566, the ❌-flagged granularity axis whose idea-keyholes live in §7.8 + §2.12) and 'You cannot see inside the cabinet; you can absolutely see what it draws' (:1647) — both name a landlord's pip CEILING without a spread, so the four scalars are null + these cites, never invented (the corpus-wide law dns/mail/game-servers/object-storage/voip/serverless/exchange-colo all cite)."
+    },
+    "keyhole": true,
+    "unclickableObjects": true,
+    "_todo": "keyhole TRUE — the card's defining gag verbatim, not the family clause alone: 'you cannot see inside the cages — frosted or mesh volumes with silhouettes inside... the darkness is the epistemic position, not a filter' (§1.3 visual paragraph); the teaching clause is the design spec — 'you will have to fix things you are not allowed to touch'. unclickableObjects TRUE with the same cite pair: §0.2 :566 spells the interaction law — tenant objects 'simply cannot be clicked — you see power draw and heat and file a request'. HONEST ADJACENCIES recorded: dedicated ships keyhole TRUE for ITS card-named reason (its screen is the console this landlord never gets), and exchange-colo — the sibling colo variant — argued keyhole FALSE precisely because its floor puts the fairness object in the open (the visible identical coils). The two colo lines are NOT inconsistent; they are opposite products on the same premises: the cathedral sells what you can see, the landlord sells what you cannot. The doc authors this gag for Colocation-with-a-capital-C — this card — and the variant's opposite reading stands on its own card text."
+  },
+
+  "mechanics": [
+    "committed-versus-metered-power",
+    "circuit-derate-dispute",
+    "shared-breaker-cascade",
+    "enforcement-ladder",
+    "access-list-at-2am",
+    "remote-hands-ticket-desk",
+    "escalator-clause-compounding",
+    "building-ip-taint",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Negotiate",
+    "transfers": [
+      "verbs.colo.transfer.1"
+    ],
+    "_todo": "THE BLESSED VERB — first use of the ADR-0014 #D1 blessing, and the FIRST shipped card whose §1.3 dominant-verb line is consumed verbatim rather than authored around: 'Dominant verb: Negotiate' is the card's own row (its identity block runs scarce → teaches → threat → visual → VERB). Where the card elaborates: the negotiation is an instrument, not a flavor — a 'ticket and conversation system with tone options and a relationship meter... this is the level's combat' (§1.3); the Enforce ladder is its hard edge, 'a ladder makes the powerlessness tense rather than flat'. Roster census at this commit: Triage=shared-web, Place&Connect=game-servers, Tune=mail, Commit=dns, Observe=dedicated, Shield=object-storage, Maintain=trunk-group-voip, Scale=serverless, Sell=exchange-colo; Negotiate is this card's claim — the first verb off the eight-slot tier roster (Scale·Shield·Maintain·Sell exhausted at type-9) to ship by owner law call, Schedule remains blessed-unclaimed for the backup/GPU/HPC family, Diagnose remains the invariant roster's sole unclaimed slot (MODULE-STATUS verb-wall row flips to LANDED at closeout). Reinforcement cites: §1.5 'The Landlord Renewal / Landlord Squeeze' writes the doc's own Negotiate scenario for this line (+60% renewal — 'Negotiate, sign longer for a better rate, or full physical migration', :3901); §rosetta 'Negotiate | Uses a relationship instead of a machine' (:6106); §defense-vocab lists Negotiate among the nine shipped verbs (:16305). HONEST DOOR GAP (g16 finding, RULED ADR-0014 #D2 — full PlayerVerb enum extension lane-queued, Shield-first): 'Negotiate' has no door enum member and no acquisition mechanic ships — this dominant verb is card IDENTITY and design posture; every mechanic the shipped quarter exercises still rides door verbs, and the negotiation survives as the relationship meter (visitor.trustReadable), the enforcement-ladder dial, and the ticket flood — instruments, not capabilities."
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:dns-hosting",
+        "kind": "dns-and-everything",
+        "numbers": null,
+        "_todo": "§0.2 line synergies, verbatim: 'DNS + everything (you already own the infrastructure)' — the clause is symmetric and universal; no numeric benefit authored for this pair."
+      }
+    ],
+    "antagonisms": [
+      {
+        "with": "official:gpu-power",
+        "resource": "power",
+        "kind": "headroom-contention",
+        "render": "allocation-slider",
+        "_todo": "§0.2 Line Antagonisms verbatim: 'GPU + colo compete for the same amps' (:552) — this time the doc's own noun names THIS bundle (type-9 carried the family row to the variant; the row's home is the landlord). The counterpart bundle ships no GPU line yet; game-servers and exchange-colo already author the identical pair-key from their sides, so the id names the doc's contested-resource pair, not an invented company."
+      }
+    ],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["own-facility", "power-headroom"],
+          "_todo": "§5.6 lattice verbatim: 'Your own facility + power headroom → unlocks Colocation (you become a landlord)' (:20787) — the gate the FAMILY is named in, and 'you become a landlord' is this card's title word; authored as tech flags per the lattice row's own shape."
+        },
+        {
+          "tech": ["carrier-relationships", "meet-me-room"],
+          "_todo": "§5.6 lattice verbatim: 'Carrier relationships + meet-me room → unlocks cross-connects as a product' (:20801) — 'carrier density is your product' (§1.3 verbatim) is the same unlock read from the room; the cross-connect section prices it (~90–95% margin, NRC $250–500, the faucet law)."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {},
+      "_todo": "§5.6 pivot rows both touch this line and neither is authorable: inbound 'Dedicated → Colo — gate: more rack space than servers... you lose control of what is inside the cabinet' (:20878-20880) — the doc's most precise pivot clause, and it arrives INTO this card (recorded here; type-9 authored the pair's scalars-from-dedicated's-side reading, all-null and honest); outbound 'Colo → Wholesale / Build-to-suit' (:20881) leads to an unbundled line no bundle ships, so the to-map stays empty rather than citing a phantom — never invented. The §1.3 teaching clause the inbound gate names ('you don't control the gear') is authored as this card's control._todo instead of a pivot scalar."
+    },
+    "masteryBuff": "relations.colo.mastery",
+    "distillate": "relations.colo.distillate",
+    "_todo": "mastery grounded on the §5.6 mastery law verbatim: 'Mastering Colo grants a facility-efficiency bonus' (:20963) — the FAMILY buff naming this card directly (type-9 carried the same row to the variant); the buff's instrument is the axis this line already holds — PUE (§fifth-axis) — so no number is forged into the bundle and the buff text names the efficiency shape. The distillate is the taught lesson per the §1.9 distillate law, authored from the card's doctrine: sell the shortest bar, meter what you cannot touch, negotiate with a ladder behind your back."
+  },
+
+  "ticketPack": "file:packs/colo.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.colo.runs-out",
+    "killsYou": "handover.colo.kills-you",
+    "customerWants": "handover.colo.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "cgroup-caging",
+      "alias": "committed-amp-caging",
+      "line": "rosetta.colo.amp-caging"
+    },
+    {
+      "canonical": "renewal-cliff",
+      "alias": "renewal-lever",
+      "line": "rosetta.colo.renewal"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Convert",
+      "Negotiate"
+    ],
+    "analogues": {
+      "renewal-squeeze": "scenarios.colo.renewal-squeeze",
+      "whose-cable-is-that": "scenarios.colo.whose-cable",
+      "blocklisted-building": "scenarios.colo.blocklisted-building"
+    },
+    "_todo": "Convert verbatim-grounded at the family row: §3.3 'Colo | Tenant tour → contract | One, huge | Months | Bad tour, no power available | Per-cabinet + per-kW + x-connect' (:12496) — a funnel with a moving-part count and a failure mode, the doc's own conversion shape. Negotiate is FIRST corpus use of the schema's Negotiate archetype and it is authored in the doc's own words: §1.5 'The Landlord Renewal / Landlord Squeeze' (:3899-3901) — renewal quoted at +60%, the card answers 'Negotiate, sign longer for a better rate, or full physical migration'; the §scenario-table row for Negotiate ('the opponent is a person — RFP, peering, vendor squeeze, ransom', :5070) names this desk. analogues authored from cited doc beats, consequence-only framing per §9.11: renewal-squeeze (:3901 verbatim), whose-cable-is-that (the card's signature moment verbatim — 'an unlabelled overhead cable... to a cage decommissioned three years ago'), blocklisted-building (the card's second signature verbatim — the bulletproof-host tenant 'gets the entire building's IP space blocklisted — do you evict a customer paying 30% of your revenue?')."
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}
