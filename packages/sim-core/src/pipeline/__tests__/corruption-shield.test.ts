@@ -21,7 +21,7 @@
  *  - unshielded twin runs across fresh driver closures ⇒ digest-identical
  *    (the absent-book byte-identity switch).
  *
- * As-of law unit pins (`businessMinuteOf`, `nodeShielded`) close the file.
+ * As-of law unit pins (`shieldBusinessMinuteOf`, `nodeShielded`) close the file.
  */
 
 import { describe, expect, it } from "vitest";
@@ -40,7 +40,7 @@ import { MICROS_PER_MIN as MIN, MICROS_PER_SEC, advanceClocks } from "../../kern
 import { streamFor } from "../../kernel/rng";
 import { createInitialState, createTickDriver, type TickInputs } from "../driver";
 import { createDefaultSlots, digestState } from "../index";
-import { businessMinuteOf, nodeShielded } from "../corruption";
+import { shieldBusinessMinuteOf, nodeShielded } from "../corruption";
 import { createShieldBook } from "../intent-door";
 import { DEFAULT_CLASSES, freshClocks, NO_RETRY, envelope, node, testConfig, tickInputs } from "./helpers";
 
@@ -210,15 +210,15 @@ describe("shield pre-arm — corruption falsification on one seed", () => {
 
 /* ═══════════════════════════ as-of law unit pins ═══════════════════════════ */
 
-describe("nodeShielded / businessMinuteOf — the as-of law in the small", () => {
+describe("nodeShielded / shieldBusinessMinuteOf — the as-of law in the small", () => {
   const book = shieldBook(new Map([[IDS.edge, seedEntry(5n, 100)]]));
 
-  it("businessMinuteOf floors the business clock fold and refuses unsafe minutes", () => {
-    expect(businessMinuteOf(freshClocks())).toBe(0);
-    expect(businessMinuteOf({ ...freshClocks(), businessUs: 120n * MIN })).toBe(120);
-    expect(businessMinuteOf({ ...freshClocks(), businessUs: MIN - 1n })).toBe(0);
+  it("shieldBusinessMinuteOf floors the business clock fold and refuses unsafe minutes", () => {
+    expect(shieldBusinessMinuteOf(freshClocks())).toBe(0);
+    expect(shieldBusinessMinuteOf({ ...freshClocks(), businessUs: 120n * MIN })).toBe(120);
+    expect(shieldBusinessMinuteOf({ ...freshClocks(), businessUs: MIN - 1n })).toBe(0);
     const huge = (BigInt(Number.MAX_SAFE_INTEGER) + 1n) * MIN;
-    expect(() => businessMinuteOf({ ...freshClocks(), businessUs: huge })).toThrow(RangeError);
+    expect(() => shieldBusinessMinuteOf({ ...freshClocks(), businessUs: huge })).toThrow(RangeError);
   });
 
   it("a real tick step moves the business minute ~103 (the Dual-Clock scale witness)", () => {
@@ -227,7 +227,7 @@ describe("nodeShielded / businessMinuteOf — the as-of law in the small", () =>
       speed: 1,
       incident: false,
     });
-    expect(businessMinuteOf(stepped)).toBe(102); // 43200/7 s = 102.857 min, floored → stamp boundaries
+    expect(shieldBusinessMinuteOf(stepped)).toBe(102); // 43200/7 s = 102.857 min, floored → stamp boundaries
   });
 
   it("nodeShielded: undefined book ⇒ false; absent entry ⇒ false; null ⇒ in force", () => {

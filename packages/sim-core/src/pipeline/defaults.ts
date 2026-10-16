@@ -101,7 +101,7 @@ import {
 } from "./internal.ts";
 import { bounceProbability, patienceRatioBps } from "./bounce.ts";
 import { DEFAULT_KNEE_RHO, effectiveRho, hockeyStickWaitUs, utilization } from "./queue.ts";
-import { businessMinuteOf, nodeShielded } from "./corruption.ts";
+import { shieldBusinessMinuteOf, nodeShielded } from "./corruption.ts";
 
 /* ═══════════════════════ Extension inputs (driver-supplied) ═════════════════ */
 
@@ -1001,7 +1001,7 @@ export function createPatienceCheckStep(
      * input ⇒ zero business-clock math, zero behavior change (the exact
      * byte-identity switch, same law as the `corruption` slice above). */
     const shield = (input as PatienceCheckInExt).shield;
-    const atBusinessMin = shield === undefined ? 0 : businessMinuteOf(input.context.clocks);
+    const atBusinessMin = shield === undefined ? 0 : shieldBusinessMinuteOf(input.context.clocks);
     for (const unit of input.units) {
       const predicted = waitByUnit.get(unit.id);
       if (predicted === undefined) continue; // only queued units bounce from patience

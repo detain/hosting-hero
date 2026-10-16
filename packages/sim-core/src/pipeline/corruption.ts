@@ -74,8 +74,11 @@ export function corruptionCauseId(unitId: EntityId, minute: SimMinute): CauseId 
  *  Exact integer fold of `businessUs`; the economy lane owns a twin helper
  *  (economy/state.ts `businessMinuteOf`) — the import direction forbids
  *  sharing it, and the fold is one floor-division, so the twin is the honest
- *  home here rather than a widened seam. */
-export function businessMinuteOf(clocks: ClockState): SimMinute {
+ *  home here rather than a widened seam. The name is DELIBERATELY distinct:
+ *  the root barrel `export *`-s both lanes, and one name shipped twice is a
+ *  TS2308 ambiguity, never a merge — so the shield-side fold wears the
+ *  shield name. */
+export function shieldBusinessMinuteOf(clocks: ClockState): SimMinute {
   const minute = Number(clocks.businessUs / MICROS_PER_MIN);
   if (!Number.isSafeInteger(minute)) {
     throw new RangeError(
