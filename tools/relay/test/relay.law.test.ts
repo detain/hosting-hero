@@ -27,7 +27,7 @@ function twoSeatRelay(): ReturnType<typeof createCoopRelay> {
   const relay = createCoopRelay();
   relay.joinSeat(ALICE); // tick 0
   relay.advanceTo(1n);
-  relay.joinSeat(BOB); // strictly-after join (ledger law — see same-tick test)
+  relay.joinSeat(BOB); // staggered by script choice — same-tick is legal since L-RH law 1
   return relay;
 }
 
@@ -95,19 +95,54 @@ describe("relay seat ledger (save/coop law over a Node host)", () => {
     );
   });
 
-  it("refuses a same-tick join (ledger is strictly-ascending history) — pinned v0 friction", () => {
-    const relay = createCoopRelay();
-    relay.joinSeat(ALICE);
-    // currentTick still 0 — BOB's join would duplicate the join instant ordering
-    expect(() => relay.joinSeat(BOB)).toThrowError(/not after row 0 joinedAtTick/);
+  it("same-tick joins land in canonical code-unit order regardless of submission order (L-RH law 1 — v0 refusal retired)", () => {
+    const ab = createCoopRelay();
+    ab.joinSeat(ALICE); // tick 0
+    ab.joinSeat(BOB); // same tick 0 — legal since L-RH: the ledger sorts, not staggers
+    expect(ab.ledger().seatHolders.map((s) => s.participantId)).toEqual([ALICE, BOB]);
+
+    const ba = createCoopRelay();
+    ba.joinSeat(BOB);
+    ba.joinSeat(ALICE);
+    // order-independence: the same tenure SET folds to the same ledger bytes
+    expect(ba.ledger().seatHolders.map((s) => s.participantId)).toEqual([ALICE, BOB]);
+
+    // falsifier: canonical order changes the sort, not the cap — a same-tick crowd of five refuses
+    const crowd = createCoopRelay();
+    for (const pid of ["w1", "w2", "w3", "w4"]) crowd.joinSeat(pid);
+    expect(() => crowd.joinSeat("w5")).toThrowError(/seats at most 4/);
+    expect(() => crowd.joinSeat("w5")).toThrowError(/simultaneous writers at tick 0/);
   });
 
-  it("refuses re-join by a departed participant — v0 one-tenure-row law (transport gap)", () => {
+  it("re-join after leave lands a NEW tenure row and restores the window (L-RH law 2 — v0 refusal retired)", () => {
+    const relay = twoSeatRelay(); // alice [0,?), bob [1,?)
+    relay.advanceTo(5n);
+    relay.leaveSeat(ALICE); // tenure 1 closes [0,5)
+    relay.advanceTo(6n);
+    relay.joinSeat(ALICE); // tenure 2 opens [6,?) — ADR-0014 #D6 re-join-as-new-row
+    expect(relay.ledger().seatHolders.filter((s) => s.participantId === ALICE)).toHaveLength(2);
+    expect(relay.isSeated(ALICE, 4n)).toBe(true); // first window
+    expect(relay.isSeated(ALICE, 5n)).toBe(false); // the gap
+    expect(relay.isSeated(ALICE, 6n)).toBe(true); // second window
+    relay.advanceTo(7n);
+    expect(() => relay.submit(ALICE, "note", { text: "back at it" })).not.toThrow(); // ghost law per TENURE
+    // falsifier: joining while a tenure is still open refuses LOUD
+    expect(() => relay.joinSeat(ALICE)).toThrowError(/one tenure at a time/);
+    // and vacate closes the OPEN row, not the participant's first row
+    const after = relay.leaveSeat(ALICE);
+    expect(after.seatHolders.filter((s) => s.participantId === ALICE && s.leftAtTick === undefined)).toHaveLength(0);
+  });
+
+  it("ghost-intent law survives the tenure cycle: the gap tick still refuses", () => {
     const relay = twoSeatRelay();
     relay.advanceTo(5n);
-    relay.leaveSeat(ALICE);
+    relay.leaveSeat(ALICE); // [0,5) closed
+    relay.submit(BOB, "note", { text: "gap" }); // (5,0)
     relay.advanceTo(6n);
-    expect(() => relay.joinSeat(ALICE)).toThrowError(/one tenure row per participant/);
+    relay.joinSeat(ALICE); // [6,?) opens
+    expect(() => relay.submit(ALICE, "note", { text: "late" })).not.toThrow(); // (6,0)
+    // bob's inbox saw every stamp; alice's frozen inbox caught up at re-join (law 3)
+    expect(relay.inbox(BOB).map((r) => `${r.tick}:${r.seq}`)).toEqual(["5:0", "6:0"]);
   });
 
   it("broadcast fans out to current seats only — departed inbox freezes at vacate", () => {
@@ -122,6 +157,66 @@ describe("relay seat ledger (save/coop law over a Node host)", () => {
     expect(relay.sharedLog()).toHaveLength(3); // the log grew regardless...
     expect(relay.inbox(BOB)).toHaveLength(3); // ...the seated inbox keeps growing...
     expect(relay.inbox(ALICE)).toHaveLength(frozenAt); // ...the departed one is history, frozen
+    // and the frozen inbox is NOT retroactively fed while the seat stays closed —
+    // catch-up (L-RH law 3) is a JOIN event, not a broadcast widening (@24426ec stands)
+    expect(relay.inbox(ALICE).map((r) => `${r.tick}:${r.seq}`)).toEqual(["1:0"]);
+  });
+});
+
+describe("relay joiner catch-up (L-RH law 3 — relay-side history delivery, zero save writes)", () => {
+  it("a mid-run joiner receives the shared log as of the join tick, canonically ordered", () => {
+    const relay = createCoopRelay();
+    relay.joinSeat(ALICE); // t0
+    relay.submit(ALICE, "note", { text: "before bob" }); // (0,0)
+    relay.advanceTo(2n);
+    relay.submit(ALICE, "action", placeAction("n-1")); // (2,0)
+    relay.advanceTo(3n);
+    relay.joinSeat(BOB); // mid-run join — v0 delivered NOTHING here
+    expect(relay.inbox(BOB).map((r) => `${r.tick}:${r.seq}`)).toEqual(["0:0", "2:0"]);
+    // per-seat inbox semantics stay: the door feed filters to the action arm
+    expect(relay.feedFor(BOB)).toHaveLength(1);
+    expect(relay.feedFor(BOB)).toStrictEqual(relay.feedFor(ALICE).slice(-1));
+    expect(relay.inbox(ALICE)).toHaveLength(2); // the seated writer holds the same two records
+  });
+
+  it("a re-joiner receives only the tail missed while departed — no record delivered twice", () => {
+    const relay = createCoopRelay();
+    relay.joinSeat(ALICE);
+    relay.advanceTo(1n);
+    relay.joinSeat(BOB); // empty-log catch-up — still a legal two-seat company
+    relay.submit(BOB, "note", { text: "seen" }); // (1,0) — alice seated, receives
+    relay.advanceTo(5n);
+    relay.leaveSeat(ALICE); // her inbox freezes at (1,0)
+    relay.submit(BOB, "note", { text: "missed-1" }); // (5,0)
+    relay.advanceTo(6n);
+    relay.submit(BOB, "note", { text: "missed-2" }); // (6,0)
+    relay.advanceTo(7n);
+    relay.joinSeat(ALICE); // re-join: tail-only delivery
+    const stamps = relay.inbox(ALICE).map((r) => `${r.tick}:${r.seq}`);
+    expect(stamps).toEqual(["1:0", "5:0", "6:0"]);
+    // falsifiable no-double-delivery law: strict (tick,seq) ascent — feedFor
+    // runs orderCoopTimeline, which THROWS on any duplicated stamp
+    expect(() => relay.feedFor(ALICE)).not.toThrow();
+    expect(relay.sharedLog()).toHaveLength(3); // delivery never grows the shared log
+  });
+
+  it("catch-up is join-scoped: a seat never re-opened stays frozen forever", () => {
+    const relay = createCoopRelay();
+    relay.joinSeat(ALICE);
+    relay.submit(ALICE, "note", { text: "opening" }); // (0,0)
+    relay.advanceTo(1n);
+    relay.joinSeat(BOB); // catch-up gives bob (0,0) as well
+    relay.submit(BOB, "note", { text: "together" }); // (1,0)
+    relay.advanceTo(5n);
+    relay.leaveSeat(ALICE); // her inbox freezes at [(0,0),(1,0)]
+    for (let t = 5n; t < 9n; t += 1n) {
+      relay.submit(BOB, "note", { text: `t${t}` });
+    }
+    expect(relay.inbox(ALICE).map((r) => `${r.tick}:${r.seq}`)).toEqual(["0:0", "1:0"]);
+    relay.advanceTo(9n);
+    relay.submit(BOB, "note", { text: "post" }); // (9,0)
+    expect(relay.inbox(ALICE)).toHaveLength(2); // no join, no catch-up
+    expect(relay.sharedLog()).toHaveLength(7);
   });
 });
 
@@ -255,9 +350,10 @@ describe("ruling-2 attribution guard driven from the relay's ledger", () => {
         nodeLedger,
       ),
     ).toThrowError(/attribution forgery is refused/);
-    // Departed rows still COUNT as recorded writers (guard reads the ledger's
-    // distinct set, not current seating) — to reach the MIN_WRITERS refusal the
-    // company must have literally one row ever:
+    // RATIFIED history law (L-RH, owner delegation 2026-10-16): the MIN_WRITERS
+    // check reads the ledger's distinct RECORDED writers, not current seating —
+    // a 2-seat company where one left still passes as "multi-writer" because
+    // the ledger is append-only history. Pinned as its own test below.
     const solo = createCoopRelay();
     solo.joinSeat(ALICE);
     expect(COOP_MIN_SEAT_WRITERS).toBe(2);
@@ -294,5 +390,24 @@ describe("ruling-2 attribution guard driven from the relay's ledger", () => {
         relay.ledger(),
       ),
     ).toThrowError(/not seated at tick 4/);
+  });
+
+  it("RATIFIED history law (L-RH): 2-recorded/1-live still arms MIN_WRITERS while the seated author commits", () => {
+    const relay = twoSeatRelay();
+    relay.advanceTo(5n);
+    relay.leaveSeat(ALICE); // one LIVE seat remains, TWO recorded writers in history
+    expect(() =>
+      guardCoopAttributionBatch(
+        { runId: asEntityId("r"), committedAtTick: 8n, writes: [{ facet: "scars", participantId: asEntityId(BOB), record: scarFor("scar-h", BOB) }] },
+        relay.ledger(),
+      ),
+    ).not.toThrow();
+    // the live/dead asymmetry stays honest: the DEPARTED author's own write refuses
+    expect(() =>
+      guardCoopAttributionBatch(
+        { runId: asEntityId("r"), committedAtTick: 8n, writes: [{ facet: "scars", participantId: asEntityId(ALICE), record: scarFor("scar-g", ALICE) }] },
+        relay.ledger(),
+      ),
+    ).toThrowError(/not seated at tick 8/);
   });
 });

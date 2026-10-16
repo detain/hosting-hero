@@ -4,7 +4,8 @@
  * What this is: an IN-PROCESS hub that plays the role the future PHP/Workerman
  * transport will play — the single server-side authority that (1) keeps the
  * ADR-0013 ruling-2 SEAT LEDGER (save/coop law: 1–4 concurrent writers,
- * half-open [joined,left) tenure rows), (2) STAMPS every timeline record with a
+ * half-open [joined,left) tenure rows, same-tick joins in canonical
+ * participantId order, re-join as a NEW disjoint tenure row), (2) STAMPS every timeline record with a
  * globally-unique (tick, seq) pair per the replay/coopTimeline law, and (3)
  * BROADCASTS the stamped log to every seat. Seats may receive records in any
  * arrival order; `feedFor()` normalizes via `orderCoopTimeline` and re-exports
@@ -18,8 +19,10 @@
  * orders and normalized, produce equal per-frame AND terminal digestState.
  *
  * Law surfaces honored here:
- *  - save/coop.ts       → seat ledger validation, seatParticipant/vacateSeat,
- *                         participantSeatedAt (ghost-intent refusal).
+ *  - save/coop.ts       → seat ledger validation (canonical same-tick joins,
+ *                         re-join-as-new-row tenures), seatParticipant/
+ *                         vacateSeat, participantSeatedAt per-tenure (ghost-
+ *                         intent refusal), MIN_WRITERS history posture.
  *  - replay/coopTimeline.ts → parseCoopTimelineRecord boundary (every submit
  *                         passes the strict parser), assertCoopTimelineAppendOrder
  *                         on every append, orderCoopTimeline normalization,
@@ -27,6 +30,16 @@
  *  - intent-door M4     → (tick, seq) uniqueness is exactly what the relay
  *                         stamps, so a normalized feed can never trip the
  *                         door's dup throw.
+ *
+ * HARDENED 2026-10-16 (lane L-RH, owner session-5 agenda (e)): the four law
+ * frictions the D6 spike left open are RESOLVED in-repo — (1) same-tick joins
+ * land in canonical (tick, participantId code-unit) ledger order; (2) re-join
+ * is a NEW tenure row per ADR-0014 #D6, windows resolved per tenure; (3) mid-
+ * run joiners and re-joiners get relay-side catch-up delivery of the shared
+ * log (timeline records only — still zero save writes, v0 incident-room law
+ * @10f05fb); (4) the guard's MIN_WRITERS leg is RATIFIED as the recorded-
+ * writers history law. The @24426ec departed-seat broadcast filter stands.
+ * This is still spike-grade hardening, not the shipped transport.
  *
  * Determinism law: no Math.random / Date.now / new Date / Intl / performance
  * anywhere — the relay clock is advanced by its host, values are bigint/int.
@@ -88,7 +101,12 @@ export interface CoopRelay {
   tick(): SimTick;
   /** Monotonic clock: moving backwards throws (the stamp authority's word). */
   advanceTo(tick: SimTick): void;
-  /** Seat a writer at the CURRENT tick (server-side join delivery). */
+  /** Seat a writer at the CURRENT tick (server-side join delivery).
+   *  Same-tick joins are legal (canonical participantId code-unit order,
+   *  L-RH law 1); a re-handoff after leaveSeat adds a NEW tenure row
+   *  (L-RH law 2, ADR-0014 #D6 "re-join-as-new-row"). The seat's inbox is
+   *  immediately caught up with the shared log it missed — relay-side
+   *  catch-up, L-RH law 3; no save writes. */
   joinSeat(participantId: string): CoopNodeMetadata;
   /** End a tenure at the CURRENT tick (half-open [joined,left)). */
   leaveSeat(participantId: string): CoopNodeMetadata;
@@ -232,10 +250,47 @@ export function createCoopRelay(options: CoopRelayOptions = {}): CoopRelay {
     // Fan-out is over CURRENT seats only: a departed row (leftAtTick set) is
     // skipped, so that writer's inbox freezes at vacate — it survives as
     // history (what they saw while seated) and never grows again.
+    // The @24426ec law stands; mid-run joiners and re-joiners are served by
+    // deliverCatchUp (L-RH law 3), not by widening this fan-out.
     for (const seat of requireLedger().seatHolders) {
       if (seat.leftAtTick !== undefined) continue; // departed: inbox is history
       openInbox(seat.participantId).push(record);
     }
+  }
+
+  /** Highest (tick, seq) a seat's inbox already holds — scan, never trust
+   *  array tail: the inbox is arrival-ordered by contract. */
+  function lastSeenStamp(
+    rows: readonly CoopTimelineRecord[],
+  ): { readonly tick: SimTick; readonly seq: number } | undefined {
+    let max: { tick: SimTick; seq: number } | undefined;
+    for (const row of rows) {
+      if (max === undefined || row.tick > max.tick || (row.tick === max.tick && row.seq > max.seq)) {
+        max = { tick: row.tick, seq: row.seq };
+      }
+    }
+    return max;
+  }
+
+  /**
+   * L-RH law 3 — JOINER CATCH-UP, relay-side only (the v0 incident-room law
+   * @10f05fb keeps the relay out of save state; this delivers timeline
+   * records, never save writes). A seat joining mid-run receives the shared
+   * log as of the join tick; a RE-JOINER whose inbox froze at vacate receives
+   * only the tail strictly after the last stamp they hold — so no record can
+   * be delivered twice (a duplicate stamp would trip orderCoopTimeline's
+   * collision law at the first feedFor). Delivery passes through
+   * orderCoopTimeline, so the inbox starts canonically ordered regardless of
+   * the shared log's shape.
+   */
+  function deliverCatchUp(pid: EntityId): void {
+    const inbox = openInbox(pid);
+    const last = lastSeenStamp(inbox);
+    const pending =
+      last === undefined
+        ? log
+        : log.filter((r) => r.tick > last.tick || (r.tick === last.tick && r.seq > last.seq));
+    for (const record of orderCoopTimeline(pending)) inbox.push(record);
   }
 
   function stamp(participantId: EntityId, kind: CoopTimelineKind, payload: Readonly<Record<string, unknown>>): CoopTimelineRecord {
@@ -265,8 +320,8 @@ export function createCoopRelay(options: CoopRelayOptions = {}): CoopRelay {
         participantId: asEntityId(participantId),
         joinedAtTick: currentTick,
       };
-      ledger = seatParticipant(ledger, seat); // re-validates the whole ledger
-      openInbox(seat.participantId);
+      ledger = seatParticipant(ledger, seat); // canonical insert + whole-ledger re-validation
+      deliverCatchUp(seat.participantId); // L-RH law 3: history up to the join tick
       return ledger;
     },
 
