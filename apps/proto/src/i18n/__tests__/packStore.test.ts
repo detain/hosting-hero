@@ -15,8 +15,18 @@ import {
 } from "../packStore.ts";
 
 describe("i18n/packStore · loads the shipped packs through the loader boundary", () => {
-  it("both packs parse at init, frozen, ids exact", () => {
-    expect([...PACK_IDS]).toEqual(["shared-web", "game"]);
+  it("all nine disk packs parse at init, frozen, ids exact (ADR-0014 #D5)", () => {
+    expect([...PACK_IDS]).toEqual([
+      "shared-web",
+      "game",
+      "dedicated",
+      "dns-hosting",
+      "exchange-colo",
+      "mail-hosting",
+      "object-storage",
+      "serverless",
+      "trunk-group-voip",
+    ]);
     for (const id of PACK_IDS) {
       const pack = packOf(id);
       expect(Object.isFrozen(pack)).toBe(true);
@@ -25,14 +35,45 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
     // 103 = 98 + the three economy-notice keys (contract-activated /
     // covenant-breached / chargeback-posted, docs-sync lane) + the two
     // canonical-death keys (death-imminent / company-dissolved, lane L4).
+    // The seven type-pack totals are the disk truth re-derived per pack.
     expect(packOf("shared-web").decision.size + packOf("shared-web").flavour.size).toBe(103);
     expect(packOf("game").decision.size + packOf("game").flavour.size).toBe(75);
+    expect(packOf("dedicated").decision.size + packOf("dedicated").flavour.size).toBe(66);
+    expect(packOf("dns-hosting").decision.size + packOf("dns-hosting").flavour.size).toBe(65);
+    expect(packOf("exchange-colo").decision.size + packOf("exchange-colo").flavour.size).toBe(68);
+    expect(packOf("mail-hosting").decision.size + packOf("mail-hosting").flavour.size).toBe(63);
+    expect(packOf("object-storage").decision.size + packOf("object-storage").flavour.size).toBe(67);
+    expect(packOf("serverless").decision.size + packOf("serverless").flavour.size).toBe(68);
+    expect(packOf("trunk-group-voip").decision.size + packOf("trunk-group-voip").flavour.size).toBe(
+      69,
+    );
+    // roster total: 644 templates across the nine packs
+    expect(PACK_IDS.reduce((n, id) => n + packOf(id).decision.size + packOf(id).flavour.size, 0)).toBe(644);
   });
 
   it("t() resolves a plain decision template with slot fill", () => {
     expect(t("shared-web", "refusal.unknown-node", { nodeId: "db-1" })).toBe(
       "No board object named db-1 exists at the current tick. Nothing was changed.",
     );
+  });
+
+  it("t() speaks a TYPE pack (ADR-0014 #D5 widening)", () => {
+    // a flavour key that exists ONLY in the type bank — the mail-hosting
+    // abuse-desk line is slot-free there and slotted in dns-hosting, so it
+    // resolves from exactly one pack's voice
+    expect(t("mail-hosting", "chatter.desk.stack")).toBe(
+      "The abuse@ mailbox has 6,000 unread messages. That is not a backlog. That is the reason.",
+    );
+    // the cross-pack twin law: byte-identical text resolved independently
+    // from two now-registered packs
+    expect(t("exchange-colo", "vendor.reply.firmware")).toBe(
+      "Have you tried updating to the latest firmware?",
+    );
+    expect(t("exchange-colo", "vendor.reply.firmware")).toBe(t("dedicated", "vendor.reply.firmware"));
+    // and a decision-root key from a type pack resolves with era threading
+    expect(t("serverless", "refusal.unknown-node", { nodeId: "fn-1" })).toContain("fn-1");
+    expect(hasKey("serverless", "chatter.desk.stack")).toBe(false); // slotted twin lives in dns
+    expect(hasKey("dns-hosting", "chatter.desk.stack")).toBe(true);
   });
 
   it("t() resolves flavour keys too (keys are globally unique per pack)", () => {

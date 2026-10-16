@@ -2,8 +2,11 @@
  * i18n · pack store — the proto UI's copy layer over the shipped grammar packs.
  *
  * §9.11's "adding a type is a data task" proved end-to-end in the browser:
- * the SAME packs packages/content/script/validate.mjs keeps (103 + 75
- * templates) are parsed at module init through the loader's boundary
+ * the SAME packs packages/content/script/validate.mjs keeps — ALL NINE on
+ * disk (644 templates: shared-web 103, trunk-group-voip 69, exchange-colo
+ * 68, serverless 68, object-storage 67, dedicated 66, dns-hosting 65, game
+ * 75, mail-hosting 63; widened by ADR-0014 #D5) — are parsed at module init
+ * through the loader's boundary
  * (`loadI18nPack` — already tested in sim-core; this file is a thin, loud
  * wrapper, Law 2: the wire JSON becomes a trusted frozen LoadedI18nPack
  * exactly once) and read by UI copy paths through `t()`.
@@ -27,6 +30,13 @@
  */
 import sharedWebWire from "../../../../packages/content/packs/shared-web.i18n.json?raw";
 import gameWire from "../../../../packages/content/packs/game.i18n.json?raw";
+import dedicatedWire from "../../../../packages/content/packs/dedicated.i18n.json?raw";
+import dnsHostingWire from "../../../../packages/content/packs/dns-hosting.i18n.json?raw";
+import exchangeColoWire from "../../../../packages/content/packs/exchange-colo.i18n.json?raw";
+import mailHostingWire from "../../../../packages/content/packs/mail-hosting.i18n.json?raw";
+import objectStorageWire from "../../../../packages/content/packs/object-storage.i18n.json?raw";
+import serverlessWire from "../../../../packages/content/packs/serverless.i18n.json?raw";
+import trunkGroupVoipWire from "../../../../packages/content/packs/trunk-group-voip.i18n.json?raw";
 import { getEra } from "./eraState.ts";
 import {
   fillTemplateBody,
@@ -37,10 +47,31 @@ import {
   type LoadedI18nPack,
 } from "@hh/sim-core/loader";
 
-/** The two shipped packs, by their short consumer-facing ids. */
-export type PackId = "shared-web" | "game";
+/** Every shipped pack, by its short consumer-facing id (ADR-0014 #D5: the
+ *  roster is the full disk truth — the two baseline packs keep their leading
+ *  order, the seven type packs follow code-unit sorted). */
+export type PackId =
+  | "shared-web"
+  | "game"
+  | "dedicated"
+  | "dns-hosting"
+  | "exchange-colo"
+  | "mail-hosting"
+  | "object-storage"
+  | "serverless"
+  | "trunk-group-voip";
 
-export const PACK_IDS: readonly PackId[] = Object.freeze(["shared-web", "game"] as const);
+export const PACK_IDS: readonly PackId[] = Object.freeze([
+  "shared-web",
+  "game",
+  "dedicated",
+  "dns-hosting",
+  "exchange-colo",
+  "mail-hosting",
+  "object-storage",
+  "serverless",
+  "trunk-group-voip",
+] as const);
 
 /** The shared toggle's initial era (single home: eraState.ts). */
 export { DEFAULT_ERA_YEAR } from "./eraState.ts";
@@ -51,6 +82,13 @@ export { DEFAULT_ERA_YEAR } from "./eraState.ts";
 const PARSED: Readonly<Record<PackId, LoadedI18nPack>> = Object.freeze({
   "shared-web": loadI18nPack(JSON.parse(sharedWebWire)),
   game: loadI18nPack(JSON.parse(gameWire)),
+  dedicated: loadI18nPack(JSON.parse(dedicatedWire)),
+  "dns-hosting": loadI18nPack(JSON.parse(dnsHostingWire)),
+  "exchange-colo": loadI18nPack(JSON.parse(exchangeColoWire)),
+  "mail-hosting": loadI18nPack(JSON.parse(mailHostingWire)),
+  "object-storage": loadI18nPack(JSON.parse(objectStorageWire)),
+  serverless: loadI18nPack(JSON.parse(serverlessWire)),
+  "trunk-group-voip": loadI18nPack(JSON.parse(trunkGroupVoipWire)),
 } satisfies Record<PackId, LoadedI18nPack>);
 
 export function packOf(packId: PackId): LoadedI18nPack {

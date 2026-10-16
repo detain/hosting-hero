@@ -17,7 +17,8 @@
  * flipping the era never churns their words, only their re-evaluation.
  *
  * Law 2: `EraYear` is the closed set of eras the packs actually author
- * (eraCodes 1998/2026 in shared-web; game ships zero era objects) — an
+ * (eraCodes 1998/2026 in shared-web; the other eight registered packs —
+ * game and the seven type banks — ship zero era objects) — an
  * unauthored year is unrepresentable at this boundary, so `pickEraText`'s
  * earlier/fallback ladder never sees a caller typo.
  */

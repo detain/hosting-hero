@@ -5,13 +5,14 @@
  * vendor) and NOTHING in the UI ever spoke one — only decision-root `alert.*`
  * keys had consumers. This module is the deterministic mouth.
  *
- * Pool law (CLOSED by construction, two deliberate v0 scopes — disclosed):
- *  1. PACK SCOPE: the pool draws ONLY from the packs `i18n/packStore.ts`
- *     registers today — `shared-web` + `game`. The nine type packs on disk
- *     (exchange-colo.i18n.json et al.) are NOT registered there; widening the
- *     registry is the i18n lane's call (it owns the ?raw imports + the
- *     PACK_IDS union), so this feed stays inside the existing registration
- *     law instead of sprawl-importing content.
+ * Pool law (CLOSED by construction, two deliberate scopes — the first widened
+ * by ADR-0014 #D5):
+ *  1. PACK SCOPE: the pool draws from EVERY pack `i18n/packStore.ts`
+ *     registers — all nine shipped packs (baseline shared-web + game plus the
+ *     seven type packs: dedicated, dns-hosting, exchange-colo, mail-hosting,
+ *     object-storage, serverless, trunk-group-voip). The registry widening is
+ *     the i18n lane's call and it landed; this feed stays inside the
+ *     registration law and inherits the full corpus automatically.
  *  2. SLOT-FREE TEMPLATES ONLY: `fillTemplateBody` takes an EXACT slot set,
  *     and a standing feed has no honest context to fill `{ticket}`/`{node}`
  *     with — inventing filler would be a lie printed in the pack's voice.
@@ -19,11 +20,15 @@
  *  Eligible = every zero-slot entry of `pack.flavour` — the loader ALREADY
  *  partitioned roots through the §9.3 decision/flavour wall, so a decision
  *  key is unreachable here BY CONSTRUCTION, not by a filter this file trusts.
- *  Cross-pack twins (e.g. vendor.reply.firmware / loading.tip.failover in
- *  both packs, byte-ident) are distinct pool entries keyed (packId, key) —
- *  never deduped by key. The one twin whose TEXT diverges per pack,
- *  abuse.canon.upstream, is slot-bearing in both, so the slot law above
- *  already excludes it — the feed never prints a pack-ambiguous line.
+ *  Cross-pack twins are distinct pool entries keyed (packId, key) — never
+ *  deduped by key. Census over the full nine-pack pool: the four vendor.reply
+ *  lines ship slot-free in ALL NINE packs byte-identical, loading.tip.failover
+ *  /two-is-one in both baseline packs byte-identical; every cross-pack twin
+ *  whose TEXT diverges per pack (abuse.canon.upstream, abuse.canon.customer-
+ *  dispute, intern.entry.bill, chatter.desk.stack) is slot-bearing wherever
+ *  the pool would double-count it — chatter.desk.stack goes slot-free in
+ *  mail-hosting only, so it enters exactly once. No key ever surfaces with
+ *  two different texts: the feed never prints a pack-ambiguous line.
  *
  * Order law: the pool is sorted code-unit by key, ties broken by packId
  * (`compareCodeUnits`, the chrome text law) — one stable, locale-free order
@@ -41,8 +46,9 @@
  *
  * Era seam: the text resolves through `packStore.t(packId, key, {}, eraYear)`
  * — the era-variant flavour keys (shared-web ships exactly three: the two
- * ticket subjects + the cold-aisle tip) re-word on a flip; every flat key
- * re-derives byte-identically, per the eraState law.
+ * ticket subjects + the cold-aisle tip; every type pack ships zero) re-word
+ * on a flip; every flat key re-derives byte-identically, per the eraState
+ * law.
  */
 import { asRunSeed, type RunSeed, type SimMinute } from "@hh/sim-core/types";
 import { streamFor } from "@hh/sim-core/kernel";
@@ -157,9 +163,11 @@ export function defaultFlavourPool(): readonly FlavourPoolEntry[] {
 
 /** How many pool lines each voice root owns (code-unit sorted). The chip
  *  rail asks BEFORE offering a root: a root with lines is a button, a root
- *  with none is a visibly DISABLED button (today: forum — every forum thread
- *  in the registered packs carries slots, so the slot-free law keeps it
- *  silent). Strictly better than flavourPoolForRoots throwing at the click. */
+ *  with none is a visibly DISABLED button (a future bank could ship a root
+ *  whose every line carries slots — the locked-button law stays). Since the
+ *  #D5 widening every chip root speaks: forum's threads finally shed their
+ *  slots (eight lines across the type packs). Strictly better than
+ *  flavourPoolForRoots throwing at the click. */
 export function flavourRootCounts(
   pool: readonly FlavourPoolEntry[] = DEFAULT_POOL,
 ): ReadonlyMap<string, number> {

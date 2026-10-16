@@ -29,8 +29,10 @@ const tick = ref(0);
 const activeRoot = ref<string | null>(null);
 
 /** Chip honesty (RecoveryWatch locked-button pattern): a voice root with no
- *  slot-free line today — forum, until its threads shed their slots — renders
- *  DISABLED with its count, never a click that throws. */
+ *  slot-free line renders DISABLED with its count, never a click that
+ *  throws. After the ADR-0014 #D5 widening all four chips speak (forum's
+ *  slot-free lines arrived with the type packs); the locked-button law
+ *  stays for any future bank that ships a root with slots on everything. */
 const rootCounts = flavourRootCounts();
 
 function chipCount(root: string): number {

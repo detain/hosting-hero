@@ -4,8 +4,8 @@
  * equality against flavourLineAtSeed — the component is a mouth, not a
  * second authority), the buttons drive content (advance re-derives under
  * the adjacent-distinct law, chips swap the live pool, the era flip moves
- * the SHARED eraState switch), forum renders honestly disabled at zero
- * slot-free lines, and nothing schedules a timer: every re-render is a
+ * the SHARED eraState switch), every chip rides the rail enabled since the
+ * ADR-0014 #D5 widening, and nothing schedules a timer: every re-render is a
  * click. The global observed store never hears from it.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -94,15 +94,25 @@ describe("FlavourFeed.vue", () => {
     w.unmount();
   });
 
-  it("forum renders honestly DISABLED — zero slot-free lines, no dead click", () => {
+  it("every chip SPEAKS since #D5 — forum rides the rail enabled with 8 lines", async () => {
     const w = mount(FlavourFeed);
-    const forum = w.get('[data-test="feed-root-forum"]');
-    expect(forum.attributes("disabled")).toBeDefined();
-    expect(forum.attributes("data-lines")).toBe("0");
-    // the roots with lines are live buttons
-    for (const root of ["press", "chatter", "ticket"]) {
-      expect(w.get(`[data-test="feed-root-${root}"]`).attributes("disabled")).toBeUndefined();
+    // the widening brought slot-free forum threads from the type packs; no
+    // chip renders dead any more (the locked-button branch stays law for a
+    // future bank whose root ships slots on everything)
+    for (const [root, lines] of [
+      ["press", 3],
+      ["forum", 8],
+      ["chatter", 17],
+      ["ticket", 45],
+    ] as const) {
+      const chip = w.get(`[data-test="feed-root-${root}"]`);
+      expect(chip.attributes("disabled"), root).toBeUndefined();
+      expect(chip.attributes("data-lines"), root).toBe(String(lines));
     }
+    // a now-live forum chip actually filters
+    await w.get('[data-test="feed-root-forum"]').trigger("click");
+    await w.get('[data-test="feed-advance"]').trigger("click");
+    expect(w.get('[data-test="feed-line"]').attributes("data-root")).toBe("forum");
     w.unmount();
   });
 
