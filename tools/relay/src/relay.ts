@@ -229,9 +229,11 @@ export function createCoopRelay(options: CoopRelayOptions = {}): CoopRelay {
   }
 
   function broadcast(record: CoopTimelineRecord): void {
-    // Every seated writer's inbox receives the stamp in broadcast order; a
-    // departed writer's inbox survives as history (what they saw while seated).
+    // Fan-out is over CURRENT seats only: a departed row (leftAtTick set) is
+    // skipped, so that writer's inbox freezes at vacate — it survives as
+    // history (what they saw while seated) and never grows again.
     for (const seat of requireLedger().seatHolders) {
+      if (seat.leftAtTick !== undefined) continue; // departed: inbox is history
       openInbox(seat.participantId).push(record);
     }
   }

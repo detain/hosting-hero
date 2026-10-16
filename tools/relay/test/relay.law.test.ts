@@ -109,6 +109,20 @@ describe("relay seat ledger (save/coop law over a Node host)", () => {
     relay.advanceTo(6n);
     expect(() => relay.joinSeat(ALICE)).toThrowError(/one tenure row per participant/);
   });
+
+  it("broadcast fans out to current seats only — departed inbox freezes at vacate", () => {
+    const relay = twoSeatRelay();
+    relay.submit(ALICE, "note", { text: "seen while seated" }); // tick 1
+    const frozenAt = relay.inbox(ALICE).length;
+    relay.advanceTo(5n);
+    relay.leaveSeat(ALICE);
+    relay.submit(BOB, "note", { text: "after alice left" }); // tick 5
+    relay.advanceTo(6n);
+    relay.submit(BOB, "note", { text: "still after" }); // tick 6
+    expect(relay.sharedLog()).toHaveLength(3); // the log grew regardless...
+    expect(relay.inbox(BOB)).toHaveLength(3); // ...the seated inbox keeps growing...
+    expect(relay.inbox(ALICE)).toHaveLength(frozenAt); // ...the departed one is history, frozen
+  });
 });
 
 describe("relay stamping (replay/coopTimeline law as the relay's own door)", () => {

@@ -17,7 +17,7 @@ deliberately untouched. Adoption is a separate, owner-gated decision.
   cannot matter downstream.
 - `src/runner.ts` — a client half: independent `GameState` driven through the
   real `applyIntentDoor`, hashing every frame with the pipeline's `digestState`.
-- `test/relay.law.test.ts` — 15 law tests (ledger, stamping, dup-position
+- `test/relay.law.test.ts` — 16 law tests (ledger, stamping, dup-position
   throws, interleaving-invariant digest, ruling-2 attribution guard incl.
   forgery/ghost/off-roster-facet refusals, and the v0 re-join refusal pinned
   as friction).
@@ -70,6 +70,7 @@ sim-core edits.
 - **Action payloads are opaque dicts** on the timeline; the relay re-checks
   only `args.verb` shape. The door remains the deep authority — the transport
   must not trust anything between (per coop.ts scope note @8c0ff88).
+- **Submit-time self-check is O(n²) per run**: `assertCoopTimelineAppendOrder` re-scans the whole log on every submit — the transport lane should replace it with an incremental (last-record) check.
 
 ## Hard boundaries honored
 
