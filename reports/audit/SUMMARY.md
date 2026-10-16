@@ -1553,3 +1553,62 @@ This closeout touches four files: `apps/proto/src/chrome/flavourFeed.ts` (commen
 ### Program status
 
 **All non-owner-gated work from the 2026-10-09 audit is landed.** Residual menu = OWNER QUEUE in memory/DECISIONS-PENDING: OD-10/OD-12 numerics, the tenth-type verb-law call (verb roster exhausted — Diagnose sole unclaimed invariant, zero §1.3 card names it), the ratify-on-playtest PROVISIONAL const set (death/elasticity/recovery/attention/oversell/familyWeights), co-op transport (PHP Workerman, out-of-repo), PackId widening.
+
+## WAVE-17 closeout — ADR-0014 implementation wave D1–D9: full landing, docs collected, stack pushed (2026-10-16c)
+
+**Context.** The owner's session-4 rulings (ADR-0014 #D1–#D9, `docs/adr/0014*`) were recorded at @7d77ebf; the wave-16 owner queue dissolved into a full implementation stack of fourteen commits plus two review riders. Joint review verdict on 4bcf910..tip: **zero Critical, one Major + one minor — both fixed in riders** (@24426ec: relay broadcast must fan out to CURRENT seats only, departed inboxes freeze at vacate; @7fdb143: eraState header count nine→ten-registered). This closeout collects every owed doc row, moves the markers, runs the full battery once, and pushes the unpushed stack.
+
+### The stack — per-leg one-liners
+
+| Commit | Leg |
+|---|---|
+| `7d77ebf` | ADR-0014 recorded — owner session-4 rulings D1–D9 as written law |
+| `de5cec7` | #D4 ratification sweep — PROVISIONAL labels retired on the NAMED sets only (economy 23 + pricing defaults + death 1 + elasticity 2 + recovery 7 + waveRules 2 + runner 1 + mail familyWeights reword); values byte-ident; unnamed ~40 pile untouched |
+| `fb18c05` | #D1 roster amendment — `negotiate` + `schedule` join `TIER_EXTENDED_VERBS` (six members; Diagnose blessable; re-claim/MERGE forbidden) |
+| `d3b1db3` | #D2 Shield leg — `shield-node` is the 9th `PlayerVerb` (commit-class, 1 hand/1 tick); optional `GameState.shield` pre-arm book; step-9 patience fold vetoes the exhaustion die via `nodeShielded`; +2 door suites; digest sparse-embed, byte-ident absent |
+| `4bcf910` | Shield follow-up — root-barrel TS2308 rename to `shieldBusinessMinuteOf` + 6 API-REFERENCE rows |
+| `d24071b` | #D5 pack widening — packStore registers all nine then-shipped packs; flavour pool 60→187/153; era trio strict-unchanged; proto +3 |
+| `921ca7b` | #D7 boot.build rider — additive `boot.build?:{hands?,board?}`, PROTOCOL_VERSION stays 1; SHAPE walls at the codec, MEANING walls fault the boot; default riders are 100-frame digest twins of the frozen hexes; proto +19/+1 |
+| `65ac92f` | #D9 metricNamespaceTier — optional schema field + boundary parse (band-ladder enum, drift-pinned); NO lint leg (zero membership data); type kept module-private off-barrel |
+| `1660fd2` | #D8 endless — 32 rows LIVE under **ledger-four** (append records/medals/streaksShared/codex, deny 28); 192/0 census; writeGuard throw kept unreachable-by-construction; campaign-mirror posture RETIRED; mode-tiering stays deferred OD-16(a) |
+| `9bb86f4` | #D1 follow-through — type-10 `official:colo` "Amps and Aisles" founded on **Negotiate** (first blessed-roster-verb card): bundle + rules-free slice + 68-template pack + first colo CAC; hooks 5/9 vs anchor; serial +3; 278/12 census |
+| `286b406` | colo wire-join rider — exchange-colo-style enum + corpusHost CORPUS_TABLES; drift pin flipped green unaided |
+| `5faeb28` | packStore registers colo — tenth bank speaks; pool re-roll 187/153→204/166 (#D5 cost accepted), roster 10, twins byte-ident |
+| `9a3d508` | #D6 relay SPIKE — `tools/relay` (22 tests): hub stamps per-seat inboxes through the coopTimeline (tick,seq) law + save/coop ledger; TWO-RUNNERS-ONE-DIGEST seed 904n ×100 with hostile-permutation normalization and a heterogeneous-occupancy falsifier. SPIKE ≠ adoption |
+| `24426ec` | review MAJOR — departed-seat inboxes freeze at vacate (broadcast current-seats-only) + serial script + O(n²) handoff note |
+| `7fdb143` | review minor — eraState header count nine→ten |
+
+### Battery (ONE authoritative run at this tree, this closeout)
+
+| Gate | Result |
+|---|---|
+| sim-core full serial | **147 files / 2,487 tests, exit 0, ZERO goldens moved** |
+| proto full serial | **95 files / 1,051 passed** |
+| tools/relay | **22/22** |
+| headless | **53/5 — parity real `b0162ab5` / stub `a9b4b7b8` HELD** |
+| api-verify | **PASS — 1,601 names, ZERO delta** (MetricNamespaceTier deliberately off-barrel) |
+| ci-verify | **5/5 PASS** |
+| content validate | **exit 0 — 10 bundles / 278 `_todo` / 12 pack** |
+| `pnpm -r typecheck` | **6/6 Done** (relay joins the workspace count) |
+| canary | **PASS — 133 files** |
+| proto build | OK — worker **632.70 kB** / fakeWorker **329.02 kB** / index **1,226.55 kB** (the ten-pack ?raw bank rides both worker arms — m3 row updated) |
+
+### Census — ONE marker moved
+
+✅321 · 🔧1,005 · ⚠️1 · ❌2,232 · 📝30 = 3,589 (heading-level recount, method-pinned). The move: §1.3 Colocation landlord ❌→🔧 `9bb86f4` (card ships as data; Negotiate door-mechanic gap holds it partial — law note added under the heading). Deliberate holds: "The readability targets" STAYS ⚠️ per #D3's own letter (relative law is standing law, but the measured `tools/perf` grid baseline has not run); §0.3 Colocation row carries no marker (table-row precedent) — data fact recorded in the tail note; "Endless / Survival" keeps 🔧, its #D8 ruling note amended QUEUED→LANDED. Tail WAVE-17 re-markup note appended.
+
+### Ledger (this closeout collected)
+
+`docs/DECISIONS-PENDING.md`: OD-4b→LANDED (#D9), OD-8→LANDED + posture ledger (#D8), verb-exhaustion row→#D1 amendment + type-10. `docs/MODULE-STATUS.md`: content + loader-`_todo` rows re-cut (10 bundles/38 JSON/278/12/307), save row 192/0 + endless closure, D7 row SHA-stamped @921ca7b, NEW #D9 loader row, verb-wall row LANDED (Schedule + Diagnose remain unclaimed), door row Shield BUILT, flavour row widening LANDED, co-op/relay row SPIKE CLOSED (transport row stays OPEN — not flipped), proto row chain →1,051/95, m3 sizes re-read, footer re-pinned 2,487/147 (wave-16's 2,446 drift noted honestly). `docs/API-REFERENCE.md`: `TIER_EXTENDED_VERBS` row six members + #D1 provenance, loader prose NOTE for metricNamespaceTier (private-by-decision). `hosting_game.md`: the flip + law note, endless note amendment, tail re-markup. This closeout stages five files total (the four docs + `hosting_game.md` + this SUMMARY). media/prompts never staged.
+
+### Owner asks (fresh/standing after this wave)
+
+1. **Endless campaign-mirror re-raise?** The full-carry option rode the pending rows as data; #D8 ruled ledger-four and the mirror is RETIRED — re-raising needs a fresh ruling.
+2. **Eleventh card law call**: Schedule (blessed, unclaimed — backup/GPU/HPC/satellite family) vs a Diagnose bless card — which, or neither yet?
+3. **MetricNamespaceTier export**: kept PRIVATE (off-barrel, api-verify blind) — flip when a consumer names it.
+4. **Relay transport frictions left open by the spike** (pinned in `tools/relay/README.md` + tests): same-tick joins impossible, re-join has no ledger rep (one-tenure-row v0), mid-run joiners get no history, MIN_WRITERS counts departed rows — the PHP/Workerman transport lane owes rulings; the :216 transport gap row stays OPEN.
+5. **Readability measurement**: running the `tools/perf` grid baseline on the ratified hardware target is the last gate on the program's sole ⚠️.
+
+### Program status
+
+**ADR-0014 D1–D9: FULLY LANDED** (D6 as authorized spike; D9 lint-leg honestly awaits membership data). The unpushed stack rides this push; after it, master == origin.
