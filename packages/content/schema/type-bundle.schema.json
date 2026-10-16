@@ -593,6 +593,12 @@
       }
     },
 
+    "metricNamespaceTier": {
+      "type": "string",
+      "enum": ["weather", "storm", "hunter", "entropy"],
+      "description": "Ratified FUTURE bundle field — OD-4b residual (ADR-0009 §1 4b law; ADR-0014 #D9 queue 8 build). The deepest §1.7 telegraph band whose metrics this type declares nameable in policy rules: entropy-band 'foresight is a purchase' grows the policy grammar's metric namespace rung by rung (MASTER_REPORT §6 OD-4 row) — bundle data, never engine branching. The rung vocabulary IS the ratified band ladder (sim-core waves/bands.ts TELEGRAPH_BANDS; loader mirrors bundle.ts METRIC_NAMESPACE_TIERS / wavestruct.ts WAVE_BAND_VOCAB, drift-pinned) — zero new tokens. OPTIONAL: absent in every shipped bundle; a present-but-off-ladder value fails the strict loader BAD_ENUM, and the loader's UNKNOWN_FIELD wall still fences every undeclared key."
+    },
+
     "_todo": { "type": "string", "description": "Top-level TODO marker (sibling convention: any object with a null placeholder carries _todo naming the §-cite)." }
   },
   "additionalProperties": true

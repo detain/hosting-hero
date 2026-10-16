@@ -53,6 +53,20 @@ export type WinConditionKind =
   | "audit-pass"
   | "convert-%";
 
+/** OD-4b residual, ratified FUTURE bundle field (ADR-0009 §1 4b; ADR-0014 #D9
+ *  consequence 8): the deepest §1.7 telegraph band whose metrics this type
+ *  declares nameable in policy rules — entropy-band "foresight is a purchase"
+ *  grows the policy grammar's metric namespace rung by rung, as bundle data,
+ *  never engine branching (MASTER_REPORT §6 OD-4 row: "which metrics are
+ *  nameable in rules at Tier N becomes a WS-3/WS-6 authoring contract").
+ *  The rung vocabulary IS the ratified band ladder — waves/bands.ts
+ *  TELEGRAPH_BANDS, loader mirror wavestruct.ts WAVE_BAND_VOCAB — zero new
+ *  tokens; all three literals are drift-pinned in __tests__. Deliberately
+ *  NOT barrel-exported until the docs lane can author its API-REFERENCE row
+ *  (api-verify is name-exact both directions); the LoadedTypeBundle field is
+ *  structurally this union either way. */
+type MetricNamespaceTier = (typeof METRIC_NAMESPACE_TIERS)[number];
+
 /** Float-free JSON subset kept opaque (eraOverrides forward-compat surface):
  *  strings, booleans, null, integer numbers, arrays and objects only. */
 export type OpaqueJsonValue = string | boolean | null | number | readonly OpaqueJsonValue[] | OpaqueJsonRecord;
@@ -336,6 +350,9 @@ export interface LoadedTypeBundle {
   readonly rosettaCards: readonly LoadedRosettaCard[];
   readonly scenarios: LoadedScenarios;
   readonly guardrails: LoadedGuardrails;
+  /** ADR-0014 #D9 / OD-4b — OPTIONAL; absent (key omitted) in every shipped
+   *  bundle today, which keeps loaded state byte-identical to pre-D9 parses. */
+  readonly metricNamespaceTier?: MetricNamespaceTier;
 }
 
 /* ═════════════════════ parsing machinery ═════════════════════ */
@@ -531,6 +548,14 @@ const SCENARIO_ARCHETYPES = [
   "Hold-Without-Hands",
   "Inherit",
 ] as const;
+
+/* metricNamespaceTier rungs (ADR-0009 §1 4b, ADR-0014 #D9) — the ratified §1.7
+ * telegraph band ladder copied VERBATIM: waves/bands.ts TELEGRAPH_BANDS is the
+ * engine authority; wavestruct.ts WAVE_BAND_VOCAB is this module's existing
+ * mirror (loader imports only ../types + ../kernel, so a literal mirror is the
+ * house pattern). metric-namespace-tier.test.ts drift-pins all three literals
+ * so none can silently diverge. */
+const METRIC_NAMESPACE_TIERS = ["weather", "storm", "hunter", "entropy"] as const;
 
 const bounceSigmoidLeaf = (value: unknown, path: string): readonly [Fixed, Fixed, Fixed] | null => {
   if (value === null) return null;
@@ -861,6 +886,12 @@ const ROOT_PLAN: Plan = {
   ),
   scenarios: req((v, p) => parseObject(v, p, SCENARIOS_PLAN)),
   guardrails: req((v, p) => parseObject(v, p, GUARDRAILS_PLAN)),
+  /* ADR-0014 #D9 (OD-4b residual, ratified by ADR-0009 §1 4b): how far the
+     policy grammar's metric namespace reaches for this type, as ONE rung of
+     the §1.7 band ladder. Absent = undeclared (key omitted downstream —
+     byte-identity law, mirrors economy.chargebackRate). An off-ladder value
+     fails loud at the boundary; an explicit null is not an authored rung. */
+  metricNamespaceTier: opt(enumOf(METRIC_NAMESPACE_TIERS, "metric-namespace tiers (§1.7 telegraph band ladder, ADR-0009 4b)"), null),
 };
 
 /* ═════════════════════ flattening + freeze ═════════════════════ */
@@ -1030,6 +1061,9 @@ function toLoadedBundle(parsed: JsonRecord): LoadedTypeBundle {
       analogues: scenarios.analogues as Readonly<Record<string, string>>,
     },
     guardrails: parsed.guardrails as LoadedGuardrails,
+    /* absent-while-idle: the key is OMITTED when the wire omits it, so every
+       pre-D9 bundle loads byte-identically (same shape, same key order). */
+    ...(parsed.metricNamespaceTier === null ? {} : { metricNamespaceTier: parsed.metricNamespaceTier as MetricNamespaceTier }),
   };
   return loaded;
 }
