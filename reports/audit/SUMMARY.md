@@ -1454,3 +1454,62 @@ Loader+waves (the m1 blast radius, 332-file pin from `bfd8e1e`'s own gate record
 `docs/MODULE-STATUS.md`: footer re-pinned 2,435→**2,438**/144 with the auto-join attribution; Type-8 row carries the citation re-grounding echo; worker-loop gap row stamped **@1165368**; m3/m4 added as two new gap rows.
 
 This closeout touches seven files: `packages/content/types/serverless.json`, `packages/content/packs/serverless.i18n.json`, `packages/content/README.md`, `packages/sim-core/src/waves/__tests__/families.test.ts`, `docs/MODULE-STATUS.md`, `hosting_game.md`, plus this `reports/audit/SUMMARY.md`. media/prompts never staged.
+
+## WAVE-15 closeout — type-9 marked, flavour mouth + co-op room recorded, wire join green, battery re-pinned (2026-10-16)
+
+### The commits (four already on master at closeout start; closeout adds one docs commit)
+
+| SHA | Role | What landed |
+|---|---|---|
+| `d4e7863` | content type-9 | **The Microsecond Cathedral** ruleset card — 9th OD-14(a) hosting type via the SELL tier-extension: card ships NO dominant-verb line (second such case), Sell grounded twice in-card ("microseconds are what you sell" / "you sell *equal* latency") + the Colo verb-shift row; §0.3 scarcity row EXISTS (unequal latency between tenants) so the Three-Change table survives; firsts — µs `simTimeScale`, resident patience mode, escalator-TRUE terms, all-or-nothing party at null win-threshold; threats reuse 8 registry ids, both lookalike seeds re-worn, ZERO registry edits; 68-template pack (37/31), RULES-FREE wave slice at par 25/60/30/75/100 (census maxAuthored UNMOVED 240); hooks 5/9 vs anchor (R23 shed ladder rides deliberately). VERB-ROSTER WALL: all four tier slots claimed, Diagnose unclaimed — tenth card is an OWNER law call. 9 files +798/−17 |
+| `73cccc4` | proto flavour | Front-of-House **flavour feed** — g24's mouth: deterministic per-(seed,tick) line via kernel `streamFor(seed,"chrome/flavour-feed",tick)` + adjacent-DISTINCT re-draw law; pool = ZERO-SLOT flavour templates of the two packStore-registered packs (60 entries, 54 distinct keys; cross-pack twins coexist keyed (packId,key)); era-aware through `t(...,eraYear)`; forum chip honestly DISABLED at 0 lines; HudLabPanel card; zero timers. 6 files +758 |
+| `10f05fb` | proto co-op | **Incident Room** — co-op seat ledger + shared timeline laws made playable in ONE tab: `validateCoopSeatLedger` / `guardCoopAttributionBatch`→`commitCoopAttribution` (ruling-2 scars/museum-only wall) / (tick,seq) append order + interleaving-invariant `digestCoopTimeline`; transport leg owed (ADR-0013 ruling 8). 6 files +1,154 |
+| `95fc86e` | proto wire join | exchange-colo joined the corpus wire enum (`protocol.ts` + `corpusHost.ts` mirror) — the `simWorker.corpus.test.ts` drift pin (9 slices on disk vs 8-entry table) flipped GREEN unaided; count-neutral; worker/fakeWorker chunks each +~48 KB |
+| closeout | docs | the n1 cure below + ledgers — zero machine values moved, zero test semantics moved |
+
+### Review
+
+Both reviews returned **PUSH-GO**. `d4e7863`: **0 critical / 0 major / 0 minor / 2 nit** — one raised point (the widened count-neutral pins) re-verified here as genuinely count-neutral: the per-file law loops auto-join by disk census, and a detached-`91c45b5` worktree A/B measures the whole delta at loader+waves 332→335 / full serial 2,438→2,441 with files UNMOVED (storm-cap per-slice `it` +1, real-content per-bundle loops +2 — the type-8 pattern verbatim); no cure. Proto-stack (`73cccc4`+`10f05fb`+`95fc86e`): **0C / 0M / 0m / 1 nit** —
+- **n1 cured (comment-only):** `chrome/flavourFeed.ts` pool-law docblock cited `abuse.canon.upstream` inside the "distinct pool entries … never deduped" example, but that twin is EXCLUDED from the pool — it is slot-bearing in BOTH packs (verified by reading both JSONs: `{upstreamDomain}`/`{prefix}`), so the slot law never lets it in (its text also diverges per pack, which is exactly why the law matters). The sentence now names genuine in-pool twins (`vendor.reply.firmware` / `loading.tip.failover`, byte-ident both packs — verified) and states the upstream twin's true status: excluded BY the slot law, the divergence the law quietly de-risks. The pool test already asserted `POOL.some(e => e.key === "abuse.canon.upstream") === false` — the docblock was the lie, the code never was.
+
+### Markers / appendix
+
+| Line | Heading | State | Disposition | Note |
+|---|---|---|---|---|
+| 2361 | §1.3 `"Exchange Colo" / "The Microsecond Cathedral" / "The Meter Stick" — Financial low-latency colocation` | ❌ → **🔧 d4e7863** | flipped (fail-loud assert ❌ on disk first) | card-identity + data shipped; the Sell door-verb gap and engine consumers of the bundle's knobs keep it off ✅ — the serverless/object-storage precedent; `d4e7863` stamps the data commit |
+
+Skips and appendix notes:
+- **§0.3 scarcity row**: table rows carry no markers — SKIPPED per the Trunk Group/serverless precedent.
+- **Flavour feed (`73cccc4`): NO heading flipped — appendix note.** The §9.3 sweep looked for a heading whose claim a zero-slot deterministic ticker actually SATISFIES. The three loud candidates stay ❌ for honest reasons: `### The Trade Radio` requires an ambient AUDIO channel reporting world events before mechanical consequence; `### Outage Bingo` requires the 5×5 grid minigame + cosmetic line-fill; `### Server naming and the label maker` requires the name generator + MTTR/morale mechanics + label-tape rendering. The feed's real consumers (ticket generator, vendor comedy channel, loading tips, staff chatter, press, forum threads, sticky notes, intern's log) are ALREADY 🔧 from pack authorship (`08d4fe2`/`354261d` era) — the mouth widens them below the marker, not past it; partial-pool status is ledgered in three new MODULE-STATUS gap rows instead (pool scope 2/11 + zero-slot law, forum-chip honest disable).
+- **Co-op room (`10f05fb`): NO marker moved — appendix note.** The multiplayer rows are already 🔧 since `8c0ff88` (e.g. `### Co-op NOC (asymmetric information)` 🔧 8c0ff88 — left standing per brief); the room is the DEMO leg of that shipped contract, and timeline-side-only-v0 + transport-owed is a new gap row. (Name-collision checked: `### "The Co-op" — Non-profit / member-owned hosting` ❌ is the unshipped TYPE-4 ruleset CARD, not multiplayer — untouched.)
+
+### Census (`^#` marked heading lines, disk recount on the closeout tree)
+
+| Class | Before | After |
+|---|---|---|
+| ✅ DONE | 321 | **321** |
+| 🔧 PARTIAL | 1,003 | **1,004** |
+| ⚠️ PROBLEM | 1 | **1** |
+| ❌ MISSING | 2,234 | **2,233** |
+| 📝 NA | 30 | **30** |
+| **total marked** | **3,589** | **3,589** |
+
+Exactly one ❌→🔧 move this wave (the Cathedral card); recount on disk wins and matches.
+
+### Battery (full, serial, one process at a time, unloaded box, Node 24)
+
+| Gate | Result | Wall |
+|---|---|---|
+| sim-core `npx vitest run --no-file-parallelism` | **144 files / 2,441 tests passed, exit 0** — +3 vs the wave-14 pin are `d4e7863`'s disk-loop auto-joins (worktree A/B: loader+waves 332→335, files UNMOVED), ZERO digest goldens moved | 168.6s |
+| proto `npx vitest run --no-file-parallelism` | **94 files / 1,029 tests passed** — ALL GREEN on the post-n1 tree (matches the review's truth; n1 docblock shifts nothing — minified chunks byte-stable at the recorded sizes) | 53.5s |
+| `pnpm -r typecheck` | **5/5 Done** | — |
+| `node docs/api-verify.test.mjs` | **PASS — 1,594 names**, import map consistent (the stack ships zero new export names) | <10s |
+| `node scripts/ci-verify.mjs` | **5/5 PASS** (api-verify, content-validate, canary, proto-build, g5-mirror-diff) — fresh build: worker 574.30 kB / fakeWorker 274.10 kB / index 1,027.50 kB, re-read into the m3 row | ~45s |
+| `tools/headless` | **53/5** — parity b0162ab5/a9b4b7b8 **HELD** | 9.5s |
+| `node packages/content/script/validate.mjs` | **exit 0** — nine bundles/waves/packs, 245 inventory + 11 pack markers | <5s |
+
+### Ledger
+
+`docs/MODULE-STATUS.md`: proto row 977→**1,029**/94 with the full chain note (→990 @1165368 →1,008 @73cccc4 →1,029 @10f05fb; 95fc86e count-neutral drift-pin closure) + GREEN narrative for both new panels; footer re-pinned 2,438→**2,441**/144 with the worktree-measured attribution; m3 row sizes re-read honestly (fakeWorker 226→274 added — the brief only named the worker half, the line is a size ledger); THREE new gap rows (flavour pool scope packs-2/11 + zero-slot law, co-op room timeline-side-only v0, forum chip 0-lines honest disable); type-9 content row stamped **@d4e7863**.
+
+This closeout touches four files: `apps/proto/src/chrome/flavourFeed.ts` (comment-only), `hosting_game.md`, `docs/MODULE-STATUS.md`, plus this `reports/audit/SUMMARY.md`. media/prompts never staged.

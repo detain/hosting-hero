@@ -19,9 +19,11 @@
  *  Eligible = every zero-slot entry of `pack.flavour` — the loader ALREADY
  *  partitioned roots through the §9.3 decision/flavour wall, so a decision
  *  key is unreachable here BY CONSTRUCTION, not by a filter this file trusts.
- *  Cross-pack twins (e.g. vendor.reply.firmware in both packs; and
- *  abuse.canon.upstream, which DIFFERS per pack) are distinct pool entries
- *  keyed (packId, key) — never deduped by key.
+ *  Cross-pack twins (e.g. vendor.reply.firmware / loading.tip.failover in
+ *  both packs, byte-ident) are distinct pool entries keyed (packId, key) —
+ *  never deduped by key. The one twin whose TEXT diverges per pack,
+ *  abuse.canon.upstream, is slot-bearing in both, so the slot law above
+ *  already excludes it — the feed never prints a pack-ambiguous line.
  *
  * Order law: the pool is sorted code-unit by key, ties broken by packId
  * (`compareCodeUnits`, the chrome text law) — one stable, locale-free order

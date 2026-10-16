@@ -2358,7 +2358,7 @@ ownership, bid bonds — long, slow, enormous. Harder: a competitor **protests y
 win the framework agreement. Data residency also becomes a *sellable feature*, not only a
 constraint.
 
-### "Exchange Colo" / "The Microsecond Cathedral" / "The Meter Stick" — Financial low-latency colocation ❌
+### "Exchange Colo" / "The Microsecond Cathedral" / "The Meter Stick" — Financial low-latency colocation 🔧 d4e7863
 A comedy of physics.
 
 **How it works:** New rule: **cable length is measured in metres and it is the product.** Cable
