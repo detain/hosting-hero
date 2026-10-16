@@ -32,7 +32,7 @@ const typeFiles = readdirSync(join(CONTENT, "types"))
 
 describe("real packages/content loads through the strict boundary", () => {
   test("every shipped type-bundle loads with zero errors", () => {
-    expect(typeFiles).toEqual(["dedicated.json", "dns-hosting.json", "game-servers.json", "mail-hosting.json", "object-storage.json", "serverless.json", "shared-web.json", "trunk-group-voip.json"]);
+    expect(typeFiles).toEqual(["dedicated.json", "dns-hosting.json", "exchange-colo.json", "game-servers.json", "mail-hosting.json", "object-storage.json", "serverless.json", "shared-web.json", "trunk-group-voip.json"]);
     for (const name of typeFiles) {
       expect(() => loadTypeBundle(readJson("types", name))).not.toThrow();
     }
@@ -101,7 +101,7 @@ describe("real-content Ruleset Diff Lint verdict", () => {
   test("era roster on real content: 2010 lists every official line", () => {
     const bundles = typeFiles.map((name) => loadTypeBundle(readJson("types", name)));
     const live2010 = bundlesLiveInEra(bundles, 2010, { includeUndocumented: true });
-    expect(live2010).toEqual(["official:dedicated", "official:dns-hosting", "official:game-servers", "official:mail-hosting", "official:object-storage", "official:serverless", "official:shared-web", "official:trunk-group-voip"]);
+    expect(live2010).toEqual(["official:dedicated", "official:dns-hosting", "official:exchange-colo", "official:game-servers", "official:mail-hosting", "official:object-storage", "official:serverless", "official:shared-web", "official:trunk-group-voip"]);
     // dedicated, dns-hosting, game-servers, mail-hosting and object-storage eras.availableFrom are unauthored placeholders
     // (§0.4 R66): without the undocumented opt-in they must NOT be silently granted.
     expect(bundlesLiveInEra(bundles, 2010)).toEqual(["official:shared-web"]);

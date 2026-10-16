@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "packId": "pack:exchange-colo.i18n",
+  "appliesTo": "official:exchange-colo",
+  "locale": "en",
+  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the financial exchange colocation line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is GEOMETRY and FAIRNESS — the coil you can measure with your eyes, the forty nanoseconds that end a company, the regulator with a tape measure — and the advantage is depicted only as consequence: the skewed readout, the audit letter, the lawyers' register. No build instructions, no frequencies, no FPGA or microwave how-to anywhere; the level 'introduces nanosecond-scale thinking' (§1.3), not nanosecond-scale engineering.",
+  "slots": {
+    "nodeId": {
+      "kind": "entity",
+      "desc": "Board object the decision surface is about (cabinet row / floor segment / meet-me room id)."
+    },
+    "verb": {
+      "kind": "text",
+      "desc": "Engine intent verb being refused (place/connect/configure/...)."
+    },
+    "availableAtTick": {
+      "kind": "tick",
+      "desc": "Tick at which the queued intent or a freed hand presents."
+    },
+    "relationKind": {
+      "kind": "text",
+      "desc": "Board relation of a cable (data/power/control/trust)."
+    },
+    "slotName": {
+      "kind": "entity",
+      "desc": "Socket designation on a node (PSU, uplink, patch jack, cage position)."
+    },
+    "cabinetId": {
+      "kind": "entity",
+      "desc": "One cabinet by designation — the unit the whole line sells (§0.3: 'A cabinet three metres closer')."
+    },
+    "tenantName": {
+      "kind": "entity",
+      "desc": "A trading firm by name — the resident, the hunter, or the one with lawyers now."
+    },
+    "skewNs": {
+      "kind": "number",
+      "desc": "Nanoseconds of latency skew between two tenants that were promised equality (§1.3 catastrophe quantum)."
+    },
+    "leaseMonths": {
+      "kind": "number",
+      "desc": "Months left on a lease the riot is reading aloud."
+    },
+    "crossConnects": {
+      "kind": "number",
+      "desc": "Cross-connects on the order or in the room — every one a faucet dripping gold (§6.x)."
+    },
+    "ticketId": {
+      "kind": "entity",
+      "desc": "Customer support ticket number."
+    },
+    "hour": {
+      "kind": "time",
+      "desc": "Clock hour a notice or ticket was filed at — the session clock's instrument."
+    },
+    "minute": {
+      "kind": "time",
+      "desc": "Clock minute a notice or ticket was filed at."
+    },
+    "day": {
+      "kind": "number",
+      "desc": "Day of the quarter, for the intern's log."
+    },
+    "hostName": {
+      "kind": "entity",
+      "desc": "A competitor in press/obituary copy."
+    }
+  },
+  "decision": {
+    "type.exchange-colo.name": "The Microsecond Cathedral",
+    "type.exchange-colo.codex": "The Exchange floor: cable length, not compute. Metres are the product — 'cable length is measured in metres and it is the product' (§1.3) — and you sell *equal* latency, enforced by the spool alone. The fastest catastrophe never breaks uptime: one tenant finds a 40-nanosecond advantage and the others riot with lawyers, while the regulator arrives with a tape measure. The coils look identical; that is the contract — read the row with your eyes before you read it in ns. Fairness is infrastructure here: geometry you sell, audit you survive, equality you enforce before the number tells you.",
+    "visitor.unit.cabinet-lease": "cabinet lease",
+    "goal.exchange-colo.binding": "Metres and hands, not cores: the floor's whole promise is a skew that stays at zero, the promise is audited by someone else's calendar, and the hands that re-spool a coil are the same hands that answer the regulator — the product is equal latency and it is enforced by you, live, on every rack at once.",
+    "scarce.exchange-colo.qos": "Nothing on this floor sheds, and that is the design: leases are resident and cabinets are committed capacity — 'occupies a slot for the whole level ... cannot be shed at all' (§3.2) — so the ladder never decides who loses bandwidth, it only decides who waits for the survey. The equality the meter sells is defended upstream of any shed order: a coil re-spooled fairly is worth more than any priority queue, and the ladder rides the standard P3-P0 law until the class-level immunity question the engine records is owned.",
+    "skin.exchange-colo.inspector": "Obsidian and gold under trading-floor teal: a cabinet row so neat it reads as a ledger, fibre lengths labelled in metres, coiled excess fibre on every rack — a detail that looks amazing and explains itself. The Signature meter draws nanoseconds absurdly precise, brass on black; the catastrophe is one coil visibly smaller than its neighbours, 'spottable by eye before the number tells you' (§1.3). When the row fails the readout goes UNEQUAL, not red: latency scarlet on one needle while every uptime lamp swears nothing broke, the equality-white band going patchy as the riot finds its letterhead.",
+    "economy.exchange-colo.bad-month": "A single tenant, not renewing: a 3–5 year cliff arriving as one signature, and the amps it held suddenly worth a competitor's tour group.",
+    "cac.exchange-colo.todo": "§6.6 Companion B prices the family rows — 'Colocation' at $2,000–15,000 over a 12–30 month fit-out, and 'Cross-connect' at ~$0 because it is 'sold to an existing tenant' — but prices no exchange-premium row for this variant; the distance tier re-prices everything and nothing in B captures it. Placeholder until the pricing pass — never invented.",
+    "verbs.exchange-colo.transfer.1": "Geometric-fairness discipline transfers everywhere: any line that sells sameness now asks you the same question — what does it cost to prove the promise, who audits your units, and what happens the day one customer measurably gets more of the equal thing than another?",
+    "relations.exchange-colo.mastery": "The floor reads the calendar: leases ramped before the stranded year, coils attested before the regulator's window, cross-connects fauceted before the tour asks, and the skew readout boring enough that the audit report becomes a formality you file instead of a verdict you survive.",
+    "relations.exchange-colo.distillate": "Playbook: sell the invariant, not the capacity — a floor of equal metres is a product that must be *measured* into existence every day; treat the audit as a scheduled load, not an emergency; and remember that on a fairness line the breach does not arrive as an outage, it arrives as arithmetic one tenant can prove — forty nanoseconds, one letterhead, and a riot of people who each paid for the same distance.",
+    "handover.exchange-colo.runs-out": "Your metres and your hands. A floor with no survey cadence is a promise you cannot attest; a NOC that spends its hands on the rewrap has none left for the regulator, and the audit window does not re-schedule for your staffing.",
+    "handover.exchange-colo.kills-you": "The 40ns advantage: one tenant measurably closer than the others — 'and the others riot (angry client sprites with lawyers)' — the breach that never breaks uptime, spends the building's word instead, and arrives already written in arithmetic no apology can round.",
+    "handover.exchange-colo.customer-wants": "The cabinet three metres closer — and they want it at the same latency as everyone else's contract says they should: 'you sell *equal* latency as a product' (§1.3), which is the one thing on this floor they cannot buy twice.",
+    "rosetta.exchange-colo.equalization": "Cable-spool equalization is the cgroup cage pointed at photons: the same bet that a bounded neighbour is cheaper than an unbounded one, enforced now in metres instead of memory — shared-web cages what a tenant runs, this line cages how far their light travels.",
+    "rosetta.exchange-colo.renewal": "The multi-year lease cliff is the renewal cliff measured in years: shared-web's cohort leaves at the promo rate's end because renewals are cheap; a colo tenant leaves when the 3–5 year term ends because everything else is — the cliff shape is the same and the unit is a signature.",
+    "scenarios.exchange-colo.shortened-cable-discovered": "The Shortened Cable (§1.3): someone cut 2m off a run, the readout moved forty nanoseconds, and the floor discovered that its product was a promise — the audit that follows is not forensics, it is an act of worship returning to geometry. 'Fairness is enforced by cable spool' until it isn't, and the consequence is the entire remainder of the level.",
+    "scenarios.exchange-colo.regulator-audit-day": "The Regulator's Audit Day (§1.3 threat clause verbatim: 'the regulator who audits your cable lengths'): every length label, every attestation, every cross-connect order on one table at once, while the hands you did not staff queue outside the compliance door. The audit is a scheduled load the doc writes as a threat — treat it like a wave, because the tenants will.",
+    "scenarios.exchange-colo.twenty-cabinet-ramp": "The Twenty-Cabinet Ramp (§6.x verbatim: 'You sign a tenant for 20 cabinets — but colo deals ramp'): the deal books, the billing calendar starts on cabinet one, and cabinets 5 through 20 are stranded amps you reserved from day one. Success arrived as the biggest lease of the quarter and spent the year before it — the demand-side ghost the phantom-cabinet row renders in grey.",
+    "alert.coil-mismatch": "{cabinetId} on {nodeId}: diameter audit flagged {skewNs} ns of skew against the row's promise — the coil was spottable before the readout moved. That is the incident.",
+    "alert.advantage-hunt": "{tenantName} behind {nodeId} came back a shade short of the floor's round trip since {hour}:{minute}. Nothing broke. Fairness did.",
+    "alert.audit-window-open": "Audit window opens on {nodeId}: {crossConnects} cross-connects, every length label, every attestation — hands free by {availableAtTick} or the regulator decides what 'complete' means.",
+    "alert.riot-cascade": "{leaseMonths}-month leases are being read aloud with the word 'breach' in them: {tenantName} and the row behind them have lawyers now.",
+    "alert.phantom-hold": "{cabinetId} billed and silent on {nodeId} — the ramp has not started, the amps are still its shadow, and the tour walks past it on the way to a competitor's lit row.",
+    "terms.distance-tier": "Distance tier — 'a customer will pay enormous money for a cabinet three metres closer' (§1.3 verbatim): the same metre sold at the price of its distance from the engine, and the whole line's tension in one price list.",
+    "terms.cross-connect": "Cross-connect — 'the best line item in hosting' (§6.x): ~95% margin, recurring, ~$0 acquisition because it is 'sold to an existing tenant', and the reason the meet-me room is the cathedral (§6.x/§8.x).",
+    "terms.meter-stick": "Meter stick — the card's own title object: the survey cadence that makes the fairness claim true daily; on this floor the ruler is not a tool, it is the product's warranty.",
+    "refusal.hands-exhausted": "Both hands are committed. The {verb} intent is queued and presents when a hand frees at tick {availableAtTick}.",
+    "refusal.stamped-in-future": "The {verb} intent is stamped for tick {availableAtTick}, ahead of the current minute. Nothing was spent.",
+    "refusal.unknown-node": "No board object named {nodeId} exists at the current tick. Nothing was changed.",
+    "refusal.edge-exists": "A {relationKind} cable already links {nodeId} to those endpoints. The existing edge was left as it is.",
+    "refusal.slot-occupied": "{slotName} on {nodeId} is occupied. One supplier per socket; disconnect before you reconnect.",
+    "status.rung-1": "Investigating elevated error rates",
+    "status.rung-2": "Degraded performance",
+    "status.rung-3": "Partial outage",
+    "status.rung-4": "Major outage",
+    "status.rung-5": "We are aware of the fire."
+  },
+  "flavour": {
+    "ticket.subject.skew": "our co-lo contract says EQUAL latency and ours says {skewNs} ns — which document is real",
+    "ticket.body.skew": "Ticket {ticketId}, filed {hour}:{minute} morning. We are not alleging an outage. There has never been an outage. We are alleging arithmetic: the round trip from {cabinetId} to the matching engine arrives early, the other row arrives on schedule, and the contract uses the word 'equal' in three places. Our compliance team would like to discuss. Our compliance team has already discussed it internally, without us, at length.",
+    "ticket.subject.phantom": "we are paying for {leaseMonths} months of a cabinet that has never drawn amps",
+    "ticket.body.phantom": "The invoice says cabinet, the ramp schedule says later, and the marketing tour says 'fully occupied floor'. We did not sign for a shadow, we signed for the first eight, and the remaining {cabinetId} entries are being presented to visitors as OUR capacity. Please re-word the brochure or re-wire the billing. We are flexible about which.",
+    "ticket.subject.audit": "regulator site visit {day} — we would like our cable lengths attested BEFORE, not during",
+    "ticket.body.audit": "They arrive at open with clipboards and leave at close with findings. The {crossConnects} cross-connects in your meet-me room are now OUR audit trail, the label board is missing six metres of honesty, and 'the fairness is visible' is a sentence your tour guide used against you in there. Attest in advance or we will be explaining your geometry to people who measure.",
+    "ticket.subject.crossconnect": "who approved a {crossConnects}-port meet-me room with no patch discipline",
+    "ticket.body.crossconnect": "A cross-connect landed on the wrong port at {hour}:{minute} and a tenant we have never met took down a tenant who takes down OUR order flow. Nobody's uptime page noticed because nobody's page includes the word 'yours'. The faucet you sell is a fire hose when the map is wrong.",
+    "press.headline.riot": "No outage at {hostName}, exchanges confirm — only one tenant, forty nanoseconds, and a floor of clients who read 'equal latency' literally; the incident report is a subpoena.",
+    "press.headline.ramp": "{hostName}'s record lease arrives as a ramp — twenty cabinets billed as a victory, eight dark for a year; the tour walks past them in a different light.",
+    "forum.thread.coils": "Anyone else's floor going patchy on the equality band with zero alert? Ours flagged {skewNs} ns at {hour}:{minute} and the coil picture explains it before the log does. Bought a second meter stick. Sleeps better.",
+    "forum.thread.tier": "Whoever priced the distance tier was right and I cannot unsee it. Watched a demo floor hand the third row a four-figure premium for a promise the spool rack keeps for free — and then watched the audit-day thread where the same tier becomes the plaintiff's exhibit.",
+    "chatter.desk.equal": "Row's boring, skew's zero, audit's filed. On this line 'boring' is the product demo.",
+    "chatter.desk.eye": "Watch the coils: nine identical, one shade tight, no ticket yet. That is not green — that is early.",
+    "codex.equality": "'You sell *equal* latency as a product' (§1.3 verbatim): the rarest good in hosting — a promise measured in other people's physics. The coil is the warranty; the readout is the claim; the regulator is the audit of whether you kept both in the same building.",
+    "codex.spool": "'Fairness is enforced by cable spool' (§1.3 verbatim): geometry as law. Every other line in the game can oversell; this one oversells only in the direction of embarrassment — a metre shorter for one tenant is a metre longer for everyone else's lawyers.",
+    "loading.tip.metre": "Cable length is measured in metres and it is the product (§1.3). If your tenants could see the board, they would invoice before your monitoring did.",
+    "loading.tip.ramp": "Twenty cabinets signed is not twenty cabinets billing: the ramp is the year your success spends on your behalf. 'Colo is real estate' (§6.x) — and real estate has a move-in date.",
+    "intern.entry.row": "Day {day}: walked the row counting coil diameters. Nobody broke anything, nobody arrived early, and the boss called it the best shift since launch. The meter, she said, is the only thing that lies here — and only when you stop measuring.",
+    "intern.entry.audit": "Day {day}: watched the regulator read the label board like a verdict. Forty minutes, one missing metre of honesty, and the senior tech wrote underneath the findings: 'green lamps are not a fairness certificate'.",
+    "sticky.note.spool": "Taped above the control plane: 'Fairness is enforced by cable spool'. Nobody has laughed at it since the audit week. — console note, post-incident",
+    "abuse.canon.attestation": "Attestation advisory: {cabinetId} round trip measured {skewNs} ns from row median since {hour}:{minute}. Re-spool or re-attest before the audit window. The letter is written either way; the sentence in it is yours.",
+    "abuse.canon.tenant-dispute": "Formal dispute opened on ticket {ticketId}: the tenant denies the arithmetic, the contract, and the phrase 'substantially equal'. They do not deny the nanoseconds. Legal has the toner ready.",
+    "vendor.reply.firmware": "Have you tried updating to the latest firmware?",
+    "vendor.reply.log-bundle": "Please collect a full log bundle.",
+    "vendor.reply.known-issue": "This is a known issue, fixed in the next release (no ETA).",
+    "vendor.reply.inactive": "Closing due to inactivity.",
+    "achievement.boring-row": "Boring Row, Filed Quarter.",
+    "achievement.spotter-first": "Spotted It First.",
+    "achievement.audit-formality": "The Audit Was a Formality.",
+    "canary.coil-tally": "Skew {skewNs} ns, leases {leaseMonths} mo, faucets {crossConnects} on {nodeId} — the hunt, the hold and the riot are the same instrument, read three times."
+  },
+  "_provenance": {
+    "type.exchange-colo.name": "§1.3 card title verbatim ('The Microsecond Cathedral'); README §Key literals",
+    "type.exchange-colo.codex": "§1.3 card paragraphs (cable-length-is-product, equal-latency-as-product, 40ns/riot/three-threat objects, regulator clause, coil-identicality law — verbatim cores) + §0.3 row columns; README §Key literals",
+    "visitor.unit.cabinet-lease": "§0.3 row unit column ('A cabinet three metres closer') + §3.2 Resident exemplar ('a colo lease'); bundle key pin",
+    "goal.exchange-colo.binding": "§1.3 sell-equal-latency + regulator clause + §3.2 resident law; README §Key literals",
+    "scarce.exchange-colo.qos": "§3.2 resident-unshedable law verbatim + §1.3 spool-fairness sentence; standard-P3-P0 ladder ride recorded in bundle scarce._todo (no named ladder authored for this line); §9.3 clause-2 sober surface",
+    "skin.exchange-colo.inspector": "§1.3 visual paragraph verbatim cores (obsidian-and-gold/teal, labelled-in-metres fibre via §8.x identity row, coiled-excess-fibre, nanosecond readout, spottable-by-eye catastrophe) + chord verbatim; §9.3 sober surface",
+    "economy.exchange-colo.bad-month": "§6.x Companion C family row 'a single tenant not renewing' (:23387) — CARRIED from the family row onto the variant (flagged, not quoted verbatim for this line)",
+    "cac.exchange-colo.todo": "§6.6 Companion B family rows (Colocation + Cross-connect, :23372-23373; no exchange-premium row) + §0.3 customer column; null-provenance law — placeholder until priced",
+    "verbs.exchange-colo.transfer.1": "§1.9 Portable Skill idiom applied to the geometric-fairness posture; authored",
+    "relations.exchange-colo.mastery": "§5.6 'Mastering Colo grants a facility-efficiency bonus' family line (:20963) + §1.3 audit/spool laws; wording authored",
+    "relations.exchange-colo.distillate": "§1.3 sell-equal-latency + 40ns catastrophe + §6.x cross-connect/audit beats; playbook form per §1.9 distillate law",
+    "handover.exchange-colo.runs-out": "§0.3 scarce column 'Microseconds / cable length' + §1.3 regulator clause; README §Key literals",
+    "handover.exchange-colo.kills-you": "§1.3 catastrophe sentence verbatim cores (40ns / riot / lawyers) + §0.3 failure column ('Unequal latency between tenants'); README §Key literals",
+    "handover.exchange-colo.customer-wants": "§0.3 unit column verbatim ('A cabinet three metres closer') + §1.3 sell-equal-latency clause; README §Key literals",
+    "rosetta.exchange-colo.equalization": "README §Key literals; §1.3 spool law translated to the baseline cgroup-caging metric (§1.9 Rosetta law)",
+    "rosetta.exchange-colo.renewal": "README §Key literals; §6.6 'renewal cliff' family dynamic (:938 'the renewal, not termination') translated to the baseline renewal-cliff metric (§1.9 Rosetta law)",
+    "scenarios.exchange-colo.shortened-cable-discovered": "§1.3 threats clause verbatim core (cable someone cut 2m short) + catastrophe sentence; consequence-only framing per §9.11",
+    "scenarios.exchange-colo.regulator-audit-day": "§1.3 threats sentence verbatim (regulator clause); audit-as-load authored from §9.3 sober surfaces",
+    "scenarios.exchange-colo.twenty-cabinet-ramp": "§6.x ramp law verbatim ('You sign a tenant for 20 cabinets' / '16 empty cabinets of stranded capacity', :5600-5602) + phantom-cabinet row (:30111); wording authored",
+    "alert.coil-mismatch": "§1.3 catastrophe + spottable-by-eye clause verbatim cores; §9.3 clause-2 sober surface",
+    "alert.advantage-hunt": "§1.3 verbatim threat ('a tenant who finds an unfair advantage'); §9.3 sober surface",
+    "alert.audit-window-open": "§1.3 regulator clause + §6.x cross-connect count beat; §9.3 sober surface",
+    "alert.riot-cascade": "§1.3 catastrophe verbatim (others riot / lawyers); §9.3 sober surface",
+    "alert.phantom-hold": "§6.x stranded-capacity clause + §8.x phantom-cabinet row (:30111); §9.3 sober surface",
+    "terms.distance-tier": "§1.3 'enormous money' sentence verbatim + §8.x placement-worth-more row (:26479); terms register",
+    "terms.cross-connect": "§6.x 'best line item in hosting' + Companion B ~$0/immediate row verbatim fragments; terms register",
+    "terms.meter-stick": "§1.3 card title object; audit-cadence law authored from the card's enforcement sentence; terms register",
+    "refusal.hands-exhausted": "§9.3 clause-2 sober-surface law; engine door reason code; cross-pack byte-identical",
+    "refusal.stamped-in-future": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.unknown-node": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.edge-exists": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.slot-occupied": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "status.rung-1": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-2": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-3": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-4": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
+    "ticket.subject.skew": "§1.3 sell-equal-latency in customer register; ticket register comedy",
+    "ticket.body.skew": "§1.3 catastrophe quantified as arithmetic-not-outage; §9.3 ticket register; no technique named, §9.11",
+    "ticket.subject.phantom": "§6.x ramp law in tenant register; ticket register",
+    "ticket.body.phantom": "§6.x stranded-capacity clause dramatized (:5602); §8.x phantom-cabinet visual; wording authored",
+    "ticket.subject.audit": "§1.3 regulator clause as tenant complaint; ticket register",
+    "ticket.body.audit": "§1.3 fairness-is-visible line turned against the vendor; §9.3 register; consequence-only, §9.11",
+    "ticket.subject.crossconnect": "§2.1x family threat 'Colo: Cross-Connect Errors' (:9929) in tenant register; ticket register",
+    "ticket.body.crossconnect": "§2.1x cross-connect wrong-port sentence dramatized as cascade; the faucet image from §6.x (:23471); wording authored",
+    "press.headline.riot": "§1.3 catastrophe beat in §9.3 press register; consequence-only, §9.11",
+    "press.headline.ramp": "§6.x ramp law as press beat; §9.3 press format",
+    "forum.thread.coils": "§1.3 spottable-by-eye law in forum register; §9.3 industry-forum channel",
+    "forum.thread.tier": "§8.x placement-is-commercial row (:26479) + audit-day beat in forum register; §9.3 forum register",
+    "chatter.desk.equal": "§1.3 boring-meter-as-product survived; chatter channel",
+    "chatter.desk.eye": "§1.3 spottable-by-eye clause; chatter channel",
+    "codex.equality": "§1.3 verbatim cores (sell equal latency as a product; coil as meter); codex register",
+    "codex.spool": "§1.3 'Fairness is enforced by cable spool' verbatim; oversell-asymmetry authored from §0.2 scarcity frame; codex register",
+    "loading.tip.metre": "§1.3 first sentence verbatim core; loading channel",
+    "loading.tip.ramp": "§6.x 'Colo is real estate' (:23417) verbatim + ramp law; loading channel",
+    "intern.entry.row": "§1.3 coil-meter law; §9.3 Intern's Log concept",
+    "intern.entry.audit": "§1.3 regulator beat; §9.3 Intern's Log; measurement-not-mechanics framing per §9.11",
+    "sticky.note.spool": "§1.3 'Fairness is enforced by cable spool' verbatim on the console wall; §9.3 sticky-note channel",
+    "abuse.canon.attestation": "§1.3 audit consequence + re-spool named as remedy only; advisory-text only, §9.11",
+    "abuse.canon.tenant-dispute": "§1.3 breach-discovery beat in legal register; notice-text only, §9.11",
+    "vendor.reply.firmware": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.log-bundle": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.known-issue": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.inactive": "§9.3 vendor comedy channel (verbatim)",
+    "achievement.boring-row": "§1.3 boring-readout law as victory; §9.3 achievement-name channel",
+    "achievement.spotter-first": "§1.3 spottable-by-eye clause as victory; §9.3 achievement channel",
+    "achievement.audit-formality": "§1.3 regulator clause survived boringly; §9.3 achievement channel",
+    "canary.coil-tally": "§1.3 hunt/hold/riot triad; canary-notice channel (precedent: dedicated canary.row-tally, object-storage canary.comb-tally, voip canary.busy-wall-tally, serverless canary.warm-pool-tally)"
+  },
+  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates only the family as '2001 dot-com colo' (:651), never this variant). The win threshold, the 40ns catastrophe's mechanical mapping, every pressure mapping in the wave slice, the diurnal amplitude, the un-reconciled §0.3 'cabinet' vs §6.6 'U / kW / cross-connect' unit words (unreconciled per owner law), the family-row transfer of all §6.6 economy numbers onto the exchange variant (flagged in economy._todo), and the scenario/press copy for the shortened-cable, audit and ramp beats stay PROVISIONAL-B / owner-law until the re-author sweep; the advantage beats deliberately carry no technique detail — their slots are consequences (nanoseconds, months, counts, hours), never methods, per §9.11. "
+}

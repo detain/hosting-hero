@@ -85,9 +85,9 @@ describe("parseFamilyWeightsTable — the boundary into the dice", () => {
     const files = readdirSync(bundleDir)
       .filter((f) => f.endsWith(".json"))
       .sort();
-    // Census pin (wave-14: 8 hosting types on disk). The law loop below auto-joins
-    // any new bundle; this pin only forces a conscious count when one lands.
-    expect(files.length).toBe(8);
+    // Census pin (type-9 exchange-colo: 9 hosting types on disk). The law loop below
+    // auto-joins any new bundle; this pin only forces a conscious count when one lands.
+    expect(files.length).toBe(9);
     for (const file of files) {
       const doc = JSON.parse(readFileSync(join(bundleDir, file), "utf8")) as {
         threats: { familyWeights: Record<string, unknown> };

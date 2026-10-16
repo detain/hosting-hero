@@ -25,6 +25,7 @@ types/dedicated.json                type 5 ("Root Is Theirs") — variety-engine
 types/object-storage.json           type 6 ("Eleven Nines") — durability scarcity, accretive data, dominant verb Shield (first tier-extension verb freed by ADR-0013 #14; see Type 6 notes)
 types/trunk-group-voip.json         type 7 ("The Switchboard") — jitter scarcity, toll-fraud fatality, dominant verb Maintain (second tier-extension card via ADR-0013 #14; see Type 7 notes)
 types/serverless.json               type 8 ("The Mayfly Field") — warm-capacity scarcity, blast-radius fatality, dominant verb Scale (third tier-extension card, first with NO dominant-verb line on the card at all; see Type 8 notes)
+types/exchange-colo.json            type 9 ("The Microsecond Cathedral") — cable-length scarcity, fairness-breach fatality, dominant verb Sell (fourth and FINAL tier-extension card — the roster is now exhausted; second with NO dominant-verb line; see Type 9 notes)
 palettes/shared-80.json             the named home of buildables.paletteRef — 4 engine-backed shared archetypes (concurrency-pool, two-face-rack, control-plane, matchmaker) + the R61 ~15-slot verb-changer reserve accounting
 waves/g1-shared-web-first-quarter.json  seeded wave slice for gates G1/G5
 waves/g1-game-servers-first-quarter.json  seeded wave slice for gate G6 (same law set, type-specific DATA only)
@@ -34,8 +35,9 @@ waves/g1-dedicated-first-quarter.json  type-5 first-quarter slice — same law s
 waves/g1-object-storage-first-quarter.json  type-6 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
 waves/g1-trunk-group-first-quarter.json  type-7 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
 waves/g1-serverless-first-quarter.json  type-8 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
-threats/registry-core.json          16 mechanical threat entries (mail-hosting, dns-hosting, dedicated, object-storage, trunk-group-voip and serverless each reuse 8 or fewer existing ids; native threat rosters await the registry-owner pass — the census pins live in sibling tests, see Type 3/4/5/6/7/8 notes)
-visitors/archetypes-core.json       9 visitor archetypes (mail-hosting, dns-hosting, dedicated, object-storage, trunk-group-voip and serverless reference NONE — their visitors are the message / the query / the sales inquiry / the PUT-GET / the call / the invocation itself; see Type 3/4/5/6/7/8 notes)
+waves/g1-exchange-colo-first-quarter.json  type-9 first-quarter slice — same law set, DELIBERATELY RULES-FREE (no rules block) until the batch-D rule-adapter pass
+threats/registry-core.json          16 mechanical threat entries (mail-hosting, dns-hosting, dedicated, object-storage, trunk-group-voip, serverless and exchange-colo each reuse 8 or fewer existing ids; native threat rosters await the registry-owner pass — the census pins live in sibling tests, see Type 3/4/5/6/7/8/9 notes)
+visitors/archetypes-core.json       9 visitor archetypes (mail-hosting, dns-hosting, dedicated, object-storage, trunk-group-voip, serverless and exchange-colo reference NONE — their visitors are the message / the query / the sales inquiry / the PUT-GET / the call / the invocation / the cabinet lease itself; see Type 3/4/5/6/7/8/9 notes)
 packs/shared-web.i18n.json          ticket pack for official:shared-web — 103 grammar templates, decision 42 / flavour 61
 packs/game.i18n.json                ticket pack for official:game-servers — 75 grammar templates, decision 34 / flavour 41
 packs/mail-hosting.i18n.json        ticket pack for official:mail-hosting — 63 grammar templates, decision 32 / flavour 31
@@ -44,6 +46,7 @@ packs/dedicated.i18n.json           ticket pack for official:dedicated — 66 gr
 packs/object-storage.i18n.json      ticket pack for official:object-storage — 67 grammar templates, decision 36 / flavour 31
 packs/trunk-group-voip.i18n.json    ticket pack for official:trunk-group-voip — 69 grammar templates, decision 38 / flavour 31
 packs/serverless.i18n.json          ticket pack for official:serverless — 68 grammar templates, decision 37 / flavour 31
+packs/exchange-colo.i18n.json       ticket pack for official:exchange-colo — 68 grammar templates, decision 37 / flavour 31
 script/validate.mjs                 Node-stdlib structural validator (no npm deps)
 ```
 
@@ -239,6 +242,51 @@ object — 'a countable concurrency pool' — with five costumes"), so
 `concurrency-pool` re-worn as a skin is the palette rule's doc-named exemplar.
 The slice ships WITHOUT a rules block, same law as Types 3/4/5/6/7.
 
+### Type 9 notes (official:exchange-colo, 2026-10-16)
+
+Chosen for **Sell**, the last unclaimed slot on the ratified per-tier roster. The §1.3
+financial-exchange-colo card ("The Microsecond Cathedral" / "The Meter Stick") ships
+NO dominant-verb line — second such case after serverless: nothing is claimed and
+nothing is displaced. Sell is verbatim-grounded twice in the card body ("microseconds
+are what you sell", "you sell *equal* latency as a product") and once in the Verb Shift
+Rule family row ("Colo: *sell space and police power*"). The §0.3 scarcity row the
+registrar card lacked DOES exist here ("Financial exchange colo | Microseconds / cable
+length | Unequal latency between tenants | A cabinet three metres closer"), so the
+Three-Change table survives. Scarce = cable-length (meter = nanosecond-skew readout,
+§8.x financial-colo face); fatal = fairness breach ("one tenant gets a 40ns advantage
+and the others riot"); unit = cabinet lease (§6.6 revenue-shape row "Colocation |
+U / kW / cross-connect | 3–5 year leases"); win = hold-metric latency-skew with the
+threshold null — the card promises *equal*, never "≤N ns", so no number is invented.
+Door-gap honesty repeats from Types 6/7/8: Sell is not a `PLAYER_VERBS` door member and
+no sell/gate mechanic ships — identity, not capability; the MODULE-STATUS gap row now
+covers all four tier cards. `visitor.patienceModel` ships `mode: "resident"` — the FIRST
+corpus use, claimed straight from §3.2's unit section ("a colo lease" as the Resident
+exemplar; the engine's `PATIENCE_MODE_VOCAB` names the arm: a joined unit holds capacity
+rather than abandoning it), and the party is all-or-nothing with size null (§3.2 "seven
+cabinets, or they go elsewhere" — a law of seven, not an N); populationEffect is true
+per §2.12's meet-me threshold clause. Loader lint: 5 of 9 §7.8 hooks changed vs the
+anchor (R15 meter widget/stat/face, R16 commercial-slider to meet-me-access-tier —
+unique across all nine bundles, R17 dial roster, R18 time granularity — the corpus's
+FIRST µs `simTimeScale`, the card's whole premise measured in nanoseconds, R22 mechanics
+set). **R23's shed-ladder leg deliberately rides the anchor**: a resident lease is
+unshedable by the §3.2 wait-law and no doc names a colo ladder — inventing one would
+break "never invent numbers" harder than leaving the hook unchanged.
+THREE_CHANGE/VERB_SHIFT clean against all eight siblings, waves contentInspector zero
+findings, corpus lint findings `[]` with nine bundles. Threats reuse 8 of the 16
+registry ids (layer7-mimic, cheat-client-griefer, mod-update-day, ticket-avalanche-hydra,
+empty-server-spiral, chargeback-swarm, open-resolver-reflection, scanner-drizzle) with
+the colo framing in `_todo` cites — zero registry additions; both mimic seeds are
+re-worn, no sixth seed. Economy is family-transfer: the §6.6 Colocation correction row
+(escalator/deposit/NRC) lands as the corpus's FIRST `contractTerms.escalator: true` —
+generic-colo terms ported to the exchange variant, flagged; Companion B prices only
+generic colocation ($2,000–15,000 / 12–30 mo) with no financial-latency row, so
+cacProfile stays `cac.exchange-colo.todo`, and bad-month is the Companion C colo quote
+("a single tenant not renewing") verbatim. `demandCharges: true` — the amps are the
+product (§5.6's power-headroom unlock gate). Honest gaps recorded: the regulator audit
+and the fairness attestation have no registry mechanic; they ride the goal/meter/
+scenarios until the registry-owner pass — same "bigger scaffold of nulls" verdict as
+Types 7/8. The slice ships WITHOUT a rules block, same law as Types 3/4/5/6/7/8.
+
 ## Validate
 
 ```bash
@@ -288,7 +336,7 @@ are approved, superseding the ≤60-per-pack task-line guidance (the validator k
 floor and sets no ceiling; most provenance cites are §9.3 verbatim doc seeds, so
 trimming would delete doc-mandated content). Pack `_todo` markers
 print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
-(212 since the type-8 serverless authoring pass 2026-10-15; 186 at type-7, 159 at type-6, 133 at type-5, 108 at type-4, 84 at type-3, 63 at wave-1) is untouched by
+(245 since the type-9 exchange-colo authoring pass 2026-10-16; 212 at type-8, 186 at type-7, 159 at type-6, 133 at type-5, 108 at type-4, 84 at type-3, 63 at wave-1) is untouched by
 pack authoring — no test pins the printed number, though sibling lane memory
 quotes the wave-1 figure.
 
@@ -296,17 +344,17 @@ quotes the wave-1 figure.
 
 | Law | Source | In practice here |
 |---|---|---|
-| **Three-Change** | §0.2 | A type ships only if ≥3 of the six Ruleset-Card slots change vs existing types. shared-web and game-servers differ on Unit, Scarce, Patience-Analog, Threat-Mix, Look (5 of 6). mail-hosting differs on Unit (message), Scarce (ip-reputation), Goal (recipient-inbox), Threat-Mix and Look — loader lint reports 5 of 9 §7.8 hooks changed vs the anchor (within the 3–5 budget). dns-hosting differs on Unit (query), Scarce (anycast-pop-capacity), Goal (authoritative-answer), Threat-Mix and Look — likewise 5 of 9 hooks changed vs the anchor, clean pairwise against all three siblings. dedicated differs on Unit (inquiry), Scarce (rack-space), Goal (server-delivery), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all four siblings. object-storage differs on Unit (object request), Scarce (durability-nines), Goal (stored-object integrity), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all five siblings. trunk-group-voip differs on Unit (call), Scarce (jitter-and-packet-loss), Goal (toll-fraud fatality), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all six siblings. serverless differs on Unit (invocation), Scarce (warm-capacity), Goal (warm-execution / blast-radius fatality), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all seven siblings. |
-| **Verb-Shift** | R4, §0.2, ADR-0013 #14 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect**, mail-hosting = **Tune**, dns-hosting = **Commit**, dedicated = **Observe** (§1.3 card verbatim; one of the six invariant verbs, never a 7th, §1.9). object-storage = **Shield** — the first card grounded on ADR-0005's ratified per-tier roster via loader `TIER_EXTENDED_VERBS` (ADR-0013 decision 14); the card's §1.3 line named Observe, held by dedicated, so it re-authored onto Shield (see Type 6 notes). Shield is content identity, not a door `PLAYER_VERBS` member — the door-mechanic gap ships as a MODULE-STATUS gap row. trunk-group-voip = **Maintain** — the route's second card (see Type 7 notes), likewise content identity without door support. serverless = **Scale** — the route's third card (see Type 8 notes), and the first case with no dominant-verb line on the card at all to overwrite or displace; Scale is verbatim-grounded in "scale to zero" (§1.3 + §4.2). Diagnose remains the sole unclaimed invariant slot (the wave-5 card census records no §1.3 card naming it verbatim); Sell remains the sole unclaimed tier-extension slot. |
+| **Three-Change** | §0.2 | A type ships only if ≥3 of the six Ruleset-Card slots change vs existing types. shared-web and game-servers differ on Unit, Scarce, Patience-Analog, Threat-Mix, Look (5 of 6). mail-hosting differs on Unit (message), Scarce (ip-reputation), Goal (recipient-inbox), Threat-Mix and Look — loader lint reports 5 of 9 §7.8 hooks changed vs the anchor (within the 3–5 budget). dns-hosting differs on Unit (query), Scarce (anycast-pop-capacity), Goal (authoritative-answer), Threat-Mix and Look — likewise 5 of 9 hooks changed vs the anchor, clean pairwise against all three siblings. dedicated differs on Unit (inquiry), Scarce (rack-space), Goal (server-delivery), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all four siblings. object-storage differs on Unit (object request), Scarce (durability-nines), Goal (stored-object integrity), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all five siblings. trunk-group-voip differs on Unit (call), Scarce (jitter-and-packet-loss), Goal (toll-fraud fatality), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all six siblings. serverless differs on Unit (invocation), Scarce (warm-capacity), Goal (warm-execution / blast-radius fatality), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor, clean pairwise against all seven siblings. exchange-colo differs on Unit (cabinet lease), Scarce (cable-length), Goal (equalized-floor / fairness-breach fatality), Threat-Mix and Look — 5 of 9 hooks changed vs the anchor (R15, R16, R17, R18, R22), clean pairwise against all eight siblings. |
+| **Verb-Shift** | R4, §0.2, ADR-0013 #14 | A type ships only if the MOST-PERFORMED verb shifts: shared-web = **Triage**, game-servers = **Place & Connect**, mail-hosting = **Tune**, dns-hosting = **Commit**, dedicated = **Observe** (§1.3 card verbatim; one of the six invariant verbs, never a 7th, §1.9). object-storage = **Shield** — the first card grounded on ADR-0005's ratified per-tier roster via loader `TIER_EXTENDED_VERBS` (ADR-0013 decision 14); the card's §1.3 line named Observe, held by dedicated, so it re-authored onto Shield (see Type 6 notes). Shield is content identity, not a door `PLAYER_VERBS` member — the door-mechanic gap ships as a MODULE-STATUS gap row. trunk-group-voip = **Maintain** — the route's second card (see Type 7 notes), likewise content identity without door support. serverless = **Scale** — the route's third card (see Type 8 notes), and the first case with no dominant-verb line on the card at all to overwrite or displace; Scale is verbatim-grounded in "scale to zero" (§1.3 + §4.2). exchange-colo = **Sell** — the route's fourth and FINAL tier-extension card (see Type 9 notes), second with no dominant-verb line on the card to overwrite or displace; Sell is verbatim-grounded in "microseconds are what you sell" / "you sell *equal* latency as a product" (§1.3) plus the Verb Shift Rule family row "Colo: sell space and police power". The tier roster is now EXHAUSTED (Scale · Shield · Maintain · Sell all claimed); Diagnose remains the sole unclaimed invariant slot (the wave-5 card census records no §1.3 card naming it verbatim) — a tenth type cannot ship a new dominant verb without an owner law call. |
 | **Rosetta Card** | R11 | One canonical engine metric + one player-language alias + one joining line. Both anchors carry doc-verbatim lines (table below). |
 | **3–5 budget** (handover) | R10, §1.9 | `handoverNote` is EXACTLY 3 keys: runsOut / killsYou / customerWants, diegetic sheet-on-desk voice. Schema enforces maxProperties 3. |
-| **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"` — authored in `palettes/shared-80.json`, validator-enforced). All shipped types compose from the shared `concurrency-pool` + `two-face-rack` archetypes (plus `control-plane` in seven skins, web's cPanel, mail's webmail, dedicated's ipmi-console, dns's zone-editor, object-storage's bucket-policy, trunk-group-voip's fraud-desk and serverless's metering-plan); the `matchmaker` archetype is the R61 reserve's first shipped verb-changer (14 of 15 slots remain unbuilt). |
+| **20% palette** | §1.9 | New type ≤20% replacement of the build palette; 80% known objects (`buildables.paletteRef: "palette:shared-80"` — authored in `palettes/shared-80.json`, validator-enforced). All shipped types compose from the shared `concurrency-pool` + `two-face-rack` archetypes (plus `control-plane` in eight skins, web's cPanel, mail's webmail, dedicated's ipmi-console, dns's zone-editor, object-storage's bucket-policy, trunk-group-voip's fraud-desk, serverless's metering-plan and exchange-colo's audit-desk); the `matchmaker` archetype is the R61 reserve's first shipped verb-changer (14 of 15 slots remain unbuilt). |
 | **Five-Asset Skin Kit** | R48/R49/R53, §8.10 | Exactly: 1 palette (accent+secondary) · 2 visitor costume (hull+prop) · 3 ONE hero silhouette · 4 bespoke meter face · 5 bespoke catastrophe FX (+ ambient sound swap). Everything else = parameters of shared systems ("five assets plus eight parameter values"). Author order: METER FIRST. |
 | **Localisation law** | R46 + owner directive | **ALL human strings are i18n keys** resolved through the bundle's `ticketPack` file. No literal prose, no joke text in bundles. The packs ARE the authored English: `packs/*.i18n.json` carry every string, split into a sober `decision` namespace (shown while deciding or losing — §9.3 clauses 2–3) and a comedic `flavour` namespace (quiet surfaces only); the validator enforces the wall by root vocabulary and refuses any bundle-referenced key that strays into flavour. |
 | **Pruning rule R36** | WS-3, §2.12 | A threat earns a mechanical slot (stats + counters) only if it CHANGES THE PLAYER'S VERB, not just the noun. Everything else is Codex flavour attached to a mechanical entry. |
 | **Second Answer** | §5.1 | Every registry threat has ≥2 viable counters at DIFFERENT prices (cheap / expensive / lateral triad). Validator enforces. |
 | **Visual Coverage** | §8.18, OD-12(d), ADR-0013 ruling 5(d) | The screen must be able to draw every shipped entity, or the content must say otherwise: every threat, visitor archetype, and palette archetype carries a `visual` slug grounded in the design-doc prose (`the-elbow` §2.10, `slow-wall` §2.3, the §3.1 duration-class primitives) or an explicit `codexOnly: true` tag. The validator fails absence and malformed slugs red. All 16 shipped threats are mechanical (R36) and every slug is doc-grounded, so zero codexOnly tags ship today — the hatch exists for future demotions. |
-| **Lookalike (rule-masking)** | §2.4, OD-18, ADR-0013 ruling 9 | A mimic threat may declare `lookalikeOf`: the visitor archetype it masquerades as — a costume on the visitor roster, never a new entity. Direction is one-way (an archetype carrying `lookalikeOf` fails red); the id must resolve in the visitors registry. Five mimic seeds ship across the eight bundles: shared-web `layer7-mimic`→`power-shopper` · game-servers `cheat-client-griefer`→`game-player-joining` · mail-hosting `xmlrpc-pingback-amplifier`→`api-client` · dns-hosting `slowloris-sipper`→`deep-reader` · dedicated `scanner-drizzle`→`crawler` — object-storage and trunk-group-voip each carry TWO of these seeds (`slowloris-sipper`, `scanner-drizzle`) by reuse rather than adding a sixth, and serverless carries two (`xmlrpc-pingback-amplifier`, `slowloris-sipper`) — the amplifier seed crossing lines for the first time, the recursion wearing the pingback swarm's costume (§1.3's self-invoking function re-framed onto the registry's one amplification engine). Bundles legitimately reuse signature ids, so the lint enforces ≥1 seed per bundle rather than exactly-one — the mask rides the registry entry, so reuse inherits the law by design. |
+| **Lookalike (rule-masking)** | §2.4, OD-18, ADR-0013 ruling 9 | A mimic threat may declare `lookalikeOf`: the visitor archetype it masquerades as — a costume on the visitor roster, never a new entity. Direction is one-way (an archetype carrying `lookalikeOf` fails red); the id must resolve in the visitors registry. Five mimic seeds ship across the nine bundles: shared-web `layer7-mimic`→`power-shopper` · game-servers `cheat-client-griefer`→`game-player-joining` · mail-hosting `xmlrpc-pingback-amplifier`→`api-client` · dns-hosting `slowloris-sipper`→`deep-reader` · dedicated `scanner-drizzle`→`crawler` — object-storage and trunk-group-voip each carry TWO of these seeds (`slowloris-sipper`, `scanner-drizzle`) by reuse rather than adding a sixth, and serverless carries two (`xmlrpc-pingback-amplifier`, `slowloris-sipper`) — the amplifier seed crossing lines for the first time, the recursion wearing the pingback swarm's costume (§1.3's self-invoking function re-framed onto the registry's one amplification engine), and exchange-colo carries two more (`layer7-mimic`, `cheat-client-griefer`) — the anchor's own seed re-worn on the ninth line and the griefer seed crossing over, still no sixth seed. Bundles legitimately reuse signature ids, so the lint enforces ≥1 seed per bundle rather than exactly-one — the mask rides the registry entry, so reuse inherits the law by design. |
 | **Wave rules** | §1.7/§2.24 | Baseline continuous-diurnal-never-zero; events are shaped envelopes over it; ≤4 threat entries/wave; first wave ≤40% par ALWAYS; troughs ≥45% below preceding peak; ≤2 roles >30% per wave; new role every 4th wave; hard waves draw TWO denominations; entropy budget peaks in troughs = f(estate age × size × (1−maintenance spend)); second-incident ×1.8 (incident) / ×2.5 (recovery). |
 | **Hue ledger** | §1.3/§8.10 | MAGENTA is reserved for hostile traffic; no décor may use it — game-servers' palette explicitly excludes the magenta band; flow layer stays globally neutral cyan/magenta/violet. |
 
@@ -423,6 +471,15 @@ here and the pack's `decision` value.
 | `economy.serverless.bad-month` | "A function that invokes itself: nine minutes, $40,000." | §2.12 (authored — Companion C prices no serverless row) |
 | `goal.serverless.binding` | "Warmth, not throughput: the visitor's experience depends on whether another visitor came recently, and a runaway spends money without touching availability — the hands that pre-warm the pool are the same hands that read the nine-minute invoice." | §1.3 |
 | `type.serverless.name` | "The Mayfly Field" | §1.3 |
+| `handover.exchange-colo.runs-out` | "Your metres and your hands. A floor with no survey cadence is a promise you cannot attest; a NOC that spends its hands on the rewrap has none left for the regulator, and the audit window does not re-schedule for your staffing." | §0.3/§1.3 |
+| `handover.exchange-colo.kills-you` | "The 40ns advantage: one tenant measurably closer than the others — 'and the others riot (angry client sprites with lawyers)' — the breach that never breaks uptime, spends the building's word instead, and arrives already written in arithmetic no apology can round." | §1.3/§0.3 |
+| `handover.exchange-colo.customer-wants` | "The cabinet three metres closer — and they want it at the same latency as everyone else's contract says they should: 'you sell *equal* latency as a product' (§1.3), which is the one thing on this floor they cannot buy twice." | §1.3 |
+| `rosetta.exchange-colo.equalization` | "Cable-spool equalization is the cgroup cage pointed at photons: the same bet that a bounded neighbour is cheaper than an unbounded one, enforced now in metres instead of memory — shared-web cages what a tenant runs, this line cages how far their light travels." | §1.9 |
+| `rosetta.exchange-colo.renewal` | "The multi-year lease cliff is the renewal cliff measured in years: shared-web's cohort leaves at the promo rate's end because renewals are cheap; a colo tenant leaves when the 3–5 year term ends because everything else is — the cliff shape is the same and the unit is a signature." | §1.9 |
+| `verbs.exchange-colo.transfer.1` | "Geometric-fairness discipline transfers everywhere: any line that sells sameness now asks you the same question — what does it cost to prove the promise, who audits your units, and what happens the day one customer measurably gets more of the equal thing than another?" | §1.9 Portable Skill idiom + §1.3 cable-spool law (authored — see Type 9 notes) |
+| `economy.exchange-colo.bad-month` | "A single tenant, not renewing: a 3–5 year cliff arriving as one signature, and the amps it held suddenly worth a competitor's tour group." | §6.6 Companion C (Colocation row) |
+| `goal.exchange-colo.binding` | "Metres and hands, not cores: the floor's whole promise is a skew that stays at zero, the promise is audited by someone else's calendar, and the hands that re-spool a coil are the same hands that answer the regulator — the product is equal latency and it is enforced by you, live, on every rack at once." | §1.3 |
+| `type.exchange-colo.name` | "The Microsecond Cathedral" | §1.3 |
 
 ## How to add a type
 

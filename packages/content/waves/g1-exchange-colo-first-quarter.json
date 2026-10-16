@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-exchange-colo-first-quarter",
+  "type": "official:exchange-colo",
+  "purpose": "First-quarter wave slice for the ninth Ruleset Card — the second card whose §1.3 identity ships NO dominant-verb line, authored onto Sell via the ratified ADR-0005 per-tier roster (ADR-0013 decision 14; 9 of the 20-type launch canon, OD-14(a)). Slice shape mirrors the eight shipped g1 siblings: a survey-drizzle opening on a floor nobody has cheated yet, the tenant's own advantage-hunt as the surprise-with-composition beat (the catastrophe rents by the cabinet), a hollow-quiet trough where the enemy is the dark cabinet still billing, and a finale built on the line's authored cruelty ('one tenant gets a 40ns advantage and the others riot' + 'the regulator who audits your cable lengths', §1.3). Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "market-session-hours",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. The rhythm name is AUTHORED-flagged, not the card's own phrase (bundle tempo._todo carries the honesty note): the doc names the customers ('Trading firms', §0.3 verbatim) and never their hours; the open-outcry rhythm is the inference to a named curve id, amplitude unauthored — the waves-lane curve catalogue owns the numbers; PROVISIONAL-B. neverZero holds in the landlord register too: between sessions the floor is never empty — the residents live there; a quiet quarter is a held lease, not an absent one.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "advantage-hunt",
+      "kind": "customer",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "spooled-tail" },
+      "amplitude": null,
+      "telegraph": "the first degraded read is not an attack signature, it is a measurement: one cabinet's round trip came back a shade short of everyone else's, and the coil on its rack is the correct diameter anyway — 'a tenant who finds an unfair advantage' (§1.3 verbatim) hunts in the spaces the spool cannot see",
+      "source": "§1.3 card Threats sentence verbatim ('a microwave link, an FPGA, a cable someone cut 2m short'); §0.3 failure column verbatim ('Unequal latency between tenants')",
+      "compoundWave": "the line's inversion of the attacker genre: the adversary is a resident — a paying customer whose whole product is the building's fairness, spending it against the building; the blast radius lands on tenants whose only crime was ordering the same metre as everyone else",
+      "_todo": "advantage-size → skew-pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "phantom-reservation",
+      "kind": "customer",
+      "overWaves": [3],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "released-tail" },
+      "amplitude": null,
+      "composition": ["hoarder-noisy-neighbor", "empty-server-spiral"],
+      "telegraph": "the trough's enemy bills monthly: a tenant holding cabinets dark against a ramp nobody started, amps reserved and drawing nothing, while the floor's story — the one told at the tours — quietly stops matching the floor",
+      "source": "§6.x ramp law verbatim ('you must reserve all 20 cabinets' power and space from day one' / '16 empty cabinets of stranded capacity for a year', :5602); §8.x 'The phantom cabinet — an empty cabinet, lit, with your asset tag on the door' (:30111)",
+      "compoundWave": "authored so STRANDED CAPACITY is the scarce lung, not raw power: every dark cabinet spends amps and floor that a signing tenant cannot buy, and the spiral (Healer/Spawner) turns the visible emptiness itself into the reputation event — the busy wall the player sold against is going grey one hexagon at a time",
+      "_todo": "hold-share → occupancy-pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "respool-audit-window",
+      "kind": "threat",
+      "overWaves": [4],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "attested-tail" },
+      "amplitude": null,
+      "telegraph": "the remediation calendar lands the audit calendar: one 'compliance fix' day re-spools every coil on the floor at once while the regulator's paperwork avalanche hits the NOC — 'the regulator who audits your cable lengths' (§1.3 verbatim) — and a fleet-wide re-wrap is exactly the moment a single wrong turn becomes a hundred",
+      "source": "§1.3 Threats sentence verbatim (regulator clause); §2.12 family threat 'Colo: Cross-Connect Errors and the Tenant's Own Fire' — a cross-connect patched to the wrong port takes down a tenant you have no visibility into (:9929)",
+      "_todo": "audit-request rate → hands pressure mapping unauthored (no registry audit mechanic — the hydra is the closest existing swarm-on-hands shape, re-framed in bundle threats._todo); PROVISIONAL-B."
+    },
+    {
+      "id": "riot-cascade",
+      "kind": "threat",
+      "overWaves": [5],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "settlement-tail" },
+      "amplitude": null,
+      "telegraph": "the 40ns becomes public: the riot does not arrive as one angry tenant, it arrives as a hundred small instruments moving together — disputed invoices, lawyers on the letterhead, and the dark-spiral of cabinets whose owners found a fairer floor elsewhere — 'one tenant gets a 40ns advantage and the others riot (angry client sprites with lawyers)' (§1.3 verbatim)",
+      "source": "§1.3 card Visual paragraph, catastrophe sentence verbatim; §6.x Companion C family row 'a single tenant not renewing' (:23387) crowd-framed",
+      "_todo": "discovery → cascade-rate mapping unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is a drizzle of survey teams walking the fence line and measuring your skew from the parking lot — the quarter opens with a perfect row of identical coils and the only strangers paying attention to them are the ones with clipboards (§1.3's meter stick, §0.3's trading-firm tenants still touring).",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["data-integrity"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the ROUTINE catastrophe, and it is a tenant winning. Two-Front (§2.24): the compliance-mimic (Mimic — 'a tenant who finds an unfair advantage', §1.3 verbatim; the registry's crowd-hider re-framed onto a floor whose whole product is visible identicality) spends concurrency against the shared trunk, while the griefer (Mimic — the registry's ONE fairness-cheating customer entry, lookalike law OD-18: it masks as a game-player-joining archetype because cheating is excitement resold) spends reputation on every tenant who ordered the same metre. The coil diameters still match. The numbers do not. That is the lesson of wave two: fairness enforced by spool is fairness enforced on the spool — the threat lives downstream of the visible contract.",
+      "entries": [
+        { "threat": "layer7-mimic", "role": "Mimic", "pressurePct": 55, "band": "storm" },
+        { "threat": "cheat-client-griefer", "role": "Mimic", "pressurePct": 45, "band": "hunter" }
+      ],
+      "denominations": ["concurrency", "reputation"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS the survey cadence, and the card prices it twice: the meter-stick dial as the purchase, the publicized breach as the unforgiven version (§1.3)."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the spool equalizer, the label board, the audit trail all get their window here. But on the exchange-colo line the quiet is the bill: the residents live there, the phantom cabinets hold amps against a ramp nobody started, and the busy wall goes grey one hexagon at a time — '16 empty cabinets of stranded capacity for a year' (§6.x ramp law verbatim). Two fronts: concurrency x reputation — the hoarder's dark rows read as headroom while the spiral makes the emptiness itself the story the tours stop telling.",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 60, "band": "storm" },
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 40, "band": "entropy" }
+      ],
+      "denominations": ["concurrency", "reputation"]
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, exchange-colo variant: the remediation calendar lands the audit calendar — a batch re-spool day walks every rack on the floor (Splitter debuts here, the every-4th-wave NEW ROLE beat; unseen in waves 1-3, the registry's only purchased-batch mechanic reused per this line's threat-mapping law), every 'compliance fix' a coin flip against the identicality contract — and inside the same window the regulator's paperwork avalanche hits the NOC (Swarm on hands), because a floor mid-rewrap is exactly when cable lengths stop matching the ledgers that promise they do. Two fronts: data-integrity (the invariant itself — measured equality, tonight measured only in hindsight) x hands (the audit does not queue politely; 'the regulator who audits your cable lengths', §1.3 verbatim).",
+      "entries": [
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 55, "band": "hunter" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["data-integrity", "hands"],
+      "secondIncident": "audit-request avalanche arrives inside the re-spool incident window -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the identicality contract made public property: the hidden advantage is discovered (Parasite carry — the reflection of one unaudited tenant's unsecured gear lands on the whole building's standing; the registry's reputation-reflection re-framed per bundle threats._todo), the riot arrives as instruments not fists (Swarm — disputed invoices, chargebacks, 'angry client sprites with lawyers', §1.3 verbatim), and the spiral keeps darkening the floor the tours now have to explain (Healer/Spawner) — every dark hexagon somebody's competitor's success story. Hard wave draws TWO fronts — reputation x cash — per §2.24: the building's word and the tenants' counter-word, spending the company from both sides at once. Win check: the skew held at zero long enough that the audit report read like a boring document, while the row of coils stayed a row.",
+      "entries": [
+        { "threat": "open-resolver-reflection", "role": "Parasite", "pressurePct": 30, "band": "storm" },
+        { "threat": "chargeback-swarm", "role": "Swarm", "pressurePct": 35, "band": "weather" },
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 35, "band": "entropy" }
+      ],
+      "denominations": ["reputation", "cash"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}

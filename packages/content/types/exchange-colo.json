@@ -1,0 +1,359 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:exchange-colo",
+  "_todo": "All human strings are keys into file:packs/exchange-colo.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. NINTH CARD of the OD-14(a) 20-launch canon: the §1.3 card 'Exchange Colo' / 'The Microsecond Cathedral' / 'The Meter Stick' ships NO dominant-verb line (the second such card after serverless — nothing here is claimed and nothing is displaced), and the level is authored onto Sell, the tier roster's last unclaimed slot (loader lint TIER_EXTENDED_VERBS); see verbs._todo for the verbatim grounding and the honest door gap. §0.3 row verbatim: 'Financial exchange colo | Microseconds / cable length | Unequal latency between tenants | Trading firms | A cabinet three metres closer'. Pack authored at file:packs/exchange-colo.i18n.json — cac.exchange-colo.todo stays a placeholder: §6.6 Companion B prices the family row 'Colocation' (and the 'Cross-connect' row) but no exchange-premium row exists — see economy._todo.",
+
+  "meta": {
+    "name": "type.exchange-colo.name",
+    "codexSummary": "type.exchange-colo.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.cabinet-lease",
+    "durationClass": "Resident",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "The §3.1 five-stat ledger rows this line verbatim in QUALITATIVE terms only — 'A colo tour is `patience months / value enormous / weight one cabinet row / loyalty 5 years / fragility catastrophic`' (:11463, the colo family entry; the family label is the doc's, the variant premium is unpriced) — and the section's own law ('Five numbers. Same five slots.' around it) demands numbers the doc never writes for this line. All five authored as null + this cite, never forged zeros, same law serverless cites for its unpriced stats; the qualitative ledger rides here so the tuning pass can find it. The fragility word the doc does choose ('catastrophic') is this line's fatality shape, not a scalar: the card's catastrophe ('one tenant gets a 40ns advantage and the others riot', §1.3 verbatim) is the qualitative read of it."
+    },
+    "patienceModel": {
+      "mode": "resident",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "mode 'resident' — FIRST corpus use of the mode (voip's 'binary' first-use precedent): the pipeline vocabulary carries it (src/pipeline/defaults.ts PATIENCE_MODE_VOCAB; docblock 'resident — the sticky session (§App A durationClass Resident): once it has joined a queue it WAITS — capacity is held, not abandoned'), and §3.2 names this line's unit as its exemplar verbatim: 'Resident (a tenant or training job that occupies a slot for the whole level) consumes committed capacity and cannot be shed at all — which is precisely why a colo lease and a GPU training run feel identical to manage' (:11689). The cabinet does not abandon the queue; the drama is never bounce-attrition, it is what a resident unit's un-terminable presence DOES to the shared meter. budgetMs/bounceSigmoid null BY MODE LAW (the mode never consults a budget — patienceProbabilityFor returns the zero-bounce arm); the §3.1 patience ledger word ('months', :11463) is lease-clock prose owned by tempo/contract law, not a bounce LUT input — flagged for the tuning pass."
+      }
+    },
+    "party": {
+      "allOrNothing": true,
+      "size": null,
+      "_todo": "allOrNothing TRUE verbatim-grounded: 'Colo — a tenant's deployment (seven cabinets, or they go elsewhere)' (§3.2 party-arrival law, :11770) — the doc's own colo exemplar of the all-or-nothing unit. size null: the seven is a parenthetical example, not an authored scalar for this line; partial-deploy ramp economics ('the tenant takes 2 cabinets now, 8 in' — P11 ramp-schedule clause, :355) live in buildables._todo and scenarios, not in a forged integer."
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null,
+      "_todo": "no herd law is authored for leases; the arrival clustering that matters on this line is the cohort ramp (§3.2/§6.13 'colo deals ramp'), which is a cohortSpawn law, not a herding scalar — never conflated, never invented."
+    },
+    "populationEffect": true,
+    "retryAmplifies": false,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-cabinet-month",
+    "trustReadable": false,
+    "archetypeRefs": [],
+    "_todo": "durationClass 'Resident' verbatim (§3.2 names 'a colo lease' as the class's exemplar, :11689-91); §3.2 also authors the costume law the render lane needs — 'shape encodes duration class only — circle = instant, teardrop = session, square = batch/job, hexagon = resident' (:11695) — cited in skin._todo rather than forged into a bundle scalar. populationEffect TRUE: §2.12's generalization law names this line's mechanism verbatim — 'IX peering (carrier density attracts carriers), and the colo meet-me room... get above the threshold fast, or don't start' (:9476) — carrier density and tenant density are the same mutual attractor, and §5.6 gates cross-connects as a product on exactly that room (:20801). retryAmplifies false: a lease does not retry. cohortSpawn tier 3: tenants arrive as deployments from customer cards (R29 cohort law; §3.3 'Tenant tour → contract'). costPerInvocation 'per-cabinet-month' from §6.6 space rent 'Per rack, cabinet, cage, or square foot; multi-year contracts with annual escalators' (:22212) and the revenue table's unit column 'U / kW / cross-connect'. trustReadable false: fairness on this line is ENFORCED, not felt — 'Fairness is enforced by cable spool' (§1.3 verbatim); the operator reads metres and clamp-meters, never a trust score through a cabinet door. archetypeRefs empty by authoring law, not oversight: the visitor here IS the cabinet lease (same law dns cites for the query, mail for the message, object-storage for the PUT/GET, serverless for the invocation); the §3.3 colo row's 'Tenant tour → contract' is a lease-native entry and a tour/cabinet archetype would move the visitor registry censuses this lane is fenced off from — flagged for the registry-owner pass."
+  },
+
+  "goal": {
+    "nodeType": "equalized-floor",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "latency-skew",
+      "threshold": null,
+      "_todo": "The hold IS the product and the card names the held quantity twice: the §8.x per-line identity entry writes 'Meter: a nanosecond skew readout' (:31804) and the §0.3 row scarce column is 'Microseconds / cable length' — the win is the skew that never opens. But the card carries NO Win clause and the only number it writes is the CATASTROPHE quantum ('one tenant gets a 40ns advantage', :2377 area — the riot trigger, not a success threshold); authoring a win scalar off a catastrophe number would be forging the doc's deliberate void, so threshold null + this cite, same law object-storage's unauthored nines cite and serverless's unauthored-smoothness cite."
+    },
+    "loseCondition": {
+      "kind": "fairness-breach"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.exchange-colo.binding"
+  },
+
+  "scarce": {
+    "resourceId": "cable-length",
+    "meterWidget": "nanosecond-skew-readout",
+    "meterBoundStat": "latency-skew",
+    "commercialSlider": "distance-tier-pricing",
+    "operationalDials": [
+      "cable-spool-equalization-setting",
+      "meter-stick-survey-cadence",
+      "meet-me-access-tier"
+    ],
+    "windowGrows": false,
+    "shedOrder": "standard-p3-p0-ladder",
+    "qosAnswer": "scarce.exchange-colo.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "µs",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly-in-advance",
+      "escalator": true,
+      "grandfathering": false,
+      "_todo": "escalator TRUE — the first shipped bundle to claim it, and the doc is emphatic twice over: P11 ✅ 'Colo is a multi-year term billed monthly in advance with an annual escalator and a ramp schedule' (:354-355) and the revenue-table correction 'billed monthly in advance on a multi-year term with an escalator, a deposit and an NRC — not annual invoicing' (:23336). default 'monthly-in-advance' verbatim-shaped from the same correction; grandfathering FALSE: no grandfathering clause is authored for the colo family (§6.12 is referenced by the lease-terms card, :23423, as '§6.12 term structure' and the deposit/NRC/ramp-credit instruments are unmodeled — recorded, not invented). The whole block is family-row law ('Colocation'), carried to this variant openly: the doc prices no separate exchange-colo contract shape."
+    },
+    "seasonality": [],
+    "diurnalBaseline": "market-session-hours",
+    "_todo": "simTimeScale 'µs' — this line's authored clock quantum, first µs claim in the corpus: the §0.3 row scarce column is 'Microseconds / cable length' verbatim (:623) and the card 'Introduces nanosecond-scale thinking' (:2369) — object-storage took 'hours' for the same kind of reason (the clock unit the line thinks in). permanentIncidentClock false: the audit arrives on a schedule, not as a fuse; the catastrophe is instantaneous (a 40ns advantage, discovered) and its aftermath rides the crowd — the §2.24 law that keeps a fuse off this line is the same one serverless cites, restated: idle quiet here is not a countdown. seasonality []: no exchange-colo season is authored; inventing a curve would move the waves-lane curve catalogue — flagged with that debt. diurnalBaseline 'market-session-hours' AUTHORED-FLAGGED: the doc names the customers ('Trading firms', §0.3) and never their hours; trading-session rhythm is the honest inference to a named rhythm id with the number unauthored (PROVISIONAL-B, waves-lane debt), never a forged curve."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.25,
+      "human": 0.15,
+      "entropic": 0.05,
+      "systemic": 0.2,
+      "customerAsThreat": 0.35,
+      "_todo": "customerAsThreat .35 — the card's threat sentence opens with a TENANT: 'a tenant who finds an unfair advantage — a microwave link, an FPGA, a cable someone cut 2m short' (§1.3 verbatim); the adversary on this line wears a customer badge and rents by the cabinet. malicious .25 — the off-floor hunters: competitors surveying your skew, the uninvited RF crowd around a microwave path (:31915/'Weather and place at Z4' scopes microwave links to exactly this weather; §2.12 family entries carry the external threat shapes); external probes ride the scanner drizzle. human .15 — the regulator and the crowd: 'the regulator who audits your cable lengths' (§1.3 verbatim) plus the §3.3 tour-to-contract traffic. systemic .2 — fairness is SHARED ARCHITECTURE: the identicality of every coil is one property of the whole floor, so a bad batch re-spool walks every rack at once and a single publicized 40ns breach cascades into the riot (§1.3 catastrophe). entropic .05 floor only, excluded from activeFamilies: cable length is measured precisely BECAUSE it does not drift silently on its own — the doc authors no decay law for this line's metered object; the wildlife/fibre-sag family rows (:10401-10403) are facility-generic and stay out of the weights. Sum 1.00 (micro-exact 250000/150000/50000/200000/350000). Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "systemic",
+      "customerAsThreat"
+    ],
+    "signatureThreats": [
+      { "id": "layer7-mimic", "mechanical": true },
+      { "id": "cheat-client-griefer", "mechanical": true },
+      { "id": "mod-update-day", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "empty-server-spiral", "mechanical": true },
+      { "id": "chargeback-swarm", "mechanical": true },
+      { "id": "open-resolver-reflection", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "cabinet-distance-tier": ["cheat-client-griefer"],
+      "spool-equalizer-rack": ["layer7-mimic"],
+      "meet-me-room": ["mod-update-day"]
+    },
+    "twoFrontDraw": [
+      "concurrency",
+      "data-integrity",
+      "hands",
+      "cash",
+      "reputation"
+    ],
+    "waveTable": "file:waves/g1-exchange-colo-first-quarter.json",
+    "_todo": "Threat mapping law (dns/mail/dedicated/object-storage/voip/serverless precedent — registry ids re-framed in _todo cites, zero new registry entries): the card names its threats as OBJECTS ('a microwave link, an FPGA, a cable someone cut 2m short — and the regulator who audits your cable lengths', §1.3 verbatim); none is a registry id, so each rides the closest existing mechanic — layer7-mimic = the tenant whose coil is visibly identical because the advantage is NOT in the coil (the registry's crowd-hider, re-framed onto the floor: it mimics compliance itself; its lookalikeOf power-shopper is this bundle's first mimic seed), cheat-client-griefer = the tenant who wins unfair — the registry's ONE fairness-cheating customer archetype entry (§2.12 'Cheat Client' genre), and on a line whose whole product is EQUAL latency the griefer is not a nuisance, it is the fatality vector (its lookalikeOf game-player-joining is the bundle's second seed), mod-update-day = the batch remediation day when every coil on the floor is re-spooled at once (Splitter — one wrong 'compliance fix' walks the fleet), ticket-avalanche-hydra = the audit-request avalanche the regulator's visit summons (Swarm on hands), empty-server-spiral = the darkening floor once the riot starts signing elsewhere (Healer/Spawner on reputation), chargeback-swarm = the lawyers' register made mechanical: disputed invoices arriving as a crowd (customerAsThreat cash), open-resolver-reflection = an unaudited tenant's unsecured gear reflecting on the whole building's standing (reputation), scanner-drizzle = the off-floor survey teams measuring your skew from outside (Stealth; its data-integrity denomination is the honest read — an unmeasured floor is a corrupted promise). activeFamilies omits entropic per the floor law. The 40ns advantage itself has NO attacker id: a cable someone cut short is a PHYSICS theft, and the registry owns no cable-length mechanic — it rides the meter pair (nanosecond-skew-readout × latency-skew), the audit dials and the fairness-breach fatality, never fabricated as a threat entity (flagged for the registry-owner pass)."
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "obsidian and gold",
+      "accent": "trading-floor teal",
+      "chord": [
+        "trading-floor teal",
+        "fiber aqua",
+        "brass meter",
+        "latency scarlet",
+        "equality white"
+      ]
+    },
+    "materialPreset": "preset:obsidian-and-brass",
+    "visitorCostume": {
+      "hull": "hexagon-cabinet",
+      "propSlot": "coiled-fiber"
+    },
+    "heroSilhouette": "asset:hero.fiber-coil",
+    "heroObject": "fiber-coil",
+    "meterFace": "nanosecond-skew-readout",
+    "catastropheFx": "fx:one-coil-too-small",
+    "ambientSoundPack": "sound:air-handlers-over-a-quiet-floor",
+    "densityMultiplier": null,
+    "arrivalRhythm": "market-session-hours",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.shortened-cable",
+    "signatureMotion": "motion:diameter-identical-coils",
+    "signatureFrame": "frame:coils-in-perfect-row",
+    "lodContract": {
+      "full": "asset:lod.fiber-coil.full",
+      "icon16": "asset:lod.fiber-coil.icon16",
+      "pip": "pip:equality-white",
+      "aggregate": "agg:cabinet-row-symmetry",
+      "inspector": "skin.exchange-colo.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented (the Z4 campus row lists 'meet-me room' among Z4 objects, §8.x :1025, but that is renderer altitude-table territory, not a bundle scalar). Palette chord VERBATIM from the card's visual paragraph: 'Chord: trading-floor teal · fiber aqua · brass meter · latency scarlet · equality white'; dominant/accent taken from the card's own opening sentence 'obsidian and gold, trading-floor teal' — flagged for the owner's palette ratification (serverless precedent: the chord's notes are the doc's, the dominant/accent pick is the lane's). Hero object: THE COIL — 'Make the coil the meter: the coils should be visibly identical in diameter across all tenants — that identicality is the fairness contract' (§1.3 verbatim); the coiled excess fiber 'on every rack' is the card's signature shape at world altitude, and the catastrophe is one coil 'spottable by eye before the number tells you' — hence heroObject fiber-coil and catastropheFx fx:one-coil-too-small (AUTHORED from the card sentence; bespoke asset refs kept at exactly five per R48/R49, counted in buildables/lod: heroSilhouette, catastropheFx, commercialArtifactIcon, lod.full, lod.icon16). Costume: hull 'hexagon-cabinet' = §3.2's duration-class shape law ('hexagon = resident', :11695) worn by the card's cabinet; propSlot 'coiled-fiber' from 'beautiful coiled excess fiber on every rack' (verbatim fragment). commercialArtifactIcon asset:artifact.shortened-cable — the card's own threat object ('a cable someone cut 2m short'), the bad-month artifact of the line. meterFace bound to scarce.meterWidget per the R15 pairing law (baseline density-comb/density-comb, serverless chrysalis/chrysalis). arrivalRhythm 'market-session-hours' flagged AUTHORED (see tempo._todo). ambientSoundPack authored from the facility-family ambience rows (the meet-me room's fluorescents, :29127; the air-handlers hum is landlord-tier atmosphere, §1.3 Tier-4 'The Floor'); flagged, the doc writes no sound line for this card. signatureMotion 'motion:diameter-identical-coils' and signatureFrame 'frame:coils-in-perfect-row' authored from the card's identicality law — the perfect row IS the signature frame."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4's era grid dates the FAMILY, not this line: '2001 dot-com colo' appears in the era × type sketch (:651), but the financial exchange variant — a product of nanosecond thinking and co-location arms races — is not dated anywhere, and dating it would be guessing the HFT era into a law the doc never writes. Placeholder per §0.4 R66 law — never invented; the capability gates the doc DOES author for colo-family lines ('Your own facility + power headroom → unlocks Colocation', §5.6 :20787) ride relations.unlocks instead; status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "cabinet",
+    "revenueShape": "multi-year-lease-monthly-advance",
+    "marginProfile": "high",
+    "cashTiming": "monthly-in-advance",
+    "termStructure": {
+      "typical": "3-5-year",
+      "churn": "single-tenant-non-renewal",
+      "_todo": "§6.6 revenue table family row verbatim: 'Colocation | U / kW / cross-connect | 3–5 year leases | high | monthly in advance on a multi-year term | building + power' (:23308); Companion A: 'Colocation | 3–5 years | 0.3–0.8% | +12 to +18 months (fit-out)' (:23349); Companion C bad-month: 'a single tenant not renewing' (:23387). All three are the FAMILY rows — the doc prices no 'Financial exchange colo' economy row of its own — carried openly with that flag (the object-storage TB-month precedent transfers family numbers only when the doc prices nothing for the variant; the distance-tier premium is priced NOWHERE, and cacProfile therefore stays a placeholder, below). churn 'single-tenant-non-renewal' names the Companion C event shape without forging the 0.3–0.8% scalar into a bundle field."
+    },
+    "cacProfile": "cac.exchange-colo.todo",
+    "ticketsPerCustomer": null,
+    "signatureCost": "building-and-power",
+    "badMonth": "economy.exchange-colo.bad-month",
+    "fifthAxisScore": {
+      "metric": "microseconds-cable-length",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.3 line table verbatim: 'Financial exchange colo | Microseconds / cable length | Unequal latency between tenants | Trading firms | A cabinet three metres closer' — the scarce column is this line's fifth-axis frame (serverless precedent: the row's own scarce word IS the axis); R42 score weight not authored."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": true
+    },
+    "_todo": "unitOfSale 'cabinet' — §0.3 unit column verbatim ('A cabinet three metres closer'); §6.6 prices the family at 'U / kW / cross-connect' — three meters for one artifact (amps, units, patch cables) that the two tables do NOT reconcile into one word, left unreconciled here per owner law (the gb-vs-TB storage precedent): the sold artifact rides the §0.3 scalar word while costPerInvocation carries §6.6's per-cabinet phrasing. signatureCost verbatim from the revenue table's signature-cost column ('building + power'). cacProfile PLACEHOLDER: Companion B DOES price the family rows — 'Colocation | $2,000–15,000 (sales cycle) | 12–30 months (fit-out) | 0.05–0.2 + remote hands' and 'Cross-connect | ~$0 (sold to an existing tenant) | immediate | ~0' (:23372-23373) — and dedicated/shared-web ship real slugs from their own B rows; this lane declines to forge the family number onto the exchange variant, because the whole premise of the line is that the distance tier re-prices everything (§1.3: 'a customer will pay enormous money for a cabinet three metres closer') and B prices none of that premium. The cross-connect row's ~$0 CAC / immediate payback is the line's OWN upsell economics and rides scenarios.analogues + the distance-tier dial instead, cited there. ticketsPerCustomer: no rate authored. badMonth: Companion C's family row 'a single tenant not renewing' (:23387) dramatized onto this variant — flagged as carried, not quoted, in the pack provenance. demandCharges TRUE: the family meters power as a product — 'per rack, cabinet, cage, or square foot' space rent plus the three-readout cabinet power ledger 'sold / usable / drawn' (§6.x :22508) — and the amps are the co-scarcity of the cable; p95billing false: the 95th-percentile mechanic is authored for the CDN line (§2.12), not this one."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "cabinet-floor" },
+      { "archetype": "two-face-rack", "skin": "exchange-colo" },
+      { "archetype": "control-plane", "skin": "audit-desk" }
+    ],
+    "distinct": [
+      "cabinet-distance-tier",
+      "cross-connect-faucet",
+      "spool-equalizer-rack",
+      "meter-stick-survey-kit",
+      "meet-me-room",
+      "cabinet-power-ledger",
+      "badge-audit-trail",
+      "length-label-board"
+    ],
+    "nonPhysical": [
+      "lease-ramp-schedule",
+      "fairness-attestation-ledger"
+    ],
+    "_todo": "All distinct names cite the doc: cabinet-distance-tier from §8.x 'Placement is a commercial decision too' — 'In colo, cabinets near the meet-me room are worth more' (:26479) + the yield-management row 'the cabinets nearest the meet-me room' (:23194) + the card's own price sentence; cross-connect-faucet VERBATIM named — 'the Cross-Connect Faucet — every cross-connect you sell adds a small faucet dripping gold' (§6.x :23471, repeated in §8's juice list :25345); spool-equalizer-rack from the card's fairness law ('Fairness is enforced by cable spool'); meter-stick-survey-kit from the card's own title ('The Meter Stick'); meet-me-room is a doc-named object three times over (§4.10 skin-on-shared-mechanics list includes 'meet-me room' :18735; 'Meet-Me Room — \"The Cathedral\" ... The single most profitable room in a colo building' :17495 — note the doc's own cathedral nickname echoing the card title); cabinet-power-ledger VERBATIM — 'the Cabinet Power Ledger should be a clamp meter you physically [hang]' (§8.x :1683) with the sold/usable/drawn law :22508; badge-audit-trail from the landlord-tier row 'badge access, a loading dock, a meet-me room, a NOC' (§4.x :932 family) + the card's regulator; length-label-board from the §8.x identity entry 'fibre lengths labelled in metres' (:31803). The three invitation doors in threats.unlockedByBuildables are cabinet-distance-tier (a priced floor creates the incentive to cheat it), spool-equalizer-rack (absent equalization, hidden advantage is invisible), meet-me-room (a cross-connect patched to the wrong port takes down a tenant you have no visibility into — the §2.12 family threat 'Colo: Cross-Connect Errors and the Tenant's Own Fire', :9929). nonPhysical: the lease ramp schedule is 'colo deals ramp. Cabinets 1-4 bill from [date X]...' (:5600) — money on a calendar, not on a rack; the fairness attestation ledger is what the regulator signs (card verbatim: the regulator 'audits your cable lengths'). The §4.10 one-object law: the concurrency-pool archetype re-worn as a CABINET FLOOR — 'The Busy Wall (capacity, universal)... concurrency, cabinets, GPUs' (:14795) names cabinets in the universal capacity list, and §3.2's resident law ('occupies a slot for the whole level') makes the sold floor a concurrency pool counted in metres and amps; two-face-rack wears the exchange skin (the rack silhouette is shared furniture; 'skins the mechanics, never the silhouette'); control-plane in the audit-desk skin joins the shared control-plane lineage (cpanel/webmail/ipmi-console/zone-editor/bucket-policy/fraud-desk/metering-plan — eight skins strong)."
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2 control-granularity authors only the shared-hosting profile; the exchange-colo pip row awaits its ruleset-card pass. The family DOES ship a control sentence — 'In colo you control nothing above the cabinet door' (:566, §control-granularity axis, ❌-flagged idea) — and §2.x adds 'You cannot see inside the cabinet; you can absolutely see what it draws' (:1647); both name a landlord's pip CEILING without a spread, so the four scalars are null + these cites, never invented (same law dns/mail/game-servers/object-storage/voip/serverless cite)."
+    },
+    "keyhole": false,
+    "unclickableObjects": false,
+    "_todo": "keyhole FALSE against the family's landlord lore, and the card is the reason: this variant's whole epistemics is VISIBILITY — 'the coils should be visibly identical in diameter... spottable by eye before the number tells you' (§1.3 verbatim) — the fairness object is deliberately out in the open on every rack (the excess fibre is the CONTRACT, drawn for inspection), while the cabinet INTERIOR stays the tenant's; the doc authors keyhole-mode for dedicated (its card names it) and nothing for this line, so the slot rides the baseline. The family's 'cannot see inside the cabinet' clause is recorded here so the §0.2 owning pass can reconcile it honestly."
+  },
+
+  "mechanics": [
+    "cable-length-as-product",
+    "cable-spool-equalization",
+    "coil-identicality-audit",
+    "distance-tier-pricing",
+    "cross-connect-recurring-revenue",
+    "lease-ramp-schedule",
+    "riot-cascade-liability",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Sell",
+    "transfers": [
+      "verbs.exchange-colo.transfer.1"
+    ],
+    "_todo": "SECOND FIRST-CASE CARD — the §1.3 card carries NO dominant-verb line (its identity block runs scarce → teaches → threat → visual with no verb row), so nothing is claimed and nothing is displaced, and ADR-0013 decision 14's per-tier roster is consumed rather than amended. Chosen: Sell — the tier roster's last unclaimed slot (loader lint TIER_EXTENDED_VERBS), and the card's own verb, verbatim, three times: 'microseconds are what you sell', 'you sell *equal* latency as a product', 'cable length is measured in metres and it is the product' (§1.3); reinforced at family level by the ✅ Verb Shift Rule row itself — 'Colo: *sell space and police power*' (:512) — and by `The Landlord` career entry 'you sell space, power, and cross-connects' (:1393). Census at commit 91c45b5: Triage=shared-web, Place&Connect=game-servers, Tune=mail, Commit=dns, Observe=dedicated, Shield=object-storage, Maintain=trunk-group-voip, Scale=serverless; Sell is this card's claim — the tier roster is now EXHAUSTED, and Diagnose remains the invariant roster's only unclaimed slot with no §1.3 card naming it (wave-5 census holds; the wall and its candidates ship as a MODULE-STATUS gap row). HONEST DOOR GAP (g16 finding, same law as Scale/Shield/Maintain): 'Sell' has no PlayerVerb door enum member and no acquisition mechanic ships — this dominant verb is card IDENTITY and design posture, not a door capability; every mechanic the shipped quarter slice exercises still rides door verbs, and the card's sell-the-metre posture survives as the meter pair (nanosecond-skew-readout × latency-skew) and the distance-tier slider, not as a verb."
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:dns-hosting",
+        "kind": "dns-and-everything",
+        "numbers": null,
+        "_todo": "§0.2 line synergies, verbatim: 'DNS + everything (you already own the infrastructure)' — the clause is symmetric and universal; no numeric benefit authored for this pair. The family's named synergy partner ('colo + transit + cross-connects', :540) rides carriers and an unbundled transit line, so it is recorded in threats/scenarios instead of forged onto a shipped id."
+      }
+    ],
+    "antagonisms": [
+      {
+        "with": "official:gpu-power",
+        "resource": "power",
+        "kind": "headroom-contention",
+        "render": "allocation-slider",
+        "_todo": "§0.2 Line Antagonisms, verbatim: 'GPU + colo compete for the same amps' (:552) — the family row, carried to this variant (amps are co-scarce with cable on this floor: the sold/usable/drawn ledger, §6.x :22508). The counterpart bundle ships no GPU line yet; game-servers already authors the identical pair-key from its side ('official:gpu-power', resource 'power'), so the id names the doc's contested-resource pair, not an invented company."
+      }
+    ],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["own-facility", "power-headroom"],
+          "_todo": "§5.6 lattice verbatim: 'Your own facility + power headroom → unlocks Colocation (you become a landlord)' (:20787) — the family gate, authored as tech flags because the doc gates the family, not the variant."
+        },
+        {
+          "tech": ["carrier-relationships", "meet-me-room"],
+          "_todo": "§5.6 lattice verbatim: 'Carrier relationships + meet-me room → unlocks cross-connects as a product' (:20801) — the upsell gate this line's whole revenue stack hangs on (§6.x: cross-connects are 'the best line item in hosting', ~90-95% margin, :23461-23470; 'the highest-margin unlock in the game')."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {
+        "official:dedicated": {
+          "customerOverlap": null,
+          "hardwareReuse": null,
+          "skillTransfer": null,
+          "regulatoryDelta": null,
+          "_todo": "§5.6 pivot row verbatim: 'Dedicated → Colo — gate: more rack space than servers. You start renting out what you already own' (:20878-20880) — the doc prices no overlap numbers and no regulatory delta for the pair; the exchange variant adds the FINANCIAL regulator (card verbatim) whose delta is authored NOWHERE, so all four scalars stay null + these cites, never forged (serverless shipped regulatoryDelta 0 for an unregulated pair; claiming 0 for an audited line would be the louder lie). The family's outbound row ('Colo → Wholesale / Build-to-suit', :20881) leads to an unbundled line and is recorded, not authored."
+        }
+      }
+    },
+    "masteryBuff": "relations.exchange-colo.mastery",
+    "distillate": "relations.exchange-colo.distillate",
+    "_todo": "mastery grounded on the §5.6 mastery law verbatim: 'Mastering Colo grants a facility-efficiency bonus' (:20963) — the family buff, carried to the variant with the flag; the distillate is the line's taught lesson per the §1.9 distillate law, authored from the card's doctrine (equal latency as product; fairness enforced by geometry)."
+  },
+
+  "ticketPack": "file:packs/exchange-colo.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.exchange-colo.runs-out",
+    "killsYou": "handover.exchange-colo.kills-you",
+    "customerWants": "handover.exchange-colo.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "cgroup-caging",
+      "alias": "cable-spool-equalization",
+      "line": "rosetta.exchange-colo.equalization"
+    },
+    {
+      "canonical": "renewal-cliff",
+      "alias": "multi-year-lease-cliff",
+      "line": "rosetta.exchange-colo.renewal"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Convert",
+      "Build-to-Spec"
+    ],
+    "analogues": {
+      "shortened-cable-discovered": "scenarios.exchange-colo.shortened-cable-discovered",
+      "regulator-audit-day": "scenarios.exchange-colo.regulator-audit-day",
+      "twenty-cabinet-ramp": "scenarios.exchange-colo.twenty-cabinet-ramp"
+    },
+    "_todo": "Convert verbatim-grounded: §3.3's colo family row IS a conversion funnel — 'Tenant tour → contract' (:12496). Build-to-Spec from the ramp law — 'You sign a tenant for 20 cabinets — but colo deals ramp' (:5600): the deployment is BUILT TO the signed spec on a billing calendar. The third analogue keeps the cross-connect upsell economics (§6.x 'Cross-connects: the best line item in hosting') legible as a scenario even though the product word 'Cross-connect' is not its own scenario key — see economy._todo. analogues authored from cited doc beats, consequence-only framing per §9.11."
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}
