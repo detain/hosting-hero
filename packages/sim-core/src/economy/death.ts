@@ -37,8 +37,8 @@
  * no floats, no RNG draws) and the whole record set is OPTIONAL on EconomyState
  * — keys are ABSENT while idle, so existing hosts serialize byte-identically
  * and the pipeline digest (which covers GameState, not EconomyState) never
- * sees any of it. All PROVISIONAL rows ratify-on-playtest like the runway
- * constants beside them.
+ * sees any of it. All four thresholds (plus the refused-settles requirement
+ * of the float cause) are RATIFIED 2026-10-16 (ADR-0014 #D4).
  */
 
 import {

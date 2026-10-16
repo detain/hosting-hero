@@ -320,7 +320,9 @@ export function replenishAtBusinessMonth(
 /**
  * THE OWNER'S OPENING ATTENTION TAX — ADR-0013 ruling 12(v): "attention cost
  * per verb is now an OWNER DECISION. Opening default {Communicate: 1,
- * ticket-class handling: 1, all other verbs: 0}."
+ * ticket-class handling: 1, all other verbs: 0}." The shipped map below is
+ * RATIFIED 2026-10-16 (ADR-0014 #D4) — "ticket-class handling" read onto the
+ * deal/commit verb per §7.5.
  *
  * MAPPING CHOICE (documented per the ruling's INTENT — attention tax on the
  * communication/deal verbs, never on build verbs). §7.5's CEO-Override passage

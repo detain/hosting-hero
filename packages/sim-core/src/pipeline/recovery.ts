@@ -72,32 +72,33 @@ function fail(code: string, at: string, detail: string): never {
 
 /* ────────────────────────────── config ──────────────────────────────── */
 
-/** Every value PROVISIONAL — ratify-on-playtest, same class as the death
+/** Every value RATIFIED 2026-10-16 (ADR-0014 #D4), same sweep as the death
  *  thresholds (economy/death.ts) and the elasticity coefficients. Minutes
  *  are SIM minutes (1 tick == 1 sim minute on the shipped macro clock). */
 export interface RecoveryConfig {
   /** Length of the untouched shadow countdown (§7.7 Second Failure Window);
-   *  also the hold of a safe-mode lock. PROVISIONAL 12 — mirrors the proto
-   *  incident clock's `recovering` minute-fold (@2ef5cae) so the two
-   *  degradations narratives stay legible side by side. */
+   *  also the hold of a safe-mode lock. RATIFIED 12 (ADR-0014 #D4) — mirrors
+   *  the proto incident clock's `recovering` minute-fold (@2ef5cae) so the
+   *  two degradations narratives stay legible side by side. */
   readonly windowMinutes: number;
   /** Minutes each restored arm stays clamped before the next one opens
-   *  (gradual restoration / slow-start). PROVISIONAL 4. */
+   *  (gradual restoration / slow-start). RATIFIED 4 (ADR-0014 #D4). */
   readonly rampMinutes: number;
   /** Minimal viable posture: arms visible during the ramp start and every
-   *  safe-mode lock. PROVISIONAL 1. */
+   *  safe-mode lock. RATIFIED 1 (ADR-0014 #D4). */
   readonly floorSlots: number;
   /** Bounces attributed to one node in one tick that count as STRUGGLING.
-   *  PROVISIONAL 2 (one silent patience bounce is weather; a burst is a
-   *  degraded node). */
+   *  RATIFIED 2 (ADR-0014 #D4) (one silent patience bounce is weather; a
+   *  burst is a degraded node). */
   readonly struggleBounceThreshold: number;
   /** Quiet minutes after the last struggle before the shadow window opens
-   *  (the node "finished stabilizing"). PROVISIONAL 1 — pure minute math,
-   *  no timers. */
+   *  (the node "finished stabilizing"). RATIFIED 1 (ADR-0014 #D4) — pure
+   *  minute math, no timers. */
   readonly quietMinutes: number;
 }
 
-/** The shipped default book (all PROVISIONAL — see RecoveryConfig). */
+/** The shipped default book (all RATIFIED 2026-10-16, ADR-0014 #D4 — see
+ *  RecoveryConfig). */
 export function defaultRecoveryConfig(): RecoveryConfig {
   return Object.freeze({
     windowMinutes: 12,

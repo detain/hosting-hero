@@ -20,7 +20,8 @@
  *    host-side ground truth, never an observed cell). Feeds the copycat
  *    rescale: threats copy what defends them (waves/generate.ts 4c).
  *
- * All thresholds here are PROVISIONAL scenario rows (owner ratify-on-playtest
+ * The oversell ratio below is RATIFIED 2026-10-16 (ADR-0014 #D4); all other
+ * thresholds here remain PROVISIONAL scenario rows (owner ratify-on-playtest
  * posture) and every one is a named const so the pin travels with the number.
  * The feint consumer is structurally wired but MARKER-INERT on shipped data:
  * no g1 wave authors a `feint` marker — buildSharedWebG1Table() therefore
@@ -110,8 +111,8 @@ export function planWaveWindowSchedule(
 
 /* ═══════════════════════════ oversell (OD-24) ═══════════════════════════ */
 
-/** OD-24 record: 8:1 PROPOSED as the shared-web starting oversell ratio
- *  (taste pending — docs/DECISIONS-PENDING.md:100). 1.0 = 1_000_000n, and
+/** OD-24 record: 8:1 — RATIFIED 2026-10-16 (ADR-0014 #D4) as the shared-web
+ *  starting oversell ratio. 1.0 = 1_000_000n, and
  *  waves/contention.ts proves ratio ≤ 1 ⇒ exactly 0n probability, so this
  *  row is the difference between "law present" and "law firing". */
 export const OVERSELL_RATIO_MICRO: bigint = 8_000_000n;

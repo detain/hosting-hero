@@ -14,6 +14,8 @@
  *     billedMrc composition chain (base → escalator → grandfather → MFN);
  *     the grandfather lock still wins over the player's price line — a
  *     written concession is a permanent line (§6.12) the dial cannot cross.
+ *     This order is RATIFIED LAW 2026-10-16 (ADR-0014 #D4): §6.12 outranks
+ *     the §6.5 dial when they disagree.
  *  2. ELASTICITY — the price the customer PAYS relative to the price the
  *     plan was AUTHORED at moves three odds: monthly churn UP on a hike,
  *     renewal-cliff retention DOWN, dunning recovery DOWN (angry wallets).
@@ -32,7 +34,7 @@
  *
  * All math is exact bigint bps (round-half-away, same discipline as
  * kernel/fixed.ts / money.ts). Constants live in `config.ts → pricing`,
- * every one PROVISIONAL (ratify-on-playtest).
+ * every one RATIFIED 2026-10-16 (ADR-0014 #D4).
  */
 
 import {

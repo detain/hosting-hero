@@ -252,30 +252,31 @@ export interface ReputationConfig {
 /* ────────────────── company death thresholds (OD-25(a), §6.10) ────────── */
 
 /** The three canonical company deaths (economy/death.ts folds them at tick
- *  step 12.6). Every value PROVISIONAL — ratify-on-playtest, same class as
- *  the runway constants. Days go through `daysToMinutes` (calendar-driven),
- *  never a hardcoded 1440. */
+ *  step 12.6). Every value RATIFIED 2026-10-16 (ADR-0014 #D4). Days go
+ *  through `daysToMinutes` (calendar-driven), never a hardcoded 1440. */
 export interface DeathConfig {
   /** Active-customer book BELOW this counts as collapse territory. Default
-   *  1 = literal extinction (zero customers sustained); ratify-on-playtest. */
-  readonly churnFloor: number; // PROVISIONAL
+   *  1 = literal extinction (zero customers sustained). */
+  readonly churnFloor: number; // RATIFIED 2026-10-16 (ADR-0014 #D4)
   /** How long the book must stay under the floor before DISSOLUTION arms. */
-  readonly churnCollapseSustainedDays: number; // PROVISIONAL
+  readonly churnCollapseSustainedDays: number; // RATIFIED 2026-10-16 (ADR-0014 #D4)
   /** How long free cash may sit at zero WITH refused settles before the float
-   *  death arms. 3 days mirrors the unattended LONG_WEEKEND ceiling (2880
+   *  death arms (the refused-settles requirement is part of the ratified
+   *  shape). 3 days mirrors the unattended LONG_WEEKEND ceiling (2880
    *  business minutes), so a weekend never outlives the threshold. */
-  readonly floatInsolvencySustainedDays: number; // PROVISIONAL
+  readonly floatInsolvencySustainedDays: number; // RATIFIED 2026-10-16 (ADR-0014 #D4)
   /** Cure window a latched covenant breach gets after its month-roll
    *  (dunning's middle-rung shape, §6.4: warn long, escapable at a cost). */
-  readonly covenantCureGraceDays: number; // PROVISIONAL
+  readonly covenantCureGraceDays: number; // RATIFIED 2026-10-16 (ADR-0014 #D4)
 }
 
 /* ─────────────── price elasticity of the adjust-price book (OD-24(a)) ──── */
 
 /** The elasticity dial set behind `economy/elasticity.ts` (OD-24(a) owner
  *  ruling 2026-10-09 — part 2 of the pricing surface: the door's
- *  `adjust-price` records are CONSUMED here). Every value PROVISIONAL —
- *  ratify-on-playtest, same class as the reputation deltas. Direction law:
+ *  `adjust-price` records are CONSUMED here). Every value RATIFIED
+ *  2026-10-16 (ADR-0014 #D4) — the retention-vs-churn asymmetry is ratified
+ *  as deliberate (cuts buy no certainty). Direction law:
  *  a price HIKE raises churn pressure and lowers both renewal retention and
  *  dunning recovery odds; a CUT mirrors. All factors are exact bigint bps
  *  multipliers applied to the SAME single seeded roll each consumer already
@@ -283,24 +284,30 @@ export interface DeathConfig {
 export interface PricingConfig {
   /** Churn-pressure coefficient: bps of extra churn-factor per 10,000 bps of
    *  out-of-band price deviation (150% ⇒ churn doubles at +110% over the
-   *  dead-band). PROVISIONAL. */
+   *  dead-band). RATIFIED 2026-10-16 (ADR-0014 #D4). */
   readonly churnCoefficientBps: bigint;
   /** Renewal-cliff retention coefficient (win/loss pulse): a hike scales the
-   *  term-matrix retention DOWN by this leverage. PROVISIONAL. */
+   *  term-matrix retention DOWN by this leverage (80%).
+   *  RATIFIED 2026-10-16 (ADR-0014 #D4). */
   readonly retentionCoefficientBps: bigint;
   /** Dunning-recovery coefficient: a hike scales per-stage recovery odds
-   *  DOWN by this leverage (angry wallets pay slower). PROVISIONAL. */
+   *  DOWN by this leverage (angry wallets pay slower, 50%).
+   *  RATIFIED 2026-10-16 (ADR-0014 #D4). */
   readonly dunningCoefficientBps: bigint;
   /** Dead-band: |deviation| ≤ this many bps from the authored price is
-   *  INERTIA — every factor stays exactly 1.0 (±10% — PROVISIONAL). */
+   *  INERTIA — every factor stays exactly 1.0 (±10%).
+   *  RATIFIED 2026-10-16 (ADR-0014 #D4). */
   readonly deadBandBps: bigint;
   /** Saturation floor for adverse-direction factors (a −90% cut can only
-   *  halve churn pressure; a hike can at most multiply it by factorMax). */
+   *  halve churn pressure; a hike can at most multiply it by factorMax).
+   *  The [0.5×, 3×] churn clamp is RATIFIED 2026-10-16 (ADR-0014 #D4). */
   readonly factorMinBps: bigint;
-  /** Saturation clamp for the churn factor above the dead band. PROVISIONAL. */
+  /** Saturation clamp for the churn factor above the dead band.
+   *  RATIFIED 2026-10-16 (ADR-0014 #D4). */
   readonly factorMaxBps: bigint;
-  /** Hard floor for the retention mirror: even a brutal hike keeps a small
-   *  chance of renewal (retention factor never reaches 0). PROVISIONAL. */
+  /** Hard floor for the retention mirror (0.1×): even a brutal hike keeps a
+   *  small chance of renewal (retention factor never reaches 0).
+   *  RATIFIED 2026-10-16 (ADR-0014 #D4). */
   readonly retentionFactorMinBps: bigint;
 }
 
@@ -448,19 +455,19 @@ export function defaultEconomyConfig(): EconomyConfig {
       honestPostmortemBps: 250n, // PROVISIONAL (§5.10 transparency earns back)
     },
     death: {
-      churnFloor: 1, // PROVISIONAL — extinction line
-      churnCollapseSustainedDays: 3, // PROVISIONAL
-      floatInsolvencySustainedDays: 3, // PROVISIONAL — matches LONG_WEEKEND 2880-min ceiling
-      covenantCureGraceDays: 10, // PROVISIONAL — dunning middle-rung shape (§6.4)
+      churnFloor: 1, // RATIFIED 2026-10-16 (ADR-0014 #D4) — extinction line
+      churnCollapseSustainedDays: 3, // RATIFIED 2026-10-16 (ADR-0014 #D4)
+      floatInsolvencySustainedDays: 3, // RATIFIED 2026-10-16 (ADR-0014 #D4) — matches LONG_WEEKEND 2880-min ceiling
+      covenantCureGraceDays: 10, // RATIFIED 2026-10-16 (ADR-0014 #D4) — dunning middle-rung shape (§6.4)
     },
     pricing: {
-      churnCoefficientBps: 15_000n, // PROVISIONAL — ratify-on-playtest (OD-24(a) part 2)
-      retentionCoefficientBps: 8_000n, // PROVISIONAL
-      dunningCoefficientBps: 5_000n, // PROVISIONAL
-      deadBandBps: 1_000n, // PROVISIONAL — ±10% inertia band
-      factorMinBps: 5_000n, // PROVISIONAL — 0.5× saturation floor
-      factorMaxBps: 30_000n, // PROVISIONAL — 3× saturation clamp
-      retentionFactorMinBps: 1_000n, // PROVISIONAL — hikes never zero the renewal chance
+      churnCoefficientBps: 15_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — churn 150% (OD-24(a) part 2)
+      retentionCoefficientBps: 8_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — retention 80%
+      dunningCoefficientBps: 5_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — recovery 50%
+      deadBandBps: 1_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — ±10% inertia band
+      factorMinBps: 5_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — 0.5× floor of the [0.5×,3×] churn clamp
+      factorMaxBps: 30_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — 3× ceiling of the [0.5×,3×] churn clamp
+      retentionFactorMinBps: 1_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — 0.1× floor: hikes never zero the renewal chance
     },
     postMortem: DEFAULT_POST_MORTEM_CONFIG, // §7.7 — shared frozen default book
   };

@@ -298,7 +298,8 @@ export function termYearsElapsed(econ: ContractEconomy, atBusinessMin: SimMinute
  * player's active `adjust-price` amount replaces the AUTHORED base at the
  * head of the chain — escalators compound on the new price and the
  * grandfather lock still overrides it (a written concession is a permanent
- * line the dial cannot cross, §6.12).
+ * line the dial cannot cross, §6.12). This grandfather-WINS billing order
+ * is RATIFIED LAW 2026-10-16 (ADR-0014 #D4): §6.12 outranks the §6.5 dial.
  */
 export function billedMrc(
   contract: Contract,

@@ -107,7 +107,7 @@
       "entropic": 0.05,
       "systemic": 0.25,
       "customerAsThreat": 0.3,
-      "_todo": "Provisional sheet-B-era skew read straight off the §1.3 mail card (no §2.27 Matrix C row exists for email): customerAsThreat .30 — 'one compromised customer account sending 400k messages at 2am; a legitimate customer who bought a mailing list' puts the customer's own traffic at parity with attackers; malicious .30 — joe-jobs, backscatter, snowshoe spammers (§2.12); systemic .25 — 'your /24 listed because of a neighbour's IP' and 'Google silently deciding your mail goes to spam'; human .10 — bulk-send friction complaints; entropic .05 — config rot (SPF/DKIM 'subtly wrong for months'). Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+      "_todo": "RATIFIED 2026-10-16 (ADR-0014 #D4) — sheet-B-era skew read straight off the §1.3 mail card (no §2.27 Matrix C row exists for email): customerAsThreat .30 — 'one compromised customer account sending 400k messages at 2am; a legitimate customer who bought a mailing list' puts the customer's own traffic at parity with attackers; malicious .30 — joe-jobs, backscatter, snowshoe spammers (§2.12); systemic .25 — 'your /24 listed because of a neighbour's IP' and 'Google silently deciding your mail goes to spam'; human .10 — bulk-send friction complaints; entropic .05 — config rot (SPF/DKIM 'subtly wrong for months'). Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
     },
     "activeFamilies": [
       "malicious",

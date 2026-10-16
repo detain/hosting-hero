@@ -47,11 +47,12 @@
  * WAVE RULES LIVE (§2.24, B4): the traffic is the SHIPPED g1 shared-web slice
  * (five par-scaled waves via the canonical foreign adapter @c9c0433), planned
  * lazily at each window entry with the three host inputs wired in
- * `runner/waveRules.ts` — OD-24's 8:1 oversell proposal (gated on the bundle
- * declaring the slider), a bounce/land incident clock (fires wave-4's
+ * `runner/waveRules.ts` — OD-24's 8:1 oversell ratio, RATIFIED 2026-10-16
+ * (ADR-0014 #D4) (gated on the bundle declaring the slider), a bounce/land
+ * incident clock (fires wave-4's
  * secondIncident marker), and the deep lane's engaged-family census (copycat).
- * All thresholds PROVISIONAL scenario rows; witnesses via wavePlan(n) /
- * incidentState() / dominantDefenseFamily().
+ * The incident-clock and census thresholds remain PROVISIONAL scenario rows;
+ * witnesses via wavePlan(n) / incidentState() / dominantDefenseFamily().
  *
  * CORPUS DRIVE MODE (§1.5 seam, the runner leg of @5df5586/@bc11697): an
  * optional `corpus: {authority, waves}` option replaces the internal
