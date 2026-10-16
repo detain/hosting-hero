@@ -498,11 +498,14 @@ describe("Uptime streak — ONE shared cross-mode counter set", () => {
 
 /* ═══════════════════════ 6. OD-8 write-access matrix (Matrix B ratified) ═══════════════════════ */
 
-const RATIFIED_MATRIX_B = ["scenario", "daily", "consultant", "blitz"] as const;
+/** The five modes carrying the Matrix B shadow-instance posture: the
+ *  ADR-0009 cohort (2026-10-09) plus endless, flipped LIVE by ADR-0014 #D8
+ *  (2026-10-16) with the SAME ledger-four facet permissions. */
+const MATRIX_B_LIVE_MODES = ["scenario", "endless", "daily", "consultant", "blitz"] as const;
 /** §2.5-B: the only facets a Matrix B shadow instance appends. */
 const MATRIX_B_LEDGER = new Set(["records", "medals", "streaksShared", "codex"]);
 
-describe("Mode write-access matrix — OD-8 Matrix B LIVE, endless held, campaign full-carry", () => {
+describe("Mode write-access matrix — OD-8 Matrix B LIVE for all five shadow modes, campaign full-carry", () => {
   it("campaign may write EVERY facet (full-carry, L18)", () => {
     for (const facet of WRITE_FACETS) {
       expect(() => writeGuard("campaign", facet)).not.toThrow();
@@ -518,8 +521,8 @@ describe("Mode write-access matrix — OD-8 Matrix B LIVE, endless held, campaig
     expect(writeGuard("campaign", "playbook")).toBe("instance");
   });
 
-  it("OD-8 Matrix B (ratified 2026-10-09, ADR-0009): scenario/daily/consultant/blitz rows are LIVE and never throw", () => {
-    for (const mode of RATIFIED_MATRIX_B) {
+  it("OD-8 Matrix B: all five shadow-mode rows are LIVE and never throw (ADR-0009 cohort + endless per ADR-0014 #D8)", () => {
+    for (const mode of MATRIX_B_LIVE_MODES) {
       for (const facet of WRITE_FACETS) {
         expect(() => writeGuard(mode, facet)).not.toThrow();
         expect(writeAccessOf(mode, facet).status).toBe("LIVE");
@@ -527,8 +530,8 @@ describe("Mode write-access matrix — OD-8 Matrix B LIVE, endless held, campaig
     }
   });
 
-  it("Matrix B pattern enforced: ratified modes APPEND only records/medals/streaksShared/codex and DENY everything else (§2.5-B)", () => {
-    for (const mode of RATIFIED_MATRIX_B) {
+  it("Matrix B pattern enforced: shadow modes APPEND only records/medals/streaksShared/codex and DENY everything else (§2.5-B)", () => {
+    for (const mode of MATRIX_B_LIVE_MODES) {
       const appendFacets = WRITE_ACCESS_MATRIX.filter((r) => r.mode === mode && r.kind === "append")
         .map((r) => r.facet)
         .sort();
@@ -544,33 +547,37 @@ describe("Mode write-access matrix — OD-8 Matrix B LIVE, endless held, campaig
     expect(writeGuard("daily", "finances")).toBe("deny"); // Bulletproof precedent: earnings unusable
   });
 
-  it("endless stays contested: all 32 rows PENDING_OD8 and EVERY writeGuard call THROWS naming OD-8", () => {
+  it("endless flipped LIVE per ADR-0014 #D8: all 32 rows LIVE with the ledger-four posture — padlock retired, deny law intact", () => {
     for (const facet of WRITE_FACETS) {
-      expect(writeAccessOf("endless", facet).status).toBe("PENDING_OD8");
-      expect(() => writeGuard("endless", facet)).toThrow(/OD-8/);
+      expect(writeAccessOf("endless", facet).status).toBe("LIVE");
+      expect(() => writeGuard("endless", facet)).not.toThrow();
+      const expected = MATRIX_B_LEDGER.has(facet) ? "append" : "deny";
+      expect(writeGuard("endless", facet)).toBe(expected);
     }
-    // campaign-mirror recommendation carried as DATA only (§2.5 Long Save in place):
-    expect(writeAccessOf("endless", "habits").kind).toBe("instance");
+    // the 2026-10-09 campaign-mirror data posture is RETIRED with the flip —
+    // pre-D8 pins (habits mirrored "instance") re-cut to ledger-four:
+    expect(writeAccessOf("endless", "habits").kind).toBe("deny");
     expect(writeAccessOf("endless", "records").kind).toBe("append");
-    // the throw names the held mode and the hold, fail-loud (Law 4):
-    expect(() => writeGuard("endless", "habits")).toThrow(/"endless".*HELD PENDING/s);
+    // endless settlements still may not touch the Company spine (§2.5-B):
+    expect(writeGuard("endless", "scars")).toBe("deny");
+    expect(writeGuard("endless", "reputation")).toBe("deny");
+    expect(writeGuard("endless", "customerBooks")).toBe("deny");
+    expect(writeGuard("endless", "finances")).toBe("deny");
   });
 
-  it("matrix arithmetic under Matrix B: LIVE + PENDING counts derived from SAVE_MODES × WRITE_FACETS", () => {
+  it("matrix arithmetic after #D8: every row LIVE, pendingOd8Rows() converged to empty (mechanism stands, holds are gone)", () => {
     const total = SAVE_MODES.length * WRITE_FACETS.length; // 6 × 32 = 192
     expect(WRITE_ACCESS_MATRIX.length).toBe(total);
-    expect(pendingOd8Rows().length).toBe(WRITE_FACETS.length); // endless only
-    expect(pendingOd8Rows().every((r) => r.mode === "endless")).toBe(true);
-    expect(liveRows().length).toBe(total - WRITE_FACETS.length); // campaign + 4 ratified modes
+    expect(pendingOd8Rows()).toEqual([]); // D8: nothing on disk is pending anymore
+    expect(liveRows().length).toBe(total);
     const ratifiedLive = liveRows().filter((r) => r.mode !== "campaign").length;
-    expect(ratifiedLive).toBe(RATIFIED_MATRIX_B.length * WRITE_FACETS.length); // 4 × 32 = 128
+    expect(ratifiedLive).toBe(MATRIX_B_LIVE_MODES.length * WRITE_FACETS.length); // 5 × 32 = 160
     for (const mode of SAVE_MODES) {
-      const expected = mode === "endless" ? 0 : WRITE_FACETS.length;
-      expect(liveRows(mode).length).toBe(expected);
+      expect(liveRows(mode).length).toBe(WRITE_FACETS.length);
     }
   });
 
-  it("guardBatch aborts a whole settlement batch on a denied or held row (settlement atomicity, §2.4)", () => {
+  it("guardBatch aborts a whole settlement batch on a denied row (settlement atomicity, §2.4)", () => {
     const ok = { runId: "run-1", mode: "campaign" as const, committedAtTick: 10n, writes: [{ facet: "records" as const, payload: {} }] };
     expect(() => guardBatch(ok)).not.toThrow();
     // a ratified ledger-only batch commits:
@@ -584,9 +591,12 @@ describe("Mode write-access matrix — OD-8 Matrix B LIVE, endless held, campaig
     // LIVE-but-denied row in a ratified mode's batch: aborted by the Matrix B deny, not silently passed
     const tainted = { runId: "run-2", mode: "blitz" as const, committedAtTick: 10n, writes: [{ facet: "medals" as const, payload: {} }, { facet: "scars" as const, payload: {} }] };
     expect(() => guardBatch(tainted)).toThrow(/denies mode "blitz"/);
-    // held endless row: still throws naming OD-8
-    const held = { runId: "run-4", mode: "endless" as const, committedAtTick: 10n, writes: [{ facet: "records" as const, payload: {} }] };
-    expect(() => guardBatch(held)).toThrow(/OD-8/);
+    // endless writes now SUCCEED (ADR-0014 #D8): the formerly-held ledger batch commits clean…
+    const endlessLedger = { runId: "run-4", mode: "endless" as const, committedAtTick: 10n, writes: [{ facet: "records" as const, payload: {} }] };
+    expect(() => guardBatch(endlessLedger)).not.toThrow();
+    // …and the throw law rides endless's STANDING DENY rows like every other shadow mode's:
+    const endlessTainted = { runId: "run-5", mode: "endless" as const, committedAtTick: 10n, writes: [{ facet: "scars" as const, payload: {} }] };
+    expect(() => guardBatch(endlessTainted)).toThrow(/denies mode "endless"/);
     expect(() => guardBatch({ runId: "r", mode: "campaign", committedAtTick: 0n, writes: [] })).toThrow(/facts or nothing/);
   });
 

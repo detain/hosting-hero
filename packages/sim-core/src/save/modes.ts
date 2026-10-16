@@ -9,16 +9,21 @@
  *
  *  - `campaign` rows ship LIVE (full-carry writes, L18 — the doc is
  *    unambiguous there, and the game is unplayable without them);
- *  - `scenario`, `daily`, `consultant` and `blitz` rows are LIVE with the
- *    Matrix B pattern that was formerly the stored recommendation: a shadow
- *    instance appends ONLY records / medals / streaksShared / codex at
- *    settlement and is DENIED every other facet (§2.5-B: NEVER scars,
- *    reputation, customer_book, cash);
- *  - `endless` is the carve-out — contested at ratification, so its rows stay
- *    status PENDING and `writeGuard()` THROWS naming OD-8 on any attempt to
- *    exercise one. The declared `kind` still mirrors campaign semantics
- *    (§2.5: "the Long Save continuing in place") as data for a future
- *    unblock.
+ *  - `scenario`, `daily`, `consultant` and `blitz` rows went LIVE at the
+ *    2026-10-09 ratification (ADR-0009) with the Matrix B pattern that was
+ *    formerly the stored recommendation: a shadow instance appends ONLY
+ *    records / medals / streaksShared / codex at settlement and is DENIED
+ *    every other facet (§2.5-B: NEVER scars, reputation, customer_book, cash);
+ *  - `endless` was the carve-out — contested at ratification, its 32 rows
+ *    held PENDING. ADR-0014 #D8 (2026-10-16) ENDED that posture: "queue the
+ *    endless save slice" flips the 32 rows LIVE with the SAME ledger-four
+ *    shadow-instance posture as the 2026-10-09 cohort. The formerly carried
+ *    campaign-mirror recommendation (§2.5: "the Long Save continuing in
+ *    place") is retired as DATA with the flip — full-carry stays campaign's
+ *    L18 privilege; re-raising endless's posture beyond the ledger four
+ *    would need a fresh owner ruling, not an inference from the mirror.
+ *    Note the split: the SAVE SLICE is live while the endless LOOP stays
+ *    unscoped, which is why MODE_TIERING keeps the DEFERRED-tier override.
  *
  * The write protocol underneath (Appendix C §2.4): modes NEVER mutate the
  * Company mid-run; a run accumulates a `writes[]` batch that is committed at
@@ -131,46 +136,30 @@ const MATRIX_B_LEDGER_FACETS: ReadonlySet<WriteFacet> = new Set<WriteFacet>([
   "codex",
 ]);
 
-/** Modes whose rows flipped LIVE under the OD-8 Matrix B ratification
- *  (owner decision 2026-10-09, ADR-0009). Endless is NOT here — it was
- *  explicitly held PENDING as contested. */
-const RATIFIED_MATRIX_B_MODES: readonly SaveMode[] = ["scenario", "daily", "consultant", "blitz"];
+/** Modes whose rows are LIVE with the Matrix B shadow-instance posture:
+ *  scenario/daily/consultant/blitz flipped at the 2026-10-09 ratification
+ *  (ADR-0009); endless joined 2026-10-16 per ADR-0014 #D8 with the SAME
+ *  facet permissions — the ledger four append, everything else denies. */
+const MATRIX_B_LIVE_MODES: readonly SaveMode[] = ["scenario", "endless", "daily", "consultant", "blitz"];
 
-/** The ratified Matrix B pattern (owner decision 2026-10-09, ADR-0009):
- *  shadow instances write ONLY records, medals, streaksShared and codex —
- *  NEVER scars, reputation, customer_book, cash (§2.5-B).
- *  For the still-held endless rows the same function is recommendation-as-
- *  DATA only: endless mirrors campaign semantics (§2.5: "the Long Save
- *  continuing in place") until the owner unblocks it. */
-function matrixBKind(mode: SaveMode, facet: WriteFacet): WriteKind {
-  if (mode === "endless") {
-    // §2.5: endless is "the Long Save continuing in place" — same node,
-    // quarterly commits; the held row mirrors campaign semantics.
-    return APPEND_FACETS.has(facet) ? "append" : "instance";
-  }
+/** The Matrix B pattern (§2.5-B): shadow instances write ONLY records, medals,
+ *  streaksShared and codex — NEVER scars, reputation, customer_book, cash. */
+function matrixBKind(facet: WriteFacet): WriteKind {
   return MATRIX_B_LEDGER_FACETS.has(facet) ? "append" : "deny";
 }
 
-/** A LIVE row under the Matrix B ratification (scenario/daily/consultant/blitz). */
+/** A LIVE row under the Matrix B posture (ADR-0009 cohort + endless per ADR-0014 #D8). */
 function ratifiedRow(mode: SaveMode, facet: WriteFacet): WriteAccessRow {
+  const ruling =
+    mode === "endless"
+      ? 'OD-8 Matrix B live for "endless" per ADR-0014 #D8 (2026-10-16): the save-slice flip ends the contested posture; the endless LOOP stays deferred in MODE_TIERING.'
+      : "OD-8 Matrix B ratified 2026-10-09 (ADR-0009).";
   return {
     mode,
     facet,
-    kind: matrixBKind(mode, facet),
+    kind: matrixBKind(facet),
     status: "LIVE",
-    note: `OD-8 Matrix B ratified 2026-10-09 (ADR-0009): shadow-instance rows write ONLY records/medals/streaks/codex, NEVER scars/reputation/customer_book/cash.`,
-  };
-}
-
-/** An endless row: held PENDING (contested at the 2026-10-09 ratification)
- *  with the campaign-mirror recommendation carried as data. */
-function pendingRow(mode: SaveMode, facet: WriteFacet): WriteAccessRow {
-  return {
-    mode,
-    facet,
-    kind: matrixBKind(mode, facet),
-    status: "PENDING_OD8",
-    note: `OD-8 ratified Matrix B 2026-10-09 but "${mode}" rows are explicitly HELD PENDING (contested); kind mirrors campaign semantics as data only — exercising this row throws.`,
+    note: `${ruling} Shadow-instance rows write ONLY records/medals/streaks/codex, NEVER scars/reputation/customer_book/cash.`,
   };
 }
 
@@ -179,8 +168,10 @@ function buildMatrix(): readonly WriteAccessRow[] {
   for (const facet of WRITE_FACETS) rows.push(campaignRow(facet));
   for (const mode of SAVE_MODES) {
     if (mode === "campaign") continue;
-    const rowOf = RATIFIED_MATRIX_B_MODES.includes(mode) ? ratifiedRow : pendingRow;
-    for (const facet of WRITE_FACETS) rows.push(rowOf(mode, facet));
+    if (!MATRIX_B_LIVE_MODES.includes(mode)) {
+      fail(`WRITE_ACCESS_MATRIX: mode "${mode}" has no row-builder — a new SaveMode needs its posture ruled before shipping rows`);
+    }
+    for (const facet of WRITE_FACETS) rows.push(ratifiedRow(mode, facet));
   }
   return rows;
 }
@@ -198,16 +189,18 @@ const ROW_INDEX: ReadonlyMap<string, WriteAccessRow> = new Map(
  *  return "deny" as probe data — but deny is ENFORCED, not silently skipped:
  *  a settlement batch row targeting a denied facet makes guardBatch throw and
  *  the whole batch aborts (§2.4 atomicity).
- *  PENDING → THROWS naming OD-8: the surviving PENDING rows are endless,
- *  explicitly held at the 2026-10-09 Matrix B ratification — exercising one
- *  while contested is a defect we want LOUD (Law 4), not one we want guessed. */
+ *  PENDING → THROWS naming OD-8: exercising a held row while contested is a
+ *  defect we want LOUD (Law 4), not one we want guessed. After ADR-0014 #D8
+ *  (2026-10-16) the shipped matrix holds NO pending rows — the last 32 were
+ *  endless and they are LIVE now — but the throw-on-pending machinery stays
+ *  as standing law for any future hold. */
 export function writeGuard(mode: SaveMode, facet: WriteFacet): WriteKind {
   const row = ROW_INDEX.get(`${mode}::${facet}`);
   if (row === undefined) fail(`writeGuard: no matrix row for mode "${mode}" facet "${facet}" (corrupt matrix)`);
   if (row.status === "PENDING_OD8") {
     fail(
       `OD-8 was ratified as Matrix B on 2026-10-09, but mode "${mode}" rows are explicitly HELD PENDING (contested): it may not write facet "${facet}" until the owner unblocks them. ` +
-        `See docs/DECISIONS-PENDING.md OD-8, docs/adr/0009-owner-ratifications-calibration.md, and Appendix C §2.5 (current row carries the campaign-mirror recommendation as data).`,
+        `See docs/DECISIONS-PENDING.md OD-8, docs/adr/0009-owner-ratifications-calibration.md, docs/adr/0014-owner-rulings-session-4.md (D8), and Appendix C §2.5 (the held row's note carries its intended posture).`,
     );
   }
   return row.kind;
@@ -269,8 +262,11 @@ export function guardBatch(batch: SettlementBatch): void {
  *              author toward them, the shell does not promise them for v1;
  *  - deferred: parked (netcode-class engineering) or cut-candidate framings.
  *              A deferred mode is SCHEMA-ONLY in this registry: nothing here
- *              makes it buildable, and no save-ledger row may be exercised
- *              through it (see the endless override note on its row). */
+ *              makes its LOOP buildable. The one ratified exception on the
+ *              save side is `endless`: ADR-0014 #D8 (2026-10-16) flipped its
+ *              32 ledger rows LIVE (save slice) while the loop itself stays
+ *              unscoped and the DEFERRED-tier override holds — see the
+ *              endless row's note. */
 export type ModeTier = "core" | "extended" | "deferred";
 
 /** The band labels the RECORDED triage (reports/MASTER_REPORT.md "Modes
@@ -301,9 +297,11 @@ export interface GameModeRow {
 
 /** The recorded band → law tier fold (lane-authored mapping of the ratified
  *  five-band triage into the three-tier schema ruling OD-16(a) names).
- *  THE ONLY override is `endless`, and the owner ratified it explicitly:
- *  "the endless-32 save rows STAY PENDING_OD8 until an endless loop is
- *  scoped (deferral ratified, not a gap)" — docs/DECISIONS-PENDING.md OD-16. */
+ *  THE ONLY override is `endless`, and the owner ratified it explicitly: the
+ *  endless LOOP "STAYS [deferred] until an endless loop is scoped (deferral
+ *  ratified, not a gap)" — docs/DECISIONS-PENDING.md OD-16. ADR-0014 #D8
+ *  (2026-10-16) ended the OD-8 carve-out on the SAVE ROWS only: the 32
+ *  endless rows are LIVE; the tier override stands until the loop lands. */
 const BAND_TIER_LAW: Readonly<Record<GameModeBand, ModeTier>> = Object.freeze({
   "SHIP-4 v1": "core",
   "CHEAP v1.1": "extended",
@@ -521,7 +519,7 @@ export const MODE_TIERING: readonly GameModeRow[] = Object.freeze([
     band: SHIP4,
     tier: DEFERRED,
     saveMode: "endless",
-    note: "THE RULING'S OWN OVERRIDE. Design band stays SHIP-4 v1 — 'the mode people will actually play the most' — but the loop is unscoped (Seasons structure, draft-1-of-3 modifiers, hardware aging, line offers), so OD-16(a) ratifies the DEFERRAL explicitly: the 32 endless save rows stay PENDING_OD8 and writeGuard throws until the owner scopes the loop. 'Ratified, not a gap' (docs/DECISIONS-PENDING.md OD-16). Unblocking = scope the loop → flip this row's tier + flip the rows.",
+    note: "THE RULING'S OWN OVERRIDE (tier side). Design band stays SHIP-4 v1 — 'the mode people will actually play the most' — but the loop is unscoped (Seasons structure, draft-1-of-3 modifiers, hardware aging, line offers), so OD-16(a) ratifies the DEFERRAL explicitly: 'Ratified, not a gap' (docs/DECISIONS-PENDING.md OD-16). The SAVE-SLICE half of the carve-out ENDED 2026-10-16 per ADR-0014 #D8 ('queue the endless save slice'): the 32 endless rows flipped PENDING_OD8→LIVE with the same ledger-four shadow-instance posture as scenario/daily/consultant/blitz; writeGuard no longer throws on them. Tier flip stays gated on scoping the loop: scope the loop → flip this row's tier (rows are already LIVE).",
   }),
   Object.freeze({
     slug: "coop-noc",

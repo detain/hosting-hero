@@ -3,8 +3,9 @@
  * (owner ruling 2026-10-09b; recorded source: reports/MASTER_REPORT.md
  * "Modes triage (§9.1)" consolidating hosting_game.md §9.1 heading
  * 33137→33149; ★ orphan marks included). These tests pin the census,
- * the ledger↔table consistency, the ratified endless override, the
- * deferred-nothing-buildable law, and wire back-compat (the tiering is
+ * the ledger↔table consistency, the ratified endless TIER override (its
+ * save rows went LIVE 2026-10-16 per ADR-0014 #D8; the loop stays deferred),
+ * the deferred-nothing-buildable law, and wire back-compat (the tiering is
  * code-side law ONLY — no save bundle gains a field).
  */
 
@@ -93,18 +94,26 @@ describe("OD-16(a) tiering — ledger law", () => {
     expect(unmappedCore.map((r) => r.slug)).toEqual(["sandbox"]);
   });
 
-  it("deferred rows are schema-only — no deferred mode except the ratified endless override may hold a ledger door, and endless writes NOTHING", () => {
+  it("deferred rows are schema-only — no deferred mode may hold a ledger door except endless, whose door is LIVE per ADR-0014 #D8", () => {
     for (const row of modeRowsIn("deferred")) {
       if (row.slug === "endless") continue;
       expect(row.saveMode).toBeNull();
     }
-    // The deferred door that exists is padlocked exactly as OD-8 held it:
+    // The padlock was retired by the owner's 2026-10-16 save-slice ruling:
+    // endless writes the ledger four and NOTHING else — same posture as the
+    // ADR-0009 cohort. (The tier stays DEFERRED because the LOOP is unscoped;
+    // the writeGuard PENDING machinery survives with an empty pending set.)
     for (const facet of WRITE_FACETS) {
-      expect(() => writeGuard("endless", facet)).toThrow(/OD-8/);
+      expect(() => writeGuard("endless", facet)).not.toThrow();
     }
-    // And the padlock is still the ONLY pending machinery (PENDING_OD8 untouched):
-    expect(pendingOd8Rows().length).toBe(WRITE_FACETS.length);
-    expect(pendingOd8Rows().every((r) => r.mode === "endless")).toBe(true);
+    expect(writeGuard("endless", "records")).toBe("append");
+    expect(writeGuard("endless", "medals")).toBe("append");
+    expect(writeGuard("endless", "streaksShared")).toBe("append");
+    expect(writeGuard("endless", "codex")).toBe("append");
+    expect(writeGuard("endless", "scars")).toBe("deny");
+    expect(writeGuard("endless", "reputation")).toBe("deny");
+    // No row on disk is pending anymore; the mechanism itself stands:
+    expect(pendingOd8Rows()).toEqual([]);
   });
 
   it("the band→tier fold is total: every row matches BAND_TIER_LAW or is the named override (load-time assertModeTiering already throws otherwise — this proves it is not vacuous)", () => {
