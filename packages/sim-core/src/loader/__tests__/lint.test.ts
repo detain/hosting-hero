@@ -7,6 +7,7 @@
 import { describe, expect, test } from "vitest";
 import {
   INVARIANT_VERBS,
+  isGroundableDominantVerb,
   lintRulesetCorpus,
   TIER_EXTENDED_VERBS,
   waveRefKey,
@@ -161,6 +162,58 @@ describe("VERB_SHIFT — dominant verb differs, else MERGE verdict", () => {
       }),
     );
     expect(codesOf(report)).toEqual([]);
+  });
+
+  test("ADR-0014 #D1: the roster is six tier-extension verbs, in order", () => {
+    expect(TIER_EXTENDED_VERBS).toEqual([
+      "scale",
+      "shield",
+      "maintain",
+      "sell",
+      "negotiate",
+      "schedule",
+    ]);
+  });
+
+  test("ADR-0014 #D1: negotiate and schedule ground the canon leg", () => {
+    // The two OFF-roster verbs the owner blessed onto the extension roster:
+    // the §1.3 generic colo card names Negotiate verbatim, the backup/GPU/
+    // HPC/satellite family cards name Schedule. Neither joins the invariant
+    // six, and the pairwise MERGE law stays untouched (beta's verb still
+    // differs from alpha's).
+    for (const verb of ["negotiate", "schedule"] as const) {
+      expect(INVARIANT_VERBS as readonly string[]).not.toContain(verb);
+      expect(isGroundableDominantVerb(verb)).toBe(true);
+      const report = lintRulesetCorpus(
+        miniCorpus({
+          bundles: [
+            ALPHA(),
+            mutatedBundle("minimal-beta.json", (raw) => {
+              (raw.verbs as Record<string, unknown>)["dominant"] =
+                verb[0]!.toUpperCase() + verb.slice(1);
+            }),
+          ],
+        }),
+      );
+      expect(codesOf(report)).toEqual([]);
+    }
+  });
+
+  test("ADR-0014 #D1: an off-list verb stays convicted (the amendment is closed, not open)", () => {
+    expect(isGroundableDominantVerb("fly")).toBe(false);
+    expect(isGroundableDominantVerb("negotiates")).toBe(false);
+    const report = lintRulesetCorpus(
+      miniCorpus({
+        bundles: [
+          ALPHA(),
+          mutatedBundle("minimal-beta.json", (raw) => {
+            (raw.verbs as Record<string, unknown>)["dominant"] = "Fly";
+          }),
+        ],
+      }),
+    );
+    expect(codesOf(report)).toEqual(["VERB_SHIFT"]);
+    expect(report.findings[0]?.detail).toContain("seventh");
   });
 });
 

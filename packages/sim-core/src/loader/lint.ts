@@ -127,20 +127,34 @@ export const INVARIANT_VERBS = [
  *  PLACE·LINK·TUNE·SCALE·SHIELD·INVESTIGATE·MAINTAIN·SELL) minus every verb
  *  §1.9 already folds into the invariant six — PLACE·LINK → "place & connect",
  *  INVESTIGATE → "diagnose", TUNE verbatim. What remains is the tier-extension
- *  roster ADR-0013 decision 14 adopted so type-line 6+ cards can found an
- *  identity without touching the invariant core: the six stay six.
+ *  roster ADR-0013 decision 14 adopted (extend-within-ADR-0005, no ADR
+ *  amendment needed) so type-line 6+ cards can found an identity without
+ *  touching the invariant core: the six stay six.
+ *
+ *  ADR-0014 #D1 (owner ruling, 2026-10-16) blessed two further verbs onto the
+ *  extension roster — Negotiate (the §1.3 generic colo card names it verbatim)
+ *  and Schedule (the §1.3 backup/GPU/HPC/satellite family cards name it) —
+ *  the two OFF-roster verbs of the VERB-ROSTER-WALL census. That is a law
+ *  change INSIDE ADR-0005's already-ratified per-tier-verb-sets frame, again
+ *  extending ADR-0013 #14's route with no amendment. Everything else stands:
+ *  the invariant-six law, the pairwise MERGE prohibition (a card naming a
+ *  verb another card holds as dominant stays a merge candidate, never a
+ *  type), and the canon-leg mechanics are UNCHANGED.
  *
  *  Honest gap (reports/audit/group-16.md g16 finding): none of these verbs
  *  exists in the closed eight-verb PLAYER_VERBS door enum and no verb-
  *  acquisition mechanic ships. A tier-extension dominant verb is therefore a
  *  CONTENT IDENTITY law, not a door capability — the card declares it, while
  *  every mechanic the quarter slice exercises still rides door verbs. The
- *  door-side seam (or a ratified re-skin) is owed its own lane. */
+ *  door-side seam (or a ratified re-skin) is owed its own lane — RULED
+ *  ADR-0014 #D2 (full PlayerVerb enum extension, Shield-first), lane queued. */
 export const TIER_EXTENDED_VERBS = [
   "scale",
   "shield",
   "maintain",
   "sell",
+  "negotiate",
+  "schedule",
 ] as const;
 
 /** Canon-leg truth: the dominant verb is groundable in a ratified set — the
