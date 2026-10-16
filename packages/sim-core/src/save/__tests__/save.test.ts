@@ -498,14 +498,18 @@ describe("Uptime streak — ONE shared cross-mode counter set", () => {
 
 /* ═══════════════════════ 6. OD-8 write-access matrix (Matrix B ratified) ═══════════════════════ */
 
-/** The five modes carrying the Matrix B shadow-instance posture: the
- *  ADR-0009 cohort (2026-10-09) plus endless, flipped LIVE by ADR-0014 #D8
- *  (2026-10-16) with the SAME ledger-four facet permissions. */
-const MATRIX_B_LIVE_MODES = ["scenario", "endless", "daily", "consultant", "blitz"] as const;
+/** The four modes carrying the Matrix B shadow-instance posture (ADR-0009
+ *  cohort). Endless rode this roster from ADR-0014 #D8 until the owner's
+ *  same-day re-raise moved it to the campaign mirror — see below. */
+const MATRIX_B_LIVE_MODES = ["scenario", "daily", "consultant", "blitz"] as const;
+/** Modes whose LIVE rows mirror campaign's full-carry facet permissions
+ *  (owner ruling 2026-10-16, session-5 agenda item (a) — supersedes #D8's
+ *  ledger-four posture on endless; §2.5 "the Long Save continuing in place"). */
+const CAMPAIGN_MIRROR_MODES = ["endless"] as const;
 /** §2.5-B: the only facets a Matrix B shadow instance appends. */
 const MATRIX_B_LEDGER = new Set(["records", "medals", "streaksShared", "codex"]);
 
-describe("Mode write-access matrix — OD-8 Matrix B LIVE for all five shadow modes, campaign full-carry", () => {
+describe("Mode write-access matrix — OD-8 Matrix B LIVE for the shadow cohort, campaign + endless-mirror full-carry", () => {
   it("campaign may write EVERY facet (full-carry, L18)", () => {
     for (const facet of WRITE_FACETS) {
       expect(() => writeGuard("campaign", facet)).not.toThrow();
@@ -521,8 +525,8 @@ describe("Mode write-access matrix — OD-8 Matrix B LIVE for all five shadow mo
     expect(writeGuard("campaign", "playbook")).toBe("instance");
   });
 
-  it("OD-8 Matrix B: all five shadow-mode rows are LIVE and never throw (ADR-0009 cohort + endless per ADR-0014 #D8)", () => {
-    for (const mode of MATRIX_B_LIVE_MODES) {
+  it("OD-8 Matrix B cohort + campaign mirror: every non-campaign row is LIVE and never throws (ADR-0009 + #D8 flip + same-day posture re-raise)", () => {
+    for (const mode of [...MATRIX_B_LIVE_MODES, ...CAMPAIGN_MIRROR_MODES]) {
       for (const facet of WRITE_FACETS) {
         expect(() => writeGuard(mode, facet)).not.toThrow();
         expect(writeAccessOf(mode, facet).status).toBe("LIVE");
@@ -547,34 +551,47 @@ describe("Mode write-access matrix — OD-8 Matrix B LIVE for all five shadow mo
     expect(writeGuard("daily", "finances")).toBe("deny"); // Bulletproof precedent: earnings unusable
   });
 
-  it("endless flipped LIVE per ADR-0014 #D8: all 32 rows LIVE with the ledger-four posture — padlock retired, deny law intact", () => {
+  it("endless rides the campaign mirror (owner re-raise 2026-10-16): all 32 rows LIVE, facet kinds EQUAL to campaign — ledger-four superseded", () => {
     for (const facet of WRITE_FACETS) {
       expect(writeAccessOf("endless", facet).status).toBe("LIVE");
       expect(() => writeGuard("endless", facet)).not.toThrow();
-      const expected = MATRIX_B_LEDGER.has(facet) ? "append" : "deny";
-      expect(writeGuard("endless", facet)).toBe(expected);
+      // the mirror law: endless's permission IS campaign's permission, facet for facet
+      // (structural falsifier — any hand-authored drift from the campaign map goes red here)
+      expect(writeGuard("endless", facet)).toBe(writeGuard("campaign", facet));
     }
-    // the 2026-10-09 campaign-mirror data posture is RETIRED with the flip —
-    // pre-D8 pins (habits mirrored "instance") re-cut to ledger-four:
-    expect(writeAccessOf("endless", "habits").kind).toBe("deny");
-    expect(writeAccessOf("endless", "records").kind).toBe("append");
-    // endless settlements still may not touch the Company spine (§2.5-B):
-    expect(writeGuard("endless", "scars")).toBe("deny");
-    expect(writeGuard("endless", "reputation")).toBe("deny");
-    expect(writeGuard("endless", "customerBooks")).toBe("deny");
-    expect(writeGuard("endless", "finances")).toBe("deny");
+    // witnesses re-cut from the #D8-era ledger-four pins to campaign-mirror full-carry
+    // (1660fd2 expected deny here; the 2026-10-16 owner re-raise carries per campaign law):
+    expect(writeAccessOf("endless", "habits").kind).toBe("instance"); // #D8-era pin: "deny"
+    expect(writeAccessOf("endless", "records").kind).toBe("append"); // unchanged — ledger facet both ways
+    expect(writeAccessOf("endless", "codex").kind).toBe("instance"); // #D8-era pin: "append" — campaign treats codex as a bounded projection
+    // the Company spine facets that #D8 denied now carry (§2.5: the Long Save continues in place):
+    expect(writeGuard("endless", "scars")).toBe("append"); // #D8-era pin: "deny"
+    expect(writeGuard("endless", "reputation")).toBe("instance"); // #D8-era pin: "deny"
+    expect(writeGuard("endless", "customerBooks")).toBe("append"); // #D8-era pin: "deny"
+    expect(writeGuard("endless", "finances")).toBe("instance"); // #D8-era pin: "deny"
   });
 
-  it("matrix arithmetic after #D8: every row LIVE, pendingOd8Rows() converged to empty (mechanism stands, holds are gone)", () => {
-    const total = SAVE_MODES.length * WRITE_FACETS.length; // 6 × 32 = 192
+  it("matrix arithmetic after the re-raise: every row LIVE, pendingOd8Rows() converged to empty (mechanism stands, holds are gone)", () => {
+    const total = SAVE_MODES.length * WRITE_FACETS.length; // 6 × 32 = 192 — enum untouched by the posture flip
     expect(WRITE_ACCESS_MATRIX.length).toBe(total);
-    expect(pendingOd8Rows()).toEqual([]); // D8: nothing on disk is pending anymore
+    expect(pendingOd8Rows()).toEqual([]); // D8 flip: nothing on disk is pending anymore
     expect(liveRows().length).toBe(total);
     const ratifiedLive = liveRows().filter((r) => r.mode !== "campaign").length;
-    expect(ratifiedLive).toBe(MATRIX_B_LIVE_MODES.length * WRITE_FACETS.length); // 5 × 32 = 160
+    expect(ratifiedLive).toBe((MATRIX_B_LIVE_MODES.length + CAMPAIGN_MIRROR_MODES.length) * WRITE_FACETS.length); // (4 + 1) × 32 = 160
     for (const mode of SAVE_MODES) {
       expect(liveRows(mode).length).toBe(WRITE_FACETS.length);
     }
+    // posture census (falsifiable against any silent posture drift): the standing
+    // deny rows live ONLY in the four Matrix B shadow modes — 28 facets each —
+    // and the campaign mirror denies nothing. #D8-era pin was 5 × 28 = 140.
+    expect(WRITE_ACCESS_MATRIX.filter((r) => r.kind === "deny").length).toBe(
+      MATRIX_B_LIVE_MODES.length * (WRITE_FACETS.length - MATRIX_B_LEDGER.size),
+    );
+    expect(WRITE_ACCESS_MATRIX.filter((r) => r.mode === "endless" && r.kind === "deny").length).toBe(0);
+    // the mirror in aggregate: endless's append/instance split equals campaign's
+    const appendOf = (mode: (typeof SAVE_MODES)[number]) =>
+      WRITE_ACCESS_MATRIX.filter((r) => r.mode === mode && r.kind === "append").length;
+    expect(appendOf("endless")).toBe(appendOf("campaign"));
   });
 
   it("guardBatch aborts a whole settlement batch on a denied row (settlement atomicity, §2.4)", () => {
@@ -591,12 +608,18 @@ describe("Mode write-access matrix — OD-8 Matrix B LIVE for all five shadow mo
     // LIVE-but-denied row in a ratified mode's batch: aborted by the Matrix B deny, not silently passed
     const tainted = { runId: "run-2", mode: "blitz" as const, committedAtTick: 10n, writes: [{ facet: "medals" as const, payload: {} }, { facet: "scars" as const, payload: {} }] };
     expect(() => guardBatch(tainted)).toThrow(/denies mode "blitz"/);
-    // endless writes now SUCCEED (ADR-0014 #D8): the formerly-held ledger batch commits clean…
-    const endlessLedger = { runId: "run-4", mode: "endless" as const, committedAtTick: 10n, writes: [{ facet: "records" as const, payload: {} }] };
-    expect(() => guardBatch(endlessLedger)).not.toThrow();
-    // …and the throw law rides endless's STANDING DENY rows like every other shadow mode's:
-    const endlessTainted = { runId: "run-5", mode: "endless" as const, committedAtTick: 10n, writes: [{ facet: "scars" as const, payload: {} }] };
-    expect(() => guardBatch(endlessTainted)).toThrow(/denies mode "endless"/);
+    // endless settlements now ride the campaign mirror (owner re-raise 2026-10-16): the
+    // FULL-CARRY batch that the #D8-era pin saw ABORT here commits clean end to end…
+    const endlessFullCarry = {
+      runId: "run-4",
+      mode: "endless" as const,
+      committedAtTick: 10n,
+      writes: (["records", "scars", "reputation", "customerBooks", "finances"] as const).map((facet) => ({ facet, payload: {} })),
+    };
+    expect(() => guardBatch(endlessFullCarry)).not.toThrow();
+    // #D8-era pin retired: `expect(() => guardBatch({...facet: "scars"...})).toThrow(/denies mode "endless"/)` —
+    // endless has NO deny rows anymore. The deny-abort falsifier above (blitz medals+scars batch →
+    // /denies mode "blitz"/) keeps the enforcement law alive on the shadow cohort's standing deny rows.
     expect(() => guardBatch({ runId: "r", mode: "campaign", committedAtTick: 0n, writes: [] })).toThrow(/facts or nothing/);
   });
 

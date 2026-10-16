@@ -4,9 +4,10 @@
  * "Modes triage (§9.1)" consolidating hosting_game.md §9.1 heading
  * 33137→33149; ★ orphan marks included). These tests pin the census,
  * the ledger↔table consistency, the ratified endless TIER override (its
- * save rows went LIVE 2026-10-16 per ADR-0014 #D8; the loop stays deferred),
- * the deferred-nothing-buildable law, and wire back-compat (the tiering is
- * code-side law ONLY — no save bundle gains a field).
+ * save rows went LIVE 2026-10-16 per ADR-0014 #D8, posture re-raised to the
+ * campaign-mirror full-carry the same day by fresh owner ruling; the loop
+ * stays deferred), the deferred-nothing-buildable law, and wire back-compat
+ * (the tiering is code-side law ONLY — no save bundle gains a field).
  */
 
 import { describe, expect, it } from "vitest";
@@ -94,24 +95,26 @@ describe("OD-16(a) tiering — ledger law", () => {
     expect(unmappedCore.map((r) => r.slug)).toEqual(["sandbox"]);
   });
 
-  it("deferred rows are schema-only — no deferred mode may hold a ledger door except endless, whose door is LIVE per ADR-0014 #D8", () => {
+  it("deferred rows are schema-only — no deferred mode may hold a ledger door except endless, whose door is LIVE at full-carry (ADR-0014 #D8 flip + same-day owner re-raise)", () => {
     for (const row of modeRowsIn("deferred")) {
       if (row.slug === "endless") continue;
       expect(row.saveMode).toBeNull();
     }
-    // The padlock was retired by the owner's 2026-10-16 save-slice ruling:
-    // endless writes the ledger four and NOTHING else — same posture as the
-    // ADR-0009 cohort. (The tier stays DEFERRED because the LOOP is unscoped;
-    // the writeGuard PENDING machinery survives with an empty pending set.)
+    // The padlock was retired by the owner's 2026-10-16 save-slice ruling; the
+    // same day's fresh ruling (session-5 agenda item (a)) re-raised the posture
+    // from ledger-four to the campaign mirror: endless rides campaign's facet
+    // map (full-carry), NOT the ADR-0009 cohort's ledger-only permissions.
+    // (The tier stays DEFERRED because the LOOP is unscoped; the writeGuard
+    // PENDING machinery survives with an empty pending set.)
     for (const facet of WRITE_FACETS) {
       expect(() => writeGuard("endless", facet)).not.toThrow();
     }
     expect(writeGuard("endless", "records")).toBe("append");
     expect(writeGuard("endless", "medals")).toBe("append");
     expect(writeGuard("endless", "streaksShared")).toBe("append");
-    expect(writeGuard("endless", "codex")).toBe("append");
-    expect(writeGuard("endless", "scars")).toBe("deny");
-    expect(writeGuard("endless", "reputation")).toBe("deny");
+    expect(writeGuard("endless", "codex")).toBe("instance"); // #D8-era pin: "append" — campaign law treats codex as a bounded projection; the mirror follows
+    expect(writeGuard("endless", "scars")).toBe("append"); // #D8-era pin: "deny" — spine facets carry under full-carry
+    expect(writeGuard("endless", "reputation")).toBe("instance"); // #D8-era pin: "deny"
     // No row on disk is pending anymore; the mechanism itself stands:
     expect(pendingOd8Rows()).toEqual([]);
   });
