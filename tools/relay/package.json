@@ -1,0 +1,22 @@
+{
+  "name": "relay-tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SPIKE (ADR-0014 #D6): in-process co-op node relay proving the ADR-0013 contracts (save/coop seat ledger + replay/coopTimeline stamping law) work over a Node-side host — two runners, one digest, fed the same relay-stamped timeline in different arrival orders. NOT the shipped transport: the network layer stays PHP/Workerman per OD-5(b).",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hh/sim-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
+  }
+}
