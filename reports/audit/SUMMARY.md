@@ -1513,3 +1513,43 @@ Exactly one ❌→🔧 move this wave (the Cathedral card); recount on disk wins
 `docs/MODULE-STATUS.md`: proto row 977→**1,029**/94 with the full chain note (→990 @1165368 →1,008 @73cccc4 →1,029 @10f05fb; 95fc86e count-neutral drift-pin closure) + GREEN narrative for both new panels; footer re-pinned 2,438→**2,441**/144 with the worktree-measured attribution; m3 row sizes re-read honestly (fakeWorker 226→274 added — the brief only named the worker half, the line is a size ledger); THREE new gap rows (flavour pool scope packs-2/11 + zero-slot law, co-op room timeline-side-only v0, forum chip 0-lines honest disable); type-9 content row stamped **@d4e7863**.
 
 This closeout touches four files: `apps/proto/src/chrome/flavourFeed.ts` (comment-only), `hosting_game.md`, `docs/MODULE-STATUS.md`, plus this `reports/audit/SUMMARY.md`. media/prompts never staged.
+
+## WAVE-16 closeout — m4 threatMeta fold + freeze micro-fold: the last drivable item (2026-10-16b)
+
+**Context.** The audit's drivable-now list named one residual engineering item: m4 threatMeta triple-copy dedup. The lane folded it to a single authority @216106e; review verdict PUSH-GO — 0 Critical / 0 Major / 0 minor / 1 info (confidence 97%). The info item (authority records were unfrozen shared objects) is executed here as a separate micro-fold with attempt-once/cheap-exit protocol.
+
+### The fold (216106e)
+
+| Leg | Detail |
+|---|---|
+| 4→1 authority | `buildThreatMetaLookup(registry, where)` in `waves/foreign.ts` is now THE registry→threatMeta law. Folded copies: `chrome/corpusMission.ts`, `shared/corpusHost.ts` (cross-table closure memo KEPT at host), `scenario/__tests__/corpusFixtures.ts`, `runner/waveRules.ts` (non-array census pre-guard KEPT explicitly at the call site — the divergent edge stays named) |
+| Placement rationale | Exactly the home the gap row predicted — `ForeignThreatMeta` + the fail-loud throw family already live in `waves/foreign.ts`; hosts already value-import `@hh/sim-core/waves`, so no cross-package mirror remains and no drift-pin was needed (the sim-core fixture consumes the barrel directly — legal under the import-direction law) |
+| Byte-verbatim throw law | The `where` label carries each host's module name so every historical throw string stands verbatim — zero witnesses moved. Authority unit-tested in `foreign.test.ts` (+5, incl. a shipped-registry agreement pin vs the loose reader) |
+| NOT folded | Loose full-record gate/lab readers (`g6Data.threatIndex`, gate-g2/g6 fixtures) — different contract (band included, no per-record fail-loud), named in the authority docblock |
+
+### Freeze micro-fold (de6f401) — LANDED
+
+`Object.freeze({family, denomination})` per record at map-build time + one-line rationale. Targeted proofs on the fold: sim-core waves serial **14f/212 GREEN** and proto corpus trio (`simWorker.corpus`/`corpusMission`/`simCoreRunner.corpus`) **3f/47 GREEN** — no witness objected (the fold added zero `isFrozen` pins; all consumers copy values out).
+
+### Battery
+
+| Gate | Result |
+|---|---|
+| sim-core full serial | **144 files / 2,446 tests, exit 0, ZERO goldens** — discharged by the review lane on the 216106e tree; the lane's 2,441+5 prediction hit exactly |
+| waves targeted + proto corpus trio (closeout, post-freeze) | **14f/212** + **3f/47** GREEN — the freeze touched nothing witnessed |
+| proto full | **94 files / 1,029 UNMOVED** (review truth; freeze is sim-core-side) |
+| `node docs/api-verify.test.mjs` | **PASS — 1,595 names** (+1 `buildThreatMetaLookup` vs the wave-15 1,594 pin) |
+| `node scripts/ci-verify.mjs` | **5/5 PASS** |
+| `pnpm -r typecheck` | **5/5 Done** |
+
+### Census — UNCHANGED, zero flips — stated loudly
+
+✅321 · 🔧1,004 · ⚠️1 · ❌2,233 · 📝30 = 3,589. **WAVE-16 moves NO marker.** The dedup is pure code hygiene: it ships no spec surface, satisfies no heading, and touches `hosting_game.md` not at all. `hosting_game.md` on disk is byte-identical to the wave-15 closeout.
+
+### Ledger
+
+`docs/MODULE-STATUS.md`: waves row carries the 195→212 re-pin (m4 +5 tests, +12 absorbed sibling row-lag); m4 CLOSED gap row @261 SHA-stamped (@216106e fold + @de6f401 freeze, stamp @2446f08). `docs/API-REFERENCE.md` waves table carries the authority row (lane @216106e). This closeout stages three files total: `packages/sim-core/src/waves/foreign.ts` (freeze), `docs/MODULE-STATUS.md` (stamp), this `reports/audit/SUMMARY.md`. media/prompts never staged.
+
+### Program status
+
+**All non-owner-gated work from the 2026-10-09 audit is landed.** Residual menu = OWNER QUEUE in memory/DECISIONS-PENDING: OD-10/OD-12 numerics, the tenth-type verb-law call (verb roster exhausted — Diagnose sole unclaimed invariant, zero §1.3 card names it), the ratify-on-playtest PROVISIONAL const set (death/elasticity/recovery/attention/oversell/familyWeights), co-op transport (PHP Workerman, out-of-repo), PackId widening.
