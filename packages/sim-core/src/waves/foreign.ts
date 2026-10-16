@@ -101,10 +101,14 @@ export function buildThreatMetaLookup(
         `${where}: registry-core threat record missing id/family/denomination: ${JSON.stringify(raw).slice(0, 80)}`,
       );
     }
-    map.set(raw.id, {
-      family: raw.family as ForeignThreatMeta["family"],
-      denomination: raw.denomination as ForeignThreatMeta["denomination"],
-    });
+    // Frozen records: the map is shared across every caller of this authority —
+    // defense-in-depth per review of 216106e (no consumer may mutate in place).
+    map.set(raw.id,
+      Object.freeze({
+        family: raw.family as ForeignThreatMeta["family"],
+        denomination: raw.denomination as ForeignThreatMeta["denomination"],
+      }),
+    );
   }
   return (threatId: string) => map.get(threatId);
 }
