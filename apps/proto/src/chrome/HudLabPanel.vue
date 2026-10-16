@@ -25,6 +25,7 @@ import RecoveryWatch from "./RecoveryWatch.vue";
 import AttentionCard from "./AttentionCard.vue";
 import CorpusMissionCard from "./CorpusMissionCard.vue";
 import FlavourFeed from "./FlavourFeed.vue";
+import CoopRoom from "./CoopRoom.vue";
 import { buildHudCandidates, formatMicroUsd, formatRunClock, hudPermanentRows, rhoDisplayOf } from "./metrics";
 import { planPromotion, toggleUserPin, type MetricCandidate } from "./promotion";
 import { globalExplain } from "./explainRegistry";
@@ -268,6 +269,11 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
         <section class="card" data-hud-optional="true" data-test="lab-flavour">
           <h4>Front of House — the flavour bank speaks, one deterministic line per tick (g24)</h4>
           <FlavourFeed />
+        </section>
+
+        <section class="card" data-hud-optional="true" data-test="lab-coop">
+          <h4>Incident Room — co-op seat ledger + shared incident timeline, two seats one log (OD-9/OD-17)</h4>
+          <CoopRoom />
         </section>
       </div>
     </div>

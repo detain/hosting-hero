@@ -23,6 +23,7 @@ export * from "./deathWatch";
 export * from "./pricingDial";
 export * from "./recoveryWatch";
 export * from "./flavourFeed";
+export * from "./coopRoom";
 export {
   buildCandidates,
   buildHudCandidates,
@@ -51,6 +52,7 @@ export { default as LossCard } from "./LossCard.vue";
 export { default as PricingDial } from "./PricingDial.vue";
 export { default as RecoveryWatch } from "./RecoveryWatch.vue";
 export { default as FlavourFeed } from "./FlavourFeed.vue";
+export { default as CoopRoom } from "./CoopRoom.vue";
 
 /**
  * HUD-LAB mount — same frozen shape as every gates/gX/index.ts manifest
