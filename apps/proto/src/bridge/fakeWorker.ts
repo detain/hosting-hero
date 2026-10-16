@@ -46,17 +46,20 @@ export class FakeWorkerLike {
   private handleInbound(raw: unknown): void {
     const message = assertToWorker(raw);
     if (message.kind === "boot") {
-      /* Mirror of sim.worker.ts boot branch (corpus rider + boot-fault
-         channel): the SAME shared workerCorpusDrive builder feeds the SAME
-         createRunner seam, so headless bridge tests speak worker-exact
-         corpus semantics (runnerKind-honoring precedent). Seed stays the
-         fake's fixed 1 — pump()-driven determinism, share codes are the
-         real worker's concern. */
+      /* Mirror of sim.worker.ts boot branch (corpus rider + D7 build rider +
+         boot-fault channel): the SAME shared workerCorpusDrive builder feeds
+         the SAME createRunner seam, so headless bridge tests speak worker-exact
+         corpus semantics (runnerKind-honoring precedent); `build` forwards
+         identically so a semantically bad rider faults the boot here exactly
+         as it would in the browser worker (lastRunner null, ready never sent).
+         Seed stays the fake's fixed 1 — pump()-driven determinism, share codes
+         are the real worker's concern. */
       try {
         this.runner = createRunner(
           message.runnerKind,
           1,
           message.corpus === undefined ? undefined : workerCorpusDrive(message.corpus),
+          message.build,
         );
       } catch (error) {
         this.runner = null;

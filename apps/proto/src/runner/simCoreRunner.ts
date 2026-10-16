@@ -79,6 +79,8 @@ import {
   observedKey,
   type AttentionLoanKind,
   type AttentionState,
+  type BoardEdgeRecord,
+  type BoardState,
   type ClockState,
   type Contract,
   type DependencyEdge,
@@ -121,6 +123,7 @@ import {
   attentionWindowEntry,
   corruptionOutageSecs,
   createAttentionState,
+  createBoardState,
   createDefaultSlots,
   createInitialState,
   createTickDriver,
@@ -188,7 +191,14 @@ import {
 // SSOT law: the traffic mix comes from the authored bundle, never a copied
 // number (precedent: lab/coverageGridModel.ts, gates/g5, gates/g6).
 import sharedWebBundleRaw from "../../../../packages/content/types/shared-web.json?raw";
-import type { SimProjection, EventNotice, ProtoCell, CellValue } from "../shared/protocol";
+import type {
+  BootBoardEdgeWire,
+  BootBuildWire,
+  SimProjection,
+  EventNotice,
+  ProtoCell,
+  CellValue,
+} from "../shared/protocol";
 import type { SimRunner } from "./simRunner";
 
 /* ═══════════════════════════ scenario (G1 maze board) ═══════════════════════════
@@ -267,6 +277,71 @@ function mkNode(id: EntityId, slots: number, serviceUs: bigint, depth: NodeRecor
     utilizationRho: 0n,
     dependencyNodeId: dep,
   });
+}
+
+/* ─────────── D7 build rider — seedable board roster (ADR-0014 #D7) ───────────
+ * `boot.build.board` (wire half in shared/protocol.ts) seeds the door's
+ * BoardState slice: structural edges BETWEEN the maze nodes below. NODES are
+ * not seedable — the roster is code-defined (the maze above with its lanes and
+ * dependency edges), and a rider naming fresh nodes would mint a board the
+ * route step and the observed fold do not know. The door's own unknown-node
+ * law therefore SPEAKS THROUGH the seed: endpoints off this set throw at
+ * construction — a boot fault through the hosts' shared try/catch, mirroring
+ * the citation-domain walls. */
+const BUILD_SEEDABLE_NODE_IDS: ReadonlySet<string> = Object.freeze(
+  new Set<string>([String(NODE_EDGE), String(NODE_WAF), String(NODE_DEEP), String(NODE_ORIGIN)]),
+);
+
+/** Mirror of the door's PRIVATE `defaultEdgeId` convention
+ *  (pipeline/intent-door.ts:716): `edge:<relation>:<from>-><to>`, power edges
+ *  carry `:<slot>`. A rider that omits `id` gets exactly this form, so a
+ *  connect-verb on the same endpoints mints the SAME key — the seeded edge
+ *  then proves itself LIVE through the door's own `edge-exists` refusal
+ *  (witnessed in simWorker.build.test.ts; nothing engine-side exported to drift). */
+function deriveBoardEdgeId(
+  relation: string,
+  from: string,
+  to: string,
+  slot: string | null | undefined,
+): string {
+  const base = `edge:${relation}:${from}->${to}`;
+  return relation === "power" && slot != null ? `${base}:${slot}` : base;
+}
+
+/** Parse-don't-validate: the codec trusted the SHAPE (closed relation vocab,
+ *  the door's socket laws, scalar ids). What stays HERE is the runner's
+ *  semantic domain: id resolution, duplicate refusal (createBoardState
+ *  overwrites silently — a rider must not), and off-roster endpoints. Every
+ *  throw surfaces as a boot fault (never a crash, never a silent drop). */
+function mintBuildBoard(
+  board: readonly BootBoardEdgeWire[] | undefined,
+): BoardState | undefined {
+  if (board === undefined) return undefined;
+  const seen = new Set<string>();
+  const records: BoardEdgeRecord[] = board.map((edge, index) => {
+    const id = edge.id ?? deriveBoardEdgeId(edge.relation, edge.from, edge.to, edge.slot);
+    if (seen.has(id)) {
+      throw new Error(`SimCoreRunner: build.board edge[${index}] duplicates id "${id}"`);
+    }
+    seen.add(id);
+    for (const endpoint of [edge.from, edge.to] as const) {
+      if (!BUILD_SEEDABLE_NODE_IDS.has(endpoint)) {
+        throw new Error(
+          `SimCoreRunner: build.board edge "${id}" names unknown node "${endpoint}" — nodes are the runner's code-defined maze, not wire-seedable`,
+        );
+      }
+    }
+    return Object.freeze({
+      id: asEntityId(id),
+      relation: edge.relation,
+      from: asEntityId(edge.from),
+      to: asEntityId(edge.to),
+      // Codec-parsed records always carry the key; direct ctor callers may
+      // omit it — null is the record's own idle spelling.
+      slot: edge.slot ?? null,
+    });
+  });
+  return createBoardState(records);
 }
 
 /** One paid contract so GameState.contracts is a real (non-degenerate) map. */
@@ -954,6 +1029,24 @@ export interface SimCoreRunnerOptions {
    *  frame digest (money goldens 25_005_307_300n / 25_109_732_500n, mazing
    *  arms, recovery/advisory legs) is the byte-identity proof. */
   readonly corpus?: CorpusDriveOptions | undefined;
+  /** D7 build rider (ADR-0014 #D7; wire half is `boot.build` in
+   *  shared/protocol.ts): seeds the door's opening embeds at mint —
+   *  `hands` reseeds the §7.5 rail capacity (default 2, the T2-staffing
+   *  literal), `board` seeds the BoardState edges via `createBoardState`
+   *  between the code-defined maze nodes. WHAT SEEDING DOES NOT WIRE (honest
+   *  ledger): the node roster, lanes, contracts and wave schedule stay as-is;
+   *  routing composition is UNAFFECTED — the route slot walks the
+   *  code-defined express/deep node paths and node dependency edges, never
+   *  the BoardState slice, so a seeded board changes only what the DOOR sees
+   *  (its connect/disconnect/drain/power-cycle verdicts and the edge-exists
+   *  refusals that prove the seed is live). ABSENT ⇒ `handCapacity: 2`, no
+   *  board key ⇒ every shipped golden (money 25_005_307_300n /
+   *  25_109_732_500n, legacy boot digests ca8863849cb3db32 / 780b1cbc61dff760)
+   *  is the byte-identity proof. Construction-domain refusals (duplicate or
+   *  dangling edge ids, `mintHandState`'s ≥1 rail wall) THROW at the ctor —
+   *  the worker hosts' boot-fault channel turns them into a loud fault frame,
+   *  never a crash and never a half-seeded run. */
+  readonly build?: BootBuildWire | undefined;
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -1041,6 +1134,9 @@ export class SimCoreRunner implements SimRunner {
     this.baseTickMs = options.tickRealMs ?? 100;
 
     const clocks: ClockState = initialClocks();
+    /* D7 board seed resolves BEFORE the mint (fail-loud: a bad rider throws
+       here — at construction — never after a partial state exists). */
+    const buildBoard = mintBuildBoard(options.build?.board);
     this.game = createInitialState({
       runSeed: this.runSeed,
       engineVersion: this.engineVersion,
@@ -1061,7 +1157,14 @@ export class SimCoreRunner implements SimRunner {
       lanes: [this.zeroLane()],
       contracts: [CONTRACT],
       // §7.5 action economy: two hands (T2 staff) — the door pays verbs here.
-      handCapacity: 2,
+      // D7 rider: `build.hands` reseeds the rail (?? keeps an explicit 0 on
+      // its way to mintHandState's >=1 wall — the boot fault names the engine
+      // law verbatim, the forwarded-domain-wall precedent).
+      handCapacity: options.build?.hands ?? 2,
+      /* Board embed rides createInitialState's own optional gate too
+         (driver.ts:366, hands/attention precedent): absent ⇒ zero spread ⇒
+         no key ⇒ the door materializes lazily exactly as before. */
+      ...(buildBoard !== undefined ? { board: buildBoard } : {}),
       /* Attention rides createInitialState's own optional gate (mirrors
          fastForward.mintInitialState); absent ⇒ zero spread ⇒ no key. */
       ...(options.attention !== undefined ? { attention: options.attention } : {}),

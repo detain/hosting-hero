@@ -12,6 +12,7 @@
 import {
   assertFromWorker,
   decodeProjection,
+  type BootBuildWire,
   type BootCorpusWire,
   type SimProjection,
   type SpeedX,
@@ -50,12 +51,18 @@ export class SimClient {
   /** `corpus` (WORKER-CORPUS leg, additive protocol-v1): a shipped-slice
    *  citation that boots a sim-core runner in corpus drive mode
    *  (`shared/corpusHost.ts` builds the authority worker-side). Omitted ⇒
-   *  the key is never posted — legacy boots ride the identical wire. */
+   *  the key is never posted — legacy boots ride the identical wire.
+   *  `build` (D7 rider, ADR-0014 #D7, same additive law and the same
+   *  positions-1-3-unchanged shape @1165368 set): optional opening build
+   *  state (door hands capacity + structural board edges) forwarded to the
+   *  sim-core runner. Omitted ⇒ never posted; both riders are sim-core-only
+   *  (mock boot + rider is a wiring bug the worker hosts fault loud). */
   boot(
     seed: string,
     speedX: SpeedX = 1,
     runnerKind: "mock" | "sim-core" = "mock",
     corpus?: BootCorpusWire,
+    build?: BootBuildWire,
   ): void {
     this.worker.postMessage({
       kind: "boot",
@@ -64,6 +71,7 @@ export class SimClient {
       speedX,
       runnerKind,
       ...(corpus === undefined ? {} : { corpus }),
+      ...(build === undefined ? {} : { build }),
     });
   }
 

@@ -32,12 +32,17 @@ host.onmessage = (event: MessageEvent): void => {
          this branch verbatim). Citation-domain refusals (starved-over waves,
          non-ascending, mock+corpus wiring bug) throw at construction —
          BEFORE tick 1 — and surface on the fault channel, never as a quiet
-         season or a dead worker. Absent corpus ⇒ byte-ident legacy boot. */
+         season or a dead worker. Absent corpus ⇒ byte-ident legacy boot.
+         D7 build rider (ADR-0014 #D7): `build` forwards the opening door
+         rail/board to the SAME construction try/catch — a semantically bad
+         rider (zero-capacity rail, duplicate/dangling seeded edge) faults
+         the boot through this exact channel, never crashes the worker. */
       try {
         runner = createRunner(
           message.runnerKind,
           seed,
           message.corpus === undefined ? undefined : workerCorpusDrive(message.corpus),
+          message.build,
         );
       } catch (error) {
         post({

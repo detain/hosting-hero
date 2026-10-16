@@ -276,8 +276,50 @@ export interface BootCorpusWire {
   readonly waves: readonly number[];
 }
 
+/** D7 build-state rider (ADR-0014 #D7) — the boot may seed the intent door's
+ *  two ground-truth embeds. Exact `boot.corpus` precedent (@1165368):
+ *  additive-optional under PROTOCOL_VERSION 1, absent ⇒ the legacy wire is
+ *  byte-ident (key never posted, never parsed), present-but-malformed ⇒
+ *  ProtocolError. SHAPE wall only lives here; the SEMANTIC walls (duplicate
+ *  edge ids, endpoints off the runner's node roster, sub-one hand rail) are
+ *  the runner's construction domain and fault the boot through the shared
+ *  try/catch (lastRunner witness pattern), never crash.
+ *
+ *  The JSON mirrors what `createInitialState({hands, board})` already
+ *  consumes — sim-core `BoardEdgeRecord`/`HandState` (types.ts:1530/1566) —
+ *  no invented schema: `hands` is the door rail capacity (the runner's
+ *  `mintHandState` seed, §7.5); `board` is the structural edge list, each
+ *  edge `{relation, from, to, slot?}` with the door's OWN connect-verb socket
+ *  law (power carries a socket name, every other relation forbids one), and
+ *  an OPTIONAL `id` — when absent the runner derives the engine's private
+ *  `defaultEdgeId` convention (`edge:<relation>:<from>-><to>` plus `:<slot>`
+ *  for power, intent-door.ts:716), so a seeded edge and a connect-verb mint
+ *  collide on the SAME id by construction (the edge-exists liveness witness). */
+export const BOARD_RELATION_WIRE_IDS = Object.freeze(["data", "power", "control", "trust"] as const);
+
+export type BoardRelationWire = (typeof BOARD_RELATION_WIRE_IDS)[number];
+
+/** One structural edge of the seeded board (door BoardEdgeRecord on the wire). */
+export interface BootBoardEdgeWire {
+  readonly relation: BoardRelationWire;
+  readonly from: string;
+  readonly to: string;
+  /** Socket name — REQUIRED for power, FORBIDDEN otherwise (door law).
+   *  Producers may omit it; the parser ALWAYS emits `slot: string | null`
+   *  on the trusted record (absent ⇒ null), so downstream never guesses. */
+  readonly slot?: string | null;
+  /** Explicit edge id; absent ⇒ the runner derives the defaultEdgeId form. */
+  readonly id?: string;
+}
+
+/** Optional opening build state: the hands rail + the structural board edges. */
+export interface BootBuildWire {
+  readonly hands?: number;
+  readonly board?: readonly BootBoardEdgeWire[];
+}
+
 export type ToWorker =
-  | { readonly kind: "boot"; readonly protocol: typeof PROTOCOL_VERSION; readonly seed: string; readonly speedX: SpeedX; readonly runnerKind: RunnerKindWire; readonly corpus?: BootCorpusWire }
+  | { readonly kind: "boot"; readonly protocol: typeof PROTOCOL_VERSION; readonly seed: string; readonly speedX: SpeedX; readonly runnerKind: RunnerKindWire; readonly corpus?: BootCorpusWire; readonly build?: BootBuildWire }
   | { readonly kind: "intent"; readonly protocol: typeof PROTOCOL_VERSION; readonly seq: number; readonly clock: ClockKind; readonly atUs: WireUs; readonly origin: "player" | "rule"; readonly payload: WireIntentPayload }
   | { readonly kind: "speed"; readonly protocol: typeof PROTOCOL_VERSION; readonly speedX: SpeedX }
   | { readonly kind: "halt"; readonly protocol: typeof PROTOCOL_VERSION };
@@ -346,6 +388,77 @@ function parseBootCorpus(raw: unknown): BootCorpusWire {
     waves.push(entry);
   });
   return { tableId, waves: Object.freeze(waves) };
+}
+
+function parseNonEmptyString(path: string, raw: unknown): string {
+  const value = parseString(path, raw);
+  if (value.length === 0) throw new ProtocolError(path, "non-empty string", raw);
+  return value;
+}
+
+/** Parse the optional boot.build rider (ADR-0014 #D7): hands integer + board
+ *  edge records with the door's socket law. Unknown keys inside the record are
+ *  ignored — the exact envelope tolerance `parseBootCorpus` documents (extras
+ *  are the codec's blind spot BY PRECEDENT, half-values are not). */
+function parseBootBuild(raw: unknown): BootBuildWire {
+  const rec = isRecord("boot.build", raw);
+  const handsRaw = rec["hands"];
+  let hands: number | undefined;
+  if (handsRaw !== undefined) {
+    if (typeof handsRaw !== "number" || !Number.isInteger(handsRaw) || handsRaw < 0) {
+      throw new ProtocolError("boot.build.hands", "non-negative integer hand count", handsRaw);
+    }
+    hands = handsRaw;
+  }
+  const boardRaw = rec["board"];
+  let board: readonly BootBoardEdgeWire[] | undefined;
+  if (boardRaw !== undefined) {
+    if (!Array.isArray(boardRaw)) {
+      throw new ProtocolError("boot.build.board", "array of edge records", boardRaw);
+    }
+    board = Object.freeze(boardRaw.map(parseBootBoardEdge));
+  }
+  const build: { hands?: number; board?: readonly BootBoardEdgeWire[] } = {};
+  if (hands !== undefined) build.hands = hands;
+  if (board !== undefined) build.board = board;
+  return Object.freeze(build);
+}
+
+function parseBootBoardEdge(raw: unknown, index: number): BootBoardEdgeWire {
+  const path = `boot.build.board[${index}]`;
+  const rec = isRecord(path, raw);
+  const relation = parseLiteral(`${path}.relation`, rec["relation"], BOARD_RELATION_WIRE_IDS);
+  const from = parseNonEmptyString(`${path}.from`, rec["from"]);
+  const to = parseNonEmptyString(`${path}.to`, rec["to"]);
+  const slotRaw = rec["slot"];
+  let slot: string | null;
+  if (slotRaw === undefined || slotRaw === null) {
+    slot = null;
+  } else if (typeof slotRaw === "string" && slotRaw.length > 0) {
+    slot = slotRaw;
+  } else {
+    throw new ProtocolError(`${path}.slot`, "null, absent, or non-empty socket name", slotRaw);
+  }
+  // The door's own connect-verb socket law, applied to pre-seeded records:
+  // a power edge without a socket or a data edge carrying one is a lying
+  // record — refuse at the boundary, never smuggle it into the ground map.
+  if (relation === "power" && slot === null) {
+    throw new ProtocolError(`${path}.slot`, "power edges carry a socket name (door law)", slotRaw);
+  }
+  if (relation !== "power" && slot !== null) {
+    throw new ProtocolError(`${path}.slot`, `slot only for power edges (door law), got "${slot}"`, slotRaw);
+  }
+  const idRaw = rec["id"];
+  if (idRaw !== undefined && typeof idRaw !== "string") {
+    throw new ProtocolError(`${path}.id`, "string edge id or absent", idRaw);
+  }
+  return Object.freeze({
+    relation,
+    from,
+    to,
+    slot,
+    ...(idRaw === undefined ? {} : { id: parseNonEmptyString(`${path}.id`, idRaw) }),
+  });
 }
 
 /* ═══════════════════════════ Encode (trusted → wire) ═══════════════════════ */
@@ -551,6 +664,7 @@ export function assertToWorker(raw: unknown): ToWorker {
   }
   if (kind === "boot") {
     const corpusRaw = rec["corpus"];
+    const buildRaw = rec["build"];
     return {
       kind,
       protocol: PROTOCOL_VERSION,
@@ -564,6 +678,8 @@ export function assertToWorker(raw: unknown): ToWorker {
       // Absent ⇒ no key at all on the parsed record (legacy boots stay
       // byte-ident through this seam — WORKER-CORPUS rider law).
       ...(corpusRaw === undefined ? {} : { corpus: parseBootCorpus(corpusRaw) }),
+      // Same absent-means-no-key law (D7 build-state rider, ADR-0014 #D7).
+      ...(buildRaw === undefined ? {} : { build: parseBootBuild(buildRaw) }),
     };
   }
   return {
