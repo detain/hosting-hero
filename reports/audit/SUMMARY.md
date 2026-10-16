@@ -1612,3 +1612,42 @@ This closeout touches four files: `apps/proto/src/chrome/flavourFeed.ts` (commen
 ### Program status
 
 **ADR-0014 D1–D9: FULLY LANDED** (D6 as authorized spike; D9 lint-leg honestly awaits membership data). The unpushed stack rides this push; after it, master == origin.
+
+
+## WAVE-18 measurement lane — readability targets: measured tools/perf grid baseline lands; the program's sole ⚠️ moves to 🔧 (2026-10-16d)
+
+**Context.** ADR-0014 #D3's final clause made the relative readability law standing but deferred the marker until "a measured `tools/perf` grid baseline … is appended when run". Lane R-18 runs it. Zero code shipped: the existing grid answered every question (no harness additions — the brief's optional-one-script hatch stayed holstered).
+
+### Measurement (hardware target = ratified dev-box floor: 64-core Linux, 257 GB, Node v24.21.0, sim-core @`49a4620`)
+
+Full grid 7 sizes (2/10/50/200/500/1000/2000) × 3 rates (6/50/200 per min) × 2 arms, best-of-3, auto-ticks — **no tick trims**; max sample spread across all 42 cells 14.4 % (under the 15 % re-run law — zero re-runs). Load: shell 11.69 at start; grid meta.loadAvg1 **10.77**; headline deep-look **4.57**; storm bisection **3.84**.
+
+| Cell (best/median t/s) | advance | digest | digest:advance |
+|---|---|---|---|
+| n2@6 | 8,314 / 7,996 | 4,678 / 4,639 | 1.8× |
+| n200@6 | 2,709 / 2,691 | 840 / 839 | 3.2× |
+| n200@200 | 255 / 253 | 202 / 201 | 1.3× |
+| n1,000@200 | 200 / 199 | 110 / 108 | 1.8× |
+| **n2,000@6** | 356 / 356 | **100 / 99** | 3.6× |
+| n2,000@50 | 286 / 285 | 90 / 89 | 3.2× |
+| **n2,000@200** | 150 / 149 | **70 / 68** (best-of-5 deep-look [65,69,67,68,70]) | 2.1× |
+
+Storm bisection at n2,000 (digest): @100 → 83 · @400 → 54 · **@1,024 (the shipped D-7 STORM_CAP ceiling) → 27 t/s**. The n2,000@200 terminal digest `7cd5e135a8d438681fb1217e3190bfdd` reproduced byte-equal across two independent runs — determinism holds under the meter.
+
+**Verdicts written to the §8.9 law-note.** (1) *2,000 discrete objects:* REACHED — `nodesLast = 2,000` on every big cell, `maxDuplicates = 0` everywhere (FIX-8 ghost law at 10× the audit grid). (2) *Frame budget:* at a 10 Hz host, n2,000@200 digest keeps 7.0× real-time headroom at 1× and **3.5× at the ratified 2× max-legible speed**; 2.7×/1.35× at the 1,024 storm cap. (3) *20,000 in-flight entities:* **UNREACHABLE on shipped plateau boards — stated with numbers:** the roster census plateaus at **192 live units with terminal queue 0 at every rate ≥100/min** (service+patience laws prune faster than plateaus mint; the 64-slot × 20 s origin path caps throughput ≈192/min — beyond it, rate multiplies bounces, not backlog). The measurement itself is the evidence #D3's relative law was written for; absolutes stand as the demoted aspiration note. (4) *Honesty split:* engine MEASURED at the densities; 1080p pixel legibility / 60s-unread / "40 entities per glyph" remain STRUCTURAL-or-unenforced — no 40/glyph constant exists (aggregation = budget "+N" refusal clusters + Z3 `LOD2-aggregates` tier); `LABEL_CAP_BY_ALTITUDE.Z3 = 30` verified on disk — **spec and code AGREE** (no divergence to report). Law suites (hueLaw/contrast/motion/a11yRoster) are audits, not measurements.
+
+### Ledger (this lane)
+
+`hosting_game.md`: dated law-note under "The readability targets" + heading **⚠️→🔧** (the program's LAST ⚠️ discharged); line-55 status block reworded (no ⚠️ headings remain, census ✅321 🔧1,006 ⚠️0 ❌2,232 📝30 = 3,589 — disk recount, method-pinned); appendix row 31543 ⚠️→🔧; tail WAVE-18 re-markup note (SHA stamp rides the follow-up one-liner per precedent; section-label correction: the region is **§8.9 Readability at scale**, the WAVE-9/17 tails' "§8.18" was a mislabel — in-file §8.18 is the visual-coverage audit). `docs/DECISIONS-PENDING.md`: OD-10 + OD-12 rows carry dated **measurement RUN** amendments (numerics stay unratified). `docs/MODULE-STATUS.md`: perf row gained the baseline-run clause (zero harness changes). Raw reports: `/tmp/opencode/grid-w18{,-headline,-twin,-storm}.json` (transient run artifacts).
+
+### Gates (targeted — full battery belongs to closeout)
+
+- proto full serial (--no-file-parallelism): **95 files / 1,051 tests PASS** — a11yRoster parses §8.16 by TEXT and rode green; zero pin moves.
+- sim-core targeted serial (`scenarios` + `gate-g1` + `gate-g3` + `corruption`): **PASS** — all line-cites in code are ≤28,660 (< the 31,566 insertion point), no drift casualty possible; scenarios.test.ts ±12-line specRef windows verified against §1.5 lines (max 4,086).
+- `node scripts/ci-verify.mjs`: **5/5 PASS** (zero export names moved).
+- `pnpm -F perf-tools test`: **20 passed** (grid.ts/board.ts untouched).
+- Heading-marker disk recount: ✅321 🔧1,006 ⚠️0 ❌2,232 📝30 = 3,589 — matches the line-55 census.
+
+### Owner state after this wave
+
+**OD-10/OD-12 numerics REMAIN UNRATIFIED** — this lane discharged the measurement clause only. The ⚠️→🔧 flip says "measured, partial": what is left inside the row is the ratified-hardware *playtest* leg (2× max-legible stands until G1 data) and any pixel-legibility harness (deferred-until-atlases @pixi/node arm, ADR-0008). No fresh rulings asked; the standing queue (endless mirror re-raise, eleventh-card law call, MetricNamespaceTier export, relay transport rulings) is unchanged from wave-17.
