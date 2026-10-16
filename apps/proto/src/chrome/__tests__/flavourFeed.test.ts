@@ -2,7 +2,8 @@
  * Front-of-House flavour feed — pure law pins.
  *
  * Proves the four header laws: the pool is CLOSED to slot-free flavour keys
- * of ALL NINE registered packs since ADR-0014 #D5 (decision keys unreachable,
+ * of ALL TEN registered packs since ADR-0014 #D5 (colo joined the roster at
+ * the type-10 landing — its 17 slot-free lines are the blessed pool re-roll; decision keys unreachable,
  * the root wall drift-pinned against the loader's private FLAVOUR_ROOTS
  * literal, recoveryWatch's RECOVERY_WATCH_KINDS precedent); order is code-unit
  * stable; selection is deterministic per (seed, tick) with an
@@ -60,20 +61,21 @@ describe("flavourFeed · pool closure", () => {
       // keyed (packId, key), so the guard is per-entry, not global-keyed
       expect(packOf(entry.packId).decision.has(entry.key), `decision key '${entry.key}' in the feed`).toBe(false);
     }
-    // anti-vacuity: the nine decision maps are real, this test has teeth
+    // anti-vacuity: the ten decision maps are real, this test has teeth
     expect(decisionKeys.size).toBeGreaterThan(150);
   });
 
-  it("the #D5 pool census: 187 entries / 153 distinct keys (disk truth)", () => {
-    // re-derived empirically from the nine registered packs — entries count
+  it("the #D5 pool census: 204 entries / 166 distinct keys (disk truth)", () => {
+    // re-derived empirically from the ten registered packs — entries count
     // the (packId, key) pairs, distinct keys collapse the byte-ident twins
-    expect(POOL.length).toBe(187);
-    expect(new Set(POOL.map((e) => e.key)).size).toBe(153);
+    expect(POOL.length).toBe(204);
+    expect(new Set(POOL.map((e) => e.key)).size).toBe(166);
     // the widening moved every entry count EXCEPT the trio of baseline-only
     // loading tips: slot-free flavour per pack (sorted code-unit by packId)
     const perPack = new Map<PackId, number>();
     for (const entry of POOL) perPack.set(entry.packId, (perPack.get(entry.packId) ?? 0) + 1);
     expect([...perPack.entries()].sort((a, b) => compareCodeUnits(a[0], b[0]))).toEqual([
+      ["colo", 17],
       ["dedicated", 21],
       ["dns-hosting", 17],
       ["exchange-colo", 15],
@@ -112,10 +114,10 @@ describe("flavourFeed · pool closure", () => {
     );
     expect(sorted).toStrictEqual([...POOL]);
     // the (key,packId) pair is a genuine total order: since #D5 the four
-    // vendor replies ship slot-free in ALL NINE packs byte-identical, and the
+    // vendor replies ship slot-free in ALL TEN packs byte-identical, and the
     // two loading tips coexist as game+shared-web twins
     const firmware = POOL.filter((e) => e.key === "vendor.reply.firmware");
-    expect(firmware.length).toBe(9);
+    expect(firmware.length).toBe(10);
     expect(firmware.map((e) => e.packId)).toEqual(
       [...firmware.map((e) => e.packId)].sort(compareCodeUnits),
     );
@@ -296,18 +298,18 @@ describe("flavourFeed · root filter", () => {
     let total = 0;
     for (const [, n] of counts) total += n;
     expect(total).toBe(POOL.length); // every line owned by exactly one root
-    // full root census over the nine-pack pool (disk truth, #D5)
+    // full root census over the ten-pack pool (disk truth, #D5 + colo re-roll)
     expect([...counts.entries()]).toEqual([
       ["abuse", 1],
-      ["achievement", 27],
-      ["chatter", 17],
-      ["codex", 15],
+      ["achievement", 30],
+      ["chatter", 18],
+      ["codex", 17],
       ["forum", 8],
-      ["loading", 26],
+      ["loading", 28],
       ["press", 3],
-      ["sticky", 9],
-      ["ticket", 45],
-      ["vendor", 36],
+      ["sticky", 10],
+      ["ticket", 49],
+      ["vendor", 40],
     ]);
     const names = [...counts.keys()];
     expect(names).toStrictEqual([...names].sort(compareCodeUnits));

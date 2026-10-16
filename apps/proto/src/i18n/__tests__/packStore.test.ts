@@ -15,10 +15,11 @@ import {
 } from "../packStore.ts";
 
 describe("i18n/packStore · loads the shipped packs through the loader boundary", () => {
-  it("all nine disk packs parse at init, frozen, ids exact (ADR-0014 #D5)", () => {
+  it("all ten disk packs parse at init, frozen, ids exact (ADR-0014 #D5)", () => {
     expect([...PACK_IDS]).toEqual([
       "shared-web",
       "game",
+      "colo",
       "dedicated",
       "dns-hosting",
       "exchange-colo",
@@ -41,14 +42,15 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
     expect(packOf("dedicated").decision.size + packOf("dedicated").flavour.size).toBe(66);
     expect(packOf("dns-hosting").decision.size + packOf("dns-hosting").flavour.size).toBe(65);
     expect(packOf("exchange-colo").decision.size + packOf("exchange-colo").flavour.size).toBe(68);
+    expect(packOf("colo").decision.size + packOf("colo").flavour.size).toBe(68);
     expect(packOf("mail-hosting").decision.size + packOf("mail-hosting").flavour.size).toBe(63);
     expect(packOf("object-storage").decision.size + packOf("object-storage").flavour.size).toBe(67);
     expect(packOf("serverless").decision.size + packOf("serverless").flavour.size).toBe(68);
     expect(packOf("trunk-group-voip").decision.size + packOf("trunk-group-voip").flavour.size).toBe(
       69,
     );
-    // roster total: 644 templates across the nine packs
-    expect(PACK_IDS.reduce((n, id) => n + packOf(id).decision.size + packOf(id).flavour.size, 0)).toBe(644);
+    // roster total: 712 templates across the ten packs
+    expect(PACK_IDS.reduce((n, id) => n + packOf(id).decision.size + packOf(id).flavour.size, 0)).toBe(712);
   });
 
   it("t() resolves a plain decision template with slot fill", () => {
@@ -70,6 +72,10 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
       "Have you tried updating to the latest firmware?",
     );
     expect(t("exchange-colo", "vendor.reply.firmware")).toBe(t("dedicated", "vendor.reply.firmware"));
+    // the generic colo card's bank (type 10) speaks with the same vendor voice
+    expect(t("colo", "vendor.reply.firmware")).toBe(t("shared-web", "vendor.reply.firmware"));
+    // and a colo-only line resolves from no other pack's voice
+    expect(t("colo", "chatter.desk.aisle")).toContain("switch");
     // and a decision-root key from a type pack resolves with era threading
     expect(t("serverless", "refusal.unknown-node", { nodeId: "fn-1" })).toContain("fn-1");
     expect(hasKey("serverless", "chatter.desk.stack")).toBe(false); // slotted twin lives in dns

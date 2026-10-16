@@ -102,8 +102,8 @@ describe("FlavourFeed.vue", () => {
     for (const [root, lines] of [
       ["press", 3],
       ["forum", 8],
-      ["chatter", 17],
-      ["ticket", 45],
+      ["chatter", 18],
+      ["ticket", 49],
     ] as const) {
       const chip = w.get(`[data-test="feed-root-${root}"]`);
       expect(chip.attributes("disabled"), root).toBeUndefined();
