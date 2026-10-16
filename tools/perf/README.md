@@ -44,6 +44,17 @@ All runnable as `pnpm -F perf-tools <script> -- <flags>` or directly with
 node --experimental-transform-types src/grid.ts --only n2@6 --arms advance --reps 1 --json -
 ```
 
+**Reproduction law (wave-18 headline):** `--only` filters **within** the
+planned `--nodes` × `--rates` grid only — `--only n2000@200` alone is a
+UsageError ("grid is empty — --only matched no planned cell") because
+2,000-node boards are not in the default audit grid (2/10/50/200). To
+re-measure the wave-18 headline cell independently, name the shape too
+(quote results with their `meta.loadAvg1`, per the contention caveat):
+
+```bash
+node --experimental-transform-types src/grid.ts --nodes 2000 --rates 200 --arms digest --reps 2 --json -
+```
+
 ### 2. `src/ab.ts` — two-tree A/B (paths **or** git refs)
 
 Default suite = the FIX-8 reproduction shape: `congested` (1-slot path,

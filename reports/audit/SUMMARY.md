@@ -15,6 +15,8 @@ Source: 25 group manifests (reports/audit/group-01..25.md) against outline.md Ta
 | NA 📝 | 30 |
 | **total marked** | **3589** (+2 unmarked out-of-scope headings) |
 
+> *Superseded per-wave — current disk truth (wave-18): ✅321 · 🔧1,006 · ⚠️0 · ❌2,232 · 📝30 = 3,589; see the per-wave re-markup notes in hosting_game.md's tail and hosting_game.md:55.*
+
 Batch-1 delta from the session-2 tallies (✅285 🔧998 ⚠️1 ❌2275 📝30): four 🔧→✅ flips — The oversell ratio, The Second Incident multiplier, The Copycat reserve, Mode tiering. The Feint budget gained an inline scope note only (stays 🔧, not a count move).
 
 Batch-2 delta (see WAVE-3 BATCH-2): one 🔧→✅ (The Second Incident rule §2.12 twin) + four ❌→🔧 (price slider; three DNS type rows). Section deltas: §1 🔧86→88 ❌316→314 · §2 ✅52→53 ❌446→445 · §6 🔧102→103 ❌250→249.
@@ -1628,7 +1630,7 @@ Full grid 7 sizes (2/10/50/200/500/1000/2000) × 3 rates (6/50/200 per min) × 2
 | n200@6 | 2,709 / 2,691 | 840 / 839 | 3.2× |
 | n200@200 | 255 / 253 | 202 / 201 | 1.3× |
 | n1,000@200 | 200 / 199 | 110 / 108 | 1.8× |
-| **n2,000@6** | 356 / 356 | **100 / 99** | 3.6× |
+| **n2,000@6** | 356 / 356 | **98 / 97** | 3.6× |
 | n2,000@50 | 286 / 285 | 90 / 89 | 3.2× |
 | **n2,000@200** | 150 / 149 | **70 / 68** (best-of-5 deep-look [65,69,67,68,70]) | 2.1× |
 
@@ -1646,8 +1648,15 @@ Storm bisection at n2,000 (digest): @100 → 83 · @400 → 54 · **@1,024 (the 
 - sim-core targeted serial (`scenarios` + `gate-g1` + `gate-g3` + `corruption`): **PASS** — all line-cites in code are ≤28,660 (< the 31,566 insertion point), no drift casualty possible; scenarios.test.ts ±12-line specRef windows verified against §1.5 lines (max 4,086).
 - `node scripts/ci-verify.mjs`: **5/5 PASS** (zero export names moved).
 - `pnpm -F perf-tools test`: **20 passed** (grid.ts/board.ts untouched).
-- Heading-marker disk recount: ✅321 🔧1,006 ⚠️0 ❌2,232 📝30 = 3,589 — matches the line-55 census.
+
+### Census — ONE marker moved
+
+✅321 · 🔧1,006 · ⚠️0 · ❌2,232 · 📝30 = 3,589 (heading-level recount, method-pinned — matches the line-55 census; the program's LAST ⚠️ discharged, zero ⚠️ headings remain on disk). The move: §8.9 "The readability targets" ⚠️→🔧 `ceb9332` (ADR-0014 #D3 measurement clause). Holds — zero other moves: OD-10/OD-12 numerics stay UNRATIFIED (the flip is measurement, not ratification); pixel-legibility / 60s-unread / "40 entities per glyph" clauses stay structural law-suite audits, not measurements. Tail WAVE-18 re-markup note appended (stamp `8223117`).
 
 ### Owner state after this wave
 
 **OD-10/OD-12 numerics REMAIN UNRATIFIED** — this lane discharged the measurement clause only. The ⚠️→🔧 flip says "measured, partial": what is left inside the row is the ratified-hardware *playtest* leg (2× max-legible stands until G1 data) and any pixel-legibility harness (deferred-until-atlases @pixi/node arm, ADR-0008). No fresh rulings asked; the standing queue (endless mirror re-raise, eleventh-card law call, MetricNamespaceTier export, relay transport rulings) is unchanged from wave-17.
+
+### Program status
+
+**ADR-0014 D1–D9 landed and, with this wave, measured** — the audit→completion program carries zero ⚠️ headings. Remaining drives are owner-gated (eleventh-card law call, tier-verb door mechanics for Negotiate/Schedule, OD-10/OD-12 playtest numerics) or BLOCKED-BY-PLAN (types 11+, campaign/perspective content, era expansion). Full battery belongs to the wave-18 closeout.
