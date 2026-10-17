@@ -28,16 +28,16 @@
  * never touched — the branch node stays unwritten; the demo teaches the law,
  * it does not exercise the ledger.
  *
- * RE-JOIN LAW (transport-lane note, recorded at the co-op closeout): a
- * departure + re-handoff is a NEW tenure row. The engine's v0 ledger rejects
- * two rows for the same participant ("one tenure row per participant" — the
- * transport gap is real and stays in the engine), so the room keeps the full
- * TENURE HISTORY (new row per re-join, exactly the future record shape) and
- * hands the engine a PROJECTION: the latest row per participant. History is
- * display + transport-format; the projection is the authority every seating
- * check runs against. The raw-history refusal is pinned falsifiably in the
- * law test, so when the transport lane lifts the v0 ban, the projection is
- * the single seam that collapses.
+ * RE-JOIN LAW (hardened by L-RH @500c134, ADR-0014 #D6 "re-join-as-new-row"):
+ * a departure + re-handoff is a NEW tenure row, and the engine now ACCEPTS
+ * multiple rows per participant iff the half-open windows are disjoint and
+ * chronologically ordered. The room keeps the full TENURE HISTORY (new row
+ * per re-join — the transport record shape) and hands the engine a
+ * PROJECTION: the latest row per participant. History is display +
+ * transport-format; the projection is the authority every room seating check
+ * runs against. The law test pins both seams: the raw multi-row history is
+ * accepted and resolved PER TENURE by the engine, while the room projection
+ * keeps its own latest-row-per-participant semantics.
  */
 import {
   assertCoopTimelineAppendOrder,

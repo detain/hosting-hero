@@ -6,9 +6,15 @@
  */
 import { describe, expect, it } from "vitest";
 import { digestCoopTimeline } from "@hh/sim-core/replay";
-import { seatParticipant } from "@hh/sim-core/save";
-import { asEntityId } from "@hh/sim-core/types";
-import type { EntityId } from "@hh/sim-core/types";
+import {
+  guardCoopAttributionBatch,
+  participantSeatedAt,
+  seatParticipant,
+  withMuseumAttribution,
+} from "@hh/sim-core/save";
+import type { CoopAttributionBatch, MuseumExhibitRecord } from "@hh/sim-core/save";
+import { asEntityId, asRunSeed } from "@hh/sim-core/types";
+import type { EntityId, SimTick } from "@hh/sim-core/types";
 import {
   advanceClock,
   attributionGuardStatus,
@@ -160,33 +166,77 @@ describe("coopRoom — seat ledger laws (save/coop, driven through the projectio
     expect(() => joinSeat(advanceClock(s), E)).toThrowError(/seats at most 4/);
   });
 
-  it("two joins sharing one tick are refused — the ledger is append-only history", () => {
-    const joined = joinSeat(advanceClock(createCoopRoom()), A); // t=1
-    expect(() => joinSeat(joined, B)).toThrowError(/not after .*append-only history/);
+  it("two joins sharing one tick are ACCEPTED, canonically ordered by participantId (L-RH law 1 — v0 refusal retired)", () => {
+    const ab = joinSeat(joinSeat(advanceClock(createCoopRoom()), A), B); // both join at t=1
+    const ba = joinSeat(joinSeat(advanceClock(createCoopRoom()), B), A); // same set, flipped submission order
+    // the room's display history keeps what was submitted first ...
+    expect(ab.tenures.map((r) => r.participantId)).toEqual([A, B]);
+    expect(ba.tenures.map((r) => r.participantId)).toEqual([B, A]);
+    // ... but the engine ledger is a FUNCTION OF THE ROW SET: same-tick seats
+    // ascend by participantId code-unit, so both submission orders converge to
+    // the identical ledger (mirror of tools/relay's bob-then-alice ==
+    // alice-then-bob equality pin @6d0bc1e). The 5-writer cap still refuses —
+    // canonical order changes the sort, not the cap (pinned in the MAX test).
+    expect(coopRoomLedger(ab).seatHolders.map((r) => r.participantId)).toEqual([A, B]);
+    expect(coopRoomLedger(ba).seatHolders.map((r) => r.participantId)).toEqual([A, B]);
+    expect(coopRoomLedger(ba).seatHolders.map((r) => r.joinedAtTick)).toEqual([1n, 1n]);
   });
 
-  it("re-join lands a NEW tenure row in history; the engine ledger sees the projection — the ban is the ENGINE's", () => {
-    let s = joinSeat(advanceClock(createCoopRoom()), A); // A [1, ?)
-    s = advanceClock(s); // t=2
-    s = vacateSeatInRoom(s, A); // A [1,2) closed
+  it("re-join is ACCEPTED as a new tenure row — attribution resolves per tenure, the gap stays a ghost (L-RH law 2)", () => {
+    let s = seatedRoom(); // A [1,?), B [2,?)
+    s = vacateSeatInRoom(s, A); // t=2 — A closes tenure one [1,2)
     s = advanceClock(s); // t=3
-    s = joinSeat(s, A); // re-join: NEW row [3, ?)
+    s = joinSeat(s, A); // re-join: NEW row [3,?) — room AND engine both accept it
     expect(s.tenures.filter((r) => r.participantId === A)).toHaveLength(2);
-    const ledger = coopRoomLedger(s);
-    expect(ledger.seatHolders).toHaveLength(1); // the v0 one-row projection
-    expect(ledger.seatHolders[0]?.joinedAtTick).toBe(3n);
+    expect(coopRoomLedger(s).seatHolders).toHaveLength(2); // the room's latest-row-per-participant authority
     expect(
       attributionPreview(s, { participantId: A, tick: 3n, seq: 1, kind: "note", payload: {} }).seated,
-    ).toBe(true); // the new window restores attribution
-    // the raw two-row history is exactly what save/coop v0 refuses — the
-    // projection is forced by the engine, not invented by chrome:
+    ).toBe(true); // the new window restores attribution through the room's mouth
+    // The raw two-row history is what the retired v0 ban refused ("one tenure
+    // row per participant"); L-RH law 2 accepts disjoint, chronologically
+    // ordered tenures — pinned as ACCEPTANCE on the raw fold:
     const closed = s.tenures.find((r) => r.participantId === A && r.leftAtTick !== undefined);
     const open = s.tenures.find((r) => r.participantId === A && r.leftAtTick === undefined);
+    const bRow = s.tenures.find((r) => r.participantId === B);
     expect(closed).toBeDefined();
     expect(open).toBeDefined();
-    expect(() => seatParticipant(seatParticipant(undefined, closed!), open!)).toThrowError(
-      /one tenure row per participant/,
+    expect(bRow).toBeDefined();
+    const raw = seatParticipant(seatParticipant(seatParticipant(undefined, closed!), bRow!), open!);
+    expect(raw.seatHolders.map((r) => [r.participantId, r.joinedAtTick])).toEqual([
+      [A, 1n],
+      [B, 2n],
+      [A, 3n],
+    ]);
+    // per-tenure resolution: seated inside EITHER enclosing window, never in
+    // the gap — participantSeatedAt's own half-open law, not a projection trick:
+    expect(participantSeatedAt(raw, A, 1n)).toBe(true);
+    expect(participantSeatedAt(raw, A, 2n)).toBe(false); // the gap [2,3) stays unseated
+    expect(participantSeatedAt(raw, A, 3n)).toBe(true);
+    // falsifier with the guard's OWN sentence (save/coop.ts
+    // guardCoopAttributionBatch): a write stamped inside the gap is refused,
+    // the same write inside tenure two passes — the re-join restores the
+    // author's attribution WITHOUT erasing the ghost between tenures.
+    const exhibit = withMuseumAttribution(
+      {
+        id: asEntityId("ex-gap"),
+        sourceFacet: "postmortems",
+        sourceRef: "pm-gap",
+        title: "Gap witness",
+        runId: asEntityId("run-cooproom"),
+        runSeed: asRunSeed(904n),
+        acquiredAtTick: 3n,
+        deprecated: false,
+        memorialNote: null,
+      } satisfies MuseumExhibitRecord,
+      A,
     );
+    const writeAt = (tick: SimTick): CoopAttributionBatch => ({
+      runId: asEntityId("run-cooproom"),
+      committedAtTick: tick,
+      writes: [{ facet: "museum", participantId: A, record: exhibit }],
+    });
+    expect(() => guardCoopAttributionBatch(writeAt(2n), raw)).toThrowError(/author "a" is not seated at tick 2/);
+    expect(() => guardCoopAttributionBatch(writeAt(3n), raw)).not.toThrow();
   });
 
   it("vacate is the engine's sentence: unknown seat / double-vacate both refuse LOUD", () => {
