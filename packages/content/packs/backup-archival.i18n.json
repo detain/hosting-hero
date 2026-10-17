@@ -4,6 +4,12 @@
   "appliesTo": "official:backup-archival",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the backup/archival line — the eleventh card, founded on its own verbatim §1.3 dominant verb, Schedule, the second ADR-0014 #D1 blessing and the first card of a verb that stood zero-claimed. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is PROOF AND TIME — the checkmark that means nothing, the band that closes at 06:00, the copy that is the one the attacker also has — and the ransomware beats are depicted only as consequence: a dwell day, a chosen restore point, a bill. No attack walkthroughs, no tool names, no cryptanalysis; the level teaches that 'verification is the only proof' (§1.3), not how to defeat it.",
+  "eraCodes": {
+    "1998": "The tape-and-courier prehistory (§0.4's dial-up→dot-com cells; §8.10 dresses the decade in beige). A copy is a medium you can drop, the off-site is a town away, and the hours-window law (§7.8) is a human schedule — the robot arm of this pack's present has not arrived yet.",
+    "2008": "The green-checkmark middle (§0.4's 2009 cell; §8.10 adds gloss). Backup software now prints its own report card every night, and the customer has begun asking the one question the report card cannot answer.",
+    "2016": "The dashboard years (§0.4's 2016 cell; §8.10 goes flat). The vault has a robot arm, retention has a slider, and restore-test freshness (§7.8 meter-swap law) is finally a number an invoice can carry.",
+    "2026": "Now: the convoy runs itself, dwell-day arithmetic is on the screen, and the customer still wants to see the file before the disaster — the same thin wall between a checkmark and the truth."
+  },
   "slots": {
     "nodeId": {
       "kind": "entity",
@@ -142,7 +148,14 @@
     "status.rung-5": "We are aware of the fire."
   },
   "flavour": {
-    "ticket.subject.hollow": "green checkmarks every night — how do I actually see the files",
+    "ticket.subject.hollow": {
+      "eras": {
+        "2008": "the job log is green every morning — can you send me one file myself so I can see that it is real",
+        "2016": "nightly success in the dashboard — is there a way to browse the files before I need them",
+        "2026": "green checkmarks every night — how do I actually see the files"
+      },
+      "fallback": "green checkmarks every night — how do I actually see the files"
+    },
     "ticket.body.hollow": "Ticket {ticketId}, filed day {day}. I'm not saying your job failed. I'm saying it has been succeeding beautifully for longer than our company has existed and when I ask for one PowerPoint from a Tuesday you have checkmarked nine times, your console says four kilobytes. Please don't tell me it's compressed. Tell me when the drill is. Tell me the drill is Tuesday. — and yes, I have read your egress page, no, we are not leaving, we are ARRIVING, nightly, until somebody opens a crate.",
     "ticket.subject.day400": "deleted a table — need it back from day 400",
     "ticket.body.day400": "Ticket {ticketId}. Yes, the retention says {retentionDays}. No, I did not read the retention. The table is small and it is load-bearing and the intern is already crying, which I am mentioning for context, not sympathy. You invoice by the ladder; I am asking you to extend the ladder one rung by whatever means a human being with a console and a prayer can manage. Charge me the surge line. I have watched your webinar; I know what 'spiking on restore' means and I am choosing it.",
@@ -151,12 +164,27 @@
     "press.headline.publicfail": "{hostName} confirms restore failure was never an outage — customers discover the product is a promise during a live incident page; the company's status feed, ironically, remained green.",
     "press.headline.stoppedsix": "{hostName} subscribers learn six months of quiet meant silence, not safety — the checkmark's long vacation ends in a press conference about what a green light is actually for.",
     "forum.thread.verified": "Anyone else started printing the drill date on the invoice line? 'Verified {day} days ago' sells itself; 'succeeded nightly' used to. We attach the hourglass reading to every plan renewal now. The customers read the crossed-out dates. They always read the crossed-out dates. Bought the second robot arm this quarter. Sleeps better.",
-    "forum.thread.rategb": "Reminder that backup throughput and restore throughput are different sports: we sized the link on the nightly push and discovered our advertised tier implies {gbPerHour} GB/hour coming the OTHER way, which is a network design constraint, not a backup setting. The doc said so. The doc is smug about having said so.",
+    "forum.thread.rategb": {
+      "eras": {
+        "2008": "Reminder that backup throughput and restore throughput are different sports: the nightly push fits the link, but the off-site comes back on a truck, and {gbPerHour} GB/hour coming the OTHER way is a fleet you do not own. The doc said so. The doc is smug about having said so.",
+        "2016": "Reminder that backup throughput and restore throughput are different sports: we sized the cross-region copy on the nightly push and discovered our advertised tier implies {gbPerHour} GB/hour coming the OTHER way at 03:00, which is a bandwidth bill, not a backup setting. The doc said so. The doc is smug about having said so.",
+        "2026": "Reminder that backup throughput and restore throughput are different sports: we sized the link on the nightly push and discovered our advertised tier implies {gbPerHour} GB/hour coming the OTHER way, which is a network design constraint, not a backup setting. The doc said so. The doc is smug about having said so."
+      },
+      "fallback": "Reminder that backup throughput and restore throughput are different sports: we sized the link on the nightly push and discovered our advertised tier implies {gbPerHour} GB/hour coming the OTHER way, which is a network design constraint, not a backup setting. The doc said so. The doc is smug about having said so."
+    },
     "chatter.desk.0600": "06:{hour} on the belt: last crate dropped with a clunk four minutes before the edge. The band closes like a question. Nobody on the floor cheers because nobody is on the floor at this hour — the vault keeps its own hours and we just answer them.",
     "chatter.vault.static": "The robot arm moved like it always moves. Fetched like it always fetches. Loaded like it always loads. And the readout showed us what static looks like when it has been holding a checkmark for fourteen months. The aisle was very quiet and very well-lit and that is the worst part: nothing in here ever said it was unhappy.",
     "codex.window": "The window is the constraint (§1.9 teaches-line verbatim): {windowHours} hours of night between dusk and the closing edge, every job in the game reduced to one question — are you inside the band or are you a story about the band. The Gantt bar is the level's floor plan; the red seal is its door.",
     "codex.hollow": "Verification is the only proof (§1.9 teaches-line verbatim): the checkmark is drawn by the job, about the job, on the job's own ledger — which is why the honest version costs money, walks the aisle at dusk, and comes back with a date written on paper. Success that cannot be rehearsed is not success; it is weather.",
-    "loading.tip.rto": "RTO is a computed value, not a promise the player types in — measured restore rate against bytes protected, the doc's own honesty law. The hourglass on this floor is loaded with arithmetic. Everything else on the screen is marketing, including last night's checkmark.",
+    "loading.tip.rto": {
+      "eras": {
+        "1998": "A recovery estimate on this floor used to be measured in driving: the window is a shift, the archive is wherever the boxes have learned to sit, and a tape nobody has read back is a rumor with a receipt.",
+        "2008": "The hourglass on this floor is a courier schedule wearing software. What the nightly checkmark computes is the job, not the recovery; the honest number has a date and a signature on it.",
+        "2016": "The hourglass on this floor is loaded with a robot arm's arithmetic. A retention slider is not a rehearsal — the only restore that counts is the one somebody actually ran.",
+        "2026": "RTO is a computed value, not a promise the player types in — measured restore rate against bytes protected, the doc's own honesty law. The hourglass on this floor is loaded with arithmetic. Everything else on the screen is marketing, including last night's checkmark."
+      },
+      "fallback": "RTO is a computed value, not a promise the player types in — measured restore rate against bytes protected, the doc's own honesty law. The hourglass on this floor is loaded with arithmetic. Everything else on the screen is marketing, including last night's checkmark."
+    },
     "loading.tip.proof": "A backup is a theory. A restore is a fact. Between the two sits a robot arm, a tape, a courier, a key policy, and one clock that only runs during someone's worst night. The level is not about the writing. The level has always been about the reading.",
     "intern.entry.tag": "Day {day}: was asked to update the paper tag on the vault door. The senior tech watched me cross out a date and write today's and said, 'don't enjoy the crossing-out part.' Then he asked when the last one was rewritten. Then he walked the aisle to check. The tag says proof; the walk says whether the tag is telling the truth. I have learned there are two kinds of paperwork in this building.",
     "intern.entry.clunk": "Day {day}, {hour} at night: watched my first real convoy from the catwalk — crates rolling in under the band like weather going somewhere. Every one landed with a clunk and the last one I saw closed the gap at the edge so tight the light cut it in half. The senior tech said the sound is the whole job. Then a phone started ringing on the desk and nobody on the catwalk moved, because of course nobody moved, because it was the wrong hour for that sound and the right hour for nothing else.",
@@ -210,7 +238,7 @@
     "status.rung-3": "§9.3 status-page euphemism ladder (verbatim)",
     "status.rung-4": "§9.3 status-page euphemism ladder (verbatim)",
     "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
-    "ticket.subject.hollow": "§1.3 zero-byte classic + §2.9 hollow-checkmark row in customer register; ticket register",
+    "ticket.subject.hollow": "§1.3 zero-byte classic + §2.9 hollow-checkmark row in customer register; ticket register; 2008/2016 rungs authored on the §0.4 grid + §8.10 skins (checkmark distrust is era-invariant; only its furniture changes); 2026 rung verbatim",
     "ticket.body.hollow": "§2.9 'successful for 14 months... 4KB file' dramatized as the discovery email; §9.3 ticket register; no technique named, §9.11",
     "ticket.subject.day400": "§1.3 threat clause verbatim (day 400 of a 365-day retention); ticket register",
     "ticket.body.day400": "§1.3 retention-ladder clause + §6.6 B-row 'spiking on restore' + egress-moat law dramatized from the customer side; wording authored",
@@ -219,12 +247,12 @@
     "press.headline.publicfail": "§6.6 C row 'a restore that fails in public' verbatim beat in §9.3 press register",
     "press.headline.stoppedsix": "§1.3 threat clause verbatim (backups silently stopped six months ago) as press copy; §9.3 press format",
     "forum.thread.verified": "§1.3 paper-tag counter law in forum register; §9.3 industry-forum channel; §2.9 drill-confidence row",
-    "forum.thread.rategb": "§Backup entry pass restore-rate-vs-backup-rate law (:15736-15740) in forum register; §9.3 forum channel",
+    "forum.thread.rategb": "§Backup entry pass restore-rate-vs-backup-rate law (:15736-15740) in forum register; §9.3 forum channel; 2008 truck-era and 2016 cross-region rungs authored on the same law (§0.4 grid + §8.10 skins for furniture); 2026 rung verbatim",
     "chatter.desk.0600": "§3.2 band-cutoff law verbatim (physical cut at the trailing edge, red seal) as floor talk; chatter channel",
     "chatter.vault.static": "§1.3 catastrophe sentence verbatim cores (fetch/load/static) as overheard floor talk; chatter channel; consequence-only, §9.11",
     "codex.window": "§5041 teaches-clause verbatim + §7.8 Window mechanic (Gantt/overrun); codex register",
     "codex.hollow": "§5041 teaches-clause verbatim + §1.3 restore-testing clause + §2.9 confidence stat; codex register",
-    "loading.tip.rto": "§Backup entry pass computed-RTO honesty law verbatim cores; loading channel",
+    "loading.tip.rto": "§Backup entry pass computed-RTO honesty law verbatim cores; loading channel; 1998/2008/2016 rungs authored on the same honesty law with §8.10 kit furniture (driving/courier/robot arm), consequence-only per §9.11; 2026 rung verbatim",
     "loading.tip.proof": "§1.3 inversion + §11096 'test your restores' payoff row; loading channel; consequence-only, §9.11",
     "intern.entry.tag": "§1.3 'The counter, made human' verbatim (paper tag, crossed-out dates, watching-not-rewritten discomfort); §9.3 Intern's Log",
     "intern.entry.clunk": "§1.3 clunk/frame law + §3.2 convoy visual verbatim cores; §9.3 Intern's Log; the ringing-phone beat is the declaration row (:12611) witnessed, never instructed",
@@ -240,5 +268,5 @@
     "achievement.trusted": "§11344 trust-theme row ('Trust, then everything') inverted as achievement; §9.3 achievement channel",
     "canary.vault-tally": "§1.3 checkmark/claim/proof triad; canary-notice channel (precedent: colo canary.floor-tally, dedicated canary.row-tally, object-storage canary.comb-tally, voip canary.busy-wall-tally, serverless canary.warm-pool-tally, exchange-colo canary.coil-tally)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the grid dates no cell for backup/archival and the era-owner pass, not this lane, decides whether the 2009-tape readability cliff becomes a date). The RTO threshold (held deliberately null per the doc's own computed-not-typed law), every pressure mapping in the wave slice, the diurnal amplitude and the window's length, the drill cadence and price, the dedup/ratio margin mechanics, the retention ladder's rung prices, the egress fee schedule and the surge fair-use terms stay PROVISIONAL-B / owner-law until the re-author sweep; the ransomware beats deliberately carry no technique detail — their slots are consequences (dates, kilobytes, dollars, tiers), never methods, per §9.11. "
+  "_todo": "Era-variant objects landed on this line (ADR-0018 program 1a era fan: ticket.subject.hollow, loading.tip.rto and forum.thread.rategb now speak the ratified {1998,2008,2016,2026} canon). §0.4 R66 still dates no grid cell for backup/archival — rungs are grounded per-key in the §7.8 window/freshness law and the §8.10 kits, and bundle availableFrom stays null (the bundle lane's field, not this pack's; recorded not forged). The RTO threshold (held deliberately null per the doc's own computed-not-typed law), every pressure mapping in the wave slice, the diurnal amplitude and the window's length, the drill cadence and price, the dedup/ratio margin mechanics, the retention ladder's rung prices, the egress fee schedule and the surge fair-use terms stay PROVISIONAL-B / owner-law until the re-author sweep; the ransomware beats deliberately carry no technique detail — their slots are consequences (dates, kilobytes, dollars, tiers), never methods, per §9.11. "
 }

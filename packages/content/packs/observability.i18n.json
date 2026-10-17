@@ -3,7 +3,13 @@
   "packId": "pack:observability.i18n",
   "appliesTo": "official:observability",
   "locale": "en",
-  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the monitoring-as-a-service line — the thirteenth card, founded on the blessed invariant verb: ADR-0014 #D1(i) permits Diagnose onto a card whose §1.3 prose implies it ('Diagnosis is the actual gameplay', §4.6 :27179; the flatline riddle :2653-2654), with the owner's authoring-time confirmation 2026-10-17 (ADR-0016 records; the card itself never spells the word — recorded, not papered). Zero era objects (bundle eras null, §0.4 R66 — the era grid dates no cell for hosted observability); every flavour root here ships flat. Slots resolve against the bundle's machine fields only; no invented telemetry is voiced anywhere this pack cannot cite.",
+  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the monitoring-as-a-service line — the thirteenth card, founded on the blessed invariant verb: ADR-0014 #D1(i) permits Diagnose onto a card whose §1.3 prose implies it ('Diagnosis is the actual gameplay', §4.6 :27179; the flatline riddle :2653-2654), with the owner's authoring-time confirmation 2026-10-17 (ADR-0016 records; the card itself never spells the word — recorded, not papered). Era objects landed on three keys (ADR-0018 program 1a era fan — see _provenance per key); §0.4 R66 still dates no grid cell for hosted observability (bundle eras null, recorded not forged), so rungs ride the §8.10 kits and the §2.9 rows that predate the product. Every other flavour root here ships flat. Slots resolve against the bundle's machine fields only; no invented telemetry is voiced anywhere this pack cannot cite.",
+  "eraCodes": {
+    "1998": "The pre-product years (§0.4 dates no cell for this line — recorded, not papered; §8.10 dresses the decade in beige and amber monitors). Watching is a console and a binder of printed graphs: the person staring at the screen IS the retention policy.",
+    "2008": "The agent-and-panel middle (§0.4's 2009 cell is the customer's world; §8.10 gloss). Per-box agents check in every five minutes, and this line's founding riddle — the monitoring server that dies and reports green forever (§2.9) — is already folklore when the vendors arrive.",
+    "2016": "The metrics-platform years: §8.10's 2010s kit names this line's founding image outright — 'the first flat-design dashboards' and a 'wall of amber'. Series counts splay like a fan, and the fan starts appearing on bills.",
+    "2026": "Now: the wall runs dark-mode purple (§8.10's 2020s kit), ingest is metered per second, and the one thing that never modernized is the question of whether the green is true."
+  },
   "slots": {
     "nodeId": {
       "kind": "entity",
@@ -137,10 +143,30 @@
     "forum.thread.labels": "PSA: DO NOT put user IDs in metric labels — the cardinality bomb is real and I have the invoices to prove it (4,000 → 40,000,000 overnight)",
     "forum.thread.retention": "The 13-month promise: is anyone actually renegotiating? My retention bill outgrew my MRR and the sampling dial is doing the exact thing it says on the tin: nothing",
     "chatter.desk.pager": "Pager at {hour}:00, whole desk, one sentence: 'is it us or is it everything?'",
-    "chatter.wall.hum": "The wall hums at {ingestRate}/s, which everyone agrees means it's alive, which nobody agrees means it's true.",
-    "codex.cardinality": "The Cardinality Gauge — 'drawn as a fan of threads that visibly splays' (§1.3 verbatim). It is the only meter in the game that can be read as beautiful and mean it simultaneously: forty million threads is just art.",
+    "chatter.wall.hum": {
+      "eras": {
+        "2008": "The wall ticks over {ingestRate}/s of agent check-ins into green squares, which everyone agrees means it's alive, which nobody agrees means it's true.",
+        "2016": "The wall streams {ingestRate}/s onto the first flat dashboards in the building, which everyone agrees means it's alive, which nobody agrees means it's true.",
+        "2026": "The wall hums at {ingestRate}/s, which everyone agrees means it's alive, which nobody agrees means it's true."
+      },
+      "fallback": "The wall hums at {ingestRate}/s, which everyone agrees means it's alive, which nobody agrees means it's true."
+    },
+    "codex.cardinality": {
+      "eras": {
+        "2016": "The Cardinality Gauge — 'drawn as a fan of threads that visibly splays' (§1.3 verbatim). On this era's flat dashboards the fan is amber from the door, forty million threads is the wall's opinion of itself, and everyone has long since stopped looking at amber.",
+        "2026": "The Cardinality Gauge — 'drawn as a fan of threads that visibly splays' (§1.3 verbatim). It is the only meter in the game that can be read as beautiful and mean it simultaneously: forty million threads is just art."
+      },
+      "fallback": "The Cardinality Gauge — 'drawn as a fan of threads that visibly splays' (§1.3 verbatim). It is the only meter in the game that can be read as beautiful and mean it simultaneously: forty million threads is just art."
+    },
     "codex.canary": "The dogfooding paradox, solved the way the doc solves it: a second, external, deliberately primitive watchdog. 'The dumb canary' is mandatory because you monitor yourself with yourself, 'which works right up until it doesn't' (§1.3 verbatim).",
-    "loading.tip.fan": "You can keep a year at five minutes or a week at one second, not both. §4.6 is very serious about this.",
+    "loading.tip.fan": {
+      "eras": {
+        "2008": "The five-minute poll exists because the boxes can spare five minutes: a year of that lives in a shoebox, a second at a time lives nowhere you can afford, not both. §4.6 is very serious about this.",
+        "2016": "Storage got cheap and series got dear: a year at five minutes fits on one disk now, a week at one second still needs a budget meeting, not both. §4.6 is very serious about this.",
+        "2026": "You can keep a year at five minutes or a week at one second, not both. §4.6 is very serious about this."
+      },
+      "fallback": "You can keep a year at five minutes or a week at one second, not both. §4.6 is very serious about this."
+    },
     "loading.tip.sampling": "A cheaper, blinder upgrade that is realistic and tempting: sampling. — the Monitoring Wall, probably, while you're not looking",
     "intern.entry.firstday": "Day 1: was told 'the wall's fullness is your observability score' (§1.3 verbatim). Day 1: watched the wall go empty during the quarter's worst minute. The score was a picture of last week.",
     "intern.entry.loop": "A customer shipped our own error logs back to us in a loop until we paid them to stop. They named it after our product. I am no longer sure which one of us is the joke.",
@@ -205,10 +231,10 @@
     "forum.thread.labels": "§1.3 bomb verbatim mechanics (:2630-2631); forum practitioner voice, advice-shaped not command-shaped per §9.11",
     "forum.thread.retention": "§1.3 retention math :2647-2648 + §4.6 sampling :16765; forum practitioner voice",
     "chatter.desk.pager": "§1.3 duty sentence :2639-2641 + riddle :2654; desk chatter",
-    "chatter.wall.hum": "§1.3 HUD-is-world :2651 + §2.9 green-forever :8265; desk chatter",
-    "codex.cardinality": "§1.3 gauge sentence verbatim :2652; codex voice",
+    "chatter.wall.hum": "§1.3 HUD-is-world :2651 + §2.9 green-forever :8265; desk chatter; 2008 agent-panel and 2016 flat-dashboard rungs authored from §8.10 kits; slot unit {ingestRate}/s held era-invariant (the engine's number is the engine's dimension); 2026 rung verbatim",
+    "codex.cardinality": "§1.3 gauge sentence verbatim :2652; codex voice; 2016 rung authored on §8.10's 2010s kit ('the first flat-design dashboards' + the amber wall); 2026 rung verbatim",
     "codex.canary": "§1.3 dogfooding paradox verbatim :2642-2644; codex voice",
-    "loading.tip.fan": "§4.6 resolution/retention verbatim :27168-27169; loading tip",
+    "loading.tip.fan": "§4.6 resolution/retention verbatim :27168-27169; loading tip; 2008 poll-frugality and 2016 cheap-block-storage rungs authored on the same §4.6 trade as era economics — no tool names, per this pack's cite-what-you-voice law; 2026 rung verbatim",
     "loading.tip.sampling": "§4.6 'A cheaper, blinder upgrade that is realistic and tempting: sampling.' verbatim (:16765); loading tip",
     "intern.entry.firstday": "§4.6 'the wall's fullness is your observability score' (:16770) + §2.9 green-forever :8265; intern voice",
     "intern.entry.loop": "§1.3 'the log line that is itself a log line' verbatim :2645-2646; intern voice",
@@ -224,5 +250,5 @@
     "achievement.canary-earned": "§1.3 canary :2642-2644 + §2.9 counter 'dead-man's-switch / external heartbeat' (:8268); achievement voice",
     "canary.fan-tally": "§1.3 riddle :2653-2654 + §2.9 monitoring-blindness family; canary voice"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates no cell for hosted observability and the era-owner pass, not this lane, decides whether the 2016-cloud sketch gets the row). The win metric's threshold (held null per the object-storage→dbaas→backup precedent) and every alert slot's machine source (seriesCount, droppedCount, resolutionSec) remain tuning-sheet territory — PROVISIONAL-B stays valid on the bundle's tuning fields, and the shedding-ladder engine gap (this line sheds DATA, the engine sheds requests) is recorded in the bundle scarce._todo, not voiced as a capability."
+  "_todo": "Era-variant objects landed on this line (ADR-0018 program 1a era fan: chatter.wall.hum, loading.tip.fan and codex.cardinality now speak the ratified {1998,2008,2016,2026} canon). §0.4 R66 still dates no grid cell for hosted observability — the 2016-cloud sketch got its voice from the §8.10 kits, not the grid, and bundle eras stay null (the bundle lane's field, not this pack's). The win metric's threshold (held null per the object-storage→dbaas→backup precedent) and every alert slot's machine source (seriesCount, droppedCount, resolutionSec) remain tuning-sheet territory — PROVISIONAL-B stays valid on the bundle's tuning fields, and the shedding-ladder engine gap (this line sheds DATA, the engine sheds requests) is recorded in the bundle scarce._todo, not voiced as a capability."
 }

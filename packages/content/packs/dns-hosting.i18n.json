@@ -4,6 +4,12 @@
   "appliesTo": "official:dns-hosting",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the DNS line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is the OPERATOR's — the candle's draught, the calendar nobody rang, the green dashboard over a dark map — never the attack tooling. No payloads, commands, tool names-as-how-to, or technique instruction anywhere; abuse exists only as complaint, upstream notice, provider silence, and consequence.",
+  "eraCodes": {
+    "1998": "The phone-call years (§0.4's dial-up→dot-com cells; §8.10's beige kit). The zone is a file on a box with a person's name on it, the registrar runs on paperwork, and the era-locked-tech rule dates this exact year's 'DDoS mitigation' to a phone call.",
+    "2008": "The registrar wild-west middle (§0.4's 2009 cell; §8.10 gloss). Auth-codes walk off, nameservers change on accounts whose recovery mailbox went with a person who left (§2.9's Tumbleweed), and the panel is fresh paint on an old protocol.",
+    "2016": "The anycast-and-API years (§0.4's 2016 cell; §8.10 goes flat). The free tier became a funnel and a lightning rod in the same sentence, and resolution is a world map you meter per query.",
+    "2026": "Now: the signed zones put §2.9's all-or-nothing SERVFAIL on every calendar (the DNSSEC era), the candle rides every dashboard, and the rollover still never rings by itself."
+  },
   "slots": {
     "nodeId": { "kind": "entity", "desc": "Board object the decision surface is about (PoP / signer id)." },
     "verb": { "kind": "text", "desc": "Engine intent verb being refused (place/connect/configure/...)." },
@@ -65,7 +71,14 @@
     "ticket.body.new-subdomain-dead": "Filed at {hour}:{minute}, ticket {ticketId}. The record is published. The customer's launch was ten minutes ago. The negative cache says it will be true in {ttlSeconds}s, and the customer cannot hear that sentence as anything but an excuse.",
     "ticket.subject.change-my-ip-now": "change the mail server IP right now, tonight",
     "ticket.body.change-my-ip-now": "{domainName} is migrating and the customer wants the TTL they refused to set in spring lowered tonight. The propagation window they pre-committed is the thing they are now asking you to have violated on their behalf.",
-    "ticket.subject.zone-lockout": "someone changed our nameservers and we cannot get in",
+    "ticket.subject.zone-lockout": {
+      "eras": {
+        "1998": "our domain moved to another company on paperwork we never signed and we cannot get it back",
+        "2008": "the registrar email is a dead mailbox and someone changed the nameservers",
+        "2026": "someone changed our nameservers and we cannot get in"
+      },
+      "fallback": "someone changed our nameservers and we cannot get in"
+    },
     "ticket.body.zone-lockout": "Ticket {ticketId}: the account was not breached, the recovery email was. Everything is green and nothing works. The customer's tone has moved past anger into documentation.",
     "ticket.subject.half-my-users": "only a quarter of our users find us",
     "ticket.body.half-my-users": "{domainName} 'works fine' from the office. Your dashboards are green. Their customers in three regions get a timeout. The delegation is lame and nothing you sell currently blinks.",
@@ -79,8 +92,23 @@
     "chatter.desk.stack": "The abuse desk has {complaintCount} open tickets and the map is calm. That is not a backlog. That is next quarter's null-route, filed early.",
     "chatter.first-hop": "DNS is the first hop. When it lies, every other district lights its own funeral while yours reads green.",
     "codex.poisoning": "The poisoning attempts read as a signpost arrow rotating a few degrees — every resolver that trusts it walks one degree off the map, and the walk is invisible from the post.",
-    "codex.free-tier": "The free tier is your only lead source and your largest DDoS magnet, in the same sentence. The product decision is which half of that sentence you can afford.",
-    "loading.tip.throttle": "TTL is a throttle you own. Down-trade it now, or pay for it at the worst hour of your life.",
+    "codex.free-tier": {
+      "eras": {
+        "1998": "There is no free tier in the phone-call era: every name on the box pays its dues, and when the traffic arrives the mitigation plan is whoever picks up the phone.",
+        "2008": "The free tier is young here: your only lead source, and the first finger pointed at when the traffic arrives. The product decision is which half of that sentence you can afford.",
+        "2026": "The free tier is your only lead source and your largest DDoS magnet, in the same sentence. The product decision is which half of that sentence you can afford."
+      },
+      "fallback": "The free tier is your only lead source and your largest DDoS magnet, in the same sentence. The product decision is which half of that sentence you can afford."
+    },
+    "loading.tip.throttle": {
+      "eras": {
+        "1998": "TTL is a number in a file that one person remembers editing. Long, and the world keeps knocking on a door you pulled down hours ago; short, and the world queues at your box all day.",
+        "2008": "TTL is a throttle behind a control panel whose password went with a person who left. Down-trade it now, or learn which old address the internet still remembers you by.",
+        "2016": "TTL is a throttle with an API and a planet of caches downstream. Down-trade it now, or pay for it at the worst hour of your life — the caches have no undo button.",
+        "2026": "TTL is a throttle you own. Down-trade it now, or pay for it at the worst hour of your life."
+      },
+      "fallback": "TTL is a throttle you own. Down-trade it now, or pay for it at the worst hour of your life."
+    },
     "loading.tip.candle": "The number is the candle's least interesting property. Watch the evenness of the shimmer.",
     "intern.entry.calendar": "Day {day}: learned the scariest clock in the building is the rotation calendar, and it never rings by itself.",
     "intern.entry.hundred": "Day {day}: every query is worth about nothing and gets one hundred milliseconds. Volume is the whole business. The evenness is the whole product.",
@@ -132,7 +160,7 @@
     "ticket.body.new-subdomain-dead": "§2.12; business ask only, zero technique",
     "ticket.subject.change-my-ip-now": "§1.3 TTL-as-pre-committed-door tension; wording authored",
     "ticket.body.change-my-ip-now": "§1.3 'TTL is a throttle you own'; wording authored",
-    "ticket.subject.zone-lockout": "§1.3 registrar account compromise + §2.x hijack beat ('everything is green and nothing works')",
+    "ticket.subject.zone-lockout": "§1.3 registrar account compromise + §2.x hijack beat ('everything is green and nothing works'); 1998 rung on §2.9's transfer-wars row, 2008 rung on §2.9's Tumbleweed beat (the reminder went to a person who left); 2026 rung verbatim",
     "ticket.body.zone-lockout": "§2.x registrar/DNS hijack framing; consequence-only per §9.11",
     "ticket.subject.half-my-users": "§2.x 'Lame Delegation' scenario (fraction fails, monitors silent); wording authored",
     "ticket.body.half-my-users": "§2.x; wording authored",
@@ -146,8 +174,8 @@
     "chatter.desk.stack": "§1.3 abuse-desk budget tension; chatter channel",
     "chatter.first-hop": "§4.x 'DNS is the first hop' (verbatim core); chatter channel",
     "codex.poisoning": "§2.x cache poisoning visual ('the signpost arrow rotating'); codex-only demotion precedent (README R36)",
-    "codex.free-tier": "§1.3 Freemium 'Anycast Anywhere' row (funnel/lead source AND DDoS magnet in one product); codex register",
-    "loading.tip.throttle": "§1.3 'TTL is a throttle you own' (verbatim core)",
+    "codex.free-tier": "§1.3 Freemium 'Anycast Anywhere' row (funnel/lead source AND DDoS magnet in one product); codex register; 1998 rung on the era-locked-tech phone-call row, 2008 rung authored (the magnet predates the funnel's maturity) — consequence-only per §9.11; 2026 rung verbatim",
+    "loading.tip.throttle": "§1.3 'TTL is a throttle you own' (verbatim core); 1998 single-file era, 2008 dead-panel era (§2.9's account-drift beats) and 2016 anycast-era rungs authored from the §0.4 grid + §8.10 skins; the TTL-as-bet law (§1.3) is the invariant underneath; 2026 rung verbatim",
     "loading.tip.candle": "§3.3 'the evenness of the shimmer is watched' (near-verbatim)",
     "intern.entry.calendar": "§9.3 Intern's Log concept; entry authored",
     "intern.entry.hundred": "§3.1 five-stat line (patience 100ms / value ~0); §9.3 Intern's Log concept",
@@ -161,5 +189,5 @@
     "achievement.reflector": "§1.3 'a reflector and a target at the same time'; §9.3 achievement channel",
     "canary.pop-drain": "§1.3 anycast bloom (competing ripples, nearest wins); canary-notice channel (precedent: mail canary.quarantine-pool)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66); cac.dns-hosting.todo stays a placeholder until §6.6 Companion B prices the DNS channel."
+  "_todo": "Era-variant objects landed on this line (ADR-0018 program 1a era fan: loading.tip.throttle, ticket.subject.zone-lockout and codex.free-tier now speak the ratified {1998,2008,2016,2026} canon; rungs grounded per-key in §2.9's expiry/hijack rows, the era-locked-tech phone-call row, and §0.4/§8.10 era furniture; bundle availableFrom stays null). cac.dns-hosting.todo stays a placeholder until §6.6 Companion B prices the DNS channel."
 }
