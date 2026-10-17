@@ -86,6 +86,30 @@
 > consumer the same wave @`86cff89`; Diagnose stays the sole unclaimed invariant and a
 > thirteenth card is a fresh owner law call. #4 LANDED the four relay wire-mechanics R1–R4
 > in-repo @`5b0d401` (relay 27→42 tests); the PHP/Workerman transport leg stays out-of-repo.
+>
+> **2026-10-17 session-7 rulings (wave-21 program), executed as ADR-0016 #1–#10:** the owner answered
+> the wave-20 fresh-ask register with "keep going with all of this, go with recommendations, MAX
+> feature" across all five standing threads. **The thirteenth card:** ADR-0014 #D1(i)'s Diagnose bless
+> is spent — `official:observability` "Who Watches" / "Cardinality" @`9e9f377`, the invariant six
+> untouched (prose-implication bless, owner authoring-time confirm); **the roster is EXHAUSTED** — 6
+> invariant + 7 extended verbs all claimed, the FOURTEENTH card is a fresh OWNER LAW CALL. **Negotiate
+> depth:** mechanics A+B+C — relationship ledger @`5e8ce75` (per-tenant trust, table-first materialization,
+> R9 double-charge IS the law), warmth COST @`1efe12a` ($25/slot-mo month-cursor host seam), sell ACCEPTANCE
+> DICE @`24f90bc` (step 5.5, never-certain ceiling 9_500 two-domain law) — all three supersede the wave-20
+> fresh asks one day after they were raised. **Versus design laws:** RESOLVED max-feature (superseding the
+> ADR-0015 #1 NOT-in-set exclusion) — decisions 1–6 @`0ae760b`+`eb4b86a`: costBps split, affixes LIVE
+> (16-slug table, slug-12 data-only), pool-band = draftable-pool reading with `POOL_BAND_NARROW` advisory,
+> tie law `pickDecisiveWave` ratified, unattributed mint-tick floor KEPT grammar-forced (cross-lane driver
+> attribution ticket opened), three-tag key-space pin. **Transport:** in-repo as far as it goes @`0da14b8`
+> (`tools/transport` 84 tests, `hh-coop-transport@1`, client idempotence, replica witness, conformance
+> harness) — the PHP/Workerman PRODUCTION carrier plugs into `TransportPort` and passes the conformance
+> run. **Successors:** `throttle-node` (17th) @`81b0589` capacity-as-CLAMP and `restart-node` (18th)
+> @`fd91138` bounded-fence+queue-flush — the §7.16 Act-row ALL-FOUR live, refusal census 46 MACHINE-PINNED;
+> kill-in-flight DEFERRED (wedge-state). **Residues:** wire stamps RE-AUTHORED `RATIFIED-B` @`caa4d17`
+> (39 sites; validator tolerance law; waves/registry `PROVISIONAL-B` residue stays honestly tagged per
+> ruling) and copy-voice RATIFIED @`18c3f6a`. **#10 opens the NEW PROVISIONAL register** — sell 5 numerics,
+> warmth rate, relationship 11 deltas, transport taste rows, throttle/restart occupancy 1/1 —
+> ratify-on-playtest class, awaiting G1 playtests.
 
 **Source of truth:** `reports/MASTER_REPORT.md §6`. Citations: a bare `§N.M` = a section of `MASTER_REPORT.md`; source-doc headings are always written `hosting_game.md §x.y`.
 **Rule for implementers:** none of these may be resolved silently in code. Each maps to a named config knob in `docs/PHASE1-PLAN.md` / `docs/CONVENTIONS.md §5`. **§0 legend:** OPEN = owner decision requested; PENDING = sub-decision created *by* a ratified decision, recommendation given, owner sign-off outstanding.
@@ -108,7 +132,7 @@ The **five primary items (OD-1 … OD-5)** led because they gated build order an
 - **One-line context.** Three tuning sheets coexist (A ≈ physics/queue curves, B ≈ service/price tables, C ≈ progression/economy pacing); the choice is not balance but **which constants are load-bearing law** — the "upkeep semantics" war is *schema-visible* and leaks into the type-bundle schema and the policy-card upkeep field. Full conflict table verbatim in report Appendix D.
 - **Options. (historical)** (a)/(b)/(c) plus ride-along fixes that ship with whichever is picked: **month length** (hosting_game.md §7.13 ~7 real-min vs Sheet B's 4), **game-slot price** $3–15 vs $0.85, **backup-storage bands ~3× apart**, per-rule upkeep convention.
 - **Blocks. (historical)** Gate-1/Gate-5 numeric acceptance thresholds (ρ-knee session design, sawtooth `P(n)` tables), Ruleset Card baseline fields, tuning-harness CI, WS-3 bundle defaults. G1 *starts* fine (bounce LUT is sheet-stable) but its feel calibration waits.
-- **Knobs.** `tuning.sheet` = **"B" ACTIVE** (`24dfcfe`); `tuning.monthLengthRealMin` = **7 KEPT** (4-min declined; zero code change — shipped default was already correct). Content-side wire markers `"tuningSheet": "PROVISIONAL-B"` stay pre-ratification until the owner re-author sweep — see MODULE-STATUS gap row. **OD-2 RESIDUE CLOSED 2026-10-17 (ADR-0015 #1): the ~40-constant economy-taste pile and the unattended thresholds this tail tracked are RATIFIED @`4c6f827` (73 label sites); the `PROVISIONAL-B` wire stamps are EXPRESSLY NOT in the set — disk truth at closeout: 39 field sites across ALL 12 type bundles (not 4 sites/shared-web — the marker rode every bundle authored since), still owed the owner re-author. Coverage-row taste, audio audition, and era expansion stay open.**
+- **Knobs.** `tuning.sheet` = **"B" ACTIVE** (`24dfcfe`); `tuning.monthLengthRealMin` = **7 KEPT** (4-min declined; zero code change — shipped default was already correct). Content-side wire markers `"tuningSheet": "PROVISIONAL-B"` stay pre-ratification until the owner re-author sweep — see MODULE-STATUS gap row. **OD-2 RESIDUE CLOSED 2026-10-17 (ADR-0015 #1): the ~40-constant economy-taste pile and the unattended thresholds this tail tracked are RATIFIED @`4c6f827` (73 label sites); the `PROVISIONAL-B` wire stamps are EXPRESSLY NOT in the set — disk truth at closeout: 39 field sites across ALL 12 type bundles (not 4 sites/shared-web — the marker rode every bundle authored since) **RE-AUTHORED `RATIFIED-B` 2026-10-17 (ADR-0016 #1) @`caa4d17`** — validator `TUNING_RE` widened with the legacy PROVISIONAL arm kept VALID (tolerance law); the 27 waves-slice + 16 registry-core residue sites stay HONESTLY `PROVISIONAL-B` by ruling (the stamp law fences the bundle wire marker). Coverage-row taste, audio audition, and era expansion stay open; the NEW ratify-on-playtest register (ADR-0016 #10) opened alongside.**
 
 ### OD-3 — Content rebalance: ~200 threats vs ~45 visitors — **DECIDED 2026-10-09 (option a, owner override) — recorded `ea7acee`, no engine code**
 - **Decision.** **(a) KEEP ~200 MECHANICAL THREATS** — the owner **overrode the fleet recommendation (c)**; the §9.6 pruning path toward ≈45 visitors is REJECTED. Consequences as binding law (ADR-0009 §2): fairness-validator scope grows to EVERY registry threat's counter (Second-Answer invariant, all-registry); §9.6 "every new threat creates a visitor/conversion reason" becomes the pacing-valve authoring law; Versus draft pools stay wide; art FX-pairing budget scales to ≈200. Content-plan consequence — zero engine flip in code, hence the record SHA is the ADR commit.
@@ -195,18 +219,53 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 | **5-band→3-tier fold** | **RATIFIED** — the lane-authored fold inside `MODE_TIERING` @`42fbbd2` closes its ratify-on-read lever | `ADR-0013` ruling 12(vii) (record) |
 | **ADR-0012 authority** | Recovery ENGINE-canonical / observer-advisory **RATIFIED** | `ADR-0013` ruling 12(viii) (record) |
 | **canSettle** | **CLOSED — recommend-adopted: v0 law stays host-forwarded refusals** (`fastForward.ts` catch-and-void). No economy-side `canSettle()` veto is added; the MODULE-STATUS:164 owner ask is answered | `ADR-0013` ruling 13 (record) |
-| **Verb-exhaustion (types 6+)** | **ADOPTED — extend within ADR-0005's already-ratified per-tier verb sets; NO ADR amendment needed.** Trunk Group / Eleven Nines Observe-collision cards unblock via per-tier verb sets or newly authored cards — content lane decides which; `THREE_CHANGE`/`VERB_SHIFT` ruleset linters must stay clean through whichever route is picked — **2026-10-16 update: the roster WAS amended (ADR-0014 #D1 @fb18c05): `negotiate` + `schedule` join `TIER_EXTENDED_VERBS` (six members; Diagnose blessable onto an implying card; re-claim/MERGE stays FORBIDDEN). First blessed use: type-10 `official:colo` "Amps and Aisles" founded on Negotiate LANDED @9bb86f4 — **2026-10-16 session-5: SECOND blessed use LANDED @`6c0e074`, type-11 `official:backup-archival` "Restore Point" founded on Schedule (first Schedule card; the #D1 blessing pair Negotiate+Schedule now FULLY SPENT). Diagnose is the SOLE unclaimed invariant (still no §1.3 card names it verbatim); the twelfth card is an OWNER LAW CALL**. **2026-10-16 session-6 (ADR-0015 #3): the law call ANSWERED — the owner ruled to EXTEND: `isolate` joins `TIER_EXTENDED_VERBS` as the SEVENTH extended verb @`7f47563`, grounded VERBATIM in the §1.3 DBaaS card ("Verb: isolate and throttle. The boss is a split brain.") + the §7.16 Act row; type-12 `official:dbaas` "The Cellar" LANDED @`5956b8f` claiming it, and `isolate-node` entered the closed door enum (16th verb) WITH its engine consumer the same wave @`86cff89` — every extended verb is now BUILT with mechanics (ADR-0015 #2), the card-identity-only era is over for tier verbs. The invariant six are UNTOUCHED; **Diagnose is the sole unclaimed invariant (still no §1.3 card names it); a thirteenth card is again an OWNER LAW CALL.** Named successors throttle/restart/expire/reclaim stay off-roster until blessed one at a time** | `ADR-0013` ruling 14 → **`ADR-0014` #D1 (roster amendment; pair spent @6c0e074) → `ADR-0015` #3 (roster extension — Isolate)**; content gap row (MODULE-STATUS) |
+| **Verb-exhaustion (types 6+)** | **ADOPTED — extend within ADR-0005's already-ratified per-tier verb sets; NO ADR amendment needed.** Trunk Group / Eleven Nines Observe-collision cards unblock via per-tier verb sets or newly authored cards — content lane decides which; `THREE_CHANGE`/`VERB_SHIFT` ruleset linters must stay clean through whichever route is picked — **2026-10-16 update: the roster WAS amended (ADR-0014 #D1 @fb18c05): `negotiate` + `schedule` join `TIER_EXTENDED_VERBS` (six members; Diagnose blessable onto an implying card; re-claim/MERGE stays FORBIDDEN). First blessed use: type-10 `official:colo` "Amps and Aisles" founded on Negotiate LANDED @9bb86f4 — **2026-10-16 session-5: SECOND blessed use LANDED @`6c0e074`, type-11 `official:backup-archival` "Restore Point" founded on Schedule (first Schedule card; the #D1 blessing pair Negotiate+Schedule now FULLY SPENT). Diagnose is the SOLE unclaimed invariant (still no §1.3 card names it verbatim); the twelfth card is an OWNER LAW CALL**. **2026-10-16 session-6 (ADR-0015 #3): the law call ANSWERED — the owner ruled to EXTEND: `isolate` joins `TIER_EXTENDED_VERBS` as the SEVENTH extended verb @`7f47563`, grounded VERBATIM in the §1.3 DBaaS card ("Verb: isolate and throttle. The boss is a split brain.") + the §7.16 Act row; type-12 `official:dbaas` "The Cellar" LANDED @`5956b8f` claiming it, and `isolate-node` entered the closed door enum (16th verb) WITH its engine consumer the same wave @`86cff89` — every extended verb is now BUILT with mechanics (ADR-0015 #2), the card-identity-only era is over for tier verbs. The invariant six are UNTOUCHED; **Diagnose is the sole unclaimed invariant (still no §1.3 card names it); a thirteenth card is again an OWNER LAW CALL.** Named successors throttle/restart/expire/reclaim stay off-roster until blessed one at a time. **2026-10-17 session-7 (ADR-0016 #7/#5): the law call ANSWERED for the thirteenth card — Diagnose BLESSED (D1(i) route, no lint change) onto type-13 `official:observability` @`9e9f377`; ROSTER EXHAUSTED (6+7 all claimed), the FOURTEENTH = fresh law call. Door-side the successors landed WITHOUT roster entries: `throttle-node` (17th) @`81b0589` + `restart-node` (18th) @`fd91138` are door verbs, not card-identity roster verbs — expire/reclaim stay off-roster** | `ADR-0013` ruling 14 → **`ADR-0014` #D1 (roster amendment; pair spent @6c0e074) → `ADR-0015` #3 (roster extension — Isolate) → `ADR-0016` #7 (Diagnose bless) + #5 (successor door verbs)**; content gap row (MODULE-STATUS) |
 | **Attention per-verb cost** | **DECIDED (promoted out of ratify-on-read): opening default `{Communicate: 1, ticket-class handling: 1, other verbs: 0}`** — diverges from disk (config ships default-EMPTY, no prior recommendation existed in this register); owner session-3 decision, build lane ~~queued~~ **RAN 2026-10-14 (`179861d` — `ATTENTION_DEFAULT_COSTS` = {communicate 1, policy-card-commit 1}; door default stays EMPTY, hosts opt in, byte-identity twins pinned)**; **RATIFIED 2026-10-16 (ADR-0014 #D4) as LAW** | `ADR-0013` ruling 12(v); OD-6 row addendum → **`ADR-0014` #D4 (ratify)** |
 
 ---
 
-## Fresh owner asks (2026-10-17, wave-20 closeout — raised by the mechanics lanes, none is a reopening)
+## Fresh owner asks (2026-10-17, wave-21 closeout — raised by the wave-21 lanes, none is a reopening)
 
-- **Per-tenant relationship meter (Negotiate v0 gap).** `negotiate-terms` @`b70900e` books per-INVOICE tone/concession with no memory of the tenant across rounds — §1.3 "Amps and Aisles" wants a relationship; needs an owner shape ruling (ledger on `ContractEconomy`? per-customer goodwill?) before a build lane.
-- **Warmth COST host-seam (Scale gap).** `scale-node` @`8037a4f` books reserved roster slots for FREE — the serverless card's economics say warm capacity costs money; a cost seam (economy-adjacent, host-forwarded) is an owner call on price shape.
-- **Offer ACCEPTANCE dice (Sell v0 gap).** `sell-offer` @`a760771` is the part-1 book posture (adjust-price precedent verbatim): offers are recorded facts, nothing accepts or declines them. Acceptance probability against price/latency is a new mechanic — fresh ask, not implied by ADR-0015 #2.
-- **Versus-deck design laws — SEPARATE ASK, expressly excluded from ADR-0015 #1** (weightBps==cost, affix inertness, deck-pool 8–10, decisive-wave tie law).
-- **Co-op transport lane (the last leg of ADR-0014 #D6/ADR-0015 #4).** PHP/Workerman sockets, network latency, per-seat fog, and paging POLICY (page size / eviction) — the LAWS are pinned in-repo @`5b0d401`; the transport itself stays out-of-repo until the owner opens the lane.
+- **FOURTEENTH type card — OWNER LAW CALL.** The roster is EXHAUSTED: six invariant verbs + all seven
+  extended verbs claimed (Diagnose was the last, blessed onto type-13 @`9e9f377` per ADR-0016 #7).
+  Candidates: repeat-law MERGEs (GPU/HPC/satellite→Schedule), a CI/build-farm→Isolate merge,
+  throttle-claimant cards, or STOPPING at thirteen.
+- **HUD affordances ×3 (door verbs without faces).** `isolate-node`/`throttle-node`/`restart-node` ship
+  with no inspector surface: (1) Act-row chips on the node inspector (the §7.16 Act-row is now ALL-FOUR
+  live in the door but only isolate/throttle have a spec sentence to render against); (2) the dbaas
+  utilization-donut needs fence (solid ring) vs clamp (ghost ring) render states per the throttle
+  legibility law; (3) the serverless warmth METER (the cost seam @`1efe12a` now bills — the card promises
+  "you are buying the absence of a stutter", the HUD shows nothing).
+- **Per-tenant WARCT valuation leg DEFERRED.** The relationship ledger @`5e8ce75` landed the trust meter;
+  §1.3 "Amps and Aisles"'s "what is this tenant worth across the whole lease" (WARCT) valuation leg is an
+  owner-recorded DEFERRAL (ADR-0016 #8), not a gap.
+- **In-flight-kill DEFERRED (restart).** `restart-node`'s fence+flush shipped; killing a request already
+  mid-service wedges step-5 attribution (wedge-state analysis pinned in `pipeline/restart.ts`);
+  needs a design ruling before a lane builds it (ADR-0016 #5).
+- **Coverage-strength affix leg.** §2.13 mix-ins still parse-inert in the Coverage Grid (owner question 5
+  of e24e1bb stands); versus affixes went LIVE this wave @`eb4b86a` — the grid leg awaits its own ruling.
+- **Driver re-mint attribution (cross-lane ticket).** The versus decision-6 floor — `re<mint>@<tick>`
+  arrivals wear no `tableId~n~threat~ordinal` label and score `unattributed` — is grammar-forced;
+  widening pipeline arrival labeling is a pipeline-lane ticket, not a versus patch (ADR-0016 #2).
+- **Slug-12 maintenance-window consumer.** `piggybacked-on-a-maintenance-window` ships DATA-ONLY
+  (`live:false` in `AFFIX_WAVE_DELTAS`) with a written future spec (`DefenderCommit.maintenanceWindows`);
+  activation needs its own ADR item (ADR-0016 #2).
+- **PHP/Workerman production carrier (co-op).** The in-repo transport v0 @`0da14b8` proves the wire;
+  the production socket carrier, latency modelling, per-seat fog POLICY, and page-size policy are
+  out-of-repo until the owner opens the lane (ADR-0016 #3).
+- **New PROVISIONAL register (ratify-on-playtest, ADR-0016 #10):** sell acceptance dice 5 numerics,
+  warmth rate $25/slot-mo, relationship 11 trust deltas, transport taste rows, throttle/restart
+  occupancy 1/1 — ALL await G1 playtest ratification.
+
+### Wave-20 asks — disposition (all five answered by session-7; preserved as record)
+
+- Per-tenant relationship meter → **CLOSED @`5e8ce75`** (mechanic A, ADR-0016 #8).
+- Warmth COST host-seam → **CLOSED @`1efe12a`** (mechanic C, ADR-0016 #4; disclosed gap: no ship host
+  mints a Scale book at run-start yet — the seam is future-ready).
+- Offer ACCEPTANCE dice → **CLOSED @`24f90bc`** (mechanic B, ADR-0016 #9; door still moves no money).
+- Versus-deck design laws → **RESOLVED max-feature** (ADR-0016 #2 @`0ae760b`+`eb4b86a`).
+- Co-op transport → **LANDED in-repo to its frame @`0da14b8`** (ADR-0016 #3); production carrier stays
+  the out-of-repo ask (row above).
 
 ## Config-knob summary (what must fail loudly, not default silently)
 
@@ -218,4 +277,4 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 | `content.threatVisitorCensus` | OD-3 | **~200 mechanical threats — option (a) (`ea7acee`)** |
 | `mp.topology` | OD-5 | **(b) TS-portable-library RATIFIED (`ea7acee`)** |
 
-**Owner-decision checkpoints from the build order (§7.8 step 9):** OD-2 before G1 calibration ends · OD-1 before the G5 score-screen build · the OD-4 batch before G3 wording and before interpreter freeze · OD-5 anytime before slice (d) hardens — nothing in gates 1–7 waits on it. ← **ALL MET 2026-10-09**: the OD-1/OD-2 flips landed `24dfcfe`, the OD-4 batch recorded `ea7acee`, OD-5 ratified `ea7acee` (queue item 9 flips ARCHITECTURE §10). Remaining knob-less tuning taste (the UNNAMED PROVISIONAL constants — the ~40-constant OD-2 economy pile, unattended thresholds, coverage rows, audio audition, era expansion — stays open; the NAMED session-3 sets are RATIFIED 2026-10-16, ADR-0014 #D4; **the remaining OD-2 economy pile + unattended thresholds joined the RATIFIED set 2026-10-17 per ADR-0015 #1 @`4c6f827` — what is left of this residue is coverage-row taste, audio audition, the `PROVISIONAL-B` re-author, and era expansion**) — see PHASE1-PLAN "Still OPEN".
+**Owner-decision checkpoints from the build order (§7.8 step 9):** OD-2 before G1 calibration ends · OD-1 before the G5 score-screen build · the OD-4 batch before G3 wording and before interpreter freeze · OD-5 anytime before slice (d) hardens — nothing in gates 1–7 waits on it. ← **ALL MET 2026-10-09**: the OD-1/OD-2 flips landed `24dfcfe`, the OD-4 batch recorded `ea7acee`, OD-5 ratified `ea7acee` (queue item 9 flips ARCHITECTURE §10). Remaining knob-less tuning taste (the UNNAMED PROVISIONAL constants — the ~40-constant OD-2 economy pile, unattended thresholds, coverage rows, audio audition, era expansion — stays open; the NAMED session-3 sets are RATIFIED 2026-10-16, ADR-0014 #D4; **the remaining OD-2 economy pile + unattended thresholds joined the RATIFIED set 2026-10-17 per ADR-0015 #1 @`4c6f827` — what is left of this residue is coverage-row taste, audio audition, and era expansion — the `PROVISIONAL-B` re-author CLOSED 2026-10-17 @`caa4d17` (ADR-0016 #1), while the NEW ratify-on-playtest register (ADR-0016 #10: sell 5, warmth 1, relationship 11, transport taste, throttle/restart 1/1) joined it**) — see PHASE1-PLAN "Still OPEN".
