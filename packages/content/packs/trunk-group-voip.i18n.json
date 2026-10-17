@@ -4,6 +4,12 @@
   "appliesTo": "official:trunk-group-voip",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the VoIP trunk line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is MONEY and LEGIBILITY's — the cord that plugs itself in at 3am, the call both halves believe is fine, the invoice that arrives before the apology — and toll fraud is depicted only as consequence: the ticking meter, the advisory, the Monday dispute. No dialler instructions, no payloads, no commands, no tool names-as-how-to, no technique anywhere; the fraud's mechanics stay off-page exactly as §9.11 demands, because the level 'teaches monitoring as defense' (§1.3), not attacking.",
+  "eraCodes": {
+    "1998": "Voice still arrives on copper (§0.4's dial-up years; the era card's buildables name T1 trunks). Channels are countable, a fast-busy is a lamp, and the long-distance bill arrives as paper with an itemization nobody reads until Monday.",
+    "2008": "The migration years (§0.4's 2009 cell; §8.10 blue LEDs). IP-PBX on the desks, a SIP trunk on the paperwork, and the fraud line item has learned to arrive as a PDF attachment.",
+    "2016": "Hosted voice (§0.4's 2016 cell; §8.10 flat). The trunk is an account, the advisories come from dashboards, and the customer's compliance officer reads the 911 paragraph before signing.",
+    "2026": "Now: the patch cords are a drawing, the settlement line is the verdict, and the 9am spike still arrives exactly on schedule. Same fragile sessions, thinner dial tone."
+  },
   "slots": {
     "nodeId": {
       "kind": "entity",
@@ -132,12 +138,36 @@
   },
   "flavour": {
     "ticket.subject.monday-bill": "the settlement line says {invoiceAmount} — please explain",
-    "ticket.body.monday-bill": "Ticket {ticketId}, filed {hour}:{minute} Monday. None of the calls were theirs, none of the destinations were theirs, and the voicemail tree keeps saying the fraud department is next year's budget. They want the money. The money went dialling.",
+    "ticket.body.monday-bill": {
+      "eras": {
+        "1998": "Ticket {ticketId}, filed {hour}:{minute} Monday, behind a fax cover sheet from the long-distance carrier. None of the calls were theirs, none of the destinations were theirs, and the itemization reads like a travel brochure for countries nobody in the building visited. They want the money. The money went dialling.",
+        "2008": "Ticket {ticketId}, filed {hour}:{minute} Monday, the invoice attached as a PDF. None of the calls were theirs, none of the destinations were theirs, and the billing portal has no button for 'not us'. They want the money. The money went dialling.",
+        "2016": "Ticket {ticketId}, filed {hour}:{minute} Monday, flagged by their own dashboard. None of the calls were theirs, none of the destinations were theirs, and the graph shows the exact minute the floor stopped being theirs. They want the money. The money went dialling.",
+        "2026": "Ticket {ticketId}, filed {hour}:{minute} Monday. None of the calls were theirs, none of the destinations were theirs, and the voicemail tree keeps saying the fraud department is next year's budget. They want the money. The money went dialling."
+      },
+      "fallback": "Ticket {ticketId}, filed {hour}:{minute} Monday. None of the calls were theirs, none of the destinations were theirs, and the voicemail tree keeps saying the fraud department is next year's budget. They want the money. The money went dialling."
+    },
     "ticket.subject.one-way-audio": "they can hear me but I can't hear them (call {callId})",
     "ticket.body.one-way-audio": "The phone says connected. The monitoring says connected. Their end of the marriage proposal heard nothing, which is how they found out the service is 'up'. Ask again slowly; nothing changes; there is no packet to point at.",
-    "ticket.subject.e911": "if someone dials 911 from {didNumber}, what do you actually tell them?",
+    "ticket.subject.e911": {
+      "eras": {
+        "1998": "if someone dials 911 from {didNumber}, which wire tells them where we are?",
+        "2008": "if someone dials 911 from {didNumber}, does the call even know what floor we're on?",
+        "2016": "if someone dials 911 from {didNumber}, which registry answers with our address?",
+        "2026": "if someone dials 911 from {didNumber}, what do you actually tell them?"
+      },
+      "fallback": "if someone dials 911 from {didNumber}, what do you actually tell them?"
+    },
     "ticket.body.e911": "Their compliance officer read the obligation paragraph (§2.12) and now wants the registered address for forty-seven desks, three of which moved in June. The registry has not been touched since the trunk was lit. This is the ticket where 'we route calls' stops being a complete sentence.",
-    "ticket.subject.nine-am": "your trunk fast-busied my entire sales floor at 9:00",
+    "ticket.subject.nine-am": {
+      "eras": {
+        "1998": "your T1 threw fast-busy at my entire sales floor at 9:00",
+        "2008": "your SIP trunk fast-busied my entire sales floor at 9:00",
+        "2016": "your trunk fast-busied the whole sales team's softphones at 9:00",
+        "2026": "your trunk fast-busied my entire sales floor at 9:00"
+      },
+      "fallback": "your trunk fast-busied my entire sales floor at 9:00"
+    },
     "ticket.body.nine-am": "Everyone picked up at once, the way the quarter was warned they would, and the wall was already lit. Thirty people heard the recorded tone where a company was supposed to be. They are asking what your channel guarantee covered.",
     "press.headline.weekend": "{hostName}'s expensive weekend began, auditors say, as an extension range somebody left countable; the bill arrived Monday and the fraud had spent Saturday resting.",
     "press.headline.storm": "{hostName} customers describe a 'tin foil quarter' — no dropped-call alarms fired while every conversation sounded wrong; the MOS graph is technically a review.",
@@ -203,12 +233,12 @@
     "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
     "cac.trunk-group-voip.todo": "§6.6 Companion B (no VoIP row) + §0.3 customer column; null-provenance law — placeholder until priced",
     "ticket.subject.monday-bill": "§1.3 Monday-carrier-bill beat; ticket register comedy",
-    "ticket.body.monday-bill": "§1.3 $60,000 sentence + §2.12 discovery-on-Monday shape; wording authored",
+    "ticket.body.monday-bill": "§1.3 $60,000 sentence + §2.12 discovery-on-Monday shape; wording authored; rungs keep the consequence and the closer parallel and vary only how the bill arrives across §0.4's grid (the carrier fax per §8.10's 1990s-kit fax machine, the PDF statement, the flagged dashboard) — no methods, the slots stay consequences per §9.11",
     "ticket.subject.one-way-audio": "§2.12 one-way clause in customer register (the classic sentence said aloud); ticket register",
     "ticket.body.one-way-audio": "§1.3 'invisible to every uptime check' dramatized; no technique named, §9.11",
-    "ticket.subject.e911": "§2.12 911 Obligation beat as compliance question; ticket register",
+    "ticket.subject.e911": "§2.12 911 Obligation beat as compliance question; ticket register; rungs trace the location expectation across §0.4's grid per §2.12's 'address registration' clause (the wire carried the address, the trunk stopped knowing the desk, the registry holds the claim)",
     "ticket.body.e911": "§2.12 address-registration liability; wording authored",
-    "ticket.subject.nine-am": "§1.3 9am spike + §2.10 visible bounce; ticket register",
+    "ticket.subject.nine-am": "§1.3 9am spike + §2.10 visible bounce; ticket register; rungs re-key the trunk's medium across §0.4's grid (the T1 years per the dial-up-era card's PRI/T1 buildables, the SIP migration, the softphone floor) — the hard 9am spike is the card's era-neutral law; only the wire is texture",
     "ticket.body.nine-am": "§13849 channel-capacity guarantee quoted back; wording authored",
     "press.headline.weekend": "§1.3 toll-fraud paragraph as press beat; §9.3 press format; consequence-only, §9.11",
     "press.headline.storm": "§1.3 jitter-storm catastrophe; §9.3 press format; wording authored",
@@ -234,5 +264,5 @@
     "achievement.heard-both-ways": "§2.12 one-way-audio failure flipped to win condition; §9.3 achievement channel",
     "canary.busy-wall-tally": "§2.10 busy wall + §1.3 cord states/MOS; canary-notice channel (precedent: dedicated canary.row-tally, object-storage canary.comb-tally)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66). The win threshold, every pressure mapping in the wave slice, the diurnal amplitude and the DID-as-second-unit question stay PROVISIONAL-B / owner-law until the re-author sweep; the fraud scenario deliberately carries no technique detail — its slots are consequences (amounts, destinations-as-country-names, hours), never methods, per §9.11. "
+  "_todo": "Era-variant objects live on THREE pack-unique FLAVOUR keys (ticket.subject.nine-am, ticket.body.monday-bill, ticket.subject.e911) across the OD-22(c) four-rung canon; the decision namespace stays era-flat and the shared-register lines ride byte-ident; bundle availableFrom remains null (§0.4 R66) — the era voice here is customer expectation and arrival medium, never a retro-dated shelf claim. The win threshold, every pressure mapping in the wave slice, the diurnal amplitude and the DID-as-second-unit question stay PROVISIONAL-B / owner-law until the re-author sweep; the fraud scenario deliberately carries no technique detail — its slots are consequences (amounts, destinations-as-country-names, hours), never methods, per §9.11. "
 }

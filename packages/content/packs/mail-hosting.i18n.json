@@ -4,6 +4,12 @@
   "appliesTo": "official:mail-hosting",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the email line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is the OPERATOR's — the smudged postmark, the form nobody reads, the list the customer is proud of — never the spam itself. No payloads, commands, tool names-as-how-to, or technique instruction anywhere; abuse exists only as complaint, listing notice, provider silence, and consequence.",
+  "eraCodes": {
+    "1998": "Mail is still post (§0.4's dial-up years; §8.10's beige and amber). Volume is personal, the blocklists are hand-kept, and the customer expects a person on the other end of a complaint — an apology, a fix by Sunday, and no forms.",
+    "2008": "Bulk goes commercial (§0.4's 2009 cell; §8.10 gloss). Self-serve panels and rented lists fill the mailbox providers' queues, and the customer expects an auto-reply with a reference number and calls the desk a portal.",
+    "2016": "The authenticated years (§0.4's 2016 cell; §8.10 flat). The card's SPF/DKIM/DMARC stack (§1.3 buildables) is the entry fee, the providers read signatures before they read mail, and the customer expects alignment to be somebody else's problem.",
+    "2026": "Now: four postmarks, silent deprioritization, and a customer discovering deliverability the day the password resets stop arriving. Same thin wall between tenants, faster metronome."
+  },
   "slots": {
     "nodeId": { "kind": "entity", "desc": "Board object the decision surface is about (pool / server id)." },
     "verb": { "kind": "text", "desc": "Engine intent verb being refused (place/connect/configure/...)." },
@@ -62,14 +68,38 @@
   "flavour": {
     "ticket.subject.reset-in-spam": "my customers' password resets are landing in spam",
     "ticket.body.reset-in-spam": "The reset links and the receipts are in their junk folders, three days late, and the accounts are now locked. Your servers report healthy. Fix what you are actually selling.",
-    "ticket.subject.list-bought": "I bought a mailing list, when can we send?",
-    "ticket.body.list-bought": "Forty thousand addresses, 'legally acquired', filed at {hour}:{minute}. The customer is cheerful. The warm-up plan says no. The contract says complicated.",
+    "ticket.subject.list-bought": {
+      "eras": {
+        "1998": "I bought a mailing list on a CD-ROM, when can we send?",
+        "2008": "I bought a mailing list from a list broker, when can we send?",
+        "2016": "I bought an engaged-audience list, when can we send?",
+        "2026": "I bought a mailing list, when can we send?"
+      },
+      "fallback": "I bought a mailing list, when can we send?"
+    },
+    "ticket.body.list-bought": {
+      "eras": {
+        "1998": "Forty thousand addresses off a CD-ROM, 'legally acquired', filed at {hour}:{minute}. The customer is cheerful. There is no warm-up plan yet, and the list that decides this is hand-kept by someone with opinions. The contract says complicated.",
+        "2008": "Forty thousand addresses from a rented list export, 'legally acquired', filed at {hour}:{minute}. The customer is cheerful. The warm-up plan says no. The providers' auto-reply says wait. The contract says complicated.",
+        "2016": "Forty thousand 'engaged' addresses, sold with the analytics to prove it, 'legally acquired', filed at {hour}:{minute}. The customer is cheerful. The warm-up plan says no. The signatures say worse. The contract says complicated.",
+        "2026": "Forty thousand addresses, 'legally acquired', filed at {hour}:{minute}. The customer is cheerful. The warm-up plan says no. The contract says complicated."
+      },
+      "fallback": "Forty thousand addresses, 'legally acquired', filed at {hour}:{minute}. The customer is cheerful. The warm-up plan says no. The contract says complicated."
+    },
     "ticket.subject.angry-bulk": "your rate limit is costing me sales",
     "ticket.body.angry-bulk": "{accountName} sends every invoice at five on Friday and the per-account outbound cap says no. They are a legitimate bulk sender, and they are correct that the cap is the problem tonight.",
     "ticket.subject.warmup-impatient": "why is my new pool sending so slowly",
     "ticket.body.warmup-impatient": "Day {day} of the ramp and the customer wants full volume now. The ramp is the product this month, and the proof they can see is the postmark smudging while they wait.",
     "abuse.canon.listing": "From: {listName} — a listing has opened against {prefix}. Traffic attributed to your address space. Delisting begins with the form; the form begins with the evidence.",
-    "abuse.canon.postmaster": "Postmaster correspondence from {providerDomain}: volume accepted, engagement poor, placement degraded. No policy citation. No appeal channel. Read the smudge, not the words.",
+    "abuse.canon.postmaster": {
+      "eras": {
+        "1998": "Postmaster correspondence from {providerDomain}, signed with a first name: volume accepted, your machine is vouching for strangers, fix it by Sunday. No policy citation. No appeal channel. Read the tone, not the words.",
+        "2008": "Postmaster correspondence from {providerDomain}: auto-reply, reference number included. Volume accepted, complaints filed, your queue position noted. No policy citation. No appeal channel. Read the queue, not the words.",
+        "2016": "Postmaster correspondence from {providerDomain}: signatures checked before volume. You are authenticated, and you are still unwanted, and nobody will say so in words. No policy citation. No appeal channel. Read the alignment, not the words.",
+        "2026": "Postmaster correspondence from {providerDomain}: volume accepted, engagement poor, placement degraded. No policy citation. No appeal channel. Read the smudge, not the words."
+      },
+      "fallback": "Postmaster correspondence from {providerDomain}: volume accepted, engagement poor, placement degraded. No policy citation. No appeal channel. Read the smudge, not the words."
+    },
     "abuse.canon.sudden-volume": "Desk notice: {accountName} sent {volumeMsgs} in the first hour of an account that existed one hour ago. Signup vetting was skipped to protect the conversion funnel. The invoice arrives; the reputation bill was already paid.",
     "press.headline.delist": "{hostName} delisted from {listName} after {responseHours} of silence; statement calls the listing 'a false positive we respect'.",
     "press.headline.greeting-season": "Greeting-card volume forecasts up this quarter; independent senders advised to warm early. Analysts decline to comment on postmarks.",
@@ -127,14 +157,14 @@
     "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
     "ticket.subject.reset-in-spam": "§2.x 'Mail deliverability' (verbatim core: 'Password resets and receipts landing in spam')",
     "ticket.body.reset-in-spam": "§2.x Mail deliverability; wording authored",
-    "ticket.subject.list-bought": "§1.3 Threats ('a legitimate customer who bought a mailing list'); wording authored",
-    "ticket.body.list-bought": "§1.3 Threats; business ask only, zero technique",
+    "ticket.subject.list-bought": "§1.3 Threats ('a legitimate customer who bought a mailing list'); wording authored; 1998/2008/2016 rungs authored in the list's acquisition medium across §0.4's era grid (the CD-ROM years, the broker export, the engagement-analytics pitch) — the customer's economics, never a method (§9.11)",
+    "ticket.body.list-bought": "§1.3 Threats; business ask only, zero technique; rungs vary the list's proven and the desk's expected 'no' across §0.4's grid — the 1998 rung speaks the warm-up plan not yet being law, per §0.4's whole-branches-grey-out-'not invented yet' clause; the {hour, minute} filed stamp rides every rung unchanged",
     "ticket.subject.angry-bulk": "§1.3 'counters... anger legitimate bulk senders'; wording authored",
     "ticket.body.angry-bulk": "§1.3; wording authored",
     "ticket.subject.warmup-impatient": "§1.3 warm-up ramp minigame; wording authored",
     "ticket.body.warmup-impatient": "§1.3; hour/day slot-parameterised — no invented clock beyond the ticket stamp",
     "abuse.canon.listing": "§2.12 'Email: Blocklist Cascade / Spamhaus SBL Listing'; complaint-text only, §9.11 consequence-only",
-    "abuse.canon.postmaster": "§1.3 postmaster relationships + silent-deprioritization cruelty; §9.11 no-technique rule",
+    "abuse.canon.postmaster": "§1.3 postmaster relationships + silent-deprioritization cruelty; §9.11 no-technique rule; rungs vary the correspondence's genre across §0.4's grid (the signed letter, the ticketed auto-reply, the 2016 authenticated expectation per §1.3's SPF/DKIM/DMARC buildables) — same refusal voice, closer re-keyed per era, the 2026 'smudge' kept",
     "abuse.canon.sudden-volume": "§1.3 signup-vetting suppression tension + §1.5 'The Abuser (Knowing)' behaviour-not-technique framing",
     "press.headline.delist": "§9.3 obituary/press feed format; wording authored",
     "press.headline.greeting-season": "§6.6 Email sticky-annual texture + holiday sending folklore; authored press register (no doc date invented for it)",
@@ -157,5 +187,5 @@
     "achievement.forms-work": "§1.3 delisting minigame; §9.3 achievement channel",
     "canary.quarantine-pool": "§1.3 quarantine pool buildable; canary-notice channel (game precedent: canary.pool-notice)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66); cac.mail-hosting.todo stays a placeholder until §6.6 Companion B prices the email channel."
+  "_todo": "Era-variant objects live on THREE pack-unique FLAVOUR keys (ticket.subject.list-bought, ticket.body.list-bought, abuse.canon.postmaster) across the OD-22(c) four-rung canon; the decision namespace stays era-flat and the shared-register lines ride byte-ident. Bundle availableFrom remains null (§0.4 R66) — the era voice here is customer expectation, never a retro-dated shelf claim. cac.mail-hosting.todo stays a placeholder until §6.6 Companion B prices the email channel."
 }
