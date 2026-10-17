@@ -110,6 +110,31 @@
 > ruling) and copy-voice RATIFIED @`18c3f6a`. **#10 opens the NEW PROVISIONAL register** — sell 5 numerics,
 > warmth rate, relationship 11 deltas, transport taste rows, throttle/restart occupancy 1/1 —
 > ratify-on-playtest class, awaiting G1 playtests.
+>
+> **2026-10-17 session-8 rulings (wave-22 program), executed as ADR-0017 #1–#5 + ADR-0016 #11:** the owner
+> answered the wave-21 fresh-ask register (eleven items) with "go with recommendations on each of those …
+> max feature/functionality". **Fourteenth card:** the law call ANSWERED via the ROSTER route again —
+> `reclaim` joins `TIER_EXTENDED_VERBS` as the EIGHTH extended verb (fifth amendment @`ff8615c`), grounded
+> VERBATIM in the third word of the §1.4 CI/build-farm card's own verb line; type-14
+> `official:ci-build-farm` "Green Light" / "Untrusted Code, By Design" @`a47a9b5` — the FIRST §1.4-founded
+> card (§0.3/§6.6 row absences RECORDED, never forged) and the first DOOR-BEFORE-CARD landing (`reclaim-node`
+> spine @`c8b92a2` predates its card). `expire` is ruled OFF-roster expressly — the read-time expiry law
+> already auto-lapses bookings, a verb would double-name a mechanic. **The roster stands at 6 invariant +
+> 8 extended, ALL claimed; the FIFTEENTH card is a fresh OWNER LAW CALL.** **Transport ADOPTED** (ADR-0017
+> #4): browser seat client @`96bd238` + `tools/host` thin dev carrier @`af55b61` — the portable-lib
+> topology (b) holds: the hub RELAYS only, seats run local converging sims, real latency enters only as
+> hub-acceptance ticks; the PRODUCTION PHP/Workerman carrier stays out-of-repo. **Attribution** (ADR-0017
+> #5): the driver re-mint ticket CLOSED with `reentry` events @`cbf53a4` — zero state bytes, every digest
+> immune by construction, the versus unattributed floor collapsed to ZERO. **Coverage affix leg**
+> (ADR-0017 #2): §2.13's second leg BUILT @`2b63795` (five grid-column nullifications, eleven honest
+> nulls, drift-pinned versus mirror). **Split ratify:** the game-balance half of the #10 register is
+> RATIFIED as ADR-0016 #11 @`e2a1bba` (49 flips); transport caps + the PROVISIONAL-B-style residue STAND;
+> wave-22 additions (reclaim occupancy/hand 1/1, restart window 5, lift-at-boundary ergonomics) JOIN the
+> register. **HUD:** the §7.16 Act row is player-facing in the prototype @`a28e764` (canvas inspector still
+> open). **Data hygiene:** the L-PW riders found the first pack-ambiguous flavour key —
+> `intern.entry.firstday` shipped slot-free in BOTH observability and ci-build-farm with divergent texts —
+> CURED @`c317efd` by renaming the ci key to `intern.entry.board` (values byte-ident); every slot-free twin
+> is byte-ident across all fourteen packs and the divergent-set pin flipped to falsifiable empty.
 
 **Source of truth:** `reports/MASTER_REPORT.md §6`. Citations: a bare `§N.M` = a section of `MASTER_REPORT.md`; source-doc headings are always written `hosting_game.md §x.y`.
 **Rule for implementers:** none of these may be resolved silently in code. Each maps to a named config knob in `docs/PHASE1-PLAN.md` / `docs/CONVENTIONS.md §5`. **§0 legend:** OPEN = owner decision requested; PENDING = sub-decision created *by* a ratified decision, recommendation given, owner sign-off outstanding.
@@ -219,43 +244,82 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 | **5-band→3-tier fold** | **RATIFIED** — the lane-authored fold inside `MODE_TIERING` @`42fbbd2` closes its ratify-on-read lever | `ADR-0013` ruling 12(vii) (record) |
 | **ADR-0012 authority** | Recovery ENGINE-canonical / observer-advisory **RATIFIED** | `ADR-0013` ruling 12(viii) (record) |
 | **canSettle** | **CLOSED — recommend-adopted: v0 law stays host-forwarded refusals** (`fastForward.ts` catch-and-void). No economy-side `canSettle()` veto is added; the MODULE-STATUS:164 owner ask is answered | `ADR-0013` ruling 13 (record) |
-| **Verb-exhaustion (types 6+)** | **ADOPTED — extend within ADR-0005's already-ratified per-tier verb sets; NO ADR amendment needed.** Trunk Group / Eleven Nines Observe-collision cards unblock via per-tier verb sets or newly authored cards — content lane decides which; `THREE_CHANGE`/`VERB_SHIFT` ruleset linters must stay clean through whichever route is picked — **2026-10-16 update: the roster WAS amended (ADR-0014 #D1 @fb18c05): `negotiate` + `schedule` join `TIER_EXTENDED_VERBS` (six members; Diagnose blessable onto an implying card; re-claim/MERGE stays FORBIDDEN). First blessed use: type-10 `official:colo` "Amps and Aisles" founded on Negotiate LANDED @9bb86f4 — **2026-10-16 session-5: SECOND blessed use LANDED @`6c0e074`, type-11 `official:backup-archival` "Restore Point" founded on Schedule (first Schedule card; the #D1 blessing pair Negotiate+Schedule now FULLY SPENT). Diagnose is the SOLE unclaimed invariant (still no §1.3 card names it verbatim); the twelfth card is an OWNER LAW CALL**. **2026-10-16 session-6 (ADR-0015 #3): the law call ANSWERED — the owner ruled to EXTEND: `isolate` joins `TIER_EXTENDED_VERBS` as the SEVENTH extended verb @`7f47563`, grounded VERBATIM in the §1.3 DBaaS card ("Verb: isolate and throttle. The boss is a split brain.") + the §7.16 Act row; type-12 `official:dbaas` "The Cellar" LANDED @`5956b8f` claiming it, and `isolate-node` entered the closed door enum (16th verb) WITH its engine consumer the same wave @`86cff89` — every extended verb is now BUILT with mechanics (ADR-0015 #2), the card-identity-only era is over for tier verbs. The invariant six are UNTOUCHED; **Diagnose is the sole unclaimed invariant (still no §1.3 card names it); a thirteenth card is again an OWNER LAW CALL.** Named successors throttle/restart/expire/reclaim stay off-roster until blessed one at a time. **2026-10-17 session-7 (ADR-0016 #7/#5): the law call ANSWERED for the thirteenth card — Diagnose BLESSED (D1(i) route, no lint change) onto type-13 `official:observability` @`9e9f377`; ROSTER EXHAUSTED (6+7 all claimed), the FOURTEENTH = fresh law call. Door-side the successors landed WITHOUT roster entries: `throttle-node` (17th) @`81b0589` + `restart-node` (18th) @`fd91138` are door verbs, not card-identity roster verbs — expire/reclaim stay off-roster** | `ADR-0013` ruling 14 → **`ADR-0014` #D1 (roster amendment; pair spent @6c0e074) → `ADR-0015` #3 (roster extension — Isolate) → `ADR-0016` #7 (Diagnose bless) + #5 (successor door verbs)**; content gap row (MODULE-STATUS) |
+| **Verb-exhaustion (types 6+)** | **ADOPTED — extend within ADR-0005's already-ratified per-tier verb sets; NO ADR amendment needed.** Trunk Group / Eleven Nines Observe-collision cards unblock via per-tier verb sets or newly authored cards — content lane decides which; `THREE_CHANGE`/`VERB_SHIFT` ruleset linters must stay clean through whichever route is picked — **2026-10-16 update: the roster WAS amended (ADR-0014 #D1 @fb18c05): `negotiate` + `schedule` join `TIER_EXTENDED_VERBS` (six members; Diagnose blessable onto an implying card; re-claim/MERGE stays FORBIDDEN). First blessed use: type-10 `official:colo` "Amps and Aisles" founded on Negotiate LANDED @9bb86f4 — **2026-10-16 session-5: SECOND blessed use LANDED @`6c0e074`, type-11 `official:backup-archival` "Restore Point" founded on Schedule (first Schedule card; the #D1 blessing pair Negotiate+Schedule now FULLY SPENT). Diagnose is the SOLE unclaimed invariant (still no §1.3 card names it verbatim); the twelfth card is an OWNER LAW CALL**. **2026-10-16 session-6 (ADR-0015 #3): the law call ANSWERED — the owner ruled to EXTEND: `isolate` joins `TIER_EXTENDED_VERBS` as the SEVENTH extended verb @`7f47563`, grounded VERBATIM in the §1.3 DBaaS card ("Verb: isolate and throttle. The boss is a split brain.") + the §7.16 Act row; type-12 `official:dbaas` "The Cellar" LANDED @`5956b8f` claiming it, and `isolate-node` entered the closed door enum (16th verb) WITH its engine consumer the same wave @`86cff89` — every extended verb is now BUILT with mechanics (ADR-0015 #2), the card-identity-only era is over for tier verbs. The invariant six are UNTOUCHED; **Diagnose is the sole unclaimed invariant (still no §1.3 card names it); a thirteenth card is again an OWNER LAW CALL.** Named successors throttle/restart/expire/reclaim stay off-roster until blessed one at a time. **2026-10-17 session-7 (ADR-0016 #7/#5): the law call ANSWERED for the thirteenth card — Diagnose BLESSED (D1(i) route, no lint change) onto type-13 `official:observability` @`9e9f377`; ROSTER EXHAUSTED (6+7 all claimed), the FOURTEENTH = fresh law call. Door-side the successors landed WITHOUT roster entries: `throttle-node` (17th) @`81b0589` + `restart-node` (18th) @`fd91138` are door verbs, not card-identity roster verbs — expire/reclaim stay off-roster. **2026-10-17 session-8 (ADR-0017 #1): the law call ANSWERED for the fourteenth card — `reclaim` BLESSED as the EIGHTH extended verb (fifth roster amendment @`ff8615c`), grounded VERBATIM in the §1.4 CI/build-farm card's own verb line third word; type-14 `official:ci-build-farm` "Green Light" @`a47a9b5` — FIRST §1.4-founded card (§0.3/§6.6 absences RECORDED) and FIRST door-before-card landing (spine @`c8b92a2`, refusal census UNMOVED at 46 — first zero-new-phrase verb). `expire` stays OFF-roster BY RULING — the read-time expiry law already lapses bookings (double-naming argument). Roster: 6 invariant + 8 extended, ALL claimed — the FIFTEENTH card is a fresh OWNER LAW CALL** | `ADR-0013` ruling 14 → **`ADR-0014` #D1 (roster amendment; pair spent @6c0e074) → `ADR-0015` #3 (roster extension — Isolate) → `ADR-0016` #7 (Diagnose bless) + #5 (successor door verbs) → **`ADR-0017` #1 (Reclaim bless — eighth roster verb; first §1.4-founded type; `expire` ruled off-roster)**; content gap row (MODULE-STATUS) |
 | **Attention per-verb cost** | **DECIDED (promoted out of ratify-on-read): opening default `{Communicate: 1, ticket-class handling: 1, other verbs: 0}`** — diverges from disk (config ships default-EMPTY, no prior recommendation existed in this register); owner session-3 decision, build lane ~~queued~~ **RAN 2026-10-14 (`179861d` — `ATTENTION_DEFAULT_COSTS` = {communicate 1, policy-card-commit 1}; door default stays EMPTY, hosts opt in, byte-identity twins pinned)**; **RATIFIED 2026-10-16 (ADR-0014 #D4) as LAW** | `ADR-0013` ruling 12(v); OD-6 row addendum → **`ADR-0014` #D4 (ratify)** |
 
 ---
 
 ## Fresh owner asks (2026-10-17, wave-21 closeout — raised by the wave-21 lanes, none is a reopening)
 
-- **FOURTEENTH type card — OWNER LAW CALL.** The roster is EXHAUSTED: six invariant verbs + all seven
-  extended verbs claimed (Diagnose was the last, blessed onto type-13 @`9e9f377` per ADR-0016 #7).
-  Candidates: repeat-law MERGEs (GPU/HPC/satellite→Schedule), a CI/build-farm→Isolate merge,
-  throttle-claimant cards, or STOPPING at thirteen.
+- **FIFTEENTH type card — OWNER LAW CALL.** ANSWERED for the fourteenth: `official:ci-build-farm`
+  "Green Light" claimed **Reclaim** @`a47a9b5` (eighth extended verb / fifth amendment @`ff8615c`; first
+  §1.4-founded card, first door-before-card landing — ADR-0017 #1; the CI/build-farm→Isolate MERGE
+  question was mooted by claiming the card's THIRD word instead). The roster is EXHAUSTED at six
+  invariant + eight extended, ALL claimed. Candidates for the fifteenth: repeat-law MERGEs
+  (GPU/HPC/satellite→Schedule), throttle-claimant cards (the door mechanic exists, off-roster), §7.5
+  incident-vocabulary cards (failover/roll-back/escalate — design-space, none rostered), or STOPPING at
+  fourteen. `expire` was ruled off-roster WITH the fourteenth (read-time expiry double-naming argument);
+  any named successor still needs its own owner bless.
 - **HUD affordances ×3 (door verbs without faces).** `isolate-node`/`throttle-node`/`restart-node` ship
   with no inspector surface: (1) Act-row chips on the node inspector (the §7.16 Act-row is now ALL-FOUR
   live in the door but only isolate/throttle have a spec sentence to render against); (2) the dbaas
   utilization-donut needs fence (solid ring) vs clamp (ghost ring) render states per the throttle
   legibility law; (3) the serverless warmth METER (the cost seam @`1efe12a` now bills — the card promises
-  "you are buying the absence of a stutter", the HUD shows nothing).
+  "you are buying the absence of a stutter", the HUD shows nothing). **PARTIALLY CLOSED 2026-10-17
+  (ADR-0017 #3, lane L-HUD @`a28e764`): the Act row is PLAYER-FACING in the prototype — ACT chips
+  drain/restart/isolate/shed + DESK readouts throttle/reclaim/warmth/shield on the lab stepper, one
+  mint site through the door grammar alone (+33 its). The WORLD-CANVAS inspector and the donut
+  fence/clamp ring renders stay OPEN.**
 - **Per-tenant WARCT valuation leg DEFERRED.** The relationship ledger @`5e8ce75` landed the trust meter;
   §1.3 "Amps and Aisles"'s "what is this tenant worth across the whole lease" (WARCT) valuation leg is an
   owner-recorded DEFERRAL (ADR-0016 #8), not a gap.
 - **In-flight-kill DEFERRED (restart).** `restart-node`'s fence+flush shipped; killing a request already
   mid-service wedges step-5 attribution (wedge-state analysis pinned in `pipeline/restart.ts`);
   needs a design ruling before a lane builds it (ADR-0016 #5).
-- **Coverage-strength affix leg.** §2.13 mix-ins still parse-inert in the Coverage Grid (owner question 5
-  of e24e1bb stands); versus affixes went LIVE this wave @`eb4b86a` — the grid leg awaits its own ruling.
-- **Driver re-mint attribution (cross-lane ticket).** The versus decision-6 floor — `re<mint>@<tick>`
-  arrivals wear no `tableId~n~threat~ordinal` label and score `unattributed` — is grammar-forced;
-  widening pipeline arrival labeling is a pipeline-lane ticket, not a versus patch (ADR-0016 #2).
+- **Coverage-strength affix leg.** **CLOSED @`2b63795`** (ADR-0017 #2). Original ask: §2.13 mix-ins parse-inert
+  in the Coverage Grid. Resolution: `coverage/affixLegs.ts` `AFFIX_COVERAGE_NULLIFIES` — five doc-named
+  grid columns nullify per the section's OWN rows (distributed→Meter, encrypted→Classify, low-slow→Detect,
+  adaptive→Deter, piggyback→Absorb), eleven HONEST nulls (three doc rows name non-grid defenses incl. the
+  RECORDED rate-shaped contradiction; eight slugs unmapped), drift-pinned mirror of versus `AFFIX_VOCABULARY`,
+  zero import edge. The coverage-preview proto leg stays deferred (fresh ask above).
+- **Driver re-mint attribution (cross-lane ticket).** **CLOSED @`cbf53a4`** (ADR-0017 #5). Original gap:
+  `re<mint>@<tick>` arrivals wore no lineage label and scored `unattributed` — grammar-forced. Resolution
+  is NOT wider labeling: the driver mints `reentry` SimEvents at maturity (child/retryOf/lineageRoot/
+  retryDepth; union 11→12; ZERO state bytes so every digest is immune by construction) and the versus
+  fold labels from them — floor 1,040×3-seed saturation → ZERO (three floor pins flipped disclosed;
+  conservation invariants unmoved; viral deaths stay unattributed BY DESIGN).
 - **Slug-12 maintenance-window consumer.** `piggybacked-on-a-maintenance-window` ships DATA-ONLY
   (`live:false` in `AFFIX_WAVE_DELTAS`) with a written future spec (`DefenderCommit.maintenanceWindows`);
   activation needs its own ADR item (ADR-0016 #2).
 - **PHP/Workerman production carrier (co-op).** The in-repo transport v0 @`0da14b8` proves the wire;
   the production socket carrier, latency modelling, per-seat fog POLICY, and page-size policy are
-  out-of-repo until the owner opens the lane (ADR-0016 #3).
-- **New PROVISIONAL register (ratify-on-playtest, ADR-0016 #10):** sell acceptance dice 5 numerics,
-  warmth rate $25/slot-mo, relationship 11 trust deltas, transport taste rows, throttle/restart
-  occupancy 1/1 — ALL await G1 playtest ratification.
+  out-of-repo until the owner opens the lane (ADR-0016 #3). **PARTIALLY LANDED 2026-10-17 (ADR-0017 #4):
+  the BROWSER seat client @`96bd238` (seven interface truths honored, idempotence proven over real sockets)
+  + `tools/host` thin Node DEV carrier @`af55b61` (ws 8.22.0, maxPayload carrier-close 1009, localhost-no-auth
+  by ruling) landed in-repo; the PRODUCTION PHP/Workerman carrier, per-seat fog and paging policy stay
+  out-of-repo.**
+- **PROVISIONAL register (ADR-0016 #10, SPLIT 2026-10-17 by ADR-0016 #11 @`e2a1bba`):** the game-balance
+  half — sell acceptance dice ×5, warmth rate $25/slot-mo, relationship ×11 trust deltas, door occupancy/
+  hand rows across the eight verbs — is **RATIFIED 2026-10-17**; the transport taste caps (frame 65_536 /
+  log 10_000 / page 64) + PROVISIONAL-B-style residue **STAND PROVISIONAL** by ruling. Wave-22 additions
+  JOINING the register (ADR-0017 #3): reclaim-node occupancy/hand 1/1 (the #11 register CLOSED before the
+  verb existed), `RESTART_WINDOW_MINUTES = 5`, lift-at-next-boundary desk ergonomics — ratify-on-playtest.
+
+### Wave-21 asks — disposition (answered by session-8 / wave 22; preserved as record)
+
+- FOURTEENTH type card → **LAW CALLED + BUILT** — `official:ci-build-farm` on Reclaim @`a47a9b5`
+  (ADR-0017 #1; roster fifth amendment `ff8615c`, spine `c8b92a2`); FIFTEENTH = fresh law call (row above).
+- HUD affordances ×3 → **PARTIALLY CLOSED @`a28e764`** (Act row player-facing on the lab stepper, ADR-0017 #3;
+  world-canvas inspector + donut rings + warmth meter render still open).
+- WARCT valuation leg → **DEFER STANDS** (ADR-0016 #8; not built this wave).
+- In-flight-kill (wedge) → **DEFER STANDS** (ADR-0016 #5 wedge-state rationale governs).
+- Coverage affix leg → **CLOSED @`2b63795`** (ADR-0017 #2).
+- Driver re-mint attribution → **CLOSED @`cbf53a4`** (ADR-0017 #5).
+- Slug-12 consumer → **DEFER STANDS** (data-only; activation needs its own ADR item).
+- PHP/Workerman production carrier → **PARTIALLY LANDED** (ADR-0017 #4: browser client `96bd238` + dev
+  carrier `af55b61` in-repo; production carrier/fog/paging out-of-repo).
+- PROVISIONAL register → **SPLIT-RATIFIED** (ADR-0016 #11 @`e2a1bba`: balance half RATIFIED, transport caps
+  STAND) + wave-22 additions joined (ADR-0017 #3).
 
 ### Wave-20 asks — disposition (all five answered by session-7; preserved as record)
 
