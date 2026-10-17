@@ -177,6 +177,11 @@ const HONEST_ROWS: Readonly<Record<string, Record<string, unknown>>> = {
     termMonthsExtension: null,
     effectiveAtBusinessMinute: null,
   },
+  "isolate-node": {
+    targetNodeId: "web-1",
+    effectiveAtBusinessMinute: null,
+    releaseAtBusinessMinute: 480,
+  },
 };
 
 describe("the wall accepts one honest row per verb", () => {

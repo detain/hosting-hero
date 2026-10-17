@@ -1304,6 +1304,35 @@ export enum PlayerVerb {
    *  tone bumps are its company-level stand-in (the company reputation
    *  ledger @57ea80e stays untouched; record). */
   NegotiateTerms = "negotiate-terms",
+  /** ADR-0015 door-mechanics ruling (session-6 roster extension · Isolate):
+   *  the 16th door verb — the twelfth hosting type's own card verb made
+   *  playable (§1.3 dbaas card "The Managed Database", hosting_game.md
+   *  ~:2243: "**Verb: isolate and throttle.** **The boss is a split
+   *  brain.**"), and the §7.16 Act-row law finally catching the spec
+   *  (~:28825: "every object's inspector has an 'Act' row of at most four
+   *  one-click emergency verbs… drain, restart, isolate, shed" — drain is
+   *  `disconnect-drain` and shed is `shed-load` today; isolate is the
+   *  named Act verb this lands; §7.5 Incident Mode ~:26759 also names it).
+   *  One-click ⇒ COMMIT class, one hand / one tick. The door records the
+   *  FENCE into the OPTIONAL `GameState.isolate` book — a half-open
+   *  window per node `[effective, release)`, last-write-wins — and
+   *  touches nothing else: no units, no slots, no routing truth, no RNG,
+   *  no cash (state-neutral, the shield/sell posture). The engine reader
+   *  is `pipeline/isolation.ts` (`nodeIsolated`/`isolatedNodeIds`),
+   *  consumed at the step-5 serve input: while fenced, the node assigns
+   *  NO new units — its free arms answer zero to arrivals — while
+   *  in-flight and queued work completes or bounces under the existing
+   *  patience law. Shield protects what a node SERVES (the step-9
+   *  exhaustion die); Isolate stops what a node RECEIVES (step-5
+   *  admissions) — the player-authored sibling of the recovery throttle
+   *  (`throttleServeNodes`), authorities separate, precedence
+   *  min-of-clamps with the fence beating scale warmth. Unlike Shield's
+   *  no-un-shield, a fence EXPIRES: §1.4's build-farm verb line
+   *  "~:2679 `Verb: isolate, expire, reclaim`" grounds the release
+   *  window — isolation is a burden, not a blessing. A null
+   *  `releaseAtBusinessMinute` is indefinite until explicitly replaced
+   *  (the amendment IS the lift; no dedicated un-isolate verb in v0). */
+  IsolateNode = "isolate-node",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1323,6 +1352,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.ScheduleWindow,
   PlayerVerb.SellOffer,
   PlayerVerb.NegotiateTerms,
+  PlayerVerb.IsolateNode,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1571,6 +1601,34 @@ export interface NegotiateTermsArgs {
   readonly effectiveAtBusinessMinute: SimMinute | null;
 }
 
+/** ADR-0015 session-6 roster extension (`IsolateNode` — the 16th verb). */
+export interface IsolateArgs {
+  readonly verb: PlayerVerb.IsolateNode;
+  /** Node to fence against NEW work — resolved against `GameState.nodes`
+   *  (same world-existence check as shield-node / scale-node; an absent
+   *  node is the `unknown-node` refusal). The fence never touches the
+   *  node's records: edges stay intact, in-flight and queued units ride
+   *  the existing patience law (`pipeline/isolation.ts`). */
+  readonly targetNodeId: EntityId;
+  /** Business-clock effective minute (Dual-Clock law §4.4 — a fence is a
+   *  business act, the shield/scale as-of discipline): the null sentinel =
+   *  fenced from the executing tick; a future stamp is armed but NOT yet
+   *  law, honored same-tick by `nodeIsolated`. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+  /** Business-clock RELEASE minute — the fence window is HALF-OPEN
+   *  `[effective, release)`: at `release` the node admits again, strictly.
+   *  §1.4's build-farm verb line ("isolate, expire, reclaim",
+   *  hosting_game.md ~:2679) grounds the expiry: isolation is a burden,
+   *  not a blessing — unlike Shield there is a reckoning. The null
+   *  sentinel = indefinite until explicitly replaced (last-write-wins;
+   *  the amendment IS the lift — no dedicated un-isolate verb in v0).
+   *  When both minutes are non-null, `release` must be strictly greater
+   *  than `effective` (`release-before-effective` refusal); a null
+   *  effective with release 0 is accepted as already-expired inert
+   *  history (the maintain close-0 posture, ADR-0015 lane L-DM2). */
+  readonly releaseAtBusinessMinute: SimMinute | null;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1587,7 +1645,8 @@ export type PlayerVerbArgs =
   | MaintainArgs
   | ScheduleArgs
   | SellOfferArgs
-  | NegotiateTermsArgs;
+  | NegotiateTermsArgs
+  | IsolateArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -2056,6 +2115,40 @@ export interface NegotiateBook {
   readonly entries: ReadonlyMap<string, NegotiationTerm>;
 }
 
+/** ADR-0015 session-6 roster extension (`IsolateNode`) — one fence record
+ *  per node. The door stamps the window and NOTHING else; the fold reads it
+ *  as-of business minutes (`nodeIsolated`). No base-roster anchor lives
+ *  here (unlike `ScaleEntry`): the fence never writes the roster — it blocks
+ *  step-5 admissions — so there is nothing to restore when it lifts and
+ *  occupied arms are trivially never evicted. */
+export interface IsolateEntry {
+  /** Macro tick the door executed the order (write-order witness;
+   *  last-write-wins per node). */
+  readonly shippedAtTick: SimTick;
+  /** Business minute the fence drops; null = from `shippedAtTick`
+   *  (same-tick pre-arm honored — the `ShieldEntry` as-of twin). */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+  /** Business minute the fence lifts, STRICTLY exclusive — the window is
+   *  half-open `[effective, release)`, at `release` the node admits again
+   *  (§1.4 "isolate, expire, reclaim"). Null = indefinite until explicitly
+   *  replaced. Expired rows are KEPT as history witness, inert at read —
+   *  the maintain/schedule read-time expiry law (ADR-0015 lane L-DM2);
+   *  nothing is ever pruned, the digest encodes rows raw. */
+  readonly releaseAtBusinessMinute: SimMinute | null;
+}
+
+/** OPTIONAL `GameState` embed — the isolate-node book `isolate-node` writes
+ *  (same embed law as the other door books: absent ⇒ byte-identical digests
+ *  everywhere; `pipeline/digest.ts` absorbs it WHEN PRESENT). Keyed by node
+ *  id — LAST-WRITE-WINS per node: re-fencing replaces the standing window
+ *  (a shorter window is the amendment that lifts early; there is no
+ *  dedicated un-isolate verb in v0). `version` bumps per materialized write
+ *  — the board/pricing memoization convention. */
+export interface IsolateBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<EntityId, IsolateEntry>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -2309,4 +2402,20 @@ export interface GameState {
    *  absorbs it ONLY when present, so every pre-negotiate state — all
    *  shipped goldens — digests byte-identically. */
   readonly negotiate?: NegotiateBook;
+  /** ADR-0015 session-6 embed — the isolate-node (Isolate) book
+   *  `isolate-node` writes (see `IsolateBook`): a half-open fence window
+   *  `[effective, release)` per node, last-write-wins. The player-authored
+   *  SIBLING of the engine's automatic recovery clamp: while a node is
+   *  fenced the step-5 serve input offers it ZERO new admissions — free
+   *  arms answer nothing to arrivals — while in-flight and queued work
+   *  completes or bounces under the existing patience law (occupied slots
+   *  are never evicted, the queue is never truncated, the roster is never
+   *  written). The as-of law lives ONCE in `pipeline/isolation.ts`
+   *  (`nodeIsolated`/`isolatedNodeIds`); the consumption gate lives in
+   *  `pipeline/defaults.ts` `defaultServeStep` §(c); the driver threads
+   *  the fence set as a presence-only `ServeInExt.isolationFence` —
+   *  absent book ⇒ zero calls ⇒ every shipped golden byte-identical
+   *  (digest-switch law: `pipeline/digest.ts` absorbs it ONLY when
+   *  present). */
+  readonly isolate?: IsolateBook;
 }

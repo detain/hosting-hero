@@ -107,9 +107,11 @@ import {
   type ArrivalInExt,
   type PatienceCheckInExt,
   type PatienceCheckOutExt,
+  type ServeInExt,
   type StateEconomicsInExt,
   UNIT_HOLD,
 } from "./defaults.ts";
+import { isolatedNodeIds } from "./isolation.ts";
 import {
   foldCorruptionTerminals,
   shieldBusinessMinuteOf,
@@ -614,7 +616,29 @@ export function createTickDriver(
             worked.recovery,
           )
         : throttled;
-    const serveOut = steps.serve({ context, units, nodes: serveInput });
+    /* ADR-0015 session-6 · Isolate fence: with a booked isolation slice, the
+     * LIVE fences (as-of the business minute — the same single floor-division
+     * helper the shield/scale sites use, `shieldBusinessMinuteOf`, the L-DM1
+     * reuse precedent) ride the serve input as a presence-only extension;
+     * `defaultServeStep` §(c) then assigns NO new units to fenced nodes.
+     * NO book — or a book with zero live fences (`isolatedNodeIds` returns
+     * null) — ⇒ the key is omitted entirely and the input object is
+     * byte-identical to the unarmed run (zero-call law). Precedence here is
+     * min-of-clamps OVERLAY, and the fence wins on new work: it runs on the
+     * view AFTER recovery throttling and warmth padding, so a fenced node
+     * admits zero even while restored arms or booked warmth stand open
+     * (fence beats warmth — §1.3 "isolate and throttle": the fence is the
+     * emergency, the warmth is the promise). The fence writes NO roster, so
+     * occupied arms are never evicted and no board-drift surface exists
+     * downstream; the clock fold is called once per fenced-relevant tick
+     * only when the slice is present. Zero RNG at this site. */
+    const isolationFence =
+      worked.isolate !== undefined ? isolatedNodeIds(worked.isolate, shieldBusinessMinuteOf(context.clocks)) : null;
+    const serveIn: ServeInExt =
+      isolationFence === null
+        ? { context, units, nodes: serveInput }
+        : { context, units, nodes: serveInput, isolationFence };
+    const serveOut = steps.serve(serveIn);
     // R-06 class-aware shed (audit fix, §7.11): a hard-ceiling node sheds its WHOLE
     // residual queue each tick, but the order shed units enter the terminal ledger
     // follows each node's authored `shedOrder` law — cheap classes walk off first,

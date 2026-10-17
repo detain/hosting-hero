@@ -503,9 +503,40 @@ export const UNIT_HOLD = new Map<EntityId, EntityId>();
  *  3. `utilizationRho` = occupied/S (pure occupancy; the downstream queue
  *     shadow is applied where read — queue.effectiveRho).
  */
+
+/**
+ * L-V (ADR-0015 mechanics) — ServeIn presence-extension carrying the
+ * ISOLATION FENCE: the node ids whose `GameState.isolate` book entries are
+ * in force as-of this tick's business minute (pipeline/isolation.ts
+ * `isolatedNodeIds`, threaded by the driver's step-5 site). The laws the
+ * serve step honors:
+ *  - a fenced node admits NO new units — §(c) skips the whole channel, so
+ *    its free arms (including scale-warmth-booked ones) answer zero:
+ *    FENCE BEATS WARMTH; with the recovery throttle also live this is
+ *    min-of-clamps — the fence's new-work capacity is 0 and nothing can
+ *    restore it (the dbaas card, §1.3: "isolate and throttle" — the player
+ *    authored the fence, the engine owns the throttle, §7.16 Act-row law);
+ *  - joins (§(a)) and releases (§(b)) are NOT blocked — in-flight work
+ *    completes through the fence and queued units age under the existing
+ *    patience dice (the fence site rolls zero dice);
+ *  - the fence WRITES NO ROSTER: slots, queue arrays and NodeRecord values
+ *    stay byte-untouched, so an occupied floor can never be evicted and
+ *    throttleServeNodes' board-drift throw is structurally unreachable;
+ *  - ABSENT fence set (no book seeded) ⇒ every branch below is identity —
+ *    shipped digests byte-identical (zero-golden default).
+ * `ServeIn` itself stays the frozen contract; like ArrivalInExt /
+ * PatienceCheckInExt / BackpressureInExt this rides as an optional field
+ * the base step reads through a cast.
+ */
+export interface ServeInExt extends ServeIn {
+  /** Node ids fenced against NEW admissions this tick (frozen by isolation.ts). */
+  readonly isolationFence?: ReadonlySet<EntityId>;
+}
+
 export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
   const { context, nodes } = input;
   const simNow = context.clocks.simUs;
+  const isolationFence = (input as ServeInExt).isolationFence;
   const unitById = new Map<EntityId, Unit>();
   for (const unit of input.units) unitById.set(unit.id, unit);
 
@@ -558,6 +589,11 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
   for (const nodeId of sortedIds(nodes.keys())) {
     const node = nodes.get(nodeId);
     if (node === undefined) continue;
+    // L-V isolation fence: true ⇒ §(c) admits nothing new onto this node
+    // (the whole admissions channel skips it). Joins/releases/shed-order
+    // truth below are untouched by the flag — a fence stops RECEIVING new
+    // work, never keeps in-flight work from finishing.
+    const fenced = isolationFence !== undefined && isolationFence.has(nodeId);
     // rec#2 (copy-on-write discipline): queue/slot arrays materialize ONLY
     // when this tick has something to change on this node. An untouched node
     // flows through with its frozen arrays and its own record identity —
@@ -663,8 +699,12 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
       );
     }
 
-    // (c) FIFO admissions into the lowest free slots
-    while (queue !== null && queue.length > 0) {
+    // (c) FIFO admissions into the lowest free slots — a FENCED node skips
+    // the whole channel: its free (and warmth-booked) arms answer zero new
+    // work, the queue array is left exactly as §(a) built it (no
+    // truncation, no eviction, and even the phantom purge — a hygiene
+    // WRITE — stays silent: the fence writes nothing).
+    while (!fenced && queue !== null && queue.length > 0) {
       const head = queue[0];
       if (head === undefined) break;
       const unit = unitById.get(head);

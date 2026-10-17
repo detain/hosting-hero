@@ -380,6 +380,30 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0015 session-6 ISOLATE — the optional isolate-node fence book
+  // (digest-switch law, same embed law as the others): absorbed ONLY when
+  // present, so every pre-isolate state (all shipped goldens) keeps
+  // byte-identical digests. Node ids sort code-unit (Map insertion order
+  // NEVER read); both minute edges take the -1 null-sentinel and the door's
+  // >= 0 law keeps the sentinel unambiguous (an explicit 0 = booked minute
+  // 0, never "null"). Raw like maintain/sell: expired rows stay in the book
+  // as history witness (read-time expiry in pipeline/isolation.ts), and
+  // superseded-by-LWW windows are exactly the history a digest witnesses.
+  if (state.isolate !== undefined) {
+    sink.text("isolate").int(state.isolate.version);
+    const isolateKeys = Array.from(state.isolate.entries.keys()).sort(byId);
+    sink.int(isolateKeys.length);
+    for (const key of isolateKeys) {
+      const rec = state.isolate.entries.get(key);
+      if (rec === undefined) continue;
+      sink
+        .text(key)
+        .int(rec.shippedAtTick)
+        .int(rec.effectiveAtBusinessMinute ?? -1)
+        .int(rec.releaseAtBusinessMinute ?? -1);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.

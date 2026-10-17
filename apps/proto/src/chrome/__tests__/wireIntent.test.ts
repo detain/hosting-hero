@@ -467,4 +467,33 @@ describe("full bridge — a bigint price survives SimClient → wire → worker-
     expect(refused[0]!.detail).toMatch(/^negotiate-terms: bad-tone/);
     client.destroy();
   });
+
+  // L-V (ADR-0015 mechanics): the SIXTEENTH verb crosses the FULL bridge — JSON's
+  // plain numbers need NO revival dance at all (isolate carries zero bigint fields —
+  // the BIGINT/NULLABLE mirror tables never gain a row; the drift pins above prove
+  // the engine tables say so), yet the order still EXECUTES at the door.
+  it("isolate-node survives SimClient → wire → worker-host → door and executes", () => {
+    const { fake, client, frames } = bridge();
+    client.sendPlayerVerb(
+      {
+        verb: "isolate-node",
+        targetNodeId: "edge",
+        effectiveAtBusinessMinute: null,
+        releaseAtBusinessMinute: 480,
+      },
+      "business",
+    );
+    fake.pump(2);
+    const last = fake.lastIntent;
+    expect(last).not.toBeNull();
+    if (last === null || last.payload.kind !== "player-verb") throw new Error("worker never saw the intent");
+    const args = last.payload.args as unknown as Record<string, unknown>;
+    expect(args["targetNodeId"]).toBe("edge");
+    expect(args["effectiveAtBusinessMinute"]).toBeNull();
+    expect(args["releaseAtBusinessMinute"]).toBe(480);
+    const receipts = frames.flatMap((f) => f.notices).filter((n) => n.kind === "intent-executed");
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]!.detail).toBe("isolate-node: target=edge,eff=now,rel=480");
+    client.destroy();
+  });
 });

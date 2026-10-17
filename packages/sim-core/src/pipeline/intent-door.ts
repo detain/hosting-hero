@@ -60,6 +60,12 @@
  *    book (economy/negotiate.ts) by TILTING the cliff's EXISTING single
  *    retention draw and discounting the billing base at the chain head —
  *    the door casts no dice, moves no money, and never touches units),
+ *    isolate (isolate-node — the OPTIONAL ADR-0015 session-6 fence book,
+ *    STATE-NEUTRAL: new work is refused at the step-5 serve input through
+ *    the driver-threaded fence set (the as-of law is pipeline/isolation.ts
+ *    `nodeIsolated`/`isolatedNodeIds`, the gate is pipeline/defaults.ts
+ *    `defaultServeStep` §(c)), never by the door; the door writes ONLY the
+ *    book — no roster is written, no queue truncated, no unit evicted),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -111,6 +117,9 @@ import type {
   HandState,
   HandToken,
   InspectionDepth,
+  IsolateArgs,
+  IsolateBook,
+  IsolateEntry,
   JobWindow,
   JobWindowBook,
   MaintainArgs,
@@ -360,6 +369,14 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // communicate cohort (2 ticks), not the desk-tap COMMIT class. PROVISIONAL
   // taste numeric (ADR-0015 mechanics authorization), pinned red on drift.
   [PlayerVerb.NegotiateTerms]: 2,
+  // ADR-0015 session-6 roster extension (Isolate): the §7.16 Act-row law
+  // says ONE-CLICK ("an 'Act' row of at most four one-click emergency
+  // verbs… drain, restart, isolate, shed") ⇒ the COMMIT class (1 tick),
+  // same window as shield-node/adjust-price. PROVISIONAL taste (post-ratify
+  // new numeric, 2026-10-16) — occupancy pinned red on drift. The fence
+  // lands at step 5 (pipeline/isolation.ts + defaults.ts §(c)); the door
+  // only writes the book.
+  [PlayerVerb.IsolateNode]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -382,6 +399,10 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   // ADR-0015 (Negotiate 5/5): one hand to open the conversation (the
   // attendance shows in the 2-tick occupancy, occupancy table above).
   [PlayerVerb.NegotiateTerms]: 1,
+  // ADR-0015 session-6 (Isolate): one desk hand to drop a fence — same cost
+  // as the other COMMIT-class verbs (PROVISIONAL taste, occupancy table
+  // above; the one-click Act-row law makes it a tap, not an attendance).
+  [PlayerVerb.IsolateNode]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -589,6 +610,14 @@ export function createNegotiateBook(): NegotiateBook {
   return Object.freeze({ version: 0, entries: Object.freeze(new Map<string, NegotiationTerm>()) });
 }
 
+/** Empty isolation book (ADR-0015 session-6 roster extension · Isolate) —
+ *  hosts that want the door fed an unarmed-but-present board state can seed
+ *  one; the fold law is the same as the other books (an EMPTY book still
+ *  switches the digest, an ABSENT field never does). Keyed by node id. */
+export function createIsolateBook(): IsolateBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, IsolateEntry>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -643,6 +672,9 @@ interface Draft {
   /** ADR-0015 COW negotiate-terms book — null until a `negotiate-terms`
    *  order lands. */
   negotiate: NegotiateBook | null;
+  /** ADR-0015 session-6 COW isolation book — null until an `isolate-node`
+   *  order lands. */
+  isolate: IsolateBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -734,6 +766,7 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   [PlayerVerb.ScheduleWindow]: Object.freeze({ targetNodeId: "string", openAtBusinessMinute: "number-or-null", closeAtBusinessMinute: "number" }),
   [PlayerVerb.SellOffer]: Object.freeze({ targetKind: "string", targetId: "string", offerPriceMicroUsd: "bigint", termMonths: "number", effectiveAtBusinessMinute: "number-or-null" }),
   [PlayerVerb.NegotiateTerms]: Object.freeze({ targetKind: "string", targetId: "string", tone: "string", concessionMicroUsd: "bigint-or-null", termMonthsExtension: "number-or-null", effectiveAtBusinessMinute: "number-or-null" }),
+  [PlayerVerb.IsolateNode]: Object.freeze({ targetNodeId: "string", effectiveAtBusinessMinute: "number-or-null", releaseAtBusinessMinute: "number-or-null" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -1505,6 +1538,68 @@ function handleNegotiateTerms(draft: Draft, args: NegotiateTermsArgs): HandlerVe
   return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
 }
 
+/**
+ * ADR-0015 session-6 roster extension ISOLATE ↔ fence (the 16th verb) — the
+ * ONLY side effect is the book write. §1.3 dbaas card (hosting_game.md
+ * ~:2243: "**Verb: isolate and throttle.** **The boss is a split brain.**");
+ * §7.16 Act-row law (~:28825) names isolate among the four one-click
+ * emergency verbs — one-click lands it in the COMMIT class; §7.5 Incident
+ * Mode (~:26759) cites it in the incident verb set (the SET is host
+ * choreography, not the door). The door books the WINDOW — a half-open
+ * `[effective, release)` fence per node, last-write-wins — and the engine
+ * reader (`pipeline/isolation.ts`, consumed at the step-5 serve input in
+ * `pipeline/defaults.ts`) decides admissions. Wire types are parse-trusted
+ * (M2): both minutes are `number | null` by `VERB_ARG_SHAPES`; the handler
+ * owns only the VALUE domains (sign, cross-order). State-neutral by law:
+ * no unit, no slot, no queue, no roster, no RNG, no cash is touched here —
+ * the fence is READ downstream, never enforced at the door.
+ *
+ * Refusal grammar (door-shaped `reason: detail`):
+ *  - `empty-node-id` / `unknown-node: "<id>"` — the shield/scale twins;
+ *  - `bad-effective-minute: …` — the shield phrase VERBATIM;
+ *  - `bad-release-minute: … (or null = indefinite)`;
+ *  - `release-before-effective: …` — STRICT `>` when both non-null (the
+ *    half-open window refuses its own empty twin); a null effective with
+ *    release 0 is ACCEPTED as already-expired inert history (the maintain
+ *    close-0 posture, lane L-DM2 @5987ef1).
+ */
+function handleIsolateNode(draft: Draft, args: IsolateArgs): HandlerVerdict {
+  const nodeId = args.targetNodeId as EntityId; // wire type trusted (parseEntry, M2)
+  if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const releaseAt = args.releaseAtBusinessMinute;
+  if (releaseAt !== null && (!Number.isSafeInteger(releaseAt) || releaseAt < 0)) {
+    return { ok: false, reason: `bad-release-minute: ${String(releaseAt)} must be a safe integer >= 0 (or null = indefinite)` };
+  }
+  if (effectiveAt !== null && releaseAt !== null && releaseAt <= effectiveAt) {
+    return {
+      ok: false,
+      reason: `release-before-effective: release ${String(releaseAt)} must be > effective ${String(effectiveAt)} (the fence window is half-open [effective, release))`,
+    };
+  }
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
+  const base = draft.isolate ?? draft.origin.isolate ?? createIsolateBook();
+  const entries = new Map<EntityId, IsolateEntry>(base.entries);
+  entries.set(
+    nodeId,
+    Object.freeze({
+      shippedAtTick: draft.context.tick,
+      effectiveAtBusinessMinute: effectiveAt,
+      releaseAtBusinessMinute: releaseAt,
+    }),
+  );
+  draft.isolate = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  const detail =
+    `target=${nodeId}` +
+    `,eff=${effectiveAt === null ? "now" : String(effectiveAt)}` +
+    `,rel=${releaseAt === null ? "indefinite" : String(releaseAt)}`;
+  return { ok: true, detail };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -1526,7 +1621,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
     draft.attention === null && draft.shield === null && draft.scale === null &&
     draft.maintain === null && draft.schedule === null && draft.sell === null &&
-    draft.negotiate === null
+    draft.negotiate === null && draft.isolate === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1552,6 +1647,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.schedule !== null ? { schedule: draft.schedule } : {}),
     ...(draft.sell !== null ? { sell: draft.sell } : {}),
     ...(draft.negotiate !== null ? { negotiate: draft.negotiate } : {}),
+    ...(draft.isolate !== null ? { isolate: draft.isolate } : {}),
   });
 }
 
@@ -1691,6 +1787,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleSellOffer(draft, args as SellOfferArgs);
       case PlayerVerb.NegotiateTerms:
         return handleNegotiateTerms(draft, args as NegotiateTermsArgs);
+      case PlayerVerb.IsolateNode:
+        return handleIsolateNode(draft, args as IsolateArgs);
     }
   })();
 
@@ -1763,6 +1861,7 @@ export function applyIntentDoor(
     schedule: null,
     sell: null,
     negotiate: null,
+    isolate: null,
     events: [],
     receipts: [],
   };
