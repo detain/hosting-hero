@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "SPIKE (ADR-0014 #D6): in-process co-op node relay proving the ADR-0013 contracts (save/coop seat ledger + replay/coopTimeline stamping law) work over a Node-side host — two runners, one digest, fed the same relay-stamped timeline in different arrival orders. NOT the shipped transport: the network layer stays PHP/Workerman per OD-5(b).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "engines": {
     "node": ">=22.18"
   },
