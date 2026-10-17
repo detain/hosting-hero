@@ -4,6 +4,12 @@
   "appliesTo": "official:colo",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the colocation landlord line — the tenth card, founded on its own verbatim §1.3 dominant verb, Negotiate, blessed by ADR-0014 #D1. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is ACCESS and ARITHMETIC — the amps you meter but cannot touch, the derate everyone forgets, the eviction question with no good answer — and the tenancy is depicted only as consequence: the meter reading, the ladder stage, the blocklist letter. No wiring diagrams, no badge-cloning how-to, no physical-security instruction anywhere; the level teaches that 'you will have to fix things you are not allowed to touch' (§1.3), not how to touch them.",
+  "eraCodes": {
+    "1998": "The family's pre-history rung: §0.4 dates the colo grid cell '2001 dot-com colo' (:653), so 1998 wears the 1990s kit of wire shelves and phone-handover dressing (§8.10) rather than claiming the line existed in canon.",
+    "2008": "The boom middle at the customer's side of the cage (§0.4's 2009 cell lands here; §8.10's 2000s kit: blue LEDs, blue Cat5 everywhere, black steel racks, fluorescent light).",
+    "2016": "The cloud-normal years (§0.4's 2016 cell; §8.10's 2010s kit: hot-aisle containment with plastic doors, blade chassis, uniform white-label boxes). The tenant has a cloud now and still brings a box.",
+    "2026": "Now: the clamp meter is a click, the dispute is a portal thread, and the ladder has a legal department. Same cage, denser rack."
+  },
   "slots": {
     "nodeId": {
       "kind": "entity",
@@ -128,7 +134,14 @@
   "flavour": {
     "ticket.subject.overage": "we are being billed for amps we never drew — our meter says {ampsDrawn} A",
     "ticket.body.overage": "Ticket {ticketId}, filed {hour}:{minute} morning. Your invoice says committed, our clamp says drawn, and somewhere between those two words lives a clause about derating that nobody pointed at during the tour. We are not disputing physics. We are disputing which physics your sales team described. Please attach the ledger to the invoice, or attach the salesperson to the dispute.",
-    "ticket.subject.reboot7": "reboot rack 7",
+    "ticket.subject.reboot7": {
+      "eras": {
+        "2008": "reboot our server — the tall one by the door, call the mobile when it beeps",
+        "2016": "reboot rack 7 — remote hands pre-approved, bill the account",
+        "2026": "reboot rack 7"
+      },
+      "fallback": "reboot rack 7"
+    },
     "ticket.body.reboot7": "That is the whole ticket. Rack 7 is, depending on which spreadsheet you trust, a cabinet, a row position, a cage designation or a vibe — and the gear inside it is not ours to describe to you. Remote hands are billable, we have read the tariff. What we have not read is which of our engineers you called at {hour}:{minute} to ask what we meant. The answer to 'reboot rack 7' means something different to everyone involved, and tonight that includes the badge reader.",
     "ticket.subject.dock": "our delivery says seven boxes, the floor says six, and the recipient does not work here",
     "ticket.body.dock": "The dock logged it on {day}. The driver photographed a person who was certainly wearing a lanyard. The cage with our number on it contains one box short of a deployment, and your remote-hands rate starts where my patience ends. Please tell me the building runs on more confidence than a mantrap full of strangers agreeing about furniture.",
@@ -136,10 +149,24 @@
     "ticket.body.untouchable": "Yes, the account is suspended. Yes, per your own jurisdiction's little paragraph, your hands may not touch the gear for ninety days. And yes, the drawn line on your ledger disagrees with both of those facts every hour of every one of those days, at your meter, in our direction. You built a ladder with five rungs and put the one that says 'the physics is on my side' at the bottom of it.",
     "press.headline.blocklist": "No outage at {hostName}, landlord confirms — one tenant's traffic, one address range, and every neighbour's mail queue now arrives on someone else's reputation; the incident page calls it 'a building-level event'.",
     "press.headline.eviction": "{hostName} weighs eviction against thirty percent of revenue — the cage that pays the mortgage has stopped paying forward, and the tour group arrived anyway.",
-    "forum.thread.clamp": "Anyone else's tenants dispute the clamp before they dispute the invoice? We started attaching the sold/usable/drawn triplet to every overage notice, {ampsDrawn} A does not argue back. Bought the third meter stick this quarter. Sleeps better.",
+    "forum.thread.clamp": {
+      "eras": {
+        "2008": "Anyone else's tenants dispute the clamp before they dispute the invoice? We started printing the meter face and stapling it to every overage notice; {ampsDrawn} A does not argue back, and the paper barely does. Bought the second clamp meter this quarter. Sleeps worse.",
+        "2016": "Anyone else's tenants dispute the clamp before they dispute the invoice? We put the sold/usable/drawn triplet in the portal and let it refresh live; {ampsDrawn} A now argues with the page instead of with us. Bought the third meter stick and an app for it. Sleeps about the same.",
+        "2026": "Anyone else's tenants dispute the clamp before they dispute the invoice? We started attaching the sold/usable/drawn triplet to every overage notice, {ampsDrawn} A does not argue back. Bought the third meter stick this quarter. Sleeps better."
+      },
+      "fallback": "Anyone else's tenants dispute the clamp before they dispute the invoice? We started attaching the sold/usable/drawn triplet to every overage notice, {ampsDrawn} A does not argue back. Bought the third meter stick this quarter. Sleeps better."
+    },
     "forum.thread.escalator": "Whoever invented the {escalatorPct}% escalator was right and I cannot unsee it. Watched a five-year deal quietly become a fifteen-percent deal clause by clause — and then watched the renewal thread where the same clause becomes the plaintiff's second exhibit.",
     "chatter.desk.night": "Desk at {hour}:{minute}: badge checked out, cabinet number didn't. Said no. Said no twice. The 'yes' version of me is why they built the ladder.",
-    "chatter.desk.aisle": "Hot aisle's blocked again — somebody's switch is learning to be furniture. Fans up, amps up, bar down. The building negotiating with itself, no ticket filed.",
+    "chatter.desk.aisle": {
+      "eras": {
+        "2008": "Blue Cat5 fished across the hot aisle again — somebody's desktop tower is learning to be furniture. Fans up, amps up, bar down. The building negotiating with itself under the fluorescents, no ticket filed.",
+        "2016": "The containment door won't close again — somebody's switch is learning to be furniture. Fans up, amps up, bar down. The building negotiating with itself in a dashboard nobody watches, no ticket filed.",
+        "2026": "Hot aisle's blocked again — somebody's switch is learning to be furniture. Fans up, amps up, bar down. The building negotiating with itself, no ticket filed."
+      },
+      "fallback": "Hot aisle's blocked again — somebody's switch is learning to be furniture. Fans up, amps up, bar down. The building negotiating with itself, no ticket filed."
+    },
     "codex.derate": "'A 20A circuit derated to 16A continuous and tenants always forget' (§1.3 verbatim): the gap between the number on the panel and the number the physics allows is the number this line bills on. The meter remembers so the lease can't have to.",
     "codex.darkness": "'The darkness is the epistemic position, not a filter' (§1.3 verbatim): in every other level you build to be seen; here the unreadable cage IS the product — the tenant's privacy, the landlord's fog. You do not look inside. You look at the draw, the heat and the bill, and you negotiate.",
     "loading.tip.click": "In colo you control nothing above the cabinet door (§0.2). Objects here simply cannot be clicked — you see power draw and heat, and you file a request. The request is the gameplay.",
@@ -198,7 +225,7 @@
     "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
     "ticket.subject.overage": "§1.3 derate sentence in tenant register; ticket register comedy",
     "ticket.body.overage": "§committed-vs-metered dispute event ('when a tenant's engineer discovers the derate for the first time') dramatized; §9.3 ticket register; no technique named, §9.11",
-    "ticket.subject.reboot7": "§1.3 threat clause verbatim ('a request to reboot rack 7...'); ticket register",
+    "ticket.subject.reboot7": "§1.3 threat clause verbatim ('a request to reboot rack 7...'); ticket register; 2026 rung + fallback verbatim, 2008/2016 rungs authored in tenant register (§0.4 era grid cells; §8.10 kit dressing; 2016 rides the card's own billable remote-hands service line), §9.11-safe",
     "ticket.body.reboot7": "§1.3 ambiguity clause + remote-hands billing law dramatized; §9.3 register; consequence-only, §9.11",
     "ticket.subject.dock": "§1.3 delivery beat verbatim cores (person who doesn't work there / seven boxes one missing); ticket register",
     "ticket.body.dock": "§1.3 dock paragraph dramatized as a ticket; lanyard-and-photo social logic kept consequence-side only per §9.11",
@@ -206,10 +233,10 @@
     "ticket.body.untouchable": "§1.3 untouchable-gear law inverted from the tenant's side; the ladder rung named back at the landlord; wording authored",
     "press.headline.blocklist": "§1.3 second signature in §9.3 press register; consequence-only, §9.11",
     "press.headline.eviction": "§1.3 'do you evict a customer paying 30% of your revenue?' verbatim beat as press copy; §9.3 press format",
-    "forum.thread.clamp": "§6.x sold/usable/drawn ledger in forum register; §9.3 industry-forum channel",
+    "forum.thread.clamp": "§6.x sold/usable/drawn ledger in forum register; §9.3 industry-forum channel; 2008 print-and-staple / 2016 live-portal rungs authored from the same ledger in era customer register (§0.4 grid cells; §8.10 dressing)",
     "forum.thread.escalator": "§1.3 escalator law + renewal-squeeze beat in forum register; §9.3 forum register",
     "chatter.desk.night": "§1.3 'You are the one who says no, at 2am' survived on the desk; chatter channel",
-    "chatter.desk.aisle": "§1.3 hot-aisle threat clause as overheard floor talk; chatter channel",
+    "chatter.desk.aisle": "§1.3 hot-aisle threat clause as overheard floor talk; chatter channel; 2008/2016 rungs dress the same beat from §8.10's 2000s kit (blue Cat5, fluorescents) and 2010s kit (containment door, NOC dashboard) — consumer-grade gear clause grounds the desktop tower",
     "codex.derate": "§1.3 derate sentence verbatim; codex register",
     "codex.darkness": "§1.3 visual-paragraph epistemics sentence verbatim; §0.2 :566 control-granularity clause; codex register",
     "loading.tip.click": "§0.2 :566 'objects simply cannot be clicked — file a request' verbatim cores; loading channel",
@@ -228,5 +255,5 @@
     "achievement.renewed-not-evicted": "§:938 renewal-lever law + §1.3 30%-tenant question answered; §9.3 achievement channel",
     "canary.floor-tally": "§1.3 hold/overage/taint triad; canary-notice channel (precedent: dedicated canary.row-tally, object-storage canary.comb-tally, voip canary.busy-wall-tally, serverless canary.warm-pool-tally, exchange-colo canary.coil-tally)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates the family as '2001 dot-com colo' (:651) and the era-owner pass, not this lane, decides whether the family cell becomes a bundle date). The win threshold on the shortest-bar margin, every pressure mapping in the wave slice, the diurnal amplitude, the ladder rung costs (legal and relationship), the remote-hands tariff, the escalator and renewal percentages' mechanical effect, and the §0.3 'cabinet + amps' versus §6.6 'U / kW / cross-connect' unit words (unreconciled per owner law) stay PROVISIONAL-B / owner-law until the re-author sweep; the physical-security beats deliberately carry no technique detail — their slots are consequences (amps, stages, counts, hours), never methods, per §9.11. "
+  "_todo": "Era-variant objects live on three pack-unique FLAVOUR keys (ticket.subject.reboot7, forum.thread.clamp, chatter.desk.aisle) across the OD-22(c) four-rung canon {1998,2008,2016,2026}; the decision namespace stays era-flat and the shared-register lines ride byte-ident, and the 1998 rung degrades to the fallback on every one of them by design (§0.4 dates the family '2001 dot-com colo'). Bundle availableFrom stays null (§0.4 R66; the era-owner pass, not this lane, decides whether the family cell becomes a bundle date). The win threshold on the shortest-bar margin, every pressure mapping in the wave slice, the diurnal amplitude, the ladder rung costs (legal and relationship), the remote-hands tariff, the escalator and renewal percentages' mechanical effect, and the §0.3 'cabinet + amps' versus §6.6 'U / kW / cross-connect' unit words (unreconciled per owner law) stay PROVISIONAL-B / owner-law until the re-author sweep; the physical-security beats deliberately carry no technique detail — their slots are consequences (amps, stages, counts, hours), never methods, per §9.11. "
 }

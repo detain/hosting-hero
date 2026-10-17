@@ -3,7 +3,13 @@
   "packId": "pack:ci-build-farm.i18n",
   "appliesTo": "official:ci-build-farm",
   "locale": "en",
-  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the fourteenth card — the §1.4 CI / build-farm line 'Green Light' / 'Untrusted Code, By Design' (:2677), the first type founded on a §1.4 card and the first on a verb whose door mechanics shipped before the card: 'Verb: isolate, expire, reclaim.' (:2686 verbatim) with Reclaim the blessed third word (owner ruling 2026-10-17, ADR-0017 #1; isolate stayed dbaas's under the card's own rider :2687, expire stayed a law). Census: 66 templates — decision 37 / flavour 29, zero era objects (bundle availableFrom null; §0.4 dates no CI cell). The shared register — refusal 5, status ladder 5, vendor canon 4 — is byte-identical across all fourteen packs (validator law); the line's own voices carry the board: green squares, held runners, the queue wall, the secret the board cannot print (:2684, :2704). §9.11 business-not-technique holds throughout: the fatal leak, the fork storm, and the poisoned cache are told as CONSEQUENCES with no commands, no payload shapes, and no credential text.",
+  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the fourteenth card — the §1.4 CI / build-farm line 'Green Light' / 'Untrusted Code, By Design' (:2677), the first type founded on a §1.4 card and the first on a verb whose door mechanics shipped before the card: 'Verb: isolate, expire, reclaim.' (:2686 verbatim) with Reclaim the blessed third word (owner ruling 2026-10-17, ADR-0017 #1; isolate stayed dbaas's under the card's own rider :2687, expire stayed a law). Census: 66 templates — decision 37 / flavour 29, era-variant objects on three pack-unique flavour keys across the OD-22(c) four-rung canon (bundle availableFrom still null; §0.4 dates no CI cell). The shared register — refusal 5, status ladder 5, vendor canon 4 — is byte-identical across all fourteen packs (validator law); the line's own voices carry the board: green squares, held runners, the queue wall, the secret the board cannot print (:2684, :2704). §9.11 business-not-technique holds throughout: the fatal leak, the fork storm, and the poisoned cache are told as CONSEQUENCES with no commands, no payload shapes, and no credential text.",
+  "eraCodes": {
+    "1998": "Pre-history rung: §0.4 dates no hosted-CI cell (pack _todo), so 1998 speaks as before-the-wall — the build is one compile on one machine in a room with beige plastic and a laser printer the size of a dishwasher (§8.10's 1990s kit), and nobody has automated the strangers' code yet.",
+    "2008": "The self-built continuous-integration tower years (§0.4's 2009 cell lands here; §8.10's 2000s kit: blue LEDs, a dedicated box in the corner). A single machine that compiles on every commit is a luxury, and its fan is the whole status board.",
+    "2016": "The build-farm-as-service years (§0.4's 2016 cloud cell; §8.10's flat kit with its wall of dashboards). Warm pools and dependency caches become a line item, the wall of squares goes public on every README, and the Monday queue is a real capacity problem.",
+    "2026": "Now: the fastest floor is the dirty floor, the queue wall is the only metric, and every warm runner is a secret still reachable. Same board, wider seams."
+  },
   "slots": {
     "nodeId": { "kind": "entity", "desc": "Board object the decision surface is about (runner / fleet node id)." },
     "verb": { "kind": "text", "desc": "player verb being refused" },
@@ -109,10 +115,10 @@
     "ticket.body.secret-scare": "Public-log leak consequence voice (:2700); the contractor-build framing is the card's stranger-code thesis (:2678) at desk scale.",
     "press.headline.green": "Visual paragraph verbatim core (:2704 'the most instantly readable board in the game, and it's real') — the press selling the wall.",
     "press.headline.leaked": "The same paragraph turned on its irony (:2684 + :2704): the board that cannot lie about seams is the story; composed, no doc headline exists.",
-    "forum.thread.matrix": "cohortSpawn register (one push fans the matrix) over the card's unit fact (:2680); the concurrency-limit sentence is the §1.9 law inverted (:5015-5018 family).",
+    "forum.thread.matrix": "cohortSpawn register (one push fans the matrix) over the card's unit fact (:2680); the concurrency-limit sentence is the §1.9 law inverted (:5015-5018 family). 2008 single-tower / 2016 shared-pool rungs authored from the same unit fact in era customer register (§0.4 grid; §8.10 2000s kit) — the limit law rides all three rungs.",
     "forum.thread.cache": "The 400GB monorepo line verbatim in GB register (:2701); 'the warm plan pays for itself' is the cache-economics sentence (:2681-2682) as folk wisdom.",
-    "chatter.desk.wall": "Tolerance sentence as desk folklore (:2689-2690).",
-    "chatter.runner.hum": "Un-billable-overhead sentence as machine gossip: 'pure overhead you can't bill for' (:2683); the never-zero baseline register (tempo._todo).",
+    "chatter.desk.wall": "Tolerance sentence as desk folklore (:2689-2690); 2008 shout-across-the-room / 2016 front-page-badge rungs authored from §0.4's customer cells + §8.10 kit dressing — the badge read rides the same surface canary.badge-tally claims.",
+    "chatter.runner.hum": "Un-billable-overhead sentence as machine gossip: 'pure overhead you can't bill for' (:2683); the never-zero baseline register (tempo._todo). 2008 un-metered-electricity / 2016 un-invoiced-waiting rungs authored from the same sentence in era register (§0.4 grid cells).",
     "codex.wall": "Visual paragraph (:2704) read against the fatal (:2684) — the Codex states the irony the level plays; composed commentary, cites verbatim anchors.",
     "codex.hygiene": "Runner Hygiene signature meter verbatim core (:2702-2703); the 0/100 framing is the ephemeral/reused dial (:2691-2692).",
     "loading.tip.queue": "Queue-primacy sentence verbatim (:2689).",
@@ -140,10 +146,31 @@
     "ticket.body.secret-scare": "Our contractor's build just printed a label that matches our deploy credential. Please tell me it is a name and not a value. Please tell me now. — {customerName}, ticket {ticketId}",
     "press.headline.green": "The Most Readable Board In Hosting: Inside The Wall Of Squares That Runs The Week",
     "press.headline.leaked": "Green Until Thursday: Tenants Say Farm Leak Stayed Invisible On The Wall That 'Cannot Lie'",
-    "forum.thread.matrix": "PSA: one push fanned {jobCount} jobs and ate the whole pool — farm limits your concurrency, you don't limit it",
+    "forum.thread.matrix": {
+      "eras": {
+        "2008": "PSA: one commit fanned {jobCount} builds and the tower under the desk is the whole farm — it survived, the fan sounds wounded now, and the room is toasty. The machine limits your concurrency, you don't limit it.",
+        "2016": "PSA: one push fanned {jobCount} jobs and the shared pool ate the blame for all of them — the wall went red before standup. The farm limits your concurrency, you don't limit it.",
+        "2026": "PSA: one push fanned {jobCount} jobs and ate the whole pool — farm limits your concurrency, you don't limit it"
+      },
+      "fallback": "PSA: one push fanned {jobCount} jobs and ate the whole pool — farm limits your concurrency, you don't limit it"
+    },
     "forum.thread.cache": "My monorepo cache is {cacheSizeGb} GB now. The warm plan pays for itself and I hate that it does.",
-    "chatter.desk.wall": "'Slow is fine. Queued is not.' — the whole desk knows the sentence by hour three of Monday.",
-    "chatter.runner.hum": "The fans never stop. The jobs end, the runners stay warm, and nobody bills a warm one.",
+    "chatter.desk.wall": {
+      "eras": {
+        "2008": "'Slow is fine. Queued is not.' — before the wall, queued was a shout across the room at whoever was releasing, and the desk learned the sentence anyway.",
+        "2016": "'Slow is fine. Queued is not.' — the sentence now hangs on the project's front page where a thousand strangers can read it, and Monday still teaches it fresh.",
+        "2026": "'Slow is fine. Queued is not.' — the whole desk knows the sentence by hour three of Monday."
+      },
+      "fallback": "'Slow is fine. Queued is not.' — the whole desk knows the sentence by hour three of Monday."
+    },
+    "chatter.runner.hum": {
+      "eras": {
+        "2008": "The tower in the corner hums all night. The jobs end, the machine stays on, and nobody thought to bill the electricity.",
+        "2016": "The fleet idles warm between pushes. Jobs end, the runners keep their caches, and the invoice has no line for waiting.",
+        "2026": "The fans never stop. The jobs end, the runners stay warm, and nobody bills a warm one."
+      },
+      "fallback": "The fans never stop. The jobs end, the runners stay warm, and nobody bills a warm one."
+    },
     "codex.wall": "The status wall is the game's honest instrument: every square reports exactly one job's truth. The catastrophes on this floor are the ones no square holds — the seam between tenants, the secret in the log, the reuse nobody audited.",
     "codex.hygiene": "Runner hygiene is the percentage genuinely fresh versus 'reused because we were busy.' The number is the level: at 0% you are cold and safe, at 100% you are fast and one log line from a company-ending ticket.",
     "loading.tip.queue": "Queue depth is the only metric anyone looks at. The dashboard has exactly one number for a reason.",
@@ -162,5 +189,5 @@
     "achievement.zero-leak": "Strangers Stay Strangers — a quarter of arbitrary code with every boundary intact",
     "canary.badge-tally": "The status badge on the README is this floor's canary: external, deliberately primitive, and the first thing every team checks when the wall itself starts to look optimistic."
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates no cell for hosted CI and the era-owner pass, not this lane, decides whether the 2016-cloud sketch gets the row). The win metric's threshold (held null per the object-storage→dbaas→backup→observability→CI precedent), the value-decay budgetMs (the §3.3 spine's CI cell is qualitative by design, :11975), and every machine slot source (queueDepth, reusedPct, flakyRate, cacheSizeGb, jobCount) remain tuning-sheet territory, PROVISIONAL-B. alert.secret-boundary-crossed + scenarios.ci-build-farm.secret-in-the-log are the CONSEQUENCE-ONLY voice of the fatality (:2684): the card names the leak as an outcome and the pack never renders a method — §9.11's wall is exactly this line's door, because this product's method is its feature (:2679). The Runner Hygiene percentage (reusedPct) has no engine state yet — the signature meter (:2702-2703) rides codex + alert prose until a fleet-freshness observed cell exists (bundle scarce._todo carries the debt). Fourteen packs shipped; the shared register (refusal 5 / status 5 / vendor 4) byte-identical across all of them."
+  "_todo": "Era-variant objects live on three pack-unique FLAVOUR keys (chatter.desk.wall, forum.thread.matrix, chatter.runner.hum) across the OD-22(c) four-rung canon {1998,2008,2016,2026}; the decision namespace stays era-flat and the shared register (refusal 5 / status 5 / vendor 4) byte-identical across all fourteen packs; the 1998 rung degrades to the fallback on every one of them by design — the era grid dates no cell for hosted CI and the era-owner pass, not this lane, decides whether the 2016-cloud sketch gets the row (bundle availableFrom stays null, §0.4 R66). The win metric's threshold (held null per the object-storage→dbaas→backup→observability→CI precedent), the value-decay budgetMs (the §3.3 spine's CI cell is qualitative by design, :11975), and every machine slot source (queueDepth, reusedPct, flakyRate, cacheSizeGb, jobCount) remain tuning-sheet territory, PROVISIONAL-B. alert.secret-boundary-crossed + scenarios.ci-build-farm.secret-in-the-log are the CONSEQUENCE-ONLY voice of the fatality (:2684): the card names the leak as an outcome and the pack never renders a method — §9.11's wall is exactly this line's door, because this product's method is its feature (:2679). The Runner Hygiene percentage (reusedPct) has no engine state yet — the signature meter (:2702-2703) rides codex + alert prose until a fleet-freshness observed cell exists (bundle scarce._todo carries the debt). Fourteen packs shipped."
 }

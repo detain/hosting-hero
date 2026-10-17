@@ -4,6 +4,12 @@
   "appliesTo": "official:dbaas",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the database-as-a-service line — the twelfth card, founded on its own verbatim §1.3 verb line, 'Verb: isolate and throttle. The boss is a split brain.' (:2249), the first card whose roster verb arrived by the session-6 owner law call (loader lint carries isolate @7f47563). Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is TRUTH AND CONTAINMENT — the pool that exhausts, the ribbon that stretches, the seam between two ledgers both answering politely — and the corruption beats are depicted only as states and consequence: a diverged minute, a throttled workload, a reconciliation invoice. No attack walkthroughs, no query exploits, no technique; the level teaches that redundancy is a promise two machines have to keep at once, not how to break either one.",
+  "eraCodes": {
+    "1998": "Ancestral rung: §0.4 dates no managed-database cell (pack _todo), so 1998 speaks as pre-history — the customer's data lives on a box somebody else owns, and the DBA is a person you telephone, not a tier you buy.",
+    "2008": "The 2009 cell's customer world (§0.4) in §8.10's 2000s kit dressing: the application runs on the hosting account and so does its database, and whoever fixes the database is a consultant on a retainer, not a product with an SLA.",
+    "2016": "The cloud-normal years (§0.4's 2016 cell; §8.10's flat kit): app teams summon instances from a console, have never seen a drum, and still file the ticket the moment two ledgers disagree.",
+    "2026": "Now: the queries arrive from frameworks that write them, the lag ribbon is on somebody's dashboard, and the complaint is drafted where the team talks. Same casks, louder room."
+  },
   "slots": {
     "nodeId": {
       "kind": "entity",
@@ -134,18 +140,39 @@
     "status.rung-5": "We are aware of the fire."
   },
   "flavour": {
-    "ticket.subject.pool": "every query queues at {hour} — dashboards fully green",
+    "ticket.subject.pool": {
+      "eras": {
+        "2008": "everything crawls at {hour} and the consultant only answers on Thursdays",
+        "2016": "every query queues at {hour} — dashboards green and nobody here has ever seen a database",
+        "2026": "every query queues at {hour} — dashboards fully green"
+      },
+      "fallback": "every query queues at {hour} — dashboards fully green"
+    },
     "ticket.body.pool": "Ticket {ticketId}. I am not asking you to fix 'slow'. I am asking why every read from our app started queueing at {hour} while your console shows {instanceName} perfectly healthy and my own telemetry says {heldPct}% of {poolCeiling} connections held by transactions nobody can name. Your status page says 'investigating elevated error rates'. My checkout says gone. Please tell me which hand is on the throttle — yours or the ladder's. Also: we have been meaning to ask about the replica lag thing. We have not asked. That's the line I am here to move.",
     "ticket.subject.stale": "customer ordered twice — says the first one vanished",
     "ticket.body.stale": "Ticket {ticketId}. The order vanished, then reappeared forty seconds later as a second identical one, which is the part of the call that ended on speaker. Your brochure said eventual consistency; my customer heard eventually correct. {replicaName} was answering 'no order' while {nodeId} was still warm with it. We would like the routing upgrade, we would like the honest lag number you were too modest to quote, and we would like the postmortem to contain the word quorum.",
-    "ticket.subject.upgrade": "the maintenance window moved without us (again)",
+    "ticket.subject.upgrade": {
+      "eras": {
+        "2008": "please phone before you patch the database (please)",
+        "2016": "the maintenance window synced into our calendar without asking us (again)",
+        "2026": "the maintenance window moved without us (again)"
+      },
+      "fallback": "the maintenance window moved without us (again)"
+    },
     "ticket.body.upgrade": "Ticket {ticketId}. Yes, the email said {versionName}. Yes, the window was given in a timezone we do not practice. What our monitoring says is that at {hour} the {nodeId} briefly held two opinions about the orders table and every dashboard celebrated the wrong one. We are not asking you to stop patching the dependency whose calendar you do not own. We are asking, politely, with a contract review attached: which dial makes divergence illegal, and what does buying the big one do to our tier's name.",
     "press.headline.seam": "{hostName} incident was two healthy databases agreeing to disagree — customers learn 'up' was a plurality, not a promise, while the status feed held 'investigating' for the entire divergence.",
     "press.headline.melt": "Cache reboot, 100% misses, one very popular drum: {hostName} explains why the stampede outlived the redundancy that invited it — 'HA introduces its own failure class,' reads the postmortem, opening paragraph, underlined.",
     "forum.thread.quorum": "PSA for anyone selling read replicas with a straight face: put the witness in a THIRD failure domain before the next audit, not 'for now' in the primary's rack. We paid the fencing invoice twice this quarter and the second one cost more than the fence would have. The ribbon lies if the ack lies. The doc was right; the doc is always right about the thing you skipped.",
     "forum.thread.scans": "Reminder that an unindexed {scanMs} ms plan is not a performance problem, it is a capacity problem wearing a business question's face: one tenant's growth chart ate {tenantsHit} tenants' worth of slots here before anyone found the missing index. We now throttle analytics at the pool ceiling and retain the DBA like firewood. Per-tenant isolation pricing is the cheapest insurance in this game. Yes, even yours.",
     "chatter.desk.pulse": "The heartbeat pulse runs at transaction rate on {nodeId} and the whole floor reads its mood from it. Steady seek-LED chatter, scribes in perfect step — then the half-second stall when a long transaction clamps the tap and the aisle stops mid-sentence. Nobody says 'lock contention' out loud anymore. They say 'the drum hiccuped', which is funnier and somehow worse.",
-    "chatter.cellar.static": "Quiet night shift: cron chatter thinning, ribbons slack, ledgers copying in step — until {replicaName} answers a read in a voice so pleasant nobody thought to ask WHICH DAY it was reading from. The Cellar is the best-lit room in the game and the small hours are when you find out light and truth are billed by different vendors.",
+    "chatter.cellar.static": {
+      "eras": {
+        "2008": "Quiet night shift: the pager stays quiet, the backup finished on time, ledgers copying in step — until {replicaName} answers a read in a voice so pleasant nobody thought to ask WHICH DAY it was reading from. The room is lit by fluorescents, and the small hours are when you find out light and truth are billed by different vendors.",
+        "2016": "Quiet night shift: on-call is a laptop passed across a flat open room, ribbons slack, ledgers copying in step — until {replicaName} answers a read in a voice so pleasant nobody thought to ask WHICH DAY it was reading from. The room is lit like a showroom, and the small hours are when you find out light and truth are billed by different vendors.",
+        "2026": "Quiet night shift: cron chatter thinning, ribbons slack, ledgers copying in step — until {replicaName} answers a read in a voice so pleasant nobody thought to ask WHICH DAY it was reading from. The Cellar is the best-lit room in the game and the small hours are when you find out light and truth are billed by different vendors."
+      },
+      "fallback": "Quiet night shift: cron chatter thinning, ribbons slack, ledgers copying in step — until {replicaName} answers a read in a voice so pleasant nobody thought to ask WHICH DAY it was reading from. The Cellar is the best-lit room in the game and the small hours are when you find out light and truth are billed by different vendors."
+    },
     "codex.isolate": "Isolate is the verb the incident room spoke before the Cellar sold it (the §7.8 mode set names it outright): to isolate is to make one side's truth cheaper than both sides' argument. The card pairs it with throttle because the boss arrives two ways — the workload that eats the room, and the redundancy that cannot agree about the room. The seal is meant for both.",
     "codex.ha": "The tier lesson in one sentence: 'HA introduces its own failure class' (§1.x verbatim). Uptime was a number you could lose once; high availability is a relationship between machines that can lie to each other in front of you. Every redundancy you buy is a promise you must fence, witness and reconcile — and the seam between two true-looking ledgers is the only villain on this floor that never once rendered as an error.",
     "loading.tip.plan": "A query plan is a forecast: the index you did not buy today is tomorrow's {scanMs} ms weather event, and the card-catalogue drawers are the ceiling you will meet at the {iopsSharePct}% tier. Browse early — the cheap tier is a queue with better typography.",
@@ -202,18 +229,18 @@
     "status.rung-3": "§9.3 status-page euphemism ladder (verbatim)",
     "status.rung-4": "§9.3 status-page euphemism ladder (verbatim)",
     "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
-    "ticket.subject.pool": "§3.3 patience column + §4.3 green-dashboard irony; ticket register",
+    "ticket.subject.pool": "§3.3 patience column + §4.3 green-dashboard irony; ticket register; 2008 consultant-retainer / 2016 console-generation rungs authored from §0.4's 2009/2016 customer cells",
     "ticket.body.pool": "§4.3 'number-one real cause' dramatized from the app-team side + §7.8 dials (ceiling/throttle) named as the two hands; §9.3 ticket register; no technique named, §9.11",
     "ticket.subject.stale": "§4.3 read-your-writes bug verbatim core; ticket register",
     "ticket.body.stale": "§4.3 staleness sentence + 'eventual consistency' register joke authored around the bug law; routing upgrade priced; §9.11-safe",
-    "ticket.subject.upgrade": "§1.3 maintenance-window clause verbatim core; ticket register",
+    "ticket.subject.upgrade": "§1.3 maintenance-window clause verbatim core (carried as the 2026 rung + fallback); ticket register; 2008 phone-patch / 2016 calendar-sync rungs authored from the same clause in era customer register (§0.4 grid; §8.10 dressing)",
     "ticket.body.upgrade": "§1.3 'will not accept' + §4.3 quorum/fencing wish-list dramatized from the tenant side; §9.11-safe (a calendar, not a method)",
     "press.headline.seam": "§1.3 catastrophe as press register; §9.3 press format; consequence-only",
     "press.headline.melt": "§1.x tier lesson sentence quoted inside press copy (the doc's own words as the apology); §9.3 press format",
     "forum.thread.quorum": "§4.3 third-failure-domain clause in forum register; §9.3 industry-forum channel; the ribbon-lies beat from §4.3 silent-stop",
     "forum.thread.scans": "§2.5 success law + §3.1 latency band + registry blast-radius fact dramatized in forum register; §9.3 forum channel",
     "chatter.desk.pulse": "§4.3 heartbeat/stall visual verbatim cores as floor talk; chatter channel",
-    "chatter.cellar.static": "§4.3 silent-replica answer + §8.10 well-lit law as overheard floor talk; chatter channel; consequence-only, §9.11",
+    "chatter.cellar.static": "§4.3 silent-replica answer + §8.10 well-lit law as overheard floor talk; chatter channel; consequence-only, §9.11; 2008/2016 rungs dress the same beat from §8.10's 2000s kit (fluorescents) and flat-era open-plan on-call (§0.4 2016 cell)",
     "codex.isolate": "§1.3 verb line verbatim + §7.8 Incident Mode set (isolate named) + throttle pair clause; codex register",
     "codex.ha": "§1.x :908 tier lesson verbatim + §4.3 reconcile-by-hand law; codex register",
     "loading.tip.plan": "§2.5 growth-law + §8.10 card-catalogue conceit + terms.iops-tier typography line; loading channel",
@@ -232,5 +259,5 @@
     "achievement.throttle-earned": "§1.3 verb pair (isolate AND throttle) priced right; §9.3 achievement channel",
     "canary.cellar-tally": "§4.3 pulse/ribbon/witness triad; canary-notice channel (precedent: colo canary.floor-tally, dedicated canary.row-tally, object-storage canary.comb-tally, voip canary.busy-wall-tally, serverless canary.warm-pool-tally, exchange-colo canary.coil-tally, backup canary.vault-tally)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates no cell for database-as-a-service and the era-owner pass, not this lane, decides whether managed databases get the 2009 cPanel-era cell or their own). The win metric's threshold (held null per the object-storage authored-metric precedent — the doc gives only the 400-4,000ms visitor band, never an SLA), every pressure mapping in the wave slice, the diurnal amplitude, the pool ceiling and throttle ladder's bite curve, the lag band that trips each alert, the IOPS tier prices, the fence and witness invoices, the split-brain boss's registry entry (proposal rides bundle threats._todo), the §1.9 Portable-Skill row this line is absent from (authored absence, bundle verbs._todo cites), and Companion B/C's missing dbaas rows (CAC cycle and bad month authored qualitatively) stay PROVISIONAL-B / owner-law until the re-author sweep; the corruption beats deliberately carry no technique detail — their slots are consequences (milliseconds, percentages, counts, hours), never methods, per §9.11. "
+  "_todo": "Era-variant objects live on three pack-unique FLAVOUR keys (ticket.subject.pool, ticket.subject.upgrade, chatter.cellar.static) across the OD-22(c) four-rung canon {1998,2008,2016,2026}; the decision namespace stays era-flat and the shared-register lines ride byte-ident, and the 1998 rung degrades to the fallback on every one of them by design (the era grid dates no managed-database cell; the era-owner pass, not this lane, decides whether it gets the 2009 cPanel-era cell or its own). Bundle availableFrom stays null (§0.4 R66). The win metric's threshold (held null per the object-storage authored-metric precedent — the doc gives only the 400-4,000ms visitor band, never an SLA), every pressure mapping in the wave slice, the diurnal amplitude, the pool ceiling and throttle ladder's bite curve, the lag band that trips each alert, the IOPS tier prices, the fence and witness invoices, the split-brain boss's registry entry (proposal rides bundle threats._todo), the §1.9 Portable-Skill row this line is absent from (authored absence, bundle verbs._todo cites), and Companion B/C's missing dbaas rows (CAC cycle and bad month authored qualitatively) stay PROVISIONAL-B / owner-law until the re-author sweep; the corruption beats deliberately carry no technique detail — their slots are consequences (milliseconds, percentages, counts, hours), never methods, per §9.11. "
 }
