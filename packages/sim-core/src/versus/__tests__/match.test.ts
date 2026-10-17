@@ -262,6 +262,7 @@ describe("review pins — affixes are inert in the sim, live on the wire", () =>
     entries: RAW_DECK_MAIN.entries.map((entry) => Object.freeze({
       threatId: entry.threatId,
       weightBps: entry.weightBps,
+      costBps: entry.costBps,
     })),
   });
 

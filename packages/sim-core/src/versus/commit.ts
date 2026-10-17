@@ -26,8 +26,16 @@ import {
 import { VersusError, type DefenseDeck, type ThreatDeck } from "./deck.ts";
 
 /** Version tag so a future format change cannot silently re-bind old
- *  commitments. Mirrors the `hh-state-v1` / `sv1` stamping habit. */
-export const VERSUS_HASH_DOMAIN = "hh-versus-deck-v1";
+ *  commitments. Mirrors the `hh-state-v1` / `sv1` stamping habit.
+ *
+ *  hh-versus-deck-v2 (owner ruling 2026-10-17): the deck shape gained the
+ *  REQUIRED costBps field (budget law split off weightBps) and the draft
+ *  gained affix cost math (AFFIX_COST_MULTIPLIER_BPS). No format
+ *  discriminator ships with it — the parser is single-shape: v2 is the
+ *  only shape the parser accepts (no persisted decks exist in-repo,
+ *  grep-verified: save/ holds zero deckHash/commit-envelope custody). The
+ *  tag is the version record, and revealAndVerify enforces it. */
+export const VERSUS_HASH_DOMAIN = "hh-versus-deck-v2";
 
 /** Anything the two deck parsers emit (or any committed document once the
  *  lane needs it — the fold is type-agnostic over canonical JSON values). */
@@ -36,7 +44,7 @@ export type CommittableDeck = ThreatDeck | DefenseDeck;
 export interface DeckCommitment {
   /** Discriminator so a reveal can be routed to the right parser. */
   readonly kind: CommittableDeck["kind"];
-  /** `hh-versus-deck-v1:<16 hex>` over the canonical JSON below. */
+  /** `hh-versus-deck-v2:<16 hex>` over the canonical JSON below. */
   readonly deckHash: string;
   /** The canonical rendering the hash was taken over (reveal-side
    *  diff material; NOT the pretty-printed source doc). */
@@ -79,6 +87,14 @@ export interface RevealVerdict {
  *  trees differ structurally — on any mismatch. Returns a typed verdict
  *  (ok true) or throws VersusError COMMIT_MISMATCH. */
 export function revealAndVerify(envelope: DeckCommitment, revealed: unknown): RevealVerdict {
+  // HOLE-CATCH GUARD (hh-versus-deck-v2): the canonical fold is SHAPE-
+  // agnostic, so a v1-tagged envelope over self-consistent v1 bytes would
+  // otherwise verify forever — exactly the silent rebind the version tag
+  // exists to prevent. Check the domain tag FIRST, before any hashing.
+  const spoken = envelope.deckHash.split(":")[0] ?? "";
+  if (spoken !== VERSUS_HASH_DOMAIN) {
+    failMismatch(envelope, `found "${spoken}" tag, spoken "${VERSUS_HASH_DOMAIN}" tag — a foreign-version envelope cannot bind current-format bytes`);
+  }
   // Wire data arrives untyped — only the discriminant is inspected before
   // the canonical fold; everything else is exactly what the fold binds.
   const revealedKind = typeof revealed === "object" && revealed !== null

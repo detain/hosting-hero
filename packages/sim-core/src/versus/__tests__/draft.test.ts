@@ -1,8 +1,9 @@
 /**
  * versus/draft tests: determinism (same seed ×100 byte-identical,
- * cross-seed divergence), the budget-sum law holding for ANY pick
- * sequence, pool-exhaustion guards, and validateDraftedDeck as DATA
- * (violations reported, never thrown).
+ * cross-seed divergence), the v2 exact-sum COST law holding for ANY pick
+ * sequence (slots keep weights budget-shaped; the affordability-downgrade
+ * law plus the compensation walk book the costs), pool-exhaustion guards,
+ * and validateDraftedDeck as DATA (violations reported, never thrown).
  */
 import { describe, expect, test } from "vitest";
 import type { RunSeed } from "../../types.ts";
@@ -13,8 +14,10 @@ import {
 } from "../deck.ts";
 import {
   DRAFT_VIOLATION_CODES,
+  compensateExactCostSum,
   draftThreatDeck,
   validateDraftedDeck,
+  type DraftCandidate,
   type DraftOptions,
 } from "../draft.ts";
 import { commitDeck } from "../commit.ts";
@@ -225,9 +228,9 @@ describe("validateDraftedDeck", () => {
       id: "flat-draft",
       budgetBps: 9_999,
       entries: [
-        { threatId: "scanner-drizzle", weightBps: 3333 },
-        { threatId: "wp-login-brute-squad", weightBps: 3333 },
-        { threatId: "slowloris-sipper", weightBps: 3333 },
+        { threatId: "scanner-drizzle", weightBps: 3333, costBps: 3333 },
+        { threatId: "wp-login-brute-squad", weightBps: 3333, costBps: 3333 },
+        { threatId: "slowloris-sipper", weightBps: 3333, costBps: 3333 },
       ],
     });
     const codes = validateDraftedDeck(flat, { census: CENSUS, counters: COUNTERS }).map((v) => v.code);
@@ -243,5 +246,168 @@ describe("validateDraftedDeck", () => {
       "ROLE_QUOTA_EXCEEDED",
       "UNKNOWN_THREAT",
     ]);
+  });
+});
+
+/* ═══════════════ hh-versus-deck-v2 (owner ruling 2026-10-17) ═══════════════ */
+
+// The v1 draft golden, captured at base 70b16b4 BEFORE the v2 shape change
+// (plain-only drafts over DRAFT_POOL, budget 10_000, slot 2_500). The
+// cadence law says the v2 draft must reproduce threatId / weightBps /
+// pickIndex EXACTLY — costs are additive fields, never new dice.
+const V1_GOLDEN = {
+  seed9: {
+    pickIndexes: [1, 0, 2, 2],
+    threatIds: ["mod-update-day", "slowloris-sipper", "grudge-booter", "wp-login-brute-squad"],
+  },
+  seed7: {
+    pickIndexes: [2, 1, 0, 2],
+    threatIds: ["mod-update-day", "wp-login-brute-squad", "grudge-booter", "scanner-drizzle"],
+  },
+} as const;
+
+describe("draftThreatDeck — v2 cadence law (zero drift vs the v1 golden)", () => {
+  for (const [name, golden] of Object.entries(V1_GOLDEN)) {
+    const seed = name === "seed9" ? 9n : 7n;
+    test(`dice run replays the v1 golden picks byte-exact (seed ${seed})`, () => {
+      const dice = draftThreatDeck(draftOptions(asRunSeed(seed)));
+      expect(dice.presentations.map((p) => p.pickIndex)).toEqual([...golden.pickIndexes]);
+      expect(dice.presentations.map((p) => p.taken.threatId)).toEqual([...golden.threatIds]);
+      expect(dice.deck.entries.map((e) => e.weightBps)).toEqual([2500, 2500, 2500, 2500]);
+      // plain-only ⇒ cost ≡ weight and the walk is the identity (v1-defaulted
+      // decks are byte-comparable pick sequences — the headline zero-drift proof)
+      expect(dice.deck.entries.map((e) => e.costBps)).toEqual([2500, 2500, 2500, 2500]);
+    });
+    test(`scripted echo of the golden indices byte-reproduces the dice run (seed ${seed})`, () => {
+      const scripted = draftThreatDeck(draftOptions(asRunSeed(seed), { scriptedPicks: [...golden.pickIndexes] }));
+      const dice = draftThreatDeck(draftOptions(asRunSeed(seed)));
+      expect(JSON.stringify(scripted)).toBe(JSON.stringify(dice));
+    });
+  }
+
+  test("affix MATH never reshapes the offer — threatId sequence is affix-invariant", () => {
+    const plain = draftThreatDeck(draftOptions(asRunSeed(9n)));
+    for (const affixPool of [["bounded"], ["piggybacked-on-a-maintenance-window"], ["adaptive", "two-stage", "bounded"]]) {
+      const spiced = draftThreatDeck(draftOptions(asRunSeed(9n), { affixPool: affixPool as never, affixChanceBps: 10_000 }));
+      expect(spiced.presentations.map((p) => p.taken.threatId)).toEqual(plain.presentations.map((p) => p.taken.threatId));
+      expect(spiced.presentations.map((p) => p.pickIndex)).toEqual(plain.presentations.map((p) => p.pickIndex));
+    }
+  });
+});
+
+describe("draftThreatDeck — v2 affordability-downgrade law", () => {
+  test("an affix that NEVER fits slot+bank presents byte-identically to the plain draft", () => {
+    // maintenance-window ×2.0 = 5000 over a 2500 slot; plain banks nothing,
+    // so no earlier discount can ever cover it — every roll downgrades to
+    // its plain twin AT PRESENTATION (same dice, weaker card).
+    const plain = draftThreatDeck(draftOptions(asRunSeed(9n), { affixPool: [] }));
+    const impossible = draftThreatDeck(draftOptions(asRunSeed(9n), {
+      affixPool: ["piggybacked-on-a-maintenance-window"],
+      affixChanceBps: 10_000,
+    }));
+    expect(JSON.stringify(impossible)).toBe(JSON.stringify(plain));
+    for (const presentation of impossible.presentations) {
+      for (const candidate of presentation.candidates) {
+        expect("affix" in candidate).toBe(false);
+        expect(candidate.costBps).toBe(candidate.weightBps);
+      }
+    }
+  });
+
+  test("banked discounts are capped by cheaper affixes — the 2.0× affix still never lands", () => {
+    // bounded (0.8×) banks 500 per take; maintenance needs bank ≥ 2500 at
+    // presentation time — with 4 slots at 2500, at most 3 bounded takes
+    // bank before the last check (1500 < 2500). Bounded may land; the 2.0×
+    // affix must be ABSENT from every offer; the walk books Σcost == budget.
+    const { deck, presentations } = draftThreatDeck(draftOptions(asRunSeed(9n), {
+      affixPool: ["bounded", "piggybacked-on-a-maintenance-window"],
+      affixChanceBps: 10_000,
+    }));
+    for (const presentation of presentations) {
+      for (const candidate of presentation.candidates) {
+        expect(candidate.affix).not.toBe("piggybacked-on-a-maintenance-window");
+        if (candidate.affix === "bounded") expect(candidate.costBps).toBe(Math.ceil(candidate.weightBps * 0.8));
+      }
+    }
+    expect(deck.entries.map((e) => e.threatId)).toEqual([...V1_GOLDEN.seed9.threatIds]);
+    expect(deck.entries.reduce((total, e) => total + e.costBps, 0)).toBe(10_000);
+    const wire = { id: deck.id, budgetBps: deck.budgetBps, entries: deck.entries };
+    expect(JSON.stringify(parseThreatDeck(wire, { census: CENSUS }))).toBe(JSON.stringify(deck));
+  });
+});
+
+describe("draftThreatDeck — v2 exact-sum compensation walk", () => {
+  test("uniform bounded draft: walk ADDS back to cost ≡ weight, deterministic ×25", () => {
+    // every candidate rolls bounded: 2000×4 = 8000, delta +2000 → bulk +500
+    // per entry (all caps 4000, all mobile) → 2500×4 — the committed deck
+    // lands cost-for-weight identical to the plain draft.
+    const runs = new Set<string>();
+    for (let run = 0; run < 25; run += 1) {
+      const { deck } = draftThreatDeck(draftOptions(asRunSeed(5n), {
+        affixPool: ["bounded"],
+        affixChanceBps: 10_000,
+      }));
+      expect(deck.entries.every((e) => e.affix === "bounded")).toBe(true);
+      expect(deck.entries.map((e) => e.costBps)).toEqual([2500, 2500, 2500, 2500]);
+      expect(deck.entries.reduce((total, e) => total + e.costBps, 0)).toBe(10_000);
+      runs.add(JSON.stringify(deck));
+    }
+    expect(runs.size).toBe(1);
+    const drafted = draftThreatDeck(draftOptions(asRunSeed(5n), { affixPool: ["bounded"], affixChanceBps: 10_000 }));
+    const wire = { id: drafted.deck.id, budgetBps: drafted.deck.budgetBps, entries: drafted.deck.entries };
+    expect(JSON.stringify(parseThreatDeck(wire, { census: CENSUS }))).toBe(JSON.stringify(drafted.deck));
+  });
+
+  test("SEAM (walk law, falsifiable directly): weight-desc order, ∓1-per-lap, clamps, identity", () => {
+    const candidate = (threatId: string, weightBps: number, costBps: number): DraftCandidate =>
+      Object.freeze({ threatId, weightBps, costBps });
+
+    // delta == 0 → IDENTITY: the exact input array rides out unchanged.
+    const exact = Object.freeze([candidate("scanner-drizzle", 60, 60), candidate("grudge-booter", 40, 40)]);
+    expect(compensateExactCostSum(exact, 100)).toBe(exact);
+
+    // asymmetric ADD (hand-computed): Σcost 800 over budget 999 → delta 199.
+    // order = weight-desc, code-unit tie: a,b,c (300) then d (99). Bulk lap
+    // 199/4 = 49 each → [289,289,289,129]; partial lap in walk order adds the
+    // last 3 bps to a,b,c → [290,290,290,129] — the asymmetry fingerprint.
+    const lopsided = [
+      candidate("a", 300, 240),
+      candidate("b", 300, 240),
+      candidate("c", 300, 240),
+      candidate("d", 99, 80),
+    ];
+    expect(compensateExactCostSum(lopsided, 999).map((e) => e.costBps)).toEqual([290, 290, 290, 129]);
+
+    // SUBTRACTION leg requires forged over-budget costs (public drafts can
+    // never reach it — the downgrade law keeps Σcost ≤ budget): 200−190 → 10,
+    // floor max(1,⌊10/2⌋)=5 respected.
+    expect(compensateExactCostSum([candidate("x", 10, 100)], 10).map((e) => e.costBps)).toEqual([10]);
+    // two entries pinned at their floors, residual 1 bps unabsorbable → fail
+    // loud at draft.cost with the dedicated code — never book an illegal deck.
+    expect(() => compensateExactCostSum([candidate("x", 10, 100), candidate("y", 10, 100)], 9))
+      .toThrowError(VersusError);
+    try {
+      compensateExactCostSum([candidate("x", 10, 100), candidate("y", 10, 100)], 9);
+    } catch (caught) {
+      const versus = caught as VersusError;
+      expect(versus.code).toBe("AFFIX_COST_UNFEASIBLE");
+      expect(versus.path).toContain("draft.cost");
+    }
+    // ADD leg pinned at caps (presented cost × 2): budget 10, single 1-bps
+    // entry → cap 2 absorbs 1, residual 8 has nowhere to go.
+    let caught: unknown = null;
+    try {
+      compensateExactCostSum([candidate("x", 1, 1)], 10);
+    } catch (thrown) {
+      caught = thrown;
+    }
+    expect((caught as VersusError).code).toBe("AFFIX_COST_UNFEASIBLE");
+  });
+
+  test("walk preserves affixes + entry ORDER (order, like the offer, is semantic)", () => {
+    const { deck } = draftThreatDeck(draftOptions(asRunSeed(5n), { affixPool: ["bounded"], affixChanceBps: 10_000 }));
+    const plain = draftThreatDeck(draftOptions(asRunSeed(5n)));
+    expect(deck.entries.map((e) => e.threatId)).toEqual(plain.deck.entries.map((e) => e.threatId));
+    expect(deck.entries.map((e) => e.weightBps)).toEqual(plain.deck.entries.map((e) => e.weightBps));
   });
 });

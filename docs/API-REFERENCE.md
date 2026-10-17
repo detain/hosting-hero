@@ -63,7 +63,17 @@ contract-#10 verb→handler table gained its `isolate-node` row; the refusal
 census grew by exactly two value-domain phrases (`bad-release-minute`/
 `release-before-effective` — `empty-node-id`, `bad-effective-minute` and
 `unknown-node` are reused verbatim; `unknown-node` is now a NINE-verb code)
-— now 44).
+— now 44). VERSUS-DECK-V2-LANE pass 2026-10-17 (owner ruling 2026-10-17 versus
+design laws 1/2 — hh-versus-deck-v2 SHAPE law: `ThreatDeckEntry`/`DraftCandidate`
+gained the REQUIRED `costBps` (the exact-sum budget law moved off `weightBps`
+onto cost; weight stays the draft weight), `VERSUS_HASH_DOMAIN` :=
+`hh-versus-deck-v2` with a reveal-side domain guard (a foreign-tagged envelope
+dies `COMMIT_MISMATCH` naming found-vs-spoken tag), and the draft gained affix
+cost math: `AFFIX_COST_MULTIPLIER_BPS` (+1 barrel name → 72) +
+`AFFIX_COST_UNFEASIBLE` (+1 `VersusErrorCode` arm, name-invisible) behind the
+affordability-downgrade law and the exact-sum compensation walk — dice cadence
+byte-unchanged (v1 golden replays pick-for-pick). match.ts untouched; converter
+output byte-ident for affix-less decks. Affix SEMANTICS are lane V-2.)
 Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
@@ -100,7 +110,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/replay` | `src/replay/index.ts` | ✅ 59 exports (barrel is an EXPLICIT name list) |
 | `@hh/sim-core/loader` | `src/loader/index.ts` | ✅ 89 exports |
 | `@hh/sim-core/save` | `src/save/index.ts` | ✅ 191 exports (later save-lane additions rode the row un-updated — count re-pinned at the 2026-10-13 docs-currency sweep) — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
-| `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 71 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names (count re-pinned for the fingerprint-flip lane's `cardContentFingerprint` + the versus-pin-fix lane's `defaultPolicyCardIndex`, 2026-10-09) |
+| `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 72 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names (count re-pinned for the fingerprint-flip lane's `cardContentFingerprint` + the versus-pin-fix lane's `defaultPolicyCardIndex`, 2026-10-09; +1 `AFFIX_COST_MULTIPLIER_BPS` for hh-versus-deck-v2, 2026-10-17) |
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 | `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 70 exports (count re-pinned at the 2026-10-13 docs-currency sweep) — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
@@ -1123,8 +1133,9 @@ Import: `@hh/sim-core/versus`.
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 |---|---|---|---|
 | `VersusError` | `class extends Error { code: VersusErrorCode; path: string }` | Boundary error for every versus parser/verdict; message grammar `versus[CODE] at 'path': detail` | pure · total-throwing by design |
-| `VersusErrorCode` | `"MISSING_FIELD" \| "UNKNOWN_FIELD" \| ... \| "DUPLICATE_ENTRY" \| "DECK_UNPACKABLE"` (14 codes) | Machine-readable versus failure classes (mirrors LoaderErrorCode + deck/commit codes); `DUPLICATE_ENTRY` fires on repeated buildables/policy-card hashes in a defense deck | closed union |
+| `VersusErrorCode` | `"MISSING_FIELD" \| "UNKNOWN_FIELD" \| ... \| "DUPLICATE_ENTRY" \| "DECK_UNPACKABLE" \| "AFFIX_COST_UNFEASIBLE"` (15 codes) | Machine-readable versus failure classes (mirrors LoaderErrorCode + deck/commit codes); `DUPLICATE_ENTRY` fires on repeated buildables/policy-card hashes in a defense deck; `AFFIX_COST_UNFEASIBLE` (hh-versus-deck-v2) fires at `draft.cost` when the exact-sum compensation walk cannot absorb the delta inside `[max(1, ⌊weight/2⌋), presented cost × 2]` — fail loud, never book an illegal deck | closed union |
 | `AFFIX_VOCABULARY` | `readonly ThreatAffix[]` (16) | §2.13 affix mix-in slugs (core eight + second eight) | frozen |
+| `AFFIX_COST_MULTIPLIER_BPS` | `Readonly<Record<ThreatAffix \| "plain", number>>` (17 keys) | hh-versus-deck-v2 affix COST factors (bps): a candidate's cost is `ceil(weightBps × multiplier / 10_000)` at presentation (draft.ts, BigInt-exact — MAX_SAFE-adjacent budgets overflow float53). Values PROVISIONAL (2026-10-17, owner ratify-on-playtest): plain/distributed/piggyback/ramped 10_000 · bounded 8_000 (DISCOUNT affix — the table minimum) · low-slow 13_000 · timed/off-hours-only/targeted-at-one-customer/diurnal 12_000 · rate-shaped 14_000 · encrypted/mimic 16_000 · adaptive/persistent 18_000 · piggybacked-on-a-maintenance-window/two-stage 20_000 (the priciest mix-ins). Closed key set == `AFFIX_VOCABULARY` ∪ {plain} — an affix without a factor cannot exist (parse wall upstream) | frozen · key-set law |
 | `ThreatAffix` | `"low-slow" \| "distributed" \| ... \| "bounded"` | One affix slug (closed enum — v0 deck law) | closed union |
 | `MAX_DECK_THREATS` | `10` | §2.24 active-family pool cap ceiling for decks | constant |
 | `MAX_DECK_ENTRIES` | `32` | Structural entries-per-deck cap (wire-garbage guard) | constant |
@@ -1133,10 +1144,10 @@ Import: `@hh/sim-core/versus`.
 | `ThreatCensusEntry` | `interface { roles, denomination, family, band }` | What deck machinery needs about one threat id — supplied as DATA (no fs reads) | deep-frozen values |
 | `buildRegistryCensus` | `(raw: unknown) => Map<string, ThreatCensusEntry>` | Parse a registry-core-shaped doc into the census map (roles normalized: `Healer/Spawner`→healer, `Bypass/Flyer`→bypass; `customerAsThreat:true` flips family) | pure · order-pinned (threats array order) · total-throwing |
 | `buildCounterMap` | `(raw: unknown) => Map<string, readonly string[]>` | threatId → counter names from the same registry shape (R-15 fairness input) | pure · order-pinned · total-throwing |
-| `ThreatDeckEntry` | `interface { threatId; weightBps: number; affix?: ThreatAffix }` | One deck slot; weightBps is BOTH weight and cost (exact-int bps) | — |
+| `ThreatDeckEntry` | `interface { threatId; weightBps: number; costBps: number; affix?: ThreatAffix }` | One deck slot (hh-versus-deck-v2): weightBps is the DRAFT WEIGHT (placement order + role-quota share — the v1 role, sum unconstrained), costBps is the budget claim — the exact-sum law `ΣcostBps == budgetBps` rides cost (owner ruling 2026-10-17 splits what v1 fused) | — |
 | `ThreatDeck` | `interface { kind:"threat"; id; budgetBps; entries }` | The attacker's committed draft | deep-frozen at parse |
 | `ThreatDeckParseOptions` | `interface { census: ReadonlyMap<string, ThreatCensusEntry> }` | Threat universe for the parse gate | — |
-| `parseThreatDeck` | `(raw: unknown, options) => ThreatDeck` | Strict boundary parse: floats/booleans die (`NOT_A_SAFE_INTEGER`), unknown threats die (`UNKNOWN_THREAT`), budget must sum EXACTLY (`BUDGET_MISMATCH`), ids colon-free | pure · total-throwing · no clock |
+| `parseThreatDeck` | `(raw: unknown, options) => ThreatDeck` | Strict boundary parse: floats/booleans die (`NOT_A_SAFE_INTEGER`), unknown threats die (`UNKNOWN_THREAT`), costs must sum EXACTLY (`BUDGET_MISMATCH` — v2 law on `costBps`; missing costBps = `MISSING_FIELD`, no silent default), ids colon-free | pure · total-throwing · no clock |
 | `DefenseDeck` | `interface { kind:"defense"; id; buildables; policyCardHashes; doctrineRef; handCapacity }` | The defender's committed build (`policyCardHashes` are CONTENT FINGERPRINTS — `hh-card-v1` folds via `cardContentFingerprint`, never card ids; owner-ratified 2026-10-09; the cards themselves ride the ruleBook, never the deck) | deep-frozen at parse |
 | `DefenseDeckParseOptions` | `interface { buildableUniverse: ReadonlySet<string> }` | Palette universe (door `canPlaceDevice` decoupling pattern) | — |
 | `parseDefenseDeck` | `(raw: unknown, options) => DefenseDeck` | Strict parse; unknown buildable → `UNKNOWN_BUILDABLE`; duplicate buildable/policy-card hash → `DUPLICATE_ENTRY`; handCapacity 1..8 | pure · total-throwing |
@@ -1144,18 +1155,18 @@ Import: `@hh/sim-core/versus`.
 | `DeckLegalityCode` | union of the five | One legality code | closed union |
 | `DeckLegalityViolation` | `interface { code; detail }` | One legality finding (data, not exception) | — |
 | `deckLegalityViolations` | `(deck, census) => readonly DeckLegalityViolation[]` | Pure §2.24-style census: pool cap, ≤4/denomination, ≥3 roles, ≤2 roles >30% weight (hot = weight×100 > 30×budget, integer-exact) | pure · order-pinned (code-unit) · never throws |
-| `VERSUS_HASH_DOMAIN` | `"hh-versus-deck-v1"` | Commit-hash version tag (format change = new tag, never silent rebinding) | constant |
+| `VERSUS_HASH_DOMAIN` | `"hh-versus-deck-v2"` | Commit-hash version tag (format change = new tag, never silent rebinding; v2 = the costBps split, owner ruling 2026-10-17 — no format discriminator ships with it, the parser is single-shape and no persisted decks exist in-repo, so the tag is the version record and `revealAndVerify` enforces it) | constant |
 | `CommittableDeck` | `ThreatDeck \| DefenseDeck` | Anything the commit envelope binds | — |
 | `DeckCommitment` | `interface { kind; deckHash; canonicalJson }` | Blind-commit envelope: hash + the exact canonical bytes it bound | frozen |
 | `deckCanonicalJson` | `(deck: unknown) => string` | Canonical JSON (sorted keys, tagged bigints) via the shared `internal/canonical` encoder — reveal/audit material | pure · order-pinned |
-| `commitDeck` | `(deck: CommittableDeck) => DeckCommitment` | `hh-versus-deck-v1:<16hex>` FNV-1a-64 avalanche fold over the canonical bytes (whole-doc fold family of the door's M3 ruleBookHash, canonical-JSON construction) | pure · no RNG · no clock |
+| `commitDeck` | `(deck: CommittableDeck) => DeckCommitment` | `hh-versus-deck-v2:<16hex>` FNV-1a-64 avalanche fold over the canonical bytes (whole-doc fold family of the door's M3 ruleBookHash, canonical-JSON construction) | pure · no RNG · no clock |
 | `RevealVerdict` | `interface { ok: true; deckHash }` | Typed pass of reveal-verify | — |
-| `revealAndVerify` | `(envelope: DeckCommitment, revealed: unknown) => RevealVerdict` | Re-hash the revealed doc; mismatch THROWS `COMMIT_MISMATCH` naming the first diverging canonical path (`$.entries[0].weightBps` style). Reveal binds BYTES, not legality — the verified document is returned unparsed; callers must run `parseThreatDeck`/`parseDefenseDeck` on it for the legality gate | pure · total-throwing |
-| `DraftCandidate` | `interface { threatId; weightBps; affix? }` | One offered card | frozen |
+| `revealAndVerify` | `(envelope: DeckCommitment, revealed: unknown) => RevealVerdict` | DOMAIN GUARD FIRST (v2): an envelope whose `deckHash` tag ≠ `VERSUS_HASH_DOMAIN` dies `COMMIT_MISMATCH` naming the found-vs-spoken tag — the canonical fold is shape-agnostic, so without the guard a self-consistent old-version envelope would bind forever (the silent rebind the tag exists to prevent). Then re-hash the revealed doc; mismatch THROWS `COMMIT_MISMATCH` naming the first diverging canonical path (`$.entries[0].weightBps` style). Reveal binds BYTES, not legality — the verified document is returned unparsed; callers must run `parseThreatDeck`/`parseDefenseDeck` on it for the legality gate | pure · total-throwing |
+| `DraftCandidate` | `interface { threatId; weightBps; costBps; affix? }` | One offered card; costBps is the budget cost AS PRESENTED (affix-priced, pre-walk); an affix the affordability law could not carry is presented as its plain twin — affix ABSENT, cost ≡ weight (same dice, weaker card) | frozen |
 | `DraftPresentation` | `interface { pickIndex; slotWeightBps; candidates; taken }` | One 1-of-N stop: offers + the pick | frozen |
 | `DraftOptions` | `interface { seed; deckId; budgetBps; pool; slotWeightBps; affixPool?; affixChanceBps?; offerSize?; census?; scriptedPicks? }` | Draft request; last slot absorbs the budget remainder (sum law by construction); `census` validates pool ids at DRAFT time (unknown → `UNKNOWN_THREAT`); `scriptedPicks` scripts each choice — dice still roll, stream positions unchanged | — |
 | `DraftOutcome` | `interface { deck: ThreatDeck; presentations }` | The drafted deck + the full audit trail of presentations | frozen |
-| `draftThreatDeck` | `(options: DraftOptions) => DraftOutcome` | Deterministic 1-of-3 draft on `streamFor(seed, "versus/draft", 0)` forks; randomness decides WHICH cards/affixes, NEVER legality | seeded · pure-per-seed · order-pinned |
+| `draftThreatDeck` | `(options: DraftOptions) => DraftOutcome` | Deterministic 1-of-3 draft on `streamFor(seed, "versus/draft", 0)` forks; randomness decides WHICH cards/affixes, NEVER legality. v2 cost math (zero new stream positions — dice cadence byte-identical to v1, golden-pinned): AFFORDABILITY-DOWNGRADE LAW presents a rolled affix whose `ceil(weight×multiplier/10_000)` exceeds slot + banked discount as its plain twin; the EXACT-SUM COMPENSATION WALK (post-picks, weight-desc/code-unit order, ∓1 per lap, clamps `[max(1,⌊weight/2⌋), cost×2]`; identity when delta 0 — plain/v1-defaulted drafts byte-comparable) books `ΣcostBps == budgetBps` or throws `AFFIX_COST_UNFEASIBLE`. Presentations stay pre-walk offer-of-record; deck entries are post-walk | seeded · pure-per-seed · order-pinned |
 | `DRAFT_VIOLATION_CODES` | `readonly string[]` (6) | Closed code list incl. `COUNTER_ABSENT` | frozen |
 | `DraftViolationCode` | union | One draft-violation code | closed union |
 | `DraftViolation` | `interface { code; threatId?; detail }` | One validation finding | — |

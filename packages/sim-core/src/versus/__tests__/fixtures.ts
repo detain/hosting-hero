@@ -32,12 +32,12 @@ export const RAW_DECK_MAIN = Object.freeze({
   id: "deck-main",
   budgetBps: 10_000,
   entries: Object.freeze([
-    Object.freeze({ threatId: "scanner-drizzle", weightBps: 4000, affix: "distributed" }),
-    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 2500 }),
-    Object.freeze({ threatId: "slowloris-sipper", weightBps: 1500, affix: "low-slow" }),
-    Object.freeze({ threatId: "xmlrpc-pingback-amplifier", weightBps: 1000 }),
-    Object.freeze({ threatId: "grudge-booter", weightBps: 600 }),
-    Object.freeze({ threatId: "mod-update-day", weightBps: 400 }),
+    Object.freeze({ threatId: "scanner-drizzle", weightBps: 4000, costBps: 4000, affix: "distributed" }),
+    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 2500, costBps: 2500 }),
+    Object.freeze({ threatId: "slowloris-sipper", weightBps: 1500, costBps: 1500, affix: "low-slow" }),
+    Object.freeze({ threatId: "xmlrpc-pingback-amplifier", weightBps: 1000, costBps: 1000 }),
+    Object.freeze({ threatId: "grudge-booter", weightBps: 600, costBps: 600 }),
+    Object.freeze({ threatId: "mod-update-day", weightBps: 400, costBps: 400 }),
   ]),
 });
 
@@ -46,9 +46,9 @@ export const RAW_DECK_LEAN = Object.freeze({
   id: "deck-lean",
   budgetBps: 10_000,
   entries: Object.freeze([
-    Object.freeze({ threatId: "scanner-drizzle", weightBps: 5000 }),
-    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 3000 }),
-    Object.freeze({ threatId: "slowloris-sipper", weightBps: 2000 }),
+    Object.freeze({ threatId: "scanner-drizzle", weightBps: 5000, costBps: 5000 }),
+    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 3000, costBps: 3000 }),
+    Object.freeze({ threatId: "slowloris-sipper", weightBps: 2000, costBps: 2000 }),
   ]),
 });
 
@@ -57,16 +57,16 @@ export const RAW_DECK_WIDE = Object.freeze({
   id: "deck-wide",
   budgetBps: 10_000,
   entries: Object.freeze([
-    Object.freeze({ threatId: "scanner-drizzle", weightBps: 3000 }),
-    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 2000 }),
-    Object.freeze({ threatId: "slowloris-sipper", weightBps: 1200 }),
-    Object.freeze({ threatId: "layer7-mimic", weightBps: 1000 }),
-    Object.freeze({ threatId: "noisy-query-table-scan", weightBps: 800 }),
-    Object.freeze({ threatId: "xmlrpc-pingback-amplifier", weightBps: 600 }),
-    Object.freeze({ threatId: "grudge-booter", weightBps: 500 }),
-    Object.freeze({ threatId: "udp-amplification-barrage", weightBps: 400 }),
-    Object.freeze({ threatId: "mod-update-day", weightBps: 300 }),
-    Object.freeze({ threatId: "vulnerable-plugin-compromise", weightBps: 200 }),
+    Object.freeze({ threatId: "scanner-drizzle", weightBps: 3000, costBps: 3000 }),
+    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 2000, costBps: 2000 }),
+    Object.freeze({ threatId: "slowloris-sipper", weightBps: 1200, costBps: 1200 }),
+    Object.freeze({ threatId: "layer7-mimic", weightBps: 1000, costBps: 1000 }),
+    Object.freeze({ threatId: "noisy-query-table-scan", weightBps: 800, costBps: 800 }),
+    Object.freeze({ threatId: "xmlrpc-pingback-amplifier", weightBps: 600, costBps: 600 }),
+    Object.freeze({ threatId: "grudge-booter", weightBps: 500, costBps: 500 }),
+    Object.freeze({ threatId: "udp-amplification-barrage", weightBps: 400, costBps: 400 }),
+    Object.freeze({ threatId: "mod-update-day", weightBps: 300, costBps: 300 }),
+    Object.freeze({ threatId: "vulnerable-plugin-compromise", weightBps: 200, costBps: 200 }),
   ]),
 });
 
@@ -75,10 +75,10 @@ export const RAW_DECK_MULTIROLE = Object.freeze({
   id: "deck-multirole",
   budgetBps: 10_000,
   entries: Object.freeze([
-    Object.freeze({ threatId: "vulnerable-plugin-compromise", weightBps: 4000 }),
-    Object.freeze({ threatId: "ticket-avalanche-hydra", weightBps: 3000 }),
-    Object.freeze({ threatId: "grudge-booter", weightBps: 2000 }),
-    Object.freeze({ threatId: "scanner-drizzle", weightBps: 1000 }),
+    Object.freeze({ threatId: "vulnerable-plugin-compromise", weightBps: 4000, costBps: 4000 }),
+    Object.freeze({ threatId: "ticket-avalanche-hydra", weightBps: 3000, costBps: 3000 }),
+    Object.freeze({ threatId: "grudge-booter", weightBps: 2000, costBps: 2000 }),
+    Object.freeze({ threatId: "scanner-drizzle", weightBps: 1000, costBps: 1000 }),
   ]),
 });
 
@@ -87,12 +87,12 @@ export const RAW_DECK_BANDWIDTH = Object.freeze({
   id: "deck-bandwidth",
   budgetBps: 10_000,
   entries: Object.freeze([
-    Object.freeze({ threatId: "grudge-booter", weightBps: 3400 }),
-    Object.freeze({ threatId: "udp-amplification-barrage", weightBps: 3300 }),
-    Object.freeze({ threatId: "layer7-mimic", weightBps: 1500 }),
-    Object.freeze({ threatId: "xmlrpc-pingback-amplifier", weightBps: 1000 }),
-    Object.freeze({ threatId: "mod-update-day", weightBps: 500 }),
-    Object.freeze({ threatId: "scanner-drizzle", weightBps: 300 }),
+    Object.freeze({ threatId: "grudge-booter", weightBps: 3400, costBps: 3400 }),
+    Object.freeze({ threatId: "udp-amplification-barrage", weightBps: 3300, costBps: 3300 }),
+    Object.freeze({ threatId: "layer7-mimic", weightBps: 1500, costBps: 1500 }),
+    Object.freeze({ threatId: "xmlrpc-pingback-amplifier", weightBps: 1000, costBps: 1000 }),
+    Object.freeze({ threatId: "mod-update-day", weightBps: 500, costBps: 500 }),
+    Object.freeze({ threatId: "scanner-drizzle", weightBps: 300, costBps: 300 }),
   ]),
 });
 
@@ -101,13 +101,13 @@ export const RAW_DECK_FIVE_CONCURRENCY = Object.freeze({
   id: "deck-five-conc",
   budgetBps: 10_000,
   entries: Object.freeze([
-    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 2000 }),
-    Object.freeze({ threatId: "slowloris-sipper", weightBps: 2000 }),
-    Object.freeze({ threatId: "layer7-mimic", weightBps: 2000 }),
-    Object.freeze({ threatId: "noisy-query-table-scan", weightBps: 2000 }),
-    Object.freeze({ threatId: "hoarder-noisy-neighbor", weightBps: 1000 }),
-    Object.freeze({ threatId: "grudge-booter", weightBps: 500 }),
-    Object.freeze({ threatId: "mod-update-day", weightBps: 500 }),
+    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 2000, costBps: 2000 }),
+    Object.freeze({ threatId: "slowloris-sipper", weightBps: 2000, costBps: 2000 }),
+    Object.freeze({ threatId: "layer7-mimic", weightBps: 2000, costBps: 2000 }),
+    Object.freeze({ threatId: "noisy-query-table-scan", weightBps: 2000, costBps: 2000 }),
+    Object.freeze({ threatId: "hoarder-noisy-neighbor", weightBps: 1000, costBps: 1000 }),
+    Object.freeze({ threatId: "grudge-booter", weightBps: 500, costBps: 500 }),
+    Object.freeze({ threatId: "mod-update-day", weightBps: 500, costBps: 500 }),
   ]),
 });
 
@@ -115,8 +115,8 @@ export const RAW_DECK_TWO_ROLES = Object.freeze({
   id: "deck-two-roles",
   budgetBps: 10_000,
   entries: Object.freeze([
-    Object.freeze({ threatId: "scanner-drizzle", weightBps: 6000 }),
-    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 4000 }),
+    Object.freeze({ threatId: "scanner-drizzle", weightBps: 6000, costBps: 6000 }),
+    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 4000, costBps: 4000 }),
   ]),
 });
 
@@ -124,9 +124,9 @@ export const RAW_DECK_FLAT_ROLES = Object.freeze({
   id: "deck-flat-roles",
   budgetBps: 10_002,
   entries: Object.freeze([
-    Object.freeze({ threatId: "scanner-drizzle", weightBps: 3334 }),
-    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 3333 }),
-    Object.freeze({ threatId: "slowloris-sipper", weightBps: 3335 }),
+    Object.freeze({ threatId: "scanner-drizzle", weightBps: 3334, costBps: 3334 }),
+    Object.freeze({ threatId: "wp-login-brute-squad", weightBps: 3333, costBps: 3333 }),
+    Object.freeze({ threatId: "slowloris-sipper", weightBps: 3335, costBps: 3335 }),
   ]),
 });
 

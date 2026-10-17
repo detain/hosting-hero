@@ -56,11 +56,11 @@ describe("parseThreatDeck — greens", () => {
 });
 
 describe("parseThreatDeck — reds", () => {
-  test("budget off-by-one fails the exact-sum law", () => {
+  test("budget off-by-one fails the exact-sum-on-COST law", () => {
     const broken = structuredClone(RAW_DECK_MAIN) as { budgetBps: number };
     broken.budgetBps += 1;
     const error = expectVersus(() => parseThreatDeck(broken, UNIVERSE), "BUDGET_MISMATCH", "deck.budgetBps");
-    expect(error.message).toContain("budget law is exact");
+    expect(error.message).toContain("the cost law is exact");
   });
 
   test("unknown threatId names the entry path", () => {
@@ -96,7 +96,7 @@ describe("parseThreatDeck — reds", () => {
     const broken = {
       id: "d",
       budgetBps: 100,
-      entries: [{ threatId: "scanner-drizzle", weightBps: 100, affix: "quantum-entanglement" }],
+      entries: [{ threatId: "scanner-drizzle", weightBps: 100, costBps: 100, affix: "quantum-entanglement" }],
     };
     expectVersus(() => parseThreatDeck(broken, UNIVERSE), "BAD_ENUM", "entries[0].affix");
   });
@@ -106,8 +106,8 @@ describe("parseThreatDeck — reds", () => {
       id: "d",
       budgetBps: 100,
       entries: [
-        { threatId: "scanner-drizzle", weightBps: 50 },
-        { threatId: "scanner-drizzle", weightBps: 50 },
+        { threatId: "scanner-drizzle", weightBps: 50, costBps: 50 },
+        { threatId: "scanner-drizzle", weightBps: 50, costBps: 50 },
       ],
     };
     expectVersus(() => parseThreatDeck(broken, UNIVERSE), "DUPLICATE_THREAT", "entries[1].threatId");
@@ -135,6 +135,97 @@ describe("parseThreatDeck — reds", () => {
   test("Infinity budget dies at the integer boundary", () => {
     const broken = { id: "d", budgetBps: Number.POSITIVE_INFINITY, entries: [{ threatId: "scanner-drizzle", weightBps: 1 }] };
     expectVersus(() => parseThreatDeck(broken, UNIVERSE), "NOT_A_SAFE_INTEGER", "deck.budgetBps");
+  });
+});
+
+describe("parseThreatDeck — hh-versus-deck-v2 cost law (owner ruling 2026-10-17)", () => {
+  test("costBps is REQUIRED — a v1-shaped entry dies MISSING_FIELD, no silent default", () => {
+    const v1Shaped = {
+      id: "d",
+      budgetBps: 100,
+      entries: [{ threatId: "scanner-drizzle", weightBps: 60 }, { threatId: "grudge-booter", weightBps: 40, costBps: 40 }],
+    };
+    expectVersus(() => parseThreatDeck(v1Shaped, UNIVERSE), "MISSING_FIELD", "deck.entries[0].costBps");
+  });
+
+  test("weight sum is UNCONSTRAINED in v2 — decoupled cost/weight parses green", () => {
+    // Σweights = 95 (NOT the budget — v1 would have refused), Σcosts = 100 exact.
+    const deck = parseDeck({
+      id: "decoupled",
+      budgetBps: 100,
+      entries: [
+        { threatId: "scanner-drizzle", weightBps: 90, costBps: 50 },
+        { threatId: "grudge-booter", weightBps: 5, costBps: 50 },
+      ],
+    });
+    expect(deck.entries[0]?.weightBps).toBe(90);
+    expect(deck.entries[0]?.costBps).toBe(50);
+    expect(deck.entries[1]?.weightBps).toBe(5);
+    expect(deck.entries[1]?.costBps).toBe(50);
+  });
+
+  test("the exact-sum law rides COST now — exact weights but off-by-one costs refuse", () => {
+    // v1's law would pass this doc (Σweights == budget); v2's cost law must not.
+    const broken = {
+      id: "d",
+      budgetBps: 100,
+      entries: [
+        { threatId: "scanner-drizzle", weightBps: 50, costBps: 49 },
+        { threatId: "grudge-booter", weightBps: 50, costBps: 50 },
+      ],
+    };
+    const error = expectVersus(() => parseThreatDeck(broken, UNIVERSE), "BUDGET_MISMATCH", "deck.budgetBps");
+    expect(error.message).toContain("the cost law is exact");
+  });
+
+  test("cost shares the weight integer/bounds law (float, zero, over-budget all die)", () => {
+    expectVersus(
+      () => parseThreatDeck(
+        { id: "d", budgetBps: 100, entries: [{ threatId: "scanner-drizzle", weightBps: 50, costBps: 50.5 }, { threatId: "grudge-booter", weightBps: 50, costBps: 49.5 }] },
+        UNIVERSE,
+      ),
+      "NOT_A_SAFE_INTEGER",
+      "costBps",
+    );
+    expectVersus(
+      () => parseThreatDeck(
+        { id: "d", budgetBps: 100, entries: [{ threatId: "scanner-drizzle", weightBps: 50, costBps: 0 }, { threatId: "grudge-booter", weightBps: 50, costBps: 100 }] },
+        UNIVERSE,
+      ),
+      "OUT_OF_RANGE",
+      "costBps",
+    );
+    expectVersus(
+      () => parseThreatDeck(
+        { id: "d", budgetBps: 100, entries: [{ threatId: "scanner-drizzle", weightBps: 50, costBps: 101 }, { threatId: "grudge-booter", weightBps: 50, costBps: 101 }] },
+        UNIVERSE,
+      ),
+      "OUT_OF_RANGE",
+      "costBps",
+    );
+  });
+
+  test("costBps is PRESENT-EXACT on every parsed entry even when it equals weightBps", () => {
+    // The absent-not-undefined law extended: affix stays ABSENT when
+    // unaffixed (v1), costBps is never absent (v2) — mirroring fixtures
+    // (cost ≡ weight) must not tempt the parser into dropping the field.
+    for (const raw of [RAW_DECK_MAIN, RAW_DECK_LEAN]) {
+      const deck = parseDeck(structuredClone(raw));
+      for (const entry of deck.entries) {
+        expect("costBps" in (entry as object)).toBe(true);
+        expect(typeof entry.costBps).toBe("number");
+      }
+    }
+    expect("affix" in (parseDeck(RAW_DECK_LEAN).entries[0] as object)).toBe(false);
+  });
+
+  test("costBps passes the allowed-fields wall (it is no longer the cheat field)", () => {
+    const deck = parseDeck({
+      id: "d",
+      budgetBps: 100,
+      entries: [{ threatId: "scanner-drizzle", weightBps: 100, costBps: 100 }],
+    });
+    expect(deck.entries).toHaveLength(1);
   });
 });
 
@@ -262,13 +353,13 @@ describe("deckLegalityViolations (role/denomination/role-cadence laws)", () => {
       id: "conc-five",
       budgetBps: 10_000,
       entries: [
-        { threatId: "wp-login-brute-squad", weightBps: 1600 },
-        { threatId: "slowloris-sipper", weightBps: 1600 },
-        { threatId: "layer7-mimic", weightBps: 1600 },
-        { threatId: "noisy-query-table-scan", weightBps: 1600 },
-        { threatId: "hoarder-noisy-neighbor", weightBps: 1600 },
-        { threatId: "grudge-booter", weightBps: 1000 },
-        { threatId: "mod-update-day", weightBps: 1000 },
+        { threatId: "wp-login-brute-squad", weightBps: 1600, costBps: 1600 },
+        { threatId: "slowloris-sipper", weightBps: 1600, costBps: 1600 },
+        { threatId: "layer7-mimic", weightBps: 1600, costBps: 1600 },
+        { threatId: "noisy-query-table-scan", weightBps: 1600, costBps: 1600 },
+        { threatId: "hoarder-noisy-neighbor", weightBps: 1600, costBps: 1600 },
+        { threatId: "grudge-booter", weightBps: 1000, costBps: 1000 },
+        { threatId: "mod-update-day", weightBps: 1000, costBps: 1000 },
       ],
     });
     const codes = deckLegalityViolations(deck, CENSUS).map((violation) => violation.code);
@@ -280,9 +371,9 @@ describe("deckLegalityViolations (role/denomination/role-cadence laws)", () => {
       id: "flat-hot",
       budgetBps: 9_999,
       entries: [
-        { threatId: "scanner-drizzle", weightBps: 3333 },
-        { threatId: "wp-login-brute-squad", weightBps: 3333 },
-        { threatId: "slowloris-sipper", weightBps: 3333 },
+        { threatId: "scanner-drizzle", weightBps: 3333, costBps: 3333 },
+        { threatId: "wp-login-brute-squad", weightBps: 3333, costBps: 3333 },
+        { threatId: "slowloris-sipper", weightBps: 3333, costBps: 3333 },
       ],
     });
     const codes = deckLegalityViolations(deck, CENSUS).map((violation) => violation.code);
@@ -308,11 +399,11 @@ describe("deckLegalityViolations (role/denomination/role-cadence laws)", () => {
       id: "bigint-edge",
       budgetBps: budget,
       entries: [
-        { threatId: "gauntlet-heat-a", weightBps: hot },
-        { threatId: "gauntlet-heat-b", weightBps: hot },
-        { threatId: "gauntlet-heat-c", weightBps: hot },
+        { threatId: "gauntlet-heat-a", weightBps: hot, costBps: hot },
+        { threatId: "gauntlet-heat-b", weightBps: hot, costBps: hot },
+        { threatId: "gauntlet-heat-c", weightBps: hot, costBps: hot },
         // filler absorbs the exact remainder: 3×hot + filler === budget
-        { threatId: "gauntlet-filler", weightBps: budget - 3 * hot },
+        { threatId: "gauntlet-filler", weightBps: budget - 3 * hot, costBps: budget - 3 * hot },
       ],
     }, { census: forgedCensus });
     const violations = deckLegalityViolations(deck, forgedCensus);
@@ -329,8 +420,8 @@ describe("deckLegalityViolations (role/denomination/role-cadence laws)", () => {
       id: "two-roles",
       budgetBps: 10_000,
       entries: [
-        { threatId: "scanner-drizzle", weightBps: 6000 },
-        { threatId: "wp-login-brute-squad", weightBps: 4000 },
+        { threatId: "scanner-drizzle", weightBps: 6000, costBps: 6000 },
+        { threatId: "wp-login-brute-squad", weightBps: 4000, costBps: 4000 },
       ],
     });
     const codes = deckLegalityViolations(deck, CENSUS).map((violation) => violation.code);

@@ -37,7 +37,8 @@ export type VersusErrorCode =
   | "UNKNOWN_BUILDABLE"
   | "COMMIT_MISMATCH"
   | "DECK_ILLEGAL"
-  | "DECK_UNPACKABLE";
+  | "DECK_UNPACKABLE"
+  | "AFFIX_COST_UNFEASIBLE";
 
 /** Mirror of LoaderError, kept LOCAL (loader/boundary.ts is not touched):
  *  same shape, same message grammar, versus[...] prefix. */
@@ -81,6 +82,37 @@ export const AFFIX_VOCABULARY = Object.freeze([
 export type ThreatAffix = (typeof AFFIX_VOCABULARY)[number];
 
 const AFFIX_SET: ReadonlySet<string> = new Set<string>(AFFIX_VOCABULARY);
+
+/**
+ * hh-versus-deck-v2 (§2.13 affix cost multipliers, owner ruling 2026-10-17):
+ * the bps factor a draft applies to a slot's weight when it PRESENTS an
+ * affixed candidate — `costBps = ceil(weightBps × multiplier / 10_000)`.
+ * "plain" is the unaffixed twin and is the identity (10_000), so a v1-
+ * defaulted (plain-only) draft keeps cost ≡ weight and its compensation
+ * walk is the identity. The KEY SET is law: exactly the 16 §2.13 slugs plus
+ * "plain" — renaming a key or adding one is a v3 format change. The VALUES
+ * are taste: every entry is
+ * PROVISIONAL (2026-10-17, owner ratify-on-playtest).
+ */
+export const AFFIX_COST_MULTIPLIER_BPS: Readonly<Record<"plain" | ThreatAffix, number>> = Object.freeze({
+  "plain": 10_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest) — identity: cost ≡ weight
+  "low-slow": 13_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "distributed": 10_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest) — free spice, no cost
+  "encrypted": 16_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "adaptive": 18_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "timed": 12_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "piggyback": 10_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "mimic": 16_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "persistent": 18_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "off-hours-only": 12_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "ramped": 10_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "targeted-at-one-customer": 12_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "piggybacked-on-a-maintenance-window": 20_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest) — the priciest mix-in
+  "two-stage": 20_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "rate-shaped": 14_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "diurnal": 12_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
+  "bounded": 8_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest) — DISCOUNT affix: the table minimum; drafts fund splurges out of bounded savings
+});
 
 /** §2.24 active-family pool cap ("8–10"): hard ceiling for v0 decks. */
 export const MAX_DECK_THREATS = 10;
@@ -217,19 +249,24 @@ export function buildCounterMap(raw: unknown): Map<string, readonly string[]> {
 
 /* ═══════════════════════════ deck document types ═══════════════════════════ */
 
-/** One deck slot: which threat, how much of the budget it eats (weightBps
- *  is BOTH the weight and the cost — v0 law, OWNER-QUESTION in the lane
- *  report), and an optional §2.13 affix slug. */
+/** One deck slot (hh-versus-deck-v2): which threat, its DRAFT WEIGHT
+ *  (placement order + role-quota share — the v1 role), its budget COST
+ *  (costBps carries the exact-sum law: ΣcostBps == budgetBps at parse, the
+ *  weight sum is unconstrained), and an optional §2.13 affix slug. Before
+ *  v2 weightBps was both roles at once (the lane's OWNER-QUESTION); the
+ *  owner ruling 2026-10-17 split them. */
 export interface ThreatDeckEntry {
   readonly threatId: string;
   readonly weightBps: number;
+  readonly costBps: number;
   readonly affix?: ThreatAffix;
 }
 
 export interface ThreatDeck {
   readonly kind: "threat";
   readonly id: string;
-  /** Total budget; entries' weightBps must sum EXACTLY to it. */
+  /** Total budget; entries' costBps must sum EXACTLY to it (the cost law
+   *  is exact, §9.x). weightBps is a placement share, not a budget claim. */
   readonly budgetBps: number;
   readonly entries: readonly ThreatDeckEntry[];
 }
@@ -352,11 +389,11 @@ export function parseThreatDeck(raw: unknown, options: ThreatDeckParseOptions): 
 
   const entries: ThreatDeckEntry[] = [];
   const seenThreats = new Set<string>();
-  let sumBps = 0;
+  let sumCostBps = 0;
   for (const [index, item] of rawEntries.entries()) {
     const where = `deck.entries[${index}]`;
     const record = plainObject(item, where);
-    rejectUnknownFields(record, ["threatId", "weightBps", "affix"], where);
+    rejectUnknownFields(record, ["threatId", "weightBps", "costBps", "affix"], where);
     if (record["threatId"] === undefined) fail("MISSING_FIELD", `${where}.threatId`, "threatId is mandatory");
     const threatId = parseColonFreeId(record["threatId"], `${where}.threatId`);
     if (!options.census.has(threatId)) {
@@ -368,18 +405,28 @@ export function parseThreatDeck(raw: unknown, options: ThreatDeckParseOptions): 
     seenThreats.add(threatId);
     if (record["weightBps"] === undefined) fail("MISSING_FIELD", `${where}.weightBps`, "weightBps is mandatory");
     const weightBps = parseBoundedInt(record["weightBps"], `${where}.weightBps`, 1, budgetBps);
+    // hh-versus-deck-v2: cost is a REQUIRED field (parse-don't-validate —
+    // no silent default, v1 decks are not a shape this parser speaks).
+    if (record["costBps"] === undefined) {
+      fail("MISSING_FIELD", `${where}.costBps`, "costBps is mandatory (hh-versus-deck-v2 splits the budget law off weightBps)");
+    }
+    const costBps = parseBoundedInt(record["costBps"], `${where}.costBps`, 1, budgetBps);
     const affixValue = record["affix"];
     if (affixValue !== undefined && (typeof affixValue !== "string" || !AFFIX_SET.has(affixValue))) {
       fail("BAD_ENUM", `${where}.affix`, `"${String(affixValue)}" is outside §2.13 AFFIX_VOCABULARY`);
     }
-    sumBps += weightBps;
+    sumCostBps += costBps;
     entries.push(affixValue === undefined
-      ? Object.freeze({ threatId, weightBps })
-      : Object.freeze({ threatId, weightBps, affix: affixValue as ThreatAffix }));
+      ? Object.freeze({ threatId, weightBps, costBps })
+      : Object.freeze({ threatId, weightBps, costBps, affix: affixValue as ThreatAffix }));
   }
 
-  if (sumBps !== budgetBps) {
-    fail("BUDGET_MISMATCH", "deck.budgetBps", `entries sum to ${sumBps} bps but the declared budget is ${budgetBps} bps — the budget law is exact (§9.x)`);
+  // The v2 budget law rides cost, not weight: an entry's weightBps is a
+  // placement share (order + role quota); its costBps is what the budget
+  // is spent against. ΣweightBps is unconstrained (the draft's slots keep
+  // it budget-shaped; an authored deck may decouple the two freely).
+  if (sumCostBps !== budgetBps) {
+    fail("BUDGET_MISMATCH", "deck.budgetBps", `entries' costs sum to ${sumCostBps} bps but the declared budget is ${budgetBps} bps — the cost law is exact (§9.x)`);
   }
 
   return Object.freeze({ kind: "threat" as const, id, budgetBps, entries: Object.freeze(entries) });

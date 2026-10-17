@@ -9,6 +9,7 @@ import {
   commitDeck,
   deckCanonicalJson,
   revealAndVerify,
+  type DeckCommitment,
 } from "../commit.ts";
 import { VersusError, parseDefenseDeck, parseThreatDeck, type ThreatDeck } from "../deck.ts";
 import { CENSUS, RAW_DECK_LEAN, RAW_DECK_MAIN, parseDeck } from "./fixtures.ts";
@@ -19,7 +20,7 @@ describe("commitDeck / revealAndVerify — round trip", () => {
     const envelope = commitDeck(deck);
     expect(envelope.kind).toBe("threat");
     expect(envelope.deckHash.startsWith(`${VERSUS_HASH_DOMAIN}:`)).toBe(true);
-    expect(envelope.deckHash).toMatch(/^hh-versus-deck-v1:[0-9a-f]{16}$/);
+    expect(envelope.deckHash).toMatch(/^hh-versus-deck-v2:[0-9a-f]{16}$/);
     const verdict = revealAndVerify(envelope, deck);
     expect(verdict.ok).toBe(true);
     expect(verdict.deckHash).toBe(envelope.deckHash);
@@ -44,7 +45,7 @@ describe("commitDeck / revealAndVerify — round trip", () => {
   test("the canonical fold ignores object key insertion order", () => {
     const a = parseDeck(RAW_DECK_LEAN);
     const b: ThreatDeck = Object.freeze({
-      entries: a.entries.map((entry) => Object.freeze({ weightBps: entry.weightBps, threatId: entry.threatId })),
+      entries: a.entries.map((entry) => Object.freeze({ costBps: entry.costBps, weightBps: entry.weightBps, threatId: entry.threatId })),
       budgetBps: a.budgetBps,
       id: a.id,
       kind: "threat" as const,
@@ -96,13 +97,55 @@ describe("commit / reveal — tamper reds", () => {
     expect(() => revealAndVerify(envelope, other)).toThrowError(/defense.*threat|threat.*defense/);
   });
 
+  test("DOMAIN GUARD: a self-consistent v1-TAGGED envelope is refused, naming found vs spoken tag", () => {
+    // The hole the guard catches: the canonical fold is shape-agnostic, so
+    // an honest old-version envelope (v1 bytes, v1 tag, digest over its own
+    // canonicalJson) revealed against its own v1 doc would sail through the
+    // fold comparison forever — the silent rebind the version tag exists to
+    // prevent. The guard fires FIRST and its wording is the falsifiable pin
+    // (no other failure path emits "foreign-version envelope").
+    const v1Doc = {
+      kind: "threat",
+      id: "legacy-deck",
+      budgetBps: 100,
+      entries: [
+        { threatId: "scanner-drizzle", weightBps: 60 },
+        { threatId: "grudge-booter", weightBps: 40 },
+      ],
+    };
+    const legacyCanonical = deckCanonicalJson(v1Doc);
+    const legacyHex = legacyCanonical.length.toString(16).padStart(16, "0"); // stand-in digest — the guard never reaches hashing
+    const forged: DeckCommitment = Object.freeze({
+      kind: "threat",
+      deckHash: `hh-versus-deck-v1:${legacyHex}`,
+      canonicalJson: legacyCanonical,
+    });
+    let caught: unknown = null;
+    try {
+      revealAndVerify(forged, v1Doc);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(VersusError);
+    const versus = caught as VersusError;
+    expect(versus.code).toBe("COMMIT_MISMATCH");
+    expect(versus.message).toContain('found "hh-versus-deck-v1" tag');
+    expect(versus.message).toContain('spoken "hh-versus-deck-v2" tag');
+    expect(versus.message).toContain("foreign-version envelope");
+  });
+
   test("a corrupted envelope (hash re-stuck onto fresh bytes) still fails", () => {
     const deck = parseDeck(RAW_DECK_MAIN);
     const honest = commitDeck(deck);
     const other = parseDeck({
       id: "other-deck",
       budgetBps: 10_000,
-      entries: [{ threatId: "grudge-booter", weightBps: 4000 }, { threatId: "udp-amplification-barrage", weightBps: 3000 }, { threatId: "scanner-drizzle", weightBps: 2000 }, { threatId: "layer7-mimic", weightBps: 1000 }],
+      entries: [
+        { threatId: "grudge-booter", weightBps: 4000, costBps: 4000 },
+        { threatId: "udp-amplification-barrage", weightBps: 3000, costBps: 3000 },
+        { threatId: "scanner-drizzle", weightBps: 2000, costBps: 2000 },
+        { threatId: "layer7-mimic", weightBps: 1000, costBps: 1000 },
+      ],
     });
     const swapped = Object.freeze({ ...honest, deckHash: commitDeck(other).deckHash });
     expect(() => revealAndVerify(swapped, deck)).toThrowError(/corrupt envelope|differs/);
@@ -117,11 +160,11 @@ describe("deckCanonicalJson boundary", () => {
 
   test("key-order-only wire differences hash equal (entry ORDER is semantic)", () => {
     const first = parseThreatDeck(
-      { id: "same", budgetBps: 100, entries: [{ threatId: "scanner-drizzle", weightBps: 60 }, { threatId: "grudge-booter", weightBps: 40 }] },
+      { id: "same", budgetBps: 100, entries: [{ threatId: "scanner-drizzle", weightBps: 60, costBps: 60 }, { threatId: "grudge-booter", weightBps: 40, costBps: 40 }] },
       { census: CENSUS },
     );
     const second = parseThreatDeck(
-      { entries: [{ weightBps: 60, threatId: "scanner-drizzle" }, { weightBps: 40, threatId: "grudge-booter" }], budgetBps: 100, id: "same" },
+      { entries: [{ weightBps: 60, costBps: 60, threatId: "scanner-drizzle" }, { weightBps: 40, costBps: 40, threatId: "grudge-booter" }], budgetBps: 100, id: "same" },
       { census: CENSUS },
     );
     expect(commitDeck(second).deckHash).toBe(commitDeck(first).deckHash);

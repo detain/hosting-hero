@@ -5,11 +5,14 @@
  * Randomness law (§2.24-as-validator, honored verbatim from the waves
  * discipline): the RNG decides WHICH cards and affixes a presentation
  * offers and which slot the drafter takes — NEVER whether the resulting
- * deck is legal. Every presented candidate carries the exact slot weight,
- * slot weights sum to the budget by construction (last slot absorbs the
- * remainder), so any sequence of picks produces a budget-clean deck; the
- * remaining §2.24 laws (pool cap, denomination quota, role cadence floor,
- * Second-Answer counter presence) are checked as DATA by
+ * deck is legal. Every presented candidate carries the exact slot weight
+ * and its affix-priced cost; slot weights sum to the budget by construction
+ * (last slot absorbs the remainder), the affordability-downgrade law keeps
+ * every taken cost at or below its slot plus the discount banked by earlier
+ * picks, and the exact-sum compensation walk tunes the committed costs to
+ * ΣcostBps == budgetBps — so any sequence of picks produces a budget-clean
+ * deck; the remaining §2.24 laws (pool cap, denomination quota, role
+ * cadence floor, Second-Answer counter presence) are checked as DATA by
  * validateDraftedDeck so a draft can be REJECTED and redrafted under a new
  * seed rather than silently reshaped.
  *
@@ -26,6 +29,7 @@ import type { RngStream, RunSeed } from "../types.ts";
 import { streamFor } from "../kernel/rng.ts";
 import { compareCodeUnits } from "../internal/canonical.ts";
 import {
+  AFFIX_COST_MULTIPLIER_BPS,
   AFFIX_VOCABULARY,
   deckLegalityViolations,
   VersusError,
@@ -38,14 +42,21 @@ import {
 
 /* ═══════════════════════════ presentation model ═══════════════════════════ */
 
-/** One offered card. affix is present only when the dice rolled one. */
+/** One offered card. affix is present only when the dice rolled one AND
+ *  the affordability law let it stand; a rolled-but-unaffordable affix is
+ *  presented as its plain twin (same roll, weaker card — the dice cadence
+ *  never changes). costBps is the budget cost AS PRESENTED (pre-walk; the
+ *  committed deck's costs are the walked values). */
 export interface DraftCandidate {
   readonly threatId: string;
   readonly weightBps: number;
+  readonly costBps: number;
   readonly affix?: ThreatAffix;
 }
 
-/** One 1-of-3 stop in the draft: what was offered, what index was taken. */
+/** One 1-of-3 stop in the draft: what was offered, what index was taken.
+ *  The offer/pick record is PRE-walk material (what the drafter saw);
+ *  DraftOutcome.deck carries the post-walk exact-sum accounting. */
 export interface DraftPresentation {
   readonly pickIndex: number;
   readonly slotWeightBps: number;
@@ -61,8 +72,10 @@ export interface DraftOptions {
   /** Draftable threat universe (registry ids). Presented pools are sorted
    *  copies — the caller's array is never mutated or reordered. */
   readonly pool: readonly string[];
-  /** Nominal weight per pick; the FINAL pick absorbs the exact remainder
-   *  so the budget sum law holds without exceptions. */
+  /** Nominal weight per pick; the FINAL pick absorbs the exact remainder so
+   *  the weight budget law holds without exceptions. The v2 COST law
+   *  (ΣcostBps == budgetBps) is held by the affordability-downgrade law
+   *  plus the exact-sum compensation walk, not by the slots. */
   readonly slotWeightBps: number;
   /** Affix slugs the dice may mix in (subset of AFFIX_VOCABULARY; pass []
    *  to draft affix-free). */
@@ -91,6 +104,116 @@ export interface DraftOutcome {
 }
 
 const MAX_OFFER_SIZE = 4;
+
+/* ═══════════════════ affix cost math (hh-versus-deck-v2) ═══════════════════ */
+
+/** Presenting cost of one candidate: slot weight × the affix multiplier
+ *  (plain ≡ identity, cost == weight), ceil'd — an affix never costs less
+ *  through rounding than its bps factor says. BigInt-exact: deck budgets
+ *  reach MAX_SAFE-adjacent values (the census tests prove the parse law
+ *  there), and weight × 20_000 overflows float53 long before that. */
+function affixCostBps(weightBps: number, affix: ThreatAffix | null): number {
+  const multiplierBps = AFFIX_COST_MULTIPLIER_BPS[affix ?? "plain"];
+  const ceiled = (BigInt(weightBps) * BigInt(multiplierBps) + 9_999n) / 10_000n;
+  if (ceiled > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new VersusError("OUT_OF_RANGE", "draft.cost", `cost of a ${weightBps}-bps slot under a ${multiplierBps} bps affix exceeds the safe integer range`);
+  }
+  return Number(ceiled);
+}
+
+/**
+ * EXACT-SUM COMPENSATION WALK (hh-versus-deck-v2). delta = budget − Σcosts;
+ * walk the entries weight-desc (code-unit threatId tie), adjusting every
+ * not-clamped entry ∓1 bps per lap — down when over budget, up when under —
+ * each entry clamped to [max(1, ⌊weight/2⌋), presented cost × 2]. The clamps
+ * cannot absorb the delta ⇒ the draft would book an illegal deck: fail loud
+ * with AFFIX_COST_UNFEASIBLE at draft.cost, never emit one.
+ *
+ * Plain-only (v1-defaulted) drafts enter with cost ≡ weight: delta is zero
+ * and the walk is the IDENTITY — the input candidates ride out as the deck
+ * entries unchanged, pick sequences byte-comparable with v1.
+ *
+ * On public drafts the walk can only ADD: the affordability-downgrade law
+ * caps every taken cost at slot + banked discount, so Σcosts ≤ budget.
+ * A subtraction leg (or an unfeasible delta) requires forged costs —
+ * which is exactly why this seam is exported: the law is falsifiable
+ * directly (draft.test.ts drives it), without the draft API growing a
+ * test-only knob. It is NOT in the public barrel (internal law seam;
+ * pipeline/internal.ts precedent).
+ */
+export function compensateExactCostSum(
+  taken: readonly DraftCandidate[],
+  budgetBps: number,
+): readonly ThreatDeckEntry[] {
+  let sumBps = 0n;
+  for (const candidate of taken) sumBps += BigInt(candidate.costBps);
+  let delta = BigInt(budgetBps) - sumBps;
+  if (delta === 0n) {
+    return taken; // identity — zero-drift path for plain-only drafts
+  }
+
+  const order = [...taken].sort((a, b) => (a.weightBps !== b.weightBps
+    ? b.weightBps - a.weightBps
+    : compareCodeUnits(a.threatId, b.threatId)));
+  const costs = order.map((entry) => entry.costBps);
+  const floors = order.map((entry) => Math.max(1, Math.floor(entry.weightBps / 2)));
+  const caps = order.map((entry) => (entry.costBps > Number.MAX_SAFE_INTEGER / 2
+    ? Number.MAX_SAFE_INTEGER
+    : entry.costBps * 2));
+
+  while (delta !== 0n) {
+    const grow = delta > 0n;
+    const mobile: number[] = [];
+    for (const [index] of order.entries()) {
+      const room = grow
+        ? (caps[index] as number) - (costs[index] as number)
+        : (costs[index] as number) - (floors[index] as number);
+      if (room > 0) mobile.push(index);
+    }
+    if (mobile.length === 0) {
+      throw new VersusError("AFFIX_COST_UNFEASIBLE", "draft.cost",
+        `cost compensation cannot converge: budget ${budgetBps} bps, residual ${delta.toString()} bps unabsorbable — every entry is pinned inside [max(1, ⌊weight/2⌋), presented cost × 2]`);
+    }
+    const magnitude = grow ? delta : -delta;
+    const bulkLaps = magnitude / BigInt(mobile.length);
+    if (bulkLaps >= 1n) {
+      const lap = bulkLaps > BigInt(Number.MAX_SAFE_INTEGER) ? Number.MAX_SAFE_INTEGER : Number(bulkLaps);
+      for (const index of mobile) {
+        const room = grow
+          ? (caps[index] as number) - (costs[index] as number)
+          : (costs[index] as number) - (floors[index] as number);
+        const applied = Math.min(lap, room);
+        costs[index] = (costs[index] as number) + (grow ? applied : -applied);
+        delta = grow ? delta - BigInt(applied) : delta + BigInt(applied);
+      }
+      continue;
+    }
+    // Partial lap (0 < |delta| < mobile.length): one bps per entry in walk
+    // order until the delta is absorbed — the last entries of the lap keep
+    // one bps more (or less) than the first, and that asymmetry is the
+    // observable fingerprint of the walk.
+    for (const index of mobile) {
+      if (delta === 0n) break;
+      costs[index] = (costs[index] as number) + (grow ? 1 : -1);
+      delta = grow ? delta - 1n : delta + 1n;
+    }
+  }
+
+  const walked = new Map<DraftCandidate, number>();
+  for (const [index, candidate] of order.entries()) walked.set(candidate, costs[index] as number);
+  return Object.freeze(taken.map((candidate) => (candidate.affix === undefined
+    ? Object.freeze({
+      threatId: candidate.threatId,
+      weightBps: candidate.weightBps,
+      costBps: walked.get(candidate) as number,
+    })
+    : Object.freeze({
+      threatId: candidate.threatId,
+      weightBps: candidate.weightBps,
+      costBps: walked.get(candidate) as number,
+      affix: candidate.affix,
+    }))));
+}
 
 function rollAffix(rng: RngStream, affixPool: readonly ThreatAffix[], affixChanceBps: number): ThreatAffix | null {
   if (affixPool.length === 0 || affixChanceBps <= 0) return null;
@@ -163,14 +286,21 @@ export function draftThreatDeck(options: DraftOptions): DraftOutcome {
   const affixStream = root.fork("affixes");
   const affixPool = options.affixPool ?? [];
 
-  const entries: ThreatDeckEntry[] = [];
+  const entries: DraftCandidate[] = [];
   const presentations: DraftPresentation[] = [];
   const remaining = [...poolSorted];
   let left = options.budgetBps;
+  // Discount banked by earlier takes: Σ_{j<pick} (slot_j − cost_j). Plain
+  // costs ≡ slot (bank unchanged); a bounded affix banks slack that an
+  // expensive affix may later spend. The affordability-downgrade law caps a
+  // presented affix at slot + bank, which keeps the bank never-negative —
+  // so Σcosts ≤ budget and the compensation walk only ever has to ADD.
+  let bankedBps = 0;
 
   for (let pick = 0; pick < pickCount; pick += 1) {
     const slotWeightBps = Math.min(options.slotWeightBps, left);
     const offerCount = Math.min(offerSize, remaining.length);
+    const affordableBps = slotWeightBps + bankedBps;
     const candidates: DraftCandidate[] = [];
     // Draw offerCount DISTINCT threats by repeatedly removing the rolled
     // index — over a copy, deterministic, no locale anywhere.
@@ -178,10 +308,16 @@ export function draftThreatDeck(options: DraftOptions): DraftOutcome {
     for (let slot = 0; slot < offerCount; slot += 1) {
       const threatIndex = offerStream.range(drawBag.length);
       const threatId = drawBag.splice(threatIndex, 1)[0] as string;
-      const affix = rollAffix(affixStream, affixPool, affixChanceBps);
+      const rolledAffix = rollAffix(affixStream, affixPool, affixChanceBps);
+      // AFFORDABILITY-DOWNGRADE LAW (hh-versus-deck-v2): the dice have
+      // already rolled at their pinned positions; an affixed candidate the
+      // remaining budget cannot carry (even with later slots paying plain)
+      // is shown as its plain twin. Same roll, weaker card — the dice
+      // decide WHICH, never whether the deck is legal.
+      const affix = rolledAffix !== null && affixCostBps(slotWeightBps, rolledAffix) > affordableBps ? null : rolledAffix;
       candidates.push(affix === null
-        ? Object.freeze({ threatId, weightBps: slotWeightBps })
-        : Object.freeze({ threatId, weightBps: slotWeightBps, affix }));
+        ? Object.freeze({ threatId, weightBps: slotWeightBps, costBps: slotWeightBps })
+        : Object.freeze({ threatId, weightBps: slotWeightBps, costBps: affixCostBps(slotWeightBps, affix), affix }));
     }
     // The dice ALWAYS roll (stream position is pick-policy invariant);
     // a scripted entry overrides only the resulting choice.
@@ -196,6 +332,7 @@ export function draftThreatDeck(options: DraftOptions): DraftOutcome {
     const poolIndex = remaining.indexOf(taken.threatId);
     remaining.splice(poolIndex, 1);
     entries.push(taken);
+    bankedBps += slotWeightBps - taken.costBps;
     presentations.push(Object.freeze({
       pickIndex,
       slotWeightBps,
@@ -205,11 +342,14 @@ export function draftThreatDeck(options: DraftOptions): DraftOutcome {
     left -= slotWeightBps;
   }
 
+  // The exact-sum compensation walk tunes the committed deck's costs to the
+  // budget (identity when plain-only — every v1-defaulted draft lands on
+  // it untouched). Presentations above stay pre-walk offer-of-record.
   const deck: ThreatDeck = Object.freeze({
     kind: "threat" as const,
     id: options.deckId,
     budgetBps: options.budgetBps,
-    entries: Object.freeze(entries),
+    entries: compensateExactCostSum(entries, options.budgetBps),
   });
   return Object.freeze({ deck, presentations: Object.freeze(presentations) });
 }
