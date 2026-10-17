@@ -8,10 +8,11 @@
  * "**Dominant verb: Negotiate.**" and :1637: "2. **Negotiate** — a
  * ticket/conversation system with a tenant, with tone options and a
  * relationship meter. **This is the level's combat.**" The card's
- * per-tenant relationship meter does NOT exist in v0 (the company
- * reputation ledger @57ea80e is the only meter shipped); the tone
- * retention bumps in `NegotiationConfig` are its honest company-proxy
- * stand-in — recorded as the gap it is.
+ * per-tenant relationship meter LANDED as ADR-0016 mechanic A
+ * (`economy/relationship.ts`): the trust reading it books is consumed at
+ * this file's cliff composition (the `trustBps` leg). What remains the
+ * honest company-proxy stand-in is the tone bump itself — the card's meter
+ * is per-tenant; the bumps are per-term.
  *
  * THE ZERO-NEW-ROLLS LAW (mirrors OD-24(a) part 2 @5781335): the
  * negotiation never casts a die. `negotiationRetentionFactorBps` tilts
@@ -74,31 +75,47 @@ export function activeNegotiation(
   return term;
 }
 
-/** Retention tilt for the cliff's EXISTING single draw.
- *
- *  `term === null` ⇒ the price factor rides through UNTOUCHED (identity
- *  tripwire — no multiplication, no rounding, byte-identity with the
- *  pre-negotiate world). Otherwise the tone bump plus a concession-
- *  presence bump lift the factor additively (bps over 1.0), applied
- *  through the house `applyFactorBps` (so a zero total bump hits the
- *  early-exit and is exactly the input). The result is CLAMPED to ≤ 1.0:
- *  a rapport buys leverage, never certainty — the same ceiling the
- *  elasticity mirror honors (cuts cap at 1.0, @5781335).
- *
- *  A booked 0n concession is money-present but money-absent: it behaves
- *  like null for the bump ("we will not move on price" is a stance, not
- *  a sweetener), while remaining DISTINCT from null in the digest. */
-export function negotiationRetentionFactorBps(
-  term: NegotiationTerm | null,
-  priceRetentionFactorBps: bigint,
-  cfg: EconomyConfig,
-): bigint {
-  if (term === null) return priceRetentionFactorBps;
+/** The booked term's ADDITIVE bump in bps over 1.0: the tone rung plus the
+ *  concession-presence rung (a booked 0n is money-present but money-absent:
+ *  it behaves like null for the bump — "we will not move on price" is a
+ *  stance, not a sweetener). Extracted whole from
+ *  `negotiationRetentionFactorBps` (ADR-0016 mechanic A) so the cliff site
+ *  composes the relationship-trust leg beside it through ONE arithmetic
+ *  home. Pure; the numerics live in cfg.negotiation (house law). */
+export function negotiationToneBumpBps(term: NegotiationTerm, cfg: EconomyConfig): bigint {
   const concessionBump =
     term.concessionMicroUsd !== null && term.concessionMicroUsd > 0n
       ? cfg.negotiation.concessionPresenceBps
       : 0n;
-  const bump = cfg.negotiation.retentionBumpBpsByTone[term.tone] + concessionBump;
+  return cfg.negotiation.retentionBumpBpsByTone[term.tone] + concessionBump;
+}
+
+/** Retention tilt for the cliff's EXISTING single draw.
+ *
+ *  `term === null` ⇒ the price factor rides through UNTOUCHED (identity
+ *  tripwire — no multiplication, no rounding, byte-identity with the
+ *  pre-negotiate world). Otherwise the tone bump, the concession-presence
+ *  bump and (ADR-0016 mechanic A) the tenant's per-`RelationshipLedger`
+ *  trust add up (bps over 1.0), applied through the house `applyFactorBps`
+ *  (so a zero total bump hits the early-exit and is exactly the input).
+ *  The result is CLAMPED to ≤ 1.0: a rapport buys leverage, never
+ *  certainty — the same ceiling the elasticity mirror honors (cuts cap at
+ *  1.0, @5781335). The goodwill-recovery posture HOLDS (the talk restores
+ *  goodwill YOUR OWN PRICING took, never lifts authored retention); what
+ *  the trust leg ADDS is the DOWNWARD leg — trust is signed, so a burned
+ *  tenant's factor sinks BELOW the bare arm at the same key.
+ *
+ *  `trustBps` DEFAULTS TO 0n: the pre-A 3-arg behavior is EXACT (no ledger
+ *  ever booked ⇒ every shipped retention factor is precisely the
+ *  negotiate-era value — byte-identity is the whole idle story). */
+export function negotiationRetentionFactorBps(
+  term: NegotiationTerm | null,
+  priceRetentionFactorBps: bigint,
+  cfg: EconomyConfig,
+  trustBps: bigint = 0n,
+): bigint {
+  if (term === null) return priceRetentionFactorBps;
+  const bump = negotiationToneBumpBps(term, cfg) + trustBps;
   if (bump === 0n) return priceRetentionFactorBps;
   const lifted = applyFactorBps(priceRetentionFactorBps, BPS_DEN + bump);
   return lifted > BPS_DEN ? BPS_DEN : lifted;

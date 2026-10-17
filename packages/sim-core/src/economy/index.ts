@@ -22,5 +22,6 @@ export * from "./tick.ts";
 export * from "./death.ts";
 export * from "./elasticity.ts";
 export * from "./negotiate.ts";
+export * from "./relationship.ts";
 export * from "./postmortem.ts";
 export * from "./recovery.ts";

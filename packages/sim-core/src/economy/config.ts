@@ -346,6 +346,82 @@ export interface NegotiationConfig {
   readonly concessionPresenceBps: bigint;
 }
 
+/* ────────── per-tenant relationship trust (ADR-0016 mechanic A) ──────── */
+
+/** The signed-bps accrual table behind `economy/relationship.ts` (ADR-0016
+ *  mechanic A — the colo card's per-tenant RELATIONSHIP METER
+ *  (hosting_game.md §1.3 "Amps and Aisles":1637: "tone options and a
+ *  relationship meter. **This is the level's combat.**"): every booked
+ *  negotiation encounter, renewal, lapse, dunning step, suspension,
+ *  recovery, payment-after-stage, voluntary churn and write-off moves the
+ *  TENANT's own trust (keyed by the priceKey grammar), and that trust is
+ *  what the negotiation bump adds at the next cliff (the downward leg the
+ *  ADR-0015 company-proxy posture could not reach). Direction law lives in
+ *  relationship.ts (rapport/firm +, legal −, recoveries +, losses −); the
+ *  values here are magnitudes. The section is OPTIONAL on EconomyConfig
+ *  (postMortem law — sibling hosts hand-build config literals); the fold
+ *  reads `cfg.relationships ?? DEFAULT_RELATIONSHIP_CONFIG`. */
+export interface RelationshipConfig {
+  /** Trust earned per booked rapport negotiation encounter.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly toneRapportBps: bigint;
+  /** Trust earned per booked firm negotiation encounter — the arithmetic
+   *  half-works on the meter too.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly toneFirmBps: bigint;
+  /** Trust COST per booked legal negotiation encounter (stored as the
+   *  magnitude; relationship.ts applies it NEGATIVE — "each with a legal
+   *  and reputational cost", §1.3 Enforce ladder).
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly toneLegalBps: bigint;
+  /** Trust earned when the tenant renews at the cliff.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly renewedBps: bigint;
+  /** Trust burned when the tenant lapses at the cliff.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly lapsedBps: bigint;
+  /** Trust burned per dunning stage entry; `suspended` rides this same
+   *  magnitude (the spec's dunning-stage/suspended slash group — a
+   *  suspension IS the ladder's hardest stage).
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly dunningStageBps: bigint;
+  /** Trust repaired by a dunning recovery; `invoice-paid` (after-stage)
+   *  rides this same magnitude (the dunning-recovered/invoice-paid-after-
+   *  stage slash group).
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly dunningRecoveredBps: bigint;
+  /** Heavy trust burn when the account is written off.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly writtenOffBps: bigint;
+  /** Heavy trust burn when the logo leaves on its own.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly voluntaryChurnBps: bigint;
+  /** Inclusive clamp floor of the signed reading.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly trustFloorBps: bigint;
+  /** Inclusive clamp ceiling of the signed reading — a ±10-point goodwill
+   *  band around 1.0, reachable by sustained talking (40 rapport
+   *  encounters) or by bullying (a write-off alone is 400 of the 1000).
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly trustCeilingBps: bigint;
+}
+
+/** The shipped default trust book — shared frozen const, single source,
+ *  never restated inline (the `DEFAULT_POST_MORTEM_CONFIG` pattern). */
+export const DEFAULT_RELATIONSHIP_CONFIG: RelationshipConfig = Object.freeze({
+  toneRapportBps: 25n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — goodwill accrues gently
+  toneFirmBps: 10n, // PROVISIONAL (ADR-0015 follow-up taste numeric)
+  toneLegalBps: 15n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — applied NEGATIVE (the card's cost)
+  renewedBps: 50n, // PROVISIONAL (ADR-0015 follow-up taste numeric)
+  lapsedBps: 80n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — leaving stings more than staying pays
+  dunningStageBps: 100n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — the shared stage/suspension damage rung
+  dunningRecoveredBps: 50n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — the shared recovery/paid-after-stage repair rung
+  writtenOffBps: 400n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — heavy
+  voluntaryChurnBps: 200n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — heavy
+  trustFloorBps: -1_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric)
+  trustCeilingBps: 1_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric)
+});
+
 /* ─────────────── scale warmth billing (ADR-0016 mechanic C) ────────────── */
 
 /** The price of RESERVED WARMTH behind the money-lane fold
@@ -416,6 +492,10 @@ export interface EconomyConfig {
   readonly death: DeathConfig;
   readonly pricing: PricingConfig;
   readonly negotiation: NegotiationConfig;
+  /** ADR-0016 mechanic A per-tenant relationship trust (economy/relationship.ts)
+   *  — OPTIONAL (postMortem law: sibling hosts hand-build config literals).
+   *  The fold reads `cfg.relationships ?? DEFAULT_RELATIONSHIP_CONFIG`. */
+  readonly relationships?: RelationshipConfig | undefined;
   /** ADR-0016 mechanic C scale-warmth billing — OPTIONAL (postMortem law:
    *  sibling hosts hand-build config literals). The money-lane fold reads
    *  `cfg.warmth ?? DEFAULT_WARMTH_CONFIG`. */
@@ -551,6 +631,7 @@ export function defaultEconomyConfig(): EconomyConfig {
       }),
       concessionPresenceBps: 300n, // money talks in every tone (+3%; 0n booked = stance, no bump)
     },
+    relationships: DEFAULT_RELATIONSHIP_CONFIG, // ADR-0016 mechanic A — shared frozen trust book
     postMortem: DEFAULT_POST_MORTEM_CONFIG, // §7.7 — shared frozen default book
     warmth: DEFAULT_WARMTH_CONFIG, // ADR-0016 mechanic C — shared frozen default book
   };

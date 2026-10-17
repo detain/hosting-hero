@@ -22,6 +22,9 @@
  *     error-budget carry/re-grant, covenant bank review (may catch up
  *     several months of a pause)
  *   3 MFN reprices fire when their lag delay elapses (§7.15)
+ *   3.5 negotiation-encounter accrual on the relationship meter — the talk
+ *     is booked BEFORE the cliff reads it (ADR-0016 mechanic A,
+ *     economy/relationship.ts; zero new rolls)
  *   4 renewal pulses — 90 d window (§6.4)
  *   5 renewal cliffs — fire exactly at the term-end business minute (§6.12);
  *     BEFORE the calendar, so a renew restarts the grid on the same tick and
@@ -40,6 +43,9 @@
  *  12.45 post-mortem filing adjudication — ambiguity/blame/duplicate gates,
  *      signals feed the fold below, verdicts append the log (§7.7, g21)
  *  12.5 reputation fold + publish-on-change observed write (§2.10/§5.10)
+ *  12.55 relationship-outcomes fold (ADR-0016 mechanic A): cliff/dunning/
+ *     churn notices accrue PER-TENANT trust (the meter with memory; the
+ *     double-charge against 12.5's company pool is the law, not an accident)
  *  12.6 company-death fold — OD-25(a) three canonical deaths, warning →
  *      notice → dissolution state machine (economy/death.ts, §6.10/§9.6)
  */
@@ -88,6 +94,13 @@ import { bpsOf, BPS_DEN } from "./money.ts";
 import { floorDiv } from "./intMath.ts";
 import { applyFactorBps, priceElasticityFor } from "./elasticity.ts";
 import { activeNegotiation, negotiatedBillingBase, negotiationRetentionFactorBps } from "./negotiate.ts";
+import {
+  applyRelationshipEncounters,
+  relationshipTrustBps,
+  type RelationshipEvent,
+  type RelationshipEventKind,
+  type RelationshipLedger,
+} from "./relationship.ts";
 import {
   foldPostMortemFilings,
   parsePostMortemFilings,
@@ -427,6 +440,11 @@ interface Working {
    *  forward plus this-tick records — materializes as `postMortemLog` ONLY
    *  when non-empty (absent-while-idle). */
   postMortemRows: PostMortemRecord[];
+  /** ADR-0016 mechanic A per-tenant meter (economy/relationship.ts): null
+   *  while NOTHING has ever booked (pre-A byte-identity); phase 3.5 books
+   *  the talk, phase 12.55 the outcomes, the ledger materializes at the
+   *  first fact and rides `EconomyState.relationships` thereafter. */
+  relationships: RelationshipLedger | null;
   observedWrites: ObservedWrite[];
   entries: LedgerEntry[];
   events: InvoiceSettledEvent[];
@@ -507,6 +525,7 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     deathWarning: input.prior.deathWarning ?? null,
     companyDeath: null,
     postMortemRows: [...(input.prior.postMortemLog ?? [])],
+    relationships: input.prior.relationships ?? null,
     observedWrites: [],
     entries: [],
     events: [],
@@ -622,6 +641,33 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     });
   }
 
+  /* 3.5 negotiation encounters (ADR-0016 mechanic A, economy/relationship.ts).
+     The relationship meter HEARS the talk before the cliff READS it: every
+     keyed contract resolves its in-force term through the SAME as-of
+     resolution the cliff uses (no seam widening — the existing forwarded
+     `negotiations` leg is the source; no new RNG — this fold casts no
+     die). A booked term accrues its tone delta ONCE (the shippedAtTick
+     cursor in relationship.ts; an LWW amendment re-accrues); a future-dated
+     or key-less book contributes NOTHING, keeping the no-roll-discipline
+     byte-identity of every existing arm. Contract-sorted visit:
+     deterministic, insertion-order-free. */
+  if (input.negotiations !== undefined) {
+    const relEncounters: RelationshipEvent[] = [];
+    for (const id of ids) {
+      const key = w.econ.get(id)?.priceKey;
+      if (key === undefined) continue;
+      const term = activeNegotiation(input.negotiations, key, now);
+      if (term === null) continue;
+      relEncounters.push({
+        kind: "negotiation-encounter",
+        priceKey: key,
+        tone: term.tone,
+        shippedAtTick: term.shippedAtTick,
+      });
+    }
+    w.relationships = applyRelationshipEncounters(w.relationships, relEncounters, cfg);
+  }
+
   /* 4 renewal pulses + 5 cliffs — before the calendar so a renew restarts
      the grid the same tick and a lapse never writes a zombie invoice. */
   for (const id of ids) {
@@ -650,6 +696,10 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
       negotiation,
       elasticity?.retentionBpsFactor ?? BPS_DEN,
       cfg,
+      // ADR-0016 mechanic A: the tenant's remembered trust composes with the
+      // booked bump (0n while no ledger exists ⇒ byte-identity with the
+      // negotiate era — the clamp still tops out at exactly 1.0).
+      relationshipTrustBps(w.relationships, econ.priceKey, cfg),
     );
     const decision =
       supplied?.decision ??
@@ -837,6 +887,52 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     w.observedWrites.push(reputationObservedWrite(w.reputation, asCauseId(`economy:reputation:${now}`)));
   }
 
+  /* 12.55 relationship OUTCOMES fold (ADR-0016 mechanic A; the meter half of
+   * the negotiation table that the 12.5 reputation fold mirrors). THE TABLE-
+   * FIRST LAW (the brief's "materialized on first encounter", and what keeps
+   * every no-book host byte-identical through a cliff-crossing quarter): the
+   * meter OPENS at the negotiation table — an encounter (3.5) or a prior row
+   * — and cliff/dunning/payment/churn facts thereafter maintain the file
+   * THAT EXISTS. A tenant never talked to has no file: its renewals, stages
+   * and write-offs move the COMPANY pool (12.5) but never materialize this
+   * key. Facts are already in hand: the cliff notices (step 5), the dunning
+   * ladder notices (steps 7-8) and the churn notice (step 2) were pushed
+   * THIS fold — the scan rides the same w.notices trail reputation reads, in
+   * the same append order (deterministic, zero new RNG, zero new notices).
+   * An UN-KEYED contract has no tenant row at all (the sparse-priceKey law —
+   * "negotiates with nobody" holds for the meter too). THE DOUBLE-CHARGE
+   * LAW (R9, law-not-accident): for an engaged tenant, a write-off costs
+   * BOTH the company's reputation (12.5, unchanged) AND the tenant's trust
+   * (here) — the two meters measure different victims of the same event and
+   * NEVER net off. THE SINGLE-BOOKING GUARD: a ladder recovery settles the
+   * invoice IN the same fold, so its dunning-recovered notice and its
+   * invoice-paid notice describe ONE fact — the repair books exactly once,
+   * via the recovery; a bare invoice-paid books its repair only when the
+   * paid record carries dunning history (the "after-stage" leg; the tick as
+   * it stands always pairs the two, so today the guard is a no-double-book
+   * pin and the leg an honest seam for host-forwarded settlements). */
+  const relOutcomes: RelationshipEvent[] = [];
+  if (w.relationships !== null) {
+    const recoveredInvoiceIds = new Set<EntityId>();
+    for (const n of w.notices) {
+      if (n.kind === "dunning-recovered" && n.invoiceId !== undefined) recoveredInvoiceIds.add(n.invoiceId);
+    }
+    for (const n of w.notices) {
+      const kind = noticeRelationshipKind(n.kind);
+      if (kind === null) continue;
+      const key = w.econ.get(n.contractId)?.priceKey;
+      if (key === undefined || !w.relationships.trustByKey.has(key)) continue; // no file, no entry
+      if (kind === "invoice-paid") {
+        if (n.invoiceId !== undefined && recoveredInvoiceIds.has(n.invoiceId)) continue;
+        const slot = n.invoiceId !== undefined ? w.invoiceAt.get(n.invoiceId)?.[0] : undefined;
+        const paid = slot !== undefined ? w.invoices[slot] : undefined;
+        if (paid === undefined || paid.dunningStage === null) continue;
+      }
+      relOutcomes.push({ kind, priceKey: key });
+    }
+    w.relationships = applyRelationshipEncounters(w.relationships, relOutcomes, cfg);
+  }
+
   /* 12.6 company-death fold (OD-25(a); economy/death.ts). AFTER reputation
      (its notices ride w.notices which 12.5 has already scanned — no
      entanglement), BEFORE retention prune. Runs on every fold: the watch,
@@ -886,6 +982,9 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     // §7.7: the key exists iff the trail is non-empty (prior rows carried,
     // new verdicts appended) — absent-while-idle, death-key law.
     ...(w.postMortemRows.length > 0 ? { postMortemLog: Object.freeze([...w.postMortemRows]) } : {}),
+    // ADR-0016 mechanic A: the key exists iff a fact ever booked (encounter
+    // or outcome) — absent-while-idle, death-key law.
+    ...(w.relationships !== null ? { relationships: w.relationships } : {}),
   };
   return {
     state,
@@ -1446,6 +1545,36 @@ function noticeReputationKind(kind: EconomyNoticeKind): ReputationSignalKind | n
       return "chargeback";
     case "sla-credit-due":
       return "major-incident";
+    default:
+      return null;
+  }
+}
+
+/** Money-lifecycle notices that carry TENANT-trust weight (ADR-0016
+ *  mechanic A), mapped to the relationship vocabulary. The sibling of
+ *  `noticeReputationKind` above — deliberately NOT the same map: reputation
+ *  charges the COMPANY pool (chargeback, SLA credits, MFN), the meter
+ *  charges the keyed TENANT row (cliff outcomes are tenant facts the pool
+ *  never sees). Kinds absent here (invoice-failed, suspension-lifted,
+ *  pulse, MFN, budget…) are meter-neutral by design. */
+function noticeRelationshipKind(kind: EconomyNoticeKind): RelationshipEventKind | null {
+  switch (kind) {
+    case "cliff-renewed":
+      return "renewed";
+    case "cliff-lapsed":
+      return "lapsed";
+    case "dunning-stage":
+      return "dunning-stage";
+    case "suspended":
+      return "suspended";
+    case "dunning-recovered":
+      return "dunning-recovered";
+    case "invoice-paid":
+      return "invoice-paid";
+    case "churned-voluntary":
+      return "churned-voluntary";
+    case "written-off":
+      return "written-off";
     default:
       return null;
   }

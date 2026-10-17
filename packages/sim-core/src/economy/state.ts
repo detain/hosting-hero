@@ -40,6 +40,7 @@ import {
   type DeathSpiralState,
 } from "./runway.ts";
 import { initialReputationLedger, type ReputationLedger } from "./reputation.ts";
+import type { RelationshipLedger } from "./relationship.ts";
 import type {
   CompanyDeathRecord,
   DeathWarningRecord,
@@ -108,6 +109,15 @@ export interface EconomyState {
    *  is ABSENT until the first `postMortems` input — existing hosts'
    *  serialization shape never changes (absent-while-idle, death-key law). */
   readonly postMortemLog?: readonly PostMortemRecord[] | undefined;
+  /** ADR-0016 mechanic A per-tenant relationship trust (economy/
+   *  relationship.ts): the negotiation meter with memory, keyed by the
+   *  priceKey grammar. THE METER OPENS AT THE TABLE: the key materializes
+   *  at the first booked negotiation ENCOUNTER (and outcomes thereafter
+   *  only maintain files that exist — table-first law), so every pre-A
+   *  host's serialization stays byte-identical (absent-while-idle, death-
+   *  key law). `trustByKey` iteration order is code-unit-ascending by
+   *  construction (the sorted-map house law). */
+  readonly relationships?: RelationshipLedger | undefined;
 }
 
 export function emptyEconomyState(): EconomyState {

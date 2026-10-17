@@ -11,16 +11,22 @@
  *     certainty, the elasticity ceiling mirrored), and the billing-base
  *     move (0n/null ride-through, floor 0n).
  *  B. Tick integration: the NO-ROLL DISCIPLINE proof (absent book, empty
- *     book, unkeyed contracts, not-yet-law stamps, and zero-bump stances
- *     are digest-identical across state, notices, events AND entries);
+ *     book, unkeyed contracts and not-yet-law stamps are digest-identical
+ *     across state, notices, events AND entries; since ADR-0016 mechanic A
+ *     the in-force legal STANCES instead materialize their relationship
+ *     meter — equal to each other, different from bare, pinned below);
  *     the FALSIFIER (a 20% price hike cut the goodwill the cliff's single
  *     draw is compared against; the same ONE draw flips lapse→renew only
  *     when the money shows up — rapport WITHOUT concession loses, rapport
  *     WITH one wins, legal WITH one loses where rapport wins — the card's
  *     escalation ladder made arithmetic. THE HIKE IS LOAD-BEARING: the
  *     ≤1.0 clamp means the talk restores goodwill YOUR OWN PRICING took
- *     (retention factor 0.92 → 0.9476/0.9752), it never lifts retention
- *     above the authored ceiling — the design law in negotiate.ts); the billed line (concession
+ *     (retention factor 0.92 → 0.9476/0.9752 — #N1-era pin: under ADR-0016
+ *     mechanic A every BOOKED arm also reads its own accrued trust BEFORE
+ *     the draw — rapport-no-money 0.9499, legal-with-money 0.9463,
+ *     rapport-with-money 0.9775 — the brute-search below self-heals), it
+ *     never lifts retention above the authored ceiling — the design law in
+ *     negotiate.ts); the billed line (concession
  *     discounts the override-chain HEAD, grandfather still WINS —
  *     ADR-0014 #D4 order); and the term roll-forward.
  *
@@ -257,13 +263,19 @@ function econOf(r: Run, id: string): { phase: string; termEndMin: number } {
    SEED-pinned draw lands inside [hike+rap, hike+rap+C) bps — with a 20% price
    HIKE on the same priceKey the retention runs 7176 (bare) / 7391 (rapport-no-
    money == legal-with-money, the clamp-recovered 0.9476) / 7607 (rapport-with-
-   money 0.9752). So the hiked baseline churns, goodwill alone loses, the talk
+   money 0.9752). #N1-era pin: under ADR-0016 mechanic A the three BOOKED arms
+   now read their own in-fold trust (rapport +25 ⇒ 7409; legal −15 ⇒ 7381;
+   rapport+money +25 ⇒ 7625), so the live band is [7409, 7625) — the search
+   self-heals by construction and may settle on a different id; re-run and
+   re-pin these values VERBATIM whenever the taste numerics move.
+   So the hiked baseline churns, goodwill alone loses, the talk
    WITH money wins, lawyers WITH money loses where rapport wins. One draw,
    several arms, the card's ladder made arithmetic — and the ≤1.0-clamp design
    law made visible: every arm below rides the SAME hike book, because a
    negotiation cannot lift an unbitten factor (1.0 × 1.06 clamps to 1.0).
-   The same witness drives the inert-extension leg below (a zero-bump book keeps
-   the baseline lapse while the extension field is PRESENT). */
+   The same witness drives the inert-extension leg below (a legal book's only
+   trust is its −15 bullying — DOWNWARD — so the baseline lapse holds while
+   the extension field is PRESENT). */
 const HIKE: ReadonlyMap<string, PriceOverrideRecord> = new Map([["plan:pro", rec(120n)]]);
 const witness = (() => {
   for (let i = 1; i <= 400; i += 1) {
@@ -295,7 +307,7 @@ describe("no-roll discipline (default-OFF byte-identity)", () => {
   const ticks = [0, MONTH, 2 * MONTH, 3 * MONTH, 12 * MONTH];
   const keys = new Map([["n1", "plan:pro"], ["n3", "plan:pro"]]);
 
-  it("no book, empty book, unkeyed book, future-dated, and zero-bump stances are digest-identical", () => {
+  it("no book, empty book, unkeyed book and future-dated are digest-identical; the inert legal STANCES accrue the meter, equal to EACH OTHER (#N1-era retitle)", () => {
     const sc = scenario(contracts, calm(), keys);
     const base = runWeeks(sc, ticks);
     // The cliff at 12*MONTH ROLLED in these runs (n3 keyed plan:pro): the
@@ -311,10 +323,18 @@ describe("no-roll discipline (default-OFF byte-identity)", () => {
     expect(fullDigest(runWeeks(sc, ticks, new Map([["plan:pro", term("rapport", 25_000_000n, null, 99 * MONTH)]])))).toBe(
       fullDigest(base),
     );
-    // legal tone with NO money ⇒ bump 0 ⇒ exact identity tripwire, and the
-    // stance (0n booked) discounts nothing:
-    expect(fullDigest(runWeeks(sc, ticks, new Map([["plan:pro", term("legal", null)]])))).toBe(fullDigest(base));
-    expect(fullDigest(runWeeks(sc, ticks, new Map([["plan:pro", term("legal", 0n)]])))).toBe(fullDigest(base));
+    // #N1-era pin: legal TALKS, and talking is booked — the ADR-0016
+    // relationship meter accrues its −15 bullying the moment the stance is
+    // in force, so these arms are no longer digest-IDENTICAL to bare: they
+    // open a file and move the cliff's bps. The identity that SURVIVES is
+    // between the two inert-STANCE arms (null and 0n money are the same
+    // conversation): bullying accrues BY DESIGN, equal-but-not-inert.
+    const bulliedNull = runWeeks(sc, ticks, new Map([["plan:pro", term("legal", null)]]));
+    const bulliedZero = runWeeks(sc, ticks, new Map([["plan:pro", term("legal", 0n)]]));
+    expect(fullDigest(bulliedNull)).not.toBe(fullDigest(base));
+    expect(fullDigest(bulliedZero)).not.toBe(fullDigest(base));
+    expect(fullDigest(bulliedNull)).toBe(fullDigest(bulliedZero));
+    expect("relationships" in bulliedNull.state).toBe(true);
   });
 
   it("an unkeyed contract rides through a LIVE book: digest-identical (the sparse-priceKey law)", () => {
