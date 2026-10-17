@@ -1,0 +1,360 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:backup-archival",
+  "_todo": "All human strings are keys into file:packs/backup-archival.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. ELEVENTH CARD of the OD-14(a) 20-launch canon: the §1.3 backup/archival card 'Restore Point' / 'The Vault' / 'Bit Rot' ships its dominant-verb line VERBATIM — 'Dominant verb: Schedule.' (:1946) — and it is the FIRST shipped card founded on a roster verb that had zero claiming cards before it: Schedule was blessed onto loader lint TIER_EXTENDED_VERBS by ADR-0014 #D1 (2026-10-16) alongside Negotiate, and where type-10 consumed the first of that blessing, this card consumes the second. The corpus passed this line over twice on exactly this gap: the Type-3 authoring note records 'Chosen over Backup/Storage because the §1.3 backup card's dominant verb is Schedule — not one of the six invariant verbs (§1.9), so it would ship on a VERB_SHIFT violation'. The violation was the missing blessing; the blessing arrived; the card ships founded on its own word. This is NOT the DRaaS card: the §1.3 split note is explicit — 'wave-1 conflated backup with DR... This entry is backup/archival (window, verification, bit rot, restore time); DRaaS is separate — see \"Declaration Day\"' (:1951) — and the standby-oversubscription level stays unbundled. Pack authored at file:packs/backup-archival.i18n.json — cac.backup-archival.protection-cycle is the backup family's OWN §6.6 Companion B row, priced for the first time by a backup card. handoverNote provenance: the doc writes this line's three handover moves almost verbatim in the §1.9 exemplar — 'Backups: you never run out of disk. You run out of night. Jobs that don't finish by 06:00 didn't happen. Nobody cares how fast you are; they care whether Tuesday's file comes back' (:4994) — runsOut is the night, customerWants is Tuesday's file, killsYou is §0.3's fatality column ('An unrestorable backup' :613) + §6.6's bad month ('a restore that fails in public').",
+
+  "meta": {
+    "name": "type.backup-archival.name",
+    "codexSummary": "type.backup-archival.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.gb-plus-rto",
+    "durationClass": "BatchJob",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "The §3.1 five-stat ledger names this line's visitor in its own thesis sentence — 'reskinning them is how one system covers page loads, game sessions, backup jobs, inference requests, and a colo tenant touring the building' (:11445) — and the §3.3 costume row writes the shape without numbers: 'Backup | Job | Huge, scheduled | Retries | Window overrun, checksum fail' (:12493). All five authored null + these cites, never forged. The doc's own qualitative words are the shape: patience 'infinite, but the *window* is finite' (§3.2 ledger row :11964 verbatim — the patience slot is deliberately unnumbered because the line does not use the patience axis at all), value inverted by §3.2's visitor spec — 'the restore is worth 10× the reputation of any backup job' (:12608) — weight 'Huge, scheduled' (§3.3 size column verbatim), fragility 'a job that runs past the window is a partial failure that compounds into tomorrow's' (§3.2 :12595 verbatim)."
+    },
+    "patienceModel": {
+      "mode": "window",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "mode 'window' — the engine seam was BUILT named for this line: the pipeline's R25 mirror documents 'window — hard cutoff (backup's \"window module\")' (src/pipeline/defaults.ts step-9), and the §3.2 ledger row commands the choice verbatim: 'Backup job | infinite, but the *window* is finite | patience is the wrong model; use the window' (:11964). First corpus USE of the mode; the doc's backup-host spec is the design it implements: 'it won't bounce, it'll retry — but it is absolutely intolerant of the window closing' (:12595). budgetMs null by authoring law: the window's length is never authored as a scalar — the card's only window numbers are failure-state prose ('a backup window that grew to 26 hours', §1.3; 'Jobs that don't finish by 06:00 didn't happen', §1.9) and the tuning sheet owns the band. bounceSigmoid null by MODE LAW — the mode has no gradient: 'p = 1 once elapsed + predicted ≥ budget, else 0' (defaults.ts); the whole point of the row is that the sigmoid is the wrong instrument."
+      }
+    },
+    "party": {
+      "allOrNothing": true,
+      "size": null,
+      "_todo": "allOrNothing TRUE verbatim at the doc's OWN backup exemplar of the party-arrival law: 'Backup — a job chain (an incremental is worthless without its full)' (§3.2 :11772). size null: the chain's length is never authored (full + incrementals + the archive tail are tier/retention territory); the consequence the law names — a partial chain is a total loss — is what the all-or-nothing flag carries. First use of the family exemplar: type-9 and type-10 carried the COLO clause ('seven cabinets, or they go elsewhere') to their cards; this card cites its own line."
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null,
+      "_todo": "no herd law is authored for job chains; the clustering that matters here is CALENDAR-shaped — the nightly convoy arrives because a schedule says so (§3.2 visual: 'arriving as a nightly convoy during a visible window band', :12597), not because arrivals watch each other. Herding vs scheduling never conflated, never invented."
+    },
+    "populationEffect": false,
+    "retryAmplifies": true,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-tb-stored",
+    "trustReadable": false,
+    "archetypeRefs": [],
+    "_todo": "durationClass 'BatchJob' — the FIRST card to wear this class: the §3.2 class list names it verbatim ('Batch/job (a backup run, a CI build, a render) consumes a window', :11691) and the §3.3 row calls the visitor 'Job' (:12493); the costume law gives it its shape — 'circle = instant, teardrop = session, square = batch/job, hexagon = resident' (:11698) — and skin._todo wears it. populationEffect FALSE with the reason on record: this line's attractor is DATA gravity ('the switching cost is the egress bill', CEO truth §1.3) which acts on retention, not on arrival rate — §2.12's carrier-density law is authored for the colo meet-me room, not for a vault; recorded as declined, not overlooked. retryAmplifies TRUE verbatim-grounded twice over: the §3.3 patience column IS the word 'Retries' (:12493), and the compounding law is the §3.2 spec sentence — a window-cut job 'is a partial failure that compounds into tomorrow's' (:12595); the card's 26-hour disaster is the same mechanic at scale ('jobs overlap and the chain breaks', §1.3). costPerInvocation 'per-tb-stored' — §3.3 revenue-model column verbatim; §6.6 carries the wider frame 'TB protected + restore SLA' (:23320), which the economy block cites alongside it. trustReadable FALSE — the deliberate inversion of type-10's landlord meter, authored by the card's core sentence: 'The core inversion: your success metric is something you can't observe. Durability is a hidden stat. The only way to reveal it is restore testing, which costs money and produces no revenue' (§1.3 :1958 verbatim). The colo line reads its relationships on an instrument; this line reads NOTHING until it pays for proof — the green checkmark is the lie this card exists to teach, and the paper tag ('last verified restore: 41 days ago', §1.3) is the only truth-meter, measuring the last time proof was bought, not the thing itself. archetypeRefs empty by authoring law: the visitor here IS the job chain (§3.2's backup-host spec is job-native; a chain archetype would move the visitor-registry censuses this lane is fenced off from — flagged for the registry-owner pass)."
+  },
+
+  "goal": {
+    "nodeType": "vault-window-floor",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "rpo-rto-restore-success",
+      "threshold": null,
+      "_todo": "The held metric is the fifth-axis row verbatim: 'Backup host on **RPO/RTO achieved and restore success rate**' (§0.x :638), the same vocabulary the pivot lattice names as this line's identity ('New SLA vocabulary: RPO/RTO instead of uptime %', §5.6 :20893). threshold null + the doc's own prohibition: the entry pass states the law against authoring it — 'Make RTO a computed value from real measured throughput rather than a promise the player types in — that single change makes the whole backup ruleset honest' (:15736). A typed threshold in the bundle would be EXACTLY the dishonesty the doc forbids; the number lives in measured restore rate (GB/hour, a network and storage design constraint) and arrives with the tuning pass. The same cite grounds the unauthored shape: 'A customer with 40TB and an 8-hour RTO needs 5TB/hour' (:15737) is the doc's worked example, not this card's scalar."
+    },
+    "loseCondition": {
+      "kind": "unrestorable-backup"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.backup-archival.binding"
+  },
+
+  "scarce": {
+    "resourceId": "restore-time",
+    "meterWidget": "durability-and-restore-freshness",
+    "meterBoundStat": "restore-test-freshness",
+    "commercialSlider": "restore-sla-tier-pricing",
+    "operationalDials": [
+      "durability-level",
+      "scrub-io-allocation",
+      "key-custody-stance"
+    ],
+    "windowGrows": false,
+    "shedOrder": "standard-p3-p0-ladder",
+    "qosAnswer": "scarce.backup-archival.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "hours",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "annual",
+      "escalator": false,
+      "grandfathering": false,
+      "_todo": "The contract block is this card's OWN family row verbatim — §6.6 'Backup / DR | TB protected + restore SLA | very sticky, low touch | good | annual | storage + testing' (:23320) with Companion A confirming the term and the exit shape: 'Backup / DR | annual | 0.5–1.5% | +30 to +90 days' (:23357). default 'annual' verbatim from the billing column; the stickiness the doc claims in words ('backup revenue is beautiful because it never churns — the switching cost is the egress bill', CEO truth §1.3) is authored in economy.termStructure as the gravity shape, never forged into a churn scalar. escalator FALSE: no escalator clause is authored for this family (§6.12 term-structure instruments absent from every backup row) — recorded, not invented, the same honesty rule type-10 applied where the doc was silent. grandfathering FALSE for the same reason; note the §6.12 grandfathering instrument stays engine-live for priced books that DO key it — this bundle simply keys nothing."
+    },
+    "seasonality": [],
+    "diurnalBaseline": "nightly-window-convoy",
+    "_todo": "simTimeScale 'hours' — VERBATIM from the granularity roster: 'Backup runs in **hours** (the window)' (§7.8e :27842). This is the corpus's second hours clock (object-storage took hours for its rebuild math, uncontentious) and its FIRST where the hours are the level's protagonist: the band opens at dusk and closes at 06:00 and everything playable lives inside that box. NO honest-tension entry is needed the way type-10 was forced to write one: where 'Colo runs in years (the lease)' could not become a tick clock without falsifying the playable quarter, 'hours' describes the clock this card actually plays — the quarter is measured in window-counts — and the sub-band queueing physics the engine runs under it are the same minute-resolution the window mode's budget math consumes. The tempo slot CLAIMS its doc line; the hook budget (R15, R16, R17, R18, R22 — five) closes exactly at the ceiling with room enough. permanentIncidentClock false: §7.8e's always-on clause names the millisecond types; the incident clock here is the RTO hourglass, which is not permanent — it appears, once, judged, alone (§3.2: the restore request is 'the only one anyone judges you on. A single unit that is the entire win condition', :12596), and the §1.3 Cold Start keeps the fuse off the floor between appearances. seasonality []: no backup season is authored; inventing a curve would move the waves-lane catalogue — recorded debt. diurnalBaseline 'nightly-window-convoy' AUTHORED-FROM-VERBATIM: 'arrive at night in a huge burst' (§1.3) × 'arriving as a nightly convoy during a visible window band' (§3.2 visual, :12597) — the first corpus baseline whose peak is the doc's own night; the collision this shape creates with the other night line (game servers) is authored in relations.antagonisms, and the waves lane owns every curve number (PROVISIONAL-B)."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.15,
+      "human": 0.15,
+      "entropic": 0.3,
+      "systemic": 0.15,
+      "customerAsThreat": 0.25,
+      "_todo": "entropic .30 — the card closes by declaring this line the entropy level whole: 'A level where the enemy is entropy and the weapon is a maintenance schedule' (§1.3 :2007 verbatim), and its signature visual is stored data that 'literally loses pixels over years' (bit-rot tiles speckling grey, §1.3); the family weight is the thesis. customerAsThreat .25 — the threat sentence is customer-shaped from its first clause: 'a customer whose backups silently stopped six months ago... a restore that runs slower than the customer's business can survive... a customer who deletes data and wants it back from day 400 of a 365-day retention; the discovery that a customer's \"backup\" was of the wrong volume' (§1.3), and the concentration table names the line's twin exposures as 'Silent corruption | Restore surge cost | Trust, then everything' (:11344) — the trust leg is the customers believing checkmarks that were hollow. malicious .15 — one monster holds this share and the card names it at full length: 'ransomware that encrypts the customer's data and then sits for 90 days so it is inside your retention window' (§1.3 verbatim — a dwell, not a detonation), the campaign-boss row confirming the genre's rule for THIS line: 'Backups you never tested = game over... the single clearest justification the design has for spending money on something with no visible benefit for twenty levels' (§4.x :11096); depicted as consequence (dwell day, missing copy) per §9.11, never as method. systemic .15 — the correlated bad day the doc sizes exactly: 'a regional ransomware event means fifty customers all restore at once, and your restore capacity was sized for two' (§Backup: Restore Surge Cost :9716); the robot arm, the lost courier case and the drive that cannot read 2009 tapes are the physical-chain legs (§2.x 'Tape: Library Jam / Robot Failure / Courier Loss... blocks every restore until a hand fixes it', :9725). human .15 — the calls, the audits and the walk-throughs: the restore request 'arrives by phone, at night, from a person having the worst day of their career' (§Backup/DR visitor spec :12611), the 4am drill, the regulator reading the retention log. Sum 1.00 (micro-exact 150000/150000/300000/250000/150000). Consumers: waves/parseFamilyWeightsTable -> pipeline arrival familyMix (audit fix 3)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "entropic",
+      "systemic",
+      "customerAsThreat"
+    ],
+    "signatureThreats": [
+      { "id": "layer7-mimic", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "empty-server-spiral", "mechanical": true },
+      { "id": "udp-amplification-barrage", "mechanical": true },
+      { "id": "noisy-query-table-scan", "mechanical": true },
+      { "id": "vulnerable-plugin-compromise", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "key-escrow-cabinet": ["vulnerable-plugin-compromise"],
+      "nightly-window-orchestrator": ["hoarder-noisy-neighbor"],
+      "restore-throughput-bond": ["udp-amplification-barrage"]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "concurrency",
+      "data-integrity",
+      "hands",
+      "cash",
+      "reputation"
+    ],
+    "waveTable": "file:waves/g1-backup-archival-first-quarter.json",
+    "_todo": "Threat mapping law (dns/mail/dedicated/object-storage/voip/serverless/exchange-colo/colo precedent — registry ids re-framed in _todo cites, zero new registry entries): the card names its threats as STATES AND MISSED MOMENTS; none is a registry id, so each rides the closest existing mechanic — layer7-mimic = the checkmark that means nothing: 'your backup job has been \"succeeding\" for two years while writing zero bytes' (§1.3 verbatim) and the §2.9 boss row 'The backup job has been \"successful\" for 14 months and has been writing a 4KB file... The game should let this happen' (:8242) — the registry's one Mimic, whose entire role is legitimacy-wear, re-framed from traffic-noise onto a status light: the hollow check is the corpus's purest deception event, and this is the seed this bundle carries for the lookalike law (§2.4/OD-18: the visitor that masquerades is the completion that never happened). scanner-drizzle = the first grey speckle on an archive tile — bit-rot asking to be noticed (§1.3: tiles 'slowly speckling with grey noise'; §2.x 'Damage you cannot detect without looking. Discovered only at restore time', :7758) — the registry's Stealth probe re-worn as entropy's own drizzle, the one family the fog is honest about. hoarder-noisy-neighbor = the 26-hour job: 'a backup window that grew to 26 hours so jobs overlap and the chain breaks' (§1.3 verbatim) — the registry's committed-capacity eater re-framed onto the nightly band: an unfinished crate 'is a partial failure that compounds into tomorrow's' (:12595), so the neighbour holding tonight's window is always somebody's overrun from last night. ticket-avalanche-hydra = the worst-day-of-their-career calls and the day-400 requests: 'a customer who deletes data and wants it back from day 400 of a 365-day retention' (§1.3) arrives through the same desk the drill floods — the registry's one swarm-on-hands engine. empty-server-spiral = the silent stop's reputation leg: 'a customer whose backups silently stopped six months ago' (§1.3) is a green row of nothing, and when the tours of numbers come — the quarterly review, the renewal audit — the emptiness itself is the event; Healer/Spawner on reputation, the mirror of colo's grey floor read from the tenant's side. udp-amplification-barrage = the restore surge: 'fifty customers all restore at once, and your restore capacity was sized for two. Your product's busiest day is the day it is hardest to deliver' (§Restore Surge Cost :9716 verbatim) — the registry's one raw-volume Tank re-worn to run OUTBOUND: this line's flood is everybody pulling their own data back at once. noisy-query-table-scan = the window that moved: 'Daylight saving time shifts your schedule. Your nightly backup now starts during the business day... the job runs, succeeds, and saturates your storage array for four hours while customers are working' (§2.9 :8201 verbatim) — the registry's Debuffer is the saturation itself, and the comedy writes itself: the attack that is a calendar. vulnerable-plugin-compromise = the dwell: ransomware that encrypts the CUSTOMER's data 'and then sits for 90 days so it is inside your retention window' (§1.3 verbatim) — the registry's Bypass/Flyer re-framed onto time instead of perimeter: the compromise you are paid to survive is the one that learned your retention schedule; depicted strictly as consequence (a dwell day, a chosen copy) per §9.11. The drive that cannot read 2009 tapes, the courier's lost case and the jammed robot have NO attacker id: they are the systemic weight the drills find and the ladder of hours answers (§2.x Tape rows :9720-9727, cited above), recorded here rather than forged into registry entries. activeFamilies carries ALL five — entropic leads at .3 on the strength of the card's own closing sentence, the first family-led-by-entropy weighting in the corpus (the fog is not a metaphor on this floor; it is the product's counter-material)."
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "vault blue-white",
+      "accent": "label yellow",
+      "chord": [
+        "vault blue-white",
+        "tape black",
+        "label yellow",
+        "rust",
+        "restore gold"
+      ]
+    },
+    "materialPreset": "preset:cold-steel-and-deep-blue",
+    "visitorCostume": {
+      "hull": "square-job-crate",
+      "propSlot": "red-seal"
+    },
+    "heroSilhouette": "asset:hero.vault-aisle",
+    "heroObject": "vault-aisle",
+    "meterFace": "restore-time-hourglass",
+    "catastropheFx": "fx:hollow-check-static",
+    "ambientSoundPack": "sound:drive-io-and-tape-hush",
+    "densityMultiplier": null,
+    "arrivalRhythm": "nightly-window-convoy",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.paper-verification-tag",
+    "signatureMotion": "motion:robot-arm-travel",
+    "signatureFrame": "frame:crate-drops-with-a-clunk",
+    "lodContract": {
+      "full": "asset:lod.vault-aisle.full",
+      "icon16": "asset:lod.vault-aisle.icon16",
+      "pip": "pip:label-yellow",
+      "aggregate": "agg:crate-stack-silhouettes",
+      "inspector": "skin.backup-archival.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented. Palette chord VERBATIM from the card's visual paragraph: 'Chord: vault blue-white · tape black · label yellow · rust · restore gold' (§1.3 :1990 area); dominant/accent are the lane's pick from the card's own art direction — 'cold steel and deep blue, blue-white task lighting, a lot of empty floor' (verbatim) — flagged for owner palette ratification (serverless/exchange-colo/colo precedent). The rust is the doc's, and it stays: this is the one level whose palette ages on purpose — 'stored data literally loses pixels over years' is a colour instruction. Hero object: THE VAULT AISLE — 'a lot of empty floor — the slowest, calmest-looking level type, and that's the point, because the threat is invisible' (§1.3 verbatim); the robot arm 'takes real seconds to travel and you watch it' (signatureMotion verbatim), and the level's one mercy is kinetic: 'Restores are the only fast, warm thing here and they're deliberately thrilling because everything else is glacial' (verbatim) — signatureFrame 'crate-drops-with-a-clunk' is that mercy at its endpoint: 'success is the crate dropping into the vault with a clunk' (§3.2 visual verbatim). Costume hull 'square-job-crate' wears the duration-class shape law verbatim — 'square = batch/job' (:11698) — sized by the §3.2 visual: 'big slow crates on a conveyor with size labels' (:12597); propSlot 'red-seal' from the same paragraph's dread image: 'unfinished crates sit outside, half-open, with a red seal' (verbatim). meterFace bound to scarce.meterWidget per the R15 pairing law — the instrument is the card's named meter: 'Restore Time (RTO) as a physical hourglass' (verbatim); the paper tag is commercialArtifactIcon per its own paragraph — 'the \"last verified restore: 41 days ago\" readout should be a paper tag hanging on the vault door, hand-written, with the date crossed out and rewritten each time' (§1.3 'The counter, made human', verbatim — this line's bad-month artifact is the tag nobody has rewritten). catastropheFx fx:hollow-check-static — the card's catastrophe verbatim: 'a restore drill that fails — the robot fetches a cartridge, loads it, and the readout is static'; the §2.9 teaching variant keeps the stroke-vs-fill law the visual rests on — 'the checkmark is drawn slightly hollow... Teaching a real operational truth purely with a fill-vs-stroke distinction' (:8250 area), and 3-2-1 pip visibility ('three filled/unfilled pips per dataset... the player can see at a glance that they have 3-1-0 and think they're covered', :15733) is the same lesson on the rack. aggregate 'agg:crate-stack-silhouettes' = the convoy at altitude — a vault floor at Z2 is labelled crate stacks and one moving light on the rail. ambientSoundPack authored from the entry objects (drive-io + the room's hush; audio lane's voice bindings exist for both shapes); bespoke refs counted at exactly five per R48/R49 (heroSilhouette, catastropheFx, commercialArtifactIcon, lod.full, lod.icon16)."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4's era grid has no dated cell for this line (its sketches name 1994 dial-up, 2001 dot-com colo, 2009 cPanel, 2016 cloud, 2024 GPU boom); the media cliff the doc DOES author for archival ('a drive that can still read 2009 tapes', §Tape :9725; 'a media format going end-of-life') is a within-save decay mechanic, not an era unlock, and inventing a date slot for it would be the forged scalar this corpus refuses — every shipped bundle leaves the slot null pending the era-owner pass (R66 law); status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "gb-plus-rto",
+    "revenueShape": "annual-sticky-low-touch",
+    "marginProfile": "good",
+    "cashTiming": "annual",
+    "termStructure": {
+      "typical": "annual",
+      "churn": "gravity-lock-plus-30-to-90-day-exit",
+      "_todo": "§6.6 revenue table verbatim: 'Backup / DR | TB protected + restore SLA | very sticky, low touch | good | annual | storage + testing' (:23320); Companion A: 'Backup / DR | annual | 0.5–1.5% | +30 to +90 days' (:23357); Companion C bad month: 'a restore that fails in public' (:23399). typical 'annual' verbatim. churn authored as the EXIT SHAPE rather than the 0.5–1.5% scalar (never forged into a bundle field): the CEO truth IS the mechanic — 'backup revenue is beautiful because it never churns — the switching cost is the egress bill' (§1.3), and §6.x names the same moat from the fee side ('egress fees are both revenue and a churn-prevention moat (data gravity)', card economics, verbatim) — gravity holds the account, the +30-to-90-day exit is the paperwork friction; the 0.5–1.5% stays the doc's, quoted in the Codex, unnumbered here."
+    },
+    "cacProfile": "cac.backup-archival.protection-cycle",
+    "ticketsPerCustomer": null,
+    "signatureCost": "storage-and-testing",
+    "badMonth": "economy.backup-archival.bad-month",
+    "fifthAxisScore": {
+      "metric": "rpo-rto-restore-success",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.x fifth-axis row verbatim: 'Backup host on **RPO/RTO achieved and restore success rate**' (:638) — the three-instrument axis joined into one slug the same way colo joined its four-fold row; the weight stays unauthored (R42 law; the entry pass forbids the promise-typed number, see goal._todo)."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false
+    },
+    "_todo": "unitOfSale 'gb-plus-rto' — §0.3 unit column verbatim ('A GB + an RTO'); the meters stay unreconciled into one word on purpose — §6.6 prices 'TB protected + restore SLA' and §3.3 bills 'Per-TB stored' — carry-both, forge-neither per the gb-vs-TB owner law. signatureCost 'storage-and-testing': the revenue table's signature-cost column says 'storage + testing' verbatim (:23320) — the doc put the VERIFICATION COST CENTRE in the unit-of-cost column, which is this card's thesis ('The product is not storage, it's restore time'), so the ampersand is hyphenated for slug law and the meaning rides untouched. cacProfile AUTHORED — the first backup-family card to price its own acquisition: Companion B's family row IS this line's row — 'Backup / DR | $400–1,500 | 6–12 months | 0.1–0.3, spiking on restore' (:23378) — the payback-ratio's qualifier ('spiking on restore') is the surge cost read from the ledger, and it is carried into the pack text with the doc's own shape. ticketsPerCustomer null: no rate authored (the touch model is 'low touch' in words and the surge is event-shaped; inventing a per-customer ticket rate would move §3.3's whole register). badMonth: Companion C's family row verbatim ('a restore that fails in public') — this line's home row. The §9.x 'Cold Storage, Warm Margins' economics (dedup ratio gross margin, retention as pricing lever, egress as moat, restore surge) are authored into pack decision text (terms.dedup-ratio, terms.retention-window) and mechanics, not into two free boolean slots: p95billing/demandCharges are the power/CDN-line instruments and neither is authored for this row — false twice, with the reason on record."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "window-band" },
+      { "archetype": "two-face-rack", "skin": "vault-door" },
+      { "archetype": "control-plane", "skin": "vault-desk" }
+    ],
+    "distinct": [
+      "worm-immutable-vault",
+      "air-gapped-vault",
+      "offsite-tape-courier",
+      "scrubbing-engine",
+      "three-two-one-meter",
+      "restore-drill-desk",
+      "tape-library-robot",
+      "key-escrow-cabinet",
+      "restore-throughput-bond",
+      "vault-door-tag-board"
+    ],
+    "nonPhysical": [
+      "window-versus-duration-state",
+      "dwell-clock",
+      "restore-confidence-stat"
+    ],
+    "_todo": "All distinct names cite the doc: worm-immutable-vault and air-gapped-vault VERBATIM from the card's buildables line ('immutable/WORM storage, an air-gapped vault', §1.3) — the insurance-design pair the entry pass names 'Fast/Online vs Slow/Offline... A pure insurance-design decision' (:15742); offsite-tape-courier VERBATIM including its punchline ('offsite tape courier (a literal van on the map — it can crash)', §1.3) and the §Tape beat that prices it ('a courier losing a case', :9725); scrubbing-engine from the card verbatim ('checksums/scrubbing (a continuous background process that costs IOPS and reveals corruption)') — the IOPS cost is why it is a dial AND an object; three-two-one-meter from the card buildables ('a 3-2-1 compliance meter') + the entry pass's widget law ('three filled/unfilled pips per dataset... the player can see at a glance that they have 3-1-0 and think they're covered', :15733); restore-drill-desk from the signature scenario's machine ('Signature scenario: \"The Restore Drill\"' §1.3 + 'a restore drill — a recurring cost with zero visible benefit until the one day it's everything. Give it a small visible \"confidence\" stat', §2.9 :8247); tape-library-robot from the visual paragraph's hero motion ('the tape robot arm takes real seconds to travel and you watch it', §1.3) + the failure row ('a robot arm jamming', §Tape); key-escrow-cabinet from the custody trilemma made an object ('Hold the customer's key... Don't hold it... Give it to them and they will lose it. The three-way choice should be set per plan tier, visibly, at the Pricing Engine', §Backup: Encryption Key :9703); restore-throughput-bond from the computed-RTO law ('A customer with 40TB and an 8-hour RTO needs 5TB/hour, which is a network and storage design constraint', :15737 — the bond is the design purchase); vault-door-tag-board from 'The counter, made human' (§1.3 verbatim — the hand-written tag gets a buildable because the doc made watching it NOT get rewritten 'more uncomfortable than a number turning amber'). The three invitation doors are per threats.unlockedByBuildables: key-escrow-cabinet (the online vault holding every customer's key is, verbatim, 'the juiciest target on your network and a ransomware operator's dream', :15728 — holding keys invites the compromise that wants them), nightly-window-orchestrator (centralizing the band is what makes a neighbour's overrun YOUR starvation — every held crate steals the same closing edge), restore-throughput-bond (advertising the SLA tier is selling the surge a door — 'restore capacity sized for two' meets fifty on the day; the doc prices the same inversion in Companion B's 'spiking on restore'). nonPhysical: window-versus-duration-state is the entry pass's separate-tracking law made an object ('Backup window vs backup duration, tracked separately, with the overlap failure state explicit', :15746 verbatim); dwell-clock is the 90-day sit (§1.3 verbatim) as a running state — the threat is a calendar, so the state is too; restore-confidence-stat is the §2.9 counter ('a small visible \"confidence\" stat so the player has something to watch'). The concurrency-pool skin 'window-band' is the §3.2 band made capacity ('jobs queue at the edge before it opens, roll in while it's open, and are physically cut off at the band's trailing edge', verbatim :12597); the two-face-rack is the vault door — face one is yours (tag, meter, the green row of nights), face two is what the media actually holds and is visible only during a drill, which is the whole level in one hinge (§1.3 inversion + §2.9 static readout); the control-plane skin 'vault-desk' is where the custody decision and the drill calendar are set. All three archetypes re-worn, zero palette additions."
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2/§7.8f control-granularity authors the pip spread for shared/dedicated/colo/reseller/cloud/wholesale lines only (the one non-null corpus row remains dedicated's verbatim 'hardware and network'); the backup pip row awaits its ruleset-card pass. The line DOES ship control prose — the key-custody trilemma is a pure control decision ('hold / don't / give') and the air-gap is control over reachability itself — but no four-way spread is authored for them, so the scalars stay null + this cite, never invented (the corpus-wide law dns/mail/game-servers/object-storage/voip/serverless/exchange-colo/colo all cite)."
+    },
+    "keyhole": false,
+    "unclickableObjects": false,
+    "_todo": "keyhole FALSE — the HONEST INVERSION of type-10, recorded on purpose. The landlord line is the corpus's keyhole card ('you cannot see inside the cages... simply cannot be clicked', §0.2/§1.3) because its epistemic wall is a DOOR; this line's wall is a PROOF COST — nothing is locked away from the player's cursor, every object is walkable, metered, clickable, and the single fact that matters (is the data actually recoverable) is invisible THROUGH all of it ('your success metric is something you can't observe', §1.3 verbatim; 'Durability is a hidden stat'). unclickableObjects FALSE with the same argument: the checkmark, the tag, the pip trio, the hollow stroke — the doc's teaching instruments all demand clicking; the §2.9 fill-vs-stroke law exists precisely because the player CAN inspect the object and the object can still LIE ('the backup node shows a green checkmark every night — but on inspection the checkmark is drawn slightly hollow', verbatim :8248). The two colo-lineage epistemologies are not inconsistent; they are the two halves of the trust design: the landlord cannot look, the vault-keeper looks constantly at a thing that cannot look back at itself. The keyhole MODE's verbs ('ask, advise, escort, escalate, prove it isn't us', §7.8h) belong to lines that talk to tenants; this line's verbs are all in-house, they just cost money to mean."
+  },
+
+  "mechanics": [
+    "backup-window-fit",
+    "hidden-durability-stat",
+    "restore-drill-cost-center",
+    "bit-rot-decay",
+    "dedup-ratio-margin",
+    "egress-gravity-moat",
+    "ransomware-dwell-window",
+    "key-custody-trilemma",
+    "triage-window",
+    "attention-grace"
+  ],
+
+  "verbs": {
+    "dominant": "Schedule",
+    "transfers": [
+      "verbs.backup-archival.transfer.1"
+    ],
+    "_todo": "THE BLESSED VERB, SECOND USE — the first card founded on a roster verb that had ZERO claiming cards before the blessing: 'Dominant verb: Schedule.' is the card's own row verbatim (§1.3 :1946, identity block: product → VERB → teaches). The §1.9 law-roster reinforces from three directions: the scenario-archetype table names the verb with this line FIRST ('Schedule — fit work into windows (backup, HPC queue, satellite passes, change freeze)', :5067); the §7.8 Window mechanic is titled '(backup, maintenance, satellite)' and says the level is 'Scheduling as tower defense' (:27864); and the Rosetta ink row is already written for the transfer — 'Backup window is your maintenance window' (:5006). Roster census at this commit: Triage=shared-web, Place&Connect=game-servers, Tune=mail, Commit=dns, Observe=dedicated, Shield=object-storage, Maintain=trunk-group-voip, Scale=serverless, Sell=exchange-colo, Negotiate=colo, Schedule=backup-archival — the invariant roster's sole unclaimed slot is now Diagnose alone, and the ADR-0014 #D1 blessing pair (negotiate/schedule) is fully consumed; a twelfth type needs a new card naming a new verb or an owner law call (MODULE-STATUS verb-wall row flips to LANDED at closeout). Reinforcement cites: §7.8e runs the clock at the verb's scale ('Backup runs in hours (the window)'); the card's close is the verb as thesis ('the enemy is entropy and the weapon is a maintenance schedule'). HONEST DOOR GAP (g16 finding, RULED ADR-0014 #D2 — full PlayerVerb enum extension lane-queued, Shield-first): 'Schedule' has no door enum member and no acquisition mechanic ships — this dominant verb is card IDENTITY and design posture, as with Negotiate. The difference recorded honestly: where Negotiate survives as instruments (meter, ladder, ticket), Schedule survives as a REAL engine seam — the patience window module (mode 'window', built and named for this line, first used here) — which makes the door lane's first acquisition mechanic the obvious candidate on this card when the owner calls it."
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:object-storage",
+        "kind": "backup-on-buckets",
+        "numbers": null,
+        "_todo": "§0.2 Line Synergies verbatim: 'backup + object storage' (:541 area, the pair named in shorthand) — the storage line IS this line's offsite copy, and §0.3 already cast object storage's customers as 'Developers, backup vendors' (:612): the vendor row and the vault row are two halves of the same durability trade. No numeric benefit authored for this pair."
+      },
+      {
+        "with": "official:colo",
+        "kind": "dr-for-your-own-tenants",
+        "numbers": null,
+        "_todo": "§0.2 Line Synergies verbatim: 'backup/DR + colo (sell DR to your own tenants)' (:540) — the landlord's cages hold tenants whose worst days ARE this line's visitor; the pair key was authored from colo's side at type-10 only as an antagonism (the amps), so the doc's OTHER sentence for the pair — the synergy — finds its second half here. No numeric benefit authored."
+      }
+    ],
+    "antagonisms": [
+      {
+        "with": "official:game-servers",
+        "resource": "night-window",
+        "kind": "colliding-night-peaks",
+        "render": "utilization-curve-collision",
+        "_todo": "§2.13/the portfolio-peak law verbatim: 'The joke version, which is also the better level: game servers and backup. Gamers peak at night. Backups run at night too. Their \"complementary\" demand curves collide, and the collision is the level' (:3028) — the doc's own named pair, and the same passage's generalization ('opposite peak hours are a synergy — ... backup peaks overnight', §0.2 :547) is the portfolio-wide reading; the pair-specific law is the COLLISION, and it is the one authored here. Both counterpart bundles ship; game-servers' slice never needed to know its night had a landlord of its own. The §1.10 Double-Header note the cite cross-references ('a level can demand you run two business types on one facility') is the same fact wearing its campaign hat."
+      }
+    ],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["storage", "offsite-capacity", "retention-policy", "restore-testing"],
+          "_todo": "§5.6 lattice verbatim: 'Hosting → Backup/DR — gate: storage plus offsite capacity plus retention policy and restore testing' (:20892) — the gate's four tech flags copied complete, in order, with the row's own words. The sentence's fifth clause is recorded rather than forged: 'and, most authentically, a trauma (your own data loss, or a customer's ransomware event)' — a trauma is a campaign-state gate the engine does not model; flagged here for the lattice-owner pass, never invented into a tech flag."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {},
+      "_todo": "§5.6 pivot rows touch this line from the inbound side only: the 'Hosting → Backup/DR' gate above carries the doc's own strategic gloss — 'Countercyclical, recession-proof, near-zero churn: the classic \"stabilize the business\" pivot' (:20894) — authored as the unlock's posture note (this card's inbound gate, as colo authored its own). No outbound pivot row is authored FROM backup/archival in the lattice; the to-map stays empty rather than citing a phantom — never invented."
+    },
+    "masteryBuff": "relations.backup-archival.mastery",
+    "distillate": "relations.backup-archival.distillate",
+    "_todo": "mastery grounded on the §5.6 mastery law verbatim: 'Mastering Backup grants a durability bonus everywhere' (:20966) — the buff's instrument is the axis this line already holds (the 3-2-1 state, the hidden durability made visible by paid proof), so no number is forged into the bundle and the buff text names the durability shape the doc names. The distillate is the taught lesson per the §1.9 distillate law, authored from the card's own doctrine: verification is the only proof; the window is the constraint (:5041 verbatim teaches-clause) — every later line inherits the reflex of buying proof before needing it."
+  },
+
+  "ticketPack": "file:packs/backup-archival.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.backup-archival.runs-out",
+    "killsYou": "handover.backup-archival.kills-you",
+    "customerWants": "handover.backup-archival.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "maintenance-window",
+      "alias": "backup-window",
+      "line": "rosetta.backup-archival.window"
+    },
+    {
+      "canonical": "renewal-cliff",
+      "alias": "gravity-lock",
+      "line": "rosetta.backup-archival.gravity"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Escort",
+      "Schedule"
+    ],
+    "analogues": {
+      "restore-drill": "scenarios.backup-archival.restore-drill",
+      "window-that-moved": "scenarios.backup-archival.window-moved",
+      "hollow-checkmark": "scenarios.backup-archival.hollow-checkmark"
+    },
+    "_todo": "Schedule is FIRST corpus use of the schema's Schedule scenario archetype and the doc authored the pairing with this line named first: 'Schedule — fit work into windows (backup, HPC queue, satellite passes, change freeze)' (:5067). Escort rides its exemplar clause verbatim — 'one unit matters (the Influencer, the Whale Demo, a tournament, a restore)' (:5063), the restore being §3.2's single judged visitor ('A single unit that is the entire win condition', :12596). analogues authored from cited doc beats, consequence-only framing per §9.11: restore-drill (§1.3 signature scenario verbatim — the 4am declaration, the RTO clock, 'any shortcut you took in the last ten levels bites you now'), window-that-moved (§2.9 :8199 verbatim title — the DST shift with 'no failure, no alert'), hollow-checkmark (§2.9 :8239 + §1.3's two-year zero-byte classic — discovered at restore time, never prevented in text)."
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

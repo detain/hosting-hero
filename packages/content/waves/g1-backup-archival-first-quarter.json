@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-backup-archival-first-quarter",
+  "type": "official:backup-archival",
+  "purpose": "First-quarter wave slice for the eleventh Ruleset Card — the §1.3 backup/archival card 'Restore Point' / 'The Vault' / 'Bit Rot', the first card founded on Schedule, the roster verb that stood zero-claimed until ADR-0014 #D1 blessed it (11 of the 20-type launch canon, OD-14(a)). Slice shape mirrors the ten shipped g1 siblings: a reconnaissance opening on a floor whose only motion is scheduled, the hollow-success beat as the surprise-with-composition wave (the disaster that looks like a green checkmark), a trough where the enemy is a calendar nobody checked, and a finale built on the line's authored cruelty — 'your success metric is something you can't observe' meets 'a restore that fails in public'. Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "nightly-window-convoy",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. The rhythm name is authored from the card's own words (bundle tempo._todo carries the cites): 'arrive at night in a huge burst' (§1.3) × 'arriving as a nightly convoy during a visible window band' (§3.2, :12597) — the corpus's first baseline whose PEAK is the night band and whose daytime is the queue outside it. neverZero holds here in the register this line owns: the band closes at 06:00 and opens again at dusk, and in between the board is not empty — it is HOLDING (the half-open crate with the red seal, the dwell clock, the tag nobody has rewritten); the day's arrivals are verifications, audits and disputes, and between them the belt never actually stops, it only pretends. The curve catalogue owns every number, PROVISIONAL-B.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "dwell-window",
+      "kind": "customer",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "quiet-tail" },
+      "amplitude": null,
+      "telegraph": "the first degraded read is not an attack, it is a timestamp: an encrypted file's creation date sits comfortably INSIDE the retention band — 'ransomware that encrypts the customer's data and then sits for 90 days so it is inside your retention window' (§1.3 verbatim) — and the good copy is now whichever one the restore desk reaches first",
+      "source": "§1.3 card Threats sentence verbatim (the 90-day dwell clause); §11369 family threat row 'ransomware *of the customer*' (:11369)",
+      "compoundWave": "the line's inversion of the attacker genre: the adversary spent its whole budget three shifts ago and is merely waiting to be RESTORED; the blast radius is the retention ladder itself — every keep-day the player sold becomes a day the attacker also had",
+      "_todo": "dwell-age → data-integrity/reputation pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "hollow-success",
+      "kind": "threat",
+      "overWaves": [3],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "revealed-tail" },
+      "amplitude": null,
+      "composition": ["layer7-mimic", "empty-server-spiral"],
+      "telegraph": "the trough's enemy has a green checkmark: the nightly row prints success after success while the ledger prints 4KB writes — 'your backup job has been \"succeeding\" for two years while writing zero bytes' (§1.3 verbatim) — and the silent stop's dark cabinets are crates nobody will open until a worst day says open them",
+      "source": "§1.3 threat clause verbatim (six-months-stopped + zero-byte classic); §2.9 'Backup That Never Restored' (:8239) 'Has been failing silently for six in-game months; only discovered at restore time. The game should let this happen.'",
+      "compoundWave": "authored so the SCARCE thing is proof, not capacity: the mimic (Mimic) spends the confidence stat by faking completions while the spiral (Healer/Spawner) turns the empty row itself into the reputation event — renewal season is when tenants read their own checkmarks against their own files",
+      "_todo": "hollow-streak length → confidence/restore-success mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "window-that-moved",
+      "kind": "threat",
+      "overWaves": [4],
+      "shape": { "ramp": "instant", "plateau": "short", "decay": "reset-tail" },
+      "amplitude": null,
+      "telegraph": "the clock betrays nobody — the band simply is not where the schedule thinks it is: 'Daylight saving time shifts your schedule. Your nightly backup now starts during the business day... the job runs, succeeds, and saturates your storage array for four hours while customers are working' (§2.9 :8201 verbatim); two days later someone connects the dots, tonight the Debuffer is simply at work",
+      "source": "§2.9 'The Backup Window That Moved' verbatim; §1.3 26-hour clause ('a backup window that grew to 26 hours so jobs overlap and the chain breaks'); §Backup System entry 'backup traffic saturating the network' (:15724)",
+      "_todo": "day-spill → bandwidth/concurrency pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "surge-and-spiral",
+      "kind": "threat",
+      "overWaves": [5],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "blackholed-tail" },
+      "amplitude": null,
+      "telegraph": "the finale arrives the way every disaster on this line does, as a good customer asking a fair question at 4am: 'a regional ransomware event means fifty customers all restore at once, and your restore capacity was sized for two. Your product's busiest day is the day it is hardest to deliver' (§Restore Surge Cost :9716 verbatim), while the calls multiply behind the flood — one worst day, fifty worst days, one desk",
+      "source": "§Backup: Restore Surge Cost verbatim (:9713-9716); §1.3 'Restore surge — when a customer has a disaster your costs spike exactly when they're most emotional'; §3.2 restore-request spec ('arrives by phone, at night, from a person having the worst day of their career', :12611)",
+      "_todo": "surge-fan → bandwidth/hands pressure mapping unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is the quarter's first nightly convoy landing clean inside a wide-open band, crates dropping with a clunk, every checkmark green, and the only anomalies are the small grey questions the vault learns to ask out loud — a speckle on tile 9 that could be anything, a delivery log the courier forgot to sign, a customer asking a question about retention that has no answer yet. The quarter opens calm because this is the calmest-looking level in the game, and the card says that IS the point: 'the threat is invisible' (§1.3).",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["data-integrity"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the ROUTINE catastrophe, and it is a verification failing upward. Two-Front (§2.24): the hollow success (Mimic — 'your backup job has been \"succeeding\" for two years while writing zero bytes', §1.3 verbatim; the registry's one legitimacy-wearing entry re-framed onto this line's status lights, the checkmark 'drawn slightly hollow', §2.9) spends data-integrity in a way nothing on screen objects to, while the restore-request desk begins its climb (Swarm — the worst-day-of-their-career call and the day-400-of-365 request, 'a customer who deletes data and wants it back from day 400 of a 365-day retention', §1.3 verbatim) spending hands on questions whose only honest answer costs money. Two tenants of the same fear, two instruments, one lesson of wave two: verification is the only proof, and the window is the constraint (§1.9 teaches-line verbatim).",
+      "entries": [
+        { "threat": "layer7-mimic", "role": "Mimic", "pressurePct": 55, "band": "hunter" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["data-integrity", "hands"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS the scrub and the drill: 'a continuous background process that costs IOPS and reveals corruption' (§1.3 verbatim), and the card prices the unspent version twice: the six-month stop, the fourteen-month 4KB file."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the drill desk, the 3-2-1 meter, the tape robot and the escrow cabinet all get their window here — pun first, sorry. But on this line the quiet has a hold problem: the chain that missed Tuesday is holding Wednesday's band ('a job that runs past the window is a partial failure that compounds into tomorrow's', §3.2 verbatim; 'jobs overlap and the chain breaks', §1.3), and the empty row behind the mesh is a trust account withdrawing in silence — 'a customer whose backups silently stopped six months ago' (§1.3 verbatim). Two fronts: concurrency x reputation — held bands starve the convoy while the spiral makes the missing crates themselves the story the quarterly review starts telling.",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 60, "band": "storm" },
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 40, "band": "entropy" }
+      ],
+      "denominations": ["concurrency", "reputation"],
+      "note2": "the trough is also the dwell's middle frame: nothing visible happens for exactly the reason the §1.3 sentence gives — 'it is inside your retention window'."
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, backup variant: the window that moved lands with the dwell that ended — the DST-shifted band runs its 'successful' job straight through the business day ('saturates your storage array for four hours while customers are working', §2.9 verbatim; Debuffer debuts here, the every-4th-wave NEW ROLE beat; unseen in waves 1-3, the registry's one throttle-everyone mechanic wearing a calendar instead of a query), while the compromise that has been sitting for its 90 quiet days is now a restore request with a date on it (Bypass/Flyer — 'ransomware that encrypts the customer's data and then sits for 90 days so it is inside your retention window', §1.3 verbatim; the registry's one entry-compromise re-framed onto time, the door it walked through already inside the keep). Two fronts: data-integrity (the copy you need is the copy the attacker counted on) x concurrency (four hours of the band running in the wrong twelve). secondIncident inside the same window because on this line every failure is two failures: one that was visible and one that was checked.",
+      "entries": [
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 45, "band": "storm" },
+        { "threat": "vulnerable-plugin-compromise", "role": "Bypass/Flyer", "pressurePct": 55, "band": "hunter" }
+      ],
+      "denominations": ["concurrency", "data-integrity"],
+      "secondIncident": "the good copy turns out to be the one the encryption predates -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the line's inversion completed: the traffic you serve constantly was never the traffic you're graded on ('A beautiful inversion: the traffic you serve constantly is not the traffic you're graded on', §3.2 verbatim), and the grading arrives as everybody's worst day at once — the surge pulls OUTBOUND at full tank (Tank — 'fifty customers all restore at once, and your restore capacity was sized for two', §9716 verbatim; the registry's one raw-volume entry re-worn to run the other direction, this flood is their own data coming home), while the desk drowns in exactly the calls the drills were insurance against (Swarm — the hydra of 4am phones and hourglass reads, hands spent on 'whether Tuesday's file comes back', §1.9's own customerWants line). Hard wave draws TWO fronts — bandwidth x hands — per §2.24: the pipe and the person. Win check: the band held, the checkmarks were solid, the tag got rewritten, and the one restore that mattered was fast enough to be boring.",
+      "entries": [
+        { "threat": "udp-amplification-barrage", "role": "Tank", "pressurePct": 55, "band": "hunter" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["bandwidth", "hands"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}
