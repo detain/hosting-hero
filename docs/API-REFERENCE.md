@@ -249,7 +249,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 
 | Subpath specifier | Resolves to | Ships |
 |---|---|---|
-| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 14 module barrels **incl. `save` (2026-10-06), `versus` + `coverage` + `unattended` (2026-10-07), `unlocks` (2026-10-09), `scenario` (2026-10-10), zero name collisions — native names ride the star** |
+| `@hh/sim-core` | `src/index.ts` (root barrel) | ✅ types + kernel + all 15 module barrels **incl. `save` (2026-10-06), `versus` + `coverage` + `unattended` (2026-10-07), `unlocks` (2026-10-09), `scenario` (2026-10-10), `campaign` (2026-10-18, L-CP1), zero name collisions — native names ride the star** |
 | `@hh/sim-core/types` | `src/types.ts` | ✅ shared contract (181 exports; intent-door arm landed 2026-10-06, +20; OD-24(a) pricing arm 2026-10-09, +4; later-state arms rode the row un-updated — count re-pinned at the 2026-10-13 docs-currency sweep) |
 | `@hh/sim-core/kernel` | `src/kernel.ts` — integrator file aggregating `kernel/{fixed,time,rng}.ts` | ✅ 44 exports (NOT `limbs.ts`, NOT `rng-reference.ts` — kernel-internal/oracle only) |
 | `@hh/sim-core/pipeline` | `src/pipeline/index.ts` | ✅ (130 exports incl. the intent-door surface, the OD-24(a)/attention/engine-recovery/observer surfaces — +1 ATTENTION_DEFAULT_COSTS @ADR-0013 #12(v) lane, +3 negotiate-terms door names @ADR-0015 5/5, +4 isolate-capstone names @ADR-0015 mechanics (isolation.ts module), +3 throttle-node names @ADR-0016 successor program — `createThrottleBook` (intent-door.ts, book-factory precedent) + `nodeThrottleCut`/`throttleCuts` (new module `pipeline/throttle.ts`), +3 restart-node names @ADR-0016 successor program — `createRestartBook` (intent-door.ts, same precedent) + `nodeRestartWindow`/`restartSets` (new module `pipeline/restart.ts`), +4 reclaim-node names @ADR-0017 #3 — `createReclaimBook` (intent-door.ts, book-factory precedent) + `reclaimInForce`/`reclaimIndex`/`voidedByTombstone` (new module `pipeline/reclaim.ts`, the six-site tombstone void at the player-booking capacity reads; zero new refusal phrases — census 46 UNMOVED); `internal.ts` private) |
@@ -260,12 +260,13 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/waves` | `src/waves/index.ts` | ✅ 98 exports (m4 fold adds `buildThreatMetaLookup`; absorbs the stale 88→97 contention/families/wave-rules lag — re-pinned 2026-10-16) |
 | `@hh/sim-core/replay` | `src/replay/index.ts` | ✅ 59 exports (barrel is an EXPLICIT name list) |
 | `@hh/sim-core/loader` | `src/loader/index.ts` | ✅ 89 exports |
-| `@hh/sim-core/save` | `src/save/index.ts` | ✅ 191 exports (later save-lane additions rode the row un-updated — count re-pinned at the 2026-10-13 docs-currency sweep) — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
+| `@hh/sim-core/save` | `src/save/index.ts` | ✅ 218 exports (later save-lane additions rode the row un-updated — count re-pinned at the 2026-10-13 docs-currency sweep; +9 for the campaign settlement executor `settle.ts` (L-CP1, ADR-0018 program 1b): `CAMPAIGN_RUN_OUTCOMES`/`CampaignRunOutcome`/`RunInstance`/`SettleStreakWrite`/`FacetApplier`/`FACET_APPLIERS`/`parseRunInstance`/`settleRun`/`settleRoot`) — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
 | `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 78 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names (count re-pinned for the fingerprint-flip lane's `cardContentFingerprint` + the versus-pin-fix lane's `defaultPolicyCardIndex`, 2026-10-09; +1 `AFFIX_COST_MULTIPLIER_BPS` for hh-versus-deck-v2, 2026-10-17; +6 for affix-semantics-live V-2 @`eb4b86a` — `AFFIX_WAVE_DELTAS`/`AffixWaveDelta`/`DRAFT_AFFIX_DEFAULT_POOL`/`MAX_FEINT_WAVES_PER_DECK`/`feintBudgetViolations`/`pickDecisiveWave`; `threatFromWaveUnitId` is file-exported for the V-2 structural pin and deliberately NOT barrelled — api-verify is barrel-name based; `pickEffectCause` joins it in seam style for the ADR-0017 preference-law pin) |
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 | `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 70 exports (count re-pinned at the 2026-10-13 docs-currency sweep) — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/scenario` | `src/scenario/index.ts` | ✅ 51 exports (30 values + 21 types) — hg §1.5 scenario-library runner v0: `hh-scenario@1` doc wall + runScenario composing the existing engine + 27 shipped missions with one-flip lose probes + corpus tableId traffic seam (`corpus.ts`, invitations authority LIVE 2026-10-14 — whole-storm gate + per-entry defer, default-off byte-ident) + 29-predicate vocab (wave three: written-off / delta-window / family-arrivals rungs 1–3; wave four: covenant-breach-count + reputation rungs 4–5 — covenant TERMS ride `limits.covenants`, the rating rides the observation; wave five: the CHANNELS ladder — door INTENTS ride `intents:` rows into `TickInputs.externalIntents`, economy HOST-SIGNALS ride `signals:` rows folded per minute through the exported engine primitives; wave eight rung 9: the intent four gained an optional per-verb `verb` dimension over a doorReceipts census — totals byte-ident when absent) ; EXPLICIT barrel, zero root collisions |
+| `@hh/sim-core/campaign` | `src/campaign/index.ts` | ✅ 25 exports (14 values + 11 types) — campaign-chain core (hg §2.5 Long Save / §9.9 succession; L-CP1, ADR-0018 program 1b): `hh-campaign@1` doc wall (ordered ScenarioDoc chapters; cash-floor bridge + carry caps; `perspective` RESERVED for L-CP2) + deterministic thin carry projection (bridge law, grudge-first casts) + chapter loop against ONE CompanyNode through `save/settle.ts` (win→settle→next; death→`failure_restart` succession spending `applyInheritanceManifest` exactly once — museum-marker re-spend refusal, zero inherited cash until bootstrapped) + `digestCampaignReport`; EXPLICIT barrel, zero root collisions |
 
 Resolution law (root barrel header): every re-export uses **explicit `.ts`
 specifiers** so the same sources load under vitest/Vite, `tsc
@@ -1296,6 +1297,11 @@ as OPAQUE data.
 | `withScarAttribution` `withMuseumAttribution` | `(record, participantId) => record` | attribution stamps (new record, Law 3); the stamp rides the existing scar/museum rows — museum and scrapbook REUSED, never forked | pure |
 | `guardCoopAttributionBatch` | `(batch, ledger?) => void` | THE ruling-2 guard (validator, not runtime — sim-core has no live MP host): refuses empty batches, ANY non-branch facet by name, unseated/ghost writers, solo ledgers, and missing/mismatched attribution stamps | total-throwing |
 | `commitCoopAttribution` | `(node, batch) => CompanyNode` | guard-then-apply: scars route through `addScar` (cap-retire law survives, attribution rides the demotion), museum appends (no-destroy §2.5) | pure |
+| `CAMPAIGN_RUN_OUTCOMES` `CampaignRunOutcome` | `["won","lost","timeout"]`; union | the settlement outcome vocab (mirrors the scenario runner's outcomes — `parseRunInstance` refuses anything else, so a foreign authority fails at the wall) | const |
+| `RunInstance` `SettleStreakWrite` `parseRunInstance` | interfaces; `(value, where?) => RunInstance` | THE campaign executor's write contract — `SettleStreakWrite` is the typed payload of a `streaksShared` root row: a run's identity (runId/runSeed/tick-window/outcome) bound to its `SettlementBatch` — exact keys, `batch.runId` must agree with the instance, `committedAtTick` must land inside `[startedAtTick, endedAtTick]`, mode literal `campaign` only, deep-frozen | boundary-parsed |
+| `FacetApplier` `FACET_APPLIERS` | interface; `Readonly<Record<WriteFacet, FacetApplier>>` | one applier per campaign row — module-load audit asserts all 32 `WRITE_FACETS` are covered, every kind ≡ `writeGuard("campaign", facet)`, and exactly one is root-scope (`streaksShared`); any matrix drift fails at import | import-time checked |
+| `settleRun` | `(graph, nodeId, run: RunInstance) => LineageGraph` | `guardBatch` FIRST (abort-everything PAIRING — the mode matrix is never re-implemented here), then fold writes in batch order, copy-on-write; node payloads re-parse through the node's own `parseCompanyNode` (probe technique — zero duplicate law; `addScar`/`appendAttribution` keep owning caps and seqs); root-scope rows THROW naming the ledger split; the input graph is never mutated, so every refusal preserves identity | deterministic COW |
+| `settleRoot` | `(streaks: SharedStreaks, batch: SettlementBatch) => SharedStreaks` | the `streaksShared` half of the root-vs-node split (streaks live at SaveFile ROOT, not on the node): clean rows advance, breach rows break with `atTick` + branded cause; streaks rows ONLY | deterministic |
 
 ---
 
@@ -1793,6 +1799,46 @@ Import: `@hh/sim-core/scenario`.
 | `SHIPPED_SCENARIOS` | `Readonly<Record<string, ScenarioDoc>>` | id → parsed, frozen doc | frozen |
 | `shippedScenario` | `(id: string) => ScenarioDoc` | Registry read; unknown id throws `BAD_ID` enumerating the legal set | pure |
 
+
+
+---
+
+## campaign
+
+Purpose: THE CAMPAIGN CHAIN (hg §2.5 "Long Save in place", §9.9 succession;
+L-CP1, ADR-0018 program 1b). An ordered chain of ScenarioDocs (chapters)
+played against ONE CompanyNode: each chapter runs through the host-injected
+`CampaignAuthority` (the shipped seam is `scenario/runScenario`), wins settle
+into the node through the `save/settle.ts` executor, and the carry-over thin
+law (§2.5) decides what rides to the next chapter — cash below the authored
+floor opens on the bridge (poorer, never paid), grudge-bearing active
+customers claim contract-cast slots, ≤3 staff facts ride as ledger knowledge.
+Loss-by-death bridges generations the §9.9 way: a `failure_restart` edge
+carries the 3-node inheritance manifest, and the child's FIRST chapter spends
+`applyInheritanceManifest` exactly once — the museum `succession` marker owns
+the refusal, because the seam itself is value-idempotent. `perspective` is a
+RESERVED optional-forward chapter slot refused by name until L-CP2 lands it.
+ZERO GameState/EconomyState/CompanyNode fields added (state-freeze law).
+Import law: `../types` + `../kernel` + the `save`/`scenario` barrels +
+`replay/canonical.ts` for the chapter-seed and report digests.
+
+| Export | Signature (as shipped) | Meaning | Determinism notes |
+|---|---|---|---|
+| `CAMPAIGN_SCHEMA` `CampaignErrorCode` | `"hh-campaign@1"`; code union | wire identity + the wall's closed error vocabulary | const |
+| `CampaignError` | `class extends Error` | house grammar `campaign: CODE at 'path': detail` | total-throwing |
+| `parseCampaignDoc` `toCampaignWire` | `(value, where?) => CampaignDoc`; `(doc) => Record<string, unknown>` | strict boundary parse (closed keys, unique chapter ids, caps in range, bridge STRICTLY below the floor, `scarCapRide: true` mandatory — the scar cap is engine law) + pure wire projection; `perspective` present = refused BY NAME | boundary-parsed |
+| `parseCampaignMoney` | `(value, path) => bigint` | µ$ money wall: real bigint or decimal string only — floats refused (canonical-JSON transport round-trips both shapes) | pure |
+| `CARRY_STAFF_CAP` `CARRY_CAST_CAP` | `3`; `12` | the carry-over thin caps (§2.5): staff facts ride three, named-customer casts ride twelve (mirrors `NAMED_CUSTOMER_CAP`) | const |
+| `CampaignDoc` `CampaignChapterSpec` `CampaignCarryRules` `CampaignCarryCashFloor` | parsed-wire interfaces | one ordered chapter list + cash floor/bridge + cast caps — the whole contract is data | frozen |
+| `projectChapterCarry` | `(node, rules) => CampaignCarryProjection` | deterministic thin projection: bridge law both sides, grudge-first cast order then code-unit ladder, churned/zero-mrr books stay dead, scar count rides as fact | pure |
+| `CampaignCarryProjection` `CarryStaffFact` | interfaces | the carry's output shape (opening cash, contract specs, staff facts, scar count) | frozen |
+| `applyCarryToDoc` | `(doc, projection) => ScenarioDoc` | clone-project the carry INTO the chapter INPUT (contracts append, `limits.initialFreeMicroUsd` overrides); identity return (`toBe`) when nothing rides — the doc is never mutated | pure |
+| `seedForChapter` | `(baseSeed, chapterId) => RunSeed` | per-chapter seed through the U4 `seededOrderCache` grammar — `digestCanonicalValue("<chapterId>::<seed>")`: stable per (chapter, base), divergent across chapters | total |
+| `childManifestSpent` `spendInheritanceOnChild` | `(node) => boolean`; `(graph, nodeId) => { graph, node }` | §9.9 bootstrap accounting: child's first chapter spends the edge's manifest EXACTLY once; founder/refound and re-spend throw by name; un-bootstrapped child sits at ZERO inherited cash (machine-pinned) | deterministic COW |
+| `CampaignAuthority` `CampaignRunOptions` | interfaces | the injected run seam (`run` + `docOf` — hosts wire `runScenario` + their registry; corpus/config choices stay theirs) + graph/entry-node/seedOffset options | — |
+| `runCampaign` | `(campaign, seed, options) => CampaignReport` | the ordered chain: docOf → (chapter 1+ carry-override) → authority.run → outcome validated at `parseRunInstance` → `settleRun` commits the chapter facts → win advances, death-succession spawns the heir mid-chain (3-node law fail-loud), timeout/plain loss END the run where it stands | deterministic given the authority |
+| `CampaignChapterRecord` `CampaignReport` | interfaces | per-chapter witness (run identity, cash start/end, `settledFacets` in batch order, bootstrapped flag) + final graph/edges — the report IS the audit trail | frozen |
+| `digestCampaignReport` | `(report) => string` | HHC1-canonical digest over the report incl. finalGraph (Map entries ride insertion order — twins agree byte-for-byte; ×100 pinned) | ×100-pinned |
 
 ---
 

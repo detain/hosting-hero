@@ -20,6 +20,7 @@
     "./loader": "./src/loader/index.ts",
     "./save": "./src/save/index.ts",
     "./scenario": "./src/scenario/index.ts",
+    "./campaign": "./src/campaign/index.ts",
     "./versus": "./src/versus/index.ts",
     "./coverage": "./src/coverage/index.ts",
     "./unattended": "./src/unattended/index.ts",

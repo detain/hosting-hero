@@ -47,6 +47,11 @@ export * from "./unlocks/index.ts";
  * ride is proven collision-free by tsc — all 41 scenario names (26 values +
  * 15 types) stay native on the root. */
 export * from "./scenario/index.ts";
+/* campaign (2026-10-18, L-CP1 / ADR-0018 program 1b): explicit-named barrel
+ * (ordered ScenarioDoc chapters played against ONE CompanyNode, bridged by
+ * save/settle.ts); star ride proven collision-free by tsc — all 25 campaign
+ * names stay native on the root. */
+export * from "./campaign/index.ts";
 
 /**
  * Disambiguation (integrator): `stableSerialize` exists in BOTH observed

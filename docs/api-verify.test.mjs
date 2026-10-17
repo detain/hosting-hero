@@ -97,6 +97,7 @@ const real = {
   unattended: resolveBarrel(join(SRC, "unattended/index.ts")),
   unlocks: resolveBarrel(join(SRC, "unlocks/index.ts")),
   scenario: resolveBarrel(join(SRC, "scenario/index.ts")),
+  campaign: resolveBarrel(join(SRC, "campaign/index.ts")),
 };
 
 /* ───────────────────────── markdown extraction ───────────────────────── */

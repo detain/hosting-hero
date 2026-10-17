@@ -17,6 +17,7 @@ export * from "./streaks.ts";
 export * from "./modes.ts";
 export * from "./faces.ts";
 export * from "./envelope.ts";
+export * from "./settle.ts";
 // fix-economy handoff seam (named-only: the structural param mirrors stay
 // file-local until per-domain ledgers give them a second consumer).
 export { reputationStateFromLedger } from "./reputation.ts";
