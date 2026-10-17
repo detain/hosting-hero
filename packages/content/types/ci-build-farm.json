@@ -1,0 +1,309 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:ci-build-farm",
+  "_todo": "FOURTEENTH hosting type, founded on the §1.4 card 'Green Light' / 'Untrusted Code, By Design' — CI / build-farm hosting (:2677), the FIRST type in the corpus founded on a §1.4 card (all thirteen shipped types anchor §1.3). Dominant verb Reclaim is the card's own third word verbatim — 'Verb: isolate, expire, reclaim.' (:2686) — blessed onto the roster by the owner's max-feature ruling 2026-10-17 (ADR-0017 #1, fifth roster extension; lint roster carried 'reclaim' @ff8615c BEFORE this bundle existed, the same ship-order the isolate precedent @7f47563 established). The card's §1.4 rider (:2687) records that isolate was ALREADY claimed by type-12 dbaas @5956b8f — a repeat verb is a merge candidate under ADR-0014 #D1(iii), never a second claim — and that expire stays off-roster because the engine's read-time expiry law implements lapse without a door verb; this card takes the THIRD word only. Unusual ship order on record: the door verb PlayerVerb.ReclaimNode and its six-site consumer spine landed FIRST @c8b92a2 (L-DM5), so this is the first card whose dominant verb already had live engine mechanics before the card was authored — the card rides mechanics it did not precede, and the reclaim-cadence mechanic entry names that debt. HOOKS: exactly 5 of the 9 §7.8 slots changed vs anchor official:shared-web — R15 meter triplet, R16 commercial slider, R17 operational dial set, R22 mechanics set, R23 shed order; R18 ms band RIDES the anchor with the full tempo._todo tension, R19 windowGrows false, R20 pips all-null, R21 keyhole false / unclickable false. SCARCITY ROWS HONESTLY ABSENT: §0.3 has no CI / build-farm scarcity row (the observability two-precedent: the card's own four axis sentences :2680-2685 are quoted into unit/scarce/fatal/customer and NO row is forged), §6.6's revenue-unit table has no CI row (recorded, never extrapolated), and Companion C's bad-month table names no CI row (the composed bad-month carries the absence). CAC instead grounds on the Companion-B channel table's verdict line — 'Platform \"recommended\" slot' (:13417): cycle '12+ months', 'Fragile (they can remove you)', 'Best channel in hosting'.",
+  "meta": {
+    "name": "type.ci-build-farm.name",
+    "codexSummary": "type.ci-build-farm.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.build-minute",
+    "durationClass": "BatchJob",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "RATIFIED-B",
+      "_todo": "All five scalars null per the tuning-sheet law: §3.3's patience-budget spine gives the CI row QUALITATIVE shape only — 'patient, but **value decays with queue time**' (:11975 verbatim) — a curve claim, not a number; the spine's numeric column prices browsers, buyers, machines, and jobs, and this line's cell deliberately holds none."
+    },
+    "patienceModel": {
+      "mode": "value-decay",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": null,
+        "tuningSheet": "RATIFIED-B",
+        "_todo": "FIRST CARD-NAMED CONSUMER OF value-decay IN THE CORPUS (census: the thirteen shipped bundles wear window once, resident three, binary once, sigmoid-budget eight; none wears value-decay — the mode existed in PATIENCE_MODE_VOCAB since the pipeline's patience law and waited for the one §3.3 row that names it). The doc's command is verbatim: 'CI build job | patient, but value decays with queue time | the developer context-switches away' (:11975). The engine law this card now owns: the budget doubles as the value meter — p grows LINEARLY with elapsed/patience (truncated Fixed ratio), saturating at certainty at 1x — pipeline/defaults.ts value-decay docblock (:1268-1270, :1304-1308) — so a queued build's value bleeds at a constant rate from the moment it queues; budgetMs null because 'patient' prices the SHAPE (a long budget) and the tuning sheet owns the number, PROVISIONAL-B until playtest; bounceSigmoid is unused by the value-decay arm (the mode reads only the budget), authored null with this note rather than a fake curve."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null,
+      "_todo": "A build is one build: a queue entry arrives, holds a runner, ends. The card's fan-out (one push spawning a matrix of jobs) is authored as cohortSpawn below, NOT as party size — allOrNothing false and size null carry that split; the matrix's rows can individually fail and re-run (the Flaky Test Tax :2695 needs single-job failure), which an all-or-nothing party would forbid."
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null,
+      "_todo": "The Monday Morning Wall IS correlated demand — 'demand is a sawtooth with a hard weekly shape and a dead weekend' (:2694) — but it is CALENDAR-shaped, not visitor-side stochastic coupling: every cohort arrives together because it is Monday, not because they watch each other. Herding stays disabled; the wall rides mechanics (monday-morning-wall), the w2 wave envelope, and tempo._todo's seasonality debt note (baseline never-zero law: this lane does not invent curves)."
+    },
+    "populationEffect": false,
+    "retryAmplifies": true,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3,
+      "_todo": "retryAmplifies TRUE is this line's load model verbatim: 'The Flaky Test Tax — customers re-run failed builds, so *their* quality problem is *your* capacity problem' (:2695) — every red square the customer re-runs is a fresh mint on YOUR farm, the corpus's purest instance of the retry-storm primitive the Shared Pipe was built to show. cohortSpawn tier 3 is the build matrix: one push fans a lattice of jobs (test-matrix rows across runners); fromCustomerCard true because the fan size is the customer's pipeline definition, not the sim's dice."
+    },
+    "costPerInvocation": "per-build-minute",
+    "trustReadable": true,
+    "archetypeRefs": [],
+    "_todo": "Unit verbatim: 'Unit = a build minute / a job.' (:2680) — the visitor IS the job, its duration a metered minute, so no archetype in visitors/archetypes-core.json is referenced (the registry's nine archetypes price browsers/buyers/machines; the §3.3 spine's 'CI build job' row names the genre and the registry-owner pass, not this lane, decides whether it gets an archetype — the ten-sibling no-ref precedent). durationClass 'BatchJob' is DOC-NAMED for this exact line: 'Batch/job (a backup run, a CI build, a render) consumes a **window**' (:11699 verbatim, the only duration class in §3.2 that names a CI build outright); the consumed window is the runner slot the job holds — and the card's overhead sentence is the same law from the bill side: 'a runner must be destroyed and rebuilt between jobs, which is pure overhead you can't bill for' (:2682-2683). trustReadable TRUE wears the visual paragraph verbatim: 'a wall of green/red status squares — the most instantly readable board in the game, and it's real' (:2704). THE IRONY THIS CARD IS BUILT ON, recorded not hidden: the board is honest and the leak is invisible — a build that exfiltrated another tenant's cache still prints green; 'the most instantly readable board' and 'a leaked secret between tenants' coexist on the same screen, and that Mimic-shape is what goal.loseCondition prices."
+  },
+  "goal": {
+    "nodeType": "runner-farm-floor",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "queue-depth-and-clean-runners",
+      "threshold": null,
+      "_todo": "The held metric fuses the card's two scoreboard sentences: 'Queue depth is the only metric anyone looks at' (:2689) and the scarce sentence's protected object — 'clean ephemeral capacity' (:2681). threshold null per the object-storage→dbaas→backup→observability precedent: no doc line prices a queue wall; the tuning sheet owns the number (PROVISIONAL-B until playtest). The metric's second half is what makes this win condition a HYGIENE contract and not a throughput contract: green squares with dirty runners is the fatality wearing the win screen."
+    },
+    "loseCondition": {
+      "kind": "secret-leak-between-tenants"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.ci-build-farm.binding",
+    "_todo": "Fatality verbatim from the card's Fatal axis: 'a leaked secret between tenants' builds, because CI runners hold production credentials for every customer' (:2684-2685). This is the corpus's first fatality that is not an outage, a loss of data, or a loss of money — it is a loss of BOUNDARY: the product keeps running, the wall stays green, and the company dies of what the green squares cannot see. minWarningMinutes 3 rides the family register (the guard exists so the leak has a fuse a player could have pulled: a hygiene report trending dirty, a reused-runner percentage climbing — Runner Hygiene :2702 IS the notice channel this guard presumes)."
+  },
+  "scarce": {
+    "resourceId": "cold-start-time-cache-locality-clean-ephemeral-capacity",
+    "meterWidget": "queue-depth-wall",
+    "meterBoundStat": "queue-depth",
+    "commercialSlider": "warm-vs-ephemeral-minute-pricing",
+    "operationalDials": ["ephemeral-vs-reused-runners", "cache-retention", "flaky-test-reporting"],
+    "windowGrows": false,
+    "shedOrder": "queue-honesty-fifo-ladder",
+    "qosAnswer": "scarce.ci-build-farm.qos",
+    "_todo": "resourceId is the card's Scarce axis verbatim: 'cold-start time, cache locality, and clean ephemeral capacity' (:2681), worn with the economics sentence beneath it: 'a build farm's economics live entirely in how much dependency cache you keep warm' (:2681-2682). R15 triplet grounded: 'Queue depth is the only metric anyone looks at' (:2689) commands the bound stat, and the visual paragraph commands the face — 'a wall of green/red status squares' (:2704) — so widget and face are the SAME object, the wall IS the meter; THE DEBT HONESTLY NOTED: the card's own signature meter, Runner Hygiene — 'the percentage of your fleet that is genuinely fresh vs \"reused because we were busy\"' (:2702-2703) — has NO engine state to bind (no fleet-freshness stat exists in the observed vocabulary), so it goes to mechanics.runner-hygiene + codex prose with this _todo instead of being forged into the triplet; a fleet-freshness meter would need an engine lane, not a content lane. R16 grounded: 'utilisation is structurally terrible and pricing must account for it' (:2694) makes the minute price a WARM-vs-EPHEMERAL dial — warm capacity is what you cannot bill (:2683), and §6.12's Spot / preemptible sales product card is the doc's own pricing figure for selling it: 'Monetizes idle capacity at a discount, with the right to reclaim it … Converts your safety margin into money — which is exactly the trap the game wants you to consider' — the word 'reclaim' in the spot right is the DOC'S OWN, the same verb this card's name now carries (:22234-22238). R17 dials verbatim: 'Ephemeral-vs-reused runners' (:2691 named dial — 'reused is fast and a cross-tenant contamination vector; ephemeral is safe and cold' :2691-2692), cache-retention (the scarce sentence 'how much dependency cache you keep warm' :2682), flaky-test-reporting ('a \"flakiness report\" is a product you can sell them that reduces your own load' :2695-2696 — a dial whose up-direction shrinks your own queue, the corpus's first self-relieving knob). R19 windowGrows false: no batch-window growth law in the card (§3.2's window is the runner slot itself, fixed by fleet size). R23 shedOrder 'queue-honesty-fifo-ladder' grounded on the tolerance sentence verbatim: 'developers tolerate slow builds and not queued builds' (:2689-2690) — the shed may reorder PHYSICS (a slow build stays) but must never lie about POSITION (a queued build stays queued); the wall's honesty is the product, so the ladder sheds strictly by queue truth. Anchor-family rides kept: R18 ms band and R20/R21 surfaces untouched — see tempo._todo."
+  },
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly",
+      "escalator": false,
+      "grandfathering": false,
+      "_todo": "default 'monthly' rides the corpus family register (dbaas and observability both wear monthly; §5.6's Commercial branch ladder 'hourly → monthly → annual → multi-year colo → reserved capacity' (:20676-20677) is the doc's authored clock-spine and monthly is the rung a build-minute meter bills against) — WITH THE ABSENCE RECORDED: §6.6's revenue-unit table has NO row for CI / build farm (verified census; no row is extrapolated), and escalator/grandfathering false because no line of the doc grants either to this floor. The card's own money sentence is cost-side, not term-side: 'pure overhead you can't bill for' (:2683)."
+    },
+    "seasonality": [],
+    "diurnalBaseline": "queued-workday-builds",
+    "_todo": "R18 TENSION, RECORDED NOT RESOLVED (the type-10 lease-years precedent in posture, the serverless µs-scale precedent in direction): the customer axis is a tempo claim — 'engineering teams, who feel every second' (:2685) — and §3.3's row prices the decay in queue-time. But authoring the clock in s would make R18 a SIXTH changed hook over the 3-5 ceiling, and §7.8e's time-granularity ladder names no CI row; 'feel every second' is CUSTOMER AFFECT (a churn-physics and value-decay claim, already honored in visitor.patienceModel value-decay) and not granularity law, so ms RIDES the anchor band and the tension stands on this record. permanentIncidentClock false: the wall's bad day is a wave, not a permanent incident — the leaked secret is a terminal event (goal.loseCondition), the Monday Wall is periodic weather (mechanics + envelope), and neither is a clock that never stops. seasonality [] and diurnalBaseline 'queued-workday-builds': the card's sawtooth claim — 'demand is a sawtooth with a hard weekly shape and a dead weekend' (:2694) — is a SEASONALITY CLAIM this lane refuses to forge into a curve: the baseline never-zero law keeps the floor flat here (the waves lane owns curves, and the w2 envelope carries the wall as authored weather), so the dead-weekend collapse lives in mechanics.monday-morning-wall + this debt note; 'queued-workday-builds' is the name of the flat floor (a queue that drains overnight still never sits at zero across the quarter — cron builds, badges, and dependency refresh are this floor's idle hum, the family register of §3.3's never-zero law, and the number is the tuning sheet's)."
+  },
+  "threats": {
+    "familyWeights": {
+      "customerAsThreat": 0.3,
+      "malicious": 0.25,
+      "systemic": 0.2,
+      "human": 0.15,
+      "entropic": 0.1
+    },
+    "activeFamilies": ["customerAsThreat", "malicious", "systemic", "human", "entropic"],
+    "signatureThreats": [
+      { "id": "cheat-client-griefer", "mechanical": true },
+      { "id": "vulnerable-plugin-compromise", "mechanical": true },
+      { "id": "grudge-booter", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "mod-update-day", "mechanical": true },
+      { "id": "slowloris-sipper", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "runner-destroyer": ["cheat-client-griefer", "grudge-booter"],
+      "secret-scrubber": ["vulnerable-plugin-compromise"],
+      "cache-retention-gc": ["scanner-drizzle"],
+      "flakiness-report-desk": ["ticket-avalanche-hydra"]
+    },
+    "twoFrontDraw": ["bandwidth", "concurrency", "cash", "hands", "reputation", "data-integrity"],
+    "waveTable": "file:waves/g1-ci-build-farm-first-quarter.json",
+    "_todo": "familyWeights micro-exact 1e6 (300000+250000+200000+150000+100000): customerAsThreat 0.30 dominant — the card says the quiet part loud: 'free-tier cryptomining — the most abused free product in the industry and the dominant real abuse in this business' (:2698) plus the Flaky Test Tax's structural customer-induced load (:2695); malicious 0.25 — 'a fork-PR build that runs attacker code with your secrets' + 'a build that forks until the host dies' (:2699) + 'a job that exfiltrates another job's cache' / 'cache poisoning between builds' (:2700); systemic 0.20 — 'the upstream API rate limit that stalls every build at once' (:2701), a correlated-weather line the Monday Wall amplifies; human 0.15 — the runner 'reused because we were busy' (:2703) is staff-shape load, and ticket-avalanche-hydra's desk flood rides the wall; entropic 0.10 — cold-start physics and cache decay: 'how much dependency cache you keep warm' decays by itself (:2681-2682). SIGNATURE SET = EXACTLY 8 REUSES from the 16-id registry, ZERO registry additions (the twelve-sibling re-wear law; native rosters await the registry-owner pass): cheat-client-griefer re-worn as free-tier cryptomining inside customer builds (:2698; its lookalikeOf game-player-joining seed carried); vulnerable-plugin-compromise re-worn as the fork-PR supply-chain build — attacker code running with YOUR secrets on OUR runner (:2699, §2.5 supply chain per the card's own Interacts-with :2707); grudge-booter re-worn as the fork bomb until the host dies (:2699 — the registry's destruction shape worn without technique words, §9.11); hoarder-noisy-neighbor re-worn as the 400GB monorepo whose cache is larger than the farm's warmth budget (:2701); mod-update-day re-worn as the upstream API rate-limit day that stalls every build at once (:2701 — 'your dependencies update on someone else's calendar' worn as package-registry weather); slowloris-sipper re-worn as the runner held past its job — the session that will not release the slot (:2691-2693's reused-runner squeeze; its lookalikeOf deep-reader seed carried); ticket-avalanche-hydra re-worn as the Monday Wall desk flood — 'Queue depth is the only metric anyone looks at' (:2689) when the wall flushes red (:2694); scanner-drizzle re-worn as warm-runner reconnaissance — slow probes of a reused runner's residue (:2681's cold-start opposite; its lookalikeOf crawler seed carried, the three-seed law satisfied: scanner-drizzle→crawler, slowloris-sipper→deep-reader, cheat-client-griefer→game-player-joining). LOOKALIKE CHOICE, DISCLOSED DEVIATION FROM THE LANE BRIEF: the brief sketched a deception beat on 'the green check that means nothing' (:2702-2703); that phrase is NOT verbatim on the card — the deception beat is instead grounded ON DISK at the wall-going-red visual (:2704-2705) + cache poisoning (:2700) + the fatal's invisible leak (:2684), and layer7-mimic was NOT re-worn (the 8-id bar is met and the three carried seeds above satisfy the lookalike law); the registry's zero-green-lie id stands. AMBITION RIDES w5 NARRATIVE, NOT REGISTRY: the leaked secret between tenants (:2684) is the boss beat this slice tells through envelope composition + purpose prose; the registry has no secret-leak threat id and none is forged — the registry-owner proposal is this _todo: a cross-tenant 'credential-boundary breach' mechanical threat whose counter is destroy-on-release. unlockedByBuildables grounded: runner-destroyer kills cryptominers and fork bombs (ephemeral = 'safe and cold' :2692); secret-scrubber fences the supply-chain build (:2700); cache-retention-gc evicts the recon residue a scanner probes (:2681); flakiness-report-desk shrinks the re-run flood at its source (:2695-2696 — the sell-that-reduces-your-own-load dial). twoFrontDraw: all six denominations stay drawable because the quarter fights concurrency AND hands (runner pool), data-integrity AND reputation (the poisoned cache, the leaked log), and cash AND bandwidth (the 400GB monorepo's cache egress)."
+  },
+  "skin": {
+    "palette": {
+      "dominant": "signal green",
+      "accent": "failure red",
+      "chord": ["runner steel", "cache blue", "log amber", "sawtooth grey", "failure red"]
+    },
+    "materialPreset": "preset:steel-glass-and-status-squares",
+    "visitorCostume": {
+      "hull": "square-job-crate",
+      "propSlot": "credential-tag"
+    },
+    "heroSilhouette": "asset:hero.status-square-wall",
+    "heroObject": "the-status-wall",
+    "meterFace": "queue-depth-wall",
+    "catastropheFx": "fx:wall-flushes-red",
+    "ambientSoundPack": "sound:runner-fan-and-queue-murmur",
+    "densityMultiplier": null,
+    "arrivalRhythm": "queued-workday-builds",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.runner-card-plan-tier",
+    "signatureMotion": "motion:wall-flushes-red-left-to-right",
+    "signatureFrame": "frame:all-green-and-leaking",
+    "lodContract": {
+      "full": "skin.ci-build-farm.inspector",
+      "icon16": "icon:queued-job-crate",
+      "pip": "pip:failure-red",
+      "aggregate": "agg:job-crate-stack",
+      "inspector": "skin.ci-build-farm.inspector"
+    },
+    "_todo": "Palette is the card's visual paragraph verbatim: 'a wall of green/red status squares' (:2704) — dominant signal green, accent failure red; chord members are the card's own nouns: runner steel (:2681 the fleet), cache blue (:2682 the warm dependency cache), log amber (:2700 'secrets leak into a public build log' — the log is this floor's ink), sawtooth grey (:2694 the Monday Wall's demand shape), failure red repeated as the accent's second home (:2705 'the wall going red'). NO MAGENTA (validator law). visitorCostume hull 'square-job-crate' re-wears the backup-archival crate word for the §3.2 BatchJob class the doc names CI builds into (:11699) — shared class, shared shape, the corpus's costume honesty; propSlot 'credential-tag' is the fatal worn as a fuse: 'CI runners hold production credentials for every customer' (:2685) — every job crate carries someone's production secret on its tag, and the destroy-on-release is the tag's incineration. heroSilhouette/heroObject ARE the visual paragraph — the wall of green/red squares is the hero furniture, 'the most instantly readable board in the game, and it's real' (:2704): the HUD-as-hero move the observability wall pioneered, differentiated by being a board of JUDGEMENTS (each square is a stranger's code passing or failing) instead of a board of signals. meterFace 'queue-depth-wall' is the R15 triplet's third member (the wall IS the meter, :2689). catastropheFx + signatureMotion are the card's FX line verbatim: 'the wall going red left-to-right as a bad dependency propagates' (:2705). signatureFrame 'all-green-and-leaking' freezes the fatal — the wall fully green while a secret crosses a boundary the board cannot see: the one frame in the corpus where the picture LIES because the picture is honest and the leak is invisible (:2684 + :2704 read against each other). densityMultiplier/homeAltitude/detailAltitude null per the ten-sibling LOD register (the camera-owner pass owns the numbers). arrivalRhythm re-wears tempo.diurnalBaseline's name. FLAG FOR OWNER RATIFICATION: palette lanes pick skins; this row is a lane choice worn on verbatim card nouns, not a doc-decreed palette."
+  },
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4's era grid dates no cell for hosted CI/build farm (its sketches name 1994 dial-up, 2001 dot-com colo, 2009 cPanel, 2016 cloud, 2024 GPU boom — and the corpus's hosted-CI product reality postdates the sketches it would most nearly fit, the same young-cloud problem the serverless and dbaas rows recorded). availableFrom null: the era-owner pass decides whether the 2016-cloud sketch gets this line's row; no era object is authored, and the i18n pack carries zero era variants accordingly (the type-9→type-13 five-sibling register)."
+  },
+  "economy": {
+    "unitOfSale": "build-minute",
+    "revenueShape": "per-minute-meter",
+    "marginProfile": "undocumented",
+    "cashTiming": "monthly",
+    "termStructure": {
+      "typical": "monthly-meter-plan",
+      "churn": "platform-slot-fragility",
+      "_todo": "unitOfSale 'build-minute' is the card's Unit axis verbatim: 'Unit = a build minute / a job.' (:2680) — the doc's rarest gift: a unit named in the card body itself (thirteen siblings had to compose one). revenueShape 'per-minute-meter' from the scarce/economics pair: minutes are what you bill and warmth is what you eat — 'a runner must be destroyed and rebuilt between jobs, which is pure overhead you can't bill for' (:2682-2683): the meter is honest and the margin is the un-billable overhead of keeping it warm; §6.6's revenue-unit table has NO CI row (absence recorded — revenueShape/cashTiming/termStructure are composed from the card's sentences and §5.6's ladder, not from a priced table). marginProfile 'undocumented' per the observability coinage for doc-unpriced lines (the utilization sentence prices the PROBLEM — 'utilisation is structurally terrible' :2694 — never the margin). cashTiming/typical ride §5.6's Commercial contract-length ladder (hourly → monthly → annual rung spine :20676) at the monthly rung with the absence record above. churn 'platform-slot-fragility' is grounded one table over, verbatim: the Companion-B channel table rates this line's best channel 'Platform \"recommended\" slot … Fragile (they can remove you) … One slot' (:13417) — distribution you did not build is churn you do not control, the corpus's first single-channel dependency written as churn physics."
+    },
+    "cacProfile": "cac.ci-build-farm.platform-slot-cycle",
+    "ticketsPerCustomer": null,
+    "signatureCost": "warm-cache-and-clean-runners",
+    "badMonth": "economy.ci-build-farm.bad-month",
+    "fifthAxisScore": {
+      "metric": "queue-depth-and-clean-runners",
+      "weight": null,
+      "tuningSheet": "RATIFIED-B",
+      "_todo": "Not on §1.7's fifth-axis roster census (that list carries its own named entries; this line is not one) — metric rides the goal's held pair, weight null PROVISIONAL-B until playtest."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false,
+      "_todo": "p95billing false (the meter is per-minute duration, not percentile bandwidth — this floor sells time held, not peaks). demandCharges FALSE with the tension on record: the card's pricing sentence — 'pricing must account for' the sawtooth (:2694) — is demand-charge-ADJACENT, and §6.12's Spot / preemptible sales card is the doc's own device for monetizing the idle half of it ('Monetizes idle capacity at a discount, with the right to reclaim it', :22234-22238); but no doc line gives THIS floor a demand-charge toggle, so the idea rides R16's warm-vs-ephemeral minute pricing (the slider IS the reclaim-economics lever) and the Kite's trap sentence ('which is exactly the trap the game wants you to consider') is quoted into the codex instead of being forged into a toggle."
+    },
+    "_todo": "ticketsPerCustomer null per the register (the free-tier abuse :2698 and the desk flood :2689 shape ticket volume; the doc prices no ratio). badMonth composed: the doc's bad-month table (Companion C) names no CI row — the absence is on record and the month is composed from the fatal (:2684) plus the public-log leak (:2700): the month the wall stayed green while the secrets went out, and the postmortems are everyone's."
+  },
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "runner-fleet-pool" },
+      { "archetype": "two-face-rack", "skin": "warm-cold-runner-rack" },
+      { "archetype": "control-plane", "skin": "dispatch-desk" }
+    ],
+    "distinct": [
+      "runner-destroyer",
+      "warm-runner-shelf",
+      "dependency-cache-vault",
+      "cache-retention-gc",
+      "fork-guard",
+      "secret-scrubber",
+      "flakiness-report-desk",
+      "queue-honesty-board",
+      "status-wall",
+      "reclaim-ledger-desk"
+    ],
+    "nonPhysical": [
+      "cross-tenant-contamination-state",
+      "cache-locality-decay",
+      "monday-sawtooth-shape"
+    ],
+    "_todo": "Each distinct names a card sentence, never a technique: runner-destroyer IS the dominant verb bought as hardware (the dbaas per-tenant-throttle precedent) — 'a runner must be destroyed and rebuilt between jobs' (:2682) and the reclaim cadence the door verb mechanics @c8b92a2 now run; warm-runner-shelf holds the populated caches (:2682, :2691 'reused is fast'); dependency-cache-vault is the scarce object kept warm (:2681-2682); cache-retention-gc is the dial made furniture (R17 cache-retention); fork-guard answers 'a build that forks until the host dies' (:2699 — the guard is the sentence, the bomb shape is banned prose §9.11); secret-scrubber fences 'a customer whose secrets leak into a public build log' (:2700); flakiness-report-desk sells the tax back as a product (:2695-2696); queue-honesty-board is R23's ladder as furniture (:2689-2690); status-wall is the hero made placeable (:2704); reclaim-ledger-desk is the door verb's BOOK as furniture — the tombstoned runner's future minutes re-sold (:2686's third word wearing the ledger the engine's reclaim book now keeps). nonPhysical trio: cross-tenant-contamination-state is the great tension made state — 'the fastest way to serve customers (warm, reused runners with populated caches) is exactly the least safe way' (:2697); cache-locality-decay is the physics that makes warmth cost money (:2681-2682); monday-sawtooth-shape is the demand law no curve in this bundle authors (:2694, the tempo._todo debt's third leg). archetypeInstances: concurrency-pool re-worn as the runner fleet (the palette's doc-named exemplar for pools of slots); two-face-rack wears THE TWO FACES as the card's own thesis — fast+unsafe on one face, safe+cold on the other (:2691-2692, :2697), the corpus's most literal use of the two-face law yet; control-plane skinned 'dispatch-desk' (the THIRTEENTH control-plane skin in the corpus — census: this lane counts from the palette's shared-80 roster, the palette-owner pass owns the count). NO matchmaker instance: no matchmaking shape in this card's sentences (the eleven-sibling negative-control register)."
+  },
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "R20 all-null pips ride the anchor family register (§0.2/§7.8f authors the pip spread for shared/dedicated/colo/reseller/cloud/wholesale lines only — the four-sibling null-and-cite precedent): the four-relationship notch surfaces belong to floors the doc says a notch must be read at; here the whole board IS one notch — 'a wall of green/red status squares' (:2704) — and the pips would re-price what the wall already publishes."
+    },
+    "keyhole": false,
+    "unclickableObjects": false,
+    "_todo": "R20 all-null pips ride the anchor family register (the four-relationship notch surfaces belong to floors the doc says a notch must be read at; here the whole board IS one notch — the green/red squares :2704). R21 keyhole false / unclickableObjects false, grounded: 'the most instantly readable board in the game' (:2704) forbids hidden agency — every runner, crate, and square is inspectable; the horror of this floor is not that the UI hides the leak but that the leak is invisible to the UI while the UI is TRUTHFUL about everything it can see (:2684)."
+  },
+  "mechanics": [
+    "queue-depth-primacy",
+    "ephemeral-vs-reused-runners",
+    "monday-morning-wall",
+    "flaky-test-tax",
+    "runner-hygiene",
+    "cache-locality-economy",
+    "secret-in-runner-blast-radius",
+    "reclaim-cadence",
+    "triage-window",
+    "attention-grace"
+  ],
+  "verbs": {
+    "dominant": "Reclaim",
+    "transfers": ["verbs.ci-build-farm.transfer.1"],
+    "_todo": "dominant 'Reclaim' verbatim from the card's own verb line: 'Verb: isolate, expire, reclaim.' (:2686) — the THIRD word, the only one still unclaimed by any shipped card: isolate went to dbaas @5956b8f under the §1.4 rider's own merge-candidate warning (:2687), expire stays a law not a verb (the engine's read-time expiry implements lapse without a door verb — the rider's record), and Reclaim was blessed onto the roster by the owner 2026-10-17 (ADR-0017 #1; lint roster @ff8615c before bundle, door mechanics PlayerVerb.ReclaimNode @c8b92a2 before card — this verb's mechanics PRECEDE its card for the first time in the corpus). The engine's reclaim law and the doc's spot-sale definition are the same sentence from opposite ends: GameState.reclaim's book voids bookings for tombstoned nodes (c8b92a2), and 'Spot / preemptible sales … Monetizes idle capacity at a discount, with the right to reclaim it' (:22234-22235) — the player sells warm capacity as spot and eats the reclaim when Monday arrives."
+  },
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:dedicated",
+        "kind": "the-build-box-beneath",
+        "numbers": null,
+        "_todo": "the card's own Interacts-with line, verbatim: '§4.2 Bare-Metal Build Box (now a whole business)' (:2706-2707) — the dedicated floor IS the build box beneath the farm: warm runners want physical machines whose caches stay populated between tenants of ONE owner, and type-5 'Root Is Theirs' is the line that sells exactly that; numbers null (the lattice owner pass prices pair counts; no row is extrapolated)."
+      },
+      {
+        "with": "official:serverless",
+        "kind": "the-cold-start-twins",
+        "numbers": null,
+        "_todo": "composed from the two cards' shared first word, both quoted: CI's scarce axis opens 'cold-start time, cache locality, and clean ephemeral capacity' (:2681) and the serverless card's codename IS 'Cold Start' (§1.3 :2226 region) — two floors that pay the identical physics bill: destruction between uses is the safety you sell and the latency you eat (:2692 'ephemeral is safe and cold'); synergy numbers null, the lattice-owner pass prices it; HONEST RECORD: §5.6's cross-branch lattice rows ('Observability + Automation = Auto-Remediation', 'Sense + Trust = Honest Status Page', :20686-20690) name no CI pairing and none is forged — the Honest Status Page node is cited-not-paired, this floor's wall is its nearest relative."
+      }
+    ],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["config-management", "immutable-images"],
+          "_todo": "§5.6's Automation branch ladder is the doc's authored capability chain and CI/CD is a RUNG on it: 'Shell Scripts → Config Management → Immutable Images → CI/CD → Infrastructure as Code → Self-Healing → Autoscaling' (:20670-20671) — the two flags are the two rungs immediately BEFORE this line's rung, copied complete in order (the observability rung-copy precedent, the dbaas two-flag gate shape); the branch's own law is this floor's cost curve: 'Each step converts toil (a recurring staff-hour drain) into capex plus blast radius' (:20671-20672) — the blast-radius half is the fatal (:2684) spoken by the ladder before the card ever drew it."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {},
+      "_todo": "No §5.6 pivot row names this line from either side. The candidate the corpus would otherwise reach for — stabilize-the-business by shedding warmth for hygiene, grow-the-business by overselling the warm margin (the §6.12 Kite's exact trap sentence: selling the safety margin is 'exactly the trap the game wants you to consider', :22238) — is this floor's permanent dial, not a pivot: the card's thesis makes fast-vs-safe a standing choice every quarter re-decides (:2691-2692, :2697), so no pivot target is authored FORGED; the pivot-owner pass, not this lane, decides whether a row is added."
+    },
+    "masteryBuff": "relations.ci-build-farm.mastery",
+    "distillate": "relations.ci-build-farm.distillate",
+    "_todo": "antagonisms empty (no doc line sets this floor against another; the tension is INTERNAL — fast-vs-safe :2697 — and internal tension is mechanics, not relations). pivots {} per the register (no pivot sentence names this floor). §5.6's mastery tables name game/backup/colo only (the R68 census dbaas recorded stands: no CI mastery row exists) — masteryBuff and distillate composed from the card's own sentences: mastery = the fast/safe dial walked until the player instinctively asks 'would I run THAT commit on a runner that held my bank's keys?'; distillate = destroy-on-release as a reflex any future floor that shares a secret between tenants inherits — the hygiene science, portable to every line that runs strangers' code (the §1.9 row's law generalized: 'The fast path and the safe path are opposites' :5061)."
+  },
+  "ticketPack": "file:packs/ci-build-farm.i18n.json",
+  "handoverNote": {
+    "runsOut": "handover.ci-build-farm.runs-out",
+    "killsYou": "handover.ci-build-farm.kills-you",
+    "customerWants": "handover.ci-build-farm.customer-wants"
+  },
+  "rosettaCards": [
+    {
+      "canonical": "oversell-ratio",
+      "alias": "preemptible-warmth",
+      "line": "rosetta.ci-build-farm.warmth"
+    },
+    {
+      "canonical": "cgroup-caging",
+      "alias": "queue-depth-ceiling",
+      "line": "rosetta.ci-build-farm.caging"
+    }
+  ],
+  "scenarios": {
+    "archetypeApplicability": ["Build-to-Spec", "Endure"],
+    "analogues": {
+      "wall-goes-red": "scenarios.ci-build-farm.wall-goes-red",
+      "fork-until-it-dies": "scenarios.ci-build-farm.fork-until-it-dies",
+      "secret-in-the-log": "scenarios.ci-build-farm.secret-in-the-log"
+    },
+    "_todo": "archetypeApplicability [Build-to-Spec, Endure]: Build-to-Spec is the corpus's ONLY archetype that names this line's product outright — 'the board must reach a stated shape' — and a green status board IS a stated shape (:2704's squares are the spec's literal picture); Endure wears the Monday Wall quarter — survive the sawtooth whose dead weekend eats your warmth budget while its peak eats your patience (:2694). NOT Convert (this floor's traffic is one team's commits, not a funnel), NOT Diagnose (that verb went to type-13 verbatim and the wall here reports, it does not investigate). analogues are three consequence-only scenario sketches grounded in card sentences: the wall flushing red left-to-right (:2705), the build that forks until the host dies (:2699), the secret in the public log (:2700) — the §9.11 business-not-technique wall holds on all three (outcomes told, no commands)."
+  },
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

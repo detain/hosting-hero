@@ -1,0 +1,155 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-ci-build-farm-first-quarter",
+  "type": "official:ci-build-farm",
+  "purpose": "First-quarter wave slice for the fourteenth Ruleset Card — the §1.4 CI / build-farm card 'Green Light' / 'Untrusted Code, By Design', the first card founded on a §1.4 card and the first founded on a verb whose door mechanics shipped BEFORE the card (PlayerVerb.ReclaimNode @c8b92a2): 'Verb: isolate, expire, reclaim.' (:2686 verbatim) with Reclaim the blessed third word (owner ruling 2026-10-17, ADR-0017 #1; isolate stays dbaas's, expire stays a law) (14 of the 20-type launch canon, OD-14(a)). Slice shape mirrors the thirteen shipped g1 siblings: a reconnaissance opening on the calmest wall in the game, a peak built from the card's two structural pressures (runners held past their jobs and the desk flooding as the wall flushes), a trough where the enemy is the dead weekend eating the warmth budget while free-tier miners mine in the quiet, a surprise-with-composition wave carrying the line's named supply-chain threat — the fork-PR build running attacker code — landing beside the upstream rate-limit day, and a finale built on the card's own catastrophe: the boss beat with no registry id, a secret crossing a tenant boundary while every square on the most instantly readable board in the game stays green. Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored). The HONEST TENSION this slice records rather than resolves: this card's OWN demand shape is a different sawtooth — 'demand is a sawtooth with a hard weekly shape and a dead weekend' (:2694) — a CALENDAR weekly wave, not the quarter's rising-floor pressure ramp; both sawteeth stand, the par ladder is the game's, the Monday Wall is the floor's weather (mechanics.monday-morning-wall + the w2 envelope), and the curve catalogue owns reconciling them."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "queued-workday-builds",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. The rhythm name is authored from the card's own words (bundle tempo._todo carries the cites): 'Unit = a build minute / a job' (:2680) × 'engineering teams, who feel every second' (:2685) — the farm queues while the teams are awake and pushing, and the queue drains overnight but never empties: cron builds, badge refreshes, and dependency-cache warm-ups are this floor's idle hum. The card's dead-weekend claim ('a hard weekly shape and a dead weekend', :2694) is a SEASONALITY debt the never-zero baseline law keeps OUT of this curve — the waves lane owns curves, the numbers are the catalogue's (PROVISIONAL-B), and the weekend collapse lives in mechanics + the w3 trough's framing instead of a forged dip. neverZero holds in this line's register precisely because the card says the idle is the expensive part: the runners stay warm whether the queue is deep or empty, 'pure overhead you can't bill for' (:2683).",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "monday-wall-surge",
+      "kind": "customer",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "quiet-tail" },
+      "amplitude": null,
+      "telegraph": "the week's first hour arrives as the whole company's first hour at once: every team's overnight commits and Monday CI refresh landing in the same ten minutes — 'The Monday Morning Wall — demand is a sawtooth with a hard weekly shape' (:2693-2694 verbatim core) — and the wall of squares begins flushing not with failure but with QUEUE, every crate amber-lined, the depth meter the only number on the screen ('Queue depth is the only metric anyone looks at', :2689)",
+      "source": "§1.4 card mechanics, The Monday Morning Wall entry verbatim (:2693-2694); §3.3 CI row's patience shape — 'patient, but value decays with queue time' (:11975) — arrives here as the queue's cost side",
+      "compoundWave": "authored so the SCARCE thing is position, not speed: developers tolerate slow builds and not queued builds (:2689-2690 verbatim), so the wall surge spends hands (desk pressure as every team asks 'is it me or is it the farm?') and concurrency (held runners) together, and the honest answer — queue depth is real and FIFO — is the product the shed-order law exists to keep",
+      "_todo": "queue-depth/held-runner arrival mapping unauthored (the waves curve, not this lane); PROVISIONAL-B."
+    },
+    {
+      "id": "weekend-quarry",
+      "kind": "threat",
+      "overWaves": [3],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "revealed-tail" },
+      "amplitude": null,
+      "composition": ["cheat-client-griefer", "hoarder-noisy-neighbor"],
+      "telegraph": "the dead weekend is the free tier's prime time: while the engineering teams sleep, the free-plan accounts — 'the most abused free product in the industry and the dominant real abuse in this business' (:2698 verbatim) — quietly convert runner-minutes into hash-rate, and the big monorepo's nightly cache-refresh stretches its legs into the empty farm ('a customer whose monorepo needs 400GB of RAM', :2701)",
+      "source": "§1.4 threats census verbatim (:2698 free-tier cryptomining as dominant real abuse; :2701 the 400GB monorepo); registry cheat-client-griefer + hoarder-noisy-neighbor re-framed onto the farm (bundle threats._todo carries the per-id mapping)",
+      "compoundWave": "authored so the SCARCE thing is cleanliness itself: the miner rides a REUSED runner (contamination vector wearing a profit shape, :2691-2692), the hoarder's cache appetite outlives its owner's weekend, and the trough's real cost is the hygiene percentage nobody watched — 'the percentage of your fleet that is genuinely fresh vs \"reused because we were busy\"' (:2702-2703 verbatim)",
+      "_todo": "mining-load/hoard-cache → data-integrity/reputation pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "poison-and-rate-limit",
+      "kind": "threat",
+      "overWaves": [4],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "reset-tail" },
+      "amplitude": null,
+      "composition": ["vulnerable-plugin-compromise", "mod-update-day"],
+      "telegraph": "the surprise-with-composition wave lands the supply chain whole: an open-source PR — a stranger's code, the product's own admission ('You sell the execution of arbitrary code written by strangers', :2678 verbatim core) — merges, its build passes, and its poisoned artifact cache now seeds every later build on the shared runners; the same morning, the upstream package registry rate-limits every fetch at once — 'the upstream API rate limit that stalls every build at once' (:2701 verbatim) — so the poison spreads fastest exactly when nobody can rebuild clean",
+      "source": "§1.4 threats census verbatim (:2699 fork-PR attacker code, :2700 cache poisoning between builds, :2701 upstream rate limit); card Interacts-with leg 2: '§2.5 supply chain' (:2707); registry vulnerable-plugin-compromise + mod-update-day re-framed (bundle threats._todo carries the mapping)",
+      "compoundWave": "authored so the SCARCE thing is an untainted start: cache poisoning between builds (:2700) is data-integrity spent quietly while the rate-limit stall spends concurrency loudly, and the composition — poison spreading while the clean path is throttled — is the §1.7 law's own exemplar: never surprise with size; surprise with composition",
+      "_todo": "poison-depth/stall-window → concurrency/data-integrity pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "green-and-leaking",
+      "kind": "threat",
+      "overWaves": [5],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "blackholed-tail" },
+      "amplitude": null,
+      "composition": ["grudge-booter", "cheat-client-griefer"],
+      "telegraph": "the finale runs the farm's two loudest attacks as cover for the quietest one: a build that forks until the host dies (:2699 verbatim) spends the fleet's attention while a free-tier abuser's job reaches sideways into another tenant's cache (:2700 'a job that exfiltrates another job's cache' verbatim) — and the exfiltration prints no red square, because the board is honest about jobs, not about boundaries; 'a leaked secret between tenants' builds, because CI runners hold production credentials for every customer' (:2684-2685) is the boss this level's lose-condition IS",
+      "source": "§1.4 fatal axis verbatim (:2684-2685); threats census :2699-2700; registry grudge-booter + cheat-client-griefer re-framed (bundle threats._todo carries the mapping); the boss itself has NO registry id — the registry-owner proposal (a mechanical cross-tenant credential-boundary breach, countered by destroy-on-release) rides bundle threats._todo per the split-brain-boss precedent",
+      "compoundWave": "authored as an EVENT because the registry has no secret-leak entry and the leak is a STATE produced by the player's own economics — keeping warm runners reused because 'ephemeral is safe and cold' (:2692) and warmth sells: the fork storm (Siege) runs INBOUND for the fleet's hands while the mimic-shaped abuse (Mimic) runs SIDEWAYS through the cache; the wall flushes red from the storm (:2704-2705 'the wall going red left-to-right as a bad dependency propagates' verbatim core) and the red is a DECOY the board honestly reports — the fatal square never turns",
+      "_todo": "storm-depth/leak-window → concurrency/data-integrity pressure mapping unauthored; customer-notification and credential-rotation cost (hands x trust) unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). The quarter opens on the wall half-lit: overnight queues drained, warm caches humming, green squares settling into their rows — and the only weather is a scanner's drizzle at the edge of the fleet, slow probes reading the public badge board, learning which repos are busy and which runners are reused (:2681's cold-averse reconnaissance; the Stealth debut, data-integrity front only). The opening teaches the board before it tests the boundary: 'the most instantly readable board in the game, and it's real' (:2704 verbatim) — every square answers, the queue is shallow, and the player learns to read green. The tension sits where the card puts it, in the dial's two ends: 'reused is fast and a cross-tenant contamination vector; ephemeral is safe and cold' (:2691-2692) — and today, nothing has asked which end the player chose.",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["data-integrity"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the Monday Morning Wall lands, and it is the line's two native crowds arriving together. Two-Front (§2.24): jobs that will not release their runners (Sapper — the sipper re-worn: a session-shaped hold on a slot the fleet already billed away, 'a runner must be destroyed and rebuilt between jobs, which is pure overhead you can't bill for' :2682-2683 wearing the attacker's manners) spending concurrency on holds that are individually unremarkable, while the desk begins its climb (Swarm — the hydra of the queued quarter, every team asking 'is it my build or your farm?' as the wall flushes amber, 'developers tolerate slow builds and not queued builds' :2689-2690 verbatim) spending hands on tickets whose only honest answer is queue depth and an ephemeral-pool purchase. Two tenants of one Monday, two instruments, one lesson of wave two: the queue is the product, and the value of every crate in it is bleeding at a constant rate while it waits — 'patient, but value decays with queue time' (:11975 verbatim), the engine's value-decay law wearing this floor as its first card-named face.",
+      "entries": [
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 55, "band": "storm" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["concurrency", "hands"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS the destroyer and the scrubber: 'runner-destroyer' and 'secret-scrubber' are this level's own counter list for its signature failures (bundle threats.unlockedByBuildables), and the card prices the unspent version in its fatal: runners that outlive their jobs are secrets that outlive their tenants (:2684)."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the cache vault, the retention GC, the fork guard and the flakiness desk all get their window in the dead weekend. But the weekend is not empty, it is REASSIGNED: 'a hard weekly shape and a dead weekend' (:2694) means the engineering teams left and the free tier stayed — cryptominers in reused runners (Mimic — the griefer re-worn: a build that compiles nothing and earns everything, ':2698's dominant real abuse wearing a green square) spending data-integrity one idle runner at a time, while the big monorepo's nightly cache job settles onto the shared drum (Parasite — 'a customer whose monorepo needs 400GB of RAM' :2701 verbatim, the hoarder re-worn from inode appetite to cache appetite). Two fronts: data-integrity x reputation — contamination nobody sees while the hygiene percentage nobody watches slides, and the trough's real cost is written in the signature meter no engine can yet bind: 'genuinely fresh vs \"reused because we were busy\"' (:2702-2703).",
+      "entries": [
+        { "threat": "cheat-client-griefer", "role": "Mimic", "pressurePct": 55, "band": "entropy" },
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 45, "band": "entropy" }
+      ],
+      "denominations": ["data-integrity", "reputation"],
+      "note2": "the trough is also the reclaim beat's quiet setup: the empty weekend is the ONLY window when destroy-everything is affordable — the ephemeral posture is 'safe and cold' (:2692) and today, cold is cheap; the player who reclaims the fleet over the weekend arrives at Monday clean, and the engine's reclaim book (PlayerVerb.ReclaimNode @c8b92a2) is the furniture that makes the lesson purchasable."
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, farm variant: the stranger's code and the stranger's calendar land together — a merged PR carries attacker code that runs WITH the runner's borrowed production credentials (Bypass/Flyer debuts here, the every-4th-wave NEW ROLE beat, unseen in waves 1-3 — vulnerable-plugin-compromise re-worn from plugin marketplaces onto 'a fork-PR build that runs attacker code with your secrets', :2699 verbatim, the card's Interacts-with leg to '§2.5 supply chain' :2707 made playable), while the upstream package registry rate-limits every concurrent fetch at once (Splitter debuts too — mod-update-day re-framed onto 'the upstream API rate limit that stalls every build at once' :2701 verbatim, the dependency's calendar gate and the queue's fork in the same hour). Two fronts: concurrency (builds waiting on fetches hold their runners holding nothing) x data-integrity (the poisoned cache seeds every later build — 'cache poisoning between builds' :2700 verbatim). secondIncident inside the same window because on this line every supply is two supplies: the artifact that lied and the registry that would not answer.",
+      "entries": [
+        { "threat": "vulnerable-plugin-compromise", "role": "Bypass/Flyer", "pressurePct": 60, "band": "hunter" },
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 40, "band": "storm" }
+      ],
+      "denominations": ["concurrency", "data-integrity"],
+      "secondIncident": "the rate-limit stall finds the poisoned build mid-propagation -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the card's thesis completed — 'You sell the execution of arbitrary code written by strangers. That is not a bug in the product; it is the product.' (:2678-2679 verbatim) — and it arrives as one loud failure covering one quiet one: a grudge build forks until its host dies (Siege — the booter re-worn: ':2699's fork-until-the-host-dies, the registry's destruction shape told consequence-only per §9.11, the wall flushing red from the blast outward, 'the wall going red left-to-right as a bad dependency propagates' :2705 verbatim core) while a free-tier job reaches sideways through the warm-runner seam into another tenant's cache and out (Mimic — :2700's exfiltration, the leak the honest board cannot print: every square it reports is true, and the fatal square never turns :2684-2685). Hard wave draws TWO fronts — concurrency x data-integrity — per §2.24: the fleet's held slots and the boundary the slots share. The boss has no registry id and none is forged; the envelope event carries it (bundle threats._todo proposal). Win check: the wall flushed and refilled green, the hygiene stayed published, no secret crossed a tenant line, and the player proves they own the tension by choosing COLD when cold is what safety costs — reclaim the runners, eat the cold start, keep the strangers' secrets strangers.",
+      "entries": [
+        { "threat": "grudge-booter", "role": "Siege", "pressurePct": 55, "band": "storm" },
+        { "threat": "cheat-client-griefer", "role": "Mimic", "pressurePct": 45, "band": "hunter" }
+      ],
+      "denominations": ["concurrency", "data-integrity"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}
