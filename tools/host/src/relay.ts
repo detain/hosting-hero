@@ -21,7 +21,12 @@ import { createCoopRelay } from "relay-tools";
 import type { CoopRelay } from "relay-tools";
 import type { WebSocketServer } from "ws";
 import { createWsHubPort } from "./wsHubPort.ts";
-import type { WsHubPort } from "./wsHubPort.ts";
+import type { WsHubPort, WsHubPortOptions } from "./wsHubPort.ts";
+
+/** Hub knobs (parsed upstream by attachRelayHub) welded side by side with
+ *  CARRIER knobs (owned by wsHubPort) — the welder splits them by identity,
+ *  restating nothing. */
+export interface HostRelayOptions extends AttachRelayHubOptions, WsHubPortOptions {}
 
 export interface HostRelay {
   readonly relay: CoopRelay;
@@ -29,8 +34,11 @@ export interface HostRelay {
   readonly port: WsHubPort;
 }
 
-export function createHostRelay(server: WebSocketServer, options: AttachRelayHubOptions = {}): HostRelay {
-  const port = createWsHubPort(server);
+export function createHostRelay(server: WebSocketServer, options: HostRelayOptions = {}): HostRelay {
+  const port = createWsHubPort(server, {
+    ...(options.autoLeaveOnDisconnect === undefined ? {} : { autoLeaveOnDisconnect: options.autoLeaveOnDisconnect }),
+    ...(options.authorize === undefined ? {} : { authorize: options.authorize }),
+  });
   const relay = createCoopRelay({ autoCatchUpOnJoin: false });
   const hub = attachRelayHub(relay, port, options);
   return { relay, hub, port };

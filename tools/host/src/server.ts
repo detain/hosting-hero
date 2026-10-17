@@ -25,17 +25,20 @@
  * transport-tools is the single PROVISIONAL source. The carrier enforces it
  * on the wire (an oversize inbound CLOSES that connection — ws code 1009);
  * the codec's pre-parse check stays as defense-in-depth for carriers with a
- * larger ceiling. Loopback only, no auth (dev prototype — the README spells
- * the exposure rules).
+ * larger ceiling. Loopback only; auth stays the standing BY-RULING default
+ * (DECISIONS-PENDING @af55b61 / ADR-0017) — `auth: { secret }` (cli
+ * `--token`) is an OPT-IN dev hardening knob, `autoLeaveOnDisconnect` an
+ * opt-out BUG-CURE (the wsHubPort header states both laws). The README
+ * spells the exposure rules.
  */
 
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
 import { MAX_FRAME_BYTES } from "transport-tools";
-import type { AttachRelayHubOptions } from "transport-tools";
 import { WebSocketServer } from "ws";
+import { createTokenGate } from "./auth.ts";
 import { createHostRelay } from "./relay.ts";
-import type { HostRelay } from "./relay.ts";
+import type { HostRelay, HostRelayOptions } from "./relay.ts";
 import { createHostSim } from "./simLoop.ts";
 import type { HostSimHandle, HostSimOptions, HostStepReport } from "./simLoop.ts";
 
@@ -61,6 +64,19 @@ export interface StartHostOptions {
    *  carrier both-browser local-sim demo shipped @96bd238 — BOTH topologies
    *  can run side by side on different ports. */
   readonly sim?: HostSimOptions;
+  /** CARRIER bug-cure (lane L-AUTH), default TRUE: a socket that dies
+   *  without a `leave` gets one synthesized on the frame channel, so its
+   *  tenure never stays open forever (which poisoned re-join in v0).
+   *  FALSE opts back OUT into the exact legacy open-forever posture.
+   *  Gates + tick law: the wsHubPort header AUTO-LEAVE block. */
+  readonly autoLeaveOnDisconnect?: boolean;
+  /** OPT-IN dev token auth (default absent = the standing localhost-no-auth
+   *  posture, byte-for-byte). Seats must connect `ws://…/?token=<secret>`;
+   *  a refusal closes 1008 "policy violation" before the hub sees a byte.
+   *  An empty secret throws at boot (fail-loud). This is a shared-secret
+   *  gate for a loopback dev carrier — NOT identity, NOT TLS, NOT the
+   *  deferred PHP/Workerman room layer. */
+  readonly auth?: { readonly secret: string };
 }
 
 export interface HostHandle extends HostRelay {
@@ -88,6 +104,8 @@ export async function startHost(options: StartHostOptions = {}): Promise<HostHan
   if (!Number.isSafeInteger(tickMs) || tickMs < 0) {
     throw new RangeError(`host[tickMs]: expected a safe integer >= 0 (0 = manual), got ${String(tickMs)}`);
   }
+  // Fail-loud BEFORE binding: an empty secret must not leave a listening port.
+  const authorize = options.auth === undefined ? undefined : createTokenGate(options.auth.secret);
   const server = new WebSocketServer({
     host: options.host ?? "127.0.0.1",
     port: options.port ?? 0,
@@ -101,13 +119,15 @@ export async function startHost(options: StartHostOptions = {}): Promise<HostHan
   // callback stays permanently undefined — the omit-when-unset seat-state
   // shape, unchanged.
   let simHandle: HostSimHandle | null = null;
-  const hubOptions: AttachRelayHubOptions = {
+  const carrierOptions: HostRelayOptions = {
     ...(options.pageSize === undefined ? {} : { pageSize: options.pageSize }),
     ...(options.maxPageSize === undefined ? {} : { maxPageSize: options.maxPageSize }),
     ...(options.logBudget === undefined ? {} : { logBudget: options.logBudget }),
+    ...(options.autoLeaveOnDisconnect === undefined ? {} : { autoLeaveOnDisconnect: options.autoLeaveOnDisconnect }),
+    ...(authorize === undefined ? {} : { authorize }),
     projectionSource: (seat: string) => simHandle?.viewFor(seat),
   };
-  const { relay, hub, port } = createHostRelay(server, hubOptions);
+  const { relay, hub, port } = createHostRelay(server, carrierOptions);
   if (options.sim !== undefined) {
     simHandle = createHostSim({ relay, hub, options: options.sim });
   }
@@ -155,6 +175,7 @@ export async function startHost(options: StartHostOptions = {}): Promise<HostHan
       if (stopped) return;
       stopped = true;
       if (timer !== null) clearInterval(timer);
+      port.shutdown(); // cease leave-synthesis FIRST: a tearing-down carrier queues no verdicts
       const closed = once(server, "close"); // subscribe BEFORE the verbs that trigger it
       for (const socket of server.clients) socket.close(1001, "host stopped");
       server.close(); // stops listening; 'close' fires once every connection is gone

@@ -1,10 +1,12 @@
 /**
  * `tools/host/src/cli.ts` — dev entry: start the localhost co-op carrier.
  *
- * `pnpm -F host-tools dev [--port 9210] [--sim] [--scope <seat>:<csv|all>]`
+ * `pnpm -F host-tools dev [--port 9210] [--sim] [--scope <seat>:<csv|all>] [--token SECRET]`
  * prints the ws:// URL (port 0 asks the OS for an ephemeral one) and runs
- * until Ctrl+C. Loopback bind, NO AUTH — a dev prototype, never
- * internet-exposed (README §security).
+ * until Ctrl+C. Loopback bind; NO AUTH is the standing posture (BY RULING —
+ * dev prototype, never internet-exposed, README §security). `--token` flips
+ * on the OPT-IN dev gate: seats must connect with `?token=SECRET` or the
+ * carrier closes 1008 before the hub sees a byte.
  *
  * Default posture is topology (b) — the relay-only two-browser local-sim
  * demo. `--sim` engages topology (a): the host runs the engine itself
@@ -54,17 +56,36 @@ function parseScopes(argv: readonly string[]): HostSimScopes {
   return scopes;
 }
 
+/** `--token SECRET` — OPT-IN dev token auth (default absent keeps the
+ *  standing localhost-no-auth posture). Seats connect `ws://…/?token=SECRET`. */
+function parseToken(argv: readonly string[]): string | undefined {
+  const at = argv.indexOf("--token");
+  if (at === -1) return undefined;
+  const raw = argv[at + 1];
+  if (raw === undefined || raw.length === 0 || raw.startsWith("--")) {
+    console.error("host-tools dev: --token expects a non-empty secret");
+    process.exit(1);
+  }
+  return raw;
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const sim = argv.includes("--sim");
+  const token = parseToken(argv);
   const handle = await startHost({
     port: parsePort(argv),
     ...(sim ? { sim: { scopes: parseScopes(argv), defaultScope: "all" as const } } : {}),
+    ...(token === undefined ? {} : { auth: { secret: token } }),
   });
   const posture = sim ? "host-sim topology (a) — the host owns the engine, seats get fogged views" : "relay-only topology (b) — browsers run local sims, the host stamps and relays";
   console.log(`hh-coop dev ${sim ? "host-sim" : "relay"} listening on ws://127.0.0.1:${handle.boundPort}`);
   console.log(`posture: ${posture}`);
-  console.log("localhost-only, no auth — NEVER expose this carrier to the internet.");
+  if (token === undefined) {
+    console.log("localhost-only, no auth — NEVER expose this carrier to the internet.");
+  } else {
+    console.log("localhost-only, token auth ON — seats must connect with ?token=<secret>; a refusal closes 1008. NEVER expose this carrier to the internet (this is a dev gate, not TLS).");
+  }
   console.log("kill with Ctrl+C (SIGINT closes every socket and stops the tick).");
   process.on("SIGINT", () => {
     void handle.stop().then(() => process.exit(0));

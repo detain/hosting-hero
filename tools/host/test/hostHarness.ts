@@ -49,12 +49,12 @@ export async function startTestHost(options: StartHostOptions = {}): Promise<Hos
   return startHost({ tickMs: 0, ...options });
 }
 
-export function hostUrl(handle: HostHandle): string {
-  return `ws://127.0.0.1:${handle.boundPort}`;
+export function hostUrl(handle: HostHandle, query = ""): string {
+  return `ws://127.0.0.1:${handle.boundPort}${query}`;
 }
 
-export async function openSeat(handle: HostHandle, id: string): Promise<TestSeat> {
-  const socket = new WsClass(hostUrl(handle));
+export async function openSeat(handle: HostHandle, id: string, query = ""): Promise<TestSeat> {
+  const socket = new WsClass(hostUrl(handle, query));
   await once(socket, "open");
   const inbound: string[] = [];
   const wire: string[] = [];
@@ -134,4 +134,24 @@ export async function closeSeat(seat: TestSeat): Promise<void> {
     seat.socket.close(1000, "test done");
     await closed;
   }
+}
+
+/** HARD kill: destroy the TCP connection with no close handshake — exactly
+ *  the dropped-socket scenario the auto-leave cure exists for. Resolves
+ *  once the CLIENT side observes its close; the server-side 'close' (and
+ *  with it the leave synthesis) is observed via the port counters — wait on
+ *  `h.port.queued()` / `h.port.routes()` transitions, never on a sleep. */
+export async function hardKill(seat: TestSeat): Promise<void> {
+  const closed = once(seat.socket, "close");
+  seat.socket.terminate();
+  await closed;
+}
+
+/** Connect expecting the auth gate to refuse: the handshake completes (the
+ *  dev carrier answers at the WebSocket layer) and the server's close frame
+ *  arrives with the policy code. Resolves [code, reason]. */
+export async function connectRejected(handle: HostHandle, query: string): Promise<[number, string]> {
+  const socket = new WsClass(hostUrl(handle, query));
+  const [code, reason] = (await once(socket, "close")) as [number, Buffer];
+  return [code, reason.toString("utf8")];
 }

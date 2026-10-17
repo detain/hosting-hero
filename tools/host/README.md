@@ -32,6 +32,7 @@ pnpm -F host-tools dev            # topology (b): prints ws://127.0.0.1:<port> (
 pnpm -F host-tools dev -- --port 9210
 pnpm -F host-tools dev -- --sim   # topology (a): the host runs the engine + fog
 pnpm -F host-tools dev -- --sim --scope alice:edge --scope bob:all   # per-seat fog table
+pnpm -F host-tools dev -- --token SECRET   # OPT-IN dev token auth (seats connect with ?token=SECRET)
 ```
 
 `--sim` honesty: v0 host-sim runs the PIPELINE physics + observed merge only —
@@ -55,29 +56,65 @@ law, and no frame assertion here is timed — see the test headers).
 
 ## SECURITY — read this
 
-- **Loopback bind only (`127.0.0.1`), NO AUTH.** The join frame carries a
+- **Loopback bind only (`127.0.0.1`), NO AUTH by default — BY RULING**
+  (DECISIONS-PENDING records it @af55b61 / ADR-0017; hardening here is
+  OPT-IN or a bug-cure, never a reversal). The join frame carries a
   bare `participantId`; anyone who can open the socket owns that seat name
   (last-claim routing). This is a dev prototype.
+- **OPT-IN dev token auth (lane L-AUTH):** `startHost({ auth: { secret } })`
+  or `dev -- --token SECRET`. Browser WebSockets cannot set headers, and the
+  subprotocol slot belongs to the wire-version negotiation, so the token
+  rides the connect URL: `ws://127.0.0.1:<port>/?token=SECRET`. The gate
+  verifies with `node:crypto.timingSafeEqual` over sha256 digests (length-
+  blind) inside the connection handler BEFORE any message listener attaches
+  — a refusal closes **1008 "policy violation"** and the hub never sees a
+  byte from that socket. Ambiguous `token` arms and absent tokens are their
+  own closed reasons (`src/auth.ts`); an empty secret throws at boot. Default
+  OFF is byte-for-byte the legacy posture. Still not TLS, not identity, not
+  the PHP/Workerman room layer.
 - **NEVER expose this carrier to the internet** or bind it to a public
-  interface. Auth, rooms, and presence are the PHP/Workerman room layer's
-  deferred rung (tools/transport README §Deferred rungs) — this package
-  deliberately invents none.
+  interface. Rooms and real auth remain the PHP/Workerman room layer's
+  deferred rung (tools/transport README §Deferred rungs).
 - The frame cap is single-sourced: `MAX_FRAME_BYTES` (65_536, PROVISIONAL)
   imported from transport-tools and enforced twice — carrier-close (ws 1009)
   on the wire, codec refusal behind any wider carrier.
 
-## Laws — this file points, it does not restate
+## Carrier laws added here (L-AUTH)
 
-The eight transport laws, the R1–R4 wire-mechanics rulings, and the server
-contract table all live in **`tools/transport/README.md`** (cited, not
-copied). What THIS package adds is carrier behavior only:
+- **Auto-leave on disconnect (default ON, `autoLeaveOnDisconnect: false`
+  opts out).** The v0 bug: a socket dropped without a `leave` frame left its
+  tenure OPEN forever, poisoning re-join. The cure queues a `leave` FRAME on
+  the carrier's only authority channel (the same inbox a browser writes;
+  handleLeave stamps it through the same `relay.leaveSeat` law; the hub
+  already authors frames it never received — fault frames). Three
+  carrier-local gates: last-claim (only routes this socket still owns),
+  join-visible (a never-joined socket close queues nothing), suppression
+  (this socket already delivered that pid's own leave → exactly ONE vacate,
+  zero faults). FIFO ⇒ submits already queued stamp BEFORE the leave. TICK
+  LAW DISCLOSURE: the ledger requires `leftAtTick > joinedAtTick`, so a leave
+  drained without a clock advance after its join is a named ledger refusal —
+  the host's advance-then-drain rituals (pump/pumpTo/interval/step) guarantee
+  the synthesized leave always stamps later; raw double-drains ride the same
+  law an explicit leave rides. `stop()` shuts synthesis down first (a
+  tearing-down carrier answers nobody).
+- **The ledger IS the room registry** (v0: one relay per process). There is
+  no second room table; a seat-collision over the wire (same participantId
+  joins while its tenure is open) is refused by the save/coop double-open-row
+  law itself. Disk-verified (test/rooms.host.test.ts): the refusal surfaces
+  as a NAMED `SaveError` thrown at the `hub.drain()`/pump boundary with the
+  batch's refused mutation state-safe (ledger unchanged) — NOT as a fault
+  frame (the coopRoomWire header's v0 phrasing was aspirational; its owning
+  lane/closeout owns that text). Presence is ledger state re-fanned: join/
+  leave/submit (and `publish()`, @61efe31) push fresh `seat-state` ledgers;
+  the open-row count is the room's occupant list.
 
 | Concern | Where it lives |
 |---|---|
 | Stamping, seq streams, ledger tenures, dup self-check, paging | `tools/relay` (`createCoopRelay`) |
 | Codec, frame kinds, hub verdict grammar, log budget, page clamp, `publish()` fan seam | `tools/transport` (`attachRelayHub`) |
-| FIFO arrival → hubInbox, seat→socket route learning (participantId peek), counted carrier loss | `src/wsHubPort.ts` |
-| The wall clock (`setInterval`) + deterministic `pump()`/`pumpTo()` seam | `src/server.ts` |
+| FIFO arrival → hubInbox, seat→socket route learning (participantId + kind peek), counted carrier loss, auto-leave synthesis, auth refusal wiring (1008) | `src/wsHubPort.ts` |
+| Token parse + constant-time verify (closed reasons, fail-loud boot) | `src/auth.ts` |
+| The wall clock (`setInterval`) + deterministic `pump()`/`pumpTo()` seam + option welding | `src/server.ts` |
 | Topology (a): the host-owned tick — door-feed cursor, driver advance, observed merge (simCoreRunner twin), fogged `viewFor(seat)` | `src/simLoop.ts` |
 
 `client(seat).poll()` returns empty host-side BY CONTRACT (the host never
