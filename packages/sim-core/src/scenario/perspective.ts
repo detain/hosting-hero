@@ -183,7 +183,7 @@ export interface PerspectiveSpec {
  *  stay out — "no Triage" needs a communicate/shed ban (no seam) and
  *  investigation actions need mechanics perspectives cannot add. The
  *  Support Queue section itself is still ❌ (:1372); its row anchors on the
- *  law block's own example line :1208 — disclosed, not hidden. */
+ *  law block's own example line :1212 — disclosed, not hidden. */
 export type PerspectiveId =
   | "apprentice"
   | "datacenter-tech"
@@ -197,7 +197,7 @@ export const PERSPECTIVE_IDS: readonly PerspectiveId[] = Object.freeze(
 
 export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = Object.freeze({
   /* "A pure reactive level: no building allowed, only triage… Six things
-     break in twenty minutes; you have three hands." (:1262-1266)
+     break in twenty minutes; you have three hands." (:1266-1270)
      Expressed: place-device taped, hands minted at three, and the purest
      variant's phone is taxed — "you have only dashboards and a phone, and
      you can only route information to the right people" (:1268-1270):
@@ -207,7 +207,7 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
   "noc-shift": Object.freeze({
     id: "noc-shift",
     name: "The NOC Shift / On-Call Night",
-    specLine: 1262,
+    specLine: 1266,
     hide: Object.freeze([]),
     show: Object.freeze([]),
     refuse: Object.freeze({ verbs: Object.freeze([Verb.PlaceDevice] as const satisfies readonly PlayerVerb[]) }),
@@ -216,7 +216,7 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
     lookupPolicyCards: true,
   }),
   /* "You are the hands… the upstairs 'player' (the NOC) sends you
-     instructions that are sometimes wrong." (:1320-1324)
+     instructions that are sometimes wrong." (:1324-1328)
      Expressed: the upstairs telemetry (company:: namespace) is out of sight
      and the policy book is closed (lookupPolicyCards false). The doc's
      "Place/Connect only, no Observe" is carried by that pair — an honest
@@ -227,15 +227,15 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
   "datacenter-tech": Object.freeze({
     id: "datacenter-tech",
     name: "The Datacenter Tech / Remote Hands",
-    specLine: 1320,
+    specLine: 1324,
     hide: Object.freeze(["company::"] as const),
     show: Object.freeze([]),
     refuse: Object.freeze({ verbs: Object.freeze([]) as readonly PlayerVerb[] }),
     lookupPolicyCards: false,
   }),
   /* "You see only tickets, not the board… you must infer the outage from
-     customer complaints and dispatch fixes blind." (:1372-1374, law line
-     :1208). Diagnose-only: every bannable non-diagnose verb is taped and
+     customer complaints and dispatch fixes blind." (:1376-1378, law line
+     :1212). Diagnose-only: every bannable non-diagnose verb is taped and
      the book is closed; the sight hides EVERYTHING except ticket/queue-
      denominated cells (queueDepth-style properties, company telemetry —
      the churn signal is the complaint stream) and the frosted pane clears
@@ -245,7 +245,7 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
   "support-queue": Object.freeze({
     id: "support-queue",
     name: "The Support Queue",
-    specLine: 1208,
+    specLine: 1212,
     hide: Object.freeze(["*"] as const),
     show: Object.freeze(["company::", "support", "ticket", "queue"] as const),
     refuse: Object.freeze({
@@ -254,7 +254,7 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
     lookupPolicyCards: false,
   }),
   /* "You cannot act. You can only author policies — if/then rules with a
-     priority order." (:1474-1475, law line :1210 "Tune-only (you may
+     priority order." (:1478-1475, law line :1210 "Tune-only (you may
      author policy and nothing else)"). Expressed v0: place-device taped
      (the doc's "cannot act" made mechanical) while the book stays OPEN —
      the one perspective whose card WISH is fully served by a seam, because
@@ -264,7 +264,7 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
   apprentice: Object.freeze({
     id: "apprentice",
     name: "The Apprentice",
-    specLine: 1474,
+    specLine: 1478,
     hide: Object.freeze([]),
     show: Object.freeze([]),
     refuse: Object.freeze({ verbs: Object.freeze([Verb.PlaceDevice] as const satisfies readonly PlayerVerb[]) }),
@@ -280,7 +280,7 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
   "red-team-friday": Object.freeze({
     id: "red-team-friday",
     name: "Red Team Friday",
-    specLine: 1246,
+    specLine: 1250,
     hide: Object.freeze([]),
     show: Object.freeze([]),
     refuse: Object.freeze({ verbs: Object.freeze([]) as readonly PlayerVerb[] }),

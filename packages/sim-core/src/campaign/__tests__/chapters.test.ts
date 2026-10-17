@@ -154,8 +154,8 @@ describe("chapter meta — the §1.9 authoring law", () => {
 
   it("the perspective anchors are TEXT-true lines in hosting_game.md", () => {
     const book = readFileSync(fileURLToPath(new URL("../../../../../hosting_game.md", import.meta.url)), "utf8").split("\n");
-    expect(book[1474 - 1]).toContain("The Apprentice");
-    expect(book[1208 - 1]).toContain("The Support Queue");
+    expect(book[1478 - 1]).toContain("The Apprentice");
+    expect(book[1212 - 1]).toContain("The Support Queue");
     // Shipped-mission specLines ride each doc's OWN citation (the meta↔doc
     // equality law above) — the book's heading lines drift as sibling lanes
     // insert content, and this lane never re-pins another doc's anchor.

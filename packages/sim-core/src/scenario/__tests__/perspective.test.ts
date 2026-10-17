@@ -216,7 +216,7 @@ describe("PERSPECTIVE_EXPRESSIBILITY — the honest ceiling, pinned exactly", ()
 describe("the roster rows (§1.2 anchors and defaults)", () => {
   it("noc-shift: three hands (the doc's own number), phone taxed, no building", () => {
     const spec = PERSPECTIVE_V0["noc-shift"];
-    expect(spec.specLine).toBe(1262);
+    expect(spec.specLine).toBe(1266);
     expect(spec.handCapacity).toBe(3);
     expect(spec.attentionCostOverride).toEqual({ communicate: 1 });
     expect([...spec.refuse.verbs]).toEqual(["place-device"]);
@@ -225,7 +225,7 @@ describe("the roster rows (§1.2 anchors and defaults)", () => {
 
   it("datacenter-tech: upstairs telemetry out of sight, book closed", () => {
     const spec = PERSPECTIVE_V0["datacenter-tech"];
-    expect(spec.specLine).toBe(1320);
+    expect(spec.specLine).toBe(1324);
     expect([...spec.hide]).toEqual(["company::"]);
     expect(spec.refuse.verbs.length).toBe(0);
     expect(spec.lookupPolicyCards).toBe(false);
@@ -247,7 +247,7 @@ describe("the roster rows (§1.2 anchors and defaults)", () => {
 
   it("apprentice: cannot act, book open (the one fully-served card wish)", () => {
     const spec = PERSPECTIVE_V0["apprentice"];
-    expect(spec.specLine).toBe(1474);
+    expect(spec.specLine).toBe(1478);
     expect([...spec.refuse.verbs]).toEqual(["place-device"]);
     expect(spec.lookupPolicyCards).toBe(true);
     expect(spec.hide.length).toBe(0);

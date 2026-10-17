@@ -131,6 +131,9 @@ barrel. Zero sim-core edits.
 
 - **Auth** (who may hold seat "alice") — PHP/Workerman's room layer; the
   `join` frame deliberately carries only `participantId` + telemetry hint.
+  **WAVE-24 UPDATE (ADR-0018 1d): a DEV-GRADE rung landed in `tools/host`
+  @`2b0a882` — opt-in `?token=` gate w/ 1008 refusal + auto-leave on
+  disconnect; rooms/production auth + paging stay PHP's.**
 - **Failover authority** — `createReplica` is a WITNESS (shadow log, ledger
   copy, digest equality), not an implementation: election, fencing, and
   notary-backed handover belong to the carrier.

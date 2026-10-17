@@ -90,7 +90,7 @@ export interface ChapterMeta {
 /* Authored scenario docs — the two perspective levels (§1.2 seats)     */
 /* ------------------------------------------------------------------ */
 
-/** Apprentice seat (:1474, "you may only write rules"): the hands are taped
+/** Apprentice seat (:1478, "you may only write rules"): the hands are taped
  *  at the door while the desk still answers tickets. The rail schedules BOTH
  *  the forbidden place-device rows (LIVE refusal witness — the tape bites)
  *  and the legal communicate rows (the queue still moves from below). */
@@ -101,7 +101,7 @@ const APPRENTICE_DESK_SHIFT_WIRE = {
   brief:
     "You are the apprentice: the runbook says you may only write rules, and the door believes it. Every build thought dies at the tape — so answer the frightened queue with your hands where the seat allows them, and let the senior's board stand.",
   specRef: "§1.5 The Apprentice's Desk (campaign-authored perspective level)",
-  specLine: 1474,
+  specLine: 1478,
   perspective: { id: "apprentice" },
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
@@ -139,7 +139,7 @@ const APPRENTICE_DESK_SHIFT_WIRE = {
   limits: { maxSimMinutes: 45, handCapacity: 1 },
 } satisfies PerspectiveScenarioWire;
 
-/** Support-Queue seat (:1208, "Diagnose-only, the board hidden"): the desk
+/** Support-Queue seat (:1212, "Diagnose-only, the board hidden"): the desk
  *  answers and nothing else — build AND price thoughts both die at the tape.
  *  The queue IS the whole game from here. */
 const SUPPORT_DESK_VIGIL_WIRE = {
@@ -149,7 +149,7 @@ const SUPPORT_DESK_VIGIL_WIRE = {
   brief:
     "From the support desk the board is a rumour and the price list is somebody else's religion. All you own is the queue — so work it to silence, and let every build-and-price temptation break on the seat's tape where the campaign can see it.",
   specRef: "§1.5 The Support Desk Vigil (campaign-authored perspective level)",
-  specLine: 1208,
+  specLine: 1212,
   perspective: { id: "support-queue" },
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
@@ -246,9 +246,9 @@ const PROLOGUE_WIRE = {
 
 /** Prologue beat ledger (§1.9 archetype + hosting_game.md anchor per chapter). */
 export const PROLOGUE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
-  "p-1-triage-desk": { archetype: "Hold-Without-Hands", specLine: 3657 },
-  "p-2-borrowed-thunder": { archetype: "Reach-State", specLine: 4047 },
-  "p-3-handover-queue": { archetype: "Schedule", specLine: 3880 },
+  "p-1-triage-desk": { archetype: "Hold-Without-Hands", specLine: 3673 },
+  "p-2-borrowed-thunder": { archetype: "Reach-State", specLine: 4063 },
+  "p-3-handover-queue": { archetype: "Schedule", specLine: 3896 },
 });
 
 /** The parsed Prologue. parse-at-module-init = fail-loud: any authoring drift
@@ -303,14 +303,14 @@ const ACT_ONE_WIRE = {
 
 /** Act I beat ledger. */
 export const ACT_ONE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
-  "a-1-launch-day": { archetype: "Build-to-Spec", specLine: 3145 },
-  "a-2-apprentice-desk": { archetype: "Escort", specLine: 1474, perspectiveId: "apprentice" },
-  "a-3-angry-whale": { archetype: "Convert", specLine: 3408 },
-  "a-4-deadbeat-quarter": { archetype: "Inherit", specLine: 3790 },
-  "a-5-price-hike": { archetype: "Negotiate", specLine: 3802 },
-  "a-6-quiet-month": { archetype: "Endure", specLine: 3463 },
-  "a-7-rfo": { archetype: "Diagnose", specLine: 4034 },
-  "a-8-support-vigil": { archetype: "Hold-Without-Hands", specLine: 1208, perspectiveId: "support-queue" },
+  "a-1-launch-day": { archetype: "Build-to-Spec", specLine: 3161 },
+  "a-2-apprentice-desk": { archetype: "Escort", specLine: 1478, perspectiveId: "apprentice" },
+  "a-3-angry-whale": { archetype: "Convert", specLine: 3424 },
+  "a-4-deadbeat-quarter": { archetype: "Inherit", specLine: 3806 },
+  "a-5-price-hike": { archetype: "Negotiate", specLine: 3818 },
+  "a-6-quiet-month": { archetype: "Endure", specLine: 3479 },
+  "a-7-rfo": { archetype: "Diagnose", specLine: 4050 },
+  "a-8-support-vigil": { archetype: "Hold-Without-Hands", specLine: 1212, perspectiveId: "support-queue" },
 });
 
 /** The parsed Act One. */

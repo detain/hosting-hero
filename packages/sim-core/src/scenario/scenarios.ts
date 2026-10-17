@@ -148,7 +148,7 @@ const LONG_WEEKEND_WIRE = {
   brief:
     "You are on vacation: no hands, no heroics. Four calm shared-web accounts hum along at 40 visits a minute while payroll drips. Keep the doors open for four hours of simulated weekend — and keep every customer.",
   specRef: '§1.5 The Long Weekend / "No Hands" / Skeleton Crew / Founder\'s Vacation',
-  specLine: 3646,
+  specLine: 3662,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 400, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -193,7 +193,7 @@ const DEADBEAT_QUARTER_WIRE = {
   brief:
     "The MRR poster looks great; the bank does not. Five monthly accounts bill on paper while weekly payroll is paid in real money. End the quarter still holding cash — revenue is not cash, and the ledger keeps score.",
   specRef: "§1.5 Deadbeat Quarter / Endure / Interlude",
-  specLine: 3790,
+  specLine: 3806,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 200, serviceTimeUs: 3_000_000 }],
     edges: [],
@@ -238,7 +238,7 @@ const ANGRY_WHALE_WIRE = {
   brief:
     "One customer is two-thirds of the company and their term ends mid-quarter. Say yes and you keep the lights; say no and the concentration crisis arrives on schedule. Everything else is rounding error.",
   specRef: "§1.5 The Angry Whale / The Concentration Crisis / The Sole Whale",
-  specLine: 3408,
+  specLine: 3424,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 400, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -295,7 +295,7 @@ const COLLECTIONS_WEEK_WIRE = {
   brief:
     "Six hosted accounts on hourly paper: invoices settle from the first hour while payroll drips, two anchors sign their cliff renewal, and the dice-book small accounts drift out one by one. Keep the ledger breathing for four simulated hours — and never let churn take the company.",
   specRef: "§1.5 Collections Week",
-  specLine: 3778,
+  specLine: 3794,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 400, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -351,7 +351,7 @@ const METASTABLE_WIRE = {
   brief:
     "An eight-slot edge node hums at half load until a three-minute surge quadruples arrivals past capacity. Short enough, the queue drains before the ten-minute degraded wall closes; long enough, backlog and retries lock it solid — some seeds drain, some cascade.",
   specRef: "§1.5 Metastable",
-  specLine: 4076,
+  specLine: 4092,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -392,7 +392,7 @@ const METASTABLE_CORPUS_WIRE = {
   brief:
     "The eight-slot edge node hums at half load, then cites the shipped quarter: a scanner drizzle at the half-hour mark is weatherable; stack the finale behind it and backlog plus retries lock capacity past the degraded wall — the storm rides the content's schedule.",
   specRef: "§1.5 Metastable",
-  specLine: 4076,
+  specLine: 4092,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -433,7 +433,7 @@ const LAUNCH_DAY_WIRE = {
   brief:
     "A link goes live at the half-hour mark and forty visits a minute arrive for capacity that admits eight. Weather the spike without spending your bounce budget — the hug of death only kills you if the queue does.",
   specRef: "§1.5 Launch Day / Hug of Death / The Slashdotting",
-  specLine: 3145,
+  specLine: 3161,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -475,7 +475,7 @@ const DDOS_SEASON_WIRE = {
   brief:
     "No single wave, just a gradient: the attack baseline climbs every hour for four hours. Endure the season with the node out of the degraded wall — the level that never lets the map edges go quiet.",
   specRef: "§1.5 DDoS Season",
-  specLine: 3978,
+  specLine: 3994,
   board: {
     nodes: [{ id: "edge-1", kind: "shared-web", slots: 10, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -526,7 +526,7 @@ const RUNWAY_SIX_WEEKS_WIRE = {
   brief:
     "The books are profitable and the bank account is empty — the annual prepay is already spent. Payroll drains the ledger to zero at hour five; the anchor deal activates at 5:15. Cash timing is the whole mission.",
   specRef: "§1.5 Runway: 6 Weeks / Insolvency Run / Payroll Friday",
-  specLine: 3753,
+  specLine: 3769,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -578,7 +578,7 @@ const PRICE_HIKE_WIRE = {
   brief:
     "The control-panel vendor's bill triples at the quarter turn with sixty days' notice. No migration door, no negotiation minigame yet — eat the hike out of margin and keep the company above the mandate floor for eight hours.",
   specRef: "§1.5 The Price Hike / Vendor Shock / The Relicense",
-  specLine: 3802,
+  specLine: 3818,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 200, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -639,7 +639,7 @@ const QUIET_MONTH_WIRE = {
   brief:
     "Nothing is attacking you. Two quiet monthly accounts pay, traffic trickles, and the only enemy in the building is the upkeep line — spend nothing extra and the mandate floor never blinks.",
   specRef: "§1.5 The Quiet Month / Reverse Wave / The Good Problem",
-  specLine: 3463,
+  specLine: 3479,
   board: {
     nodes: [{ id: "edge-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -710,7 +710,7 @@ const POST_BREACH_WIRE = {
   brief:
     "The breach is public and wallets remember. Six hourly accounts keep billing while their payment dice go bad, the dunning ladder starts terminating what it cannot save, and the board demands the write-off column stay under seven at the meeting in five-and-a-half hours.",
   specRef: "§1.5 Post-Breach / The Breach / The Suspicious Login",
-  specLine: 3213,
+  specLine: 3229,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -776,7 +776,7 @@ const CONTRACT_RECOMPETE_WIRE = {
   brief:
     "Your biggest tenant is testing the market and the clause is explicit: show measurable service improvement hour over hour or lose the account. Climb the ladder, prove the delta, and do not buy the trend line with a bounce storm.",
   specRef: "§1.5 Contract Recompete / The Renewal",
-  specLine: 3839,
+  specLine: 3855,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 16, serviceTimeUs: 3_000_000 }],
     edges: [],
@@ -842,7 +842,7 @@ const FREE_TIER_FLOOD_WIRE = {
   brief:
     "The free tier launches to a trickle of genuine blogs, then the flood: two hours in, the stream turns into miners and relays. Keep the abuse ceiling under control WITHOUT strangling the genuine signups that made the tier worth running.",
   specRef: "§1.5 Free Tier Flood / Free Tier Abuse / Free Tier Invaded",
-  specLine: 3574,
+  specLine: 3590,
   board: {
     nodes: [{ id: "edge-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -891,7 +891,7 @@ const SEV0_WIRE = {
   brief:
     "Regulated data, midnight page, the whole sequence lit: preserve, isolate, notify, remediate. v0 plays the scar, not the runbook — arrivals crater at the disclosure and the mission ends when the served curve visibly recovers without eating the bounce budget.",
   specRef: "§1.5 The Sev-0",
-  specLine: 3240,
+  specLine: 3256,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 24, serviceTimeUs: 3_000_000 }],
     edges: [],
@@ -977,7 +977,7 @@ const COVENANT_WIRE = {
   brief:
     "The lender's covenant rides the wire: minimum six months of runway at the monthly review. Lean ops sail through the roll; one growth-buildout invoice turns the same board into a default — the bank is the antagonist, and no attacker is on screen.",
   specRef: "§1.5 Covenant",
-  specLine: 3772,
+  specLine: 3788,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1066,7 +1066,7 @@ const REVIEW_BOMB_WIRE = {
   brief:
     "A smear wave of delinquent accounts lands on the ledger and the public rating becomes the lives counter — every write-off is a one-star review. The board serves the quiet street flawlessly the whole time: the damage is real regardless of uptime.",
   specRef: "§1.5 Review Bomb",
-  specLine: 3870,
+  specLine: 3886,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1135,7 +1135,7 @@ const UNDERSTAFFED_SUNDAY_WIRE = {
   brief:
     "No crisis — an ordinary Sunday with a quarter of the hands. Nothing dramatic happens; the routine simply outruns the roster. Keep the tickets talked-to for forty minutes without ever letting the queue of NO's pile up.",
   specRef: "§1.5 The Understaffed Sunday",
-  specLine: 3657,
+  specLine: 3673,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1184,7 +1184,7 @@ const CHARGEBACK_WAVE_WIRE = {
   brief:
     "A carder ring paid with stolen cards and the processor is collecting. Nothing is broken, the servers are green, revenue books — and every dispute still takes its fee and its stars. Weather four disputes and keep the storefront rating alive.",
   specRef: "§1.5 The Chargeback Wave / Processor Freeze / Rolling Reserve",
-  specLine: 3721,
+  specLine: 3737,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1258,7 +1258,7 @@ const SLOW_WEEK_AFTER_WIRE = {
   brief:
     "The outage is over and nothing is broken — everything is fragile. The mechanics are all consequences: the post-mortem you file (or fudge), and the rating the next bad month tests against the floor your honesty built.",
   specRef: "§1.5 The Slow Week After",
-  specLine: 4025,
+  specLine: 4041,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1308,13 +1308,13 @@ const SLOW_WEEK_AFTER_WIRE = {
 
 /* ──────────────────── Someone Else's Outage ────────────────────────── */
 
-/** §1.5 "Someone Else's Outage" (:4047) — the C1 door channel's second
+/** §1.5 "Someone Else's Outage" (:4063) — the C1 door channel's second
  *  story, told from the OTHER side of the rail. A major region elsewhere
  *  dies and the internet notices your status page anyway: every ticket is
  *  about a failure you did not have. The engine says it plainly — the
  *  board stays GREEN for the whole hour (`bounces-below:1` is not taste,
  *  it is the premise) while the entire game is the communicate cadence.
- *  DIFFERENT vs "Understaffed Sunday" (C1 pilot, :3657): Sunday is a
+ *  DIFFERENT vs "Understaffed Sunday" (C1 pilot, :3673): Sunday is a
  *  drowning sprint — one operator, a 40-minute rain of tickets, the win
  *  is surviving refusals. Here the site is innocent, the queue is the
  *  weather, and the WIN line itself requires grace (executed ≥ 13 AND
@@ -1337,7 +1337,7 @@ const SOMEONE_ELSES_OUTAGE_WIRE = {
   brief:
     "A cloud region far away caught fire and your status page caught the blame. Nothing is broken here — the hour is pure queue: reply, reply, reply, and never let the one-hand door refuse a frightened customer.",
   specRef: "§1.5 Someone Else's Outage",
-  specLine: 4047,
+  specLine: 4063,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1381,8 +1381,8 @@ const SOMEONE_ELSES_OUTAGE_WIRE = {
 
 /* ──────────────────────────── The RFO ──────────────────────────────── */
 
-/** §1.5 "The RFO" (:4034) — the signals channel's blame-culture story,
- *  deliberately the MIRROR of "The Slow Week After" (:4025). That pilot
+/** §1.5 "The RFO" (:4050) — the signals channel's blame-culture story,
+ *  deliberately the MIRROR of "The Slow Week After" (:4041). That pilot
  *  proved adjudication: the same filing flips on changesInFlight (one
  *  clean change credits, two blur into ambiguity and forfeit). This one
  *  flips on STYLE, and the wire has a word for it: `style: "blame"` is
@@ -1414,7 +1414,7 @@ const THE_RFO_WIRE = {
   brief:
     "Enterprise paper demands a Reason-For-Outage after the region dies. Write it blameless and the house floor halves the next hit; print a finger-pointing doc for the logs and the second outage lands at full weight on a brand nobody trusts.",
   specRef: "§1.5 The RFO",
-  specLine: 4034,
+  specLine: 4050,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1460,7 +1460,7 @@ const THE_RFO_WIRE = {
 
 /* ───────────────────────── Threshold Day ───────────────────────────── */
 
-/** §1.5 "The Threshold Day" (:4086) — the corrupts channel (16c6add)
+/** §1.5 "The Threshold Day" (:4102) — the corrupts channel (16c6add)
  *  gets its conversion, and the channel is LITERALLY the spec's thesis:
  *  "nothing changed" — no attack, no deploy, no failure — the board just
  *  grew into a limit. On a bounce-mode board a queue jam screams through
@@ -1498,7 +1498,7 @@ const THE_THRESHOLD_DAY_WIRE = {
   brief:
     "No attack, no deploy, no drama — just the graph you stopped watching. The board serves exactly five a minute; the sixth arrival is the threshold. On a corrupts board the queue rots in silence while the bounce meter insists nothing is happening.",
   specRef: "§1.5 The Threshold Day",
-  specLine: 4086,
+  specLine: 4102,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 5, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1530,7 +1530,7 @@ const THE_THRESHOLD_DAY_WIRE = {
 
 /* ─────────────────── The Founder Bus Factor (rung 6) ─────────────────── */
 
-/** §1.5 "The Founder Bus Factor / Two Weeks' Notice" (:3880), playable core:
+/** §1.5 "The Founder Bus Factor / Two Weeks' Notice" (:3896), playable core:
  *  the least fungible resource. Ladder rung 6 (`limits.attention`) is the
  *  engine truth here — the departing engineer's handover queue runs as
  *  dense `communicate` + `configure-node` rows, BOTH taxed 1 (the door's
@@ -1547,7 +1547,7 @@ const THE_THRESHOLD_DAY_WIRE = {
  *  communicate holds 2 ticks, configure 1, and the door's half-open law
  *  (busyUntil <= tick releases) frees the pair exactly when the next pair
  *  lands — all 20 rows execute, win@40 with zero refusals, pure arithmetic
- *  (the understaffed-sunday :3657 @110f516 capacity precedent). Drop the
+ *  (the understaffed-sunday :3673 @110f516 capacity precedent). Drop the
  *  flip to capacity 1 and the queue jams deterministically: every configure
  *  row arriving mid-handover refuses `attention-debt`, and the 4th refusal
  *  lands at EXACTLY t12 on all five probed offsets —
@@ -1557,7 +1557,7 @@ const THE_THRESHOLD_DAY_WIRE = {
  *  early return), the door path is seed-free, witnesses pin exact ticks.
  *  FOLD (docblock law): the spec's fourteen in-game days fold to the
  *  handover SESSION its queue fits — the same compression long-weekend
- *  (:3646) names for its four-day weekend; the un-chosen days are the
+ *  (:3662) names for its four-day weekend; the un-chosen days are the
  *  refusals. NON-EXPRESSIBLE (recorded): the DAY-BY-DAY allocation choice
  *  (documenting vs training vs fixing vs relationships needs an
  *  allocation ledger that does not exist), and the permanent loss of
@@ -1569,7 +1569,7 @@ const FOUNDER_BUS_FACTOR_WIRE = {
   brief:
     "Two weeks' notice, one senior engineer, and a handover queue that does not fit in their head. Every briefing and every knob-walk burns a real attention token: with two hands on the clock the queue flows; with one, every second thought dies with them.",
   specRef: "§1.5 The Founder Bus Factor / Two Weeks' Notice",
-  specLine: 3880,
+  specLine: 3896,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1617,7 +1617,7 @@ const FOUNDER_BUS_FACTOR_WIRE = {
 
 /* ───────────────────── The Change Freeze (rung 8) ─────────────────────── */
 
-/** §1.5 "The Change Freeze / Frozen Change / Read-Only Friday" (:3625).
+/** §1.5 "The Change Freeze / Frozen Change / Read-Only Friday" (:3641).
  *  Ladder rung 8 (`limits.freeze`) wires the spec's hazard tape through the
  *  door's two EXISTING host-validator seams — `canPlaceDevice` and
  *  `canAdjustPrice` (intent-door.ts:170/175) — answered by the runner's
@@ -1639,7 +1639,7 @@ const FOUNDER_BUS_FACTOR_WIRE = {
  *  the door lane). The "break the freeze ONCE" variant needs a one-veto
  *  counter the observation does not carry.
  *  Zero dice: integer segment rates mint without arrival rolls (the
- *  free-tier-flood :3574 determinism law); the flip moves the probe row's
+ *  free-tier-flood :3590 determinism law); the flip moves the probe row's
  *  atTick INSIDE the band (t20 → t75) and loses
  *  `lose:intents-refused-above:0@75` at that exact tick on all five probed
  *  offsets — the tape refuses on the beat, every seed, like the spec's
@@ -1651,7 +1651,7 @@ const CHANGE_FREEZE_WIRE = {
   brief:
     "The board mandated N quiet days and the tape is diagonal across the deploy button. Something breaks mid-freeze — fix it with knobs you already own: flags, steering, words. The deploy you refuse is the level; the deploy you sneak is the audit finding.",
   specRef: "§1.5 The Change Freeze / Read-Only Friday",
-  specLine: 3625,
+  specLine: 3641,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1687,7 +1687,7 @@ const CHANGE_FREEZE_WIRE = {
 
 /* ───────────── Free Tier Flood — corpus twin (no new rung) ───────────── */
 
-/** §1.5 "Free Tier Flood" (:3574) again, through the waves-tableId seam
+/** §1.5 "Free Tier Flood" (:3590) again, through the waves-tableId seam
  *  (@5df5586) instead of hand-typed plateaus: the organic trickle stays
  *  authored (the baseline envelope — the free tier's genuine signups),
  *  while the FLOOD is a citation of the shipped g1 mail-hosting quarter —
@@ -1698,9 +1698,9 @@ const CHANGE_FREEZE_WIRE = {
  *  malicious-dominant composition (registry-core families: scanner-drizzle,
  *  vulnerable-plugin-compromise, wp-login-brute-squad, layer7-mimic all
  *  malicious; the wave-5 crest is systemic-dominant and its storm dice are
- *  deliberately outside this band — the metastable-corpus :4076 twin keeps
+ *  deliberately outside this band — the metastable-corpus :4092 twin keeps
  *  the finale for its own cascade witness).
- *  Same abuse-ceiling reading as the segments twin (:3574), narrowed to the
+ *  Same abuse-ceiling reading as the segments twin (:3590), narrowed to the
  *  malicious census pair per this lane's vocab: the citation must flood
  *  attacks ABOVE a floor that proves the storm actually spawned, while the
  *  whole cited band stays BELOW the abuse ceiling the free-tier controls
@@ -1722,7 +1722,7 @@ const FREE_TIER_FLOOD_CORPUS_WIRE = {
   brief:
     "The free tier opens to a trickle of genuine blogs; the flood is not typed in — it is whatever the quarter's own waves do to a mail box. Keep the abuse census under the ceiling the controls were tuned to without strangling the signups that made the tier worth running.",
   specRef: "§1.5 Free Tier Flood / Free Tier Abuse / Free Tier Invaded",
-  specLine: 3574,
+  specLine: 3590,
   board: {
     nodes: [{ id: "edge-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1747,7 +1747,7 @@ const FREE_TIER_FLOOD_CORPUS_WIRE = {
 
 /* ───────────── The Ransom Customer (corpus + opex choice) ─────────────── */
 
-/** §1.5 "The Ransom Customer / Ransom DDoS / Extortion" (:3984).
+/** §1.5 "The Ransom Customer / Ransom DDoS / Extortion" (:4000).
  *  The wire-level choice is the opex ledger: one row at m60 titled
  *  "ransom-paid" for 40 Mµ$ — the exact shape of a payoff the unattended
  *  lane already honors (a burn the company VOLUNTEERS). The storm is a
@@ -1769,7 +1769,7 @@ const FREE_TIER_FLOOD_CORPUS_WIRE = {
  *  engine-legible "failure" here because the ceiling row is authored as
  *  the losing line: the game that scores a fattened cash box as a win
  *  cannot tell this story, so the wire names the box itself as the
- *  losing ledger. NON-EXPRESSIBLE rides (recorded, spec :3984 body):
+ *  losing ledger. NON-EXPRESSIBLE rides (recorded, spec :4000 body):
  *  "paying marks you as a payer", the next-pool-worse escalation, and
  *  law-enforcement advice arcs — none have a state channel in v0
  *  (no payer-mark exists to carry them). Dice law: churn rolls only at
@@ -1784,7 +1784,7 @@ const RANSOM_CUSTOMER_WIRE = {
   brief:
     "A mail box gets a note with a bitcoin address. The storm does not care whether you pay — the engine has no response-conditional traffic. The ledger remembers the 40 grand: pay and the quarter stays inside the corridor; hold and the money you kept becomes the number that loses.",
   specRef: "§1.5 The Ransom Customer / Ransom DDoS / Extortion",
-  specLine: 3984,
+  specLine: 4000,
   board: {
     nodes: [{ id: "mail-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1817,7 +1817,7 @@ const RANSOM_CUSTOMER_WIRE = {
   },
 } satisfies ScenarioWire;
 
-/* The Copycat (§1.5 :3429) — the rung-7 price-war half. THE WIRE WIDENS:
+/* The Copycat (§1.5 :3445) — the rung-7 price-war half. THE WIRE WIDENS:
  *  the whale row carries `priceKey: "plan:copycat-shield"`, registering it
  *  against the L1 elasticity book (@5781335), and the rung-8 door rail
  *  speaks the adjust-price verb (@0032a21): at t30 the player cuts the
@@ -1857,7 +1857,7 @@ const COPYCAT_WIRE = {
   brief:
     "A rival undercuts you. A 15% cut lands outside the dead band — the monthly churn dice hear it. The cliff ignores price by law: no discount ever bought certainty. The timid 5% flip rolls no dice at all, and the whale churns on the raw floor.",
   specRef: "§1.5 The Copycat / The Price War",
-  specLine: 3429,
+  specLine: 3445,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1893,7 +1893,7 @@ const COPYCAT_WIRE = {
 
 /* ─────────── The Understaffed Sunday — triage twin (rung 9, wave eight) ── */
 
-/** §1.5 "The Understaffed Sunday" (:3657) re-read through the rung-9 lens.
+/** §1.5 "The Understaffed Sunday" (:3673) re-read through the rung-9 lens.
  *  The original counts the NO's (`intents-refused-above`); this twin asks
  *  WHICH verb ate them. One hand, three runbook knob-walks (configure-node)
  *  that Monday's shift depends on, and two incoming calls (communicate):
@@ -1908,7 +1908,7 @@ const COPYCAT_WIRE = {
  *  refused {configure-node:1}). Arm B's executed total reads 2 only
  *  because its death cuts the rail short at @8 — the full five-row rail
  *  would execute 4 in both arms.
- *  Zero dice: rate-0 traffic mints no envelopes (founder :3880 @110f516
+ *  Zero dice: rate-0 traffic mints no envelopes (founder :3896 @110f516
  *  precedent), the door path is seed-free, witnesses pin exact ticks ×5.
  *  NON-EXPRESSIBLE (recorded): the spec's ticket-entity backlog — same note
  *  as the original Sunday at :1123; the refused-count stays its honest
@@ -1920,7 +1920,7 @@ const UNDERSTAFFED_SUNDAY_TRIAGE_WIRE = {
   brief:
     "Same Sunday, one hand, and a collision that MUST happen: two calls and three knob-walks. Something gets dropped — the mission is making sure it is a call, not Monday's runbook. Total refusals look identical either way; only the per-verb census knows which promise died.",
   specRef: "§1.5 The Understaffed Sunday",
-  specLine: 3657,
+  specLine: 3673,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -2001,7 +2001,7 @@ const FREE_TIER_FLOOD_MIX_WIRE = {
   brief:
     "The flood again — but the truth is a mix, not a label. Signups keep their organic name on the dashboard while ninety percent roll as miners and relays. Count the stream BY IDENTITY: abuse visible above the detection floor, under the ceiling the tier controls were tuned to.",
   specRef: "§1.5 Free Tier Flood / Free Tier Abuse / Free Tier Invaded",
-  specLine: 3574,
+  specLine: 3590,
   board: {
     nodes: [{ id: "edge-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
     edges: [],

@@ -40,10 +40,13 @@
  * second gate, and the door's parseEntry is the final authority (R2 posture:
  * the relay carries, the door refuses).
  *
- * v0 honest gaps (disclosed, not patched): re-connecting the SAME seat id on
- * a dead socket without a prior leave() hits the hub's double-open-row
- * refusal as a fault frame (the dev carrier prunes routes, not tenures);
- * no auth, localhost carrier only. The per-seat fog rider (lane L-THIN,
+ * v0 honest gaps (disclosed, then cured): re-connecting the SAME seat id on
+ * a dead socket without a prior leave() now THROWS SaveError through the
+ * drain — the dev carrier synthesizes the leave on socket close (L-AUTH
+ * @2b0a882), and the double-open-row verdict is a THROW, not a fault frame
+ * (split per tools/transport/CARRIER-CONTRACT.md §2.11-§2.12); token auth is
+ * OPT-IN (--token, refusal closes 1008) — localhost carrier is still the
+ * default posture. The per-seat fog rider (lane L-THIN,
  * ADR-0017 #7 owe) IS now surfaced — read-only through wireView()/
  * wireViewSeenAt() into CoopRoom's own column; a carrier without a wired
  * projectionSource (the plain relay carrier; the host-sim `--sim` one HAS

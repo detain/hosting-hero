@@ -60,7 +60,9 @@ law, and no frame assertion here is timed — see the test headers).
   (DECISIONS-PENDING records it @af55b61 / ADR-0017; hardening here is
   OPT-IN or a bug-cure, never a reversal). The join frame carries a
   bare `participantId`; anyone who can open the socket owns that seat name
-  (last-claim routing). This is a dev prototype.
+  (last-claim routing). This is a dev prototype — but the CARRIER obligation for production
+  auth/rooms is now WRITTEN: `tools/transport/CARRIER-CONTRACT.md` §2.12
+  (connection-layer truths) + §2.11 (hub behavior).
 - **OPT-IN dev token auth (lane L-AUTH):** `startHost({ auth: { secret } })`
   or `dev -- --token SECRET`. Browser WebSockets cannot set headers, and the
   subprotocol slot belongs to the wire-version negotiation, so the token
