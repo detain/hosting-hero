@@ -65,11 +65,13 @@ describe("flavourFeed · pool closure", () => {
     expect(decisionKeys.size).toBeGreaterThan(150);
   });
 
-  it("the #D5 pool census: 272 entries / 217 distinct keys (disk truth)", () => {
+  it("the #D5 pool census: 272 entries / 218 distinct keys (disk truth)", () => {
     // re-derived empirically from the fourteen registered packs — entries count
     // the (packId, key) pairs, distinct keys collapse the byte-ident twins
+    // (218 since the ci-build-farm firstday→board rename split the one
+    // pack-ambiguous key into two distinct ones; entries unchanged at 272)
     expect(POOL.length).toBe(272);
-    expect(new Set(POOL.map((e) => e.key)).size).toBe(217);
+    expect(new Set(POOL.map((e) => e.key)).size).toBe(218);
     // the widening moved every entry count EXCEPT the trio of baseline-only
     // loading tips: slot-free flavour per pack (sorted code-unit by packId)
     const perPack = new Map<PackId, number>();
@@ -125,12 +127,13 @@ describe("flavourFeed · pool closure", () => {
     expect(firmware.map((e) => e.packId)).toEqual(
       [...firmware.map((e) => e.packId)].sort(compareCodeUnits),
     );
-    // the keyed law keeps multi-pack slot-free twins byte-identical — with
-    // exactly ONE disclosed exception: intern.entry.firstday ships slot-free
-    // in BOTH observability and ci-build-farm with divergent texts (the
-    // fourteenth pack authored the collision @a47a9b5; resolution is owed to
-    // the content lane — a key rename or a slot gate, never a silent proto
-    // carve). The census pins the exception SET exactly, so no second
+    // the keyed law keeps multi-pack slot-free twins byte-identical across
+    // all fourteen packs — the divergent-text SET is EMPTY and pinned so.
+    // It earned that emptiness: the fourteenth pack authored
+    // intern.entry.firstday slot-free in BOTH observability and ci-build-farm
+    // with divergent texts (collision @a47a9b5, disclosed @27281fa); the
+    // content lane resolved it by renaming the ci side to intern.entry.board.
+    // Pinned as the exact EMPTY set, not merely asserted small — no
     // pack-ambiguous line can join the pool by silence.
     const byKey = new Map<string, string[]>();
     for (const entry of POOL) {
@@ -143,7 +146,7 @@ describe("flavourFeed · pool closure", () => {
       if (texts.length < 2) continue;
       if (new Set(texts).size > 1) divergent.push(key);
     }
-    expect(divergent).toStrictEqual(["intern.entry.firstday"]);
+    expect(divergent).toStrictEqual([]);
     // the text-divergent cross-pack keys (abuse.canon.upstream,
     // abuse.canon.customer-dispute, intern.entry.bill, chatter.desk.stack)
     // are slot-bearing wherever they would double-enter: chatter.desk.stack
