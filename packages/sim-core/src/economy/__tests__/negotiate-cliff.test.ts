@@ -30,9 +30,9 @@
  *     discounts the override-chain HEAD, grandfather still WINS —
  *     ADR-0014 #D4 order); and the term roll-forward.
  *
- * Taste numerics pinned here (PROVISIONAL, ADR-0015 mechanics — the card
- * names tones, not numbers): rapport +300bps, firm +100bps, legal 0bps,
- * concession presence +300bps, clamped ≤ 1.0.
+ * Taste numerics pinned here (RATIFIED 2026-10-17 (ADR-0017 #6); ADR-0015
+ * mechanics — the card names tones, not numbers): rapport +300bps, firm
+ * +100bps, legal 0bps, concession presence +300bps, clamped ≤ 1.0.
  */
 
 import { describe, expect, it } from "vitest";
@@ -115,7 +115,7 @@ describe("negotiationRetentionFactorBps (the tilt before the EXISTING draw)", ()
       expect(negotiationRetentionFactorBps(null, f, cfg)).toBe(f);
     }
   });
-  it("tone bumps: rapport +300 > firm +100 > legal 0 (PROVISIONAL numerics pinned red on drift)", () => {
+  it("tone bumps: rapport +300 > firm +100 > legal 0 (RATIFIED 2026-10-17 (ADR-0017 #6), pinned red on drift)", () => {
     expect(cfg.negotiation.retentionBumpBpsByTone).toEqual({ rapport: 300n, firm: 100n, legal: 0n });
     expect(cfg.negotiation.concessionPresenceBps).toBe(300n);
     // 5500 baseline: ×1.03 = 5665, ×1.01 = 5555, ×1.00 = EXACT identity:

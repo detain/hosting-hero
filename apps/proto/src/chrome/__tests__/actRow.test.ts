@@ -198,7 +198,7 @@ describe("actRow · mint semantics", () => {
     expect(args["releaseAtBusinessMinute"]).toBe(NOW_MINUTE + LIFT_AT_NEXT_MINUTE);
   });
 
-  it("restart release is REQUIRED non-null — bounded flush window (PROVISIONAL 5m taste row)", () => {
+  it("restart release is REQUIRED non-null — bounded flush window (5m taste row RATIFIED 2026-10-17 (ADR-0017 #6))", () => {
     const drop = mintActIntent(PlayerVerb.RestartNode, "edge", NOW_MINUTE) as unknown as Record<string, unknown>;
     expect(drop["dropQueued"]).toBe("drop");
     expect(drop["releaseAtBusinessMinute"]).toBe(NOW_MINUTE + RESTART_WINDOW_MINUTES);

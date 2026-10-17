@@ -21,9 +21,10 @@
  *    steps 5/9 through pipeline/reclaim.ts — proven in
  *    reclaim-consume.test.ts);
  *  - occupancy class: COMMIT (1 hand / 1 tick) — the one-click Act-row law;
- *    PROVISIONAL (post-ratify new numeric, 2026-10-17): the ADR-0016 #11
- *    register CLOSED (e2a1bba) before this verb existed, so house law ships
- *    the pair PROVISIONAL like the original eight did before the sweep;
+ *    RATIFIED 2026-10-17 (ADR-0017 #6): the ADR-0016 #11 register CLOSED
+ *    (e2a1bba) before this verb existed, so the pair shipped under the
+ *    post-ratify taste tag like the original eight did before their sweep;
+ *    the wave-23 game-feel batch-ratify discharges it;
  *  - M2 wire wall: both arg keys are STRUCTURAL (missing/wrong type throws
  *    IntentDoorError); explicit `null` is the only "now" form; the value
  *    domain is the three reused phrases;

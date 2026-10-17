@@ -127,6 +127,58 @@ lineage tracing came free.
 > `direct := <tableId>@` prefix. Truly-viral deaths stay `unattributed` BY DESIGN — the floor
 > is gone, not the concept. Landed by `cbf53a4`.
 
+**#6 — GAME-FEEL NUMERICS RATIFIED (owner follow-on ruling 2026-10-17, wave-23 item 4a).** The
+owner batch-ratifies the game-feel subset of the standing taste registers NOW; the engineering
+caps are not game feel and STAND PROVISIONAL pending real-carrier data — the #11 split posture
+survives verbatim. Every ratified site flips its comment label to the one grep-able literal
+`RATIFIED 2026-10-17 (ADR-0017 #6)` — a comment/text sweep; machine values are byte-identical
+(string-aware strip-comment token diff proves zero code change, the two disclosed test-title
+flips excluded by ledger; the full battery re-runs green on the flipped labels alone). The
+enumeration, in the registers' own terms:
+
+- **Affix cost multipliers ×18** (`versus/deck.ts` `AFFIX_COST_MULTIPLIER_BPS`): the 17 values
+  plus their table umbrella — the `PROVISIONAL (2026-10-17, owner ratify-on-playtest)` grammar
+  that #11's STANDS list named by its own exception, retired here.
+- **Affix wave deltas ×1 (umbrella)** (`versus/affixes.ts` `AFFIX_WAVE_DELTAS` @`eb4b86a`): the
+  shape permilles, window scales, share cut and fold clamps. On-disk honesty: the table shipped
+  with NO taste tag on its rows — the I-P V-2 spec values were law from landing — so the
+  ratification is stamped once on the table umbrella, not onto fifteen unlabeled rows.
+- **Negotiation bumps ×4** (`economy/config.ts` `NegotiationConfig` interface + defaults block):
+  rapport 300 · firm 100 · legal 0 · concessionPresence 300 bps — the #11-named survivor
+  (`PROVISIONAL (ADR-0015 taste numeric)` grammar, four sites).
+- **Coverage mid-band ×1** (`coverage/matrix.ts` `DEFAULT_UNCALIBRATED_STRENGTH` 0.5): the
+  "Taste call, OWNER" gate — #11's coverage-row survivor. The 12×9 grid count and the
+  6554/26214/55706 ladder are LAWS and were not touched by this bullet.
+- **Reclaim door rows ×2** (`pipeline/intent-door.ts`): occupancy 1 / handCost 1 — the pair
+  this ADR's #3 registered as post-ratify PROVISIONAL because the #11 sweep (`e2a1bba`) closed
+  before the 19th verb existed. Their test header re-pins to the new label (count-neutral).
+- **Act-row desk numerics ×2** (`apps/proto/src/chrome/actRow.ts` @`a28e764`):
+  `RESTART_WINDOW_MINUTES = 5` (labeled on disk) and the `LIFT_AT_NEXT_MINUTE` boundary
+  ergonomics — #3's register names the lift choice PROVISIONAL while its docblock carried no
+  tag; the stamp discharges it from register authority, disclosed.
+- **Family-law sweep ×2** (`pipeline/defaults.ts`): the Schedule band→sim-time conversion law
+  (`jobBandDistanceUs`) and the Maintain absorb-not-prevent choice — the same post-ratify
+  grammar as the reclaim pair, found by grep (this is the register law, not just the list).
+
+Total: **30 source sites across 7 files + 4 test sites across 3 files** (two block-comment
+headers, two `it()` titles — the wave-20 pricingDial / wave-21 sell-accept precedent for
+title flips, disclosed in the commit body). **What STANDS PROVISIONAL (explicit):** the
+`tools/transport` caps (`MAX_FRAME_BYTES` 65_536, `DEFAULT_LOG_BUDGET` 10_000, `maxPageSize` 64 —
+real-carrier gate), the tuning-sheet A/C letters and their status enum (`waves/pressure.ts` —
+OD-2 ratified B, ADR-0009), the legacy `PROVISIONAL-B` content residue (27 waves-slice + 16
+registry-core sites — the validator-tolerance law), the audio ducking envelope (audition gate),
+the substrate spike taste rows (first-mount gate), the 7,000 t/s bench budget, the motionAudit
+programmer-art coverage estimates and the absolute readability numerics (render-harness gate),
+the g5 fixture-local money/wave text and `noticeSurface` provisional voices (copy-voice batch),
+the decision-rail `DECISION_*` taste consts (outside this sweep's file scope — same playtest
+set), `economy/config.ts`'s label-vocabulary legend, and test titles that merely describe
+numerics without owning a ratification label (the wave-20/21 skip discipline).
+**Label-grammar discharge:** with #6 the ADR-0016 #10/#11 survivor lists are fully
+dispositioned — Sell/Warmth/Relationship/door-rows by #11; affix costs, wave deltas,
+Negotiation bumps, coverage mid-band, the reclaim pair, the Act-row numerics and the family-law
+sweep by this bullet; everything else STANDS under the named gates above. Changing a value
+ratified here is a law-change event, never a tuning tweak — the ADR-0015 #1 discipline, unbroken.
+
 ## Consequences
 
 - **Landed (wave-22 chain atop `e7d9150`):** `2b63795` #2 · `e2a1bba` ADR-0016 #11 split

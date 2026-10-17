@@ -1104,10 +1104,11 @@ export function jobWindowInForce(
  *  sim:business ratio IS the current speed's ratio, so the conversion is
  *  exact; under mixed speeds it weights the remaining edge by the run's
  *  AVERAGE so-far (the player's speed history is deterministic replay input,
- *  so this stays byte-reproducible either way). PROVISIONAL: this conversion
- *  law is new mechanics postdating the ADR-0015 #1 numerics ratification —
- *  house law ships new numerics PROVISIONAL with ADR-0015 mechanics context
- *  (same posture as the Maintain v0 absorb-not-prevent choice).
+ *  so this stays byte-reproducible either way). The conversion law was
+ *  registered as new mechanics postdating the ADR-0015 #1 numerics
+ *  ratification; it is RATIFIED 2026-10-17 (ADR-0017 #6) with the wave-23
+ *  game-feel batch (same posture as the Maintain v0 absorb-not-prevent
+ *  choice below, discharged together).
  *
  *  Tick-0 fallback: businessUs 0 divides nothing — at 1× the law is exact by
  *  construction (60 sim µs ÷ (43200/7) business µs = 7/720 per business µs),
@@ -1411,9 +1412,10 @@ export function createPatienceCheckStep(
        * The unit HOLDS — elapsed keeps accruing, the wait keeps
        * re-predicting, capacity is still consumed; what attendance absorbs
        * is the GIVING-UP, not the queueing (the v0 absorb-not-prevent
-       * choice, PROVISIONAL — new mechanics postdating the ADR-0015 #1
-       * numerics ratification, house law ships PROVISIONAL with mechanics
-       * context). Zero blast radius exactly as the shield veto cites above:
+       * choice — new mechanics postdating the ADR-0015 #1 numerics
+       * ratification, RATIFIED 2026-10-17 (ADR-0017 #6) with the wave-23
+       * game-feel batch). Zero blast radius exactly as the shield veto
+       * cites above:
        * "skipping this unit's draw shifts nobody else's dice" — and with
        * NO book on input this line answers null without touching a Map. */
       if (queueNode !== undefined && maintainInForce(maintain, queueNode, atBusinessMin, reclaims) !== null) continue;

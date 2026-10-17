@@ -48,7 +48,8 @@ import {
 
 /* ─────────────────────────── taste + law constants ─────────────────────────── */
 
-/** PROVISIONAL taste row (owner-ratify owed, ADR-0017 register): the
+/** RATIFIED 2026-10-17 (ADR-0017 #6) — the wave-23 game-feel batch-ratify
+ *  (owner ruling 4a; discharged from this ADR's #3 taste register): the
  *  one-click bounded restart window. §7.16's restart is a BOOT, not a
  *  fence — the door REQUIRES a release minute (an unbounded restart is
  *  isolate-node under another name), so the desk mints a short window. */
@@ -56,7 +57,10 @@ export const RESTART_WINDOW_MINUTES = 5;
 
 /** Isolate-lift law mirror: the door has NO un-isolate verb. The honest
  *  "end it now" is a replacement entry releasing at the NEXT minute
- *  boundary, labelled that way in every UI string. */
+ *  boundary, labelled that way in every UI string. The boundary choice is
+ *  RATIFIED 2026-10-17 (ADR-0017 #6) — named PROVISIONAL by the #3
+ *  register's desk-ergonomics rider; the docblock carried no tag on disk,
+ *  so the stamp discharges it here. */
 export const LIFT_AT_NEXT_MINUTE = 1;
 
 /* ──────────────────────────────── error family ─────────────────────────────── */

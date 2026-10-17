@@ -100,7 +100,13 @@ export const VERSUS_AFFIX_SI_STACK_FACTOR_MICRO = 1_500_000;
  * The 16-slug conversion table (I-P V-2 spec, verbatim per-slug). Order
  * mirrors §2.13 / AFFIX_VOCABULARY. Every row's comment is the record of
  * what the doc promises vs. what v0 delivers — the gap-notes are honest
- * approximations, each one also listed in the lane report.
+ * approximations, each one also listed in the lane report. The numerics
+ * (window scales, shape permilles, share cut, fold clamps) are
+ * RATIFIED 2026-10-17 (ADR-0017 #6) — the wave-23 game-feel batch-ratify
+ * (owner ruling 4a). On-disk honesty: this table shipped (`eb4b86a`) with
+ * NO taste tag on its rows — the spec values were law from landing — so
+ * the ratification is stamped once here, on the table umbrella, not onto
+ * fifteen unlabeled rows.
  */
 export const AFFIX_WAVE_DELTAS: Readonly<Record<ThreatAffix, AffixWaveDelta>> = Object.freeze({
   /* 1 — "1/10th rate, 10× duration". v0 approximates as window ×2: */

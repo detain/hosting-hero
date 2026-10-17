@@ -103,7 +103,9 @@ export type CoverageProfile = ReadonlyMap<string, BuildableCoverage>;
 
 /** An uncalibrated (threatRole × declared column) cell sits at "ok" mid-band
  *  (0.5): building the right KIND of defense reads as a real answer, but
- *  never as a perfect one until content calibrates it. Taste call, OWNER. */
+ *  never as a perfect one until content calibrates it. The mid-band taste is
+ *  RATIFIED 2026-10-17 (ADR-0017 #6) — the wave-23 game-feel batch-ratify
+ *  (#11's coverage-row survivor). The grid count and ladder remain LAWS. */
 export const DEFAULT_UNCALIBRATED_STRENGTH: Fixed = fromRatio(1n, 2n);
 
 /** Grid size law: 12 threat roles (§2.1, waves/THREAT_ROLES) × 9 defense

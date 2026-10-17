@@ -91,27 +91,28 @@ const AFFIX_SET: ReadonlySet<string> = new Set<string>(AFFIX_VOCABULARY);
  * defaulted (plain-only) draft keeps cost ≡ weight and its compensation
  * walk is the identity. The KEY SET is law: exactly the 16 §2.13 slugs plus
  * "plain" — renaming a key or adding one is a v3 format change. The VALUES
- * are taste: every entry is
- * PROVISIONAL (2026-10-17, owner ratify-on-playtest).
+ * are taste, and the taste is now law: every entry is
+ * RATIFIED 2026-10-17 (ADR-0017 #6) — the wave-23 game-feel batch-ratify
+ * (owner ruling 4a; the engineering caps are dispositioned elsewhere).
  */
 export const AFFIX_COST_MULTIPLIER_BPS: Readonly<Record<"plain" | ThreatAffix, number>> = Object.freeze({
-  "plain": 10_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest) — identity: cost ≡ weight
-  "low-slow": 13_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "distributed": 10_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest) — free spice, no cost
-  "encrypted": 16_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "adaptive": 18_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "timed": 12_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "piggyback": 10_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "mimic": 16_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "persistent": 18_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "off-hours-only": 12_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "ramped": 10_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "targeted-at-one-customer": 12_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "piggybacked-on-a-maintenance-window": 20_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest) — the priciest mix-in
-  "two-stage": 20_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "rate-shaped": 14_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "diurnal": 12_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest)
-  "bounded": 8_000, // PROVISIONAL (2026-10-17, owner ratify-on-playtest) — DISCOUNT affix: the table minimum; drafts fund splurges out of bounded savings
+  "plain": 10_000, // RATIFIED 2026-10-17 (ADR-0017 #6) — identity: cost ≡ weight
+  "low-slow": 13_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "distributed": 10_000, // RATIFIED 2026-10-17 (ADR-0017 #6) — free spice, no cost
+  "encrypted": 16_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "adaptive": 18_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "timed": 12_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "piggyback": 10_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "mimic": 16_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "persistent": 18_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "off-hours-only": 12_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "ramped": 10_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "targeted-at-one-customer": 12_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "piggybacked-on-a-maintenance-window": 20_000, // RATIFIED 2026-10-17 (ADR-0017 #6) — the priciest mix-in
+  "two-stage": 20_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "rate-shaped": 14_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "diurnal": 12_000, // RATIFIED 2026-10-17 (ADR-0017 #6)
+  "bounded": 8_000, // RATIFIED 2026-10-17 (ADR-0017 #6) — DISCOUNT affix: the table minimum; drafts fund splurges out of bounded savings
 });
 
 /** §2.24 active-family pool cap ("8–10"): hard ceiling for v0 decks. */

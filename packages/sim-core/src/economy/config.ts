@@ -331,18 +331,19 @@ export interface PricingConfig {
  *  bumps RAISE the cliff's retention factor BEFORE the existing single
  *  draw (never a new roll), clamped to ≤ 1.0 — a rapport buys leverage,
  *  never certainty (the elasticity ceiling, mirrored). All values
- *  PROVISIONAL taste numerics (ADR-0015 mechanics authorization; the
- *  card names no numbers — the ordering law it DOES name, rapport-with-
- *  concession > rapport-without, is pinned in tests). */
+ *  RATIFIED 2026-10-17 (ADR-0017 #6) — the wave-23 game-feel batch-ratify
+ *  (owner ruling 4a; the #11-named survivor). ADR-0015 mechanics
+ *  authorization; the card names no numbers — the ordering law it DOES
+ *  name, rapport-with-concession > rapport-without, is pinned in tests. */
 export interface NegotiationConfig {
   /** Additive bps over 1.0 of retention lift per tone at the renewal
    *  cliff (rapport leans on the relationship, firm on the arithmetic,
    *  legal on the contract — which buys no goodwill: 0).
-   *  PROVISIONAL (ADR-0015 taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0017 #6). */
   readonly retentionBumpBpsByTone: Readonly<Record<NegotiationTone, bigint>>;
   /** Additive bps for a NON-ZERO booked concession (money talks in every
    *  tone; a booked 0n is a stance, not a sweetener). Combined with the
-   *  tone bump, then clamped ≤ 1.0. PROVISIONAL (ADR-0015 taste numeric). */
+   *  tone bump, then clamped ≤ 1.0. RATIFIED 2026-10-17 (ADR-0017 #6). */
   readonly concessionPresenceBps: bigint;
 }
 
@@ -667,8 +668,8 @@ export function defaultEconomyConfig(): EconomyConfig {
       retentionFactorMinBps: 1_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — 0.1× floor: hikes never zero the renewal chance
     },
     negotiation: {
-      // ADR-0015 5/5 (Negotiate). PROVISIONAL taste numerics — the card
-      // names tones, not numbers; the ORDERING law it names is pinned.
+      // ADR-0015 5/5 (Negotiate). RATIFIED 2026-10-17 (ADR-0017 #6) — the
+      // card names tones, not numbers; the ORDERING law it names is pinned.
       retentionBumpBpsByTone: Object.freeze({
         rapport: 300n, // the relationship meter works (+3% retention)
         firm: 100n, // the arithmetic half-works (+1%)

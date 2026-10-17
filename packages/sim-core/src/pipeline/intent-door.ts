@@ -444,11 +444,11 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // durations floor family (~:26741: "restart a service **20s**") plus the
   // corpus spot law "~:24851: reclaimable at any moment" (collecting must
   // never be expensive or it is not "at any moment") ⇒ the COMMIT class,
-  // same window as isolate-node/throttle-node/restart-node. PROVISIONAL
-  // taste (post-ratify new numeric, 2026-10-17) — occupancy pinned red on
-  // drift. The ADR-0016 #11 ratify register CLOSED (e2a1bba) BEFORE this
-  // verb existed, so house law ships the new numeric PROVISIONAL with
-  // mechanics context. The void lands at the six reads
+  // same window as isolate-node/throttle-node/restart-node — occupancy
+  // pinned red on drift. The ADR-0016 #11 ratify register CLOSED (e2a1bba)
+  // BEFORE this verb existed, so the pair shipped under the post-ratify
+  // taste tag; the wave-23 game-feel batch discharges it:
+  // RATIFIED 2026-10-17 (ADR-0017 #6). The void lands at the six reads
   // (pipeline/reclaim.ts + steps 5/9); the door only writes the book.
   [PlayerVerb.ReclaimNode]: 1,
 });
@@ -501,9 +501,9 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   // ADR-0017 #3 (Reclaim): one desk hand to collect a node's stale bookings
   // — same cost as the other COMMIT-class verbs (occupancy table above; the
   // corpus spot law "reclaimable at any moment" prices it as a tap, never
-  // an attendance). PROVISIONAL taste (post-ratify new numeric, 2026-10-17)
-  // — the ADR-0016 #11 register closed before this verb existed; see the
-  // occupancy row.
+  // an attendance). RATIFIED 2026-10-17 (ADR-0017 #6) — the ADR-0016 #11
+  // register closed before this verb existed; the wave-23 batch discharged
+  // the post-ratify tag; see the occupancy row.
   [PlayerVerb.ReclaimNode]: 1,
 });
 
