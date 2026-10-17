@@ -7,9 +7,10 @@
  * the root wall drift-pinned against the loader's private FLAVOUR_ROOTS
  * literal, recoveryWatch's RECOVERY_WATCH_KINDS precedent); order is code-unit
  * stable; selection is deterministic per (seed, tick) with an
- * adjacent-distinctness law; the era seam moves ONLY the three era-variant
- * flavour keys the packs actually author (all in shared-web — the type packs
- * ship zero era objects). No DOM, no timers, no fs beyond the one drift-pin
+ * adjacent-distinctness law; the era seam moves ONLY the five era-variant
+ * flavour keys in the pool — shared-web's three plus game's two, all quad-rung
+ * since L-ER-B (the other twelve packs still ship zero era objects).
+ * No DOM, no timers, no fs beyond the one drift-pin
  * source read.
  */
 import { readFileSync } from "node:fs";
@@ -230,17 +231,24 @@ describe("flavourFeed · era law", () => {
       const after = t(entry.packId, entry.key, {}, 2026);
       if (before !== after) changed.add(entry.key);
     }
-    // the trio is still the whole story after #D5: every TYPE pack authors
-    // zero era objects, so widening the pool adds ZERO era-sensitive lines
+    // L-ER-B widened the changed set from the shared-web trio to five: game's
+    // two pack-unique flavour keys (griefed, naming) joined the four-rung axis.
+    // The other twelve packs author zero era objects, so the pool widening
+    // stays era-safe; the flip test probes 1998 vs 2026, so the set pins the
+    // whole era-variant roster, not just the years compared.
     expect([...changed].sort(compareCodeUnits)).toStrictEqual([
+      "chatter.quiet.naming",
       "loading.tip.cold-aisle",
       "ticket.subject.cron",
       "ticket.subject.dev-left",
+      "ticket.subject.griefed",
     ]);
     expect(POOL.filter((e) => e.kind === "era-variant").map((e) => e.packId)).toStrictEqual([
+      "game",
       "shared-web",
       "shared-web",
       "shared-web",
+      "game",
     ]);
   });
 
@@ -253,6 +261,11 @@ describe("flavourFeed · era law", () => {
     const solo = Object.freeze(cron);
     expect(flavourLineAt(SEED, 3, 1998, solo).text).toBe("my hit counter doesnt go up");
     expect(flavourLineAt(SEED, 3, 2026, solo).text).toBe("my cron didnt run");
+    // L-ER-B quad-rung: the middle rungs speak too — 2008/2016 bodies land
+    // exactly on their years (the earlier-rung degradation law lives in
+    // packs.test.ts's LADDER; this pins the observable new copy)
+    expect(flavourLineAt(SEED, 3, 2008, solo).text).toBe("my stats havent updated in two days");
+    expect(flavourLineAt(SEED, 3, 2016, solo).text).toBe("my scheduled post never went live");
     // and on the full #D5 pool the line still surfaces within 400 ticks at
     // seed 904 (deterministic, era-independent selection — same tick both years)
     const tickCronSurfaces = (() => {

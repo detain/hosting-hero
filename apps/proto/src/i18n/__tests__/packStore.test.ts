@@ -101,7 +101,7 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
     expect(templateOf("shared-web", "ticket.subject.cron").kind).toBe("era-variant");
     expect(t("shared-web", "ticket.subject.cron", {}, 1998)).toBe("my hit counter doesnt go up");
     expect(t("shared-web", "ticket.subject.cron", {}, 2026)).toBe("my cron didnt run");
-    expect(t("shared-web", "ticket.subject.cron", {}, 2025)).toBe("my hit counter doesnt go up"); // earlier
+    expect(t("shared-web", "ticket.subject.cron", {}, 2025)).toBe("my scheduled post never went live"); // earlier (2016 rung, L-ER-B)
     expect(t("shared-web", "ticket.subject.cron", {}, 1990)).toBe("my cron didnt run"); // fallback
     expect(DEFAULT_ERA_YEAR).toBe(2026);
   });
@@ -112,7 +112,7 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
     );
   });
 
-  it("game pack has NO era-variants (zero era objects authored)", () => {
+  it("game pack era-variants live on two flavour keys only; decision stays flat", () => {
     for (const key of packOf("game").decision.keys()) {
       expect(templateOf("game", key).kind).toBe("plain");
       break;
@@ -121,6 +121,15 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
     // era year is inert on plain templates:
     expect(t("game", "refusal.unknown-node", { nodeId: "x" }, 1998)).toBe(
       t("game", "refusal.unknown-node", { nodeId: "x" }, 2026),
+    );
+    // L-ER-B joined game to the four-rung canon on two pack-unique FLAVOUR keys:
+    expect(templateOf("game", "ticket.subject.griefed").kind).toBe("era-variant");
+    expect(templateOf("game", "chatter.quiet.naming").kind).toBe("era-variant");
+    expect(t("game", "ticket.subject.griefed", {}, 2008)).toBe(
+      "someone griefed the clan server, can you roll us back to friday",
+    );
+    expect(t("game", "chatter.quiet.naming", {}, 1998)).toBe(
+      "The first row is named for gods. It seemed important at the time that nothing was.",
     );
   });
 });

@@ -91,14 +91,15 @@ describe("era canon — packs stay inside the ratified four-era axis (OD-22(c))"
     }
   });
 
-  it("at authoring time: shared-web carries the demo pair {1998, 2026}; all other packs carry zero era years", () => {
-    // Census of the CURRENT copy axis — the 2008/2016 copy rungs land with the
-    // campaign content wave (L-ER-B/C). When that wave adds them, RE-PIN this
-    // row honestly; do not widen the canon to make it pass.
+  it("at authoring time: shared-web and game carry the full four-rung canon; the other twelve packs carry zero era years", () => {
+    // Census of the CURRENT copy axis — L-ER-B landed the quad-rung copy on
+    // shared-web (4 era-quad keys) and game (2 era-quad flavour keys). The
+    // fan lanes (L-ER-C..F) re-pin this row as their packs join the axis.
+    // The ⊆canon assertion above NEVER bends; only this census moves.
     const authored = PACK_FILES.map((name) => [name, [...new Set(collectEraYears(parsePack(name)))].sort((a, b) => a - b)] as const);
     for (const [name, years] of authored) {
-      if (name === "shared-web.i18n.json") {
-        expect(years, name).toEqual([1998, 2026]);
+      if (name === "shared-web.i18n.json" || name === "game.i18n.json") {
+        expect(years, name).toEqual([1998, 2008, 2016, 2026]);
       } else {
         expect(years, name).toEqual([]);
       }

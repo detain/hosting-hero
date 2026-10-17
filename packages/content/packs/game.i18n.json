@@ -4,6 +4,12 @@
   "appliesTo": "official:game-servers",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the game-servers line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is the OPERATOR's — booter extortion as a demand email, grief as a rollback ticket, mod-day as a red badge at 2am — never the attack itself. No payloads, commands, tool names-as-how-to, or technique instruction anywhere; abuse exists only as complaint, extortion note, upstream pressure, and consequence.",
+  "eraCodes": {
+    "1998": "The persistent-world years (§0.4's pre-colo dial-up→dot-com span; §8.10 dresses the decade in bevels). The customer's world is small and durable, the ticket is email from a clan officer, and 'roll it back' is a human favor.",
+    "2008": "The clan-server years (§0.4's 2009 cell lands here; §8.10 gloss). Hand-installed mods, a rented panel with rounded corners, and the customer's whole social life has an IP address.",
+    "2016": "The mod-panel years (§0.4's 2016 cell; §8.10 flat). Hundreds of instances on one panel, red update badges at 2am, and the crowd arrives from a video link.",
+    "2026": "Now: the raid comes from a clip, the panel self-updates, and the tick budget is the product. Same room, faster metronome."
+  },
   "slots": {
     "nodeId": { "kind": "entity", "desc": "Board object the decision surface is about (tick node / server id)." },
     "serverId": { "kind": "entity", "desc": "One game instance among many on the box." },
@@ -89,7 +95,15 @@
     "status.rung-5": "We are aware of the fire."
   },
   "flavour": {
-    "ticket.subject.griefed": "someone griefed my base, can you roll back the world",
+    "ticket.subject.griefed": {
+      "eras": {
+        "1998": "someone wrecked my castle in the world, can you rewind to last weekend",
+        "2008": "someone griefed the clan server, can you roll us back to friday",
+        "2016": "someone griefed our modded server, can you roll back the world",
+        "2026": "someone griefed my base, can you roll back the world"
+      },
+      "fallback": "someone griefed my base, can you roll back the world"
+    },
     "ticket.body.griefed": "I logged off for dinner and half the spawn is gone. Roll the world back to Friday night. What do you mean 'the other players did it' — YOU host the server.",
     "ticket.subject.lag-blame": "your server is lagging my game",
     "ticket.body.lag-blame": "It is not my wifi, not my console, not my region. Everyone in the clan can tell, and every one of them is watching at {peakHour}.",
@@ -116,7 +130,15 @@
     "loading.tip.tick-missed": "A missed tick is not one frozen player. It is the whole room, in stereo.",
     "loading.tip.two-is-one": "Two of something is often one of something.",
     "loading.tip.failover": "The failover you never tested is not a failover.",
-    "chatter.quiet.naming": "Three naming schemes in this row alone: the old gods, letters-and-numbers, and whatever the last company called things. The photo of the rack is the Rosetta stone.",
+    "chatter.quiet.naming": {
+      "eras": {
+        "1998": "The first row is named for gods. It seemed important at the time that nothing was.",
+        "2008": "The old boxes are still gods. The new ones are web01 through web12, and nobody has reconciled the two runbooks.",
+        "2016": "This row has gods, functional names, and whatever the last company called things. The rename project keeps getting scheduled and never keeps getting run.",
+        "2026": "Three naming schemes in this row alone: the old gods, letters-and-numbers, and whatever the last company called things. The photo of the rack is the Rosetta stone."
+      },
+      "fallback": "Three naming schemes in this row alone: the old gods, letters-and-numbers, and whatever the last company called things. The photo of the rack is the Rosetta stone."
+    },
     "chatter.handoff.quiet-night": "Handoff note, one line: 'quiet night.'",
     "chatter.cascade.chart": "Nobody is shouting. Everyone is reading the same tick chart.",
     "canary.pool-notice": "{modSet}@{version} moves to canary pool {poolId} for {observationWindow}. The fleet holds where it is until the pool goes green.",
@@ -166,7 +188,7 @@
     "status.rung-3": "§9.3 status-page euphemism ladder (verbatim)",
     "status.rung-4": "§9.3 status-page euphemism ladder (verbatim)",
     "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
-    "ticket.subject.griefed": "§9.3 game-hosting ticket line (verbatim)",
+    "ticket.subject.griefed": "§9.3 game-hosting ticket line (verbatim as the 2026 rung + fallback); 1998/2008/2016 rungs authored in customer lexicon (§0.4 era grid; the persistent-world→clan-server→mod-panel arc)",
     "ticket.body.griefed": "§9.3 (subject verbatim; body authored) + §2.12 griefer economics operator-side",
     "ticket.subject.lag-blame": "§1.3 (customer blames the host for physics); wording authored",
     "ticket.body.lag-blame": "§1.3 primetime texture; wording authored",
@@ -193,7 +215,7 @@
     "loading.tip.tick-missed": "§1.3 tick-budget feel (the whole room freezes together); wording authored",
     "loading.tip.two-is-one": "§9.3 loading tips (verbatim)",
     "loading.tip.failover": "§9.3 loading tips (verbatim)",
-    "chatter.quiet.naming": "§9.3 server-naming arc ('thor tells you nothing'; three schemes coexist in the rack photo)",
+    "chatter.quiet.naming": "§9.3 server-naming arc ('thor tells you nothing'; three schemes coexist in the rack photo — :34028/:34035); 1998/2008/2016 rungs authored from the same arc's Tier-1 gods / functional names / acquired-estate beats",
     "chatter.handoff.quiet-night": "§9.3 on-call handoff note that says only 'quiet night'",
     "chatter.cascade.chart": "§9.3 staff chatter: during cascade nobody panics, everyone is tired",
     "canary.pool-notice": "§5.1 staged-version-pinning counter (roll the mods to a canary pool first)",
@@ -209,5 +231,5 @@
     "achievement.rebooted": "§9.3 achievement names (verbatim)",
     "_todo": "Null provenances are authored-voice strings with no doc line to cite (mastery/distillate copy: R68 names the fields, not the text). Never invent law-numbers: these stay null until the owning § authors them."
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null); CAC placeholder cac.game-servers.todo stays until §6.6 Companion B prices the game channel."
+  "_todo": "Era-variant objects live on two pack-unique FLAVOUR keys (ticket.subject.griefed, chatter.quiet.naming) across the OD-22(c) four-rung canon; the decision namespace stays era-flat and the shared-register lines ride byte-ident. CAC placeholder cac.game-servers.todo stays until §6.6 Companion B prices the game channel."
 }

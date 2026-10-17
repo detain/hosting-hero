@@ -57,20 +57,23 @@ describe("i18n/eraState · the OD-22 ratified four-era canon + cycle law", () =>
     expect(current).toBe(DEFAULT_ERA_YEAR);
   });
 
-  it("setEra accepts every canon rung; copy ladder degrades honestly on unauthored years", () => {
-    // 2008/2016 have no authored era-variant text yet (campaign content wave);
-    // pickEraText's earlier/fallback ladder must resolve them, never throw —
-    // ticket.subject.cron (eraCodes 1998/2026) renders the EARLIER rung at
-    // 2008/2016 and the exact rung at 2026.
+  it("setEra accepts every canon rung; copy now speaks all four rungs exactly", () => {
+    // L-ER-B landed the 2008/2016 copy rungs: every canon year now hits an
+    // EXACT era body. The earlier/fallback DEGRADATION law (unauthored years
+    // resolve down the ladder, never throw) is pinned table-driven in
+    // loader/__tests__/packs.test.ts — this test keeps the non-throw sweep
+    // and pins the four exact renders through the shared toggle.
     for (const year of ERA_YEARS) {
       setEra(year);
       expect(getEra()).toBe(year);
       expect(() => t("shared-web", "ticket.subject.cron")).not.toThrow();
     }
+    setEra(1998);
+    expect(t("shared-web", "ticket.subject.cron")).toBe("my hit counter doesnt go up"); // exact rung
     setEra(2008);
-    expect(t("shared-web", "ticket.subject.cron")).toBe("my hit counter doesnt go up"); // ladder → earlier (1998)
+    expect(t("shared-web", "ticket.subject.cron")).toBe("my stats havent updated in two days"); // exact rung (L-ER-B)
     setEra(2016);
-    expect(t("shared-web", "ticket.subject.cron")).toBe("my hit counter doesnt go up"); // ladder → earlier (1998)
+    expect(t("shared-web", "ticket.subject.cron")).toBe("my scheduled post never went live"); // exact rung (L-ER-B)
     setEra(DEFAULT_ERA_YEAR);
     expect(t("shared-web", "ticket.subject.cron")).toBe("my cron didnt run"); // exact rung
   });

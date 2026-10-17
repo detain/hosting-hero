@@ -53,7 +53,8 @@ function expectPackError(fn: () => unknown, code: LoaderErrorCode, fragment: str
   expect(err.message).toContain(fragment);
 }
 
-/* The four era-variant keys the shared-web pack actually ships (§9.3 era anchors). */
+/* The four era-variant keys the shared-web pack actually ships (§9.3 era anchors),
+   each quad-rung across the OD-22(c) canon since L-ER-B. */
 const ERA_KEYS: readonly string[] = [
   "scenarios.shared-web.slashdot",
   "ticket.subject.dev-left",
@@ -105,10 +106,10 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
     }
   });
 
-  test("era axis: shared-web declares 1998+2026 ascending; game declares none", () => {
-    expect([...SHARED.eraCodes.keys()]).toEqual([1998, 2026]);
+  test("era axis: shared-web declares the four-rung canon ascending; game declares the same canon", () => {
+    expect([...SHARED.eraCodes.keys()]).toEqual([1998, 2008, 2016, 2026]);
     expect(SHARED.eraCodes.get(1998)).toContain("founding era");
-    expect(GAME.eraCodes.size).toBe(0);
+    expect([...GAME.eraCodes.keys()]).toEqual([1998, 2008, 2016, 2026]);
   });
 
   test("slot glossaries parse with kinds + descs (47 shared-web, 46 game)", () => {
@@ -130,7 +131,7 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
     expect(SHARED.provenance.get("_todo")).toContain("Never invent law-numbers");
   });
 
-  test("exactly the four real era-variant keys parse as {eras, fallback} maps", () => {
+  test("era-variant roster: exactly shared-web's four + game's two, all quad-rung {eras, fallback} maps", () => {
     const found: string[] = [];
     for (const map of [SHARED.decision, SHARED.flavour]) {
       for (const [key, template] of map) if (template.kind === "era-variant") found.push(key);
@@ -138,12 +139,23 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
     expect(found.sort((a, b) => (a < b ? -1 : 1))).toEqual([...ERA_KEYS].sort((a, b) => (a < b ? -1 : 1)));
     for (const key of ERA_KEYS) {
       const t = variantOf(SHARED, key);
-      expect([...t.eras.keys()]).toEqual([1998, 2026]);
+      expect([...t.eras.keys()]).toEqual([1998, 2008, 2016, 2026]);
       expect(typeof t.fallback).toBe("string");
     }
-    // game pack: zero era-variants (its _todo pins this state)
+    // game pack (L-ER-B): era-variants on two pack-unique FLAVOUR keys only —
+    // the decision namespace and every other key stay plain (its _todo pins this state)
+    const gameEraFound: string[] = [];
     for (const map of [GAME.decision, GAME.flavour]) {
-      for (const [, template] of map) expect(template.kind).toBe("plain");
+      for (const [key, template] of map) {
+        if (template.kind === "era-variant") gameEraFound.push(key);
+        else expect(template.kind).toBe("plain");
+      }
+    }
+    expect(gameEraFound.sort((a, b) => (a < b ? -1 : 1))).toEqual(["chatter.quiet.naming", "ticket.subject.griefed"]);
+    for (const key of gameEraFound) {
+      const t = variantOf(GAME, key);
+      expect([...t.eras.keys()]).toEqual([1998, 2008, 2016, 2026]);
+      expect(typeof t.fallback).toBe("string");
     }
   });
 
@@ -254,7 +266,7 @@ describe("forged packs fail loud at the boundary", () => {
       eras: { "2031": "not on the declared axis" },
       fallback: "body",
     };
-    expectPackError(() => loadI18nPack(raw), "BAD_ENUM", "era '2031' not declared in pack eraCodes [1998, 2026]");
+    expectPackError(() => loadI18nPack(raw), "BAD_ENUM", "era '2031' not declared in pack eraCodes [1998, 2008, 2016, 2026]");
   });
 
   test("era variant whose slot set differs from fallback fails loud", () => {
@@ -390,13 +402,19 @@ describe("fillTemplate / fillTemplateBody — exact-set deterministic substituti
 });
 
 describe("pickEraText — exact year > nearest EARLIER year > fallback (table-driven)", () => {
-  // Shared-web declares exactly {1998, 2026}; the ladder pins every rung.
-  const LADDER: readonly (readonly [number, "fallback" | 1998 | 2026])[] = [
+  // Shared-web declares the four-rung OD-22(c) canon {1998, 2008, 2016, 2026};
+  // the ladder pins every rung and every inter-rung gap (L-ER-B).
+  const LADDER: readonly (readonly [number, "fallback" | 1998 | 2008 | 2016 | 2026])[] = [
     [1997, "fallback"], // before every era → fallback speaks
-    [1998, 1998], // exact hit
+    [1998, 1998], // exact hit at the first rung
     [1999, 1998], // nearest earlier, strictly not later
-    [2011, 1998], // mid-gap stays with the earlier era
-    [2025, 1998], // one tick before 2026 → still the earlier era
+    [2007, 1998], // one tick before 2008 → still the founding era
+    [2008, 2008], // exact hit
+    [2011, 2008], // mid-gap stays with the earlier era
+    [2015, 2008], // one tick before 2016 → still the gloss era
+    [2016, 2016], // exact hit
+    [2017, 2016], // nearest earlier after the flat rung arrives
+    [2025, 2016], // one tick before 2026 → still the earlier era
     [2026, 2026], // exact hit at the late boundary
     [2027, 2026], // after every era → latest entry (which is earlier)
   ];

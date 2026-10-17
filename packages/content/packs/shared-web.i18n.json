@@ -5,7 +5,9 @@
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the shared-web line. Two namespaces with a machine-checked wall: 'decision' carries every string the player reads WHILE deciding or losing (type labels, terms, refusals, alerts, status-page rungs) and is written SOBER — §9.3 clause 2 bans jokes inside alerts/build-cards/crisis-prompts, clause 3 bans comedy at the moment of loss. 'flavour' carries recognition comedy for quiet surfaces (ticket inbox, trade press, forums, staff chatter, loading tips, stickies, vendor replies, achievements) — the joke is always the situation, never a person, and never a real product (§9.3 recognition-not-parody). §9.11: the business is depicted, never the technique — abuse exists only as complaint/takedown/upstream-pressure text, zero payloads, commands, or exploit paths. Doc-verbatim strings are marked '(verbatim)' in _provenance cites.",
   "eraCodes": {
-    "1998": "The line's founding era as the rendered era axis bites it (bundle availableFrom 2009 is the engine shelf date; §0.4 names the era grid, the two rendered codes follow the sibling era-token pair). Customer lexicon lives and dies here: webmaster, hit counter, FTP, mail form.",
+    "1998": "The line's founding era as the rendered era axis bites it (bundle availableFrom 2009 is the engine shelf date; §0.4 names the era grid, the four rendered codes follow the OD-22(c) canon). Customer lexicon lives and dies here: webmaster, hit counter, FTP, mail form.",
+    "2008": "The cPanel-boom middle (§0.4 names the 2009 shared-hosting-and-cPanel cell; §8.10 dresses the year in gloss). The site was built by a designer, the traffic arrived through a search box or the front page, and the stats are someone else's software.",
+    "2016": "The cloud-normal years (§0.4's 2016 cell; §8.10 dresses it flat). Templates and agencies own the customer's site, scheduled jobs run the marketing, and the customer watches an uptime widget you did not build.",
     "2026": "Now: the customer is a growth team or an AI-wrapper site, and the ticket arrives mid-stream. Same box, same thin wall between tenants."
   },
   "slots": {
@@ -77,6 +79,8 @@
     "scenarios.shared-web.slashdot": {
       "eras": {
         "1998": "A link on a famous front page: {arrivalCount} strangers arrive inside the hour and none of them came for your product.",
+        "2008": "The site is voted onto the aggregator's front page: {arrivalCount} people click through in one wave, every one of them a real reader, and the box cannot tell them from an attack.",
+        "2016": "A link makes the rounds of a social feed: {arrivalCount} arrive on phones, bounce at the loading bar, and post that the site is broken while it is only busy.",
         "2026": "An aggregator lists the site: {arrivalCount} requests a minute arrive as machines, and the humans were never the majority."
       },
       "fallback": "A link on a famous page: {arrivalCount} strangers arrive inside the hour; free traffic, zero conversion, one very awake operator."
@@ -116,6 +120,8 @@
     "ticket.subject.dev-left": {
       "eras": {
         "1998": "my webmaster left",
+        "2008": "my web designer left",
+        "2016": "my agency stopped answering",
         "2026": "my developer left"
       },
       "fallback": "my developer left"
@@ -125,6 +131,8 @@
     "ticket.subject.cron": {
       "eras": {
         "1998": "my hit counter doesnt go up",
+        "2008": "my stats havent updated in two days",
+        "2016": "my scheduled post never went live",
         "2026": "my cron didnt run"
       },
       "fallback": "my cron didnt run"
@@ -165,6 +173,8 @@
     "loading.tip.cold-aisle": {
       "eras": {
         "1998": "A box fan in an aisle is not cooling. It is hoping.",
+        "2008": "Cooling the whole room to spare one hot rack is a power bill wearing a plan's clothes.",
+        "2016": "The containment drawing is not the temperature. Read the return air.",
         "2026": "A containment aisle is only as cool as the one roof leak above it."
       },
       "fallback": "Redundant everything except the one shared thing you forgot to count."
@@ -205,7 +215,7 @@
     "handover.shared-web.customer-wants": "README §Key literals (verbatim); §1.3",
     "rosetta.shared-web.oversell": "§1.3 comb-teeth oversell metaphor; R11 Rosetta Card law; wording authored",
     "rosetta.shared-web.density": "§1.3 density-as-windows metaphor; R11; wording authored",
-    "scenarios.shared-web.slashdot": "§1.5 type-parameterised world-event analogues (bundle slashdot-teleport); era variants authored in customer lexicon (§9.3 era anchors)",
+    "scenarios.shared-web.slashdot": "§1.5 type-parameterised world-event analogues (bundle slashdot-teleport); era variants authored in customer lexicon (§9.3 era anchors); 2008/2016 rungs ride the §0.4 grid cells (2009 cPanel / 2016 cloud) and §8.10 era-kit dressing, surge theme from §1.5 Launch Day 'legitimate visitors, not an attack'",
     "scenarios.shared-web.mass-patch-week": "§2.5 mass-CMS-compromise chain; §9.12 Patch Debt; bundle wordpress-heartbleed-week",
     "terms.oversell-warning": "§1.3 oversell margin; §2.10 fair-share contention; wording authored",
     "terms.prepay-lock": "§1.3 annual-prepay renewal cliff; §6.6 intro-to-renewal pricing; wording authored",
@@ -236,10 +246,10 @@
     "ticket.subject.slow": "§9.3 ticket generator (verbatim)",
     "ticket.subject.deleted-back": "§9.3 ticket generator (verbatim)",
     "ticket.subject.password": "§9.3 ticket generator (verbatim)",
-    "ticket.subject.dev-left": "§9.3 ticket generator (2026 verbatim); 1998 variant authored from era lexicon",
+    "ticket.subject.dev-left": "§9.3 ticket generator (2026 verbatim); 1998 variant authored from era lexicon; 2008/2016 rungs authored (designer-agency customer base, §0.4 grid)",
     "ticket.body.dev-left": "§9.3 (subject verbatim; body authored)",
     "ticket.subject.virus": "§9.3 ticket generator (verbatim)",
-    "ticket.subject.cron": "§9.3 ticket generator (fallback verbatim incl. the misspelling); 1998 hit-counter variant authored",
+    "ticket.subject.cron": "§9.3 ticket generator (fallback verbatim incl. the misspelling); 1998 hit-counter variant authored; 2008 stats-report / 2016 scheduled-post rungs authored from §0.4/§8.10 era dressing",
     "ticket.subject.blocklist": "§9.3 ticket generator (verbatim)",
     "ticket.subject.font": "§9.3 ticket generator (verbatim)",
     "ticket.subject.files-deleted": "§9.3 ticket generator (verbatim)",
