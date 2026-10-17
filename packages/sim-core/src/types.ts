@@ -1269,6 +1269,21 @@ export enum PlayerVerb {
    *  deadline. Maintain = attendance absorbs the risk; Schedule = the
    *  calendar imposes it. */
   ScheduleWindow = "schedule-window",
+  /** ADR-0015 door-mechanics ruling (tier verbs 3/5 · Sell): the 14th door
+   *  verb — the Sell tier verb made playable (§1.3 exchange-colo card "The
+   *  Microsecond Cathedral", hosting_game.md:2361-2378: "microseconds are
+   *  what you sell", "you sell *equal* latency as a product" :2370; the
+   *  §0.3-area verb-shift line "Colo: sell space and police power" :514).
+   *  The door records the OFFER into the OPTIONAL `GameState.sell` book
+   *  (a priceKey-shaped offer: target + integer µ$ price + term months,
+   *  as-of a business minute, last-write-wins per key). OD-24(a) part-1
+   *  posture VERBATIM: the book is the order, not the money — closing the
+   *  sale is the host's signed contract through the EXISTING economy seam
+   *  (register/openContractEconomy + priceKey @5781335), "the queued
+   *  economy/HUD lanes reading this book, not the door's job". The sales
+   *  act is deterministic player authority — an executed intent IS the
+   *  close; no acceptance dice in v0 (refusal grammar is the counterparty). */
+  SellOffer = "sell-offer",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1286,6 +1301,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.ScaleNode,
   PlayerVerb.MaintainNode,
   PlayerVerb.ScheduleWindow,
+  PlayerVerb.SellOffer,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1449,6 +1465,40 @@ export interface ScheduleArgs {
   readonly closeAtBusinessMinute: SimMinute;
 }
 
+/** What a `sell-offer` order binds to (ADR-0015 3/5 · Sell). The target
+ *  reuses the CLOSED `PriceTargetKind` vocabulary {plan|contract-class|sku}
+ *  — deliberately the SAME kind space as `adjust-price`: an offer is a price
+ *  on a sellable, so its composite key is exactly the economy `priceKey`
+ *  grammar (codec `priceOverrideKey`/`parsePriceOverrideKey`, reused by
+ *  identity — a host can feed a sell-book key straight into the pricing
+ *  override / priceKey seam with no re-derivation). The door never
+ *  interprets kinds; `canSellOffer` resolves them host-side. */
+export interface SellOfferArgs {
+  readonly verb: PlayerVerb.SellOffer;
+  /** Closed PriceTargetKind vocabulary; anything else is a
+   *  `bad-target-kind` refusal (phrase shared with `adjust-price`). */
+  readonly targetKind: PriceTargetKind;
+  /** Id inside the targetKind namespace — resolved by the host validator
+   *  (`canSellOffer`; absent validator = structural sanity only, the
+   *  `canPlaceDevice`/`canAdjustPrice` decoupling pattern). */
+  readonly targetId: EntityId;
+  /** Integer µ$ — the MoneyUnit bigint makes a fractional offer
+   *  UNREPRESENTABLE at the wire (Law 2): a float/string price is
+   *  structural garbage (throws), a non-positive bigint is the
+   *  `bad-offer-price` value-domain refusal. */
+  readonly offerPriceMicroUsd: MoneyUnit;
+  /** Contract term in whole business months — a safe integer >= 1
+   *  (`bad-term-months` refuses everything else). The term is what the
+   *  host signs onto when it consumes the offer; the door just books it. */
+  readonly termMonths: number;
+  /** Business-clock effective minute (Dual-Clock law §4.4: a sale is a
+   *  business act); null sentinel = the offer stands from the executing
+   *  tick, a future stamp arms it — the `PriceOverrideRecord` as-of
+   *  discipline. The door only STAMPS this field (part-1 posture is
+   *  state-neutral); the host decides what "later" means. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1463,7 +1513,8 @@ export type PlayerVerbArgs =
   | ShieldArgs
   | ScaleArgs
   | MaintainArgs
-  | ScheduleArgs;
+  | ScheduleArgs
+  | SellOfferArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -1847,6 +1898,44 @@ export interface JobWindowBook {
   readonly entries: ReadonlyMap<EntityId, JobWindow>;
 }
 
+/** One executed `sell-offer` order, frozen into the offer book. The record
+ *  is the ENTIRE door side effect (ADR-0015 3/5 · Sell): NOTHING in the sim
+ *  reads this book in v0 — closing the sale is the host's, which signs a
+ *  contract through the EXISTING economy seam (register/openContractEconomy
+ *  + priceKey @5781335) with the booked price and term. The sales act is
+ *  deterministic player authority — an executed intent IS the close; no
+ *  acceptance dice in v0 (grounded; the refusal grammar is the
+ *  counterparty). */
+export interface SellOffer {
+  /** Closed price-target kind (see `SellOfferArgs`). */
+  readonly targetKind: PriceTargetKind;
+  /** Host-namespace id of what is being sold (never resolved by the door). */
+  readonly targetId: EntityId;
+  /** Integer µ$ of the standing offer. */
+  readonly offerPriceMicroUsd: MoneyUnit;
+  /** Whole business months of the offered term (>= 1 by the door's law). */
+  readonly termMonths: number;
+  /** Macro tick the door executed the order (write-order witness;
+   *  last-write-wins per key). */
+  readonly shippedAtTick: SimTick;
+  /** Business minute the offer takes effect; null = from `shippedAtTick`.
+   *  The as-of reading discipline is the `PriceOverrideRecord` twin. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
+/** OPTIONAL `GameState` embed — the sell-offer book `sell-offer` writes
+ *  (same embed law as the other door books: absent ⇒ byte-identical
+ *  digests everywhere; `pipeline/digest.ts` absorbs it WHEN PRESENT).
+ *  Keyed by the COMPOSITE `<targetKind>:<targetId>` priceKey grammar —
+ *  the `priceOverrideKey`/`parsePriceOverrideKey` codec REUSED by identity,
+ *  so a sell-book key IS an economy priceKey with zero translation.
+ *  LAST-WRITE-WINS per key (amending an offer replaces it; `version` bumps
+ *  per materialized write — the board/pricing memoization convention). */
+export interface SellBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<string, SellOffer>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -2076,4 +2165,13 @@ export interface GameState {
    *  absorbs it ONLY when present, so every pre-schedule state — all shipped
    *  goldens — digests byte-identically. */
   readonly schedule?: JobWindowBook;
+  /** ADR-0015 embed — the sell-offer (Sell) book `sell-offer` writes (see
+   *  `SellBook`): a priceKey-shaped standing offer per target, no sim-side
+   *  reader in v0 — the host consumes the book between ticks and signs the
+   *  sale through the EXISTING economy priceKey seam (OD-24(a) part-1
+   *  posture; the door never moves money, audit-tested by reference
+   *  identity). OPTIONAL, digest-switch law: `pipeline/digest.ts` absorbs
+   *  it ONLY when present, so every pre-sell state — all shipped goldens —
+   *  digests byte-identically. */
+  readonly sell?: SellBook;
 }

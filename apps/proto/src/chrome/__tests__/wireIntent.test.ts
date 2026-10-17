@@ -44,6 +44,19 @@ const ADJUST_ARGS = {
   effectiveAtBusinessMinute: null,
 };
 
+// ADR-0015 3/5 (Sell) — the SECOND bigint carrier on this wire. The sell
+// offer books onto GameState.sell; the runner needs no node resolution
+// (targetKind/targetId resolve host-side), so the bridge witness below
+// executes exactly like the adjust-price twin.
+const SELL_ARGS = {
+  verb: "sell-offer",
+  targetKind: "plan",
+  targetId: "cathedral-1u",
+  offerPriceMicroUsd: "250000000",
+  termMonths: 12,
+  effectiveAtBusinessMinute: null,
+};
+
 describe("BIGINT_ARG_FIELDS mirror vs the ENGINE (drift pin)", () => {
   it("every VERB_ARG_SHAPES bigint field is covered; the mirror adds none", () => {
     const door = readFileSync(
@@ -99,6 +112,25 @@ describe("wireIntentToPlayerIntent — boundary revival", () => {
     // A raw JSON number is equally structural garbage (wire law: strings).
     expect(() => wireIntentToPlayerIntent(envelope({ ...ADJUST_ARGS, newPriceMicroUsd: 9.25 }))).toThrow(
       /args\.newPriceMicroUsd/,
+    );
+  });
+
+  it("the sell-offer carrier revives too: bigint price revived, termMonths a plain number, null stamp verbatim", () => {
+    const intent = wireIntentToPlayerIntent(envelope(SELL_ARGS));
+    if (intent.payload.kind !== "player-verb") throw new Error("unreachable");
+    const args = intent.payload.args as unknown as Record<string, unknown>;
+    expect(args["offerPriceMicroUsd"]).toBe(250_000_000n);
+    expect(args["termMonths"]).toBe(12); // number passes through untouched
+    expect(args["targetKind"]).toBe("plan");
+    expect(args["effectiveAtBusinessMinute"]).toBeNull();
+  });
+
+  it("a fractional string on the sell-offer carrier dies at the boundary too", () => {
+    expect(() => wireIntentToPlayerIntent(envelope({ ...SELL_ARGS, offerPriceMicroUsd: "9.25" }))).toThrow(
+      ProtocolError,
+    );
+    expect(() => wireIntentToPlayerIntent(envelope({ ...SELL_ARGS, offerPriceMicroUsd: "9.25" }))).toThrow(
+      /args\.offerPriceMicroUsd/,
     );
   });
 
@@ -200,6 +232,53 @@ describe("full bridge — a bigint price survives SimClient → wire → worker-
       },
     });
     expect(() => fake.pump(1)).toThrow(/args\.newPriceMicroUsd/);
+    client.destroy();
+  });
+
+  it("sell-offer: sendPlayerVerb(bigint) EXECUTES over the worker path (ADR-0015 3/5)", () => {
+    const { fake, client, frames } = bridge();
+    client.sendPlayerVerb(
+      {
+        verb: "sell-offer",
+        targetKind: "plan",
+        targetId: "bridge-plan",
+        offerPriceMicroUsd: 250_000_000n, // a REAL bigint client-side
+        termMonths: 12,
+        effectiveAtBusinessMinute: null,
+      },
+      "business",
+    );
+    fake.pump(2);
+    const last = fake.lastIntent;
+    expect(last).not.toBeNull();
+    if (last === null || last.payload.kind !== "player-verb") throw new Error("worker never saw the intent");
+    expect((last.payload.args as unknown as Record<string, unknown>)["offerPriceMicroUsd"]).toBe(250_000_000n);
+    const receipts = frames
+      .flatMap((f) => f.notices)
+      .filter((n) => n.kind === "intent-executed" || n.kind === "intent-refused");
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]!.kind).toBe("intent-executed");
+    expect(receipts[0]!.detail).toBe("sell-offer: target=plan:bridge-plan,price=250000000,term=12");
+    client.destroy();
+  });
+
+  it("sell-offer: a revived 0 µ$ refuses bad-offer-price — the money stays UNTOUCHED either way", () => {
+    const { fake, client, frames } = bridge();
+    client.sendPlayerVerb(
+      {
+        verb: "sell-offer",
+        targetKind: "plan",
+        targetId: "bridge-plan",
+        offerPriceMicroUsd: 0n,
+        termMonths: 12,
+        effectiveAtBusinessMinute: null,
+      },
+      "business",
+    );
+    fake.pump(2);
+    const refused = frames.flatMap((f) => f.notices).filter((n) => n.kind === "intent-refused");
+    expect(refused).toHaveLength(1);
+    expect(refused[0]!.detail).toMatch(/^sell-offer: bad-offer-price/);
     client.destroy();
   });
 });

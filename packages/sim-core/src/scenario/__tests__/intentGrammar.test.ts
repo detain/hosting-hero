@@ -76,13 +76,18 @@ describe("SCENARIO_INTENT_ARG_SHAPES — falsifiable mirror of the door", () => 
     }
   });
 
-  it("the money carrier is the ONLY translation, and it appears once", () => {
+  it("the money translation appears at exactly the two offer/price carriers", () => {
+    // The sell-offer lane (ADR-0015 3/5) is the SECOND bigint arg to join the
+    // door grammar — this pin is the tripwire that makes any further bigint
+    // field announce itself here (and in proto BIGINT_ARG_FIELDS) rather
+    // than silently forking the wire law. Original pin (adjust-price alone)
+    // re-pinned honestly by the sell lane, disclosed in the landing commit.
     const moneyFields = Object.entries(SCENARIO_INTENT_ARG_SHAPES).flatMap(([verb, fields]) =>
       Object.entries(fields)
         .filter(([_f, wireType]) => wireType === "money")
         .map(([field]) => `${verb}.${field}`),
     );
-    expect(moneyFields).toEqual(["adjust-price.newPriceMicroUsd"]);
+    expect(moneyFields.sort()).toEqual(["adjust-price.newPriceMicroUsd", "sell-offer.offerPriceMicroUsd"]);
   });
 });
 
@@ -139,6 +144,13 @@ const HONEST_ROWS: Readonly<Record<string, Record<string, unknown>>> = {
   "scale-node": { targetNodeId: "web-1", reservedSlots: 2, effectiveAtBusinessMinute: null },
   "maintain-node": { targetNodeId: "web-1", openAtBusinessMinute: null, closeAtBusinessMinute: 60 },
   "schedule-window": { targetNodeId: "web-1", openAtBusinessMinute: null, closeAtBusinessMinute: 480 },
+  "sell-offer": {
+    targetKind: "plan",
+    targetId: "cathedral-1u",
+    offerPriceMicroUsd: "250000000",
+    termMonths: 12,
+    effectiveAtBusinessMinute: null,
+  },
 };
 
 describe("the wall accepts one honest row per verb", () => {

@@ -325,6 +325,32 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0015 3/5 (Sell) — the sell-offer book (digest-switch law, same embed
+  // law as the other door books): absorbed ONLY when present, so every
+  // pre-sell state (all shipped goldens) keeps byte-identical digests.
+  // Composite `<kind>:<id>` keys sort code-unit (Map insertion order NEVER
+  // read); like pricing the RECORD fields carry the identity (.text kind +
+  // id — the key is derived data, never absorbed), the integer µ$ offer
+  // rides the bigint sink exactly like an economy money amount, and the null
+  // effective edge takes the -1 sentinel. Raw like maintain: superseded-by-
+  // LWW history is what a digest witnesses.
+  if (state.sell !== undefined) {
+    sink.text("sell").int(state.sell.version);
+    const sellKeys = Array.from(state.sell.entries.keys()).sort(byId);
+    sink.int(sellKeys.length);
+    for (const key of sellKeys) {
+      const rec = state.sell.entries.get(key);
+      if (rec === undefined) continue;
+      sink
+        .text(rec.targetKind)
+        .text(rec.targetId)
+        .int(rec.offerPriceMicroUsd)
+        .int(rec.termMonths)
+        .int(rec.shippedAtTick)
+        .int(rec.effectiveAtBusinessMinute ?? -1);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.

@@ -351,6 +351,13 @@ export const SCENARIO_INTENT_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Re
     openAtBusinessMinute: "null|number",
     closeAtBusinessMinute: "number",
   }),
+  "sell-offer": Object.freeze({
+    targetKind: "string",
+    targetId: "string",
+    offerPriceMicroUsd: "money",
+    termMonths: "number",
+    effectiveAtBusinessMinute: "null|number",
+  }),
 });
 
 /** One scheduled player verb on the door's rail. The runner stamps seq =

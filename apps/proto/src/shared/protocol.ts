@@ -734,9 +734,12 @@ function decodeIntentPayload(raw: unknown): WireIntentPayload {
 /** Closed mirror of the door's `VERB_ARG_SHAPES` bigint-typed fields (the
  *  table itself stays private in pipeline/intent-door.ts). A drift-pin test
  *  (chrome/__tests__/wireIntent.test.ts) greps the engine source and reddens
- *  the day a second bigint arg appears without joining this list. */
+ *  the day a bigint arg appears without joining this list — sell-offer's
+ *  offerPriceMicroUsd (ADR-0015 3/5) is the second such arg and joined the
+ *  list in its landing commit. */
 export const BIGINT_ARG_FIELDS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   "adjust-price": Object.freeze(["newPriceMicroUsd"]),
+  "sell-offer": Object.freeze(["offerPriceMicroUsd"]),
 });
 
 const INT_STRING_RE = /^-?\d+$/;

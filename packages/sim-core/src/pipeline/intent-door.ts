@@ -51,6 +51,10 @@
  *    book, STATE-NEUTRAL: the deadline substitution is read at step 9 for
  *    patience-mode "window" units through pipeline/defaults.ts
  *    `jobWindowInForce`/`jobBandDistanceUs`, never by the door),
+ *    sell (sell-offer — the OPTIONAL ADR-0015 offer book, STATE-NEUTRAL by
+ *    the OD-24(a) PART-1 POSTURE: the door books the offer, the host signs
+ *    it through the EXISTING economy priceKey seam — no revenue, no money
+ *    math, no acceptance dice in the door, ever),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -120,6 +124,9 @@ import type {
   ScaleBook,
   ScaleEntry,
   ScheduleArgs,
+  SellBook,
+  SellOffer,
+  SellOfferArgs,
   ShedLoadArgs,
   ShedOrder,
   ShieldArgs,
@@ -184,6 +191,22 @@ export interface PriceTargetRejection {
   readonly reason: string;
 }
 
+/** What the host's sell-target validator sees — the SAME decoupling pattern
+ *  as `canAdjustPrice`: catalog/entitlement knowledge stays HOST-side, the
+ *  door only learns "resolved" or "refused, because <reason verbatim>".
+ *  Returns null = accept (the offer stands in the host's namespace), or a
+ *  rejection that lands in the refusal event as `unknown-target: <reason>`.
+ *  ADR-0015 3/5 (Sell): the counterparty voice — in v0 the sales act has no
+ *  acceptance dice, so THIS grammar is the only "no a customer can hear". */
+export interface SellOfferQuery {
+  readonly args: SellOfferArgs;
+  readonly state: GameState;
+  readonly context: TickContext;
+}
+export interface SellOfferRejection {
+  readonly reason: string;
+}
+
 export interface IntentDoorConfig {
   /** Hand tokens when materializing a missing GameState.hands (default 1 —
    *  T0/T2 per §7.5). Hosts SHOULD seed hands via createInitialState instead. */
@@ -200,6 +223,14 @@ export interface IntentDoorConfig {
    *  the `canPlaceDevice` law). Callback output is validated: `reason` must
    *  be a string, host bugs throw rather than fork a state. */
   readonly canAdjustPrice?: (query: AdjustPriceQuery) => PriceTargetRejection | null;
+  /** sell-offer target validator (ADR-0015 3/5 Sell; host-wired plan/catalog
+   *  resolution — absent = the door books the offer on structural sanity
+   *  only, exactly the `canAdjustPrice`/`canPlaceDevice` law). Callback
+   *  output is validated: `reason` must be a string, host bugs throw rather
+   *  than fork a state. This seam is the v0 counterparty — an executed
+   *  intent IS the close (no acceptance dice), so a refusal here is the only
+   *  "no" the sale can hear. */
+  readonly canSellOffer?: (query: SellOfferQuery) => SellOfferRejection | null;
   /** policy-card-commit resolver: maps the payload hash to the authored card.
    *  Absent → commits refuse with "no-card-lookup". */
   readonly lookupPolicyCard?: (cardHash: string) => PolicyCard | null;
@@ -285,6 +316,12 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // cost attendance-grade time. The deadline lands at step 9; the door only
   // writes the book.
   [PlayerVerb.ScheduleWindow]: 1,
+  // ADR-0015 (Sell 3/5): signing an offer is a desk decision — the COMMIT
+  // class (1 tick), same hand cost. PROVISIONAL taste (post-ratify new
+  // numeric): selling space/latency is a contract tap like a price order.
+  // The door only writes the book; the sale closes host-side through the
+  // existing economy priceKey seam (OD-24(a) part-1 posture).
+  [PlayerVerb.SellOffer]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -301,6 +338,9 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   [PlayerVerb.ScaleNode]: 1,
   [PlayerVerb.MaintainNode]: 1,
   [PlayerVerb.ScheduleWindow]: 1,
+  // ADR-0015 (Sell 3/5): one desk hand to sign an offer — same cost as the
+  // other COMMIT-class verbs (PROVISIONAL taste, occupancy table above).
+  [PlayerVerb.SellOffer]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -487,6 +527,15 @@ export function createJobWindowBook(): JobWindowBook {
   return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, JobWindow>()) });
 }
 
+/** Empty sell-offer book (ADR-0015 Sell 3/5) — hosts that want the embed
+ *  present from tick 0 mint it here; the `sell-offer` handler materializes
+ *  lazily without it. Keyed by the COMPOSITE `<targetKind>:<targetId>`
+ *  priceKey grammar (`priceOverrideKey` REUSED by identity — a sell-book key
+ *  IS an economy priceKey), last-write-wins per key. */
+export function createSellBook(): SellBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<string, SellOffer>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -536,6 +585,8 @@ interface Draft {
   /** ADR-0015 COW backup job-window book — null until a `schedule-window`
    *  order lands. */
   schedule: JobWindowBook | null;
+  /** ADR-0015 COW sell-offer book — null until a `sell-offer` order lands. */
+  sell: SellBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -618,6 +669,7 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   [PlayerVerb.ScaleNode]: Object.freeze({ targetNodeId: "string", reservedSlots: "number", effectiveAtBusinessMinute: "number-or-null" }),
   [PlayerVerb.MaintainNode]: Object.freeze({ targetNodeId: "string", openAtBusinessMinute: "number-or-null", closeAtBusinessMinute: "number" }),
   [PlayerVerb.ScheduleWindow]: Object.freeze({ targetNodeId: "string", openAtBusinessMinute: "number-or-null", closeAtBusinessMinute: "number" }),
+  [PlayerVerb.SellOffer]: Object.freeze({ targetKind: "string", targetId: "string", offerPriceMicroUsd: "bigint", termMonths: "number", effectiveAtBusinessMinute: "number-or-null" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -1252,6 +1304,66 @@ function handleScheduleWindow(draft: Draft, args: ScheduleArgs): HandlerVerdict 
   return { ok: true, detail: `node=${nodeId},open=${openAt === null ? "now" : String(openAt)},close=${String(closeAt)}` };
 }
 
+/** ADR-0015 3/5 SELL ↔ the existing money plumbing — the ONLY side effect
+ *  is one frozen record in the OPTIONAL `GameState.sell` book (absent ⇒
+ *  every pre-sell digest byte-identical — the same embed law as pricing).
+ *  OD-24(a) part-1 posture VERBATIM: the door records the ORDER, never the
+ *  money — closing the sale is the host's, which signs a contract through
+ *  the EXISTING economy seam (register/openContractEconomy + priceKey
+ *  @5781335) with the booked price and term; "the queued economy/HUD lanes
+ *  reading this book, not the door's job". The sales act is deterministic
+ *  player authority — an executed intent IS the close; no acceptance dice
+ *  in v0 (grounded; the refusal grammar — `canSellOffer` above all — is the
+ *  counterparty). §1.3 exchange-colo card "The Microsecond Cathedral",
+ *  hosting_game.md:2361-2378: "microseconds are what you sell", "you sell
+ *  *equal* latency as a product"; the verb-shift line "Colo: sell space and
+ *  police power" :514. The book key REUSES `priceOverrideKey` — a sell-book
+ *  key IS an economy priceKey (identity, not duplication; the door↔economy
+ *  kind-vocabulary mirror is drift-pinned by tests on both sides).
+ *  Wire types are parse-trusted (M2): `offerPriceMicroUsd` is a bigint by
+ *  law, so a fractional offer never exists down here — the value-domain
+ *  refusals are positivity (`bad-offer-price`), a whole-month term
+ *  (`bad-term-months`), target shape, and a well-formed non-negative
+ *  business minute. */
+function handleSellOffer(draft: Draft, args: SellOfferArgs): HandlerVerdict {
+  const targetKind = args.targetKind; // wire type trusted (parseEntry, M2)
+  if (!PRICE_TARGET_KINDS.includes(targetKind)) {
+    return { ok: false, reason: `bad-target-kind: "${String(targetKind)}" not in {${PRICE_TARGET_KINDS.join(",")}}` };
+  }
+  if (args.targetId.length === 0) return { ok: false, reason: "empty-target-id" };
+  if (args.offerPriceMicroUsd <= 0n) {
+    return { ok: false, reason: `bad-offer-price: ${String(args.offerPriceMicroUsd)} µ$ must be > 0` };
+  }
+  if (!Number.isSafeInteger(args.termMonths) || args.termMonths < 1) {
+    return { ok: false, reason: `bad-term-months: ${String(args.termMonths)} must be a safe integer >= 1` };
+  }
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const rejection = draft.config.canSellOffer?.({ args, state: snapshotFor(draft), context: draft.context });
+  if (rejection !== undefined && rejection !== null) {
+    // host CALLBACK output stays validated (it is not door-wire input):
+    return { ok: false, reason: `unknown-target: ${requireString(rejection.reason, "canSellOffer result.reason")}` };
+  }
+  const base = draft.sell ?? draft.origin.sell ?? createSellBook();
+  const entries = new Map(base.entries);
+  entries.set(
+    priceOverrideKey(targetKind, args.targetId as EntityId),
+    Object.freeze({
+      targetKind,
+      targetId: args.targetId as EntityId,
+      offerPriceMicroUsd: args.offerPriceMicroUsd,
+      termMonths: args.termMonths,
+      shippedAtTick: draft.context.tick,
+      effectiveAtBusinessMinute: effectiveAt,
+    }),
+  );
+  draft.sell = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  const detail = `target=${targetKind}:${args.targetId},price=${String(args.offerPriceMicroUsd)},term=${String(args.termMonths)}`;
+  return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -1272,7 +1384,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     draft.nodes === null && draft.board === null && draft.hands === null &&
     draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
     draft.attention === null && draft.shield === null && draft.scale === null &&
-    draft.maintain === null && draft.schedule === null
+    draft.maintain === null && draft.schedule === null && draft.sell === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1296,6 +1408,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.scale !== null ? { scale: draft.scale } : {}),
     ...(draft.maintain !== null ? { maintain: draft.maintain } : {}),
     ...(draft.schedule !== null ? { schedule: draft.schedule } : {}),
+    ...(draft.sell !== null ? { sell: draft.sell } : {}),
   });
 }
 
@@ -1431,6 +1544,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleMaintainNode(draft, args as MaintainArgs);
       case PlayerVerb.ScheduleWindow:
         return handleScheduleWindow(draft, args as ScheduleArgs);
+      case PlayerVerb.SellOffer:
+        return handleSellOffer(draft, args as SellOfferArgs);
     }
   })();
 
@@ -1501,6 +1616,7 @@ export function applyIntentDoor(
     scale: null,
     maintain: null,
     schedule: null,
+    sell: null,
     events: [],
     receipts: [],
   };
