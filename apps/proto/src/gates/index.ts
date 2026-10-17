@@ -9,9 +9,12 @@
  * CHROME ADOPTION (owner ruling 2026-10-17, wave-23): `...CHROME` joins the
  * aggregate — HUD-LAB and COOP reach the rail and the app import graph
  * through this spread (the wave-22 review F-1 gap: the chrome barrel had
- * zero app-graph importers, "test-mount-only"). The §9.13 six are still the
- * six — the chrome entries carry their own non-gate ids and trail the gates
- * in the selector.
+ * zero app-graph importers, "test-mount-only"). The chrome entries carry
+ * their own non-gate ids and trail the gates in the selector.
+ *
+ * GATE SEVEN (ADR-0018, wave-24): the §9.13 six became SEVEN with the
+ * owner-commissioned "two boards, one pool" gate — G7 rides this aggregate
+ * like the rest; the chrome rows still trail the gates.
  *
  * The `GateMount` shape is declared once (g1..g6 barrels each mirror it
  * structurally; the chrome barrel imports it as a TYPE, so this runtime
@@ -25,6 +28,7 @@ import { GATE_MOUNTS as G3 } from "./g3/index.ts";
 import { GATE_MOUNTS as G4 } from "./g4/index.ts";
 import { GATE_MOUNTS as G5 } from "./g5/index.ts";
 import { GATE_MOUNTS as G6 } from "./g6/index.ts";
+import { GATE_MOUNTS as G7 } from "./g7/index.ts";
 import { GATE_MOUNTS as CHROME } from "../chrome/index.ts";
 
 /** One mountable panel: what to show, where, and why (manifest per §9.13). */
@@ -38,7 +42,7 @@ export interface GateMount {
   readonly description?: string;
 }
 
-/** All stage-mountable panels: the §9.13 six in gate order (G1 first = shell
+/** All stage-mountable panels: the §9.13 seven in gate order (G1 first = shell
  *  default), then the chrome stage mounts (HUD-LAB, COOP — wave-23 ruling). */
 export const ALL_GATE_MOUNTS: readonly GateMount[] = Object.freeze([
   ...G1,
@@ -47,7 +51,8 @@ export const ALL_GATE_MOUNTS: readonly GateMount[] = Object.freeze([
   ...G4,
   ...G5,
   ...G6,
+  ...G7,
   ...CHROME,
 ] satisfies readonly GateMount[]);
 
-export { G1, G2, G3, G4, G5, G6, CHROME };
+export { G1, G2, G3, G4, G5, G6, G7, CHROME };
