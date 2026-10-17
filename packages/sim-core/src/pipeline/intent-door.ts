@@ -39,6 +39,11 @@
  *    shield (shield-node — the OPTIONAL ADR-0014 #D2 corruption pre-arm book,
  *    STATE-NEUTRAL: the corrupts-channel veto is read at step 9 through
  *    pipeline/corruption.ts, never by the door),
+ *    scale (scale-node — the OPTIONAL ADR-0015 reserved-warmth book,
+ *    STATE-NEUTRAL: the warmth is materialized at the step-5/6 capacity read
+ *    through pipeline/defaults.ts, never by the door — and the COST of
+ *    warmth is not door-side either: the door never touches cash, host opex
+ *    consumption of the book is the future seam),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -99,6 +104,9 @@ import type {
   PriceOverrideBook,
   PriceOverrideRecord,
   PriceTargetKind,
+  ScaleArgs,
+  ScaleBook,
+  ScaleEntry,
   ShedLoadArgs,
   ShedOrder,
   ShieldArgs,
@@ -249,6 +257,10 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // class (1 tick), same hand cost. The protection itself is state-neutral
   // here: step 9 reads the book, the door never touches units or RNG.
   [PlayerVerb.Shield]: 1,
+  // ADR-0015 (Scale 1/5): booking reserved warmth is the same desk decision
+  // class — COMMIT, 1 tick. The warmth lands at the step-5/6 capacity read
+  // (pipeline/defaults.ts); the door only writes the book.
+  [PlayerVerb.ScaleNode]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -262,6 +274,7 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   [PlayerVerb.ToggleSpeed]: 0,
   [PlayerVerb.AdjustPrice]: 1,
   [PlayerVerb.Shield]: 1,
+  [PlayerVerb.ScaleNode]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -426,6 +439,13 @@ export function createShieldBook(): ShieldBook {
   return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, ShieldEntry>()) });
 }
 
+/** Empty reserved-warmth book (ADR-0015 Scale 1/5) — hosts that want the
+ *  embed present from tick 0 mint it here; the `scale-node` handler
+ *  materializes lazily without it. Node-keyed, last-write-wins per node. */
+export function createScaleBook(): ScaleBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, ScaleEntry>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -467,6 +487,8 @@ interface Draft {
   pricing: PriceOverrideBook | null;
   /** ADR-0014 #D2 COW pre-arm book — null until a `shield-node` order lands. */
   shield: ShieldBook | null;
+  /** ADR-0015 COW reserved-warmth book — null until a `scale-node` order lands. */
+  scale: ScaleBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -546,6 +568,7 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   [PlayerVerb.ToggleSpeed]: Object.freeze({ speedX: "number" }),
   [PlayerVerb.AdjustPrice]: Object.freeze({ targetKind: "string", targetId: "string", newPriceMicroUsd: "bigint", effectiveAtBusinessMinute: "number-or-null" }),
   [PlayerVerb.Shield]: Object.freeze({ targetNodeId: "string", effectiveAtBusinessMinute: "number-or-null" }),
+  [PlayerVerb.ScaleNode]: Object.freeze({ targetNodeId: "string", reservedSlots: "number", effectiveAtBusinessMinute: "number-or-null" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -1025,6 +1048,62 @@ function handleShield(draft: Draft, args: ShieldArgs): HandlerVerdict {
   return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
 }
 
+/** ADR-0015 (Scale mechanic 1/5) SCALE ↔ reserved warmth — the ONLY side
+ *  effect is one frozen entry in the OPTIONAL `GameState.scale` book
+ *  (absent ⇒ every pre-scale digest byte-identical — the same embed law as
+ *  pricing/shield). The door NEVER touches nodes, units, or RNG: the
+ *  warmth is materialized at the step-5/6 serve capacity read through
+ *  `applyScaleWarmth` (pipeline/defaults.ts), which holds the as-of law
+ *  (`scaleWarmInForce` mirrors `nodeShielded`/`activePriceOverride` — null
+ *  = law from the executing tick; a future business-minute stamp is armed
+ *  but NOT YET law). §1.3 serverless card grounding: "a Chrysalis Pool of
+ *  pre-warmed shells is the buildable: buying warmth is buying the absence
+ *  of a stutter" — and `reservedSlots: 0` is the card's "scale to zero"
+ *  amendment: re-booking REPLACES (no dedicated withdrawal verb, no expiry,
+ *  per the shield precedent). The entry carries `baseRosterSlots` — the
+ *  node's authored roster length — chain-inherited from the prior entry on
+ *  amendments so withdrawal returns capacity to the AUTHORING baseline,
+ *  never to whatever the live roster happens to be mid-warmth.
+ *  HONEST GAP: the COST of warmth is not door-side — the door never
+ *  touches cash; host opex consumption of this book is the future seam.
+ *  Wire types are parse-trusted (M2): the refusals own the value domain
+ *  only — empty id, malformed slots/minute, unknown node. */
+function handleScaleNode(draft: Draft, args: ScaleArgs): HandlerVerdict {
+  const nodeId = args.targetNodeId as EntityId; // wire type trusted (parseEntry, M2)
+  if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
+  const reservedSlots = args.reservedSlots;
+  if (!Number.isSafeInteger(reservedSlots) || reservedSlots < 0) {
+    return { ok: false, reason: `bad-reserved-slots: ${String(reservedSlots)} must be a safe integer >= 0` };
+  }
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
+  const base = draft.scale ?? draft.origin.scale ?? createScaleBook();
+  // Chain-inherit the authored-roster anchor across amendments: the FIRST
+  // booking on a node stamps the live roster length; every re-booking keeps
+  // the prior entry's anchor. A pure function of (live roster, R) could
+  // never tell grown warmth from authored capacity — the anchor rides the
+  // entry so scale-to-zero is exact even while warm heads are in service.
+  const prior = base.entries.get(nodeId);
+  const anchor = prior !== undefined ? prior.baseRosterSlots : nodes.get(nodeId)!.slots.length;
+  const entries = new Map(base.entries);
+  entries.set(
+    nodeId,
+    Object.freeze({
+      reservedSlots,
+      baseRosterSlots: anchor,
+      shippedAtTick: draft.context.tick,
+      effectiveAtBusinessMinute: effectiveAt,
+    }),
+  );
+  draft.scale = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  const detail = `node=${nodeId},slots=${String(reservedSlots)}`;
+  return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -1044,7 +1123,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
   if (
     draft.nodes === null && draft.board === null && draft.hands === null &&
     draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
-    draft.attention === null && draft.shield === null
+    draft.attention === null && draft.shield === null && draft.scale === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1065,6 +1144,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.pricing !== null ? { pricing: draft.pricing } : {}),
     ...(draft.attention !== null ? { attention: draft.attention } : {}),
     ...(draft.shield !== null ? { shield: draft.shield } : {}),
+    ...(draft.scale !== null ? { scale: draft.scale } : {}),
   });
 }
 
@@ -1194,6 +1274,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleAdjustPrice(draft, args as AdjustPriceArgs);
       case PlayerVerb.Shield:
         return handleShield(draft, args as ShieldArgs);
+      case PlayerVerb.ScaleNode:
+        return handleScaleNode(draft, args as ScaleArgs);
     }
   })();
 
@@ -1261,6 +1343,7 @@ export function applyIntentDoor(
     ruleBookHash: null,
     pricing: null,
     shield: null,
+    scale: null,
     events: [],
     receipts: [],
   };

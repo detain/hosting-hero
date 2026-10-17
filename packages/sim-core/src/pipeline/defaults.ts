@@ -58,6 +58,7 @@ import type {
   QueueWait,
   QueueWaitIn,
   QueueWaitOut,
+  RecoveryState,
   RouteIn,
   RouteOut,
   RulePhaseIn,
@@ -68,6 +69,7 @@ import type {
   ServeIn,
   ServeOut,
   SimEvent,
+  SimMinute,
   SimTick,
   SimTimeUs,
   SlotAssignment,
@@ -80,6 +82,8 @@ import type {
   ObservedCell,
   ObservedKey,
   ObservedWrite,
+  ScaleBook,
+  ScaleEntry,
   ShieldBook,
 } from "../types.ts";
 import { asCauseId, asEntityId, observedKey, ResolutionBand } from "../types.ts";
@@ -100,7 +104,7 @@ import {
   withUnit,
 } from "./internal.ts";
 import { bounceProbability, patienceRatioBps } from "./bounce.ts";
-import { DEFAULT_KNEE_RHO, effectiveRho, hockeyStickWaitUs, utilization } from "./queue.ts";
+import { DEFAULT_KNEE_RHO, effectiveRho, hockeyStickWaitUs, makeSlots, utilization } from "./queue.ts";
 import { shieldBusinessMinuteOf, nodeShielded } from "./corruption.ts";
 
 /* ═══════════════════════ Extension inputs (driver-supplied) ═════════════════ */
@@ -768,6 +772,111 @@ export const defaultQueueWaitStep: TickStep<QueueWaitIn, QueueWaitOut> = (input)
   }
   return Object.freeze({ waits: Object.freeze(waits) });
 };
+
+/* ═══════════ Step 5/6 side law · Scale ↔ reserved warmth (ADR-0015) ═══════════ */
+
+/** ADR-0015 door-mechanics ruling, Scale 1/5 — the AS-OF law of the
+ *  reserved-warmth book, a flat twin of corruption.ts `nodeShielded` (and
+ *  economy's `activePriceOverride`): an absent entry books no warmth;
+ *  `effectiveAtBusinessMinute === null` is law from the executing tick; a
+ *  future stamp is armed but NOT yet law. Accepting the optional book keeps
+ *  the caller's guard flat (Law 1): `undefined` book ⇒ null for every node
+ *  — the byte-identity switch. §1.3 serverless card "Cold Start": "a
+ *  Chrysalis Pool of pre-warmed shells is the buildable: buying warmth is
+ *  buying the absence of a stutter." */
+export function scaleWarmInForce(
+  scale: ScaleBook | undefined,
+  nodeId: EntityId,
+  atBusinessMinute: SimMinute,
+): ScaleEntry | null {
+  if (scale === undefined) return null;
+  const entry = scale.entries.get(nodeId);
+  if (entry === undefined) return null;
+  return entry.effectiveAtBusinessMinute === null || atBusinessMinute >= entry.effectiveAtBusinessMinute
+    ? entry
+    : null;
+}
+
+/** Last occupied slot index + 1 for a stored record (0 when none). The
+ *  shrink twin of recovery.ts `occupiedFloor` (private there, recovery.ts
+ *  :415) — an occupied arm is NEVER evicted: withdrawing warmth while a
+ *  head carries a unit defers the release until the unit walks off, so
+ *  scale-to-zero can never orphan an in-service tenant. */
+function scaleOccupiedFloor(slots: readonly NodeSlotRecord[]): number {
+  let floor = 0;
+  for (let i = slots.length - 1; i >= 0; i -= 1) {
+    const slot = slots[i];
+    if (slot !== undefined && slot.occupied) {
+      floor = i + 1;
+      break;
+    }
+  }
+  return floor;
+}
+
+/**
+ * Present the SERVE step its node view under booked reserved warmth: every
+ * node with warmth in force (see `scaleWarmInForce`) sees a roster of
+ * `max(baseRosterSlots + reservedSlots, occupiedFloor)` arms — grown on the
+ * pad tail with blank arms (queue.ts `makeSlots`, the board-bootstrap
+ * scaffold — a warm head starts empty, never with a ghost tenant), shrunk
+ * toward the authored roster on withdrawal (0-amendment = the card's
+ * "scale to zero"). Nodes without a live booking pass through by record
+ * identity; a book with nothing in force returns the SAME Map object, so a
+ * driver whose host merely never books warmth pays zero copies and zero
+ * clock math (byte-identity gate: `undefined` book ⇒ the function is never
+ * even called — driver gates on `worked.scale !== undefined`).
+ *
+ * This view is what gets STORED (serve echoes its nodes) — the recovery
+ * throttle's doctrine, deliberately adopted: the booked roster is ground
+ * truth for the tick, so EVERY capacity read follows the slots-not-HP
+ * arithmetic downstream — serve's free-slot scan, admission,
+ * `utilization`/`effectiveRho` (queue.ts divides by `slots.length`),
+ * patience waits, the hockey stick. The fold itself is PURE arithmetic on
+ * the roster: ZERO RNG, zero event mints, zero unit writes.
+ *
+ * RECOVERY DEFERRAL: a node under a live §7.7 recovery window keeps the
+ * THROTTLED arms — the two books must not fight (recovery fail-louds
+ * `recovery[board-drift]` when stored capacity exceeds the captured
+ * `fullSlots`, and padding past a window mid-restoration would trip its
+ * own law). Booking stays valid; materialization waits for the window to
+ * close. A booking made DURING a window anchors `baseRosterSlots` at the
+ * throttled length (the door reads the live roster) — deterministic and
+ * disclosed.
+ */
+export function applyScaleWarmth(
+  nodes: ReadonlyMap<EntityId, NodeRecord>,
+  scale: ScaleBook | undefined,
+  atBusinessMinute: SimMinute,
+  recovery: RecoveryState | undefined,
+): ReadonlyMap<EntityId, NodeRecord> {
+  if (scale === undefined || scale.entries.size === 0) return nodes;
+  let changed = false;
+  const out = new Map<EntityId, NodeRecord>();
+  for (const [nodeId, record] of nodes) {
+    const warm = scaleWarmInForce(scale, nodeId, atBusinessMinute);
+    if (warm === null || (recovery !== undefined && recovery.windows.has(nodeId))) {
+      out.set(nodeId, record);
+      continue;
+    }
+    const stored = record.slots.length;
+    const target = Math.max(warm.baseRosterSlots + warm.reservedSlots, scaleOccupiedFloor(record.slots));
+    if (target === stored) {
+      out.set(nodeId, record);
+      continue;
+    }
+    changed = true;
+    const slots =
+      target < stored
+        ? Object.freeze(record.slots.slice(0, target))
+        : Object.freeze([...record.slots, ...makeSlots(target - stored)]);
+    out.set(nodeId, Object.freeze({ ...record, slots }));
+  }
+  // Whole-map identity when nothing materialized (inert future stamps,
+  // zero-warmth amendments already at floor) — the byte-identity twin of
+  // throttleServeNodes' `windows.size === 0` early return.
+  return changed ? out : nodes;
+}
 
 /* ═══════════════════════════ Step 7 · Inspect ═══════════════════════════ */
 

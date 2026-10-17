@@ -140,7 +140,8 @@ const COVENANT_FLOOR_BPS_MAX = 1_000_000_000_000;
 
 /** Channels-ladder ceiling for `postmortem-credits-*`: the summed
  *  `creditedBps` of the adjudication log. One honest card earns 250 bps
- *  (cfg.reputation.honestPostmortemBps, PROVISIONAL), so even a hundred
+ *  (cfg.reputation.honestPostmortemBps, RATIFIED 2026-10-16 (ADR-0015 #1)),
+ *  so even a hundred
  *  filings stay far below this — the wall only refuses nonsense scales. */
 const POSTMORTEM_CREDITS_BPS_MAX = 1_000_000_000;
 
@@ -333,6 +334,11 @@ export const SCENARIO_INTENT_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Re
   }),
   "shield-node": Object.freeze({
     targetNodeId: "string",
+    effectiveAtBusinessMinute: "null|number",
+  }),
+  "scale-node": Object.freeze({
+    targetNodeId: "string",
+    reservedSlots: "number",
     effectiveAtBusinessMinute: "null|number",
   }),
 });

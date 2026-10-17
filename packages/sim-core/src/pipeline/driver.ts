@@ -103,6 +103,7 @@ import {
   type RecoveryNotice,
 } from "./recovery.ts";
 import {
+  applyScaleWarmth,
   type ArrivalInExt,
   type PatienceCheckInExt,
   type PatienceCheckOutExt,
@@ -111,6 +112,7 @@ import {
 } from "./defaults.ts";
 import {
   foldCorruptionTerminals,
+  shieldBusinessMinuteOf,
   type CorruptionTerminal,
 } from "./corruption.ts";
 import { DEFAULT_KNEE_RHO, utilization } from "./queue.ts";
@@ -593,8 +595,25 @@ export function createTickDriver(
      * node serves its restored arms, not its full board (gradual
      * restoration / safe-mode floor). No slice or no windows ⇒ the SAME Map
      * object passes through by identity — zero copies, byte-identity. */
-    const serveInput =
+    const throttled =
       recoveryCfg !== undefined ? throttleServeNodes(worked.nodes, worked.recovery) : worked.nodes;
+    /* ADR-0015 · Scale reserved warmth: with a booked scale slice, the node
+     * serves its authored roster PLUS the warmth in force (as-of the
+     * business minute; recovery windows defer). NO book ⇒ the fold is never
+     * called — no clock math, no copies: the byte-identity switch is
+     * presence of `GameState.scale`, exactly like the door slices before it.
+     * Order matters: warmth is applied to the THROTTLED view, and the fold
+     * itself re-checks the windows so a padded arm can never outrank a live
+     * restoration law. */
+    const serveInput =
+      worked.scale !== undefined
+        ? applyScaleWarmth(
+            throttled,
+            worked.scale,
+            shieldBusinessMinuteOf(context.clocks),
+            worked.recovery,
+          )
+        : throttled;
     const serveOut = steps.serve({ context, units, nodes: serveInput });
     // R-06 class-aware shed (audit fix, §7.11): a hard-ceiling node sheds its WHOLE
     // residual queue each tick, but the order shed units enter the terminal ledger

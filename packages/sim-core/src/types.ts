@@ -1225,6 +1225,19 @@ export enum PlayerVerb {
    *  door writes the OPTIONAL `GameState.shield` book; the veto is read at
    *  step 9 (pipeline/corruption.ts owns the as-of law). */
   Shield = "shield-node",
+  /** ADR-0015 door-mechanics ruling (tier verbs 1/5): the 11th door verb —
+   *  the Scale tier verb made playable (§1.3 serverless card "Cold Start":
+   *  "a Chrysalis Pool of pre-warmed shells is the buildable: buying warmth
+   *  is buying the absence of a stutter"). The door records the ORDER into
+   *  the OPTIONAL `GameState.scale` book (reservedSlots per node, as-of a
+   *  business minute; 0 = the card's "scale to zero" amendment — replace,
+   *  not expiry, per the shield precedent); the warmth is materialized as
+   *  RESERVED SLOTS on the node roster at the step-5/6 capacity read
+   *  (pipeline/defaults.ts owns the fold) — the slots-not-HP arithmetic
+   *  then flows: ρ, queues, patience all follow the booked roster. Cost of
+   *  warmth is NOT door-side (the door never touches cash; host opex
+   *  consumption is the future seam, recorded in the door docblock). */
+  ScaleNode = "scale-node",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1239,6 +1252,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.ToggleSpeed,
   PlayerVerb.AdjustPrice,
   PlayerVerb.Shield,
+  PlayerVerb.ScaleNode,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1347,6 +1361,26 @@ export interface ShieldArgs {
   readonly effectiveAtBusinessMinute: SimMinute | null;
 }
 
+export interface ScaleArgs {
+  readonly verb: PlayerVerb.ScaleNode;
+  /** Node to book reserved warmth for — resolved against `GameState.nodes`
+   *  (same world-existence check as shield/shed/communicate; an absent node
+   *  is the `unknown-node` refusal). */
+  readonly targetNodeId: EntityId;
+  /** Reserved slots to hold WARM beyond the node's authored roster — an
+   *  integer >= 0. 0 is the legal "scale to zero" amendment (§1.3 serverless
+   *  card): it REPLACES a prior booking, withdrawing the warmth (bounded by
+   *  the occupied-slot floor — warmth already carrying a unit is never
+   *  evicted from under it, the recovery throttle's non-eviction law).
+   *  Negative or fractional warmth is unbuyable → value-domain refusal. */
+  readonly reservedSlots: number;
+  /** Business-clock effective minute (Dual-Clock law §4.4: capacity is a
+   *  business action, the same as pricing and shielding). The null sentinel
+   *  = law from the executing tick; a future stamp is armed but NOT yet law
+   *  — the same as-of law as the shield book. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1358,7 +1392,8 @@ export type PlayerVerbArgs =
   | CommunicateArgs
   | ToggleSpeedArgs
   | AdjustPriceArgs
-  | ShieldArgs;
+  | ShieldArgs
+  | ScaleArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -1628,6 +1663,51 @@ export interface ShieldBook {
   readonly entries: ReadonlyMap<EntityId, ShieldEntry>;
 }
 
+/** One executed `scale-node` order, frozen into the reserved-warmth book.
+ *  The record is the ENTIRE door side effect (ADR-0015, mirroring
+ *  `ShieldEntry`): the serve capacity read consumes this book at step 5/6
+ *  (pipeline/defaults.ts `scaleWarmInForce` owns the as-of law, mirroring
+ *  corruption.ts `nodeShielded` and economy's `activePriceOverride`) —
+ *  nothing in the door touches nodes, units, or RNG. `causeId` attribution
+ *  lives on the minting `intent-executed` event (`intent:<seq>`), mirroring
+ *  every other door verb. */
+export interface ScaleEntry {
+  /** Warm slots booked BEYOND `baseRosterSlots` — integer >= 0; 0 is the
+   *  legal "scale to zero" amendment (§1.3 serverless card: withdraw the
+   *  pool, the roster returns to its authored size once no warm slot is
+   *  carrying a unit — the occupied-slot floor governs the release). */
+  readonly reservedSlots: number;
+  /** The node's authored roster length at booking time. The effective
+   *  capacity is `baseRosterSlots + reservedSlots`, and the anchor RIDES
+   *  the entry (chain-inherited across amendments) so pure arithmetic on
+   *  the live roster can never mistake a grown head for authored capacity
+   *  — re-arming a node that already spent its warmth stays exact. The
+   *  door stamps it from the live roster (or the prior entry's anchor),
+   *  never the fold. */
+  readonly baseRosterSlots: number;
+  /** Macro tick the door executed the order (write-order witness; the book's
+   *  Map is keyed by node, never ordered — last-write-wins per node). */
+  readonly shippedAtTick: SimTick;
+  /** null = law from `shippedAtTick`; a business-minute stamp otherwise
+   *  (buy warmth ahead of the rush — the pre-arm reads its name). */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
+/** OPTIONAL `GameState` embed — the reserved-warmth book `scale-node` writes
+ *  (same embed law as board/hands/pricing/shield: absent ⇒ byte-identical
+ *  digests everywhere; `pipeline/digest.ts` absorbs it WHEN PRESENT, node
+ *  ids sorted code-unit so Map insertion order never leaks). Keyed by node
+ *  id, LAST-WRITE-WINS per node (re-booking a node replaces its entry and
+ *  bumps `version` — the topology/board memoization convention). There is
+ *  NO dedicated withdrawal verb: the amendment door follows its own
+ *  mechanic design (ADR-0015), and `reservedSlots: 0` replaces a prior
+ *  booking per the card's scale-to-zero law; a stamp already in force
+ *  never expires on its own. */
+export interface ScaleBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<EntityId, ScaleEntry>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -1829,4 +1909,12 @@ export interface GameState {
    *  present, so every pre-shield state — all shipped goldens — digests
    *  byte-identically. */
   readonly shield?: ShieldBook;
+  /** ADR-0015 embed — the reserved-warmth (Scale) book `scale-node` writes
+   *  (see `ScaleBook`). Read at the step-5/6 serve capacity fold through
+   *  the driver-forwarded state view (pipeline/defaults.ts owns the as-of
+   *  law; recovery windows defer the materialization). OPTIONAL,
+   *  digest-switch law: `pipeline/digest.ts` absorbs it ONLY when present,
+   *  so every pre-scale state — all shipped goldens — digests
+   *  byte-identically. */
+  readonly scale?: ScaleBook;
 }

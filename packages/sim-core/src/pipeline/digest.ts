@@ -259,6 +259,29 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0015 (Scale 1/5) — the reserved-warmth book (digest-switch law, same
+  // embed law as hands/board/pricing/shield): absorbed ONLY when present, so
+  // every pre-scale state (all shipped goldens) keeps byte-identical digests.
+  // Node ids sort code-unit (Map insertion order NEVER read); the null
+  // effective minute takes the -1 sentinel slot (business minutes are >= 0
+  // by door refusal law). baseRosterSlots is absorbed: two bookings of equal
+  // reservedSlots against different authored rosters are DIFFERENT orders.
+  if (state.scale !== undefined) {
+    sink.text("scale").int(state.scale.version);
+    const scaleIds = Array.from(state.scale.entries.keys()).sort(byId);
+    sink.int(scaleIds.length);
+    for (const id of scaleIds) {
+      const rec = state.scale.entries.get(id);
+      if (rec === undefined) continue;
+      sink
+        .text(id)
+        .int(rec.reservedSlots)
+        .int(rec.baseRosterSlots)
+        .int(rec.shippedAtTick)
+        .int(rec.effectiveAtBusinessMinute ?? -1);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.
