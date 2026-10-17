@@ -18,7 +18,8 @@ import { THREAT_ROLES } from "../waves/table.ts";
 import type { DefenseRoleId } from "./defenseRoles.ts";
 import { DEFENSE_ROLE_IDS } from "./defenseRoles.ts";
 import type { CoverageCell, CoverageProfile } from "./matrix.ts";
-import { deriveCoverageCell, resolveCoverageProfile } from "./matrix.ts";
+import { resolveCoverageProfile } from "./matrix.ts";
+import { deriveCoverageCellForAffix } from "./affixLegs.ts";
 import { compareCodeUnits } from "../internal/canonical.ts";
 
 /** Cell key grammar: `<threatRole>|defenseRole>` — one pipe, slugs are
@@ -53,6 +54,13 @@ export interface CoverageGrid {
 
 export interface CoverageGridInput {
   readonly profile: CoverageProfile;
+  /** §2.13 coverage-strength leg (hg "Each mix-in invalidates exactly one
+   *  defense role", see affixLegs.ts): a slug builds the grid AS THE THREATS
+   *  WEARING THAT MIX-IN SEE IT — the nullified column reads dark across all
+   *  12 rows while its contributors stay listed. `null`/absent is the
+   *  byte-identity twin of the unaffixed grid (pinned by test); an
+   *  off-vocabulary slug dies `coverage[BAD_AFFIX]`. */
+  readonly affix?: string | null;
 }
 
 /** Build the full 12×9 grid from the player's buildables-as-data. */
@@ -61,7 +69,7 @@ export function buildCoverageGrid(input: CoverageGridInput): CoverageGrid {
   const flat: CoverageCell[] = [];
   for (const threatRole of THREAT_ROLES) {
     for (const defenseRole of DEFENSE_ROLE_IDS) {
-      flat.push(deriveCoverageCell(resolved, threatRole, defenseRole));
+      flat.push(deriveCoverageCellForAffix(resolved, threatRole, defenseRole, input.affix));
     }
   }
   // Sorted insertion so the canonical Map walk is order-independent of the

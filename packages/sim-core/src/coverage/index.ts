@@ -9,13 +9,17 @@
  *
  *   defenseRoles.ts — the nine defense roles (§2.1 table, verbatim)
  *   matrix.ts       — cells, the Fixed ladder, MAX-combine, profile parser
+ *   affixLegs.ts    — §2.13 coverage-strength leg: slug → invalidated column
  *   grid.ts         — render-agnostic whole-grid projection + Second Answer gaps
  *   invitations.ts  — darkCellReport: spawnable threats × dark rows (G2/P2 bridge)
  *
  * Import rule: this dir reads ../types, ../kernel, ../waves (THREAT_ROLES
  * vocabulary only), ../internal (code-unit compare) — and NEVER economy,
- * policy, or topology (grep-pinned by test): buildables, spawnable pools,
- * and role censuses enter as PLAIN DATA, door-canPlaceDevice style.
+ * policy, topology, or versus (grep-pinned by test): buildables, spawnable
+ * pools, and role censuses enter as PLAIN DATA, door-canPlaceDevice style.
+ * The §2.13 slug set in affixLegs.ts is a DRIFT-PINNED MIRROR of
+ * versus/deck.ts AFFIX_VOCABULARY (elasticity's PRICE_KEY_KINDS-vs-intent-
+ * door precedent) — the pin imports cross-module TEST-side only.
  */
 
 /* defenseRoles.ts */
@@ -41,6 +45,9 @@ export type {
   CoverageProfile,
   ResolvedBuildable,
 } from "./matrix.ts";
+
+/* affixLegs.ts */
+export { AFFIX_COVERAGE_NULLIFIES, affixCoverageNullifier, deriveCoverageCellForAffix } from "./affixLegs.ts";
 
 /* grid.ts */
 export { buildCoverageGrid, coverageCellKey, secondAnswerGaps } from "./grid.ts";

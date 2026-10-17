@@ -161,7 +161,19 @@ lanes updated the `PlayerVerb` enum row but these two adjacent rows lagged);
 the `SellOfferArgs` row no longer promises "no acceptance dice in v0" —
 ADR-0016 mechanic B @`24f90bc` put them in the fold (the door still moves no
 money); `threatFromWaveUnitId` recorded as a file-exported test seam,
-deliberately NOT barrelled.)
+deliberately NOT barrelled.) COVERAGE-AFFIX-LEG pass 2026-10-17 (owner
+ruling 2026-10-17 max feature, ADR-0017 — §2.13 SECOND leg "Each mix-in
+invalidates exactly one defense role" made mechanical on the Coverage Grid:
+`## coverage` +3 names (`AFFIX_COVERAGE_NULLIFIES`/`affixCoverageNullifier`/
+`deriveCoverageCellForAffix`, barrel 28→31; new module file `affixLegs.ts`);
+`CoverageGridInput` gained the optional `affix` field and `darkCellReport`
+the optional 5th `affix` argument (both absent/null = byte-identity twins,
+pinned); `CoverageErrorCode` gained the `BAD_AFFIX` arm (name-invisible);
+the slug set is a drift-pinned MIRROR of versus `AFFIX_VOCABULARY` —
+coverage src keeps its zero-../versus import law (grep-pin extended), the
+pin rides the test suite (elasticity-vs-intent-door precedent). Five doc-
+named legs, eleven honest nulls — the three doc rows naming non-columns
+(staffed response / any fixed threshold / Hands) are recorded, not invented.)
 Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
@@ -1348,10 +1360,15 @@ from `waves/THREAT_ROLES` (never re-invented); defense roles ship verbatim
 against `packages/content/threats/registry-core.json` `defenseRolesVocabulary`
 (pinned by test). Pure data + pure logic: buildables, spawnable pools and role
 censuses arrive as PLAIN DATA (door `canPlaceDevice` decoupling — no economy /
-policy / topology imports, grep-pinned; no ledger import — the G2 bridge takes
-`spawnableThreatIds` from the caller). Cell combine law: MAX, not sum (two
-WAFs do not double-cover everything one covers; Second Answer depth is
-per-ROW via `secondAnswerGaps`, §2.1). Import: `@hh/sim-core/coverage`.
+policy / topology / versus imports, grep-pinned; no ledger import — the G2
+bridge takes `spawnableThreatIds` from the caller). Cell combine law: MAX, not
+sum (two WAFs do not double-cover everything one covers; Second Answer depth is
+per-ROW via `secondAnswerGaps`, §2.1). §2.13 coverage-strength leg
+(`affixLegs.ts`): each mix-in invalidates exactly one defense ROLE — the grid
+view a threat wearing a slug sees nullifies that slug's column (§2.13
+invalidates table, five doc-named legs; slug set drift-pinned TEST-side to
+versus `AFFIX_VOCABULARY`, elasticity precedent). Import:
+`@hh/sim-core/coverage`.
 
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 |---|---|---|---|
@@ -1361,7 +1378,7 @@ per-ROW via `secondAnswerGaps`, §2.1). Import: `@hh/sim-core/coverage`.
 | `DEFENSE_ROLE_IDS` | `readonly DefenseRoleId[]` (9) | Column order for the grid (§2.1 table order) | frozen |
 | `isDefenseRoleId` | `(value: string) => value is DefenseRoleId` | Boundary guard for role tags in content data | pure |
 | `CoverageError` | `class extends Error { code: CoverageErrorCode; path: string }` | Boundary error; message grammar `coverage[CODE] at 'path': detail` | pure · total-throwing by design |
-| `CoverageErrorCode` | `"BAD_THREAT_ROLE" \| "BAD_DEFENSE_ROLE" \| "BAD_STRENGTH" \| "OUT_OF_RANGE" \| "EMPTY_ROLES" \| "UNKNOWN_THREAT"` | Machine-readable coverage failure classes | closed union |
+| `CoverageErrorCode` | `"BAD_THREAT_ROLE" \| "BAD_DEFENSE_ROLE" \| "BAD_STRENGTH" \| "OUT_OF_RANGE" \| "EMPTY_ROLES" \| "UNKNOWN_THREAT" \| "BAD_AFFIX"` | Machine-readable coverage failure classes (BAD_AFFIX: §2.13 slug outside the 16-word vocabulary, affixLegs.ts) | closed union |
 | `CoverageCellState` | `"dark" \| "thin" \| "ok" \| "strong"` | The four teaching rungs (P17: lit cells vs conspicuous holes) | closed union |
 | `COVERAGE_LADDER` | `Readonly<{ darkBelow; thinBelow; okBelow: Fixed }>` | Fixed-exact rung thresholds 6554n/26214n/55706n (≈0.1/0.4/0.85, half-away rounding); a cell sits in the first rung its strength is strictly below | frozen · raw values pinned by test |
 | `coverageCellState` | `(strength: Fixed) => CoverageCellState` | Ladder classifier (non-bigint dies `BAD_STRENGTH`) | pure · total-throwing |
@@ -1374,15 +1391,18 @@ per-ROW via `secondAnswerGaps`, §2.1). Import: `@hh/sim-core/coverage`.
 | `combineCoverageStrength` | `(current: Fixed, contribution: Fixed) => Fixed` | THE combine law: max, never sum (docblock notes where redundancy revisits) | pure |
 | `deriveCoverageCell` | `(resolved, threatRole, defenseRole) => CoverageCell` | One cell: max over contributors declaring the column (calibrated value or generic default), with sorted contributor list | pure · order-pinned |
 | `CoverageCell` | `interface { threatRole; defenseRole; strength: Fixed; state; contributors }` | The answer to "how much does what I built blunt THIS role via THIS kind of defense" | deep-frozen |
+| `AFFIX_COVERAGE_NULLIFIES` | `Readonly<Record<string, DefenseRoleId \| null>>` (16 keys) | §2.13 coverage-strength leg "Each mix-in invalidates exactly one defense role": slug → the grid COLUMN a threat wearing the mix-in treats as a non-answer (hg §2.13 invalidates table; five legs — distributed→meter, encrypted→classify, low-slow→detect, adaptive→deter, piggyback→absorb; eleven honest nulls with per-row doc reasons). Keys mirror versus `AFFIX_VOCABULARY` 1:1 — drift-pinned test-side (no src import edge); every non-null slug pinned live in `AFFIX_WAVE_DELTAS` | deep-frozen · order-pinned |
+| `affixCoverageNullifier` | `(affix: string \| null \| undefined) => DefenseRoleId \| null` | Boundary parse of the §2.13 slug: null/undefined (unaffixed) ⇒ null; off-vocabulary dies `coverage[BAD_AFFIX]`; prototype keys fenced by `Object.hasOwn` (BudgetManager precedent) | pure · total-throwing |
+| `deriveCoverageCellForAffix` | `(resolved, threatRole, defenseRole, affix) => CoverageCell` | One cell AS SEEN BY a threat wearing `affix`: identity with `deriveCoverageCell` except the nullified column — that cell pins strength `FIXED_ZERO` / its ladder state with `contributors` KEPT ("you own it; it does not answer THIS threat"). Invalidation is categorical, not a discount — calibration is no shield | pure · absent-affix byte-identity twin (pinned) |
 | `coverageCellKey` | `(threatRole, defenseRole) => string` | Cell key grammar `<threatRole>\|<defenseRole>` (slugs are pipe-free by vocabulary) | pure |
 | `CoverageGrid` | `interface { rows; cols; cells: ReadonlyMap<string, CoverageCell>; summary }` | The whole render-agnostic 12×9 projection; cells inserted code-unit-sorted so canonical Map walks digest byte-stably | deep-frozen · order-pinned |
-| `CoverageGridInput` | `interface { profile: CoverageProfile }` | Grid build input | — |
+| `CoverageGridInput` | `interface { profile: CoverageProfile; affix?: string \| null }` | Grid build input; `affix` is the §2.13 coverage leg — the grid as threats wearing that mix-in see it (nullified column dark across all rows); absent/null byte-identical to the unaffixed grid | — |
 | `CoverageGridSummary` | `interface { darkCount; thinCount; okCount; strongCount; bestCoverage: Fixed; holePairs }` | Panel header: hole census + `holePairs` = dark-cell keys sorted code-unit (named like the §2.1 plain-language row) | frozen |
 | `buildCoverageGrid` | `(input: CoverageGridInput) => CoverageGrid` | Full matrix computation (empty board ⇒ 108 dark cells, bestCoverage 0) | pure · no rng/clock · digest-stable (encodeTaggedTree ×100 pinned) |
 | `secondAnswerGaps` | `(grid: CoverageGrid) => readonly ThreatRole[]` | §2.1 Second Answer law: rows with <2 columns at "ok"-or-better ("a tax, not a decision") | pure · vocabulary order |
 | `ThreatRoleCensus` | `ReadonlyMap<string, readonly ThreatRole[]>` | threatId → roles (ARRAY values: the real registry is multi-role — one threat teaches every role it plays) | — |
 | `DarkCellRow` | `interface { threatRole; state; weakestDefenses; sampleThreatIds; invitedThreatIds }` | One teaching row: exposure state = row's BEST cell; weakest-first columns (Fixed, ties code-unit); spawnable samples; P2 invite flags | frozen |
-| `darkCellReport` | `(profile, spawnableThreatIds, threatRoleOf, recentInvites?) => readonly DarkCellRow[]` | THE teaching payload: which unblocked threats exploit which dark/thin rows; covered rows and unhurt holes are omitted; unknown threats/invites fail loud | pure · order-pinned · total-throwing |
+| `darkCellReport` | `(profile, spawnableThreatIds, threatRoleOf, recentInvites?, affix?) => readonly DarkCellRow[]` | THE teaching payload: which unblocked threats exploit which dark/thin rows; covered rows and unhurt holes are omitted; unknown threats/invites fail loud; `affix` (5th, optional) runs the rows through the §2.13 invalidates leg — absent/null byte-identical, garbage slug dies `BAD_AFFIX` before the census validation | pure · order-pinned · total-throwing |
 
 ---
 

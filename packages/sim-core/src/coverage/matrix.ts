@@ -33,7 +33,8 @@ export type CoverageErrorCode =
   | "BAD_STRENGTH"
   | "OUT_OF_RANGE"
   | "EMPTY_ROLES"
-  | "UNKNOWN_THREAT";
+  | "UNKNOWN_THREAT"
+  | "BAD_AFFIX";
 
 /** Local boundary error (VersusError/LoaderError grammar, coverage prefix). */
 export class CoverageError extends Error {

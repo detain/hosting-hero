@@ -26,7 +26,8 @@ import type { DefenseRoleId } from "./defenseRoles.ts";
 import { DEFENSE_ROLE_IDS } from "./defenseRoles.ts";
 import type { CoverageCellState, CoverageProfile } from "./matrix.ts";
 import type { ResolvedBuildable } from "./matrix.ts";
-import { CoverageError, coverageCellState, deriveCoverageCell, resolveCoverageProfile } from "./matrix.ts";
+import { CoverageError, coverageCellState, resolveCoverageProfile } from "./matrix.ts";
+import { affixCoverageNullifier, deriveCoverageCellForAffix } from "./affixLegs.ts";
 import { compareCodeUnits } from "../internal/canonical.ts";
 
 /** threatId → the threat roles it occupies. VALUES ARE ARRAYS because the
@@ -49,9 +50,10 @@ export interface DarkCellRow {
   readonly invitedThreatIds: readonly string[];
 }
 
-/** The nine cells of one threat-role row, in §2.1 column order. */
-function rowCells(resolved: readonly ResolvedBuildable[], threatRole: ThreatRole) {
-  return DEFENSE_ROLE_IDS.map((defenseRole) => deriveCoverageCell(resolved, threatRole, defenseRole));
+/** The nine cells of one threat-role row, in §2.1 column order, as seen
+ *  through the §2.13 coverage leg (`affix` null/absent ⇒ unaffixed cells). */
+function rowCells(resolved: readonly ResolvedBuildable[], threatRole: ThreatRole, affix: string | null | undefined) {
+  return DEFENSE_ROLE_IDS.map((defenseRole) => deriveCoverageCellForAffix(resolved, threatRole, defenseRole, affix));
 }
 
 /**
@@ -65,13 +67,21 @@ function rowCells(resolved: readonly ResolvedBuildable[], threatRole: ThreatRole
  * @param spawnableThreatIds  the ledger's current spawnable pool
  * @param threatRoleOf        threatId → roles census (plain data from content)
  * @param recentInvites       optional: threats the latest build just unlocked (P2)
+ * @param affix               optional §2.13 coverage leg: build the report AS
+ *                            threats wearing this mix-in see it (invalidated
+ *                            column dark across every row); null/absent is the
+ *                            byte-identity twin of the unaffixed report.
  */
 export function darkCellReport(
   profile: CoverageProfile,
   spawnableThreatIds: readonly string[],
   threatRoleOf: ThreatRoleCensus,
   recentInvites: readonly string[] = [],
+  affix: string | null | undefined = null,
 ): readonly DarkCellRow[] {
+  // Fail loud before ANY computation: a garbage affix slug is authored
+  // garbage (Law 4), and the census checks below must not mask it.
+  affixCoverageNullifier(affix);
   const spawnable = new Set<string>(spawnableThreatIds);
   const invited = new Set<string>(recentInvites);
 
@@ -107,7 +117,7 @@ export function darkCellReport(
   const resolved = resolveCoverageProfile(profile);
   const rows: DarkCellRow[] = [];
   for (const [threatRole, threatIds] of [...threatsByRole].sort((a, b) => compareCodeUnits(a[0], b[0]))) {
-    const cells = rowCells(resolved, threatRole);
+    const cells = rowCells(resolved, threatRole, affix);
     let best: Fixed = cells[0]?.strength ?? 0n;
     for (const cell of cells) if (cell.strength > best) best = cell.strength;
     const state: CoverageCellState = coverageCellState(best);

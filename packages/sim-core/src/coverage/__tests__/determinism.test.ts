@@ -80,6 +80,7 @@ describe("grep-pin — data-input decoupling + determinism hygiene", () => {
   const sources = [
     "defenseRoles.ts",
     "matrix.ts",
+    "affixLegs.ts",
     "grid.ts",
     "invitations.ts",
     "index.ts",
@@ -88,6 +89,8 @@ describe("grep-pin — data-input decoupling + determinism hygiene", () => {
   it.each(sources)("$name imports no sibling domain module", ({ name, text }) => {
     // Waves: only the TABLE grammar (../waves/table) is legal data input —
     // the generator (envelope/generate) is the engine's job, never here.
+    // Versus: the §2.13 slug mirror in affixLegs.ts is drift-pinned TEST-side
+    // (elasticity precedent) — a src edge into ../versus is still forbidden.
     for (
       const forbidden of [
         "../economy",
@@ -95,6 +98,7 @@ describe("grep-pin — data-input decoupling + determinism hygiene", () => {
         "../topology",
         "../observed",
         "../save",
+        "../versus",
         "../waves/generate",
         "../waves/envelope",
       ]
