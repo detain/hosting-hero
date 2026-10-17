@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "In-repo co-op transport layer (ADR-0016 owner ruling 2026-10-17, design lane I-T): the hh-coop-transport@1 frame codec, the pump-driven TransportPort contract, the in-memory carrier adapter, and the relay hub/client endpoints — transport TO THE FRAME; the wire itself (sockets, rooms, auth) stays the PHP/Workerman carrier. Zero timers, zero wall-clock, zero sim-core edits.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "engines": {
     "node": ">=22.18"
   },

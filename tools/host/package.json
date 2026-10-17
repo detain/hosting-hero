@@ -1,0 +1,30 @@
+{
+  "name": "host-tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Localhost-only dev relay host (owner ruling 2026-10-17, ADR-0017 transport adoption): the hh-coop-transport@1 hub over REAL loopback WebSocket sockets via `ws`. Thin carrier + tick pump ONLY — tools/relay stays the sole stamp + ledger authority, tools/transport the sole frame law; zero sim runs here (topology (b): browser seats hold the local sims). NOT the production carrier: PHP/Workerman stays the out-of-repo posture.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --no-file-parallelism",
+    "dev": "node --experimental-transform-types src/cli.ts"
+  },
+  "dependencies": {
+    "relay-tools": "workspace:*",
+    "transport-tools": "workspace:*",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@hh/sim-core": "workspace:*",
+    "@types/node": "^26.6.4",
+    "@types/ws": "8.18.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
+  }
+}
