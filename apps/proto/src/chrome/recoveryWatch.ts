@@ -15,10 +15,11 @@
  * reading is labelled presentation-only: the ENGINE clamp stays authoritative.
  *
  * Voice law (noticeSurface pattern): every headline/line first asks the pack
- * (`alert.recovery-<kind>`, zero-slot) and falls back to the PROVISIONAL
- * table below. No such keys exist in the shipped packs today — the drift-pin
- * test proves the provisional genuinely answers, so when an author adds the
- * key the fallback retires itself without touching this file.
+ * (`alert.recovery-<kind>`, zero-slot) and falls back to the RATIFIED table
+ * below — voice copy RATIFIED 2026-10-17 (ADR-0016 copy-voice batch). No such
+ * keys exist in the shipped packs today — the drift-pin test proves the
+ * fallback genuinely answers, so when an author adds the key the fallback
+ * retires itself without touching this file.
  */
 import {
   acceptsFailback,
@@ -189,11 +190,13 @@ export function buildRecoveryRows(
   return Object.freeze(rows);
 }
 
-/* ─────────────────────────── provisional voices ───────────────────────── */
+/* ───────────────────────── ratified fallback voices ───────────────────────── */
 
-/** Fallback voice per kind — §9.9 sober, mechanism-accurate, owner-ratify
- *  batch. The pack line (`alert.recovery-<kind>`) wins wherever it resolves;
- *  no such key ships today, which the falsifiable pin proves. */
+/** Fallback voice per kind — §9.9 sober, mechanism-accurate.
+ *  Copy RATIFIED 2026-10-17 (ADR-0016 copy-voice batch) — formerly the
+ *  "owner-ratify batch" marker. The pack line (`alert.recovery-<kind>`) wins
+ *  wherever it resolves; no such key ships today, which the falsifiable pin
+ *  proves. */
 export const RECOVERY_WATCH_VOICES: Readonly<Record<string, { headline: string; line: string }>> =
   Object.freeze({
     episode: Object.freeze({
@@ -223,7 +226,7 @@ const UNRECOGNISED_VOICE = Object.freeze({
   line: "the engine emitted a kind this panel has no mirror for — surface it, do not narrate it",
 });
 
-/** Pack-first voice; provisional table behind it; unknown kind gets the
+/** Pack-first voice; ratified fallback table behind it; unknown kind gets the
  *  visible UNRECOGNISED row (fail-soft like StatusChip's UNVERIFIED, so an
  *  engine drift can never blank the HUD). */
 export function recoveryVoice(

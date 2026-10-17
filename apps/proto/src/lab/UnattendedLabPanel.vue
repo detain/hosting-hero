@@ -34,7 +34,7 @@ import {
   explainWeekend,
   explainWhatIf,
   guardRowFields,
-  provisionalNote,
+  ratifiedNote,
   runWeekend,
   runWeekendWhatIf,
   shortDigest,
@@ -207,7 +207,7 @@ defineExpose({ GUARD_KINDS, GUARD_METRICS, GUARD_COMPARATORS, BOARD_PRESETS });
   <div class="unattended-lab" data-test="lab-unattended">
     <header class="lab-head">
       <h2>Unattended Weekend — §9.2 bench</h2>
-      <p class="provisional" data-test="lab-provisional">{{ provisionalNote() }}</p>
+      <p class="lab-note" data-test="lab-ratified-note">{{ ratifiedNote() }}</p>
     </header>
 
     <div class="lab-cols">
@@ -434,7 +434,7 @@ defineExpose({ GUARD_KINDS, GUARD_METRICS, GUARD_COMPARATORS, BOARD_PRESETS });
   font-size: 17px;
   letter-spacing: 0.04em;
 }
-.provisional {
+.lab-note {
   margin: 0 0 10px;
   font-size: 11px;
   color: color-mix(in srgb, var(--hh-accent) 62%, transparent);

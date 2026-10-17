@@ -30,7 +30,7 @@ export {
   guardRowFields,
   guardRowsToRecords,
   parseOpexRows,
-  provisionalNote,
+  ratifiedNote,
   runWeekend,
   runWeekendWhatIf,
   shortDigest,

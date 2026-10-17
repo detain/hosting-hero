@@ -62,8 +62,8 @@ describe("i18n/noticeCopy · the fitted seams", () => {
 
   it("covenant-breached DECLINES until a company-label seam exists ({company} cannot be invented)", () => {
     // The key EXISTS (alert.covenant-breached {company}); what's missing is a
-    // company display name in the ticker's data path. The provisional voice in
-    // gates/g5/noticeSurface.ts keeps the row honest meanwhile.
+    // company display name in the ticker's data path. The ratified fallback
+    // voice in gates/g5/noticeSurface.ts keeps the row honest meanwhile.
     expect(noticeWireCopy("covenant-breached", "birdsong.page")).toBeNull();
   });
 

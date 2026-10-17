@@ -121,11 +121,14 @@ export interface GuardRowDraft {
   value: number;
 }
 
-const PROVISIONAL_NOTE =
+/* Identifier rename (ADR-0016 copy-voice batch nice-to-have): the old
+ * name carried the retired PROVISIONAL label; the string itself has read
+ * RATIFIED since @4c6f827. */
+const RATIFIED_NOTE =
   "RATIFIED defaults (owner-taste, guardrails.ts BUILTIN_CATASTROPHE_DEFS — ADR-0015 #1) — edit with intent.";
 
-export function provisionalNote(): string {
-  return PROVISIONAL_NOTE;
+export function ratifiedNote(): string {
+  return RATIFIED_NOTE;
 }
 
 /** Fresh editor state: the two money/life guards armed at builtin defaults,

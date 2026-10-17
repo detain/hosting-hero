@@ -117,9 +117,10 @@ export function extractDeathCause(notices: readonly EventNotice[]): CompanyDeath
   return null;
 }
 
-/* ───────────────────────── provisional voices (§9.9 sober) ───────────────────────── */
-/* PROVISIONAL copy rows — owner-ratify batch. The PACK line wins wherever it
- * resolves (noticeWireCopy, lane L4); these stand behind `??` and name the
+/* ────────────────────── ratified fallback voices (§9.9 sober) ────────────────────── */
+/* Copy rows RATIFIED 2026-10-17 (ADR-0016 copy-voice batch) — the former
+ * "owner-ratify batch" marker. The PACK line wins wherever it resolves
+ * (noticeWireCopy, lane L4); these stand behind `??` and name the
  * cause only through the closed mirror above. */
 
 /** Warning strip (death-imminent rung). */

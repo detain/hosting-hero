@@ -11,32 +11,33 @@
  *  - Pack prose (i18n/noticeCopy.ts) ALWAYS wins: `voiceEconomyNotice` is a
  *    fallback behind `noticeWireCopy(...) ?? …`, so shipping a pack key
  *    retires the line here without touching the ticker.
- *  - Every string here is marked PROVISIONAL-taste (like the bps deltas
- *    that produced the events); nothing in the packs corpus is implied.
+ *  - Copy is voice copy: RATIFIED 2026-10-17 (ADR-0016 copy-voice batch).
+ *    The dev-facing "PROVISIONAL:" marker is retired from
+ *    the displayed lines, and nothing in the packs corpus is implied.
  *  - `company::reputation` OBSERVATION voicing is NOT here — it rides the
  *    frame's `reputation` pane (projection.ts), the cell channel, not the
  *    notice channel.
  */
 
-export const PROVISIONAL_NOTICE_VOICES: Readonly<Record<string, string>> = Object.freeze({
+export const RATIFIED_FALLBACK_VOICES: Readonly<Record<string, string>> = Object.freeze({
   "contract-activated":
-    "PROVISIONAL: pending contract went LIVE — backlog drain starts billing now",
+    "pending contract went LIVE — backlog drain starts billing now",
   "covenant-breached":
-    "PROVISIONAL: a bank covenant broke — runway / evidence readouts latched; the bank may act",
+    "a bank covenant broke — runway / evidence readouts latched; the bank may act",
   "chargeback-posted":
-    "PROVISIONAL: a settled payment was reversed after the fact — fee charged, reputation docked",
+    "a settled payment was reversed after the fact — fee charged, reputation docked",
   /* OD-25(a): the pack keys (alert.death-imminent / alert.company-dissolved)
      ship ZERO-SLOT and win via `noticeWireCopy(...) ?? …` — these lines stay
      only as the hand-authored safety net for a pack-less host. */
   "death-imminent":
-    "PROVISIONAL: death watch armed — an empty register plus refused settlement has held for days; the next fold dissolves the company",
+    "death watch armed — an empty register plus refused settlement has held for days; the next fold dissolves the company",
   "company-dissolved":
-    "PROVISIONAL: the company is dissolved — the ledger stops at its last entry; no settle, no accrual, no new notice",
+    "the company is dissolved — the ledger stops at its last entry; no settle, no accrual, no new notice",
 });
 
 /** Voice a fresh economy notice kind, or null for every kind this seam does
  *  not own (chrome keeps its silence). The row's own detail column already
  *  carries the money/seconds payload — the voice adds only the human frame. */
 export function voiceEconomyNotice(kind: string): string | null {
-  return (PROVISIONAL_NOTICE_VOICES as Record<string, string | undefined>)[kind] ?? null;
+  return (RATIFIED_FALLBACK_VOICES as Record<string, string | undefined>)[kind] ?? null;
 }

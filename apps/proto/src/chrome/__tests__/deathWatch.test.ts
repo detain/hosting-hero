@@ -1,7 +1,7 @@
 /**
  * deathWatch (batch-E v0) — the wire-rider reader for the OD-25(a) ladder.
  * Parsing, monotone phase extraction, the cause mirror's drift pin against
- * the ENGINE source, and the sober §9.9 provisional voices.
+ * the ENGINE source, and the sober §9.9 ratified fallback voices.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -144,7 +144,7 @@ describe("cause mirror vs the ENGINE (drift pin)", () => {
   });
 });
 
-describe("provisional voices (§9.9 sober, §9.3 no comedy at loss)", () => {
+describe("ratified fallback voices (§9.9 sober, §9.3 no comedy at loss)", () => {
   it("every cause has an epilogue; keys are exactly the closed mirror", () => {
     expect(Object.keys(CAUSAL_EPILOGUE).sort()).toEqual([...COMPANY_DEATH_CAUSES].sort());
     for (const line of Object.values(CAUSAL_EPILOGUE)) {

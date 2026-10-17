@@ -11,7 +11,7 @@ import waveTableRaw from "../../../../../../packages/content/waves/g1-shared-web
 import { observedKey, asEntityId, type ObservedKey } from "@hh/sim-core/types";
 import { QUARTER_MINUTES, runQuarter, type QuarterResult } from "../quarter.ts";
 import { projectFrame } from "../projection.ts";
-import { PROVISIONAL_NOTICE_VOICES, voiceEconomyNotice } from "../noticeSurface.ts";
+import { RATIFIED_FALLBACK_VOICES, voiceEconomyNotice } from "../noticeSurface.ts";
 
 const SEED = 55105n;
 const REPUTATION_KEY: ObservedKey = observedKey(asEntityId("company"), "reputation");
@@ -112,7 +112,7 @@ describe("g5 frame · reputation pane", () => {
   });
 });
 
-describe("g5 ticker · provisional notice voices", () => {
+describe("g5 ticker · ratified fallback notice voices", () => {
   /* The three fix-economy kinds + the OD-25(a) canonical-death pair (lane
      L4). The death lines are FALLBACKS: their pack keys ship zero-slot and
      win the `noticeWireCopy(...) ?? …` race — the census here pins that the
@@ -125,12 +125,15 @@ describe("g5 ticker · provisional notice voices", () => {
     "company-dissolved",
   ] as const;
 
-  it("voices exactly the five fresh economy kinds, PROVISIONAL-marked", () => {
-    expect(Object.keys(PROVISIONAL_NOTICE_VOICES).sort()).toEqual([...NEW_KINDS].sort());
+  it("voices exactly the five fresh economy kinds — ratified, marker-free", () => {
+    expect(Object.keys(RATIFIED_FALLBACK_VOICES).sort()).toEqual([...NEW_KINDS].sort());
     for (const kind of NEW_KINDS) {
       const line = voiceEconomyNotice(kind);
       expect(line).toBeTypeOf("string");
-      expect(line).toContain("PROVISIONAL");
+      // RATIFIED 2026-10-17 (ADR-0016 copy-voice batch): the dev-facing
+      // "PROVISIONAL:" marker is retired from the displayed lines — a line
+      // re-spawning it is unratified copy and reddens here.
+      expect(line).not.toContain("PROVISIONAL");
     }
   });
 
