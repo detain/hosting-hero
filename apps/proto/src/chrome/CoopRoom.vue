@@ -19,6 +19,20 @@
  * the socket and the pump start ONLY on user click (connect / pump), never
  * on mount, and every wire view is a recomputation of the controller's
  * current state (wireTick invalidation, not a poller).
+ *
+ * FOG RIDER COLUMN (lane L-THIN, ADR-0017 #7 owe): the wire mode shows THIS
+ * seat's hub-chosen projection as its own column — built by the pure
+ * coopSeatView law from the seat-state `view` rider only. It never reads
+ * state/observedStore.ts: "seats get PROJECTIONS, never the store" is made
+ * visible as a literal second column beside the local-sim digest. A hub that
+ * sends no rider gets the honest no-rider sentence, never fabricated cells;
+ * out-of-scope keys render NOTHING (absence including existence — no
+ * hidden-count anywhere on this surface). Labels are visible-raw (i18n pack
+ * voices are a content-lane follow-on, disclosed). Status tints ride the
+ * existing ledger vars (green/gold/grey — the ClockRibbon tone precedent);
+ * zero new timers, the mount pin rides coopSeatView.mount.test.ts. The
+ * `wireSocketFactory` prop is a TEST SEAM mirroring the controller's own
+ * socketFactory option — default behavior (real WebSocket) is unchanged.
  */
 import { computed, onBeforeUnmount, ref } from "vue";
 import type { CoopTimelineKind } from "@hh/sim-core/replay";
@@ -43,6 +57,13 @@ import {
 } from "./coopRoom";
 import { createCoopRoomWire } from "./coopRoomWire";
 import type { CoopRoomWire } from "./coopRoomWire";
+import { SEAT_VIEW_NO_RIDER_NOTE, seatViewState } from "./coopSeatView";
+import type { WsSocketFactory } from "../transport/wsClientPort";
+
+/** TEST SEAM ONLY (lane L-THIN): scripted socket for the wire-mode mount,
+ *  mirroring createCoopRoomWire's own socketFactory option. Absent (the
+ *  production mount) ⇒ the real browser WebSocket, byte-unchanged. */
+const props = defineProps<{ readonly wireSocketFactory?: WsSocketFactory }>();
 
 const TAPE_LIMIT = 10;
 
@@ -175,7 +196,13 @@ function onWire(run: () => void): void {
 
 function onConnect(): void {
   onWire(() => {
-    wire.value = createCoopRoomWire({ url: wireUrl.value.trim(), seat: wireSeatId.value.trim() });
+    wire.value = createCoopRoomWire({
+      url: wireUrl.value.trim(),
+      seat: wireSeatId.value.trim(),
+      // exactOptionalPropertyTypes: the key rides only when a factory exists —
+      // the production mount keeps the real-WebSocket default untouched.
+      ...(props.wireSocketFactory === undefined ? {} : { socketFactory: props.wireSocketFactory }),
+    });
   });
 }
 
@@ -262,6 +289,18 @@ const wireFaults = computed(() => {
 const wireOpen = computed(() => {
   void wireTick.value;
   return wire.value?.connected() ?? false;
+});
+/** The seat's fog rider as visible rows (pure coopSeatView law over the
+ *  controller read-through). NOT cell()/fixedDisplay() from
+ *  state/observedStore.ts — that is the LOCAL-sim door; the rider column
+ *  must answer only to what the hub chose to show this seat. */
+const wireView = computed(() => {
+  void wireTick.value;
+  return seatViewState(wire.value?.wireView() ?? null);
+});
+const wireViewSeenAt = computed(() => {
+  void wireTick.value;
+  return wire.value?.wireViewSeenAt() ?? null;
 });
 </script>
 
@@ -401,7 +440,7 @@ const wireOpen = computed(() => {
         <button type="button" data-test="coop-wire-talk" :disabled="!wireOpen" @click="onTalk">communicate</button>
       </div>
 
-      <div class="columns">
+      <div class="columns columns--wire">
         <section class="col">
           <h5>wire tape — newest first</h5>
           <ul v-if="wireTape.length > 0" class="tape">
@@ -427,6 +466,26 @@ const wireOpen = computed(() => {
           </ul>
           <p v-else class="empty" data-test="coop-wire-ledger-empty">ledger dark — no seat-state has arrived.</p>
           <p class="digest" data-test="coop-wire-digest">local digest <code>{{ wireDigest ?? "—" }}</code></p>
+        </section>
+
+        <!-- FOG RIDER (lane L-THIN): this seat's hub-chosen projection, second
+             door beside the local-sim digest — PROJECTIONS, never the store. -->
+        <section class="col" data-test="coop-wire-view" :data-present="String(wireView.present)">
+          <h5>your fogged view (hub-authoritative)</h5>
+          <p v-if="!wireView.present" class="empty" data-test="coop-wire-view-note">{{ SEAT_VIEW_NO_RIDER_NOTE }}</p>
+          <p v-else-if="wireView.rows.length === 0" class="empty" data-test="coop-wire-view-note">rider present — the hub shows this seat nothing in scope</p>
+          <template v-else>
+            <p class="tick" data-test="coop-wire-view-note">{{ wireView.rows.length }} cells the hub shows this seat · delivered t{{ wireViewSeenAt ?? "—" }}</p>
+            <ul class="tape">
+              <li v-for="row in wireView.rows" :key="row.key" class="tape-row view-row" data-test="coop-wire-view-row" :data-key="row.key" :data-status="row.status">
+                <span class="who">{{ row.key }}</span>
+                <span class="kind">{{ row.encoding }}</span>
+                <span class="what">{{ row.value ?? "?" }}</span>
+                <span class="ts">fresh {{ row.freshnessUs }}µs</span>
+                <span class="ts">cert {{ row.certainty }}</span>
+              </li>
+            </ul>
+          </template>
         </section>
       </div>
     </template>
@@ -491,10 +550,19 @@ const wireOpen = computed(() => {
   cursor: pointer;
 }
 .columns { display: grid; grid-template-columns: 3fr 2fr; gap: 8px; }
+.columns--wire { grid-template-columns: 3fr 2fr 2fr; }
 .tape-row { display: flex; gap: 8px; font-variant-numeric: tabular-nums; }
 .tape-row .ts { color: var(--hh-hue-grey); }
 .tape-row .kind { color: var(--hh-hue-grey); }
 .tape-row .ghost { color: var(--hh-hue-alarm); letter-spacing: .12em; }
+/* FOG RIDER status tints (lane L-THIN): the three fog statuses reuse three
+   ledger hues whose TEXT pairings are already contrast-audited (the
+   ClockRibbon tone trio + StatusChip's faded grey) — live=green served-ok,
+   stale=gold warn, unknown=grey neutral-aggregate. No new hex, no new var,
+   no new census row. */
+.view-row[data-status="live"] .what { color: var(--hh-hue-green); }
+.view-row[data-status="stale"] .what { color: var(--hh-hue-gold); }
+.view-row[data-status="unknown"] .what { color: var(--hh-hue-grey); }
 .digest { margin: 0 0 4px; }
 .digest code { color: var(--hh-accent); word-break: break-all; }
 .verdict { margin: 0; color: var(--hh-hue-green); }

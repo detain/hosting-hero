@@ -43,11 +43,16 @@
  * v0 honest gaps (disclosed, not patched): re-connecting the SAME seat id on
  * a dead socket without a prior leave() hits the hub's double-open-row
  * refusal as a fault frame (the dev carrier prunes routes, not tenures);
- * no auth, localhost carrier only; the per-seat fog view (client.observed())
- * is not surfaced by the dev carrier's projectionSource yet.
+ * no auth, localhost carrier only. The per-seat fog rider (lane L-THIN,
+ * ADR-0017 #7 owe) IS now surfaced — read-only through wireView()/
+ * wireViewSeenAt() into CoopRoom's own column; a carrier without a wired
+ * projectionSource (the plain relay carrier; the host-sim `--sim` one HAS
+ * it) sends no rider and the seat sees the honest no-rider state, never a
+ * fabricated view.
  */
 import { createTransportClient } from "transport-tools";
-import type { SeatLedgerWire, TransportClient } from "transport-tools";
+import type { SeatLedgerWire, SeatViewWire, TransportClient } from "transport-tools";
+import type { ScopedReadView } from "@hh/sim-core/observed";
 import { RELAY_ACTION_BUILDERS, createSpikeRunner } from "relay-tools";
 import type { SpikeRunner } from "relay-tools";
 import type { CoopTimelineRecord } from "@hh/sim-core/replay";
@@ -113,6 +118,22 @@ export interface CoopRoomWire {
   /** Hub tick as witnessed by the newest shared-log stamp (null while the
    *  room has stamped nothing). */
   hubTick(): SimTick | null;
+  /** Read-through of the seat's FOG RIDER: the decoded ScopedReadView the hub
+   *  last sent to THIS seat (client.observed() — the fog.ts decode of the
+   *  seat-state `view` rider), null when no rider has arrived. DISPLAY-SIDE
+   *  ONLY: nothing in this file feeds it to the runner or game state, and it
+   *  deliberately never touches state/observedStore.ts — the store is the SP
+   *  read door, this is the wire read door, and the two columns stay
+   *  separate on purpose (coopSeatView.ts header law). */
+  wireView(): ScopedReadView | null;
+  /** Local sim tick of the pump on which the CURRENT rider was delivered
+   *  (null until a rider has been drained). Truth 7 applies: bytes sitting
+   *  in the inbound queue have NOT been seen — the clock only stamps on the
+   *  pump's drain. Honest clock note: the frame's carrier sentAtTick is not
+   *  carried through the transport client's API (a tools/transport field
+   *  this lane does not own), so the LOCAL delivery pump is what the column
+   *  witnesses — disclosed deviation from the lane brief's wording. */
+  wireViewSeenAt(): SimTick | null;
   faultsText(): readonly string[];
   dispose(): void;
 }
@@ -147,6 +168,14 @@ export function createCoopRoomWire(options: CoopRoomWireOptions): CoopRoomWire {
   const client: TransportClient = createTransportClient(port, options.seat);
   const runner: SpikeRunner = createSpikeRunner({ runSeed: seed });
 
+  /** Rider-delivery witness (display-side): the LAST raw rider object the
+   *  client applied, by identity. decodeScopedView hands a fresh wire object
+   *  per seat-state frame, so identity change == a fresh rider was SENT to
+   *  this seat and drained here (truth 7 — queued bytes are not seen until
+   *  the pump's drain). */
+  let lastRider: SeatViewWire | null | undefined = undefined;
+  let viewSeenAtTick: SimTick | null = null;
+
   client.join(); // first frame out binds the socket route (truth 5)
   client.runCatchUp(); // joiner history arrives as paged catch-up (re-join story is ONE frame type)
 
@@ -178,7 +207,10 @@ export function createCoopRoomWire(options: CoopRoomWireOptions): CoopRoomWire {
     pump(ticks = 1): number {
       if (!Number.isSafeInteger(ticks) || ticks < 1) return 0; // early exit: zero and nonsense advance nothing (not even a drain)
       client.drain();
+      const rider = client.view(); // raw wire identity BEFORE the sim steps — this pump applied whatever arrived
       runner.runTicks(client.feedToDoor(), ticks); // the relay-runner door-feed shape verbatim (no re-stamping)
+      if (rider !== null && rider !== lastRider) viewSeenAtTick = runner.tick();
+      lastRider = rider;
       return ticks;
     },
 
@@ -240,6 +272,8 @@ export function createCoopRoomWire(options: CoopRoomWireOptions): CoopRoomWire {
       const stamp = client.hubLastStamp();
       return stamp === null ? null : BigInt(stamp.tick);
     },
+    wireView: (): ScopedReadView | null => client.observed(),
+    wireViewSeenAt: () => viewSeenAtTick,
     faultsText: () => Object.freeze(client.faults().map((fault) => `${fault.against}: ${fault.cause}`)),
     dispose(): void {
       port.close();
