@@ -152,6 +152,16 @@ export const INVARIANT_VERBS = [
  *  is NOT edited here. The card's named successors throttle/restart stay OFF
  *  the roster: ADR-0014 #D2's one-verb-per-mechanic law stands.
  *
+ *  ADR-0017 #1 (owner ruling, 2026-10-17 — the fifth roster amendment) joins
+ *  an EIGHTH extended verb: Reclaim, grounded VERBATIM in the §1.4 CI/build-
+ *  farm card's line "Verb: isolate, expire, reclaim." (hosting_game.md :2686
+ *  region, text-located) — the isolate line's third word, blessed to found
+ *  type-14 `official:ci-build-farm`, the collection-action sibling of
+ *  isolate's fence. The invariant six remain UNTOUCHED. The card's named
+ *  successor `expire` stays OFF-roster — the engine's read-time expiry law
+ *  already implements lapse without a door verb — and `throttle`/`restart`
+ *  remain door-side-but-off-roster (ADR-0016 #5).
+ *
  *  Honest gap (reports/audit/group-16.md g16 finding): none of these verbs
  *  exists in the closed eight-verb PLAYER_VERBS door enum and no verb-
  *  acquisition mechanic ships. A tier-extension dominant verb is therefore a
@@ -167,6 +177,7 @@ export const TIER_EXTENDED_VERBS = [
   "negotiate",
   "schedule",
   "isolate",
+  "reclaim",
 ] as const;
 
 /** Canon-leg truth: the dominant verb is groundable in a ratified set — the

@@ -164,7 +164,7 @@ describe("VERB_SHIFT — dominant verb differs, else MERGE verdict", () => {
     expect(codesOf(report)).toEqual([]);
   });
 
-  test("ADR-0014 #D1 + session-6 ruling: the roster is seven tier-extension verbs, in order", () => {
+  test("ADR-0014 #D1 + session-6 ruling + ADR-0017 #1: the roster is eight tier-extension verbs, in order", () => {
     expect(TIER_EXTENDED_VERBS).toEqual([
       "scale",
       "shield",
@@ -173,6 +173,7 @@ describe("VERB_SHIFT — dominant verb differs, else MERGE verdict", () => {
       "negotiate",
       "schedule",
       "isolate",
+      "reclaim",
     ]);
   });
 
@@ -221,6 +222,28 @@ describe("VERB_SHIFT — dominant verb differs, else MERGE verdict", () => {
     expect(codesOf(report)).toEqual([]);
   });
 
+  test("ADR-0017 #1: reclaim grounds the canon leg", () => {
+    // The eighth extended verb, founded verbatim on the §1.4 CI/build-farm
+    // card ("Verb: isolate, expire, reclaim." — the line's third word),
+    // blessed to carry type-14 official:ci-build-farm. It joins neither the
+    // invariant six nor a repeat of isolate's claim — content identity law,
+    // and the pairwise MERGE law stays untouched (beta's verb still differs
+    // from alpha's).
+    expect(INVARIANT_VERBS as readonly string[]).not.toContain("reclaim");
+    expect(isGroundableDominantVerb("reclaim")).toBe(true);
+    const report = lintRulesetCorpus(
+      miniCorpus({
+        bundles: [
+          ALPHA(),
+          mutatedBundle("minimal-beta.json", (raw) => {
+            (raw.verbs as Record<string, unknown>)["dominant"] = "Reclaim";
+          }),
+        ],
+      }),
+    );
+    expect(codesOf(report)).toEqual([]);
+  });
+
   test("ADR-0014 #D1: an off-list verb stays convicted (the amendment is closed, not open)", () => {
     expect(isGroundableDominantVerb("fly")).toBe(false);
     expect(isGroundableDominantVerb("negotiates")).toBe(false);
@@ -229,6 +252,14 @@ describe("VERB_SHIFT — dominant verb differs, else MERGE verdict", () => {
     // ruling added Isolate alone; one verb per mechanic (ADR-0014 #D2 law).
     expect(isGroundableDominantVerb("throttle")).toBe(false);
     expect(isGroundableDominantVerb("restart")).toBe(false);
+    // ADR-0017 #1 blesses Reclaim alone: the gerund of the new member is
+    // convicted like every other, and the §1.4 card's named successor
+    // "expire" stays off-roster — the engine's read-time expiry law already
+    // implements lapse without a door verb (the falsifier that the named-
+    // successor law still bites after an amendment).
+    expect(isGroundableDominantVerb("reclaims")).toBe(false);
+    expect(isGroundableDominantVerb("expire")).toBe(false);
+    expect(isGroundableDominantVerb("expires")).toBe(false);
     const report = lintRulesetCorpus(
       miniCorpus({
         bundles: [
