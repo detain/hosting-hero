@@ -40,12 +40,14 @@ import type {
   PlayerIntent,
   PolicyCard,
   PlayerVerbArgs,
+  RuleFiring,
   RuleId,
   RunSeed,
   SimTick,
 } from "../index.ts";
 import {
   asEntityId,
+  asMoney,
   asRuleId,
   asRunSeed,
   createRulePhaseStep,
@@ -118,7 +120,7 @@ function card(
       Object.freeze({ id: actionId, runbookName: null, value }),
     ]) as PolicyCard["then"],
     band: "execute" as const,
-    upkeepMicroUsd: 0n,
+    upkeepMicroUsd: asMoney(0n),
   });
 }
 
@@ -528,7 +530,7 @@ describe("GATE-7 · determinism", () => {
   });
 
   it("a different seed re-rolls the traffic dice: the per-tick digest trail diverges", () => {
-    const other = simulate({ doorConfig: MAPPED, seed: 708n });
+    const other = simulate({ doorConfig: MAPPED, seed: asRunSeed(708n) });
     expect(other.digests).not.toEqual(run.digests);
   });
 });
