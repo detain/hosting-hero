@@ -1,0 +1,377 @@
+{
+  "_todo": "All human strings are keys into file:packs/observability.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. THIRTEENTH CARD of the OD-14(a) 20-launch canon: the §1.3 monitoring card 'Who Watches' / 'Cardinality' (:2622) — the first line founded on an INVARIANT verb, and the first founded through a blessing rather than a naming: ADR-0014 #D1(i) permits Diagnose to be blessed onto a card whose §1.3 prose implies it, and the owner's authoring-time confirmation (2026-10-17) is the bless; the card never spells the word — the prose that implies it rides verbs._todo, quoted verbatim, with the §4.6 sentence 'Diagnosis is the actual gameplay' (:27179) as the second leg. FIRST shipped type with NO §0.3 scarcity row: the table carries no monitoring/observability line (verified at authoring — its rows run shared-web through satellite ground), and rows are never forged; the card's own four-axis sentences (:2625-2628 verbatim unit/scarce/fatal/customer) stand in for the table and this absence is reported to closeout as a fresh owner ask, not papered over. Hooks 5 of 9 vs the anchor: R15 (meter triplet — the Cardinality Gauge fan), R16 (layer-tier-pricing — §6.6's five-priced monitoring upkeep ladder), R17 (three dials), R22 (mechanics book), R23 (shed ladder — THE honest deviation: this card sheds DATA, not requests; mechanics-level only, engine gap recorded); RIDES R18 ms / R19 / R20 nulls / R21 false-false (the anti-keyhole, authored on purpose — 'the only line where the HUD and the world are the same thing', :2651). Threats reuse 8 of the 16 registry ids with this line's framing in _todo cites — zero registry additions; two lookalike seeds re-worn (scanner-drizzle→crawler as wave-1's recon weather, layer7-mimic→power-shopper as the dropped series that keeps answering), still no sixth seed.",
+  "schemaVersion": "3.0",
+  "id": "official:observability",
+  "meta": {
+    "name": "type.observability.name",
+    "codexSummary": "type.observability.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+  "visitor": {
+    "nullable": true,
+    "unitTerm": "visitor.unit.metric-series",
+    "durationClass": "Resident",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "RATIFIED-B",
+      "_todo": "The §3 entry is qualitative by construction and the first stat ledger the doc writes WITHOUT numbers: 'Not a request — a stream that never ends. Its cost is its cardinality rather than its volume' (:12693-12694). Patience has no scalar because the resident never gets impatient — the arrival is permanent (:12691 heading verbatim 'The only visitor whose arrival is permanent'); value/weight/loyalty/fragility stay null pending the unit-owner pass — the one quantified figure the region offers (4,000 to 40,000,000 series in one deploy, :2631) is a BOMB ratio, not a per-visitor stat, and lands in threats as the cardinality-bomb mechanic instead."
+    },
+    "patienceModel": {
+      "mode": "resident",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": null,
+        "tuningSheet": "RATIFIED-B",
+        "_todo": "mode 'resident' — second corpus use (exchange-colo first, voip's 'binary' first-use precedent): the pipeline vocabulary carries it (src/pipeline/defaults.ts PATIENCE_MODE_VOCAB; 'resident — the sticky session (§App A durationClass Resident)'). Here the permanence is the CARD's word verbatim, not a lease term wearing the class: the metric series 'arrives' once and its arrival IS the load forever (:12691, :12693). budgetMs/bounceSigmoid null because the resident mode defines neither — the series does not wait in a queue, it holds the queue open; the failure shape this line authors is not patience exhaustion but SILENT DROPPING (the limiter losing data :2633-2634), which is a shed-order story, told in scarce.shedOrder, not a patience curve."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null,
+      "_todo": "allOrNothing FALSE — one series is one series; there is no delegation and no chain. size null by the family law: the party slots answer 'what travels together', and what travels together on this line is the tenant's AGENT FLEET (every machine clipped with an antenna, :16771) — but that cohort is modeled where the doc places it, in the reconnect storm (:2650), as an envelope event and the empty-server-spiral threat, not as per-arrival party size."
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null,
+      "_todo": "herding FALSE — the honest near-miss of the corpus, recorded rather than forced. 'everyone's agent reconnects at once' (:2650) reads like herding and ISN'T: herding is visitor-side coupling of independent arrivals, and the reconnect storm is SYSTEMIC coupling after OUR blip — it is spawned by our own failure and belongs to the threat book (empty-server-spiral carries it in wave 5) and the tempo note on permanentIncidentClock, both cited there. The doc's own framing is anti-correlated demand (:2637-2638): the herd is the internet, not the visitors."
+    },
+    "populationEffect": false,
+    "retryAmplifies": true,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3,
+      "_todo": "fromCustomerCard TRUE — one ops team signs up and every machine in their fleet starts a stream: the Observability Agent 'is a tiny antenna module clipped onto each machine' (:16771 verbatim), so the cohort is the fleet and the customer card is the clip. tier 3 rides the family shape (the cohort inherits the customer's tier economics); the doc authors no tier ladder for agents, so no other number is claimed."
+    },
+    "costPerInvocation": "per-series-month",
+    "trustReadable": true,
+    "archetypeRefs": [],
+    "_todo": "The visitor is the §3 entry itself, heading verbatim: 'Observability host — a metric series … The only visitor whose arrival is permanent' (:12690-12691). durationClass Resident is that sentence made machine — the first non-lease Resident (exchange-colo's was a cabinet lease; this one is physics). trustReadable TRUE is the card's visual law inverted onto the visitor: 'the only line where the HUD and the world are the same thing' (:2651) and §4.6 'Monitoring literally lights up your world' (:16775) — on this floor legibility is the PRODUCT, every series shows its own face, and the horror is not unreadable state but ABSENT state (a dropped series answers from retention looking complete, :2634). archetypeRefs [] per the census: this visitor is the stream itself; the 9-archetype registry carries no metric-series entry and adding one is the registry-owner pass, not this lane (the sibling census line in README inventory records the same law)."
+  },
+  "goal": {
+    "nodeType": "series-ingest-floor",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "series-completeness-and-alert-delivery",
+      "threshold": null,
+      "_todo": "The held metric fuses the card's two contracts: the data promise — the customer is 'paying you to keep' the series (:2634) — and the duty that outranks it — 'a dropped alert is worse than a dropped metric' (:2640 verbatim). Naming both is the win line; §4.6 gives the instrument the corpus loves but never a number: 'The wall's fullness is your observability score' (:16770) names the gauge, not the threshold. threshold null: no § of the doc prices an SLA for this line (no §6.6 revenue row either, recorded in top _todo); the tuning pass owns the number and the fifth-axis score below is the named-not-numbered home for it."
+    },
+    "loseCondition": {
+      "kind": "blind-flatline"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.observability.binding"
+  },
+  "scarce": {
+    "resourceId": "write-throughput-and-series-cardinality",
+    "meterWidget": "cardinality-gauge-fan",
+    "meterBoundStat": "series-cardinality",
+    "commercialSlider": "layer-tier-pricing",
+    "operationalDials": [
+      "resolution-vs-retention-dial",
+      "alert-path-priority",
+      "sampling-rate"
+    ],
+    "windowGrows": false,
+    "shedOrder": "cardinality-drop-ladder",
+    "qosAnswer": "scarce.observability.qos",
+    "_todo": "resourceId is the §0.3 column the table never got, taken whole from the card instead: 'Scarce = write throughput and series cardinality — the number of unique metric streams, not the volume of data' (:2625-2626 verbatim). meterWidget/meterFace: 'Signature meter: the Cardinality Gauge, drawn as a fan of threads that visibly splays' (:2652 verbatim) — the only meter in the corpus whose animation IS the incident. commercialSlider 'layer-tier-pricing' from the §6.6 upkeep row the line DOES have: '| Monitoring (per layer) | — | $80 / $150 / $400 / $700 / $1,100 |' (:25537, Monthly-upkeep column) — five priced layers, the ladder sold as the dial; the Sheet-B stack row 'Monitoring stack (tier 2) | $1,200 | $240' (:25573) proves the same ladder at build cost. Dials: resolution-vs-retention from 'you can keep a year at 5 minutes or a week at one second, not both' (§4.6 Telemetry Resolution :27168-27169 verbatim); alert-path-priority from 'your architecture must prioritise the alert path over the data path — a visible, buildable split' (:2640-2641 verbatim); sampling-rate from 'A cheaper, blinder upgrade that is realistic and tempting: sampling' (§4.6 :16765 verbatim). windowGrows FALSE — no path-window growth is authored for this line (R19 rides the anchor and game-servers' authored false). shedOrder is THE honest deviation of this card, recorded at length in mechanics._todo: the doc's counter to scarcity is a limiter that 'drops the customer's excess series — silently losing the data they are paying you to keep' (:2633-2634), so the first shed ladder in the corpus drops DATA while the engine's shed machinery (pipeline shedOrder) sheds REQUESTS; the name ships as authored intent, mechanics-level only, and the data-drop seam is a fresh engine ask for closeout."
+  },
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly",
+      "escalator": false,
+      "grandfathering": false,
+      "_todo": "default 'monthly' rides the §6.6 table's own column the line appears in (the per-layer upkeep row :25537 IS a Monthly-upkeep figure) — the money clock of this line is the monthly bill, and the card says so twice: 'a promise you make at signup and a bill you pay forever' (:2647-2648). The HONEST TENSION this lane records rather than resolves: the line's two clocks are genuinely different — the stream stamps events at millisecond scale while the ledger accrues retention promises measured in THIRTEEN MONTHS (:2647) and resolution tiers spanning 5-minute averages to per-packet (:27157). ms rides as the tick clock (the anchor's own; §7.8e's granularity prose names no observability row so no scale claim is invented — the type-12 ms-ride precedent); the months ride as contract law (this block) exactly as colo ran its lease-years at ms ticks (R18 ride, the type-10 precedent). escalator/grandfathering FALSE: no §6.12 instrument is authored for this family; the 13-month promise IS a grandfathering-shaped fact in the prose (the bill outlives every plan change) and is recorded here instead of forged into a machine flag the engine has no sheet for."
+    },
+    "seasonality": [],
+    "diurnalBaseline": "never-zero-ingest",
+    "_todo": "seasonality [] — the doc authors no calendar law for this line; what it DOES author is worse and better: 'Your load spikes exactly when the internet has a bad day, so your capacity planning is anti-correlated with your own reliability' (:2637-2638 verbatim). That is weather, not season — a probability cloud keyed to OTHER people's incidents — and the wave envelopes carry it (the flatline-finale wave is the bad-day arrival); no season curve is invented for it. diurnalBaseline 'never-zero-ingest' is the resident visitor's shadow: a stream that never ends does not sleep, so the baseline floor sits above zero by definition — the §4.6 fog law 'uninstrumented means no data, not zero' (:16763) is the UI-side twin of the same physics and is cited again under control."
+  },
+  "threats": {
+    "familyWeights": {
+      "customerAsThreat": 0.35,
+      "systemic": 0.3,
+      "human": 0.15,
+      "malicious": 0.1,
+      "entropic": 0.1,
+      "_todo": "Sum 1e6 micro-exact (350000+300000+150000+100000+100000), the families.test law. customerAsThreat .35 — the card's first sentence is the whole weight in one line: 'You are the thing that tells everyone else they're down. Their carelessness is your capacity plan' (:2623 verbatim, double-cited as the §1.9 Portable-Skill row 'Your customer's carelessness is your capacity plan' :5059); the bomb is the signature proof: a tenant's UUID label turns 4,000 streams into 40,000,000 'in one deploy, at 3am, without warning' (:2630-2631), 'instantaneous, customer-triggered, and invisible until it lands' (:2632). The .35 matches colo's customer-led ceiling (the two lines where the buyer breaks the machine on purpose-free autopilot). systemic .30 — the line's meta-threats are ALL system-shaped: 'The Monitoring Server Dies / Everything is green, forever' (§2.9 :8264-8265) and 'you lose the ability to know about failures' (:8271-8273) name the dependency of knowledge itself, and correlated demand (:2637-2638) is a systemic input; the §5.6 branch spine places the whole line in the Sense branch 'Observability + Automation = Auto-Remediation' (:20686) — interlocked by design. human .15 — the query that scans a year (:2650) and the 400GB/day debug shipper (:2649) are hand-written sins without malice; the customers are 'every other ops team' (:2627) — professionals, which is why the number is not larger. malicious .10 — the floor, honestly authored: the card names NO attacker at all (:2649-2650 threat list is retention spirals and fat plans); grudge-booter wears the bad-day flood here, and the costume is recorded on the id cite. entropic .10 — 'the retention-cost spiral; a bill you pay forever' (:2647-2649) plus the log line that is itself a log line (:2645) — this line's entropy accrues rather than decays."
+    },
+    "activeFamilies": [
+      "customerAsThreat",
+      "systemic",
+      "human",
+      "malicious",
+      "entropic"
+    ],
+    "signatureThreats": [
+      {
+        "id": "noisy-query-table-scan",
+        "mechanical": true
+      },
+      {
+        "id": "hoarder-noisy-neighbor",
+        "mechanical": true
+      },
+      {
+        "id": "ticket-avalanche-hydra",
+        "mechanical": true
+      },
+      {
+        "id": "mod-update-day",
+        "mechanical": true
+      },
+      {
+        "id": "scanner-drizzle",
+        "mechanical": true
+      },
+      {
+        "id": "layer7-mimic",
+        "mechanical": true
+      },
+      {
+        "id": "empty-server-spiral",
+        "mechanical": true
+      },
+      {
+        "id": "grudge-booter",
+        "mechanical": true
+      }
+    ],
+    "unlockedByBuildables": {
+      "cardinality-limiter": [
+        "hoarder-noisy-neighbor"
+      ],
+      "per-tenant-ingest-quota": [
+        "noisy-query-table-scan"
+      ],
+      "dumb-canary": [
+        "empty-server-spiral"
+      ]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "concurrency",
+      "cash",
+      "hands",
+      "reputation",
+      "data-integrity"
+    ],
+    "waveTable": "file:waves/g1-observability-first-quarter.json",
+    "_todo": "8 ids re-worn from the 16-entry registry — zero additions (family law). The re-framing, cited per id: noisy-query-table-scan is the card's OWN threat sentence with a home — 'the query that scans a year' (:2650 verbatim) — the Debuffer aimed at the query side of the store, holding the compaction pool while a dashboard owner asks for last spring; hoarder-noisy-neighbor re-reads the parasite from inodes to STREAMS: the noisy neighbour who hoards cardinality is literally 'one tenant's missing index' updated to 'one tenant's UUID label' — 'The modern one tenant's missing index — instantaneous, customer-triggered, and invisible until it lands' (:2632 verbatim); ticket-avalanche-hydra is this line's home crowd — the customer IS 'every other ops team' (:2627), the most demanding desk in the corpus ('the most demanding and most technical buyers alive' :2628), and every flatline hydrates tickets faster than status updates close them; mod-update-day wears the agents — an upstream update to the fleet's probe rewrites label conventions and every tenant's cardinality changes without anyone deploying (the dependency you don't own, type-12 precedent); scanner-drizzle is wave-1's recon weather and carries lookalike seed crawler (the probe enumerating which endpoints are shy before the 40-million-label drop); layer7-mimic is the SECOND lookalike seed (power-shopper) re-worn as the series-drop mask — a dropped series keeps answering from retention, 'serving stale data with a straight face' (the §4.3 lineage the type-12 cite carries): 'silently losing the data they are paying you to keep' (:2634) is the Mimic aimed at DATA PATHS, which is this line's whole friction ('a perfect Friction tower' :2634 verbatim); empty-server-spiral re-rolls as the reconnect herd — 'the everyone's agent reconnects at once storm after your own blip' (:2650 verbatim), the Spawner at the ingest door, our own failure spawning the flood (systemic .30's machine); grudge-booter is the COSTUME OF THE BAD DAY: 'Your load spikes exactly when the internet has a bad day' (:2637) — the doc names no attacker for this line (recorded in familyWeights) so the booter's advance motion carries correlated demand as weather-front flooding, malicious .10 wearing the internet's own outages. Honest gaps recorded, not hidden: the FLATLINE (every graph zero at once, :2653) has no registry id — it is catastrophe, not threat, and lives in goal.loseCondition + skin.catastropheFx + the wave-5 envelope per the type-12 melt precedent; the LOG LOOP ('a customer ships your own error logs back to you in a loop' :2645-2646) has no self-amplifying feedback id either — it is authored as mechanics (log-loop-feedback) and flagged as a registry proposal for the owning pass; triage-window re-worn as the wave-5 dial per the every-type seam (the desk IS the level). unlockedByBuildables: the limiter counters the hoarder (:2633 verbatim counter sentence), the ingest quota rails counter the year-scan and the 400GB shipper (:2635 'per-tenant ingest quotas'), the dumb canary sees the reconnect storm your own monitoring can't (:2643-2644, §2.9 :8268 counter family)."
+  },
+  "skin": {
+    "palette": {
+      "dominant": "phosphor green",
+      "accent": "pager red",
+      "chord": [
+        "graph paper blue",
+        "thread gold",
+        "flatline grey",
+        "pager red",
+        "canary amber"
+      ]
+    },
+    "materialPreset": "preset:glass-phosphor-and-thread",
+    "visitorCostume": {
+      "hull": "pulse-thread-coil",
+      "propSlot": "uuid-label-tag"
+    },
+    "heroSilhouette": "asset:hero.monitoring-wall",
+    "heroObject": "the-noc-wall",
+    "meterFace": "cardinality-gauge-fan",
+    "catastropheFx": "fx:flatline-sweep",
+    "ambientSoundPack": "sound:fan-hum-and-desk-tension",
+    "densityMultiplier": null,
+    "arrivalRhythm": "never-zero-ingest",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.layer-card-plan-tier",
+    "signatureMotion": "motion:fan-splay",
+    "signatureFrame": "frame:wall-at-zero",
+    "lodContract": {
+      "full": "asset:lod.monitoring-wall.full",
+      "icon16": "asset:lod.monitoring-wall.icon16",
+      "pip": "pip:thread-gold",
+      "aggregate": "agg:series-fan-cluster",
+      "inspector": "skin.observability.inspector"
+    },
+    "_todo": "The palette IS the card's visual paragraph: 'wall-to-wall graphs' (:2651) — phosphor green dominant with pager red accent (the alert path's color by the duty law :2640), the chord drawn from the card's own nouns: graph paper blue (the wall), thread gold (the fan's threads :2652), flatline grey (:2653 'every customer's graph going to zero'), canary amber (:2643-2644 the dumb canary). No magenta, per the validator law (the hue ledger reserves it for hostile traffic). materialPreset named for the three surfaces of the floor: the glass of the wall, the phosphor of the traces, the thread of the fan. visitorCostume: the metric series coils as a live pulse-thread (the resident's shape, exchange-colo's cabinet-coil precedent), its propSlot carries the UUID label — the bomb's fuse worn by every visitor, because on this line the harmless-looking tag IS the load ('one label containing a UUID or a user ID', :2630). heroObject 'the-noc-wall' is §4.6 verbatim: 'the Monitoring Wall as a physical buildable — a wall of screens at the end of the room' (:16768-16769) — and the doc calls the diegesis its own thesis ('The wall's fullness is your observability score' :16770): the hero is the HUD, which no other line can say (the :2651 law again — here it is furniture). meterFace pairs the scarce triplet (:2652 'drawn as a fan of threads that visibly splays'). catastropheFx 'fx:flatline-sweep' renders both catastrophes at once (:2653-2656): every graph falls to zero and the queue darkens behind it; signatureFrame is the freeze on the riddle — 'you cannot tell whether the internet died or you did' (:2654). arrivalRhythm mirrors the tempo word; densityMultiplier / homeAltitude / detailAltitude null per the R66-adjacent authoring law (every sibling ships null pending the camera-owner pass; no density word authored). signatureMotion is the one animation the doc SCRIPTS: the fan visibly splaying (:2652) — the meter animating to tell you the bomb landed. Palette/motion rows are owner-taste candidates at closeout."
+  },
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4's era grid has no dated cell for this line (its sketches name 1994 dial-up, 2001 dot-com colo, 2009 cPanel, 2016 cloud, 2024 GPU boom); hosted observability as a product is young-cloud-era in reality, but the doc authors no date, and 'young-cloud-era in reality' is a vibe, not a cell — the forged scalar this corpus refuses. Every shipped bundle leaves the slot null pending the era-owner pass (R66 law); status is 'undocumented' to the era resolver until the owning pass, same note the type-11/type-12 passes carry."
+  },
+  "economy": {
+    "unitOfSale": "metric-series-month",
+    "revenueShape": "monthly-sticky-gravity",
+    "marginProfile": "undocumented",
+    "cashTiming": "monthly",
+    "termStructure": {
+      "typical": "13-month-promise",
+      "churn": "gravity-resistance-with-blindness-twin",
+      "_todo": "typical '13-month-promise' is the card's own retention sentence worn as the term shape: 'keep everything for 13 months is a promise you make at signup and a bill you pay forever' (:2647-2648 verbatim) — the term is not the contract's length but the DEBT's length, the corpus's first term structure that outlives the customer's subscription by design. churn 'gravity-resistance-with-blindness-twin': §6.x's data-gravity hosting-types list names this line outright — 'backup, object storage, DBaaS, archival, observability' (:14058 verbatim census) — so churn physics is the family's: 'The best retention mechanic is physics' (:14057) and the dark twin 'gravity is retention until the day it's resentment' (:14060). The blindness twin is this line's own sentence: leaving means going blind during incidents (:2654-2656 every customer blind, some of them yours), which is churn friction no competitor's pitch can fix — but the doc names no number, so no number is authored here either."
+    },
+    "cacProfile": "cac.observability.cost-attribution-adoption-cycle",
+    "ticketsPerCustomer": null,
+    "signatureCost": "retention-and-resolution",
+    "badMonth": "economy.observability.bad-month",
+    "fifthAxisScore": {
+      "metric": "series-completeness-and-alert-delivery",
+      "weight": null,
+      "tuningSheet": "RATIFIED-B",
+      "_todo": "§0.x fifth-axis roster carries no observability row (its entries name game/backup/colo/CDN/email/DNS/GPU/regulated/bulletproof only); the metric rides the goal's authored instrument verbatim-fused from :2634 (paying you to keep) + :2640 (dropped alert worse than dropped metric), named not numbered, the type-12 tradition. weight null for the same reason the threshold is null — the only priced figure in the region (§6.6 $80/$150/$400/$700/$1,100 :25537) is a cost ladder, not a score."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false
+    },
+    "_todo": "The §0.3 absence bites here first: with no scarcity row there is also NO §6.6 revenue-unit row for this line — Companion A prices the COST ladder (:25537 per-layer upkeep, :25573 Sheet-B stack build) and stops there; Companion B's sticky-revenue census ('object storage, backup/DR, DBaaS, tape vaulting, video archive; weakly for VPS', :23424) does NOT reach observability either, and Companion C's bad-month table has no row (its rows end at satellite ground, :23410). unitOfSale 'metric-series-month' is authored from the unit sentence itself (:2625 'Unit = an ingested metric, log line or trace span' + the per-series billing reality the §3 cardinality law makes physical :12694-12695), marginProfile stays the word 'undocumented' rather than inventing 'high'/'good' the dbaas row let type-12 claim — the doc prices this line's spend and never its take; cashTiming rides the monthly upkeep register. signatureCost 'retention-and-resolution' pairs the two bills the prose makes structural: the forever-retention bill (:2647) and 'higher resolution means more storage and more ingest' (§4.6 :27167). ticketsPerCustomer null: the customer IS the ops team, the ticket IS the product surface, and any per-customer number would be invented twice — once for the rate, once for the irony. cacProfile authored from the card's own CAC instrument: 'a cost-attribution dashboard you give the customer so they police themselves' (:2635-2636) + §5.6's cross-branch node 'Sell + Sense = Cost-to-Serve Pricing' (:20688) — the adoption cycle IS the dashboard: buyers who self-police arrive cheapest; Companion B prices no row, recorded with the serverless/dbaas absence precedent. realismToggles both false with the record kept: the doc ties p99-percentile billing to this line's resolution dial outright — '95th-percentile billing is itself a resolution artifact' (:27172 verbatim, the §6.3 cross-reference) — a candidate for the billing lane's toggle sheet, not content's to switch; demandCharges is the 400GB/day flat-plan shipper (:2649) wearing a money costume the engine has no seam for yet."
+  },
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      {
+        "archetype": "concurrency-pool",
+        "skin": "ingest-thread-pool"
+      },
+      {
+        "archetype": "two-face-rack",
+        "skin": "alert-data-split-rack"
+      },
+      {
+        "archetype": "control-plane",
+        "skin": "watch-desk"
+      }
+    ],
+    "distinct": [
+      "monitoring-wall",
+      "observability-agent",
+      "cardinality-limiter",
+      "per-tenant-ingest-quota",
+      "rollup-rules-desk",
+      "cost-attribution-dashboard",
+      "dumb-canary",
+      "dead-man-switch-desk",
+      "retention-tier-shelf",
+      "alert-path-rail"
+    ],
+    "nonPhysical": [
+      "dropped-series-state",
+      "alert-priority-preemption",
+      "fog-over-fleet"
+    ],
+    "_todo": "Every distinct name cites the doc: monitoring-wall VERBATIM 'the Monitoring Wall as a physical buildable — a wall of screens at the end of the room' (§4.6 :16768) — the line's hero, the diegetic HUD purchase; observability-agent VERBATIM 'a tiny antenna module clipped onto each machine' (:16771); cardinality-limiter VERBATIM 'The counter is a Cardinality Limiter' (:2633); per-tenant-ingest-quota + rollup-rules-desk + cost-attribution-dashboard from the support-tools sentence verbatim ('per-tenant ingest quotas, downsampling/rollup rules, and a cost-attribution dashboard', :2635-2636) — three rungs of the same self-policing ladder; dumb-canary VERBATIM 'the dumb canary is a mandatory buildable' (:2643-2644 — the only threat-counter the card declares mandatory in prose, the dogfooding paradox made furniture); dead-man-switch-desk from §2.9's named counter ('a dead-man's-switch / external heartbeat' :8268 verbatim); retention-tier-shelf from the 13-month bill (:2647); alert-path-rail from 'a visible, buildable split' (:2641 — the card's own buildability claim). The control-plane instance wears its TWELFTH skin in the corpus (watch-desk, the README palette row keeps the census: web's cPanel through dbaas's cellar-desk) and the concurrency-pool re-skins as the ingest pool per the §5.6 spine law that 'Every buildable in §4 maps to exactly one branch' (:20574-20575) — this floor IS the Sense branch's home. two-face-rack skins the ALERT-DATA SPLIT — the split is literally two-faced here: same rack, one face pages, one face ingests. nonPhysical: dropped-series-state is the data the limiter ate — present in the ledger, absent in the world (:2634), the Friction tower's basement; alert-priority-preemption is the duty law as an objectless fact (:2640); fog-over-fleet is the fog vendor's own inventory (:16771-16773 'machines without one render fogged out', §7.6-fog law 'uninstrumented means no data, not zero' :16763) — on this line the fog is a buildable's absence, not a player's handicap, which is why the card can call itself the fog vendor (:2657) and keep the bounded-fog fairness contract: 'Monitoring buys speed, not possibility' (:27151). 10 distinct of the family census, zero palette budget broken (80% shared law, R61 reserve untouched)."
+  },
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2/§7.8f control-granularity authors the pip spread for shared/dedicated/colo/reseller/cloud/wholesale lines only (the one non-null corpus row remains dedicated's verbatim 'hardware and network'); the doc names no spread for this line, so the four slots stay null + this cite, never invented — the law every sibling from mail-hosting to dbaas cites. The line DOES ship control prose — alert-path priority is control over the store's own reflexes (:2640) and the sampling valve is control over truth's resolution (:16765) — but no four-way spread is authored for either."
+    },
+    "keyhole": false,
+    "unclickableObjects": false,
+    "_todo": "keyhole FALSE and unclickable FALSE — the ANTI-keyhole, authored on purpose (the slot rides the anchor's values but the choice is this card's thesis): 'wall-to-wall graphs — the only line where the HUD and the world are the same thing' (:2651 verbatim). A keyhole here would be a contradiction in terms: this floor's entire product is legibility, §4.6 renders it literal ('Monitoring literally lights up your world' :16775; 'you can't see what you don't instrument, rendered literally as fog of war' :16773), and the diegetic HUD purchase (the wall bought as furniture, :16768-16770) means the interface is the world-object. The horror this card keeps for its _todo instead of its control flags: legibility that LIES by absence — the limiter drops the series, the graph still answers from retention, and everything remains readable, green, forever (§2.9 :8265). Nothing is hidden; something is gone. That is a data-path fault, not a UI wall, and it ships in skin/visitor/meter notes where the doc put it."
+  },
+  "mechanics": [
+    "cardinality-bomb",
+    "series-drop-ledger",
+    "alert-path-split",
+    "dumb-canary-watchdog",
+    "correlated-demand",
+    "retention-cost-spiral",
+    "dead-man-switch",
+    "triage-window",
+    "log-loop-feedback",
+    "sampling-resolution-trade"
+  ],
+  "verbs": {
+    "dominant": "Diagnose",
+    "transfers": [
+      "verbs.observability.transfer.1"
+    ],
+    "_todo": "THE BLESSED INVARIANT — first card on Diagnose, and it arrives the ONLY lawful way left after the wave-5 census: the §1.3 card never writes the word (no sibling ever claimed it; 'NO §1.3 card names Diagnose verbatim as a dominant verb — held, never forged', README Type-6 notes), and ADR-0014 #D1(i) blesses it anyway, verbatim: 'Diagnose may be blessed onto a card whose §1.3 prose implies it … a card-identity bless, still owner-confirmed at authoring time' (docs/adr/0014 :27-31 area). The prose that implies it is quoted where it lives: the §4.6 symptom-vs-cause section — a heading that IS this line's product — says 'Diagnosis is the actual gameplay, and the tools you own determine how fast you can narrow it' (:27179), and the card's own catastrophe is the diagnostic act under torture: 'every customer's graph going to zero simultaneously, and you cannot tell whether the internet died or you did' (:2653-2654). The owner's authoring-time confirmation dated 2026-10-17 is the bless event; the ADR-0016 record is closeout's to file, not this lane's to touch. Roster census AT THIS CARD, exhaustively: Triage=shared-web, Place&Connect=game-servers, Tune=mail-hosting, Commit=dns-hosting, Observe=dedicated, Shield=object-storage, Maintain=trunk-group-voip, Scale=serverless, Sell=exchange-colo, Negotiate=colo, Schedule=backup-archival, Isolate=dbaas, Diagnose=observability — SIX invariant verbs claimed, SEVEN extended verbs claimed, THIRTEEN cards, the roster EXHAUSTED: a fourteenth type needs a fresh owner law call, recorded as the wave's wall row for closeout. Verb-Shift law: no predecessor claims Diagnose, so the lint's pairwise check passes and the invariant roster (loader INVARIANT_VERBS, 'never a 7th verb' §1.9) is completed, not extended. HONEST GAP unchanged per ADR-0014 #D2 posture: Diagnose is content identity, NOT a door PLAYER_VERBS member — no acquisition mechanic ships with this bundle; the door-mechanic gap row at closeout now covers all thirteen cards, and the tier-verbs-built program (L-DM1..4) never touched invariants, so nothing here needs re-ratifying."
+  },
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:dbaas",
+        "kind": "the-fan-watches-the-drum",
+        "numbers": null,
+        "_todo": "The gravity census pairs them (:14058 'backup, object storage, DBaaS, archival, observability' — the same list type-12 quoted for its own pair-rows), and the working pair is the doc's own component relationship: the cellar's lag ribbon 'lag-ribbon-telemetry' (its bundle's buildables) IS a series on this floor, and §4.6's agents clip onto exactly the machines DBaaS runs. The two lines sell the same customer the same truth at different depths — they also SHARE a threat id family (noisy-query-table-scan is the Debuffer on both floors, this card wearing the year-scan reading :2650). §0.2's named synergy list carries no observability pair-row; no number is invented."
+      },
+      {
+        "with": "official:object-storage",
+        "kind": "retention-is-a-bucket-bill",
+        "numbers": null,
+        "_todo": "The retention promise is a storage bill in observability clothing: 'keep everything for 13 months … a bill you pay forever' (:2647) accrues into the same physics that makes object storage 'accretive, never shrinks' (§6.6 revenue row, the type-6 census quote). §5.6's cross-branch node 'Network + Storage = Geo-Replication' (:20687) is the nearest lattice row and it does NOT name this pair; recorded rather than manufactured, no number authored."
+      }
+    ],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": [
+            "monitoring",
+            "alerting"
+          ],
+          "_todo": "The §5.6 branch ladder gives the gate verbatim as a rung order: 'Availability: Monitoring → Alerting → On-Call → Runbooks → Postmortems → Error Budgets → Chaos Engineering → Multi-Region Active/Active' (:20642-20643). The first two rungs — Monitoring, Alerting — are this line's own entry shape (you sell what the ladder walks), so the prereq set copies the rung words exactly, nothing padded. §5.6's lattice carries no row shaped 'X + Y → unlocks Observability' (unlike DBaaS's two-flag gate row); the ladder is the doc's only authored progression for this branch and it is cited as such."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {},
+      "_todo": "No §5.6 pivot row names this line from either side. The candidate the corpus would otherwise reach for — 'Trust requires Sense (you can't publish a status page honestly without monitoring)' (:20631-20632) — is an interlock FACT about the Trust branch, not a pivot row, and manufacturing a statuspage product line from it would be invention of the kind this lane refuses; it rides in scenarios._todo instead (the flatline-riddle analogue). Empty pivots per the type-11/12 precedent."
+    },
+    "masteryBuff": "relations.observability.mastery",
+    "distillate": "relations.observability.distillate",
+    "_todo": "Synergies null-numbered by law (doc authors pair effects in prose, never scalars); antagonisms empty honestly — the doc names no line this line structurally fights (its natural antagonist, the log-shipping flat-plan shipper, is a CUSTOMER behavior, not a neighboring type, and lives in familyWeights .35). masteryBuff/distillate authored from cited doc beats only: mastery is the Sense branch's payoff ladder — the branch spine says the wall 'unlocks HUD features' (:16768-16770) and every sibling line runs better instrumented, the doc's Trust interlock (:20631) is the mastery claim in another branch's words; distillate is 'Cost-to-Serve Pricing' (Sell+Sense :20688) — the pricing science this floor's data enables, gated by the doc's own rule 'You cannot buy business capability without having measured something first' (:20635 area), the mirror line the §5.6 spine prints about itself."
+  },
+  "ticketPack": "file:packs/observability.i18n.json",
+  "handoverNote": {
+    "runsOut": "handover.observability.runs-out",
+    "killsYou": "handover.observability.kills-you",
+    "customerWants": "handover.observability.customer-wants"
+  },
+  "rosettaCards": [
+    {
+      "canonical": "cgroup-caging",
+      "alias": "cardinality-ceiling",
+      "line": "rosetta.observability.cardinality"
+    },
+    {
+      "canonical": "renewal-cliff",
+      "alias": "forever-retention-bill",
+      "line": "rosetta.observability.forever-bill"
+    }
+  ],
+  "scenarios": {
+    "archetypeApplicability": [
+      "Diagnose",
+      "Endure"
+    ],
+    "analogues": {
+      "flatline-riddle": "scenarios.observability.flatline-riddle",
+      "forty-million": "scenarios.observability.forty-million",
+      "year-scan": "scenarios.observability.year-scan"
+    },
+    "_todo": "Diagnose is this line's archetype BY THE BLESS, and the doc's archetype description reads like the card's own copy: 'the board is already broken; find why' (:5065) is the flatline riddle verbatim-adjacent — 'you cannot tell whether the internet died or you did' (:2654) — the scenario and the product are one sentence. Endure is the correlated-demand quarter: surviving your OWN blip means holding while everyone else's incidents land ('being down during everyone else's outage' is the fatal :2626, so the win quarter is the bad day you did NOT have); repeat draws are lawful per the type-12 census note (thirteen archetypes is a roster, not a deck). analogues authored from cited doc beats, consequence-only framing per §9.11: flatline-riddle (§1.3 catastrophe :2653-2656 — every graph zero simultaneously, customers blind during THEIR incident while you argue about whose), forty-million (§1.3 bomb :2630-2632 — the label deploy at 3am, invisible until it lands, the store falling over mid-sprint), year-scan (§1.3 threat list :2650 + §2.5 lineage — the dashboard query that asks for last spring at 1-second resolution and eats the compaction pool; the Debuffer id carries it)."
+  },
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

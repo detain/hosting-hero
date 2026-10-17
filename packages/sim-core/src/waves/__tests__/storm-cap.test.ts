@@ -327,7 +327,7 @@ function censusTable(file: string): WaveTable {
 describe("shipped g1 corpus — under the D-7 ceiling, clamp inert", () => {
   const root = `${CONTENT_ROOT}/waves`;
   const files = readdirSync(root).filter((f) => f.endsWith(".json")).sort();
-  expect(files.length).toBe(12);
+  expect(files.length).toBe(13);
 
   for (const file of files) {
     it(`AUTHORS ${file} every wave at or under the ceiling`, () => {

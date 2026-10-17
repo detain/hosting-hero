@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-observability-first-quarter",
+  "type": "official:observability",
+  "purpose": "First-quarter wave slice for the thirteenth Ruleset Card — the §1.3 monitoring card 'Who Watches' / 'Cardinality', the first card founded on a BLESSED invariant verb: Diagnose, claimed via ADR-0014 #D1(i)'s prose-implication route with the owner's authoring-time confirmation 2026-10-17 ('the wall's fullness is your observability score' §4.6 :16770; 'Diagnosis is the actual gameplay' :27179), and the first card shipped with NO §0.3 scarcity row — the card's own four-axis sentences stand in, quoted in the bundle (13 of the 20-type launch canon, OD-14(a)). Slice shape mirrors the twelve shipped g1 siblings: a reconnaissance opening where the fan is slack and every thread answers, a peak where the card's signature event lands — the label deploy that turns 4,000 streams into 40,000,000 'in one deploy, at 3am, without warning' (:2630-2631 verbatim) — beside the desk's own avalanche, a trough where the enemy is a graph that still answers after the series was dropped, a surprise-with-composition wave carrying the line's named threat — 'the query that scans a year' (:2650), the Debuffer's second home level — landing beside the agent update nobody scheduled, and a finale built on the card's own catastrophe: the correlated bad day that floods the ingest queue while the flatline riddle ('you cannot tell whether the internet died or you did', :2654 verbatim) goes live on every screen at once. Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "never-zero-ingest",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero — on this line 'never zero' is not a law obeyed, it is a physics described: the visitor's arrival is permanent (:12691) and 'Not a request — a stream that never ends' (:12693), so the ingest floor sits above zero by definition; diurnal modulation rides the tenants' workday deploys (label churn, batch windows, cron storms) rather than the line's own visitors. The rhythm name is authored from the card's own words (bundle tempo._todo carries the cites). The one quantified figure in the region is the bomb ratio (:2631 '4,000 to 40,000,000'), which is a multiplier event, not a baseline scale — the envelopes carry it. The curve catalogue owns every number, PROVISIONAL-B.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "one-deploy-forty-million",
+      "kind": "customer",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "quiet-tail" },
+      "amplitude": null,
+      "telegraph": "the first symptom is not an outage, it is a fan beginning to splay: a tenant ships 'one label containing a UUID or a user ID' and 'their metric count goes from 4,000 to 40,000,000 in one deploy, at 3am, without warning, and your time-series database falls over' (:2630-2631 verbatim) — instantaneous, customer-triggered, invisible until it lands (:2632) — and the write-throughput meter climbs while their dashboard still shows one happy service",
+      "source": "§1.3 Cardinality Bomb paragraph verbatim (:2630-2632); §3 visitor entry 'one customer adding a label to a metric can multiply your storage overnight without sending you any more traffic at all' (:12694-12695 verbatim)",
+      "compoundWave": "authored so the SCARCE thing is unique-stream headroom, not volume: the customer envelope rides the peak because the bomb is deploy-shaped — deploys cluster in working hours and the label that lands at 03:00 is the deploy that shipped at 18:00 — and the fix the card names ('per-tenant ingest quotas, downsampling/rollup rules, and a cost-attribution dashboard', :2635-2636) is a purchase ladder, not a patch",
+      "_todo": "label-cardinality → write-throughput/concurrency pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "silent-drop-window",
+      "kind": "threat",
+      "overWaves": [3],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "revealed-tail" },
+      "amplitude": null,
+      "composition": ["layer7-mimic"],
+      "telegraph": "the trough's enemy keeps answering: the Cardinality Limiter sheds the tenant's excess series 'silently losing the data they are paying you to keep' (:2634 verbatim) — 'a perfect Friction tower' — and every graph built on the dropped series keeps drawing, thin but alive, from retention; the wall stays lit because the wall shows what the store kept, not what it ate",
+      "source": "§1.3 limiter passage verbatim (:2633-2634); the registry's one Mimic re-framed from read paths onto DATA paths (bundle threats._todo carries the mapping); §4.6 fog law 'uninstrumented means no data, not zero' (:16763) as the UI-side truth of the same event",
+      "compoundWave": "authored so the SCARCE thing is completeness, not throughput: the mimic (Mimic) spends data-integrity by answering too convincingly from old buckets while the spiral (Healer/Spawner) turns the fleet's quiet gap into the quarterly story — the customer's postmortem cites YOUR missing minute, and §2.9's green-forever sentence 'Everything is green, forever' (:8265) is the trough's own weather",
+      "_todo": "drop-depth → data-integrity/reputation pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "year-scan-flat-plan",
+      "kind": "threat",
+      "overWaves": [4],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "reset-tail" },
+      "amplitude": null,
+      "telegraph": "the surprise-with-composition wave lands the card's threat sentence whole: 'the query that scans a year; the everyone's agent reconnects at once storm after your own blip' (:2650 verbatim, both legs — the scan is this wave's Debuffer, the storm is the finale's) — one dashboard owner asks for last spring at full resolution and the compaction pool dies one held slot at a time, while a second tenant 'shipping debug logs at 400GB/day on a flat plan' (:2649 verbatim) turns the bill column into a threat column",
+      "source": "§1.3 threat list verbatim (:2649-2650); §4.6 Telemetry Resolution cost law 'higher resolution means more storage and more ingest' (:27167); registry noisy-query-table-scan re-framed onto the query side of the store (bundle threats._todo carries the mapping)",
+      "_todo": "scan-depth/flat-plan-burn → concurrency/cash pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "flatline-finale",
+      "kind": "threat",
+      "overWaves": [5],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "blackholed-tail" },
+      "amplitude": null,
+      "composition": ["empty-server-spiral", "grudge-booter"],
+      "telegraph": "the finale arrives as the bad day that isn't yours: 'Your load spikes exactly when the internet has a bad day' (:2637 verbatim) — the correlated-demand flood runs INBOUND at the ingest queue (grudge-booter re-worn: the card names NO attacker, :2649-2650, so the booter's advance motion carries the internet's own outages as weather), while behind the flood the fleet begins its silent conga — 'the everyone's agent reconnects at once storm after your own blip' (:2650 verbatim; empty-server-spiral re-rolled as the reconnect herd, our blip spawning the flood that blinds us) — and in the second the queue breaks, the card's own catastrophe draws itself: 'every customer's graph going to zero simultaneously, and you cannot tell whether the internet died or you did' (:2653-2654 verbatim)",
+      "source": "§1.3 correlated-demand + threat-list + catastrophe passages verbatim (:2637-2638, :2650, :2653-2656); §2.9 green-forever meta-threat (:8264-8265); the flatline registry proposal rides bundle threats._todo (toll-fraud-boss precedent)",
+      "compoundWave": "the boss beat, authored as an EVENT because the registry has no flatline entry and the catastrophe is a STATE the player's own product produces: the floor is a fan of threads that all depend on the queue that just broke, the wall is the HUD, and the HUD is going dark live (:2651 'the only line where the HUD and the world are the same thing') — the second catastrophe sentence lands with it: 'you drop everyone's telemetry, meaning every one of your customers is blind during an incident, and some of those incidents are yours' (:2655-2656 verbatim)",
+      "_todo": "flood-depth/reconnect-herd → bandwidth/concurrency/data-integrity pressure mapping unauthored; blindness-window cost (hands x churn x trust) unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is the fan slack and the wall at a comfortable half-full: threads arriving at their negotiated rates, the retention ledger idle, the canary blinking its primitive hello, and the only anomalies small grey questions at the edge — a scanner's drizzle enumerating which ingest doors are shy, a tenant asking whether 'real-time' means 'this second' or 'this minute'. The quarter opens bright because this floor hides nothing by design — 'the only line where the HUD and the world are the same thing' (§1.3 :2651 verbatim) — and the card says what the light is for: 'You are the thing that tells everyone else they're down. Their carelessness is your capacity plan' (§1.3 :2623 verbatim).",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["data-integrity"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the ROUTINE catastrophe, and it is the line's two native crowds arriving together. Two-Front (§2.24): the hoard lands in the stream ledger (Parasite — hoarder-noisy-neighbor re-read from inodes to unique series: 'one tenant's missing index' updated to 'one tenant's UUID label', 'instantaneous, customer-triggered, and invisible until it lands' :2632 verbatim) spending concurrency on invisible multiplicity, while the most demanding desk in the corpus begins its climb (Swarm — the hydra of ops teams, customers 'the most demanding and most technical buyers alive' :2628 verbatim, because a flatline is simultaneously their incident) spending hands on tickets whose only honest answer is the quota ladder the player hasn't built yet. Two tenants of the same moment, two instruments, one lesson of wave two: the fan splays before the alarm rings, and readable is not the same as complete (§1.x :908 'degraded is harder to read than dead' family line, this line's whole physics).",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 55, "band": "entropy" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["concurrency", "hands"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS the rollup desk and the quota rail: 'per-tenant ingest quotas, downsampling/rollup rules' are the registry-cited counter list for this level's signature threat (§1.3 :2635 verbatim), and the card prices the unspent version in its first sentence: 'Their carelessness is your capacity plan'."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the cardinality limiter, the cost-attribution dashboard, the second retention shelf and the alert-path rail all get their window here. But on this line the quiet has a completeness problem: the limiter is already eating the tenant's UUID-tagged series and nobody can see the bite ('silently losing the data they are paying you to keep' :2634 verbatim), and the reconnecting fleet behind the fan is a trust account withdrawing in silence — every gap the spiral leaves is a minute no dashboard will ever draw. Two fronts: data-integrity x reputation — dropped streams rot the record while the quiet minutes become the story the customers' own postmortems tell.",
+      "entries": [
+        { "threat": "layer7-mimic", "role": "Mimic", "pressurePct": 60, "band": "hunter" },
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 40, "band": "entropy" }
+      ],
+      "denominations": ["data-integrity", "reputation"],
+      "note2": "the trough is also the silent-drop's middle frame: nothing visible happens for exactly the reason the card gives — the graphs keep drawing from retention while the series are gone; the wall is 'full' because fullness is ingestion, not survival."
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, fan variant: the scan and the window land together — 'the query that scans a year' (:2650 verbatim; Debuffer debuts here, the every-4th-wave NEW ROLE beat, unseen in waves 1-3 — and this is the Debuffer's second HOME level after §2.5's Cellar reading, the registry's one throttle-everyone mechanic now aimed at the query side of a store whose whole product is the past), while the agent fleet's auto-update rewrites label conventions at 'a time chosen by someone else' (Splitter debuts too — mod-update-day re-framed onto the antenna modules of §4.6 :16771: an upstream probe version changes what counts as a unique series, and every tenant's cardinality changes without anyone deploying). Two fronts: concurrency (the compaction pool dies one held query at a time) x data-integrity (a schema the fleet forgot to agree on is a correctness question asked by a calendar). secondIncident inside the same window because on this line every failure is two failures: the query that grew and the label that multiplied.",
+      "entries": [
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 60, "band": "entropy" },
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 40, "band": "hunter" }
+      ],
+      "denominations": ["concurrency", "data-integrity"],
+      "secondIncident": "the fleet's update window finds the year-scan mid-flight -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the card's own threat list completed: 'the retention-cost spiral; a customer shipping debug logs at 400GB/day on a flat plan; the query that scans a year; the everyone's agent reconnects at once storm after your own blip' (:2649-2650 verbatim) — and it arrives as the bad day multiplied: the internet hiccups somewhere else and 'your load spikes exactly when the internet has a bad day' (correlated demand :2637; Siege — grudge-booter re-worn INBOUND as the weather-front flood, the card naming no attacker :2649, while your own blip behind the flood 'spawns the herd reconnecting at once' :2650), the ingest queue backing up until 'you drop everyone's telemetry' (:2655) and every graph falls flat. The riddle is the boss with no registry id (proposal rides bundle threats._todo, toll-fraud-boss precedent): 'you cannot tell whether the internet died or you did' (:2654) — the HUD going dark live, because here they are the same object (:2651). Hard wave draws TWO fronts — bandwidth x hands — per §2.24: the pipe into the queue and the desk answering the blind. Win check: the fan held its threads, the alert path kept priority over the data path ('a dropped alert is worse than a dropped metric' :2640 verbatim), the canary outlived the wall, and the flatline stayed a picture in the Codex instead of a state on the board.",
+      "entries": [
+        { "threat": "grudge-booter", "role": "Siege", "pressurePct": 55, "band": "storm" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["bandwidth", "hands"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}

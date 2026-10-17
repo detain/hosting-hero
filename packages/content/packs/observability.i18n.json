@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "packId": "pack:observability.i18n",
+  "appliesTo": "official:observability",
+  "locale": "en",
+  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the monitoring-as-a-service line — the thirteenth card, founded on the blessed invariant verb: ADR-0014 #D1(i) permits Diagnose onto a card whose §1.3 prose implies it ('Diagnosis is the actual gameplay', §4.6 :27179; the flatline riddle :2653-2654), with the owner's authoring-time confirmation 2026-10-17 (ADR-0016 records; the card itself never spells the word — recorded, not papered). Zero era objects (bundle eras null, §0.4 R66 — the era grid dates no cell for hosted observability); every flavour root here ships flat. Slots resolve against the bundle's machine fields only; no invented telemetry is voiced anywhere this pack cannot cite.",
+  "slots": {
+    "nodeId": {
+      "kind": "entity",
+      "desc": "Board object the decision surface is about (wall panel / limiter / canary id)."
+    },
+    "verb": {
+      "kind": "text",
+      "desc": "player verb being refused"
+    },
+    "availableAtTick": {
+      "kind": "tick",
+      "desc": "tick a hand/token frees"
+    },
+    "relationKind": {
+      "kind": "text",
+      "desc": "edge relation word (data/power/…)"
+    },
+    "slotName": {
+      "kind": "text",
+      "desc": "socket/port name"
+    },
+    "tenantName": {
+      "kind": "entity",
+      "desc": "the tenant whose series exploded — one label, one deploy"
+    },
+    "seriesCount": {
+      "kind": "number",
+      "desc": "unique-stream count at the Cardinality Gauge"
+    },
+    "labelName": {
+      "kind": "text",
+      "desc": "the offending label key (a UUID, a user ID)"
+    },
+    "droppedCount": {
+      "kind": "number",
+      "desc": "series the Cardinality Limiter shed"
+    },
+    "retentionMonths": {
+      "kind": "number",
+      "desc": "months promised at signup and billed forever"
+    },
+    "resolutionSec": {
+      "kind": "number",
+      "desc": "rollup interval in seconds — the price side of the retention trade"
+    },
+    "canaryName": {
+      "kind": "entity",
+      "desc": "external, deliberately primitive watchdog identifier"
+    },
+    "customerName": {
+      "kind": "entity",
+      "desc": "display name of the affected ops team"
+    },
+    "ticketId": {
+      "kind": "text",
+      "desc": "ticket number"
+    },
+    "hour": {
+      "kind": "number",
+      "desc": "local hour of arrival"
+    },
+    "day": {
+      "kind": "number",
+      "desc": "day index of the quarter"
+    },
+    "hostName": {
+      "kind": "entity",
+      "desc": "machine whose antenna module fell silent"
+    },
+    "ingestRate": {
+      "kind": "number",
+      "desc": "current ingest, events per second"
+    },
+    "planName": {
+      "kind": "text",
+      "desc": "commercial plan tier of the tenant"
+    },
+    "alertName": {
+      "kind": "text",
+      "desc": "the alert that did not arrive"
+    }
+  },
+  "decision": {
+    "type.observability.name": "Who Watches",
+    "type.observability.codex": "You tell everyone else they're down — and their carelessness is your capacity plan. One tenant adds a UUID label and four thousand streams become forty million at 3am, invisible until it lands. A dropped alert is worse than a dropped metric, so the alert path outranks the data path, and the dumb canary that watches you watching is a mandatory build. The wall-to-wall graphs ARE the world: the only line where the HUD and the world are the same thing. The catastrophe is the flatline — every customer's graph going to zero simultaneously, and you cannot tell whether the internet died or you did.",
+    "visitor.unit.metric-series": "a metric series",
+    "goal.observability.binding": "You are the thing that tells everyone else they're down, and you are contractually the pager — so the quarter is held on two promises at once: every series kept, every alert delivered, at whatever the internet is doing somewhere else right now. The fan of threads that visibly splays is the scoreboard; the wall's fullness is the score.",
+    "scarce.observability.qos": "When write throughput or cardinality runs out, the Cardinality Limiter sheds by unique stream: the alert path keeps its hands, then the tenant's newest label families drop — silently losing the data they are paying you to keep, a perfect Friction tower. Sampling degrades whole floors at once; retention promises never break quietly, they bill.",
+    "skin.observability.inspector": "The Cardinality Gauge — a fan of threads that visibly splays as unique streams multiply. One UUID label and it widens at a glance; when the limiter bites, the fan stops growing because the threads are already gone. Fullness is ingestion; survival is what the graphs will admit.",
+    "economy.observability.bad-month": "The blind quarter: your ingest queue backs up, you drop everyone's telemetry at once, and every customer is blind during an incident — and some of those incidents are yours. Being down during everyone else's outage is the fatality with no row in the bad-month table, so the table learned a new column: nobody renews with a vendor whose wall went dark mid-sentence.",
+    "cac.observability.cost-attribution-adoption-cycle": "The self-policing sell: the cost-attribution dashboard you hand the customer IS the acquisition funnel — 'their carelessness is your capacity plan' and the doc's own Sell+Sense synergy names it (Cost-to-Serve Pricing, §5.6). Teams that see their own bill label their own UUIDs; the dashboard sells the next plan before sales does. No Companion B row prices this cycle; absence on record.",
+    "verbs.observability.transfer.1": "Your customer's carelessness is your capacity plan.",
+    "relations.observability.mastery": "Mastery of the fan is seeing the bomb before the deploy: the tenant asking whether 'real-time' means 'this second', the label names growing by week, the sampling dial already sweating. A master's wall goes half-dark on purpose — every uninstrumented minute is a forecast you chose not to make — and the canary never lies to itself.",
+    "relations.observability.distillate": "What the floor distills into every other floor: the discipline of the second, external, deliberately primitive check. Any line that trusts its own dashboard owns a dumb canary now — mail's blocklist probe, dns's external resolver whisper, the status page that reads from outside the failure domain — because monitoring buys speed, not possibility, and you cannot watch yourself watching.",
+    "handover.observability.runs-out": "Series headroom and the alert path. Their carelessness is your capacity plan: one label containing a UUID, one deploy at 3am, four thousand streams into forty million — 'instantaneous, customer-triggered, and invisible until it lands' (§1.3 verbatim) — and the limiter that saves the floor eats the data they are paying you to keep, a Friction tower by design.",
+    "handover.observability.kills-you": "The flatline (§1.3 verbatim catastrophe): every customer's graph going to zero simultaneously, 'and you cannot tell whether the internet died or you did' — the line where the HUD and the world are the same thing dying together. Second act of the same sentence: you drop everyone's telemetry, every customer is blind during an incident, and some of those incidents are yours.",
+    "handover.observability.customer-wants": "To be told they're down before their own users are — and to be told the truth: 'a dropped alert is worse than a dropped metric' (§1.3 verbatim). The ops team that buys this floor buys priority for its pager over the tenant's own graph, retention that survives the company's bad quarter, and a canary too stupid to lie to itself about the wall.",
+    "rosetta.observability.cardinality": "Cardinality is the oversell ratio re-taught by physics: shared-web sells slots against a bet that tenants under-use them; this line sells unique streams against a bet that labels stay small — and §1.9 says it outright ('Cardinality is your concurrency limit, set by your customer', :5015). The cabling is identical to cgroup-caging: one tenant's silent excess is everyone's queue, the meter is the fan, the shed drops their newest series first.",
+    "rosetta.observability.forever-bill": "The forever-retention-bill is the renewal cliff with the polarity reversed: at shared-web the cohort leaves at the cliff because switching is cheap; here the cohort stays and the bill climbs anyway — 'keep everything for 13 months is a promise you make at signup and a bill you pay forever' (:2647-2648 verbatim) — gravity holding your own balance sheet to the floor. The cliff arrives not when they cancel, but when you cannot afford what you promised to remember.",
+    "scenarios.observability.flatline-riddle": "The board is already broken; find why — except 'why' is the whole product. Every graph flat, the desk lights on, your monitoring is down and your monitoring is the thing that would say so (§2.9: 'Everything is green, forever.'). Win state: the canary pages first, the alert path held priority through the shed, and the postmortem can tell whether the internet died or you did.",
+    "scenarios.observability.forty-million": "The cardinality bomb, playable: a deploy lands one label containing a UUID or a user ID and the unique-stream count runs 4,000 to 40,000,000 in one window at 3am, write throughput saturating, the limiter about to eat a quarter of a customer's dashboards. Win state: quotas and rollups built before the land, the fan splaying visibly while hands still exist to spend, and the tenant self-policing off their own cost dashboard.",
+    "scenarios.observability.year-scan": "The query that scans a year arrives on the trough's quiet store: one dashboard owner asks for last spring at full resolution and the compaction pool dies one held query at a time. Win state: rollup rules the year-scan physically cannot find, the Debuffer never reaching the alert path's hands, and the retention dial honest about what 'full resolution' was always going to cost.",
+    "alert.fan-splaying": "The Cardinality Gauge is widening: {tenantName}'s unique streams now {seriesCount}. {labelName} accounts for {droppedCount} of them.",
+    "alert.series-dropped": "Cardinality limiter shed {droppedCount} streams for {tenantName}. Data from before {resolutionSec}s is gone; the graphs will keep drawing.",
+    "alert.alert-path-starved": "The alert path is contending with the data path. {alertName} arrived {hour}:00 late. The canary's voice is the only clean lane left.",
+    "alert.flatline-suspected": "All graphs flat for {customerName} — cannot tell whether they died or we did. {canaryName} confirms: the internet is fine; the queue is not.",
+    "alert.retention-overrun": "The retention promise on {planName} is accruing past its margin: {retentionMonths} months kept, resolution {resolutionSec}s. Sampling or reprice.",
+    "terms.cardinality-ceiling": "The ceiling on unique streams per tenant, priced into the plan like oversell. {seriesCount} of the fan belongs to {tenantName}. The limiter reads this number first.",
+    "terms.alert-path-split": "The architectural promise that {alertName} outranks any tenant's graph. The split is visible, buildable, and contractual — you are 'contractually the thing that pages people' (§1.3).",
+    "terms.resolution-retention": "The trade the card makes legal to feel: keep a year at {resolutionSec}s or a week at one second, 'not both' (§4.6 verbatim). {retentionMonths} months is the promise; the storage bill is the weather.",
+    "refusal.hands-exhausted": "Both hands are committed. The {verb} intent is queued and presents when a hand frees at tick {availableAtTick}.",
+    "refusal.stamped-in-future": "The {verb} intent is stamped for tick {availableAtTick}, ahead of the current minute. Nothing was spent.",
+    "refusal.unknown-node": "No board object named {nodeId} exists at the current tick. Nothing was changed.",
+    "refusal.edge-exists": "A {relationKind} cable already links {nodeId} to those endpoints. The existing edge was left as it is.",
+    "refusal.slot-occupied": "{slotName} on {nodeId} is occupied. One supplier per socket; disconnect before you reconnect.",
+    "status.rung-1": "Investigating elevated error rates",
+    "status.rung-2": "Degraded performance",
+    "status.rung-3": "Partial outage",
+    "status.rung-4": "Major outage",
+    "status.rung-5": "We are aware of the fire."
+  },
+  "flavour": {
+    "ticket.subject.cardinality": "{customerName}: dashboards empty since the {day}'s deploy — 'we're paying you to keep that'",
+    "ticket.body.cardinality": "We added {labelName} to one metric on {hostName} as a debug aid. It was not a debug aid. Support says our series count went from 4,000 to 40,000,000 and the limiter 'protected the floor'. Our floor is a graph, and it is flat, and your statuspage says you're healthy.",
+    "ticket.subject.reconnect": "All our agents flapped at once — {hostName} and {seriesCount} others, same second",
+    "ticket.body.reconnect": "Your blip at {hour}:00 and then every agent in our fleet reconnected simultaneously, our dashboards blanked, and we cannot tell if we are down or you are. The dumb canary you sold us says you are. The smart dashboard says we are. Please ship the one of these that is true.",
+    "ticket.subject.invoiced": "Why are we paying for {retentionMonths} months of {labelName}? — billing escalation {ticketId}",
+    "ticket.body.invoiced": "The cost-attribution dashboard says it is our fault. Our CFO would like to speak to the person who designed our fault. We would also like to speak to whoever decided 'keep everything' meant 'bill us for everything', {resolutionSec}-second resolution, forever, on a {planName} plan.",
+    "press.headline.fan": "Outage of the summer was everyone's at once — the monitoring wall that couldn't watch itself",
+    "press.headline.blind": "Customers 'blind for hours' during telemetry outage; vendor's own graphs 'looked great', {day}'s incident postmortem says",
+    "forum.thread.labels": "PSA: DO NOT put user IDs in metric labels — the cardinality bomb is real and I have the invoices to prove it (4,000 → 40,000,000 overnight)",
+    "forum.thread.retention": "The 13-month promise: is anyone actually renegotiating? My retention bill outgrew my MRR and the sampling dial is doing the exact thing it says on the tin: nothing",
+    "chatter.desk.pager": "Pager at {hour}:00, whole desk, one sentence: 'is it us or is it everything?'",
+    "chatter.wall.hum": "The wall hums at {ingestRate}/s, which everyone agrees means it's alive, which nobody agrees means it's true.",
+    "codex.cardinality": "The Cardinality Gauge — 'drawn as a fan of threads that visibly splays' (§1.3 verbatim). It is the only meter in the game that can be read as beautiful and mean it simultaneously: forty million threads is just art.",
+    "codex.canary": "The dogfooding paradox, solved the way the doc solves it: a second, external, deliberately primitive watchdog. 'The dumb canary' is mandatory because you monitor yourself with yourself, 'which works right up until it doesn't' (§1.3 verbatim).",
+    "loading.tip.fan": "You can keep a year at five minutes or a week at one second, not both. §4.6 is very serious about this.",
+    "loading.tip.sampling": "A cheaper, blinder upgrade that is realistic and tempting: sampling. — the Monitoring Wall, probably, while you're not looking",
+    "intern.entry.firstday": "Day 1: was told 'the wall's fullness is your observability score' (§1.3 verbatim). Day 1: watched the wall go empty during the quarter's worst minute. The score was a picture of last week.",
+    "intern.entry.loop": "A customer shipped our own error logs back to us in a loop until we paid them to stop. They named it after our product. I am no longer sure which one of us is the joke.",
+    "sticky.note.quota": "The limiter sheds DATA, not requests. The engine doesn't know this yet. The ladder says cardinality-drop; the shed code says request. When you fix this, fix the name too. — eng, after the {day}'s incident",
+    "abuse.canon.labels": "One label. One UUID. One deploy at 3am. Forty million streams by 3:02, the queue by 3:04, the wall dark by 3:07, and the customer's dashboard 'perfectly green, just empty' for the rest of the business day.",
+    "abuse.canon.loop": "The log line that is itself a log line: our own errors, shipped back by the very tool that was erroring, ingested at the very limit we were hitting, alerting on itself, until the loop became the product demo. §1.3 verbatim; we just paid for the hosting.",
+    "vendor.reply.firmware": "Have you tried updating to the latest firmware?",
+    "vendor.reply.log-bundle": "Please collect a full log bundle.",
+    "vendor.reply.known-issue": "This is a known issue, fixed in the next release (no ETA).",
+    "vendor.reply.inactive": "Closing due to inactivity.",
+    "achievement.quiet-quarter": "The quarter where every thread arrived, every alert landed, and the canary had nothing to report — which is exactly what a win sounds like on this floor.",
+    "achievement.fan-held": "The fan splayed to its limit and the shed order held: the alert path never blinked. 'A dropped alert is worse than a dropped metric' (§1.3) — you made that true.",
+    "achievement.canary-earned": "The dumb canary outlived the smart wall. When everything read green and one primitive heartbeat said 'no', you listened. §2.9 never happens to people who listen to birds.",
+    "canary.fan-tally": "The canary counts one thing, slowly, and tells the truth: if it stops, the internet died — or you did."
+  },
+  "_provenance": {
+    "type.observability.name": "§1.3 card heading first segment verbatim (:2622) 'Who Watches'. The heading's second segment, codename 'Cardinality', lives on type.observability.codex instead: the README §Key literals pin extracts the FIRST double-quoted span per row, so an internal double-quote inside a pinned literal makes byte-sync ambiguous — README §Key literals",
+    "type.observability.codex": "§1.3 card paragraph cores verbatim: thesis :2623, bomb :2630-2632, duty :2640-2641, canary :2643-2644, HUD-is-world :2651, gauge :2652, flatline :2653-2654; README §Key literals",
+    "visitor.unit.metric-series": "§3 visitor entry heading verbatim 'Observability host — a metric series' (:12690); bundle key pin",
+    "goal.observability.binding": "§1.3 thesis :2623 + duty :2639-2641 + gauge :2652 + wall :16770 (§4.6); bundle key pin",
+    "scarce.observability.qos": "§1.3 limiter sentences verbatim ('drops the customer's excess series… a perfect Friction tower', :2633-2634) + sampling :16765; bundle key pin",
+    "skin.observability.inspector": "§1.3 'drawn as a fan of threads that visibly splays' (:2652-2653); bundle key pin",
+    "economy.observability.bad-month": "§1.3 second catastrophe verbatim (:2654-2656) + fatality :2626-2627; no Companion C row exists for this line — absence recorded, composed from the card's own columns (the serverless/dbaas precedent)",
+    "cac.observability.cost-attribution-adoption-cycle": "§1.3 'a cost-attribution dashboard you give the customer so they police themselves' (:2635-2636) + §5.6 'Sell + Sense = Cost-to-Serve Pricing' (:20688); no Companion B row — absence on record with dbaas/serverless precedent",
+    "verbs.observability.transfer.1": "§1.9 Portable Skills table, Observability row verbatim: 'Your customer's carelessness is your capacity plan' (:5059); README §Key literals",
+    "relations.observability.mastery": "§1.3 correlated demand :2637-2638 + bomb telegraph :2632 + 'Monitoring buys speed, not possibility' §4.6/§7.6 :27151; composed, no invented scalars",
+    "relations.observability.distillate": "§1.3 dogfooding paradox :2642-2644 + §7.6 fog law :27148-27151 + §2.9 monitoring-blindness :8264-8268; composed distillate",
+    "handover.observability.runs-out": "§1.3 scarce clause :2625-2626 + bomb paragraph verbatim :2630-2632 + limiter :2633-2634; README §Key literals",
+    "handover.observability.kills-you": "§1.3 catastrophe verbatim :2653-2656 ('you cannot tell whether the internet died or you did'); README §Key literals",
+    "handover.observability.customer-wants": "§1.3 fatal clause :2626-2627 + duty sentence :2639-2641 ('a dropped alert is worse than a dropped metric'); README §Key literals",
+    "rosetta.observability.cardinality": "§1.9 Rosetta page verbatim: 'Cardinality is your concurrency limit, set by your customer' (:5015); oversell/caging crosswalk per the :5016-5019 law; README §Key literals",
+    "rosetta.observability.forever-bill": "§1.3 Retention math verbatim :2647-2648; renewal-cliff crosswalk inverted (cohort stays, bill climbs); README §Key literals",
+    "scenarios.observability.flatline-riddle": "§1.3 catastrophe :2653-2656 + §2.9 'Everything is green, forever.' (:8265) + §1.x 'the board is already broken; find why' archetype gloss",
+    "scenarios.observability.forty-million": "§1.3 bomb verbatim :2630-2632; consequence-only framing per §9.11",
+    "scenarios.observability.year-scan": "§1.3 threat-list item 'the query that scans a year' (:2650) + §4.6 retention-vs-resolution law :27167-27169",
+    "alert.fan-splaying": "§1.3 gauge splay :2652 + label mechanics :2630-2631; voicing of the meter alarm",
+    "alert.series-dropped": "§1.3 limiter :2633-2634 verbatim consequence; voicing of the shed event",
+    "alert.alert-path-starved": "§1.3 duty :2639-2641 verbatim; voicing of the priority inversion",
+    "alert.flatline-suspected": "§1.3 riddle :2653-2654 + canary :2642-2644; voicing of the terminal alarm",
+    "alert.retention-overrun": "§1.3 :2647-2648 + §4.6 :27167; voicing of the money clock (the honest-tension alarm)",
+    "terms.cardinality-ceiling": "scarce.commercialSlider / ceiling register — §1.3 scarce clause :2625-2626 + §1.9 :5015",
+    "terms.alert-path-split": "§1.3 'a visible, buildable split' verbatim (:2641) + duty sentence :2640",
+    "terms.resolution-retention": "§4.6 Telemetry Resolution verbatim :27168-27169 ('you can keep a year at 5 minutes or a week at one second, not both')",
+    "refusal.hands-exhausted": "Door-grammar refusal voice — byte-identical across all thirteen packs (validator law)",
+    "refusal.stamped-in-future": "Door-grammar refusal voice — byte-identical across all thirteen packs (validator law)",
+    "refusal.unknown-node": "Door-grammar refusal voice — byte-identical across all thirteen packs (validator law)",
+    "refusal.edge-exists": "Door-grammar refusal voice — byte-identical across all thirteen packs (validator law)",
+    "refusal.slot-occupied": "Door-grammar refusal voice — byte-identical across all thirteen packs (validator law)",
+    "status.rung-1": "Statuspage ladder — byte-identical across all thirteen packs (validator law)",
+    "status.rung-2": "Statuspage ladder — byte-identical across all thirteen packs (validator law)",
+    "status.rung-3": "Statuspage ladder — byte-identical across all thirteen packs (validator law)",
+    "status.rung-4": "Statuspage ladder — byte-identical across all thirteen packs (validator law)",
+    "status.rung-5": "Statuspage ladder — byte-identical across all thirteen packs (validator law)",
+    "ticket.subject.cardinality": "§1.3 bomb :2630-2632 + paying-to-keep :2634; customer voice (ops team)",
+    "ticket.subject.reconnect": "§1.3 'everyone's agent reconnects at once storm after your own blip' verbatim :2650 + §1.3 riddle :2654",
+    "ticket.subject.invoiced": "§1.3 400GB/day flat-plan shipper :2649 + cost dashboard :2635-2636 + bill-forever :2647",
+    "ticket.body.cardinality": "§1.3 bomb mechanics verbatim (:2630-2631) + Friction tower :2634; consequence-only per §9.11",
+    "ticket.body.reconnect": "§1.3 storm sentence :2650 + canary :2642-2644 + HUD-is-world :2651; consequence-only per §9.11",
+    "ticket.body.invoiced": "§1.3 dashboard/self-police :2635-2636 + 13-month bill :2647-2648; consequence-only",
+    "press.headline.fan": "§1.3 correlated demand :2637-2638 + flatline :2653; press voice",
+    "press.headline.blind": "§1.3 second catastrophe :2654-2656 ('every one of your customers is blind during an incident'); press voice",
+    "forum.thread.labels": "§1.3 bomb verbatim mechanics (:2630-2631); forum practitioner voice, advice-shaped not command-shaped per §9.11",
+    "forum.thread.retention": "§1.3 retention math :2647-2648 + §4.6 sampling :16765; forum practitioner voice",
+    "chatter.desk.pager": "§1.3 duty sentence :2639-2641 + riddle :2654; desk chatter",
+    "chatter.wall.hum": "§1.3 HUD-is-world :2651 + §2.9 green-forever :8265; desk chatter",
+    "codex.cardinality": "§1.3 gauge sentence verbatim :2652; codex voice",
+    "codex.canary": "§1.3 dogfooding paradox verbatim :2642-2644; codex voice",
+    "loading.tip.fan": "§4.6 resolution/retention verbatim :27168-27169; loading tip",
+    "loading.tip.sampling": "§4.6 'A cheaper, blinder upgrade that is realistic and tempting: sampling.' verbatim (:16765); loading tip",
+    "intern.entry.firstday": "§4.6 'the wall's fullness is your observability score' (:16770) + §2.9 green-forever :8265; intern voice",
+    "intern.entry.loop": "§1.3 'the log line that is itself a log line' verbatim :2645-2646; intern voice",
+    "sticky.note.quota": "§1.3 limiter :2633-2634 + the R23 engine gap (data vs request shedding) recorded honestly in the bundle scarce._todo; sticky-note engineering voice",
+    "abuse.canon.labels": "§1.3 bomb :2630-2632 wearing the abuse-desk register; canon style, no commands per §9.11",
+    "abuse.canon.loop": "§1.3 log-loop sentence verbatim :2645-2646; canon style",
+    "vendor.reply.firmware": "Support canon — byte-identical across all thirteen packs (validator law)",
+    "vendor.reply.log-bundle": "Support canon — byte-identical across all thirteen packs (validator law)",
+    "vendor.reply.known-issue": "Support canon — byte-identical across all thirteen packs (validator law)",
+    "vendor.reply.inactive": "Support canon — byte-identical across all thirteen packs (validator law)",
+    "achievement.quiet-quarter": "§1.3 win-shape: completeness kept + alerts delivered (:2639-2641); achievement voice",
+    "achievement.fan-held": "§1.3 duty verbatim :2640; achievement voice",
+    "achievement.canary-earned": "§1.3 canary :2642-2644 + §2.9 counter 'dead-man's-switch / external heartbeat' (:8268); achievement voice",
+    "canary.fan-tally": "§1.3 riddle :2653-2654 + §2.9 monitoring-blindness family; canary voice"
+  },
+  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates no cell for hosted observability and the era-owner pass, not this lane, decides whether the 2016-cloud sketch gets the row). The win metric's threshold (held null per the object-storage→dbaas→backup precedent) and every alert slot's machine source (seriesCount, droppedCount, resolutionSec) remain tuning-sheet territory — PROVISIONAL-B stays valid on the bundle's tuning fields, and the shedding-ladder engine gap (this line sheds DATA, the engine sheds requests) is recorded in the bundle scarce._todo, not voiced as a capability."
+}
