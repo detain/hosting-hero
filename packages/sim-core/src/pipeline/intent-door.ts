@@ -55,6 +55,11 @@
  *    the OD-24(a) PART-1 POSTURE: the door books the offer, the host signs
  *    it through the EXISTING economy priceKey seam — no revenue, no money
  *    math, no acceptance dice in the door, ever),
+ *    negotiate (negotiate-terms — the OPTIONAL ADR-0015 term book,
+ *    STATE-NEUTRAL at the door: the money lane consumes the forwarded
+ *    book (economy/negotiate.ts) by TILTING the cliff's EXISTING single
+ *    retention draw and discounting the billing base at the chain head —
+ *    the door casts no dice, moves no money, and never touches units),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -113,6 +118,10 @@ import type {
   MaintainWindow,
   NodeDiscipline,
   NodeRecord,
+  NegotiateBook,
+  NegotiateTermsArgs,
+  NegotiationTerm,
+  NegotiationTone,
   PlaceDeviceArgs,
   PlayerIntent,
   PolicyCard,
@@ -207,6 +216,23 @@ export interface SellOfferRejection {
   readonly reason: string;
 }
 
+/** What the host's negotiation-target validator sees — the SAME decoupling
+ *  pattern as `canSellOffer`: tenant/lease knowledge stays HOST-side, the
+ *  door only learns "resolved" or "refused, because <reason verbatim>".
+ *  Returns null = accept (the tenant conversation stands in the host's
+ *  namespace), or a rejection that lands in the refusal event as
+ *  `unknown-target: <reason>`. ADR-0015 5/5 (Negotiate): the tenant's
+ *  door — v0 books the talk deterministically (no acceptance dice); the
+ *  money effect lands later at the renewal cliff, not at the desk. */
+export interface NegotiateQuery {
+  readonly args: NegotiateTermsArgs;
+  readonly state: GameState;
+  readonly context: TickContext;
+}
+export interface NegotiateRejection {
+  readonly reason: string;
+}
+
 export interface IntentDoorConfig {
   /** Hand tokens when materializing a missing GameState.hands (default 1 —
    *  T0/T2 per §7.5). Hosts SHOULD seed hands via createInitialState instead. */
@@ -231,6 +257,12 @@ export interface IntentDoorConfig {
    *  intent IS the close (no acceptance dice), so a refusal here is the only
    *  "no" the sale can hear. */
   readonly canSellOffer?: (query: SellOfferQuery) => SellOfferRejection | null;
+  /** negotiate-terms target validator (ADR-0015 5/5 Negotiate; host-wired
+   *  tenant/lease resolution — absent = the door books the terms on
+   *  structural sanity only, exactly the `canSellOffer` law). Callback
+   *  output is validated: `reason` must be a string, host bugs throw
+   *  rather than fork a state. */
+  readonly canNegotiateTerms?: (query: NegotiateQuery) => NegotiateRejection | null;
   /** policy-card-commit resolver: maps the payload hash to the authored card.
    *  Absent → commits refuse with "no-card-lookup". */
   readonly lookupPolicyCard?: (cardHash: string) => PolicyCard | null;
@@ -322,6 +354,12 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // The door only writes the book; the sale closes host-side through the
   // existing economy priceKey seam (OD-24(a) part-1 posture).
   [PlayerVerb.SellOffer]: 1,
+  // ADR-0015 (Negotiate 5/5): a negotiation is the card's combat — "a
+  // ticket/conversation system with a tenant" (§1.3 "Amps and Aisles",
+  // hosting_game.md:1637) — conversation costs ATTENDANCE, so it joins the
+  // communicate cohort (2 ticks), not the desk-tap COMMIT class. PROVISIONAL
+  // taste numeric (ADR-0015 mechanics authorization), pinned red on drift.
+  [PlayerVerb.NegotiateTerms]: 2,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -341,6 +379,9 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   // ADR-0015 (Sell 3/5): one desk hand to sign an offer — same cost as the
   // other COMMIT-class verbs (PROVISIONAL taste, occupancy table above).
   [PlayerVerb.SellOffer]: 1,
+  // ADR-0015 (Negotiate 5/5): one hand to open the conversation (the
+  // attendance shows in the 2-tick occupancy, occupancy table above).
+  [PlayerVerb.NegotiateTerms]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -536,6 +577,18 @@ export function createSellBook(): SellBook {
   return Object.freeze({ version: 0, entries: Object.freeze(new Map<string, SellOffer>()) });
 }
 
+/** Empty negotiate-terms book (ADR-0015 Negotiate 5/5) — hosts that want
+ *  the embed present from tick 0 mint it here; the `negotiate-terms`
+ *  handler materializes lazily without it. Keyed by the COMPOSITE
+ *  `<targetKind>:<targetId>` priceKey grammar (`priceOverrideKey` REUSED by
+ *  identity — a negotiation key IS an economy priceKey, the leg the money
+ *  fold matches against a contract's sparse `priceKey`), last-write-wins
+ *  per key (re-negotiating replaces the standing terms; there is no
+ *  expiry leg — the `activeNegotiation` as-of law at read time). */
+export function createNegotiateBook(): NegotiateBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<string, NegotiationTerm>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -587,6 +640,9 @@ interface Draft {
   schedule: JobWindowBook | null;
   /** ADR-0015 COW sell-offer book — null until a `sell-offer` order lands. */
   sell: SellBook | null;
+  /** ADR-0015 COW negotiate-terms book — null until a `negotiate-terms`
+   *  order lands. */
+  negotiate: NegotiateBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -608,6 +664,13 @@ const RELATIONS: readonly BoardRelation[] = Object.freeze(["data", "power", "con
 /** adjust-price target namespaces (OD-24(a) part 1, closed — types.ts
  *  `PriceTargetKind` is the type-law twin of this value law). */
 const PRICE_TARGET_KINDS: readonly PriceTargetKind[] = Object.freeze(["plan", "contract-class", "sku"]);
+/** negotiate-terms tones (ADR-0015 5/5, closed — types.ts `NegotiationTone`
+ *  is the type-law twin). The economy names the vocabulary
+ *  (`NEGOTIATION_TONES`, economy/negotiate.ts); the door keeps this private
+ *  mirror because pipeline never imports economy — the same import law the
+ *  `PRICE_TARGET_KINDS`/`PRICE_KEY_KINDS` pair lives under, drift-pinned
+ *  by tests reading BOTH sources (intent-door-negotiate.test.ts). */
+const NEGOTIATE_TONES: readonly NegotiationTone[] = Object.freeze(["rapport", "firm", "legal"]);
 const VERB_SET: ReadonlySet<string> = new Set<string>(PLAYER_VERBS);
 
 function fail(where: string, detail: string): never {
@@ -654,7 +717,7 @@ function requireNumber(value: unknown, where: string): number {
  *  unrepresentable (Law 2 — the handler's `invalid-price` refusal owns only
  *  the ≤ 0 value domain). The table's field order is fixed, so an error
  *  naming "the first offender" is deterministic. */
-type ArgWireType = "string" | "string-or-null" | "number" | "number-or-null" | "bigint";
+type ArgWireType = "string" | "string-or-null" | "number" | "number-or-null" | "bigint" | "bigint-or-null";
 const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWireType>>>> = Object.freeze({
   [PlayerVerb.PlaceDevice]: Object.freeze({ nodeId: "string", deviceKind: "string", template: "string-or-null" }),
   [PlayerVerb.ConnectPorts]: Object.freeze({ relation: "string", from: "string", to: "string", slot: "string-or-null" }),
@@ -670,6 +733,7 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   [PlayerVerb.MaintainNode]: Object.freeze({ targetNodeId: "string", openAtBusinessMinute: "number-or-null", closeAtBusinessMinute: "number" }),
   [PlayerVerb.ScheduleWindow]: Object.freeze({ targetNodeId: "string", openAtBusinessMinute: "number-or-null", closeAtBusinessMinute: "number" }),
   [PlayerVerb.SellOffer]: Object.freeze({ targetKind: "string", targetId: "string", offerPriceMicroUsd: "bigint", termMonths: "number", effectiveAtBusinessMinute: "number-or-null" }),
+  [PlayerVerb.NegotiateTerms]: Object.freeze({ targetKind: "string", targetId: "string", tone: "string", concessionMicroUsd: "bigint-or-null", termMonthsExtension: "number-or-null", effectiveAtBusinessMinute: "number-or-null" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -705,6 +769,7 @@ function parseEntry(entry: unknown, index: number): ExternalIntent {
       if (wireType === "string") requireString(value, fieldWhere);
       else if (wireType === "number") requireNumber(value, fieldWhere);
       else if (wireType === "bigint") requireBigint(value, fieldWhere);
+      else if (wireType === "bigint-or-null") { if (value !== null) requireBigint(value, fieldWhere); }
       else if (wireType === "number-or-null") { if (value !== null) requireNumber(value, fieldWhere); }
       else if (value !== null) requireString(value, fieldWhere);
     }
@@ -1364,6 +1429,82 @@ function handleSellOffer(draft: Draft, args: SellOfferArgs): HandlerVerdict {
   return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
 }
 
+/** ADR-0015 5/5 NEGOTIATE ↔ the conversation the card calls combat
+ *  (§1.3 colo "Amps and Aisles", hosting_game.md:1632 "**Dominant verb:
+ *  Negotiate.**", :1637 "a ticket/conversation system with a tenant, with
+ *  tone options and a relationship meter. **This is the level's
+ *  combat.**"). The ONLY door side effect is one frozen record in the
+ *  OPTIONAL `GameState.negotiate` book; the MONEY leg is the economy
+ *  fold's (economy/negotiate.ts reads the FORWARDED book at the renewal
+ *  cliff — tone/concession tilt the EXISTING single retention draw, zero
+ *  new rolls — and discount the billing base at the chain head, under the
+ *  grandfather lock, ADR-0014 #D4). The door casts no dice and moves no
+ *  money, ever: an executed conversation is booked player authority; the
+ *  tenant's answer arrives at the cliff. The card's per-tenant
+ *  relationship meter does NOT exist in v0 (honest gap; company
+ *  reputation @57ea80e untouched) — the tone bumps are its stand-in.
+ *  The book key REUSES `priceOverrideKey` (a negotiation key IS an
+ *  economy priceKey — identity, not duplication, the sell precedent), and
+ *  the tone vocabulary is a private mirror of the economy's, drift-pinned
+ *  by tests on both sides. Wire types are parse-trusted (M2): the
+ *  `bigint-or-null` concession carrier is a REAL bigint or the explicit
+ *  null sentinel (the proto revives decimal strings before the door);
+ *  value-domain refusals are the tone word (`bad-tone`), non-negative
+ *  concession (`bad-concession` — the sign law lives on types.ts
+ *  `NegotiateTermsArgs`), a whole-month positive extension
+ *  (`bad-term-extension`), target shape, and a well-formed business
+ *  minute (`bad-effective-minute`, reused verbatim). */
+function handleNegotiateTerms(draft: Draft, args: NegotiateTermsArgs): HandlerVerdict {
+  const targetKind = args.targetKind; // wire type trusted (parseEntry, M2)
+  if (!PRICE_TARGET_KINDS.includes(targetKind)) {
+    return { ok: false, reason: `bad-target-kind: "${String(targetKind)}" not in {${PRICE_TARGET_KINDS.join(",")}}` };
+  }
+  if (args.targetId.length === 0) return { ok: false, reason: "empty-target-id" };
+  if (!NEGOTIATE_TONES.includes(args.tone)) {
+    return { ok: false, reason: `bad-tone: "${String(args.tone)}" not in {${NEGOTIATE_TONES.join(",")}}` };
+  }
+  const concession = args.concessionMicroUsd;
+  if (concession !== null && concession < 0n) {
+    return {
+      ok: false,
+      reason: `bad-concession: ${String(concession)} µ$ must be >= 0 (or null = no money in the talk; a price RIDE rides adjust-price)`,
+    };
+  }
+  const extension = args.termMonthsExtension;
+  if (extension !== null && (!Number.isSafeInteger(extension) || extension < 1)) {
+    return { ok: false, reason: `bad-term-extension: ${String(extension)} must be a safe integer >= 1 (or null = no extension)` };
+  }
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const rejection = draft.config.canNegotiateTerms?.({ args, state: snapshotFor(draft), context: draft.context });
+  if (rejection !== undefined && rejection !== null) {
+    // host CALLBACK output stays validated (it is not door-wire input):
+    return { ok: false, reason: `unknown-target: ${requireString(rejection.reason, "canNegotiateTerms result.reason")}` };
+  }
+  const base = draft.negotiate ?? draft.origin.negotiate ?? createNegotiateBook();
+  const entries = new Map(base.entries);
+  entries.set(
+    priceOverrideKey(targetKind, args.targetId as EntityId),
+    Object.freeze({
+      targetKind,
+      targetId: args.targetId as EntityId,
+      tone: args.tone,
+      concessionMicroUsd: concession,
+      termMonthsExtension: extension,
+      shippedAtTick: draft.context.tick,
+      effectiveAtBusinessMinute: effectiveAt,
+    }),
+  );
+  draft.negotiate = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  const detail =
+    `target=${targetKind}:${args.targetId},tone=${args.tone}` +
+    `,concession=${concession === null ? "none" : String(concession)}` +
+    `,ext=${extension === null ? "none" : String(extension)}`;
+  return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -1384,7 +1525,8 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     draft.nodes === null && draft.board === null && draft.hands === null &&
     draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
     draft.attention === null && draft.shield === null && draft.scale === null &&
-    draft.maintain === null && draft.schedule === null && draft.sell === null
+    draft.maintain === null && draft.schedule === null && draft.sell === null &&
+    draft.negotiate === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1409,6 +1551,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.maintain !== null ? { maintain: draft.maintain } : {}),
     ...(draft.schedule !== null ? { schedule: draft.schedule } : {}),
     ...(draft.sell !== null ? { sell: draft.sell } : {}),
+    ...(draft.negotiate !== null ? { negotiate: draft.negotiate } : {}),
   });
 }
 
@@ -1546,6 +1689,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleScheduleWindow(draft, args as ScheduleArgs);
       case PlayerVerb.SellOffer:
         return handleSellOffer(draft, args as SellOfferArgs);
+      case PlayerVerb.NegotiateTerms:
+        return handleNegotiateTerms(draft, args as NegotiateTermsArgs);
     }
   })();
 
@@ -1617,6 +1762,7 @@ export function applyIntentDoor(
     maintain: null,
     schedule: null,
     sell: null,
+    negotiate: null,
     events: [],
     receipts: [],
   };

@@ -742,6 +742,17 @@ export const BIGINT_ARG_FIELDS: Readonly<Record<string, readonly string[]>> = Ob
   "sell-offer": Object.freeze(["offerPriceMicroUsd"]),
 });
 
+/** Sibling mirror for the door's `bigint-or-null` wire arm (ADR-0015 5/5
+ *  Negotiate): the same decimal-string revival law, but the EXPLICIT null
+ *  sentinel crosses the JSON hop as real `null` and stays null — 0-vs-null
+ *  is load-bearing there ("we will not move on price" vs "no money in the
+ *  talk", types.ts `NegotiateTermsArgs.concessionMicroUsd`). The drift pin
+ *  (chrome/__tests__/wireIntent.test.ts) greps the engine's VERB_ARG_SHAPES
+ *  for BOTH arms and reddens the day a carrier joins neither list. */
+export const NULLABLE_BIGINT_ARG_FIELDS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  "negotiate-terms": Object.freeze(["concessionMicroUsd"]),
+});
+
 const INT_STRING_RE = /^-?\d+$/;
 
 /** Revive one player-verb args record: fields the door parses as `bigint`
@@ -749,18 +760,29 @@ const INT_STRING_RE = /^-?\d+$/;
  *  — the same law `WireUs`/`WireFixed` already obey — and become REAL bigints
  *  here, at the boundary, before the door's requireBigint sees them. A
  *  non-integer shape on a bigint-typed field is structural garbage → loud
- *  ProtocolError (never a silent number → door throws a vaguer error deeper). */
+ *  ProtocolError (never a silent number → door throws a vaguer error deeper).
+ *  `bigint-or-null` fields take the same law with one honest exception: the
+ *  explicit null sentinel passes through untouched (NULLABLE table above). */
 function reviveWireArgs(
   args: Readonly<Record<string, string | number | null>>,
 ): Readonly<Record<string, string | number | bigint | null>> {
   const verb = args["verb"];
-  const bigintFields = typeof verb === "string" ? BIGINT_ARG_FIELDS[verb] : undefined;
-  if (bigintFields === undefined) return args;
+  const strict = typeof verb === "string" ? BIGINT_ARG_FIELDS[verb] : undefined;
+  const nullable = typeof verb === "string" ? NULLABLE_BIGINT_ARG_FIELDS[verb] : undefined;
+  if (strict === undefined && nullable === undefined) return args;
   const revived: Record<string, string | number | bigint | null> = { ...args };
-  for (const field of bigintFields) {
+  for (const field of strict ?? []) {
     const raw = revived[field];
     if (typeof raw !== "string" || !INT_STRING_RE.test(raw)) {
       throw new ProtocolError(`intent.payload.args.${field}`, "decimal-string bigint (wire law)", raw);
+    }
+    revived[field] = BigInt(raw);
+  }
+  for (const field of nullable ?? []) {
+    const raw = revived[field];
+    if (raw === null) continue; // the sentinel IS wire-able — keep it null
+    if (typeof raw !== "string" || !INT_STRING_RE.test(raw)) {
+      throw new ProtocolError(`intent.payload.args.${field}`, "decimal-string bigint-or-null (wire law)", raw);
     }
     revived[field] = BigInt(raw);
   }

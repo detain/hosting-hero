@@ -360,11 +360,19 @@ export interface RenewalDecision {
   readonly escalatedMrc: MoneyUnit | null;
 }
 
+/** Apply a cliff decision (the deterministic transition; no RNG here).
+ *  ADR-0015 5/5: `termExtensionMonths` (default 0 — every pre-negotiate
+ *  call site byte-identical) is the negotiate-terms book's optional
+ *  renewal gift: it is added to the rolled-forward term, so the NEW cliff
+ *  lands further out and the next cliff's term-matrix row is the extended
+ *  one (longer commit = stickier cohort, §6.12). Lapse ignores it — an
+ *  extension never re-arms a written-off contract. */
 export function resolveRenewalCliff(
   econ: ContractEconomy,
   decision: RenewalDecision,
   atBusinessMin: SimMinute,
   cfg: EconomyConfig,
+  termExtensionMonths: number = 0,
 ): RenewalCliffOutcome {
   if (econ.cliffFired) {
     throw new Error(`economy/contract: cliff already fired for '${econ.contractId}' term ending ${econ.termEndMin}`);
@@ -377,7 +385,8 @@ export function resolveRenewalCliff(
   if (decision.choice === "lapse") {
     return { kind: "lapsed", econ: setPhase({ ...econ, cliffFired: true }, "terminated", atBusinessMin) };
   }
-  const extensionMonths = econ.termMonths > 0 ? econ.termMonths : cfg.contracts.evergreenExtensionMonths;
+  const baseMonths = econ.termMonths > 0 ? econ.termMonths : cfg.contracts.evergreenExtensionMonths;
+  const extensionMonths = baseMonths + termExtensionMonths;
   // Renewing rewrites the SHARED contract — that's the orchestrator's job via
   // `renewedContractGeometry`; here we only roll the economy bookkeeping.
   const rolled: ContractEconomy = {

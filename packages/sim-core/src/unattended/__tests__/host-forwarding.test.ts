@@ -42,6 +42,8 @@ import {
   asMoney,
   type AttentionState,
   type EntityId,
+  type NegotiateBook,
+  type NegotiationTerm,
   type PriceOverrideBook,
   type PriceTargetKind,
 } from "../../types.ts";
@@ -284,6 +286,100 @@ describe("pricing override book forwarding (lane @5781335 host seam)", () => {
     expect(cashEnd(priced)).toBe(79556000n);
     expect(cashEnd(bare)).toBe(62078000n);
     expect(priced.finalDigest).not.toBe(bare.finalDigest);
+  });
+});
+
+/* ───────────────────── seam 2b: negotiation ───────────────────── */
+
+/* ADR-0015 5/5 (Negotiate): the door's `GameState.negotiate` term map rides
+ * `EconomyTickIn.negotiations` on every fold — the SAME single-home leg as
+ * the pricing seam (`foldMoneyLaneTick`, tickFold.ts:353), consumed both at
+ * the renewal cliff (retention tilt, zero new rolls) and at the hourly
+ * invoice calendar (the concession discounts the billed base). Absent ⇒ key
+ * omitted ⇒ byte-identity (@984759b law). There is NO expiry leg (LWW book),
+ * so a standing concession discounts EVERY hourly cycle of the weekend by
+ * its 1_000_000 µ$ — the observable is a strict cash drop with the invoice
+ * CENSUS byte-equal (discount, not creation). */
+describe("negotiation book forwarding (lane @a760771+ ADR-0015 5/5 host seam)", () => {
+  const KEYED = new Map<EntityId, string>([[asEntityId("ctr-fwd-1"), "plan:basic"]]);
+
+  /** An in-force concession term under key ("<kind>:<id>"), null effective
+   *  stamp = law from the executing tick (the activePriceOverride twin). */
+  function negotiateBook(
+    kind: PriceTargetKind,
+    id: string,
+    concessionMicroUsd: bigint,
+    effectiveAtBusinessMinute: number | null = null,
+  ): NegotiateBook {
+    const term: NegotiationTerm = Object.freeze({
+      targetKind: kind,
+      targetId: asEntityId(id),
+      tone: "rapport",
+      concessionMicroUsd: asMoney(concessionMicroUsd),
+      termMonthsExtension: null,
+      shippedAtTick: 0n,
+      effectiveAtBusinessMinute,
+    });
+    return Object.freeze({
+      version: 1,
+      entries: Object.freeze(new Map([[`${kind}:${id}`, term]])),
+    });
+  }
+
+  it("keyed contract WITHOUT a book: identity with the bare run (sparse-key law)", () => {
+    const keyed = runUnattended(cfg({ money: hourlyMoney(KEYED) }));
+    const bare = runUnattended(cfg({ money: hourlyMoney() }));
+    expect(reportIdentity(keyed)).toBe(reportIdentity(bare));
+  });
+
+  it("a book whose key no contract carries is MONEY-neutral: cash/census identical, digest moves (presence law)", () => {
+    const mismatched = runUnattended(
+      cfg({ money: hourlyMoney(KEYED), negotiate: negotiateBook("plan", "none", 1_000_000n) }),
+    );
+    const bare = runUnattended(cfg({ money: hourlyMoney() }));
+    // The contract has no `plan:none` priceKey — activeNegotiation returns
+    // null for it (zero keys ⇒ zero effect). The EMBEDDED book still rides
+    // GameState.negotiate, so finalDigest moves BY DESIGN (the digest-switch
+    // presence law, same posture as the pricing seam's mismatched arm):
+    expect(cashEnd(mismatched)).toBe(cashEnd(bare));
+    expect([...mismatched.summary.invoiceEvents]).toEqual([...bare.summary.invoiceEvents]);
+    expect(mismatched.finalDigest).not.toBe(bare.finalDigest);
+  });
+
+  it("a FUTURE-DATED book is not-yet-law: cash/census identical, digest moves (as-of discipline)", () => {
+    const future = runUnattended(
+      cfg({
+        money: hourlyMoney(KEYED),
+        negotiate: negotiateBook("plan", "basic", 1_000_000n, 100_000),
+      }),
+    );
+    const bare = runUnattended(cfg({ money: hourlyMoney() }));
+    // The keyed contract MATCHES the entry but the stamp is past every run
+    // minute: activeNegotiation's not-yet-law leg keeps the factor/billing
+    // identity; only the embed itself moves the digest:
+    expect(cashEnd(future)).toBe(cashEnd(bare));
+    expect([...future.summary.invoiceEvents]).toEqual([...bare.summary.invoiceEvents]);
+    expect(future.finalDigest).not.toBe(bare.finalDigest);
+  });
+
+  it("an in-force concession reaches the invoice calendar: cash drops, census holds", () => {
+    const talked = runUnattended(
+      cfg({ money: hourlyMoney(KEYED), negotiate: negotiateBook("plan", "basic", 1_000_000n) }),
+    );
+    const bare = runUnattended(cfg({ money: hourlyMoney() }));
+    /* The forwarding leg is LIVE: every cycle's gross loses the concession,
+       so cash ends strictly below the bare twin. */
+    expect(cashEnd(talked)).toBeLessThan(cashEnd(bare));
+    /* The concession NEVER adds or removes an invoice — it only discounts a
+       billed amount: the census is byte-equal to bare (zero-new-rolls, and
+       the term is money-positive so it cannot be a zero-gross skip). */
+    expect([...talked.summary.invoiceEvents]).toEqual([...bare.summary.invoiceEvents]);
+    expect(talked.finalDigest).not.toBe(bare.finalDigest);
+    /* Probe literal (this engine build): the bare twin banks 62078000 µ$;
+       each discounted cycle nets the concession minus the card-rate fee —
+       the talk moves the money the door itself never touches. */
+    expect(cashEnd(bare)).toBe(62078000n);
+    expect(cashEnd(talked)).toBe(62_053_720n);
   });
 });
 

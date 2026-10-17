@@ -1284,6 +1284,26 @@ export enum PlayerVerb {
    *  act is deterministic player authority — an executed intent IS the
    *  close; no acceptance dice in v0 (refusal grammar is the counterparty). */
   SellOffer = "sell-offer",
+  /** ADR-0015 door-mechanics ruling (tier verbs 5/5 · Negotiate): the 15th
+   *  door verb — the Negotiate tier verb made playable, the money-lane leg
+   *  of the five (§1.3 colo card "Amps and Aisles", hosting_game.md:1632:
+   *  "**Dominant verb: Negotiate.**"; ":1637: 2. **Negotiate** — a
+   *  ticket/conversation system with a tenant, with tone options and a
+   *  relationship meter. **This is the level's combat.**"). The door
+   *  records the TALK into the OPTIONAL `GameState.negotiate` book — a
+   *  priceKey-shaped term per target: tone, an optional concession (a µ$
+   *  renewal-price move), an optional whole-month term extension, all
+   *  as-of a business minute, last-write-wins per key. Unlike sell, the
+   *  book HAS an engine reader (economy/negotiate.ts): at a contract's
+   *  renewal cliff the tone/concession tilt the SAME single retention
+   *  draw the elasticity mirror already tilts (zero new rolls), a live
+   *  concession discounts the renewal billing base through the existing
+   *  override chain head (grandfather still WINS, ADR-0014 #D4), and a
+   *  term extension rolls the cliff forward on renewal. The v0 honest
+   *  gap: the card's per-tenant relationship meter does not exist — the
+   *  tone bumps are its company-level stand-in (the company reputation
+   *  ledger @57ea80e stays untouched; record). */
+  NegotiateTerms = "negotiate-terms",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1302,6 +1322,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.MaintainNode,
   PlayerVerb.ScheduleWindow,
   PlayerVerb.SellOffer,
+  PlayerVerb.NegotiateTerms,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1375,6 +1396,18 @@ export interface ToggleSpeedArgs {
  *  never interprets them — the host validator (`canAdjustPrice`) resolves
  *  target ids inside whichever namespace the kind selects. */
 export type PriceTargetKind = "plan" | "contract-class" | "sku";
+
+/** ADR-0015 5/5 NEGOTIATE ↔ the card's tone options (§1.3 colo "Amps and
+ *  Aisles", hosting_game.md:1637: "a ticket/conversation system with a
+ *  tenant, with tone options"). Closed vocabulary, declared in doc order
+ *  (escalation ladder): rapport leans on the relationship, firm on the
+ *  arithmetic, legal on the contract — each with a legal and reputational
+ *  cost the Enforce ladder names; in v0 only the retention bump is built.
+ *  The economy module names the vocabulary (`NEGOTIATION_TONES`,
+ *  economy/negotiate.ts); the door keeps a private mirror (import law:
+ *  pipeline never imports economy) drift-pinned by tests, exactly the
+ *  `PRICE_TARGET_KINDS`/`PRICE_KEY_KINDS` precedent. */
+export type NegotiationTone = "rapport" | "firm" | "legal";
 
 export interface AdjustPriceArgs {
   readonly verb: PlayerVerb.AdjustPrice;
@@ -1499,6 +1532,45 @@ export interface SellOfferArgs {
   readonly effectiveAtBusinessMinute: SimMinute | null;
 }
 
+/** ADR-0015 5/5 NEGOTIATE ↔ the terms talked onto one price target
+ *  (targetKind/targetId reuse the `PriceTargetKind`/priceKey grammar —
+ *  the `priceOverrideKey` codec is REUSED by identity exactly as sell-offer
+ *  does, so a negotiation key IS an economy priceKey and matches a live
+ *  contract's sparse `priceKey` with zero translation). */
+export interface NegotiateTermsArgs {
+  readonly verb: PlayerVerb.NegotiateTerms;
+  /** Closed price-target kind (see `AdjustPriceArgs`). */
+  readonly targetKind: PriceTargetKind;
+  /** Id inside the targetKind namespace — resolved by the host validator
+   *  (`canNegotiateTerms`; absent validator = structural sanity only, the
+   *  `canPlaceDevice`/`canAdjustPrice` decoupling pattern). */
+  readonly targetId: EntityId;
+  /** Closed tone vocabulary (`NegotiationTone`); anything else is the
+   *  `bad-tone` refusal. The card's combat choice (":1637 … tone options
+   *  and a relationship meter"). */
+  readonly tone: NegotiationTone;
+  /** Signed renewal-cycle price move in integer µ$ — the SIGN LAW is
+   *  defined ONCE here: a POSITIVE concession is a DISCOUNT granted to the
+   *  tenant (the renewal bills at base − concession); null = the talk
+   *  carries no money (rapport by words alone). 0n is legal and MEANINGFUL
+   *  ("we will not move on price") — it behaves like null for the money
+   *  and like a presence for the digest. Negatives refuse (`bad-concession`
+   *  — an agreed PRICE RISE rides adjust-price/sell-offer, not the
+   *  concession leg). MoneyUnit keeps a fractional concession
+   *  UNREPRESENTABLE at the wire (Law 2). */
+  readonly concessionMicroUsd: MoneyUnit | null;
+  /** Whole business months the renewal term rolls forward on top of the
+   *  renewed geometry at the cliff (safe integer >= 1 or null = no
+   *  extension). An extension never re-arms a written-off contract — the
+   *  fold only touches the roll-forward on a renewing cliff. */
+  readonly termMonthsExtension: number | null;
+  /** Business-clock effective minute (Dual-Clock law §4.4: a negotiation
+   *  is a business act); null sentinel = in force from the executing
+   *  tick, a future stamp arms it — the `PriceOverrideRecord` as-of
+   *  discipline, consumed at the cliff by `activeNegotiation`. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1514,7 +1586,8 @@ export type PlayerVerbArgs =
   | ScaleArgs
   | MaintainArgs
   | ScheduleArgs
-  | SellOfferArgs;
+  | SellOfferArgs
+  | NegotiateTermsArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -1936,6 +2009,53 @@ export interface SellBook {
   readonly entries: ReadonlyMap<string, SellOffer>;
 }
 
+/** One executed `negotiate-terms` order, frozen into the negotiation book
+ *  (ADR-0015 5/5 · Negotiate). The record is the entire door side effect;
+ *  the ENGINE reader is economy/negotiate.ts, consumed at the renewal
+ *  cliff and the invoice calendar through the forwarded
+ *  `EconomyTickIn.negotiations` map. Grounded §1.3 colo "Amps and
+ *  Aisles", hosting_game.md:1632 "**Dominant verb: Negotiate.**" and
+ *  :1637 "tone options and a relationship meter. **This is the level's
+ *  combat.**" — the card's per-tenant relationship meter does NOT exist
+ *  in v0 (honest gap; company-level reputation @57ea80e stays untouched);
+ *  the tone retention bumps in `NegotiationConfig` are its stand-in. */
+export interface NegotiationTerm {
+  /** Closed price-target kind (see `NegotiateTermsArgs`). */
+  readonly targetKind: PriceTargetKind;
+  /** Host-namespace id of who is being negotiated with. */
+  readonly targetId: EntityId;
+  /** Closed tone vocabulary (see `NegotiationTone`). */
+  readonly tone: NegotiationTone;
+  /** Signed renewal-cycle price move in µ$, positive = tenant discount
+   *  (the sign law lives on `NegotiateTermsArgs.concessionMicroUsd`);
+   *  null = no money in the talk. 0n is a booked "no movement". */
+  readonly concessionMicroUsd: MoneyUnit | null;
+  /** Whole months the renewed term rolls forward at the cliff (>= 1 by
+   *  the door's law); null = the term renews on its existing geometry. */
+  readonly termMonthsExtension: number | null;
+  /** Macro tick the door executed the order (write-order witness;
+   *  last-write-wins per key). */
+  readonly shippedAtTick: SimTick;
+  /** Business minute the terms take effect; null = from `shippedAtTick`.
+   *  The as-of reading discipline is the `PriceOverrideRecord` twin
+   *  (`activeNegotiation` — a future stamp is not-yet-law). */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
+/** OPTIONAL `GameState` embed — the negotiate-terms book `negotiate-terms`
+ *  writes (same embed law as the other door books: absent ⇒ byte-identical
+ *  digests everywhere; `pipeline/digest.ts` absorbs it WHEN PRESENT).
+ *  Keyed by the COMPOSITE `<targetKind>:<targetId>` priceKey grammar — the
+ *  `priceOverrideKey`/`parsePriceOverrideKey` codec REUSED by identity, so
+ *  a negotiation key matches a contract's sparse `priceKey` (the leg the
+ *  economy fold reads). LAST-WRITE-WINS per key (re-negotiating replaces
+ *  the standing terms; `version` bumps per materialized write — the
+ *  board/pricing memoization convention). */
+export interface NegotiateBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<string, NegotiationTerm>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -2174,4 +2294,19 @@ export interface GameState {
    *  it ONLY when present, so every pre-sell state — all shipped goldens —
    *  digests byte-identically. */
   readonly sell?: SellBook;
+  /** ADR-0015 embed — the negotiate-terms (Negotiate) book
+   *  `negotiate-terms` writes (see `NegotiateBook`): a priceKey-shaped
+   *  standing term per target — tone, an optional µ$ concession, an
+   *  optional whole-month term extension, as-of a business minute.
+   *  Forwarded per fold as `EconomyTickIn.negotiations` (internal/
+   *  tickFold.ts, mirrors the priceOverrides seam exactly — absent book ⇒
+   *  key omitted ⇒ every shipped money digest byte-identical); consumed at
+   *  the renewal cliff (retention factor × tone/concession bumps BEFORE
+   *  the existing single draw — zero new rolls; economy/negotiate.ts) and
+   *  at the invoice calendar (concession discounts the billing base at
+   *  the override-chain head — the grandfather lock still WINS,
+   *  ADR-0014 #D4). OPTIONAL, digest-switch law: `pipeline/digest.ts`
+   *  absorbs it ONLY when present, so every pre-negotiate state — all
+   *  shipped goldens — digests byte-identically. */
+  readonly negotiate?: NegotiateBook;
 }

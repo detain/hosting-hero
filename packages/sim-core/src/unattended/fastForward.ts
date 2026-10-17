@@ -65,6 +65,7 @@ import type {
   EntityId,
   Fixed,
   GameState,
+  NegotiateBook,
   NodeRecord,
   ObservedCell,
   ObservedKey,
@@ -375,6 +376,11 @@ export interface RunUnattendedConfig {
    *  as `refusedSettlements` (@984759b) — so quiet weekends stay
    *  byte-identical (elasticity resolves to neutral, no extra RNG roll). */
   readonly pricing?: PriceOverrideBook;
+  /** ADR-0015 5/5 negotiation book (door lane): embedded post-mint exactly
+   *  like `pricing` and forwarded as `EconomyTickIn.negotiations` on every
+   *  economy fold (internal/tickFold.ts owns the leg); ABSENT ⇒ key omitted
+   *  ⇒ every shipped weekend digest byte-identical. */
+  readonly negotiate?: NegotiateBook;
   /** §7.7 recovery engine (ADR-0012 wiring, lane @cdb2bc5): arming the
    *  driver's recovery fold — struggle detection, windows, strikes, locks
    *  and gradual-restoration throttling run inside the SIM and ride the
@@ -551,8 +557,12 @@ export function mintInitialState(
      frozen — a host-side spread is the sanctioned embed point. Absent ⇒
      the SAME state object flows on (identity, not a copy — zero digest
      churn for every pre-pricing weekend). */
-  return config.pricing !== undefined
-    ? Object.freeze({ ...state, pricing: config.pricing })
+  return config.pricing !== undefined || config.negotiate !== undefined
+    ? Object.freeze({
+        ...state,
+        ...(config.pricing !== undefined ? { pricing: config.pricing } : {}),
+        ...(config.negotiate !== undefined ? { negotiate: config.negotiate } : {}),
+      })
     : state;
 }
 

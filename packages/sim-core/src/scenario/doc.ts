@@ -312,7 +312,7 @@ export type ScenarioTraffic = ScenarioSegmentsTraffic | ScenarioCorpusTraffic;
  *  __tests__/intentGrammar.test.ts reads the door's source block with
  *  node:fs and refuses drift in either direction. If the door's grammar
  *  changes, that test goes red before any mission can drift. */
-type IntentArgWire = "string" | "null|string" | "number" | "null|number" | "money";
+type IntentArgWire = "string" | "null|string" | "number" | "null|number" | "money" | "null|money";
 
 /* Exported for the fs drift-pin in __tests__/intentGrammar.test.ts — the
    barrel stays shut (doc.ts-level export = api-verify-invisible by the
@@ -356,6 +356,14 @@ export const SCENARIO_INTENT_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Re
     targetId: "string",
     offerPriceMicroUsd: "money",
     termMonths: "number",
+    effectiveAtBusinessMinute: "null|number",
+  }),
+  "negotiate-terms": Object.freeze({
+    targetKind: "string",
+    targetId: "string",
+    tone: "string",
+    concessionMicroUsd: "null|money",
+    termMonthsExtension: "null|number",
     effectiveAtBusinessMinute: "null|number",
   }),
 });
@@ -1357,6 +1365,10 @@ function parseIntentArg(value: unknown, wire: IntentArgWire, path: string): stri
     if (value === null) return null;
     if (typeof value !== "number" || !Number.isFinite(value)) bad("BAD_INTENT", path, "expected a finite number or an explicit null");
     return value;
+  }
+  if (wire === "null|money") {
+    if (value === null) return null;
+    return parseMoneyWire(value, path, "BAD_INTENT");
   }
   return parseMoneyWire(value, path, "BAD_INTENT");
 }

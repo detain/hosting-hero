@@ -351,6 +351,35 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0015 5/5 NEGOTIATE — the optional negotiate-terms book (digest-switch
+  // law, same embed law as the others): absorbed ONLY when present, so every
+  // pre-negotiate state (all shipped goldens) keeps byte-identical digests.
+  // Composite `<kind>:<id>` keys sort code-unit (insertion order NEVER read);
+  // like sell the key is derived data and the RECORD fields carry the
+  // identity — the tone rides as TEXT (§7.6: it is load-bearing play, not
+  // decoration), the concession is the one place null vs a booked 0n must
+  // stay DISTINCT ("no money" vs "we will not move on price"), and because
+  // the door's `bad-concession` law refuses negatives the -1 null-sentinel
+  // is unambiguous. Raw like sell: superseded-by-LWW history is what a
+  // digest witnesses.
+  if (state.negotiate !== undefined) {
+    sink.text("negotiate").int(state.negotiate.version);
+    const negotiateKeys = Array.from(state.negotiate.entries.keys()).sort(byId);
+    sink.int(negotiateKeys.length);
+    for (const key of negotiateKeys) {
+      const rec = state.negotiate.entries.get(key);
+      if (rec === undefined) continue;
+      sink
+        .text(rec.targetKind)
+        .text(rec.targetId)
+        .text(rec.tone)
+        .int(rec.concessionMicroUsd ?? -1)
+        .int(rec.termMonthsExtension ?? -1)
+        .int(rec.shippedAtTick)
+        .int(rec.effectiveAtBusinessMinute ?? -1);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.

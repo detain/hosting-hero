@@ -55,6 +55,7 @@ import {
   type LedgerEntry,
   type MoneyBuckets,
   type MoneyUnit,
+  type NegotiationTerm,
   type ObservedWrite,
   type PriceOverrideRecord,
   type RevenueQualityBand,
@@ -86,6 +87,7 @@ import {
 import { bpsOf, BPS_DEN } from "./money.ts";
 import { floorDiv } from "./intMath.ts";
 import { applyFactorBps, priceElasticityFor } from "./elasticity.ts";
+import { activeNegotiation, negotiatedBillingBase, negotiationRetentionFactorBps } from "./negotiate.ts";
 import {
   foldPostMortemFilings,
   parsePostMortemFilings,
@@ -264,6 +266,18 @@ export interface EconomyTickIn {
    *  its pre-existing path byte-identically — no-roll discipline pinned by
    *  __tests__/elasticity.test.ts. */
   readonly priceOverrides?: ReadonlyMap<string, PriceOverrideRecord> | undefined;
+  /** ADR-0015 5/5 — the door's frozen negotiation book (`GameState
+   *  .negotiate.entries`, keyed `<kind>:<id>` — the priceKey grammar)
+   *  forwarded per fold (internal/tickFold.ts mirrors the priceOverrides
+   *  seam EXACTLY: presence-only, absent book ⇒ key omitted ⇒ every
+   *  shipped money digest byte-identical). Contracts that carry a
+   *  matching sparse `priceKey` consult the standing terms AT THEIR
+   *  CLIFF: the tone/concession bumps tilt the retention factor BEFORE
+   *  the existing single draw (zero new rolls — economy/negotiate.ts),
+   *  a live concession discounts the invoice calendar's billing base at
+   *  the override-chain head (grandfather still WINS, ADR-0014 #D4), and
+   *  a term extension rolls the renewed cliff forward. */
+  readonly negotiations?: ReadonlyMap<string, NegotiationTerm> | undefined;
   /**
    * LONG-SAVE retention (perf audit #3), OPT-IN default OFF:
    * settled-and-fully-resolved invoices (paid/written-off with no live
@@ -626,11 +640,21 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     // OD-24(a): an active override tilts the win/loss pulse — retention is
     // scaled by the elasticity mirror BEFORE the existing single draw.
     // null (no key/book/future-dated) ⇒ neutral default inside the helper.
+    // ADR-0015 5/5: an in-force negotiation adds its tone/concession bump to
+    // that SAME factor before that SAME draw (zero new rolls), and may roll
+    // the renewed term forward. No key/book/future-dated ⇒ both legs pass
+    // through untouched (identity tripwires in economy/negotiate.ts).
     const elasticity = priceElasticityFor(contract, econ, input.priceOverrides, now, cfg);
+    const negotiation = activeNegotiation(input.negotiations, econ.priceKey, now);
+    const retentionFactorBps = negotiationRetentionFactorBps(
+      negotiation,
+      elasticity?.retentionBpsFactor ?? BPS_DEN,
+      cfg,
+    );
     const decision =
       supplied?.decision ??
-      defaultCliffDecision(contract, econ, runSeed, cfg, elasticity?.retentionBpsFactor ?? BPS_DEN);
-    const outcome = resolveRenewalCliff(econ, decision, now, cfg);
+      defaultCliffDecision(contract, econ, runSeed, cfg, retentionFactorBps);
+    const outcome = resolveRenewalCliff(econ, decision, now, cfg, negotiation?.termMonthsExtension ?? 0);
     econ = outcome.econ;
     if (outcome.kind === "escalate-and-renew") {
       // Price change lands on the SHARED contract — orchestrator re-binds it
@@ -908,11 +932,36 @@ function generateDueInvoices(
     // OD-24(a): as-of resolution of the price book at the INVOICE calendar —
     // one resolution per contract-tick (all catch-up cycles bill at the same
     // effective base; the grandfather lock inside billedMrc still wins).
-    const baseOverride = priceElasticityFor(contract, econ, input.priceOverrides, now, cfg)?.effectiveBaseMicroUsd ?? null;
+    // ADR-0015 5/5: an in-force concession discounts that effective base at
+    // the chain HEAD (still before the escalator compounds and still UNDER
+    // the grandfather lock — billing-order law ADR-0014 #D4 pinned against
+    // contract.ts). No term / null / 0n concession ⇒ base rides through
+    // UNTOUCHED (identity — the byte-identity leg).
+    const elasticity = priceElasticityFor(contract, econ, input.priceOverrides, now, cfg);
+    const baseOverride = negotiatedBillingBase(
+      contract,
+      activeNegotiation(input.negotiations, econ.priceKey, now),
+      elasticity?.effectiveBaseMicroUsd ?? null,
+    );
     let invoicedCycles = econ.invoicedCycles;
     let backlogRemaining = econ.backlogRemaining;
     for (let n = 0; n < cap; n += 1) {
       const invoice = issueInvoice(contract, { ...econ, invoicedCycles }, invoicedCycles, now, terms, discount, cfg, baseOverride);
+      /* ADR-0015 5/5: a cycle whose BILLED gross is 0 posts nothing — the
+       * ledger law is fail-loud ("an entry delta must touch at least one
+       * bucket", ledger.ts), and a negotiated concession deeper than the
+       * rent gives the cycle away rather than billing the tenant money
+       * (negotiatedBillingBase floor 0n). Reaching this branch on an
+       * UN-negotiated book is arithmetically impossible for the shipped
+       * corpus (mrc > 0 everywhere; a zero-gross contract would have hit
+       * the ledger throw before this guard ever saw it), so every existing
+       * digest is byte-ident and the guard only catches the concession-
+       * funded free cycle. The cycle still COUNTS (invoicedCycles++): the
+       * calendar advances, no invoice record, no notice, no entry. */
+      if (invoice.gross === 0n) {
+        invoicedCycles += 1;
+        continue;
+      }
       /* §6.13 recognition: backlog money does NOT re-appear at issue — the
        * same entry MOVES it (backlog −drain ⇒ accountsReceivable +gross), so
        * a signed deal's promise is never counted twice inside netPosition.

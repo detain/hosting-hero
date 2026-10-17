@@ -346,6 +346,11 @@ export function foldMoneyLaneTick(p: MoneyLaneTickParams): MoneyLaneTickResult {
          override map IS EconomyTickIn.priceOverrides' type. Absent book
          ⇒ key omitted ⇒ empty⇒omitted byte-identity (@984759b law). */
       ...(game.pricing !== undefined ? { priceOverrides: game.pricing.overrides } : {}),
+      /* Negotiation forward (ADR-0015 5/5, mirrors the priceOverrides seam
+         EXACTLY): the embedded book's term map IS EconomyTickIn
+         .negotiations' type. Absent book ⇒ key omitted ⇒ every shipped
+         money digest byte-identical (@984759b law). */
+      ...(game.negotiate !== undefined ? { negotiations: game.negotiate.entries } : {}),
       /* Empty buffer ⇒ key omitted ⇒ every pre-existing input shape
          (and every witness riding it) byte-identical. */
       ...(witness.length > 0 ? { refusedSettlements: Object.freeze([...witness]) } : {}),

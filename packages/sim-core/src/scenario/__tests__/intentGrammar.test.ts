@@ -21,15 +21,18 @@ import { SCENARIO_INTENT_ARG_SHAPES, ScenarioError, parseScenarioDoc } from "../
 
 /* ─────────────── the door's authoritative table, extracted ─────────────── */
 
-/** Map the door's wire-type spellings onto the scenario wall's. The one
- *  legal translation is `bigint` → "money": the wire is JSON, so a money
- *  arg arrives as a digit string and the wall parses it to bigint. */
+/** Map the door's wire-type spellings onto the scenario wall's. The legal
+ *  translations are `bigint` → "money" and `bigint-or-null` → "null|money":
+ *  the wire is JSON, so a money arg arrives as a digit string and the wall
+ *  parses it to bigint; the ADR-0015 5/5 negotiate arm adds the explicit
+ *  null sentinel on the money carrier (0-vs-null is load-bearing there). */
 const DOOR_TO_WIRE: Readonly<Record<string, string>> = {
   string: "string",
   "string-or-null": "null|string",
   number: "number",
   "number-or-null": "null|number",
   bigint: "money",
+  "bigint-or-null": "null|money",
 };
 
 function doorShapes(): Record<string, Record<string, string>> {
@@ -82,12 +85,27 @@ describe("SCENARIO_INTENT_ARG_SHAPES — falsifiable mirror of the door", () => 
     // field announce itself here (and in proto BIGINT_ARG_FIELDS) rather
     // than silently forking the wire law. Original pin (adjust-price alone)
     // re-pinned honestly by the sell lane, disclosed in the landing commit.
+    // ADR-0015 5/5 note: negotiate-terms' concession is the NULLABLE bigint
+    // arm ("null|money") and intentionally does NOT join this strict-money
+    // pin — the sibling pin below enumerates that carrier instead.
     const moneyFields = Object.entries(SCENARIO_INTENT_ARG_SHAPES).flatMap(([verb, fields]) =>
       Object.entries(fields)
         .filter(([_f, wireType]) => wireType === "money")
         .map(([field]) => `${verb}.${field}`),
     );
     expect(moneyFields.sort()).toEqual(["adjust-price.newPriceMicroUsd", "sell-offer.offerPriceMicroUsd"]);
+  });
+
+  it("the nullable-money translation appears at exactly the one concession carrier", () => {
+    // The `bigint-or-null` arm (I-M risk #6, resolved option (i) by the
+    // negotiate lane): a new nullable-money field must announce itself here
+    // AND in proto NULLABLE_BIGINT_ARG_FIELDS, never silently.
+    const nullMoneyFields = Object.entries(SCENARIO_INTENT_ARG_SHAPES).flatMap(([verb, fields]) =>
+      Object.entries(fields)
+        .filter(([_f, wireType]) => wireType === "null|money")
+        .map(([field]) => `${verb}.${field}`),
+    );
+    expect(nullMoneyFields.sort()).toEqual(["negotiate-terms.concessionMicroUsd"]);
   });
 });
 
@@ -151,6 +169,14 @@ const HONEST_ROWS: Readonly<Record<string, Record<string, unknown>>> = {
     termMonths: 12,
     effectiveAtBusinessMinute: null,
   },
+  "negotiate-terms": {
+    targetKind: "plan",
+    targetId: "cage-7",
+    tone: "rapport",
+    concessionMicroUsd: "250000000",
+    termMonthsExtension: null,
+    effectiveAtBusinessMinute: null,
+  },
 };
 
 describe("the wall accepts one honest row per verb", () => {
@@ -165,6 +191,23 @@ describe("the wall accepts one honest row per verb", () => {
   it("the money carrier parses to bigint", () => {
     const parsed = parseIntentRow({ atTick: 5, verb: "adjust-price", args: HONEST_ROWS["adjust-price"] });
     expect(parsed.args["newPriceMicroUsd"]).toBe(60000000n);
+  });
+
+  it("the nullable-money carrier parses BOTH arms honestly", () => {
+    // digit string → bigint (the sell-offer law)…
+    const armed = parseIntentRow({ atTick: 5, verb: "negotiate-terms", args: HONEST_ROWS["negotiate-terms"] });
+    expect(armed.args["concessionMicroUsd"]).toBe(250_000_000n);
+    // …and the EXPLICIT null sentinel stays null (0-vs-null is load-bearing:
+    // "0" must survive as 0n, never be coerced to null):
+    const honest = { ...HONEST_ROWS["negotiate-terms"]!, concessionMicroUsd: null };
+    const nulled = parseIntentRow({ atTick: 5, verb: "negotiate-terms", args: honest });
+    expect(nulled.args["concessionMicroUsd"]).toBeNull();
+    const zeroed = parseIntentRow({
+      atTick: 5,
+      verb: "negotiate-terms",
+      args: { ...honest, concessionMicroUsd: "0" },
+    });
+    expect(zeroed.args["concessionMicroUsd"]).toBe(0n);
   });
 
   it("null|string fields also accept a real string", () => {

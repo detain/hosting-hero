@@ -93,6 +93,7 @@ import {
   type ObservedCell,
   type ObservedKey,
   type GameState,
+  type NegotiateBook,
   type Outcome,
   type PatienceMode,
   type PlayerIntent,
@@ -998,6 +999,11 @@ export interface SimCoreRunnerOptions {
    *  keys without a book never see an override — both no-ops by the
    *  elasticity resolve law). */
   readonly priceKeys?: ReadonlyMap<EntityId, string>;
+  /** ADR-0015 5/5 negotiation book (door lane): embedded post-mint and
+   *  forwarded as `EconomyTickIn.negotiations` on every economy fold —
+   *  mirrors `pricing` EXACTLY (fastForward.ts sibling). ABSENT ⇒ key
+   *  OMITTED per tick (empty⇒omitted byte-identity law @984759b). */
+  readonly negotiate?: NegotiateBook;
   /** §7.7 recovery engine (ADR-0012 wiring, mirrors fastForward.config.
    *  recovery): arms the driver's recovery fold — windows, strikes, locks
    *  and gradual-restoration throttling run inside the SIM. ABSENT ⇒ the
@@ -1171,11 +1177,15 @@ export class SimCoreRunner implements SimRunner {
          fastForward.mintInitialState); absent ⇒ zero spread ⇒ no key. */
       ...(options.attention !== undefined ? { attention: options.attention } : {}),
     });
-    /* The pricing book embeds post-mint (createInitialState accepts
-       attention but not pricing; the state record is frozen): absent ⇒ the
-       SAME object flows on, zero digest churn. */
-    if (options.pricing !== undefined) {
-      this.game = Object.freeze({ ...this.game, pricing: options.pricing });
+    /* The pricing + negotiation books embed post-mint (createInitialState
+       accepts attention but not pricing/negotiate; the state record is
+       frozen): absent ⇒ the SAME object flows on, zero digest churn. */
+    if (options.pricing !== undefined || options.negotiate !== undefined) {
+      this.game = Object.freeze({
+        ...this.game,
+        ...(options.pricing !== undefined ? { pricing: options.pricing } : {}),
+        ...(options.negotiate !== undefined ? { negotiate: options.negotiate } : {}),
+      });
     }
     this.lanes = this.game.lanes;
 
@@ -1688,6 +1698,10 @@ export class SimCoreRunner implements SimRunner {
              embedded book's map IS priceOverrides' type; absent book ⇒ key
              omitted ⇒ the golden-carrying input shape byte-identical. */
           ...(this.game.pricing !== undefined ? { priceOverrides: this.game.pricing.overrides } : {}),
+          /* Negotiation forward (ADR-0015 5/5, mirrors the pricing leg):
+             embedded book's term map IS negotiations' type; absent book ⇒
+             key omitted ⇒ the golden-carrying input shape byte-identical. */
+          ...(this.game.negotiate !== undefined ? { negotiations: this.game.negotiate.entries } : {}),
           /* Empty buffer ⇒ key omitted ⇒ the pre-death input shape (and the
              goldens riding it) byte-identical. */
           ...(this.pendingRefusalWitness.length > 0

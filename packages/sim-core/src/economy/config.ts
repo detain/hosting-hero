@@ -17,7 +17,7 @@
  *  - suspension dial day 3|10|30 and policy-book concessions (player choices).
  */
 
-import type { MoneyUnit } from "../types.ts";
+import type { MoneyUnit, NegotiationTone } from "../types.ts";
 import { asMoney } from "../types.ts";
 
 /** The three candidate tuning sheets (Appendix D, MASTER_REPORT). */
@@ -319,6 +319,33 @@ export interface PricingConfig {
   readonly retentionFactorMinBps: bigint;
 }
 
+/* ─────────────── negotiation posture of the negotiate-terms book ──────── */
+
+/** The tone/concession bumps behind `economy/negotiate.ts` (ADR-0015
+ *  door-mechanics ruling 2026-10-16 — 5/5 · Negotiate, the money-lane leg:
+ *  the door's `negotiate-terms` records are CONSUMED here). Grounded §1.3
+ *  colo "Amps and Aisles" (hosting_game.md:1637): "tone options and a
+ *  relationship meter. **This is the level's combat.**" The v0 honest gap:
+ *  the per-tenant relationship meter does NOT exist — these bumps are its
+ *  company-level stand-in (types.ts `NegotiationTerm`). Direction law: the
+ *  bumps RAISE the cliff's retention factor BEFORE the existing single
+ *  draw (never a new roll), clamped to ≤ 1.0 — a rapport buys leverage,
+ *  never certainty (the elasticity ceiling, mirrored). All values
+ *  PROVISIONAL taste numerics (ADR-0015 mechanics authorization; the
+ *  card names no numbers — the ordering law it DOES name, rapport-with-
+ *  concession > rapport-without, is pinned in tests). */
+export interface NegotiationConfig {
+  /** Additive bps over 1.0 of retention lift per tone at the renewal
+   *  cliff (rapport leans on the relationship, firm on the arithmetic,
+   *  legal on the contract — which buys no goodwill: 0).
+   *  PROVISIONAL (ADR-0015 taste numeric). */
+  readonly retentionBumpBpsByTone: Readonly<Record<NegotiationTone, bigint>>;
+  /** Additive bps for a NON-ZERO booked concession (money talks in every
+   *  tone; a booked 0n is a stance, not a sweetener). Combined with the
+   *  tone bump, then clamped ≤ 1.0. PROVISIONAL (ADR-0015 taste numeric). */
+  readonly concessionPresenceBps: bigint;
+}
+
 /* ─────────────── blameless post-mortem filing gate (§7.7, g21) ─────────── */
 
 /** The adjudication limit behind `economy/postmortem.ts` (audit g21: the
@@ -358,6 +385,7 @@ export interface EconomyConfig {
   readonly reputation: ReputationConfig;
   readonly death: DeathConfig;
   readonly pricing: PricingConfig;
+  readonly negotiation: NegotiationConfig;
   /** §7.7 post-mortem filing gate — OPTIONAL (unlike every section above):
    *  sibling hosts hand-build config literals, and a REQUIRED key would
    *  break their typecheck for a fold that is input-gated anyway. The fold
@@ -478,6 +506,16 @@ export function defaultEconomyConfig(): EconomyConfig {
       factorMinBps: 5_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — 0.5× floor of the [0.5×,3×] churn clamp
       factorMaxBps: 30_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — 3× ceiling of the [0.5×,3×] churn clamp
       retentionFactorMinBps: 1_000n, // RATIFIED 2026-10-16 (ADR-0014 #D4) — 0.1× floor: hikes never zero the renewal chance
+    },
+    negotiation: {
+      // ADR-0015 5/5 (Negotiate). PROVISIONAL taste numerics — the card
+      // names tones, not numbers; the ORDERING law it names is pinned.
+      retentionBumpBpsByTone: Object.freeze({
+        rapport: 300n, // the relationship meter works (+3% retention)
+        firm: 100n, // the arithmetic half-works (+1%)
+        legal: 0n, // "each with a legal and reputational cost" — no goodwill bought
+      }),
+      concessionPresenceBps: 300n, // money talks in every tone (+3%; 0n booked = stance, no bump)
     },
     postMortem: DEFAULT_POST_MORTEM_CONFIG, // §7.7 — shared frozen default book
   };
