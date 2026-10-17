@@ -344,18 +344,22 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   [PlayerVerb.Shield]: 1,
   // ADR-0015 (Scale 1/5): booking reserved warmth is the same desk decision
   // class — COMMIT, 1 tick. The warmth lands at the step-5/6 capacity read
-  // (pipeline/defaults.ts); the door only writes the book.
+  // (pipeline/defaults.ts); the door only writes the book. PROVISIONAL taste
+  // (post-ratify new numeric, 2026-10-16) — occupancy pinned red on drift.
   [PlayerVerb.ScaleNode]: 1,
   // ADR-0015 (Maintain 2/5): booking attendance is an on-site task, not a
   // desk tap — the ATTENDANCE class (2 ticks, same window as
   // disconnect-drain/shed-load/communicate). The veto lands at step 9
   // (pipeline/defaults.ts `maintainInForce`); the door only writes the book.
+  // PROVISIONAL taste (post-ratify new numeric, 2026-10-16) — occupancy
+  // pinned red on drift.
   [PlayerVerb.MaintainNode]: 2,
   // ADR-0015 (Schedule 2/5): arming a calendar band is a TAP — 1 tick. The
   // 26-hour-disaster law (hosting_game.md:1964: a mis-set window is how a
   // night becomes a week) demands cheap re-arm, so the correction must never
   // cost attendance-grade time. The deadline lands at step 9; the door only
-  // writes the book.
+  // writes the book. PROVISIONAL taste (post-ratify new numeric, 2026-10-16)
+  // — occupancy pinned red on drift.
   [PlayerVerb.ScheduleWindow]: 1,
   // ADR-0015 (Sell 3/5): signing an offer is a desk decision — the COMMIT
   // class (1 tick), same hand cost. PROVISIONAL taste (post-ratify new
@@ -390,8 +394,14 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   [PlayerVerb.ToggleSpeed]: 0,
   [PlayerVerb.AdjustPrice]: 1,
   [PlayerVerb.Shield]: 1,
+  // ADR-0015 (Scale 1/5): one desk hand to book warmth — same cost as the
+  // other COMMIT-class verbs (PROVISIONAL taste, occupancy table above).
   [PlayerVerb.ScaleNode]: 1,
+  // ADR-0015 (Maintain 2/5): one hand to book attendance (the attendance
+  // shows in the 2-tick occupancy, occupancy table above; PROVISIONAL taste).
   [PlayerVerb.MaintainNode]: 1,
+  // ADR-0015 (Schedule 2/5): one hand to arm a calendar band — same cost as
+  // the other COMMIT-class verbs (PROVISIONAL taste, occupancy table above).
   [PlayerVerb.ScheduleWindow]: 1,
   // ADR-0015 (Sell 3/5): one desk hand to sign an offer — same cost as the
   // other COMMIT-class verbs (PROVISIONAL taste, occupancy table above).
