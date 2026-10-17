@@ -61,15 +61,15 @@ describe("flavourFeed · pool closure", () => {
       // keyed (packId, key), so the guard is per-entry, not global-keyed
       expect(packOf(entry.packId).decision.has(entry.key), `decision key '${entry.key}' in the feed`).toBe(false);
     }
-    // anti-vacuity: the eleven decision maps are real, this test has teeth
+    // anti-vacuity: the twelve decision maps are real, this test has teeth
     expect(decisionKeys.size).toBeGreaterThan(150);
   });
 
-  it("the #D5 pool census: 219 entries / 177 distinct keys (disk truth)", () => {
-    // re-derived empirically from the eleven registered packs — entries count
+  it("the #D5 pool census: 233 entries / 187 distinct keys (disk truth)", () => {
+    // re-derived empirically from the twelve registered packs — entries count
     // the (packId, key) pairs, distinct keys collapse the byte-ident twins
-    expect(POOL.length).toBe(219);
-    expect(new Set(POOL.map((e) => e.key)).size).toBe(177);
+    expect(POOL.length).toBe(233);
+    expect(new Set(POOL.map((e) => e.key)).size).toBe(187);
     // the widening moved every entry count EXCEPT the trio of baseline-only
     // loading tips: slot-free flavour per pack (sorted code-unit by packId)
     const perPack = new Map<PackId, number>();
@@ -77,6 +77,7 @@ describe("flavourFeed · pool closure", () => {
     expect([...perPack.entries()].sort((a, b) => compareCodeUnits(a[0], b[0]))).toEqual([
       ["backup-archival", 15],
       ["colo", 17],
+      ["dbaas", 14],
       ["dedicated", 21],
       ["dns-hosting", 17],
       ["exchange-colo", 15],
@@ -115,10 +116,10 @@ describe("flavourFeed · pool closure", () => {
     );
     expect(sorted).toStrictEqual([...POOL]);
     // the (key,packId) pair is a genuine total order: since #D5 the four
-    // vendor replies ship slot-free in ALL ELEVEN packs byte-identical, and the
+    // vendor replies ship slot-free in ALL TWELVE packs byte-identical, and the
     // two loading tips coexist as game+shared-web twins
     const firmware = POOL.filter((e) => e.key === "vendor.reply.firmware");
-    expect(firmware.length).toBe(11);
+    expect(firmware.length).toBe(12);
     expect(firmware.map((e) => e.packId)).toEqual(
       [...firmware.map((e) => e.packId)].sort(compareCodeUnits),
     );
@@ -277,11 +278,11 @@ describe("flavourFeed · root filter", () => {
 
   it("forum SPEAKS since #D5 — its slot-free lines arrived with the type packs", () => {
     const forum = flavourPoolForRoots(["forum"]);
-    expect(forum.length).toBe(8); // 8 of 8 forum lines ride the pool
+    expect(forum.length).toBe(9); // 9 of 9 forum lines ride the pool
     // none from the baseline packs — every shared-web/game forum thread still
     // carries slots; the type banks authored slot-free threads
     expect(new Set(forum.map((e) => e.packId))).toEqual(
-      new Set(["dedicated", "dns-hosting", "exchange-colo", "object-storage", "serverless", "trunk-group-voip"]),
+      new Set(["dbaas", "dedicated", "dns-hosting", "exchange-colo", "object-storage", "serverless", "trunk-group-voip"]),
     );
     expect(forum.some((e) => e.packId === "shared-web" || e.packId === "game")).toBe(false);
     // falsifiable: the baseline banks DO hold forum copy — all slotted, all out
@@ -299,18 +300,18 @@ describe("flavourFeed · root filter", () => {
     let total = 0;
     for (const [, n] of counts) total += n;
     expect(total).toBe(POOL.length); // every line owned by exactly one root
-    // full root census over the eleven-pack pool (disk truth, #D5 + colo + backup-archival re-roll)
+    // full root census over the twelve-pack pool (disk truth, #D5 + colo + backup-archival + dbaas re-roll)
     expect([...counts.entries()]).toEqual([
       ["abuse", 1],
-      ["achievement", 33],
+      ["achievement", 36],
       ["chatter", 19],
-      ["codex", 18],
-      ["forum", 8],
-      ["loading", 30],
+      ["codex", 20],
+      ["forum", 9],
+      ["loading", 31],
       ["press", 3],
-      ["sticky", 11],
-      ["ticket", 52],
-      ["vendor", 44],
+      ["sticky", 12],
+      ["ticket", 54],
+      ["vendor", 48],
     ]);
     const names = [...counts.keys()];
     expect(names).toStrictEqual([...names].sort(compareCodeUnits));
