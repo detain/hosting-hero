@@ -30,7 +30,8 @@ import type { EntityId, MoneyUnit, PlayerIntent } from "@hh/sim-core";
 
 export const ADJUST_PRICE = PlayerVerb.AdjustPrice;
 
-/** PROVISIONAL demo catalog (taste row, owner-ratify). The door itself never
+/** Demo catalog (taste row RATIFIED 2026-10-16, ADR-0015 #1). The door
+ *  itself never
  *  interprets plan ids — with no `canAdjustPrice` wired (the proto runner's
  *  config today) any well-formed target executes structurally; the catalog
  *  is what the DIAL offers, not what the engine allows. */

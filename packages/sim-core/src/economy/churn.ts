@@ -85,7 +85,8 @@ export interface GhostedForecast {
   /** Seeded point inside the 30–60 d lag band where the fuse LIT (§7.15). */
   readonly litAtMin: SimMinute;
   /** Lit fuses decay out after `ghostedSignalDecayDays` unless re-signalled
-   *  (PROVISIONAL; the doc insists on trend-not-timer presentation). */
+   *  (RATIFIED 2026-10-16, ADR-0015 #1; the doc insists on
+   *  trend-not-timer presentation). */
   readonly expiresAtMin: SimMinute;
 }
 

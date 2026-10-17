@@ -21,8 +21,8 @@
  *    rescale: threats copy what defends them (waves/generate.ts 4c).
  *
  * The oversell ratio below is RATIFIED 2026-10-16 (ADR-0014 #D4); all other
- * thresholds here remain PROVISIONAL scenario rows (owner ratify-on-playtest
- * posture) and every one is a named const so the pin travels with the number.
+ * thresholds here are RATIFIED 2026-10-16 (ADR-0015 #1) scenario rows, and
+ * every one is a named const so the pin travels with the number.
  * The feint consumer is structurally wired but MARKER-INERT on shipped data:
  * no g1 wave authors a `feint` marker — buildSharedWebG1Table() therefore
  * accepts injected slice JSON so a test can plant one and prove the fold.
@@ -130,7 +130,8 @@ const MICRO = 1_000_000n;
 /** Homogeneity = the dominant QoS class's share of the live traffic, in
  *  micro-units. Empty mix (no units yet) reads as FULLY homogeneous — the
  *  conservative shared-pipe posture: an unrated tenant pool is exactly the
- *  "identical racks" danger the spec calls out (PROVISIONAL scenario row). */
+ *  "identical racks" danger the spec calls out (scenario row RATIFIED
+ *  2026-10-16, ADR-0015 #1). */
 export function homogeneityMicroFromClassMix(mix: Readonly<Record<string, Fixed>>): bigint {
   const shares = Object.values(mix);
   if (shares.length === 0) return MICRO;
@@ -149,11 +150,11 @@ export type IncidentState = "quiet" | "active" | "recovering";
 /** Rolling burst window (sim-minutes) the trigger looks back over. */
 export const INCIDENT_BURST_WINDOW_MIN = 5;
 /** Bounces+landings inside the window that constitute an incident. */
-export const INCIDENT_TRIGGER_BURST = 2; // PROVISIONAL scenario row
+export const INCIDENT_TRIGGER_BURST = 2; // RATIFIED 2026-10-16 (ADR-0015 #1) scenario row
 /** Minutes the incident stays "active" after its last trigger minute. */
-export const INCIDENT_ACTIVE_MINUTES = 6; // PROVISIONAL scenario row
+export const INCIDENT_ACTIVE_MINUTES = 6; // RATIFIED 2026-10-16 (ADR-0015 #1) scenario row
 /** Minutes of "recovering" tail after active expires. */
-export const INCIDENT_RECOVERING_MINUTES = 12; // PROVISIONAL scenario row
+export const INCIDENT_RECOVERING_MINUTES = 12; // RATIFIED 2026-10-16 (ADR-0015 #1) scenario row
 
 export interface IncidentClock {
   /** Per-minute bounce+land counts, oldest first, exactly WINDOW long. */

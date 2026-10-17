@@ -100,8 +100,9 @@ export function boardPresetById(id: string): BoardPreset {
 /* ═══════════════════════════ guard editor rows ═══════════════════════════ */
 
 /** One row of the guard editor. The six GUARD_KINDS, each armable, each with
- *  its PROVISIONAL defaults surfaced as editable fields (owner decision —
- *  these numbers are §-grounded guesses, the UI must SAY so). */
+ *  its RATIFIED defaults (ADR-0015 #1) surfaced as editable fields
+ *  (owner decision — these numbers are §-grounded guesses, the UI must
+ *  SAY so). */
 export interface GuardRowDraft {
   readonly kind: GuardKind;
   /** Mutable: this is editor state — the toggle flips it in place. */
@@ -121,7 +122,7 @@ export interface GuardRowDraft {
 }
 
 const PROVISIONAL_NOTE =
-  "PROVISIONAL defaults (owner-taste, guardrails.ts BUILTIN_CATASTROPHE_DEFS) — edit with intent.";
+  "RATIFIED defaults (owner-taste, guardrails.ts BUILTIN_CATASTROPHE_DEFS — ADR-0015 #1) — edit with intent.";
 
 export function provisionalNote(): string {
   return PROVISIONAL_NOTE;

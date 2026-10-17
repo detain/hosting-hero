@@ -22,7 +22,7 @@
  *    (economy/tick.ts applyBudgets → drainOutage → error budget → SLA
  *    credits → covenant health). The engine never reaches into the economy
  *    module itself; the map this returns merges like the landed-outage fan
- *    in internal/tickFold.ts (one PROVISIONAL 60 s constant, mirroring it).
+ *    in internal/tickFold.ts (one RATIFIED 60 s constant, mirroring it).
  *
  * Default-off law: with no authored `corrupts` row the slice never
  * materializes, the fold returns `{ corruptions: [] }` with no state, and
@@ -58,10 +58,10 @@ import type {
 import { asCauseId } from "../types.ts";
 import { MICROS_PER_MIN } from "../kernel/time.ts";
 
-/** PROVISIONAL (mirrors outageSecondsFromLanded @internal/tickFold.ts): one
- *  corrupted response burns 60 error-budget seconds per contract until the
- *  owner calibrates the severity split between landed breaches and silent
- *  corruption. */
+/** RATIFIED 2026-10-16 (ADR-0015 #1; mirrors outageSecondsFromLanded
+ *  @internal/tickFold.ts): one corrupted response burns 60 error-budget
+ *  seconds per contract — the 1:1 lands-parity severity ratio is RATIFIED;
+ *  the E1 dial stays the host lever to tune it. */
 export const CORRUPTION_OUTAGE_SEC = 60n;
 
 /** House causeId convention (recovery/economy precedent): the corruption
@@ -165,7 +165,7 @@ export function foldCorruptionTerminals(
  *
  * SEVERITY DIAL (lane E1): `perSec` is how many outage seconds ONE corrupted
  * response burns — an OWNER TASTE knob, exposed so hosts can dial corruption
- * severity without touching the engine. Its default is the PROVISIONAL 60 s
+ * severity without touching the engine. Its default is the RATIFIED 60 s
  * lands-twin law (`CORRUPTION_OUTAGE_SEC`, the constant shipped @16c6add);
  * omitting the argument (or passing `undefined`) keeps every pre-dial run
  * byte-identical — the dial is law only where a host turns it. Fail-loud at

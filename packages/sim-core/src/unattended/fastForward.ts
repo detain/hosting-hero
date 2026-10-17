@@ -201,8 +201,9 @@ export const UNATTENDED_EXPRESS_MAX_CONFIDENCE: Fixed = fromRatio(6n, 10n);
 /* NODE_DEGRADED_RHO_GTE and DEFAULT_REVENUE_TAGS now live in
    internal/tickFold.ts (re-exported above / imported below). */
 
-/** Patience budget for weekend traffic (PROVISIONAL: 120 sim-minutes,
- *  gate-fixture shape; real per-population patience is the bundle's). */
+/** Patience budget for weekend traffic (RATIFIED 2026-10-16, ADR-0015 #1:
+ *  120 sim-minutes, gate-fixture shape; real per-population patience is
+ *  the bundle's). */
 export const UNATTENDED_DEFAULT_PATIENCE_MIN = 120;
 
 /* ═══════════════════════════ the config record ═══════════════════════════ */
@@ -268,8 +269,8 @@ export interface UnattendedMoneyConfig {
   /** Dunning Engine buildable owned (default false). */
   readonly dunningEngineOwned?: boolean;
   /** Revenue-colour census applied to every registered contract (default:
-   *  neutral "blue" on all five axes — PROVISIONAL; per-contract tags are
-   *  a save/bundle concern the loader lane owns). */
+   *  neutral "blue" on all five axes — RATIFIED 2026-10-16 (ADR-0015 #1);
+   *  per-contract tags are a save/bundle concern the loader lane owns). */
   readonly revenueTags?: RevenueColourTags;
   /** L1 pricing (lane @5781335 host seam): contract id → price key, handed
    *  to `registerContractEconomy` at signing so the contract becomes

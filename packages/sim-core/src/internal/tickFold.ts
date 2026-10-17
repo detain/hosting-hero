@@ -74,16 +74,17 @@ import type { GuardMetric, GuardrailSample } from "../unattended/guardrails.ts";
 
 /** Trailing window (sim-minutes) for the servedRate / ruleFiringsPerMin
  *  metrics — one empty tick is a hiccup, five is a catastrophe
- *  (PROVISIONAL owner taste). */
+ *  (owner taste RATIFIED 2026-10-16, ADR-0015 #1). */
 export const GUARD_TRAILING_WINDOW_MIN = 5;
 
 /** §6.13 degraded reading for the cascadeCollapse census: ρ at/above this
- *  marks a node degraded (PROVISIONAL owner taste — the ρ/(1−ρ) knee R-07
- *  lives lower; 0.9 reads "dying", not "busy"). */
+ *  marks a node degraded (owner taste RATIFIED 2026-10-16, ADR-0015 #1 —
+ *  the ρ/(1−ρ) knee R-07 lives lower; 0.9 reads "dying", not "busy"). */
 export const NODE_DEGRADED_RHO_GTE: Fixed = fromRatio(9n, 10n);
 
-/** Neutral revenue-colour census for registered contracts (PROVISIONAL:
- *  the five-axis RevenueColourTags default — mid-band "blue" everywhere;
+/** Neutral revenue-colour census for registered contracts (RATIFIED
+ *  2026-10-16, ADR-0015 #1: the five-axis RevenueColourTags default —
+ *  mid-band "blue" everywhere;
  *  hosts with real tags override via their own money config). */
 export const DEFAULT_REVENUE_TAGS: RevenueColourTags = Object.freeze({
   margin: "blue",
@@ -185,8 +186,9 @@ export function withCashMirror(game: GameState, econ: EconomyState | null): Game
 }
 
 /** Landed breaches burn EVERY contract's SLA budget (company-wide reading;
- *  per-contract target attribution is an OD open item — PROVISIONAL).
- *  One landed unit = one sim-minute = 60 s of outage seconds. */
+ *  per-contract target attribution is an OD open item — RATIFIED
+ *  2026-10-16, ADR-0015 #1). One landed unit = one sim-minute = 60 s of
+ *  outage seconds. */
 function outageSecondsFromLanded(
   outcomes: readonly { readonly terminal: string | null }[],
   contracts: ReadonlyMap<EntityId, Contract>,

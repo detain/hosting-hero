@@ -7,7 +7,7 @@
  * number-promotion under 3 (LIVE, §6.4). The UI's real-minute presentation
  * is the renderer's problem; here everything is business-calendar.
  *
- * Death spiral (LIVE concept, PROVISIONAL streaks, §6.13): repeated
+ * Death spiral (LIVE concept, RATIFIED streaks — ADR-0015 #1, §6.13): repeated
  * credit-line borrowing while runway is already critical is a RECOGNIZABLE
  * STATE, not a hidden flag — the detector surfaces it as data the HUD and
  * rules can read.

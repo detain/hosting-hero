@@ -73,7 +73,8 @@ export interface Escalator {
   /** Percent bump applied on each anniversary, basis points (3% → 300) —
    *  LIVE default §6.12. */
   readonly annualBps: bigint;
-  /** First anniversary (term-years) the bump applies at — PROVISIONAL (1). */
+  /** First anniversary (term-years) the bump applies at — RATIFIED 2026-10-16
+   *  (ADR-0015 #1) at 1. */
   readonly firstApplicationYear: number;
 }
 
@@ -108,7 +109,8 @@ export function revenueBar(tags: RevenueColourTags): RevenueQualityBand {
 }
 
 /** Band a basis-point "badness" reading (higher = worse) against four
- *  ascending edges. Edges are PROVISIONAL colour-dial stops. */
+ *  ascending edges. Edges are RATIFIED 2026-10-16 (ADR-0015 #1)
+ *  colour-dial stops. */
 export function bandFromBps(value: bigint, edges: readonly [bigint, bigint, bigint, bigint]): RevenueQualityBand {
   const [goldMax, greenMax, blueMax, amberMax] = edges;
   if (value <= goldMax) return "gold";
@@ -119,7 +121,7 @@ export function bandFromBps(value: bigint, edges: readonly [bigint, bigint, bigi
 }
 
 /** Term-remaining band: long term = good revenue (inverse of badness).
- *  Edges in business months — PROVISIONAL. */
+ *  Edges in business months — RATIFIED 2026-10-16 (ADR-0015 #1). */
 export function bandFromTermMonths(monthsRemaining: number): RevenueQualityBand {
   if (monthsRemaining >= 24) return "gold";
   if (monthsRemaining >= 12) return "green";
@@ -203,7 +205,7 @@ export function openContractEconomy(input: OpenContractInput, cfg: EconomyConfig
     );
   }
   // Hourly contracts may span a fractional month; termMonths rounds to 0 and
-  // the renewal lookup falls back to its PROVISIONAL default. Half-up round
+  // the renewal lookup falls back to its RATIFIED (ADR-0015 #1) default. Half-up round
   // in bigint (E-12) — no float can nudge a k−ε quotient to k.
   const termMonths = roundDiv(contract.termEndMin - contract.termStartMin, cfg.calendar.minutesPerMonth);
   // Signed-but-not-started (§6.13): a deal whose service grid opens in the

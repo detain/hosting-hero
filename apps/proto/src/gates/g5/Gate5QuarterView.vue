@@ -12,7 +12,8 @@
  * OD-1 ratified 2026-10-09 (commitment-convergence); this gate STILL shows
  * no scorecard — the Book renders ledger primitives only.
  * Content wires arrive via Vite `?raw` and are parsed at the engine boundary.
- * All economy sheet values are the shipped PROVISIONAL defaults (marked).
+ * All economy sheet values are the shipped RATIFIED defaults (marked in
+ * economy/config.ts — ADR-0015 #1).
  */
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from "vue";
 import sharedWebRaw from "../../../../../packages/content/types/shared-web.json?raw";

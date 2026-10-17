@@ -12,7 +12,7 @@
  * resolves to the ratified candidate) and never calls `resolveActiveSheet`
  * (OD-2 ratified sheet B the same day).
  * Every tuning-sheet value it inherits from `defaultEconomyConfig()` is
- * marked PROVISIONAL in economy/config.ts — this fixture rides those
+ * RATIFIED in economy/config.ts (ADR-0015 #1) — this fixture rides those
  * defaults, it does not mint new numbers.
  *
  * The stochastic dice are SILENCED (card failure / dunning recovery /
@@ -340,9 +340,9 @@ export function settleMinutes(): readonly SimMinute[] {
 
 /* ─────────────────────────── config (scripted fate) ─────────────────────────── */
 
-/** Base config: shipped defaults (all PROVISIONAL-marked sheet values ride
- *  along, unmodified) with the three dice silenced so the script is the only
- *  source of death and recovery. */
+/** Base config: shipped defaults (all RATIFIED-marked sheet values —
+ *  ADR-0015 #1 — ride along, unmodified) with the three dice silenced
+ *  so the script is the only source of death and recovery. */
 export function gate5Config(): EconomyConfig {
   const base = defaultEconomyConfig();
   return {

@@ -24,8 +24,9 @@ export const ALERT_SEVERITY: Readonly<Record<NoticeKind, AlertSeverity>> = Objec
   bounce: 2,
   "false-positive": 2,
   "intent-refused": 2, // your own command bouncing IS your business
-  // Money-lane roll-up (runner economy lane, REST-PROTO-FINAL). PROVISIONAL
-  // taste row: money events sit with the other "your business" notices —
+  // Money-lane roll-up (runner economy lane, REST-PROTO-FINAL). RATIFIED
+  // 2026-10-16 (ADR-0015 #1) taste row: money events sit with the other
+  // "your business" notices —
   // the detail rider (<economyKind>:<contractId>) tells chrome which one.
   "economy-notice": 2,
   "arrival-surge": 3,

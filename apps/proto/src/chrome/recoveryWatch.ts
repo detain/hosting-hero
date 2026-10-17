@@ -292,7 +292,7 @@ export function buildRecoveryTape(
  * authority on capacity, and the drift-pins keep the mirror honest.
  */
 
-/** Host-side advisory tuning (PROVISIONAL, owner-ratify batch). The engine
+/** Host-side advisory tuning (RATIFIED 2026-10-16, ADR-0015 #1). The engine
  *  observer's own default `failureBounceThreshold: 4` is calibrated for a full
  *  session clock; on this 240-click demo weekend no single tick ever clusters
  *  four bounced units for one node (seed 905 probe: max 3/tick), so a

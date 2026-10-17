@@ -20,7 +20,7 @@
  *     which is correct" — so this helper returns BOTH, frozen, and picks
  *     nothing.
  *
- * Every constant PROVISIONAL — ratify-on-playtest, house grammar
+ * Every constant RATIFIED 2026-10-16 (ADR-0015 #1), house grammar
  * `recovery[CODE] at 'path': detail` on refusal.
  */
 
@@ -63,7 +63,7 @@ export class RecoveryCostError extends Error {
 
 /** µ$ costs (whole bigint) and minutes for the recovery menu. Cash
  *  magnitudes sit in the payroll class ($20–$200, g5's scale). Every value
- *  PROVISIONAL. */
+ *  RATIFIED 2026-10-16 (ADR-0015 #1). */
 export interface RecoveryCostConfig {
   /** Restart-service burn (crash-cart visit, µ$). */
   readonly restartMicroUsd: bigint;
@@ -81,12 +81,12 @@ export interface RecoveryCostConfig {
 
 export function defaultRecoveryCostConfig(): RecoveryCostConfig {
   return Object.freeze({
-    restartMicroUsd: 20_000_000n, // $20 — PROVISIONAL
-    rebuildMicroUsd: 150_000_000n, // $150 — PROVISIONAL
-    warmCacheMicroUsd: 40_000_000n, // $40 — PROVISIONAL
-    failbackDrillMicroUsd: 60_000_000n, // $60 — PROVISIONAL
-    rebuildMinutes: 120, // PROVISIONAL — the amber bar's length
-    restartMinutes: 10, // PROVISIONAL — the fast-but-fragile option
+    restartMicroUsd: 20_000_000n, // $20 — RATIFIED 2026-10-16 (ADR-0015 #1)
+    rebuildMicroUsd: 150_000_000n, // $150 — RATIFIED 2026-10-16 (ADR-0015 #1)
+    warmCacheMicroUsd: 40_000_000n, // $40 — RATIFIED 2026-10-16 (ADR-0015 #1)
+    failbackDrillMicroUsd: 60_000_000n, // $60 — RATIFIED 2026-10-16 (ADR-0015 #1)
+    rebuildMinutes: 120, // RATIFIED 2026-10-16 (ADR-0015 #1) — the amber bar's length
+    restartMinutes: 10, // RATIFIED 2026-10-16 (ADR-0015 #1) — the fast-but-fragile option
   });
 }
 

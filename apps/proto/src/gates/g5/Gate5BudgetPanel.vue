@@ -10,7 +10,7 @@ const emit = defineEmits<{ explain: [payload: ExplainPayload] }>();
 
 <template>
   <section class="g5-panel" aria-label="Error budgets">
-    <h2 class="g5-h">ERROR BUDGETS · 99.9 % = 2,592 s a month (PROVISIONAL)</h2>
+    <h2 class="g5-h">ERROR BUDGETS · 99.9 % = 2,592 s a month (RATIFIED 2026-10-16)</h2>
     <ul class="g5-budgets">
       <li
         v-for="row in rows"

@@ -344,7 +344,7 @@ function reputationPane(result: QuarterResult, minute: number): ReputationPane {
     explain: {
       title: "Reputation — as of this minute",
       formula:
-        "economy step 12.5 folds signed-bps signals into one company ledger (written-off −600, voluntary churn −200, dunning recovered +150, chargeback −400, major incident −500 — halved once an honest post-mortem stands, honest post-mortem +250), clamps 0..10,000 bps, and publishes company::reputation ONLY when it changes (all deltas PROVISIONAL, economy/config.ts)",
+        "economy step 12.5 folds signed-bps signals into one company ledger (written-off −600, voluntary churn −200, dunning recovered +150, chargeback −400, major incident −500 — halved once an honest post-mortem stands, honest post-mortem +250), clamps 0..10,000 bps, and publishes company::reputation ONLY when it changes (all deltas RATIFIED 2026-10-16, economy/config.ts ADR-0015 #1)",
       inputs: [
         { name: "as-of minute", value: "current scrub position" },
         {
@@ -733,7 +733,7 @@ function dunningRows(
           { name: "stages hit", value: [...reached].join(" → ") },
           { name: "last beat", value: businessStamp(lastAt) },
           { name: "outcome", value: dead ? "written off — AR reversed" : recovered ? "recovered post-suspension, phase active" : "still climbing" },
-          { name: "ladder law", value: "config PROVISIONAL: DUNNING_STAGE_ORDER + stage days from defaultEconomyConfig" },
+          { name: "ladder law", value: "config RATIFIED (ADR-0015 #1): DUNNING_STAGE_ORDER + stage days from defaultEconomyConfig" },
         ],
       },
     });
@@ -806,7 +806,7 @@ function budgetRows(
       burned: burn.length > 0, // rollMonth zeroes the struct — the NOTICE trail is the as-of truth
       lockedAtMinute: locked?.atBusinessMin ?? null,
       explain: {
-        title: `Error budget — ${id} (99.9 % SLA, PROVISIONAL)`,
+        title: `Error budget — ${id} (99.9 % SLA, RATIFIED 2026-10-16)`,
         formula: "budgetSec = 30 days × (1 − 99.9 %) = 2,592 s/month · outages drain silently · a risky deploy on an empty budget is LOCKED (never thrown) · every CLOSED week with zero consumption refunds 60 s (rollWeek catch-up: a settlement freeze stacks multiple clean-week refunds, one cause per week — E-9)",
         inputs: [
           { name: "month budget", value: "2592.0 s (43.2 min)" },

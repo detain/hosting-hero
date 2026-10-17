@@ -150,7 +150,7 @@ export interface ObserveResult {
 /* ───────────────────────────────── config ────────────────────────────────── */
 
 /** All minutes are SIM-minutes (plain numbers, house law); multipliers are
- *  exact bigint bps. Every default is PROVISIONAL — ratify-on-playtest,
+ *  exact bigint bps. Every default is RATIFIED 2026-10-16 (ADR-0015 #1),
  *  same class as the death/elasticity constants. */
 export interface RecoveryTuning {
   /** Bounces on one node within a single observed tick that declare it
@@ -184,13 +184,13 @@ export class RecoveryTrackerError extends Error {
 
 export function defaultRecoveryTuning(): RecoveryTuning {
   return Object.freeze({
-    failureBounceThreshold: 4, // PROVISIONAL — a brownout signal worth reacting to
-    autoRecoverDelayMinutes: 5, // PROVISIONAL — crash-cart dispatch lag
-    baseRampMinutes: 30, // PROVISIONAL — slow-start admission
-    secondFailureRampMultiplierBps: 20_000n, // PROVISIONAL — 2× ramp inside the engine's window
-    safeModeFloorBps: 2_500n, // PROVISIONAL — safe mode starts at 25% capacity
-    failbackDelayMinutes: 15, // PROVISIONAL — don't steer home into a storm
-    recoveryCrewSlots: 1, // PROVISIONAL — one recovery crew, order matters
+    failureBounceThreshold: 4, // RATIFIED 2026-10-16 (ADR-0015 #1) — a brownout signal worth reacting to
+    autoRecoverDelayMinutes: 5, // RATIFIED 2026-10-16 (ADR-0015 #1) — crash-cart dispatch lag
+    baseRampMinutes: 30, // RATIFIED 2026-10-16 (ADR-0015 #1) — slow-start admission
+    secondFailureRampMultiplierBps: 20_000n, // RATIFIED 2026-10-16 (ADR-0015 #1) — 2× ramp inside the engine's window
+    safeModeFloorBps: 2_500n, // RATIFIED 2026-10-16 (ADR-0015 #1) — safe mode starts at 25% capacity
+    failbackDelayMinutes: 15, // RATIFIED 2026-10-16 (ADR-0015 #1) — don't steer home into a storm
+    recoveryCrewSlots: 1, // RATIFIED 2026-10-16 (ADR-0015 #1) — one recovery crew, order matters
   });
 }
 

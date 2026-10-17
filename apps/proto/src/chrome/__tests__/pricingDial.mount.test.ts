@@ -70,7 +70,7 @@ describe("PricingDial", () => {
     expect(w.get('[data-test="dial-proof-control"]').text()).toContain("25,023.42");
     expect(w.get('[data-test="dial-proof-treated"]').text()).toContain("24,994.92");
     expect(w.get('[data-test="dial-proof-delta"]').text()).toContain("-$28.49");
-    expect(w.get('[data-test="dial-proof-honesty"]').text()).toContain("PROVISIONAL");
+    expect(w.get('[data-test="dial-proof-honesty"]').text()).toContain("RATIFIED");
     expect(projection.value).toBeNull();
   }, 30_000);
 

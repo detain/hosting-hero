@@ -154,7 +154,8 @@ export function issueInvoice(
   const periodStartMin = econ.cycleAnchorMin + cycleIndex * period;
   const gross = cycleGross(contract, econ, periodStartMin, terms, mfnDiscountBps, cfg, baseOverride);
   // Retail card schedule on net-0 auto-pay; invoiced B2B settles by wire/ACH
-  // at interchange-plus — modeled here as rate-only (PROVISIONAL split §6.13).
+  // at interchange-plus — modeled here as rate-only (RATIFIED split,
+  //  ADR-0015 #1; §6.13).
   const rateFee = bpsOf(gross, cfg.fees.cardRateBps, `card rate '${contract.id}'`);
   const fixedFee = terms.netTermsDays > 0 ? 0n : cfg.fees.cardFixedMicroUsd;
   const fee = asMoney(rateFee + fixedFee);

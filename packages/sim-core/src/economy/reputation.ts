@@ -14,7 +14,8 @@
  * [0, 10_000] (Fixed at the observed boundary via `fromRatio(bps, 10_000)`),
  * so a fold of deltas is exact integer math — no float, no drift, replay-
  * stable (Law 3). Every delta comes from cfg.reputation (house law: no
- * inline rates in this directory); the constants there are PROVISIONAL.
+ * inline rates in this directory); the constants there are RATIFIED
+ * 2026-10-16 (ADR-0015 #1).
  *
  * The ledger NEVER moves money. Money-adjacent reputation events (the
  * chargeback fee) post through the ledger's own write path in tick.ts; this
@@ -41,7 +42,8 @@ export const REPUTATION_BPS_SCALE: bigint = BPS_DEN;
 
 /** Neutral opening score (§2.10 "scored not judged" — nobody has proven
  *  anything yet). Single source: `emptyEconomyState()` seeds with this and
- *  docs/tests cite it; PROVISIONAL (no doc figure). */
+ *  docs/tests cite it; no doc figure — value RATIFIED 2026-10-16
+ *  (ADR-0015 #1). */
 export const REPUTATION_INITIAL_BPS: bigint = 5_000n;
 
 /** The entity the company-wide reputation hangs off — the same id the

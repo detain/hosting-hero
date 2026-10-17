@@ -61,16 +61,17 @@ export interface BillingConfig {
   /** "Net-60 is really net-75": the clock starts when THEY process —
    *  +15 days slip — LIVE (§6.4). */
   readonly netTermsSlipDays: number;
-  /** Fallback net terms when the contract carries none — PROVISIONAL (doc
-   *  shows 30/60/90 as a per-deal choice, §6.4). */
+  /** Fallback net terms when the contract carries none — RATIFIED 2026-10-16 (ADR-0015 #1); the
+   *  doc shows 30/60/90 as a per-deal choice, §6.4. */
   readonly defaultNetTermsDays: number;
   /** Hourly cycle length in business minutes — LIVE (calendar tautology). */
   readonly hourlyCycleMinutes: number;
   /** Hard cap on invoices generated per contract per tick (long-pause catch-up
-   *  guard) — PROVISIONAL. */
+   *  guard) — RATIFIED 2026-10-16 (ADR-0015 #1). */
   readonly maxCatchUpInvoicesPerTick: number;
   /** Early-pay discount lever "2/10 net 30": bps off when paid within
-   * *earlyPayDays of issue — LIVE rates, PROVISIONAL wiring (§6.4). */
+   * *earlyPayDays of issue — LIVE rates; wiring RATIFIED 2026-10-16
+   *  (ADR-0015 #1) (§6.4). */
   readonly earlyPayDiscountBps: bigint;
   readonly earlyPayDays: number;
 }
@@ -79,7 +80,8 @@ export interface BillingConfig {
 
 /** Ordered stage day-boundaries measured from the invoice due date. The
  *  doc's shape — declines days 1–4, dunning days 5–20 — is LIVE; the exact
- *  split between reminder/warning is PROVISIONAL (§6.4). Per §7.10/E-18: the
+ *  split between reminder/warning is RATIFIED 2026-10-16 (ADR-0015 #1)
+ *  (§6.4). Per §7.10/E-18: the
  *  recovery challenge rolls at EVERY stage entry (retry…terminate), not only
  *  once the ladder reaches warning depth — the retry roll models the card-
  *  retry schedule itself. */
@@ -90,21 +92,22 @@ export interface DunningConfig {
   readonly retryStartDay: number;
   /** Day the `reminder` stage opens — LIVE 5 (§6.4 dunning 5–20). */
   readonly reminderStartDay: number;
-  /** Day the `warning` stage opens — PROVISIONAL (inside the 5–20 window). */
+  /** Day the `warning` stage opens — RATIFIED 2026-10-16 (ADR-0015 #1), inside the
+   *  5–20 window. */
   readonly warningStartDay: number;
   /** Suspension Policy Dial: 3 | 10 | 30 (player choice, §6.4). Default is
    *  the middle rung; each rung trades cash for reviews. */
   readonly suspensionDay: number;
-  /** Days AFTER suspension before `terminate` — PROVISIONAL (doc ends the
-   *  dunning window at day 20 total, §6.4). */
+  /** Days AFTER suspension before `terminate` — RATIFIED 2026-10-16 (ADR-0015 #1); the doc ends
+   *  the dunning window at day 20 total, §6.4. */
   readonly terminationAfterSuspensionDays: number;
   /** Per-stage recovery rates (roll at stage entry). Tuned so the cumulative
    *  dunning recovery lands inside the documented 30–50% of failures —
-   *  PROVISIONAL split, LIVE aggregate band (§6.4). */
+   *  RATIFIED 2026-10-16 (ADR-0015 #1) split, LIVE aggregate band (§6.4). */
   readonly stageRecoveryBps: Readonly<Record<"retry" | "reminder" | "warning" | "suspend", bigint>>;
-  /** Recoveries after the site is already suspended — PROVISIONAL (doc:
-   *  "suspending guarantees non-payment", §6.4; modeled as steep decay, not 0,
-   *  so the state machine stays live). */
+  /** Recoveries after the site is already suspended — RATIFIED 2026-10-16 (ADR-0015 #1);
+   *  doc: "suspending guarantees non-payment", §6.4 — modeled as steep decay,
+   *  not 0, so the state machine stays live. */
   readonly postSuspensionRecoveryBps: bigint;
   /** Flat bonus recovery bps while a built Dunning Engine is owned (data ref;
    *  tick receives it via config override) — doc: buildable lifts recovery
@@ -124,16 +127,16 @@ export interface ChurnConfig {
   /** Renewal-cliff retention by term length in whole months — LIVE term
    *  matrix (§6.12 24772: monthly ~55%, annual 78%, 2yr 82%, 3yr 85%). */
   readonly renewalRetentionBpsByTermMonths: Readonly<Record<number, bigint>>;
-  /** Retention used when the term length is off-matrix — PROVISIONAL. */
+  /** Retention used when the term length is off-matrix — RATIFIED 2026-10-16 (ADR-0015 #1). */
   readonly renewalRetentionFallbackBps: bigint;
   /** Ghosted-forecast fuse window: tickets → churn lag 30–60 days — LIVE
    *  band (§7.15 / hosting_game.md:28660). */
   readonly ghostedSignalLagMinDays: number;
   readonly ghostedSignalLagMaxDays: number;
-  /** A lit fuse decays out after this many quiet days — PROVISIONAL (doc:
-   *  "show as forecast trend, not a timer"). */
+  /** A lit fuse decays out after this many quiet days — RATIFIED 2026-10-16 (ADR-0015 #1); doc:
+   *  "show as forecast trend, not a timer". */
   readonly ghostedSignalDecayDays: number;
-  /** Bps added to monthly churn per unresolved ticket signal — PROVISIONAL. */
+  /** Bps added to monthly churn per unresolved ticket signal — RATIFIED 2026-10-16 (ADR-0015 #1). */
   readonly ghostedSignalAddBps: bigint;
 }
 
@@ -153,16 +156,19 @@ export type BudgetSpendAction =
 
 export interface ErrorBudgetConfig {
   /** Seconds charged per deliberate spend. risky-deploy −3 min and
-   *  reboot-don't-diagnose −90 s are LIVE (§6.1); the rest PROVISIONAL. */
+   *  reboot-don't-diagnose −90 s are LIVE (§6.1); the rest RATIFIED
+   *  2026-10-16 (ADR-0015 #1). */
   readonly spendSecs: Readonly<Record<BudgetSpendAction, bigint>>;
   /** Verbs locked out while the budget is exhausted — LIVE concept (§6.1
-   *  "exhaustion locks risky actions"), exact membership PROVISIONAL. */
+   *  "exhaustion locks risky actions"), exact membership RATIFIED 2026-10-16
+   *  (ADR-0015 #1). */
   readonly riskyActions: readonly BudgetSpendAction[];
-  /** Clean-week refund seconds — PROVISIONAL ("a small refund", §6.1). */
+  /** Clean-week refund seconds — RATIFIED 2026-10-16 (ADR-0015 #1),
+   *  "a small refund", §6.1. */
   readonly cleanWeekRefundSec: bigint;
   /** Month-end surplus carry cap, bps of that month's budget. Doc says
    *  surplus carries across levels (§6.1/§6.14) — full carry default is
-   *  PROVISIONAL. */
+   *  RATIFIED 2026-10-16 (ADR-0015 #1). */
   readonly carryCapBps: bigint;
 }
 
@@ -172,7 +178,7 @@ export interface ContractEconomyConfig {
   /** Typical annual escalator 3% — LIVE (§6.12 clause table). */
   readonly defaultAnnualEscalatorBps: bigint;
   /** MFN reprices "3 levels later" — LIVE count (§7.15); mapping a "level" to
-   *  one business month is PROVISIONAL. */
+   *  one business month is RATIFIED 2026-10-16 (ADR-0015 #1). */
   readonly mfnRepriceLagLevels: number;
   readonly mfnLagMinutesPerLevel: number;
   /** Renewal Window pulse lead 90 days — LIVE (§6.4). */
@@ -186,7 +192,7 @@ export interface ContractEconomyConfig {
 export interface ArAgingConfig {
   /** Four trays 0–30 / 31–60 / 61–90 / 90+ — LIVE (§6.13). */
   readonly trayEdgesDays: readonly [number, number, number];
-  /** Tray midpoints used for the DSO approximation — PROVISIONAL for the
+  /** Tray midpoints used for the DSO approximation — RATIFIED 2026-10-16 (ADR-0015 #1) for the
    *  open-ended 90+ tray (120 chosen). */
   readonly trayMidpointDays: readonly [number, number, number, number];
   /** Expected bad-debt rate past 90 days by bundle — MIDs of §6.13 (consumer
@@ -212,9 +218,9 @@ export interface RunwayConfig {
   /** Number-promotion / critical below 3 months — LIVE (§6.4). */
   readonly criticalMonths: number;
   /** Consecutive credit-line borrow months that flag the death spiral —
-   *  PROVISIONAL (doc: utilization flag, §6.13). */
+   *  RATIFIED 2026-10-16 (ADR-0015 #1); doc: utilization flag, §6.13. */
   readonly spiralBorrowStreakMonths: number;
-  /** Runway ceiling (months) under which the streak matters — PROVISIONAL. */
+  /** Runway ceiling (months) under which the streak matters — RATIFIED 2026-10-16 (ADR-0015 #1). */
   readonly spiralRunwayCeilingMonths: number;
   /** Lose-slowly guard: player must get ≥ this many REAL minutes of warning
    *  before an unavoidable loss — LIVE 3 (§9.6 gate; conversion through the
@@ -227,11 +233,13 @@ export interface RunwayConfig {
 /* ──────────────────── reputation deltas (§2.10/§5.10) ────────────────── */
 
 /** Signed bps of the FULL 0..10,000 score moved by each reputation signal
- *  (economy/reputation.ts folds them). Every value PROVISIONAL — the docs
+ *  (economy/reputation.ts folds them). Every value RATIFIED 2026-10-16
+ *  (ADR-0015 #1) — the docs
  *  give the DIRECTION (§2.10 outages/reviews hurt, recoveries and honest
  *  post-mortems help; §5.10 permanent damage floor after a published
- *  post-mortem) but no magnitudes. Tuning is an owner/list item, same class
- *  as the unattended thresholds. */
+ *  post-mortem) but no magnitudes. Tuning was an owner/list item, same
+ *  class, RATIFIED together 2026-10-16 with the unattended thresholds
+ *  (ADR-0015 #1). */
 export interface ReputationConfig {
   /** Billing failure made public and final (dunning write-off) — §2.10. */
   readonly writtenOffChurnBps: bigint;
@@ -315,21 +323,23 @@ export interface PricingConfig {
 
 /** The adjudication limit behind `economy/postmortem.ts` (audit g21: the
  *  §7.7 post-mortem rows were PARTIAL — evidence in, gated credit out).
- *  PROVISIONAL — ratify-on-playtest like the reputation deltas themselves.
+ *  RATIFIED 2026-10-16 (ADR-0015 #1), together with the reputation
+ *  deltas themselves.
  *  The section is OPTIONAL on EconomyConfig: absent ⇒ DEFAULT_POST_MORTEM_
  *  CONFIG ships the limit, and the credit rides the existing
  *  `reputation.honestPostmortemBps` (single source, never forked). */
 export interface PostMortemConfig {
   /** §7.7 "if TWO changes were in-flight, the post-mortem cannot attribute
    *  a cause": filings at/under this count are attributable; above it the
-   *  card goes `postmortem-unattributed` with zero credit. PROVISIONAL 1. */
+   *  card goes `postmortem-unattributed` with zero credit. RATIFIED
+   *  2026-10-16 (ADR-0015 #1) at 1. */
   readonly maxAttributableChanges: number;
 }
 
 /** The shipped default book — hosts that never pass `cfg.postMortem` get
  *  exactly this (the fold reads `cfg.postMortem ?? DEFAULT_POST_MORTEM_CONFIG`). */
 export const DEFAULT_POST_MORTEM_CONFIG: PostMortemConfig = Object.freeze({
-  maxAttributableChanges: 1, // PROVISIONAL — the doc's "two changes" example
+  maxAttributableChanges: 1, // RATIFIED 2026-10-16 (ADR-0015 #1) — the doc's "two changes" example
 });
 
 /* ─────────────────────────────── root config ──────────────────────────── */
@@ -369,9 +379,9 @@ export function defaultEconomyConfig(): EconomyConfig {
     billing: {
       annualPrepayDiscountBps: 1500n, // LIVE §6.13
       netTermsSlipDays: 15, // LIVE §6.4 ("net-60 is really net-75")
-      defaultNetTermsDays: 30, // PROVISIONAL
+      defaultNetTermsDays: 30, // RATIFIED 2026-10-16 (ADR-0015 #1)
       hourlyCycleMinutes: 60, // LIVE
-      maxCatchUpInvoicesPerTick: 24, // PROVISIONAL
+      maxCatchUpInvoicesPerTick: 24, // RATIFIED 2026-10-16 (ADR-0015 #1)
       earlyPayDiscountBps: 200n, // LIVE "2/10 net 30" §6.4
       earlyPayDays: 10, // LIVE §6.4
     },
@@ -379,11 +389,11 @@ export function defaultEconomyConfig(): EconomyConfig {
       cardFailureBps: 700n, // 7% (5–9) — MID §6.4
       retryStartDay: 1, // LIVE declines days 1–4 §6.4
       reminderStartDay: 5, // LIVE dunning 5–20 §6.4
-      warningStartDay: 8, // PROVISIONAL (inside the 5–20 dunning window)
+      warningStartDay: 8, // RATIFIED 2026-10-16 (ADR-0015 #1); inside the 5–20 dunning window
       suspensionDay: 10, // dial rung 3|10|30 — default middle, PLAYER CHOICE §6.4
-      terminationAfterSuspensionDays: 10, // PROVISIONAL (ends window ~day 20 §6.4)
-      stageRecoveryBps: { retry: 1200n, reminder: 1000n, warning: 800n, suspend: 400n }, // PROVISIONAL split, 30–50% aggregate LIVE §6.4
-      postSuspensionRecoveryBps: 200n, // PROVISIONAL (§6.4 suspension decays recovery)
+      terminationAfterSuspensionDays: 10, // RATIFIED 2026-10-16 (ADR-0015 #1); ends window ~day 20 §6.4
+      stageRecoveryBps: { retry: 1200n, reminder: 1000n, warning: 800n, suspend: 400n }, // RATIFIED 2026-10-16 (ADR-0015 #1) split, 30–50% aggregate LIVE §6.4
+      postSuspensionRecoveryBps: 200n, // RATIFIED 2026-10-16 (ADR-0015 #1); §6.4 suspension decays recovery
       dunningEngineBonusBps: 400n, // MID: lifts 30–50% → 40–70% §6.4
     },
     churn: {
@@ -395,38 +405,38 @@ export function defaultEconomyConfig(): EconomyConfig {
         colo: 55n, // 0.3–0.8% MID
         "enterprise-managed": 35n, // 0.2–0.5% MID
       },
-      fallbackMonthlyBps: 450n, // PROVISIONAL (= shared rate)
+      fallbackMonthlyBps: 450n, // RATIFIED 2026-10-16 (ADR-0015 #1); = shared rate
       renewalRetentionBpsByTermMonths: { 0: 5500n, 12: 7800n, 24: 8200n, 36: 8500n }, // LIVE §6.12:24772
-      renewalRetentionFallbackBps: 5500n, // PROVISIONAL (monthly rung)
+      renewalRetentionFallbackBps: 5500n, // RATIFIED 2026-10-16 (ADR-0015 #1); monthly rung
       ghostedSignalLagMinDays: 30, // LIVE §7.15/hosting_game:28660
       ghostedSignalLagMaxDays: 60, // LIVE
-      ghostedSignalDecayDays: 90, // PROVISIONAL
-      ghostedSignalAddBps: 300n, // PROVISIONAL
+      ghostedSignalDecayDays: 90, // RATIFIED 2026-10-16 (ADR-0015 #1)
+      ghostedSignalAddBps: 300n, // RATIFIED 2026-10-16 (ADR-0015 #1)
     },
     errorBudget: {
       spendSecs: {
-        shed: 120n, // PROVISIONAL
-        "stale-cache": 60n, // PROVISIONAL
-        "feature-off": 300n, // PROVISIONAL
+        shed: 120n, // RATIFIED 2026-10-16 (ADR-0015 #1)
+        "stale-cache": 60n, // RATIFIED 2026-10-16 (ADR-0015 #1)
+        "feature-off": 300n, // RATIFIED 2026-10-16 (ADR-0015 #1)
         "sla-hit": 0n, // computed per breach by caller, not a flat spend — LIVE semantics §6.1
         "risky-deploy": 180n, // −3 min LIVE §6.1
         "reboot-not-diagnose": 90n, // −90 s LIVE §6.1
-        "maintenance-window": 3600n, // PROVISIONAL (listed as a spend, no number)
+        "maintenance-window": 3600n, // RATIFIED 2026-10-16 (ADR-0015 #1); listed as a spend, no number
       },
-      riskyActions: ["risky-deploy", "reboot-not-diagnose"] as const, // PROVISIONAL membership, LIVE concept §6.1
-      cleanWeekRefundSec: 60n, // PROVISIONAL "small refund" §6.1
-      carryCapBps: 10_000n, // PROVISIONAL: full month-end surplus carries (§6.1/§6.14)
+      riskyActions: ["risky-deploy", "reboot-not-diagnose"] as const, // RATIFIED 2026-10-16 (ADR-0015 #1) membership, LIVE concept §6.1
+      cleanWeekRefundSec: 60n, // RATIFIED 2026-10-16 (ADR-0015 #1) — "small refund" §6.1
+      carryCapBps: 10_000n, // RATIFIED 2026-10-16 (ADR-0015 #1): full month-end surplus carries (§6.1/§6.14)
     },
     contracts: {
       defaultAnnualEscalatorBps: 300n, // 3% LIVE §6.12
       mfnRepriceLagLevels: 3, // LIVE §7.15 "reprices 3 levels later"
-      mfnLagMinutesPerLevel: 43_200, // PROVISIONAL: level ⇒ one business month
+      mfnLagMinutesPerLevel: 43_200, // RATIFIED 2026-10-16 (ADR-0015 #1): level ⇒ one business month
       renewalPulseLeadDays: 90, // LIVE §6.4
-      evergreenExtensionMonths: 12, // PROVISIONAL (auto-renew re-clocks a year)
+      evergreenExtensionMonths: 12, // RATIFIED 2026-10-16 (ADR-0015 #1); auto-renew re-clocks a year
     },
     arAging: {
       trayEdgesDays: [30, 60, 90] as const, // LIVE four trays §6.13
-      trayMidpointDays: [15, 45, 75, 120] as const, // PROVISIONAL (90+ open tray)
+      trayMidpointDays: [15, 45, 75, 120] as const, // RATIFIED 2026-10-16 (ADR-0015 #1); 90+ open tray
       badDebtBpsByBundle: {
         consumer: 300n, // 2–4% MID §6.13
         vps: 200n, // 1–3% MID
@@ -435,24 +445,24 @@ export function defaultEconomyConfig(): EconomyConfig {
         colo: 25n, // <0.5% MID
         bulletproof: 0n, // ~0 LIVE §6.13
       },
-      badDebtFallbackBps: 150n, // PROVISIONAL (SMB-dedicated rung)
+      badDebtFallbackBps: 150n, // RATIFIED 2026-10-16 (ADR-0015 #1); SMB-dedicated rung
     },
     deferred: { recognitionNum: 1n, recognitionDen: 12n }, // LIVE 1/12 per month §6.13
     runway: {
       cautionMonths: 6, // LIVE §6.4 tone shift
       criticalMonths: 3, // LIVE §6.4 number promotion
-      spiralBorrowStreakMonths: 3, // PROVISIONAL (§6.13 utilization flag)
-      spiralRunwayCeilingMonths: 3, // PROVISIONAL
+      spiralBorrowStreakMonths: 3, // RATIFIED 2026-10-16 (ADR-0015 #1); §6.13 utilization flag
+      spiralRunwayCeilingMonths: 3, // RATIFIED 2026-10-16 (ADR-0015 #1)
       minWarningRealMinutes: 3, // LIVE §9.6 lose-slowly gate
       creditLineAprBps: 1100n, // 8–14% MID §6.13
     },
     reputation: {
-      writtenOffChurnBps: -600n, // PROVISIONAL (§2.10 direction; no magnitude)
-      voluntaryChurnBps: -200n, // PROVISIONAL
-      dunningRecoveredBps: 150n, // PROVISIONAL
-      chargebackBps: -400n, // PROVISIONAL
-      majorIncidentBps: -500n, // PROVISIONAL (§2.10 reddit-thread class event)
-      honestPostmortemBps: 250n, // PROVISIONAL (§5.10 transparency earns back)
+      writtenOffChurnBps: -600n, // RATIFIED 2026-10-16 (ADR-0015 #1); §2.10 direction; no magnitude
+      voluntaryChurnBps: -200n, // RATIFIED 2026-10-16 (ADR-0015 #1)
+      dunningRecoveredBps: 150n, // RATIFIED 2026-10-16 (ADR-0015 #1)
+      chargebackBps: -400n, // RATIFIED 2026-10-16 (ADR-0015 #1)
+      majorIncidentBps: -500n, // RATIFIED 2026-10-16 (ADR-0015 #1); §2.10 reddit-thread class event
+      honestPostmortemBps: 250n, // RATIFIED 2026-10-16 (ADR-0015 #1); §5.10 transparency earns back
     },
     death: {
       churnFloor: 1, // RATIFIED 2026-10-16 (ADR-0014 #D4) — extinction line

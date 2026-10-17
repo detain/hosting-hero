@@ -210,7 +210,7 @@ onBeforeUnmount(() => runner.stop());
         difference is the order. The hourly SMB contract is keyed under
         “shared-web basic” — dial that plan and the delta is real µ$; dial
         any other key and the neutral-twin law holds the delta at 0.
-        Elasticity band coefficients are PROVISIONAL (ratify-on-playtest);
+        Elasticity band coefficients are RATIFIED 2026-10-16 (ADR-0014 #D4);
         churn effects may or may not ride inside the horizon — the row
         reports raw cash, never a richer story.
       </p>

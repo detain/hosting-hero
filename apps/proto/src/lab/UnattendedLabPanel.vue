@@ -5,7 +5,8 @@
  * Composition law mirrors HudLabPanel: everything runs LOCALLY (runUnattended
  * is pure), every string comes from the unattendedLab model, all chrome reads
  * through chrome/numberLaw + the hue ledger. Guard defaults shown are
- * PROVISIONAL owner-taste numbers and the panel SAYS so on every render.
+ * RATIFIED owner-taste numbers (ADR-0015 #1) and the panel SAYS so
+ * on every render.
  *
  * Hue jobs borrowed here (ledger names only, inline styles + vars):
  *  - alarm  : halt banner + error text (chrome-alarm-klaxon, the live bad-news
@@ -237,7 +238,7 @@ defineExpose({ GUARD_KINDS, GUARD_METRICS, GUARD_COMPARATORS, BOARD_PRESETS });
         </fieldset>
 
         <fieldset>
-          <legend>Guards ({{ GUARD_KINDS.length }} kinds — PROVISIONAL defaults)</legend>
+          <legend>Guards ({{ GUARD_KINDS.length }} kinds — RATIFIED defaults)</legend>
           <div v-for="row in form.guardRows" :key="row.kind" class="guard-row" :data-test="`lab-guard-${row.kind}`">
             <label class="guard-toggle">
               <input type="checkbox" :checked="row.enabled" data-test="lab-guard-toggle" @change="toggleGuard(row)" />

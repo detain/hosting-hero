@@ -1,6 +1,6 @@
 /**
- * OD-24(a) part 2 — price-override consumption + elasticity (PROVISIONAL
- * constants, ratify-on-playtest). Two families:
+ * OD-24(a) part 2 — price-override consumption + elasticity (constants
+ * RATIFIED 2026-10-16, ADR-0015 #1). Two families:
  *
  *  A. Unit laws (elasticity.ts pure math + key grammar + as-of resolution).
  *  B. Tick integration, including the NO-ROLL DISCIPLINE proofs: runs with

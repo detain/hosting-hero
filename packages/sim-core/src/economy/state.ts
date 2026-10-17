@@ -282,7 +282,8 @@ export function pulseOpenMinFor(termEndMin: SimMinute, cfg: EconomyConfig): SimM
   return termEndMin - daysToMinutes(cfg, cfg.contracts.renewalPulseLeadDays);
 }
 
-/** Default invoice terms when the deal carries none (PROVISIONAL §6.4):
+/** Default invoice terms when the deal carries none (RATIFIED 2026-10-16,
+ *  ADR-0015 #1; §6.4):
  *  card-cycled consumer plans auto-pay at issue (net-0); annual deals are
  *  invoiced with the config default terms + the net-75 slip. */
 export function defaultTermsFor(contract: Contract, cfg: EconomyConfig): InvoiceTerms {

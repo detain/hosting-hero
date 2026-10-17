@@ -181,7 +181,7 @@ onBeforeUnmount(() => runner.stop());
       honestly: the intent door has no borrowing verb, so a loan is a HOST
       action-on-state between ticks, not a hand-paid player verb — and
       repayment is the runner's forwarded month roll, one oldest loan per
-      roll. Thresholds are PROVISIONAL (ratify-on-playtest).
+      roll. Thresholds are RATIFIED 2026-10-16 (ADR-0015 #1).
     </p>
   </div>
 </template>

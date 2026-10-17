@@ -311,7 +311,8 @@ onBeforeUnmount(() => runner.stop());
       recoveryCapacityBps, the degradedMinutes lifetime meter, acceptsFailback
       and the crew queue — is the demoted ADR-0012 observer composed from the
       runner's per-tick event stream (`lastTickFacts()`); its knobs are
-      PROVISIONAL and its readings are presentation — the engine's serve clamp
+      RATIFIED 2026-10-16 (ADR-0015 #1) and its readings are presentation —
+      the engine's serve clamp
       stays authoritative. "In window" in the slice rows counts from the
       engine's own open anchor, not the observer meter.
     </p>

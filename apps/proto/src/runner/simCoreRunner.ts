@@ -51,8 +51,9 @@
  * (ADR-0014 #D4) (gated on the bundle declaring the slider), a bounce/land
  * incident clock (fires wave-4's
  * secondIncident marker), and the deep lane's engaged-family census (copycat).
- * The incident-clock and census thresholds remain PROVISIONAL scenario rows;
- * witnesses via wavePlan(n) / incidentState() / dominantDefenseFamily().
+ * The incident-clock and census thresholds are RATIFIED 2026-10-16
+ * (ADR-0015 #1) scenario rows; witnesses via wavePlan(n) /
+ * incidentState() / dominantDefenseFamily().
  *
  * CORPUS DRIVE MODE (§1.5 seam, the runner leg of @5df5586/@bc11697): an
  * optional `corpus: {authority, waves}` option replaces the internal
@@ -441,9 +442,9 @@ const MONEY_CONTRACTS: readonly Contract[] = Object.freeze([
   CONTRACT_PENDING,
 ]);
 
-/** Opening float (PROVISIONAL scenario row): $25,000 of free cash so the
- *  settle lane is funded from tick one — an unfunded roster would only ever
- *  exercise the insolvent-settle boundary. */
+/** Opening float (scenario row RATIFIED 2026-10-16, ADR-0015 #1): $25,000
+ *  of free cash so the settle lane is funded from tick one — an unfunded
+ *  roster would only ever exercise the insolvent-settle boundary. */
 const OPENING_FREE_MICRO_USD: bigint = 25_000_000_000n;
 
 /** Neutral five-axis "blue" census — verbatim fastForward default (the
@@ -457,8 +458,9 @@ const DEFAULT_REVENUE_TAGS: RevenueColourTags = Object.freeze({
 } as const);
 
 /** One landed breach = one sim-minute of company-wide outage (the
- *  fastForward PROVISIONAL reading — per-contract target attribution is an
- *  open OD item; landed traffic must at least cost SLA budget, not nothing). */
+ *  fastForward RATIFIED reading (ADR-0015 #1) — per-contract target
+ *  attribution is an open OD item; landed traffic must at least cost SLA
+ *  budget, not nothing). */
 const OUTAGE_SECONDS_PER_LANDED = 60n;
 
 /** Business-calendar month grid (economy's default minutesPerMonth — the

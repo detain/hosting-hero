@@ -28,9 +28,9 @@
  *  • errorBudgetGone   — SLA error budgets exhausted (economy/errorBudget
  *    remainingSec; commitment breach while nobody is watching).
  *
- * PROVISIONAL owner taste (marked for ratification): the five BUILTIN
- * defaults below are §-grounded guesses, not canon. Omitting a field takes
- * the builtin default; supplying one overrides it.
+ * Owner taste RATIFIED 2026-10-16 (ADR-0015 #1): the five BUILTIN
+ * defaults below are §-grounded guesses, ratified as the shipped canon.
+ * Omitting a field takes the builtin default; supplying one overrides it.
  */
 import type { Fixed, ClockState, SimMinute, SimTick } from "../types.ts";
 import { FIXED_SCALE, FIXED_ZERO, compare, toNumber } from "../kernel/fixed.ts";
@@ -133,8 +133,9 @@ export type CatastropheDef =
   | ErrorBudgetGoneDef
   | ThresholdGuardDef;
 
-/** PROVISIONAL (owner-taste, §-grounded guesses): builtin defaults. A bare
- *  `{type:"totalOutage"}` is a complete guard through this table. */
+/** Owner-taste builtin defaults (§-grounded guesses, RATIFIED
+ *  2026-10-16, ADR-0015 #1). A bare `{type:"totalOutage"}` is a
+ *  complete guard through this table. */
 export const BUILTIN_CATASTROPHE_DEFS = Object.freeze({
   freeCashDepleted: { type: "freeCashDepleted", sustainedMin: 10 },
   totalOutage: { type: "totalOutage", sustainedMin: 30 },
@@ -480,7 +481,8 @@ export function guardKindCensus(guards: readonly ParsedGuard[]): ReadonlyMap<Gua
 }
 
 /** Builtin-threshold probe for reports: the ruleRunaway default as a
- *  human-readable count (PROVISIONAL owner-taste value). */
+ *  human-readable count (owner-taste value RATIFIED 2026-10-16,
+ *  ADR-0015 #1). */
 export function ruleRunawayDefaultPerMin(): number {
   return toNumber(BUILTIN_CATASTROPHE_DEFS.ruleRunaway.firingsPerMinGt);
 }
