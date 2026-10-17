@@ -4,6 +4,12 @@
   "appliesTo": "official:exchange-colo",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the financial exchange colocation line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is GEOMETRY and FAIRNESS — the coil you can measure with your eyes, the forty nanoseconds that end a company, the regulator with a tape measure — and the advantage is depicted only as consequence: the skewed readout, the audit letter, the lawyers' register. No build instructions, no frequencies, no FPGA or microwave how-to anywhere; the level 'introduces nanosecond-scale thinking' (§1.3), not nanosecond-scale engineering.",
+  "eraCodes": {
+    "1998": "The cross-connect-paperwork years — §0.4's grid dates the family at '2001 dot-com colo' (:653), and the canon's 1998 rung carries the pre-cathedral texture: a cross-connect was an ORDER (5–20 business days plus LOA paperwork, §1.1 Tier-2 lead-time block), fairness was a dressed cable tray and a habit, and nobody measured anything.",
+    "2008": "The peering-boom years (§0.4's span; 'peering vs transit economics with 95th-percentile billing … your mistakes are now global and instant'). The first round-trip meters arrive on the floor; distance starts becoming a line item instead of a fact.",
+    "2016": "The audited years (§0.4's 2016 cell lands late on this line; §8.10 flat). The regulator with the tape measure is real, the distance tier is plaintiff's exhibit A, and attestation is a calendar.",
+    "2026": "Now: nanoseconds absurdly precise, brass on black — the equal-latency promise is metered, spooled, and attested daily; the cathedral keeps its own books."
+  },
   "slots": {
     "nodeId": {
       "kind": "entity",
@@ -117,9 +123,33 @@
     "press.headline.riot": "No outage at {hostName}, exchanges confirm — only one tenant, forty nanoseconds, and a floor of clients who read 'equal latency' literally; the incident report is a subpoena.",
     "press.headline.ramp": "{hostName}'s record lease arrives as a ramp — twenty cabinets billed as a victory, eight dark for a year; the tour walks past them in a different light.",
     "forum.thread.coils": "Anyone else's floor going patchy on the equality band with zero alert? Ours flagged {skewNs} ns at {hour}:{minute} and the coil picture explains it before the log does. Bought a second meter stick. Sleeps better.",
-    "forum.thread.tier": "Whoever priced the distance tier was right and I cannot unsee it. Watched a demo floor hand the third row a four-figure premium for a promise the spool rack keeps for free — and then watched the audit-day thread where the same tier becomes the plaintiff's exhibit.",
-    "chatter.desk.equal": "Row's boring, skew's zero, audit's filed. On this line 'boring' is the product demo.",
-    "chatter.desk.eye": "Watch the coils: nine identical, one shade tight, no ticket yet. That is not green — that is early.",
+    "forum.thread.tier": {
+      "eras": {
+        "1998": "Whoever dressed the tray with zip ties and a level was the real founder of this floor. Distance was weather — a fact you drove in — not a rate line. I miss when nobody had a spreadsheet for a metre.",
+        "2008": "The distance tier just appeared on the quote sheet and I cannot tell if it is honest accounting or the corner-office habit of pricing desks by lift proximity. Watched a tenant pay four figures to be three metres nearer the engine while the spool rack kept the promise uninvited.",
+        "2016": "Whoever priced the distance tier was right, and whoever audited it made it admissible. Watched the same four-figure premium survive discovery and then a meter stick get sworn in. Sleeps great.",
+        "2026": "Whoever priced the distance tier was right and I cannot unsee it. Watched a demo floor hand the third row a four-figure premium for a promise the spool rack keeps for free — and then watched the audit-day thread where the same tier becomes the plaintiff's exhibit."
+      },
+      "fallback": "Whoever priced the distance tier was right and I cannot unsee it. Watched a demo floor hand the third row a four-figure premium for a promise the spool rack keeps for free — and then watched the audit-day thread where the same tier becomes the plaintiff's exhibit."
+    },
+    "chatter.desk.equal": {
+      "eras": {
+        "1998": "Cages full, tray dressed, no complaints. On this floor 'fair' is still a handshake and an installer with one habit of symmetry.",
+        "2008": "Row's quiet, the first round-trip meter just landed, and the interns already argue about its decimal places. 'Boring' has not been invented yet.",
+        "2016": "Row's boring, skew's zero, the audit letter arrived pre-drafted as a formality. On this line boring is expensive, and expensive is boring.",
+        "2026": "Row's boring, skew's zero, audit's filed. On this line 'boring' is the product demo."
+      },
+      "fallback": "Row's boring, skew's zero, audit's filed. On this line 'boring' is the product demo."
+    },
+    "chatter.desk.eye": {
+      "eras": {
+        "1998": "Watch the cable tray: nine runs dressed identical because one age did all the dressing by eye and called it square. Nobody measured anything. That is not fairness — that is grooming.",
+        "2008": "Watch the new meter: one row reads a shade early and nobody on the floor has the word for it yet. That is not green — that is vocabulary.",
+        "2016": "Watch the coils: nine identical, one shade tight, and some forum thread halfway across the world already has the screenshot. That is not green — that is public.",
+        "2026": "Watch the coils: nine identical, one shade tight, no ticket yet. That is not green — that is early."
+      },
+      "fallback": "Watch the coils: nine identical, one shade tight, no ticket yet. That is not green — that is early."
+    },
     "codex.equality": "'You sell *equal* latency as a product' (§1.3 verbatim): the rarest good in hosting — a promise measured in other people's physics. The coil is the warranty; the readout is the claim; the regulator is the audit of whether you kept both in the same building.",
     "codex.spool": "'Fairness is enforced by cable spool' (§1.3 verbatim): geometry as law. Every other line in the game can oversell; this one oversells only in the direction of embarrassment — a metre shorter for one tenant is a metre longer for everyone else's lawyers.",
     "loading.tip.metre": "Cable length is measured in metres and it is the product (§1.3). If your tenants could see the board, they would invoice before your monitoring did.",
@@ -187,9 +217,9 @@
     "press.headline.riot": "§1.3 catastrophe beat in §9.3 press register; consequence-only, §9.11",
     "press.headline.ramp": "§6.x ramp law as press beat; §9.3 press format",
     "forum.thread.coils": "§1.3 spottable-by-eye law in forum register; §9.3 industry-forum channel",
-    "forum.thread.tier": "§8.x placement-is-commercial row (:26479) + audit-day beat in forum register; §9.3 forum register",
-    "chatter.desk.equal": "§1.3 boring-meter-as-product survived; chatter channel",
-    "chatter.desk.eye": "§1.3 spottable-by-eye clause; chatter channel",
+    "forum.thread.tier": "§8.x placement-is-commercial row (:26479) + audit-day beat in forum register; §9.3 forum register; era rungs trace the distance tier's own legal history — price-as-fact absent (1998), rate-card birth (2008), exhibit-A maturity (2016) — per §0.4 grid + the card's regulator-audit clause",
+    "chatter.desk.equal": "§1.3 boring-meter-as-product survived; chatter channel; era rungs follow the fairness claim's own ancestry — handshake-and-cable-tray era (§0.4 dates the family '2001 dot-com colo' :653; the canon's 1998 rung carries pre-2001 cross-connect-paperwork texture per §1.1 Tier-2 lead-time block), first-meter/peering-boom 2008 (:964 peering-vs-transit-economics line), attestation-as-formality 2016",
+    "chatter.desk.eye": "§1.3 spottable-by-eye clause; chatter channel; the 'that is not green — that is X' closer kept parallel on every rung (grooming/vocabulary/public/early); 1998 dressed-tray era from §1.1's cross-connect-order block, 2008 first-round-trip-meter years, 2016 screenshot-public years (§0.4 grid; §8.10 kits)",
     "codex.equality": "§1.3 verbatim cores (sell equal latency as a product; coil as meter); codex register",
     "codex.spool": "§1.3 'Fairness is enforced by cable spool' verbatim; oversell-asymmetry authored from §0.2 scarcity frame; codex register",
     "loading.tip.metre": "§1.3 first sentence verbatim core; loading channel",
@@ -208,5 +238,5 @@
     "achievement.audit-formality": "§1.3 regulator clause survived boringly; §9.3 achievement channel",
     "canary.coil-tally": "§1.3 hunt/hold/riot triad; canary-notice channel (precedent: dedicated canary.row-tally, object-storage canary.comb-tally, voip canary.busy-wall-tally, serverless canary.warm-pool-tally)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates only the family as '2001 dot-com colo' (:651), never this variant). The win threshold, the 40ns catastrophe's mechanical mapping, every pressure mapping in the wave slice, the diurnal amplitude, the un-reconciled §0.3 'cabinet' vs §6.6 'U / kW / cross-connect' unit words (unreconciled per owner law), the family-row transfer of all §6.6 economy numbers onto the exchange variant (flagged in economy._todo), and the scenario/press copy for the shortened-cable, audit and ramp beats stay PROVISIONAL-B / owner-law until the re-author sweep; the advantage beats deliberately carry no technique detail — their slots are consequences (nanoseconds, months, counts, hours), never methods, per §9.11. "
+  "_todo": "Era copy fan (L-ER-F): three pack-unique zero-slot flavour keys (chatter.desk.equal, chatter.desk.eye, forum.thread.tier) speak the ratified four-rung canon {1998,2008,2016,2026} (OD-22(c)); the era grid dates only the family as '2001 dot-com colo' (:653), never this variant — the 1998 rung therefore voices the cross-connect-paperwork era (§1.1 Tier-2 lead-time block), an expectation voice, not a retro-dated shelf claim (bundle availableFrom stays null, §0.4 R66); the shared register (refusal.*/status.rung-*/vendor.reply.*) and every slot-bearing press/ticket line stay plain byte-ident; 2026 rungs and all fallbacks are the prior plain text byte-ident. The win threshold, the 40ns catastrophe's mechanical mapping, every pressure mapping in the wave slice, the diurnal amplitude, the un-reconciled §0.3 'cabinet' vs §6.6 'U / kW / cross-connect' unit words (unreconciled per owner law), the family-row transfer of all §6.6 economy numbers onto the exchange variant (flagged in economy._todo), and the scenario/press copy for the shortened-cable, audit and ramp beats stay PROVISIONAL-B / owner-law until the re-author sweep; the advantage beats deliberately carry no technique detail — their slots are consequences (nanoseconds, months, counts, hours), never methods, per §9.11. "
 }

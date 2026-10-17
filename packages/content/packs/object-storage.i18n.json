@@ -4,6 +4,12 @@
   "appliesTo": "official:object-storage",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the object-storage line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is ARITHMETIC's — the degraded read nobody scheduled, the comb draining one object at a time, the invoice with a viral file's name on it — and 'there is no dramatic attacker' (§1.3 verbatim); abuse exists only as complaint, discovery, vendor silence, and consequence. No payloads, commands, tool names-as-how-to, or technique instruction anywhere.",
+  "eraCodes": {
+    "1998": "Pre-era for this line, declared honestly: the §0.4 grid's dial-up→dot-com years (:653) predate the product class — the family is named 'Object storage / S3-alike' in the §0.3 row (:612), a mid-2000s birth. Zero rung bodies are authored here on purpose; the picker's ladder (exact > nearest earlier > fallback) degrades the 1998 era to the current voice rather than force a retro-dated one.",
+    "2008": "The launch-boom years (§0.4's 2009 cell lands here; §8.10 gloss). The object locker is new and called a revolution, 'eleven nines' is a launch slide, and durability is a promise no dashboard has yet been pointed at.",
+    "2016": "The lifecycle years (§0.4's 2016 cloud cell; §8.10 flat). Tiers, rules, and retrieval fees: durability grew a billing column and cold storage became a place customers could lose things to.",
+    "2026": "Now: eleven nines as a dial position, scrubs scheduled against failure rates, and an invoice with a viral file's name on it. Same comb, louder arithmetic."
+  },
   "slots": {
     "nodeId": { "kind": "entity", "desc": "Board object the decision surface is about (storage node / bucket id)." },
     "verb": { "kind": "text", "desc": "Engine intent verb being refused (place/connect/configure/...)." },
@@ -67,7 +73,14 @@
     "cac.object-storage.todo": "§6.6 Companion B prices no object-storage acquisition channel; the §0.3 customer row ('developers, backup vendors') names WHO, not WHAT. Placeholder until the pricing pass — never invented."
   },
   "flavour": {
-    "ticket.subject.where-my-data": "hi - quick question - where exactly is my data",
+    "ticket.subject.where-my-data": {
+      "eras": {
+        "2008": "just to be clear the offsite copy is offsite right not just another drive in the same room",
+        "2016": "what does cold storage mean exactly for the files i open every tuesday",
+        "2026": "hi - quick question - where exactly is my data"
+      },
+      "fallback": "hi - quick question - where exactly is my data"
+    },
     "ticket.body.where-my-data": "Ticket {ticketId}, filed {hour}:{minute}. They have never opened a support ticket in {day}-plus days of storage, and today the first one they file is the one where the answer has to be a number of nines and not a feeling. §1.3: customers never notice you until the day they do.",
     "ticket.subject.small-upload": "uploading our archive! 400 million files, hope that's ok",
     "ticket.body.small-upload": "The enthusiasm is real, the bill is real, the metadata layer is now a question of state. Roughly {smallFileBillions} million objects arrive in one determined weekend and the success you signed up for is reading your index tier like a sponge.",
@@ -79,9 +92,23 @@
     "abuse.canon.vendor-advisory": "Drive firmware advisory: batch {firmwareSerial}. Failure mode: described. Rate: unpriced. Your racks bought this generation together, so the schedule will read like a purchase order.",
     "press.headline.quiet-death": "{hostName} data-loss saga began, auditors say, as a background process nobody scheduled; the redundancy agreed with the bug the whole way down.",
     "press.headline.dispute": "{hostName} customer disputes egress invoice after one asset goes viral; both parties describe the billing model as 'a choice someone made in shift one'.",
-    "forum.thread.nines-promise": "Anyone else's marketing says eleven nines while your scrub dashboard says 'finishes in twelve days, good luck'? Because the arithmetic does not care what the landing page promised.",
+    "forum.thread.nines-promise": {
+      "eras": {
+        "2008": "Anyone else remember when eleven nines was a launch slide and nobody on stage could say how long a scrub takes? The arithmetic was holding the whole pitch up and nobody had pointed a dashboard at it.",
+        "2016": "Anyone else's eleven nines now arrive with a retrieval fee and a lifecycle rule attached? Because the arithmetic started invoicing for its patience and the landing page kept the old poster.",
+        "2026": "Anyone else's marketing says eleven nines while your scrub dashboard says 'finishes in twelve days, good luck'? Because the arithmetic does not care what the landing page promised."
+      },
+      "fallback": "Anyone else's marketing says eleven nines while your scrub dashboard says 'finishes in twelve days, good luck'? Because the arithmetic does not care what the landing page promised."
+    },
     "forum.thread.stacked-shadows": "Found three replica shadows stacked on one rack in a demo tenant today and I felt physically ill. Whoever renders durability positionally deserves a medal; whoever placed those three deserves the hole.",
-    "chatter.desk.invisible": "Zero tickets about storage this week. On any other line that is a good week. Here it is just next week's cliffhanger.",
+    "chatter.desk.invisible": {
+      "eras": {
+        "2008": "Zero tickets about storage this week. The new object locker is a revolution, they say, and revolutions do not file tickets. On any other line that is a good week.",
+        "2016": "Zero tickets about storage this week. Half the fleet took a lifecycle rule to the cold tier and nobody has opened that drawer since. On any other line that is a good week.",
+        "2026": "Zero tickets about storage this week. On any other line that is a good week. Here it is just next week's cliffhanger."
+      },
+      "fallback": "Zero tickets about storage this week. On any other line that is a good week. Here it is just next week's cliffhanger."
+    },
     "chatter.comb.even": "The comb looks full and even from altitude. That sentence is either the whole victory or the whole lie, and the meter cannot tell you which.",
     "codex.scrub": "The operational truth that makes durability real: the scrub must complete faster than the failure rate. Not 'fast'. Faster. It is a race with a clock you schedule against, and §1.3 says so out loud.",
     "codex.no-attacker": "There is no dramatic attacker on this line (§1.3 verbatim). The genre is disaster arithmetic: entropy, placement, and rebuilds — the monster is a probability you can compute, and the jump-scare is a spreadsheet.",
@@ -136,7 +163,7 @@
     "status.rung-4": "§9.3 status-page euphemism ladder (verbatim)",
     "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
     "cac.object-storage.todo": "§6.6 Companion B (no storage row) + §0.3 customer column; null-provenance law — placeholder until priced",
-    "ticket.subject.where-my-data": "§1.3 'never notice you until the day they do'; ticket register comedy",
+    "ticket.subject.where-my-data": "§1.3 'never notice you until the day they do'; ticket register comedy; era rungs = the question the decade was actually asking — offsite-verification era (2008, the 'S3-alike' birth row §0.3 :612) to cold-tier/lifecycle confusion (2016, §0.4's 2016 cloud cell :653-654) to the nines-as-answer present",
     "ticket.body.where-my-data": "§1.3 same clause; nines-as-answer echo of §7.8 meter row; wording authored",
     "ticket.subject.small-upload": "§1.3 metadata nightmare verbatim core; ticket register",
     "ticket.body.small-upload": "§1.3 '400 million tiny files' + §2.x metadata layer dying under tiny objects; wording authored",
@@ -148,9 +175,9 @@
     "abuse.canon.vendor-advisory": "§1.3 'a bad firmware batch' + §6.6 Companion C bought-together law; advisory-text only",
     "press.headline.quiet-death": "§1.3 consistent-corruption clause as press beat; §9.3 press format; wording authored",
     "press.headline.dispute": "§6.6 bad-month + §2.x Egress Bill Shock; §9.3 press format",
-    "forum.thread.nines-promise": "§1.3 'durability is arithmetic, not vibes' in forum register; §9.3 industry-forum channel",
+    "forum.thread.nines-promise": "§1.3 'durability is arithmetic, not vibes' in forum register; §9.3 industry-forum channel; era rungs follow the nines-claim's own history — launch-slide era (the product class is named 'S3-alike' at §0.3 :612, born mid-2000s, so no 1998 body is authored) to the retrieval-fee era (§0.4's 2016 cloud cell) to the scrub-dashboard present",
     "forum.thread.stacked-shadows": "§1.3 positional-shadow upgrade verbatim imagery ('three shadows stacked on top of each other'); §9.3 forum register",
-    "chatter.desk.invisible": "§1.3 never-notice clause; chatter channel",
+    "chatter.desk.invisible": "§1.3 never-notice clause; chatter channel; era rungs from §0.4's 2009 shared-hosting-and-cPanel/cloud-boom cell and the 2016 cloud cell (:653-654) — revolution-honeymoon silence, lifecycle-rule silence, then the cliffhanger law kept byte-parallel",
     "chatter.comb.even": "§1.3 meter clause ('how full and even the comb looks' verbatim) as doubt; chatter channel",
     "codex.scrub": "§1.3 operational truth (near-verbatim core); codex register",
     "codex.no-attacker": "§1.3 'There is no dramatic attacker' verbatim + genre framing; codex register",
@@ -168,5 +195,5 @@
     "achievement.survived-success": "§1.3 mispriced-success failure mode flipped; §9.3 achievement channel",
     "canary.comb-tally": "§1.3 scrub clock + egress meter; canary-notice channel (precedent: dedicated canary.row-tally)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66). The nines scalar for the win hold and every pressure mapping in the wave slice stay PROVISIONAL-B until the owner re-author sweep; "
+  "_todo": "Era copy fan (L-ER-F): three pack-unique zero-slot flavour keys (ticket.subject.where-my-data, chatter.desk.invisible, forum.thread.nines-promise) speak the canon's post-birth rungs {2008,2016,2026} (OD-22(c)); the 1998 rung is DECLARED in eraCodes as this line's honest PRE-ERA and carries zero bodies by design — the product class is named 'Object storage / S3-alike' (§0.3 row :612), a mid-2000s birth, and the packs.ts ladder (exact > nearest earlier > fallback) degrades the 1998 era to the current voice; a tape-drawer joke was NOT forged because this line's own doc rows carry no tape texture (tape belongs to the backup-archival register). 2026 rungs and all fallbacks are the prior plain text byte-ident; shared register (refusal.*/status.rung-*/vendor.reply.*) plain byte-ident; decision namespace stays era-flat; bundle availableFrom remains null (§0.4 R66) — expectation voice, not a retro-dated shelf claim. The nines scalar for the win hold and every pressure mapping in the wave slice stay PROVISIONAL-B until the owner re-author sweep; "
 }

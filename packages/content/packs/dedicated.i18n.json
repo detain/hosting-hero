@@ -4,6 +4,12 @@
   "appliesTo": "official:dedicated",
   "locale": "en",
   "note": "Swappable grammar pack (R46, §9.3/§9.11) for the dedicated/bare-metal line. Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is the OPERATOR's — the dark square in the row, the serial numbers marching, the four-hour promise against one van — never the attack tooling. No payloads, commands, tool names-as-how-to, or technique instruction anywhere; abuse exists only as complaint, upstream notice, vendor silence, and consequence.",
+  "eraCodes": {
+    "1998": "The boxed-metal years (§0.4's pre-colo dial-up→dot-com span; §8.10 dresses the decade in bevels). The customer pictures a machine with a keyboard on the desk beside it, some failures are a drive to the datacenter, and 'remote hands' is a person you telephone (§1.1 Tier-2 remote-hands-with-latency row: '$150/hr with a 4-hour response').",
+    "2008": "The IPMI-applet years (§0.4's 2009 cell lands here; §8.10 gloss). The keyhole goes remote — a console that loads inside a browser that keeps getting newer — and the four-hour promise becomes a courier schedule.",
+    "2016": "The API-first years (§0.4's 2016 cell; §8.10 flat). Provisioning is a POST, the spares shelf is an inventory tier, and the ticket is the customer pasting your own status JSON back at you.",
+    "2026": "Now: the same keyhole, legible at Z1 — traffic, power state, IPMI — a hand-written label tape over an installer that still creeps. The box is theirs; the consequences are, too."
+  },
   "slots": {
     "nodeId": { "kind": "entity", "desc": "Board object the decision surface is about (rack / server id)." },
     "verb": { "kind": "text", "desc": "Engine intent verb being refused (place/connect/configure/...)." },
@@ -66,7 +72,15 @@
   "flavour": {
     "ticket.subject.serial-march": "my box is beeping at boot again (fourth this month)",
     "ticket.body.serial-march": "Ticket {ticketId}, filed {hour}:{minute}. You know it is not one box because the RMA pile has a theme. The vendor's known-issue notice has a serial range. Your invoices do not mention serial ranges, but the depreciation schedule now has a personality.",
-    "ticket.subject.leds-mean": "delivered yesterday - what do the lights mean",
+    "ticket.subject.leds-mean": {
+      "eras": {
+        "1998": "server is fine - when can i come down and hook up a monitor",
+        "2008": "delivered yesterday - the remote console spins forever and i am told that is a browser problem",
+        "2016": "your api says powered on, the panel says amber, and i am asking which one of you is real",
+        "2026": "delivered yesterday - what do the lights mean"
+      },
+      "fallback": "delivered yesterday - what do the lights mean"
+    },
     "ticket.body.leds-mean": "New box at {rackPosition}, root delivered, enthusiasm undimmed. The customer has held a server exactly once, in a photograph, and is now asking what the amber pilot wants from them. Nobody is wrong here. That is what makes it funny.",
     "ticket.subject.graph-flat": "is my server dead? the traffic line is a straight line",
     "ticket.body.graph-flat": "Power on, panel green, install log clean. The line is flat because the product the server runs launches Tuesday. You are being asked to explain success to somebody who has only ever measured it with noise.",
@@ -78,9 +92,25 @@
     "press.headline.batch": "{hostName} confirms fleet-wide defect in a single purchased batch; replacement timeline described as 'a function of the shelf, not the vendor'. Analysts note the word 'batch' appeared in no marketing material.",
     "press.headline.quiet": "{hostName} downtime never announced; a regional service discovered its dependency at 3 a.m. and its nameplate was, by all reports, very legible.",
     "forum.thread.whois-routing": "Anyone else's abuse complaints arrive addressed to their HOSTING ASN and not the actual bot's owner? Mine says my IP range. My IP range says my customer. My customer says they did not consent to this sentence.",
-    "forum.thread.four-hours": "Warranty said four hours. The shelf said otherwise. We have started keeping a second spare per batch line like it's a hobby. It should not be a hobby.",
+    "forum.thread.four-hours": {
+      "eras": {
+        "1998": "Warranty said bring it by the shop. The drive came back in a car, in an anti-static bag from a gas station, and the whole SLA was a phone number on a whiteboard.",
+        "2008": "Warranty said four hours. The courier said next flight out. We started asking which warehouse actually holds the spare, because the answer was sometimes another continent.",
+        "2016": "Warranty said four hours. The ticket said in stock. Both were true about different warehouses, and the rack waited for the spreadsheet to notice.",
+        "2026": "Warranty said four hours. The shelf said otherwise. We have started keeping a second spare per batch line like it's a hobby. It should not be a hobby."
+      },
+      "fallback": "Warranty said four hours. The shelf said otherwise. We have started keeping a second spare per batch line like it's a hobby. It should not be a hobby."
+    },
     "chatter.desk.quiet": "The sales desk is quiet and the utilization dial is quieter. On this line those are the same sentence.",
-    "chatter.stable.smell": "New-box smell, old-box dust, and the particular silence of a rack nobody bought. The stable tells you which one you are running.",
+    "chatter.stable.smell": {
+      "eras": {
+        "1998": "Beige, fan noise, and carpet glue in the back office. The row is loud and the dust is the slow killer. The stable tells you which one you are running.",
+        "2008": "Blade hum, anti-static floor, one label printer running. The boxes are denser and the invoices are too. The stable tells you which one you are running.",
+        "2016": "Sealed aisles, blanking panels, LED pilots breathing in rows. The beige is gone and the silence is the product. The stable tells you which one you are running.",
+        "2026": "New-box smell, old-box dust, and the particular silence of a rack nobody bought. The stable tells you which one you are running."
+      },
+      "fallback": "New-box smell, old-box dust, and the particular silence of a rack nobody bought. The stable tells you which one you are running."
+    },
     "codex.keyhole": "The keyhole is a design, not a limitation: traffic, power, IPMI. Everything else is the customer's, including the consequences — so the visibility you keep is engineered to be legible at Z1, where the row reads as a ledger of names.",
     "codex.batch": "Hardware bought together fails together. The doc's bad month for this line is not an attacker; it is a purchase decision arriving late, one serial number at a time.",
     "loading.tip.visibility": "Every unit of agency you remove must be replaced with two units of visibility. The crash cart screen is not a joke; it is the trade being honored.",
@@ -134,7 +164,7 @@
     "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
     "ticket.subject.serial-march": "§6.6 Companion C batch beat in ticket register; wording authored",
     "ticket.body.serial-march": "§6.6 Companion C; business ask only, zero technique",
-    "ticket.subject.leds-mean": "§1.3 card imagery (asset tags, green LED pilots); ticket register comedy",
+    "ticket.subject.leds-mean": "§1.3 card imagery (asset tags, green LED pilots); ticket register comedy; era rungs from the keyhole's own ancestry — 1998 body/hook-up-a-monitor era (§1.1 Tier-2 'cannot fix everything from the keyboard', :863; crash cart :17446), 2008 remote-console-in-a-browser years, 2016 API-vs-panel years (§0.4 grid cells; §8.10 dressing arc)",
     "ticket.body.leds-mean": "§0.3 customer row (technical customers, root); wording authored",
     "ticket.subject.graph-flat": "§15395 utilization law flipped to customer POV; ticket register",
     "ticket.body.graph-flat": "§12521 high-touch inquiry texture; wording authored",
@@ -146,9 +176,9 @@
     "press.headline.batch": "§6.6 Companion C; §9.3 press feed format; wording authored",
     "press.headline.quiet": "§1.3 silent-catastrophe register ('capex stranded is the quiet killer' echo); §9.3 press format",
     "forum.thread.whois-routing": "§15399 abuse-complaint beat; §9.3 industry-forum register",
-    "forum.thread.four-hours": "§1.3 four-hour expectation; §9.3 forum register; wording authored",
+    "forum.thread.four-hours": "§1.3 four-hour expectation; §9.3 forum register; wording authored; era rungs follow the spares leg's own ancestry — hand-carry era (§1.1 'drive to the datacenter' timer), next-flight courier era, inventory-spreadsheet era, shelf-truth present",
     "chatter.desk.quiet": "§12521 sales-desk register; chatter channel",
-    "chatter.stable.smell": "§1.3 The Stable/The Workshop visual; chatter channel",
+    "chatter.stable.smell": "§1.3 The Stable/The Workshop visual; chatter channel; era rungs authored from §0.4's Era-Transition Cutscene (:668-673 'the beige boxes leave, the racks get denser, the lights go LED') — the refrain kept byte-ident on every rung",
     "codex.keyhole": "§1.3 keyhole paragraph (verbatim cores: traffic/power/IPMI; email/null-route/power-off) + §7.8f law; codex register",
     "codex.batch": "§6.6 Companion C dedicated row (verbatim core); codex-only demotion precedent (README R36)",
     "loading.tip.visibility": "§7.8f verbatim law ('every unit of agency you remove...')",
@@ -165,5 +195,5 @@
     "achievement.sold-out-sold-out": "§0.3 sold-out-is-a-door scarcity read; §9.3 achievement channel",
     "canary.row-tally": "§1.3 stable row + abuse-desk tally; canary-notice channel (precedent: dns canary.pop-drain)"
   },
-  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66). verbs.transfers ships empty and no transfer.* key is authored: §1.9's Portable Skill table carries no dedicated row (bundle verbs._todo); the keyhole law rides rosetta.dedicated.keyhole instead."
+  "_todo": "Era copy fan (L-ER-F): three pack-unique zero-slot flavour keys (ticket.subject.leds-mean, chatter.stable.smell, forum.thread.four-hours) speak the ratified four-rung canon {1998,2008,2016,2026} (OD-22(c)); 2026 rungs and all fallbacks are the prior plain text byte-ident, shared-register families (refusal.*/status.rung-*/vendor.reply.*) untouched, decision namespace stays era-flat; bundle availableFrom remains null (§0.4 R66) — the copy speaks the canon, the shelf date has not moved. verbs.transfers ships empty and no transfer.* key is authored: §1.9's Portable Skill table carries no dedicated row (bundle verbs._todo); the keyhole law rides rosetta.dedicated.keyhole instead."
 }
