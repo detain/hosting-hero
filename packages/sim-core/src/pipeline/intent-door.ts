@@ -134,6 +134,25 @@
  *    RESERVED continuation namespace; while enabled, occupancyTicks for
  *    disconnect-drain is superseded by drainTicks (the drain hold covers the
  *    whole choreography, and the pull lands exactly as the hand frees).
+ *  - GATE-7 RULE CARRIERS (§9.13 gate 7, ADR-0018, OPT-IN): with
+ *    `config.ruleCarriers` set to "mapped" (DEFAULT off — the v0
+ *    unsupported-carrier refusal stays law byte-identically), a re-fed
+ *    `kind:"verb"` intent whose verb is one of FIVE mapped carriers is
+ *    TRANSLATED at execution time into its player-verb twin and runs the
+ *    ORDINARY rail: same hands, same occupancy, same handler, same
+ *    receipts/events — the Book plays itself through the same hands. The
+ *    map (raise-inspection-depth/drain/shed-class/scale-out/page/
+ *    open-ticket) is FILE-LOCAL private grammar — never exported, and every
+ *    translated refusal reuses an existing phrase (the census stays exactly
+ *    at forty-six); unmapped rule verbs (failover, dispatch-remote-hands,
+ *    queue-change, run-runbook) keep refusing on the untouched bought-verb
+ *    wall — engine breadth stays a CONTENT decision. Receipt/event labels
+ *    show the translation (e.g. raise-inspection-depth→configure-node) and
+ *    the intent's `ruleId` rides as structural attribution. v0 law: rules
+ *    pay HANDS only — the attention denomination (OD-6(a)) is reserved to
+ *    the player (D4) — and a rule carrier whose translated payload is
+ *    semantically wrong follows the ordinary value refusal, never a throw
+ *    (trusted structure, validated values).
  */
 
 import type {
@@ -148,6 +167,7 @@ import type {
   DisconnectDrainArgs,
   EntityId,
   ExternalIntent,
+  Fixed,
   GameState,
   HandState,
   HandToken,
@@ -168,6 +188,9 @@ import type {
   NegotiationTone,
   PlaceDeviceArgs,
   PlayerIntent,
+  PlayerVerbArgs,
+  PlayerVerbPayload,
+  PolicyActionId,
   PolicyCard,
   PolicyCardCommitArgs,
   PriceOverrideBook,
@@ -207,6 +230,7 @@ import {
   PlayerVerb,
 } from "../types.ts";
 import { MICROS_PER_MIN } from "../kernel/time.ts";
+import { FIXED_ONE } from "../kernel/fixed.ts";
 import { compareCodeUnits, fnv1a64OverCodePoints } from "../internal/canonical.ts";
 import { compareEntityId } from "./internal.ts";
 import { makeSlots } from "./queue.ts";
@@ -349,6 +373,15 @@ export interface IntentDoorConfig {
    *  1 — anything else is host programming garbage and throws
    *  `IntentDoorError` at the door boundary (Laws 2+4). */
   readonly attentionCost?: Partial<Record<PlayerVerb, 0 | 1>>;
+  /** GATE-7 RULE CARRIERS (ADR-0018), opt-in. Absent or "off" = TODAY's law
+   *  byte-identically: every legacy `kind:"verb"` carrier refuses
+   *  unsupported-verb-carrier and the door reads no rule payload at all.
+   *  "mapped" = five carriers translate at execution time into their
+   *  player-verb twins and run through the SAME handlers — hands pay,
+   *  occupancy pays, receipts and events ride the ordinary rails (the Book
+   *  plays itself through the same hands). Any value other than the two
+   *  words is host programming garbage and throws `IntentDoorError`. */
+  readonly ruleCarriers?: "off" | "mapped";
 }
 
 /** §7.5 reference durations, rounded UP to whole sim-minute ticks:
@@ -601,6 +634,199 @@ function resolveAttentionCost(
   return required;
 }
 
+/* ── GATE-7 rule-carrier translation (ADR-0018, opt-in, default OFF) ── */
+
+type RuleCarrierMode = "off" | "mapped";
+
+interface ResolvedRuleCarriers {
+  readonly mode: RuleCarrierMode;
+}
+
+const IDLE_RULE_CARRIERS: ResolvedRuleCarriers = Object.freeze({ mode: "off" });
+
+/** Parse the host's rule-carrier switch at the boundary (Laws 2+4), mirroring
+ *  `resolveDrainPolicy`: absent or the literal "off" yields the frozen idle
+ *  constant — the byte-identity spine of the whole seam. */
+function resolveRuleCarriers(config: IntentDoorConfig): ResolvedRuleCarriers {
+  const mode = config.ruleCarriers;
+  if (mode === undefined || mode === "off") return IDLE_RULE_CARRIERS;
+  if (mode !== "mapped") {
+    fail("config.ruleCarriers", `expected "off" | "mapped", got ${String(mode)}`);
+  }
+  return Object.freeze({ mode: "mapped" as const });
+}
+
+/** The inspection ladder is `INSPECTION_DEPTHS` (closed vocab below — rung
+ *  order is the ladder order). The Book's raise-inspection-depth value
+ *  counts WHOLE rungs from the bottom in Fixed units (§B 2.3.10 "the next
+ *  rung it can legally climb" reads as an absolute rung in v0): 0 =
+ *  pass-through, 1 = sample-1-in-20, 2 = inspect, 3 = challenge. */
+const RULE_DEPTH_DEFAULT_STEP = 1;
+/** What the Book says when it orders a shed without naming a class: the
+ *  engine's own name for contract-less work (pipeline/internal.ts treats an
+ *  unknown class id exactly as unclassified, so the string is honest AND
+ *  inert-proof against stale authored ids). */
+const RULE_DEFAULT_QOS = "unclassified";
+/** The estate note the Book dictates when it pages or opens a ticket (v0
+ *  fixed sentence — a per-rule note would be scripting the door cannot
+ *  audit; the ruleId rides the intent as attribution, not the prose). */
+const RULE_TICKET_NOTE = "the Book opened a ticket";
+
+/** Climb the rung ladder; off-ladder rungs yield a sentinel string the
+ *  ordinary configure value wall rejects (bad-inspection-depth) — the
+ *  translation never throws and never invents a new refusal phrase. */
+function climbDepth(value: Fixed | null): InspectionDepth {
+  if (value === null) return INSPECTION_DEPTHS[RULE_DEPTH_DEFAULT_STEP] ?? "pass-through";
+  const rung = Number(value / FIXED_ONE); // whole Fixed units; fraction truncates
+  return (INSPECTION_DEPTHS[rung] ?? "off-ladder") as string as InspectionDepth;
+}
+
+/** §B 2.3.10 "a drain has no target until it has one": carry the action's
+ *  target when it names a live cable directly; else, when it names a node
+ *  with EXACTLY ONE incoming supplier, carry that supplier's edge; anything
+ *  else yields the empty id, which the ordinary disconnect refusal rejects
+ *  (unknown-edge). Single-candidate by construction — no ordering law is
+ *  needed, a multi-supplier node refuses rather than picking. */
+function drainEdgeId(draft: Draft, target: EntityId | null): string {
+  if (target === null) return "";
+  const board = draft.board ?? draft.origin.board;
+  if (board === undefined) return "";
+  if (board.edges.has(target)) return target;
+  let found = "";
+  let count = 0;
+  for (const edge of board.edges.values()) {
+    if (edge.to !== target) continue;
+    count += 1;
+    found = edge.id;
+  }
+  return count === 1 ? found : "";
+}
+
+/** The Book's scale-out value is an ABSOLUTE desired warm roster
+ *  (`PolicyAction` "scale count"); the verb's reservedSlots is a RELATIVE
+ *  delta beyond the authored anchor (defaults.ts applyScaleWarmth law:
+ *  live = max(anchor + reserved, occupied floor)). Resolve absolute → delta
+ *  against the live book so repeated orders accumulate correctly; the
+ *  translation reads the same anchor chain the handler writes. */
+function scaleReserved(draft: Draft, target: EntityId | null, value: Fixed | null): number {
+  if (target === null) return 0; // empty id → ordinary unknown-node refusal downstream
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  const node = nodes === undefined ? undefined : nodes.get(target);
+  if (node === undefined) return 0; // unknown node → ordinary refusal downstream
+  const prior = draft.scale?.entries.get(target);
+  const anchor = prior?.baseRosterSlots ?? node.slots.length;
+  if (value === null) return 1; // value-less order = one more warm slot
+  const requested = Number(value / FIXED_ONE);
+  const delta = requested - anchor;
+  return delta < 0 ? 0 : delta; // the Book grows; it never evicts (0 = no-op warmth)
+}
+
+type RuleCarrierTranslate = (
+  draft: Draft,
+  target: EntityId | null,
+  value: Fixed | null,
+) => PlayerVerbPayload;
+
+/** THE closed five-entry map (§9.13 gate 7 + ADR-0018). FILE-LOCAL by law —
+ *  the door's private grammar, not an exported contract (the non-barrel
+ *  precedent), so api-verify sees zero delta. Anything outside this map —
+ *  failover, dispatch-remote-hands, queue-change, run-runbook — keeps
+ *  walking into the ordinary unsupported-carrier refusal: the bought-verb
+ *  wall stays a CONTENT truth, never a door special case. */
+const RULE_CARRIER_MAP: ReadonlyMap<PolicyActionId, {
+  readonly verb: PlayerVerb;
+  readonly translate: RuleCarrierTranslate;
+}> = new Map<PolicyActionId, { verb: PlayerVerb; translate: RuleCarrierTranslate }>([
+  [
+    "raise-inspection-depth",
+    {
+      verb: PlayerVerb.ConfigureNode,
+      translate: (_draft, target, value): PlayerVerbPayload => ({
+        kind: "player-verb",
+        args: {
+          verb: PlayerVerb.ConfigureNode,
+          nodeId: (target === null ? "" : target) as EntityId,
+          inspectionDepth: climbDepth(value),
+          shedOrder: null,
+        },
+      }),
+    },
+  ],
+  [
+    "drain",
+    {
+      verb: PlayerVerb.DisconnectDrain,
+      translate: (draft, target): PlayerVerbPayload => ({
+        kind: "player-verb",
+        args: { verb: PlayerVerb.DisconnectDrain, edgeId: drainEdgeId(draft, target) as EntityId },
+      }),
+    },
+  ],
+  [
+    "shed-class",
+    {
+      verb: PlayerVerb.ShedLoad,
+      translate: (_draft, target): PlayerVerbPayload => ({
+        kind: "player-verb",
+        args: {
+          verb: PlayerVerb.ShedLoad,
+          nodeId: (target === null ? "" : target) as EntityId,
+          qosClassId: RULE_DEFAULT_QOS,
+        },
+      }),
+    },
+  ],
+  [
+    "scale-out",
+    {
+      verb: PlayerVerb.ScaleNode,
+      translate: (draft, target, value): PlayerVerbPayload => ({
+        kind: "player-verb",
+        args: {
+          verb: PlayerVerb.ScaleNode,
+          targetNodeId: (target === null ? "" : target) as EntityId,
+          reservedSlots: scaleReserved(draft, target, value),
+          effectiveAtBusinessMinute: null,
+        },
+      }),
+    },
+  ],
+  [
+    "page",
+    {
+      verb: PlayerVerb.Communicate,
+      translate: (_draft, target): PlayerVerbPayload => ({
+        kind: "player-verb",
+        args: { verb: PlayerVerb.Communicate, target, note: RULE_TICKET_NOTE },
+      }),
+    },
+  ],
+  [
+    "open-ticket",
+    {
+      verb: PlayerVerb.Communicate,
+      translate: (_draft, target): PlayerVerbPayload => ({
+        kind: "player-verb",
+        args: { verb: PlayerVerb.Communicate, target, note: RULE_TICKET_NOTE },
+      }),
+    },
+  ],
+]);
+
+/** Translate a mapped rule carrier into its player-verb twin, or null when
+ *  the verb owns no door semantics yet (the bought-verb wall). Pure over the
+ *  draft except for read-only board/nodes/scale views — it mints nothing. */
+function translateRuleCarrier(
+  draft: Draft,
+  verb: string,
+  target: EntityId | null,
+  value: Fixed | null,
+): { readonly verb: PlayerVerb; readonly payload: PlayerVerbPayload } | null {
+  const route = RULE_CARRIER_MAP.get(verb as PolicyActionId);
+  if (route === undefined) return null;
+  return { verb: route.verb, payload: route.translate(draft, target, value) };
+}
+
 /* ═══════════════════════════ Result surface ═══════════════════════════ */
 
 /** One per fed intent — the door's verdict roll-up (host HUD ticker / test
@@ -780,6 +1006,9 @@ interface Draft {
   /** OD-6(a) parsed attention-cost set (null = denomination off for this
    *  pass — the byte-identity gate). */
   readonly attentionCost: ReadonlyMap<PlayerVerb, 1> | null;
+  /** GATE-7 parsed rule-carrier switch (mode "off" = every legacy carrier
+   *  refuses exactly as before — the byte-identity gate). */
+  readonly ruleCarriers: ResolvedRuleCarriers;
   nodes: ReadonlyMap<EntityId, NodeRecord> | null;
   board: BoardState | null;
   hands: HandState | null;
@@ -2041,13 +2270,48 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
     draft.receipts.push(Object.freeze({ submittedTick: entry.tick, seq, verb: verbLabel, outcome: "refused" as const, reason }));
   };
 
-  if (intent.payload.kind !== "player-verb") {
+  // GATE-7 (ADR-0018): when the host maps rule carriers, a `kind:"verb"`
+  // intent from the Book is TRANSLATED at execution time into its
+  // player-verb twin and joins the ordinary rail below — same hands, same
+  // occupancy, same handler, same receipts. Off (the default) nothing here
+  // reads a legacy payload at all: byte-identical v0 law. A translation
+  // whose target args are semantically wrong refuses through the ordinary
+  // value walls (trusted structure, validated values — Laws 2+4).
+  let verb: PlayerVerb;
+  let args: PlayerVerbArgs;
+  let label: string;
+  let carrierVerb: string | null = null; // set only for a translated rule carrier
+  if (intent.payload.kind === "player-verb") {
+    args = intent.payload.args;
+    verb = args.verb as PlayerVerb; // parseEntry validated membership
+    label = verb;
+  } else if (
+    draft.ruleCarriers.mode === "mapped" &&
+    intent.payload.kind === "verb"
+  ) {
+    const carrier = translateRuleCarrier(
+      draft,
+      intent.payload.verb,
+      intent.payload.target,
+      intent.payload.value,
+    );
+    if (carrier === null) {
+      reject(carrierLabel(intent.payload), "unsupported-verb-carrier: the door executes only kind=\"player-verb\" intents");
+      return;
+    }
+    args = carrier.payload.args;
+    verb = carrier.verb;
+    carrierVerb = intent.payload.verb;
+    // ATTRIBUTION: the receipt label keeps the rule's carrier visible
+    // (`raise-inspection-depth→configure-node`) — "the Book fired" is
+    // legible from the rails alone; the executed EVENT keeps the plain
+    // PlayerVerb wire type (IntentExecutedEvent.verb is typed-closed), and
+    // the fed intent's `ruleId` rides as the structural witness.
+    label = `${carrierVerb}→${verb}`;
+  } else {
     reject(carrierLabel(intent.payload), "unsupported-verb-carrier: the door executes only kind=\"player-verb\" intents");
     return;
   }
-  const args = intent.payload.args;
-  const verb = args.verb as PlayerVerb; // parseEntry validated membership
-  const label = verb;
 
   // Canonical payment order: HANDS first, then handler semantics — an
   // unaffordable action is refused before its payload is even interpreted.
@@ -2069,7 +2333,11 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
     const hands = draftHands(draft, tick);
     const free = freeHandCount(hands);
     if (free < cost) {
-      reject(label, `hands-exhausted: need ${cost}, free ${free} of ${hands.capacity}`);
+      reject(
+        label,
+        `hands-exhausted: need ${cost}, free ${free} of ${hands.capacity}` +
+          (carrierVerb === null ? "" : ` — rule carrier "${carrierVerb}" pays the same hands as the player`),
+      );
       return;
     }
     if (drainMode && hands.tokens.some((token) => token.busyCauseId === tokenCause)) {
@@ -2092,9 +2360,14 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
   // handler-refusal undo). Absent pool or no free hand → refusal
   // `attention-debt:` — the skip-the-token-that-tick law, a visible event,
   // never a silent loss. Default: the map is empty and this block never runs.
+  //
+  // GATE-7 EXEMPTION (D4, v0 law): a translated rule carrier NEVER pays the
+  // attention denomination. The Book is not a second executive mind — it
+  // spends hands it must compete for, and the founder's focus stays the one
+  // lane a human owns. A rule-carrier entry skips this block entirely.
   let attentionSnapshot: AttentionState | null = null; // pre-occupy value for undo
   let attentionPaid = false; // this entry booked a special token?
-  if (draft.attentionCost?.has(verb) === true) {
+  if (carrierVerb === null && draft.attentionCost?.has(verb) === true) {
     const pool = draftAttention(draft, tick); // caches any due-release
     attentionSnapshot = draft.attention;
     if (pool === null) {
@@ -2177,7 +2450,7 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
       atUs: context.clocks.simUs,
       tick,
       causeId: cause,
-      verb: label,
+      verb, // typed PlayerVerb on the wire; the receipt label carries the carrier arrow
       intentSeq: seq,
       handIndexes,
       busyUntilTick,
@@ -2215,6 +2488,7 @@ export function applyIntentDoor(
     config,
     drain: resolveDrainPolicy(config),
     attentionCost: resolveAttentionCost(config),
+    ruleCarriers: resolveRuleCarriers(config),
     nodes: null,
     board: null,
     hands: null,

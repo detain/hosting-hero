@@ -1168,11 +1168,19 @@ export interface PlayerIntent {
  *  The `player-verb` arm (INTENT-DOOR contract, §4.2/§7.5/§7.13) is the ONLY
  *  carrier the pipeline door EXECUTES; the legacy `verb` arm stays alive for
  *  rule-minted actions (`PolicyActionId` / `run-runbook:NAME` strings emitted
- *  by policy/evaluator.ts) and the door refuses those with an
- *  `unsupported-verb-carrier` refusal event until the policy lane maps them
- *  onto handlers. Replay-bundle compatibility: bundle.ts parses payloads
- *  OPAQUELY ("forward-compat: any kind string survives; the runner validates
- *  semantics"), so the new arm survives the wire untouched. */
+ *  by policy/evaluator.ts). GATE-7 (ADR-0018) MAPPED this seam PARTIALLY:
+ *  under the door's opt-in `ruleCarriers: "mapped"` config (DEFAULT off —
+ *  byte-identical refusal law), five mapped translations covering six
+ *  carriers (raise-inspection-depth, drain, shed-class, scale-out, page,
+ *  open-ticket) are translated at execution time into player-verb twins and
+ *  run the ordinary hands/occupancy/handler rail through a file-local
+ *  private map in pipeline/intent-door.ts. Everything else — failover,
+ *  dispatch-remote-hands, queue-change, run-runbook:NAME, and ANY carrier
+ *  while the switch is off — keeps meeting the door's
+ *  `unsupported-verb-carrier` refusal event. Replay-bundle compatibility:
+ *  bundle.ts parses payloads OPAQUELY ("forward-compat: any kind string
+ *  survives; the runner validates semantics"), so the new arm survives the
+ *  wire untouched. */
 export type IntentPayload =
   | { readonly kind: "verb"; readonly verb: string; readonly target: EntityId | null; readonly value: Fixed | null }
   | { readonly kind: "slider"; readonly control: string; readonly value: Fixed }
@@ -1194,8 +1202,11 @@ export type IntentPayload =
  *    "run-runbook:NAME", target, value}` — the ten PolicyActionId verbs
  *    (scale-out, shed-class, page, open-ticket, dispatch-remote-hands,
  *    raise-inspection-depth, failover, run-runbook, drain, queue-change)
- *    are RULE-carrier actions, deliberately NOT part of this enum; the door
- *    refuses that carrier with an explicit event (reported seam).
+ *    are RULE-carrier actions, deliberately NOT part of this enum. GATE-7
+ *    (ADR-0018) closed that seam PARTIALLY: six of the ten translate into
+ *    enum twins under the door's opt-in mapped switch (private map in
+ *    pipeline/intent-door.ts); the rest — and everything while the switch
+ *    is off — still refuse with the explicit event.
  *  - topology/graph.ts: `EdgeDraft.kind` is "data"|"power"|"control"|"trust"
  *    — `connect-ports` mirrors exactly that relation set (`BoardRelation`)
  *    and the graph's structural invariants (self-edge, slot double-feed,
