@@ -1,13 +1,15 @@
 # tools/relay — co-op node relay SPIKE (ADR-0014 #D6)
 
-**Status: spike, HARDENED 2026-10-16 (lane L-RH). Not the transport.** This
+**Status: spike, HARDENED 2026-10-16 (lane L-RH), WIRE MECHANICS LANDED
+2026-10-16 (lane T-R, owner session-6 ruling). Not the transport.** This
 package proves the ADR-0013 co-op contracts survive a Node-side host relay;
 the shipped network layer remains PHP/Workerman per OD-5(b), and the
 MODULE-STATUS transport row (future) is deliberately untouched. Adoption is a
 separate, owner-gated decision. The four LAW FRICTIONS the spike declared open
 were resolved in-repo under the owner's session-5 agenda (e) delegation —
-see "Frictions: RESOLVED" below; items that are genuinely wire-mechanics stay
-listed for the transport lane.
+see "Frictions: RESOLVED" below; the four WIRE-MECHANICS debts (seq policy,
+payload opacity, O(n²) self-check, paged catch-up) landed in-repo under the
+session-6 ruling — see "Wire mechanics: RESOLVED" below.
 
 ## What the spike is
 
@@ -23,15 +25,18 @@ listed for the transport lane.
   cannot matter downstream.
 - `src/runner.ts` — a client half: independent `GameState` driven through the
   real `applyIntentDoor`, hashing every frame with the pipeline's `digestState`.
-- `test/relay.law.test.ts` — 21 law tests (ledger incl. same-tick canonical
+- `test/relay.law.test.ts` — 34 law tests (ledger incl. same-tick canonical
   joins / re-join tenure cycle / relay-side catch-up / joined-scoped freeze,
-  stamping, dup-position throws, interleaving-invariant digest, ruling-2
-  attribution guard incl. forgery/ghost/off-roster-facet refusals and the
-  RATIFIED MIN_WRITERS history posture).
-- `test/relay.runners.test.ts` — 6 convergence tests, incl. the headline
+  stamping incl. the R1 stream law, dup-position throws, interleaving-
+  invariant digest, ruling-2 attribution guard incl. forgery/ghost/off-roster-
+  facet refusals and the RATIFIED MIN_WRITERS history posture, plus the
+  wire-mechanics suites R2 opacity / R3 step-check / R4 paging).
+- `test/relay.runners.test.ts` — 8 convergence tests, incl. the headline
   **two-runners-one-digest** claim (seed 904n, 12 ticks, per-frame AND
   terminal `digestState` equality across hostile arrival permutations), a
-  seq-swap falsifier, a door-M4 can't-happen pin, and a ×100 rebuild gate.
+  seq-swap falsifier, a door-M4 can't-happen pin, a ×100 rebuild gate, and
+  the R2 witnesses (opaque verbs converge; deep type-garbage dies at the
+  door, not the hub).
 
 Run: `pnpm -F relay-tools test` (vitest) · `pnpm -F relay-tools typecheck`.
 Sim usage is exclusively via `@hh/sim-core` subpath exports (`./types`,
@@ -119,20 +124,73 @@ these laws instead of waiting on them.
    company commits for the seated author and refuses the departed one's own
    write; a literally-solo ledger still throws `/at least 2 recorded writers/`.
 
-## Still open for the transport lane (wire mechanics, not law)
+## Wire mechanics: RESOLVED in-repo 2026-10-16 (lane T-R; owner session-6 ruling)
 
-- **Seq-per-tick resets to 0 on advance**: fine for the door (M4 is per-feed),
-  but a wide-relay monotonic global seq might prefer gap-free ordering across
-  ticks; either satisfies the law — transport lane should pick one.
-- **Action payloads are opaque dicts** on the timeline; the relay re-checks
-  only `args.verb` shape. The door remains the deep authority — the transport
-  must not trust anything between (per coop.ts scope note @8c0ff88).
-- **Submit-time self-check is O(n²) per run**: `assertCoopTimelineAppendOrder`
-  re-scans the whole log on every submit — the transport lane should replace
-  it with an incremental (last-record) check.
-- **Catch-up is whole-log in-process**: the wire version needs chunked/paged
-  delivery and reconnection semantics — latency, resume, per-seat fog all
-  belong to the Workerman lane.
+The four WIRE-MECHANICS debts this section carried are implemented (R1–R4
+below, named in `src/relay.ts`). What remains genuinely out-of-repo is the
+PHP/Workerman side: sockets, latency, per-seat fog, and paging policy — the
+LAWS the transport must obey, including the page-window contract, are now
+pinned here.
+
+1. **Per-seat seq streams — LAW (R1):** every seat owns a strictly-increasing
+   seq stream; the hub realizes the streams through a SINGLE LIFETIME-
+   MONOTONIC NUMBERING (the per-tick reset is retired — `advanceTo` consumes
+   nothing). A seat's stream is the subsequence of stamps bearing its
+   `participantId`: strictly increasing, submission-ordered, gap-free (a
+   refused submit consumes no stamp). **Why not seat-independent counters?**
+   The upstream laws key on `(tick, seq)` IGNORING participantId —
+   `orderCoopTimeline` ("claimed by two records") and the door's M4
+   ("duplicate (tick, seq) stamp") both refuse the first same-tick cross-seat
+   pair — so the SHARED LOG's global `(tick, seq)` uniqueness is PRESERVED,
+   tie-free BY CONSTRUCTION: seq values never repeat anywhere, and within a
+   tick the stamp order IS submission order (the hand-contention law is
+   unchanged; the t8/t10 witnesses moved only their numerals, disclosed
+   re-pins, digests never touched). **Falsifier:** re-introducing the reset
+   reddens 12 tests (stamp pins, R1 stream law, M4 message, swap falsifier).
+2. **Payload opacity until the door — LAW (R2):** the relay's entire say about
+   an action is its structural boundary: `payload.args` is a plain object and
+   `args.verb` is a string inside the closed `PLAYER_VERBS` enum (./types).
+   Nothing deeper is inspected — any door-shaped intent (all ten verbs,
+   unknown extra fields included) is stamped, ordered, broadcast and
+   re-exported BYTE-IDENTICAL (the feed's `args` is the submitted reference);
+   the door's `parseEntry` (M2 `VERB_ARG_SHAPES`) is the sole arg-parsing
+   authority — deep type garbage passes the hub and dies at the door's own
+   throw, and value-domain problems arrive as refusal RECEIPTS, never relay
+   throws. `RELAY_ACTION_BUILDERS` survives as the exported seat-side
+   convenience API, decoupled from feed composition. **Falsifier:** removing
+   the verb-enum wall reddens the boundary test; copying args in the feed
+   (breaking identity) reddens the passthrough test.
+3. **One-pass append self-check — LAW (R3):** `submit` validates the append
+   with `assertRelayAppendStep` — previous-vs-next ONLY, mirroring the
+   upstream message grammar verbatim (M4 dup names both positions) — replacing
+   the O(n)-per-append whole-log scan (O(n²) per run) with O(1). The whole-log
+   audit (`assertCoopTimelineAppendOrder`) remains the boundary equivalence
+   check, pinned in tests over a busy run. Under R1's monotonic stream the
+   refusal is unreachable-by-construction — it is the tripwire against relay
+   stamping bugs, and falsifiable directly (no-op check reddens it).
+4. **Paged catch-up — LAW (R4):** joiner history flows through `pageCoopLog`,
+   a PURE function of the log over stamp range (from, →] — strictly-after the
+   seat's lastSeen (L-RH law 3 cursor unchanged: dup-never-twice), canonical
+   via `orderCoopTimeline`, bounded by a parsed page limit. Because R1's seqs
+   never repeat, later growth can only sort AFTER a delivered window: re-pages
+   are byte-stable and a resume mid-page-set ends with the identical inbox and
+   the identical door feed (pinned twin test). `joinSeat` loops the SAME pages
+   to completion (`autoCatchUpOnJoin: true` default — L-RH law 3 stands); wire
+   transports may set it false and pump `catchUpPage` at their own latency —
+   the page path REQUIRES an open tenure (a departed seat pages nothing: the
+   @24426ec freeze holds on this channel too, falsifier-pinned).
+   `pendingCatchUp` is the unguarded progress view.
+
+Earlier section, preserved as history: the four LAW frictions (same-tick
+joins, re-join-as-new-row, joiner catch-up, MIN_WRITERS posture) were resolved
+@500c134+6d0bc1e (lane L-RH) — see "Frictions: RESOLVED" above.
+
+## Test census
+
+42 tests (was 21 law + 6 runners = 27 @`6d0bc1e`): 34 law (21 existing with
+the R1 re-pins + R1 streams 2, R2 opacity 3, R3 step-check 2, R4 paging 6) +
+8 runners (6 existing + 2 R2 door-authority witnesses: opaque verbs converge,
+type-garbage dies at the door).
 
 ## Hard boundaries honored
 

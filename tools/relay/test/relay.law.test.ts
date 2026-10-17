@@ -18,7 +18,14 @@ import {
 } from "@hh/sim-core/save";
 import { assertCoopTimelineAppendOrder, digestCoopTimeline, orderCoopTimeline } from "@hh/sim-core/replay";
 import type { CoopTimelineRecord } from "@hh/sim-core/replay";
-import { createCoopRelay, RelayError } from "../src/relay.ts";
+import type { PlayerVerbPayload } from "@hh/sim-core/types";
+import {
+  assertRelayAppendStep,
+  createCoopRelay,
+  pageCoopLog,
+  RELAY_ACTION_BUILDERS,
+  RelayError,
+} from "../src/relay.ts";
 
 const ALICE = "alice";
 const BOB = "bob";
@@ -140,9 +147,9 @@ describe("relay seat ledger (save/coop law over a Node host)", () => {
     relay.submit(BOB, "note", { text: "gap" }); // (5,0)
     relay.advanceTo(6n);
     relay.joinSeat(ALICE); // [6,?) opens
-    expect(() => relay.submit(ALICE, "note", { text: "late" })).not.toThrow(); // (6,0)
+    expect(() => relay.submit(ALICE, "note", { text: "late" })).not.toThrow(); // (6,1) — R1: the stream continues, no per-tick reset
     // bob's inbox saw every stamp; alice's frozen inbox caught up at re-join (law 3)
-    expect(relay.inbox(BOB).map((r) => `${r.tick}:${r.seq}`)).toEqual(["5:0", "6:0"]);
+    expect(relay.inbox(BOB).map((r) => `${r.tick}:${r.seq}`)).toEqual(["5:0", "6:1"]);
   });
 
   it("broadcast fans out to current seats only — departed inbox freezes at vacate", () => {
@@ -169,10 +176,10 @@ describe("relay joiner catch-up (L-RH law 3 — relay-side history delivery, zer
     relay.joinSeat(ALICE); // t0
     relay.submit(ALICE, "note", { text: "before bob" }); // (0,0)
     relay.advanceTo(2n);
-    relay.submit(ALICE, "action", placeAction("n-1")); // (2,0)
+    relay.submit(ALICE, "action", placeAction("n-1")); // (2,1) — R1: one lifetime stream, never reset
     relay.advanceTo(3n);
     relay.joinSeat(BOB); // mid-run join — v0 delivered NOTHING here
-    expect(relay.inbox(BOB).map((r) => `${r.tick}:${r.seq}`)).toEqual(["0:0", "2:0"]);
+    expect(relay.inbox(BOB).map((r) => `${r.tick}:${r.seq}`)).toEqual(["0:0", "2:1"]);
     // per-seat inbox semantics stay: the door feed filters to the action arm
     expect(relay.feedFor(BOB)).toHaveLength(1);
     expect(relay.feedFor(BOB)).toStrictEqual(relay.feedFor(ALICE).slice(-1));
@@ -187,13 +194,13 @@ describe("relay joiner catch-up (L-RH law 3 — relay-side history delivery, zer
     relay.submit(BOB, "note", { text: "seen" }); // (1,0) — alice seated, receives
     relay.advanceTo(5n);
     relay.leaveSeat(ALICE); // her inbox freezes at (1,0)
-    relay.submit(BOB, "note", { text: "missed-1" }); // (5,0)
+    relay.submit(BOB, "note", { text: "missed-1" }); // (5,1)
     relay.advanceTo(6n);
-    relay.submit(BOB, "note", { text: "missed-2" }); // (6,0)
+    relay.submit(BOB, "note", { text: "missed-2" }); // (6,2)
     relay.advanceTo(7n);
     relay.joinSeat(ALICE); // re-join: tail-only delivery
     const stamps = relay.inbox(ALICE).map((r) => `${r.tick}:${r.seq}`);
-    expect(stamps).toEqual(["1:0", "5:0", "6:0"]);
+    expect(stamps).toEqual(["1:0", "5:1", "6:2"]);
     // falsifiable no-double-delivery law: strict (tick,seq) ascent — feedFor
     // runs orderCoopTimeline, which THROWS on any duplicated stamp
     expect(() => relay.feedFor(ALICE)).not.toThrow();
@@ -208,13 +215,13 @@ describe("relay joiner catch-up (L-RH law 3 — relay-side history delivery, zer
     relay.joinSeat(BOB); // catch-up gives bob (0,0) as well
     relay.submit(BOB, "note", { text: "together" }); // (1,0)
     relay.advanceTo(5n);
-    relay.leaveSeat(ALICE); // her inbox freezes at [(0,0),(1,0)]
+    relay.leaveSeat(ALICE); // her inbox freezes at [(0,0),(1,1)]
     for (let t = 5n; t < 9n; t += 1n) {
       relay.submit(BOB, "note", { text: `t${t}` });
     }
-    expect(relay.inbox(ALICE).map((r) => `${r.tick}:${r.seq}`)).toEqual(["0:0", "1:0"]);
+    expect(relay.inbox(ALICE).map((r) => `${r.tick}:${r.seq}`)).toEqual(["0:0", "1:1"]);
     relay.advanceTo(9n);
-    relay.submit(BOB, "note", { text: "post" }); // (9,0)
+    relay.submit(BOB, "note", { text: "post" }); // (9,6) — R1: stream continues, never resets
     expect(relay.inbox(ALICE)).toHaveLength(2); // no join, no catch-up
     expect(relay.sharedLog()).toHaveLength(7);
   });
@@ -236,14 +243,14 @@ describe("relay stamping (replay/coopTimeline law as the relay's own door)", () 
     expect(() => relay.submit(BOB, "note", { text: "fine" })).not.toThrow();
   });
 
-  it("stamps (tick, seq) unique within a tick and resets the seq on advance", () => {
+  it("stamps (tick, seq) globally unique — the seq stream never resets (R1, re-pinned: old law reset per tick)", () => {
     const relay = twoSeatRelay();
     const a = relay.submit(ALICE, "note", { text: "one" });
     const b = relay.submit(BOB, "note", { text: "two" });
     expect([a.tick, a.seq, b.tick, b.seq]).toEqual([1n, 0, 1n, 1]);
     relay.advanceTo(2n);
     const c = relay.submit(ALICE, "note", { text: "three" });
-    expect([c.tick, c.seq]).toEqual([2n, 0]);
+    expect([c.tick, c.seq]).toEqual([2n, 2]); // was (2,0) under the retired per-tick reset
     expect(relay.sharedLog()).toHaveLength(3);
   });
 
@@ -295,6 +302,236 @@ describe("relay stamping (replay/coopTimeline law as the relay's own door)", () 
     // falsifier: a payload change moves the digest
     const altered = log.map((r, i) => (i === 0 ? { ...r, payload: { args: { verb: "other" } } } : r));
     expect(digestCoopTimeline(altered)).not.toBe(relay.timelineDigest());
+  });
+});
+
+describe("relay seq streams (R1 — per-seat monotone streams over one lifetime numbering)", () => {
+  it("one global numbering: seqs never repeat anywhere, each seat's projection strictly increases", () => {
+    const relay = twoSeatRelay(); // alice t0, bob t1
+    relay.submit(ALICE, "note", { text: "a1" }); // (1,0)
+    relay.submit(BOB, "note", { text: "b1" }); // (1,1)
+    relay.advanceTo(2n);
+    relay.submit(BOB, "note", { text: "b2" }); // (2,2) — a new tick consumes the NEXT stamp, not 0
+    relay.advanceTo(3n);
+    relay.submit(ALICE, "note", { text: "a2" }); // (3,3)
+    const log = relay.sharedLog();
+    // composition law: seq is globally unique ⇒ (tick, seq) globally unique,
+    // regardless of how many seats collide on a tick
+    expect(new Set(log.map((r) => r.seq)).size).toBe(log.length);
+    for (const pid of [ALICE, BOB]) {
+      const stream = log.filter((r) => r.participantId === pid).map((r) => r.seq);
+      for (let i = 1; i < stream.length; i += 1) {
+        expect(stream[i]!).toBeGreaterThan(stream[i - 1]!);
+      }
+      expect(stream.length).toBe(2);
+    }
+    // the shared log satisfies the UPSTREAM whole-log law too — the R3 step
+    // check and the O(n) audit agree (boundary equivalence pin)
+    expect(() => assertCoopTimelineAppendOrder(log)).not.toThrow();
+  });
+
+  it("same-tick cross-seat submits get distinct seqs — the refuted alternative is exactly what upstream refuses", () => {
+    const relay = twoSeatRelay();
+    const a = relay.submit(ALICE, "action", placeAction("n-a"));
+    const b = relay.submit(BOB, "action", placeAction("n-b")); // same tick — seat-independent counters would BOTH be (1,0)…
+    expect([a.tick, b.tick, a.seq === b.seq]).toEqual([1n, 1n, false]);
+    // …and this is the upstream law (orderCoopTimeline ignores participantId)
+    // that R1 keeps: hand-built per-seat counters collide and throw.
+    expect(() =>
+      orderCoopTimeline([record(ALICE, 1n, 0, "note"), record(BOB, 1n, 0, "note")]),
+    ).toThrowError(/\(1, 0\) is claimed by two records/);
+    // within a tick, stamp order IS submission order — the door's due-sort
+    // keeps a's claim on the rail before b's (hand-contention law unchanged)
+    expect(relay.feedFrom([b, a]).map((e) => e.intent.seq)).toEqual([0, 1]);
+  });
+});
+
+describe("opaque payloads (R2 — the door is the sole parse authority)", () => {
+  it("carries ANY door-shaped verb byte-identical — outside the builder set, extras included, the relay never touches args", () => {
+    const relay = twoSeatRelay();
+    const configureArgs = {
+      verb: PlayerVerb.ConfigureNode,
+      nodeId: "edge",
+      inspectionDepth: null,
+      shedOrder: null,
+      seatNote: "opaque extras ride too — the door only reads its shape fields",
+    };
+    const speedArgs = { verb: PlayerVerb.ToggleSpeed, speedX: 2 };
+    relay.submit(ALICE, "action", { args: configureArgs });
+    relay.submit(BOB, "action", { args: speedArgs });
+    const feed = relay.feedFor(ALICE);
+    expect(feed).toHaveLength(2);
+    const first = feed[0]!.intent.payload as PlayerVerbPayload;
+    const second = feed[1]!.intent.payload as PlayerVerbPayload;
+    // BYTE-IDENTICAL passthrough: the SAME reference, not a re-shaped copy
+    expect(first.args).toBe(configureArgs as never);
+    expect(second.args).toBe(speedArgs as never);
+    // and the shared log holds it untouched
+    expect(relay.sharedLog()[0]!.payload.args).toBe(configureArgs as never);
+  });
+
+  it("refuses structurally-invalid wire at the boundary, not deep shapes", () => {
+    const relay = twoSeatRelay();
+    expect(() => relay.submit(ALICE, "action", {})).toThrowError(RelayError);
+    expect(() => relay.submit(ALICE, "action", {})).toThrowError(/needs an 'args' object/);
+    expect(() => relay.submit(ALICE, "action", { args: [] })).toThrowError(/needs an 'args' object/);
+    expect(() => relay.submit(ALICE, "action", { args: { verb: 42 } })).toThrowError(/not a PlayerVerb/);
+    expect(() => relay.submit(ALICE, "action", { args: { verb: "launch-missiles" } })).toThrowError(/not a PlayerVerb/);
+    // deep field garbage is NOT the relay's business (contrast with R2 feed
+    // passthrough): wrong TYPES pass the hub and meet the door's parseEntry
+    expect(() => relay.submit(ALICE, "action", { args: { verb: PlayerVerb.Communicate, target: null, note: 42 } })).not.toThrow();
+  });
+
+  it("the builder convenience API survives, decoupled from feed composition", () => {
+    const built = RELAY_ACTION_BUILDERS[PlayerVerb.PlaceDevice]!({
+      nodeId: "n-9",
+      deviceKind: "server",
+      template: null,
+    });
+    expect(built).toEqual({ verb: PlayerVerb.PlaceDevice, nodeId: "n-9", deviceKind: "server", template: null });
+    expect(() => RELAY_ACTION_BUILDERS[PlayerVerb.PlaceDevice]!({ nodeId: "", deviceKind: "server", template: null })).toThrowError(
+      /args\.nodeId must be a non-empty string/,
+    );
+    expect(() => RELAY_ACTION_BUILDERS[PlayerVerb.ConnectPorts]!({ relation: "banana", from: "a", to: "b", slot: null })).toThrowError(
+      /outside board grammar/,
+    );
+  });
+});
+
+describe("one-pass append self-check (R3)", () => {
+  it("accepts the ascending step at the append boundary", () => {
+    const log = [record(ALICE, 1n, 0, "note"), record(BOB, 1n, 1, "note")];
+    expect(() => assertRelayAppendStep(log, { tick: 1n, seq: 2 })).not.toThrow(); // same tick, higher seq
+    expect(() => assertRelayAppendStep(log, { tick: 2n, seq: 0 })).not.toThrow(); // next tick
+    expect(() => assertRelayAppendStep([], { tick: 0n, seq: 0 })).not.toThrow(); // empty log: any first record
+  });
+
+  it("refuses duplicates and backwards steps at the append boundary", () => {
+    const log = [record(ALICE, 1n, 0, "note"), record(BOB, 1n, 1, "note")];
+    // FALSIFIER: the prev-vs-next step check reddens on a dup stamp…
+    expect(() => assertRelayAppendStep(log, { tick: 1n, seq: 1 })).toThrowError(
+      /\(1, 1\) appears at both positions 1 and 2/,
+    );
+    // …and on a backwards stamp — a re-delivered OLD record (a cursor bug:
+    // (0,5) sorts before the live tail (1,1)) reddens exactly like upstream's
+    // whole-log scan would, at one comparison
+    expect(() => assertRelayAppendStep(log, { tick: 0n, seq: 5 })).toThrowError(
+      /record 2 \(0, 5\) sorts before record 1 \(1, 1\) — append order violated/,
+    );
+    // dup tick but LOWER seq than prev is the same backwards violation
+    expect(() => assertRelayAppendStep(log, { tick: 1n, seq: 0 })).toThrowError(/sorts before/);
+  });
+});
+
+describe("paged catch-up (R4 — deterministic stamp-range pages, byte-stable re-pages)", () => {
+  /** Six ALICE records over ticks 0/2/4/6 (a frozen backlog): the classic
+   *  catch-up scenario — a second seat joins AFTER the traffic, so every
+   *  delivered record is backlog (no live-broadcast interference). */
+  function pageRelay(
+    opts: { readonly pageSize?: number; readonly autoCatchUp?: boolean } = {},
+  ): ReturnType<typeof createCoopRelay> {
+    const relay = createCoopRelay({
+      ...(opts.pageSize === undefined ? {} : { catchUpPageSize: opts.pageSize }),
+      ...(opts.autoCatchUp === undefined ? {} : { autoCatchUpOnJoin: opts.autoCatchUp }),
+    });
+    relay.joinSeat(ALICE); // t0
+    relay.submit(ALICE, "note", { text: "0" }); // (0,0)
+    relay.advanceTo(2n);
+    relay.submit(ALICE, "action", placeAction("n-1")); // (2,1)
+    relay.submit(ALICE, "note", { text: "1" }); // (2,2)
+    relay.advanceTo(4n);
+    relay.submit(ALICE, "note", { text: "2" }); // (4,3)
+    relay.submit(ALICE, "action", placeAction("n-2")); // (4,4)
+    relay.advanceTo(6n);
+    relay.submit(ALICE, "note", { text: "3" }); // (6,5)
+    return relay;
+  }
+  const BACKLOG = ["0:0", "2:1", "2:2", "4:3", "4:4", "6:5"];
+
+  it("pageCoopLog is pure: a delivered window cannot change when the log later grows", () => {
+    const relay = pageRelay();
+    const snapshot = relay.sharedLog();
+    const first = pageCoopLog(snapshot, { tick: 2n, seq: 1 }, 2);
+    expect(first.map((r) => `${r.tick}:${r.seq}`)).toEqual(["2:2", "4:3"]);
+    relay.advanceTo(8n);
+    relay.submit(ALICE, "note", { text: "later" }); // (8,6) — grows AFTER the window
+    // re-page against the GROWN log: byte-stable, because R1's never-repeating
+    // seq can only sort new records after an already-delivered window
+    const again = pageCoopLog(relay.sharedLog(), { tick: 2n, seq: 1 }, 2);
+    expect(again.map((r) => `${r.tick}:${r.seq}`)).toEqual(["2:2", "4:3"]);
+    // from=undefined delivers the whole canonical log; the tail law is strict
+    expect(pageCoopLog(snapshot, undefined, 100).length).toBe(snapshot.length);
+    expect(pageCoopLog(snapshot, { tick: 6n, seq: 5 }, 4)).toEqual([]);
+    // the page limit parses at the boundary (Fail Fast)
+    expect(() => pageCoopLog(snapshot, undefined, 0)).toThrowError(/bad-page-size/);
+  });
+
+  it("catchUpPage walks the backlog strictly-after lastSeen — pendingCatchUp counts, dup-never-twice holds", () => {
+    // BOB joins AFTER the traffic (live tenure, pure backlog, zero future
+    // submits so broadcast never interferes) with auto-catchup OFF.
+    const relay = pageRelay({ autoCatchUp: false });
+    relay.joinSeat(BOB); // opens (6,?) — auto-catchup off → inbox empty
+    expect(relay.inbox(BOB)).toHaveLength(0);
+    expect(relay.pendingCatchUp(BOB)).toBe(6);
+    const p1 = relay.catchUpPage(BOB, 2);
+    expect(p1.map((r) => `${r.tick}:${r.seq}`)).toEqual(["0:0", "2:1"]);
+    expect(relay.pendingCatchUp(BOB)).toBe(4);
+    const p2 = relay.catchUpPage(BOB, 2);
+    expect(p2.map((r) => `${r.tick}:${r.seq}`)).toEqual(["2:2", "4:3"]);
+    const p3 = relay.catchUpPage(BOB, 10);
+    expect(p3.map((r) => `${r.tick}:${r.seq}`)).toEqual(["4:4", "6:5"]);
+    expect(relay.catchUpPage(BOB, 3)).toEqual([]); // exhausted — the cursor is the inbox
+    expect(relay.pendingCatchUp(BOB)).toBe(0);
+    const stamps = relay.inbox(BOB).map((r) => `${r.tick}:${r.seq}`);
+    expect(stamps).toEqual(BACKLOG);
+    expect(new Set(stamps).size).toBe(stamps.length); // nothing delivered twice
+    expect(() => relay.feedFor(BOB)).not.toThrow(); // orderCoopTimeline would throw on a dup
+  });
+
+  it("FALSIFIER: catchUpPage refuses a departed tenure — the @24426ec freeze holds on the page path", () => {
+    const relay = pageRelay();
+    relay.joinSeat(BOB); // auto-catchup ON fills the backlog
+    relay.advanceTo(7n);
+    relay.leaveSeat(BOB); // tenure [6,7) closes — half-open law needs left > joined
+    expect(() => relay.catchUpPage(BOB, 2)).toThrowError(/no seat at tick/);
+  });
+
+  it("resuming a page set mid-way ends with the identical inbox as a single-shot catch-up", () => {
+    // `single` auto-catches-up on join (page loop to completion inside
+    // joinSeat); `paged` defers (auto OFF), the transport pumps 2-at-a-time
+    // and DROPS the connection after two pages, then resumes — the pure page
+    // window makes the final inboxes byte-equal, and the door feeds identical.
+    const single = pageRelay();
+    single.joinSeat(BOB);
+    const whole = single.inbox(BOB).map((r) => `${r.tick}:${r.seq}`);
+    expect(whole).toEqual(BACKLOG);
+
+    const paged = pageRelay({ autoCatchUp: false });
+    paged.joinSeat(BOB);
+    paged.catchUpPage(BOB, 2); // ["0:0","2:1"]
+    paged.catchUpPage(BOB, 2); // ["2:2","4:3"]
+    expect(paged.pendingCatchUp(BOB)).toBe(2); // connection DROPS here (mid-page-set)
+    // ... reconnect, resume from the seat's own lastSeen — byte-stable, no gaps
+    while (paged.catchUpPage(BOB, 2).length > 0) {
+      /* pump to exhaustion */
+    }
+    expect(paged.inbox(BOB).map((r) => `${r.tick}:${r.seq}`)).toEqual(whole);
+    expect(paged.feedFor(BOB)).toStrictEqual(single.feedFor(BOB));
+  });
+
+  it("joinSeat delivers through the SAME page loop (small pages still fill the inbox at join)", () => {
+    const relay = pageRelay({ pageSize: 2 }); // catchUpPageSize=2, backlog 6 = 3 pages
+    relay.joinSeat(BOB); // auto-catchup ON: deliverCatchUp loops pages of 2 to completion
+    expect(relay.inbox(BOB).map((r) => `${r.tick}:${r.seq}`)).toEqual(BACKLOG);
+    expect(relay.pendingCatchUp(BOB)).toBe(0);
+  });
+
+  it("page sizes parse at construction and at the call", () => {
+    expect(() => createCoopRelay({ catchUpPageSize: 0 })).toThrowError(/bad-page-size/);
+    expect(() => createCoopRelay({ catchUpPageSize: 2.5 })).toThrowError(/bad-page-size/);
+    const relay = pageRelay();
+    expect(() => relay.catchUpPage(ALICE, -1)).toThrowError(/bad-page-size/);
+    expect(() => relay.catchUpPage(ALICE, Number.NaN)).toThrowError(/bad-page-size/);
   });
 });
 
