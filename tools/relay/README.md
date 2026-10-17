@@ -56,9 +56,9 @@ sim-core edits.
    ghosts, forgeries, off-roster facets, empty batches, and sub-minimum
    companies all refuse with ruling-quoting messages.
 
-## Frictions: RESOLVED in-repo (lane L-RH, owner session-5 agenda (e) delegation 2026-10-16)
+## Frictions: RESOLVED in-repo @500c134+6d0bc1e (lane L-RH; owner agenda (e) delegation 2026-10-16)
 
-The four law frictions the D6 spike declared open for rulings are decided and
+The four law frictions the D6 spike (@9a3d508) declared open for rulings are
 implemented. The transport lane (PHP/Workerman, out of repo) now CONSUMES
 these laws instead of waiting on them.
 
@@ -97,7 +97,7 @@ these laws instead of waiting on them.
    re-joiner whose inbox froze at vacate receives only the tail strictly after
    the last stamp they hold — never a record twice (a double stamp would trip
    `orderCoopTimeline`'s collision law at the first `feedFor`). Delivery passes
-   through `orderCoopTimeline`, so inboxes start canonically ordered. The
+   through `orderCoopTimeline`, so the tail is canonical; `feedFor` re-normalizes. The
    @24426ec broadcast law STANDS unchanged: fan-out remains current seats only.
    **Rationale:** the v0 incident-room law (@10f05fb) keeps the relay out of
    save state — catch-up is timeline-record delivery, not a Long-Save

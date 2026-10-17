@@ -19,9 +19,9 @@ import { createSpikeRunner } from "../src/runner.ts";
 const TICKS = 12;
 const SEED = asRunSeed(904n);
 
-/** Seed the relay exactly as a host would: seats staggered by the ledger's
- *  strictly-ascending join law, then a scripted timeline including a
- *  hand-contention tick (t8: two communicates, one free hand). */
+/** Seed the relay exactly as a host would: seats staggered for clarity only —
+ *  same-tick joins are legal since @500c134, canonical order (joinedAtTick asc,
+ *  participantId code-unit); plus a hand-contention tick (t8: two communicates). */
 function buildRelay(): ReturnType<typeof createCoopRelay> {
   const relay = createCoopRelay();
   relay.joinSeat("alice"); // t0

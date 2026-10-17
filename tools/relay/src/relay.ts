@@ -280,8 +280,8 @@ export function createCoopRelay(options: CoopRelayOptions = {}): CoopRelay {
    * only the tail strictly after the last stamp they hold — so no record can
    * be delivered twice (a duplicate stamp would trip orderCoopTimeline's
    * collision law at the first feedFor). Delivery passes through
-   * orderCoopTimeline, so the inbox starts canonically ordered regardless of
-   * the shared log's shape.
+   * orderCoopTimeline, so the delivered tail is canonical; the inbox is frozen
+   * history plus that tail, and feedFor re-normalizes at consumption.
    */
   function deliverCatchUp(pid: EntityId): void {
     const inbox = openInbox(pid);

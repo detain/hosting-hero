@@ -275,7 +275,7 @@ export function guardCoopAttributionBatch(batch: CoopAttributionBatch, ledger: C
   if (batch.writes.length === 0) fail("coop attribution batch is empty — every run commits facts or nothing");
   const distinct = new Set(ledger.seatHolders.map((row) => row.participantId));
   if (distinct.size < COOP_MIN_SEAT_WRITERS) {
-    fail(`coop attribution needs at least ${COOP_MIN_SEAT_WRITERS} recorded writers — the ledger seats ${distinct.size}`);
+    fail(`coop attribution needs at least ${COOP_MIN_SEAT_WRITERS} recorded writers — the ledger records ${distinct.size}`);
   }
   for (let i = 0; i < batch.writes.length; i += 1) {
     const where = `coop write ${i}`;
