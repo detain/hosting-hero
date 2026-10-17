@@ -12,7 +12,7 @@
  * `wireIntentToPlayerIntent` in the codec, E2b).
  *
  * Content arrives as `?raw` build-time strings (the corpusMission /
- * coverage-grid pattern: vite embeds, zero fs in any thread). All THIRTEEN
+ * coverage-grid pattern: vite embeds, zero fs in any thread). All FOURTEEN
  * shipped g1 slices are wired, each paired with the MATCHING type bundle for
  * the invitation law; the wire names a table by its shipped slice identity —
  * the JSON's own `type` minus the `official:` prefix — drift-pinned against
@@ -37,6 +37,7 @@ import type { BootCorpusWire, CorpusTableId } from "./protocol";
 
 import registryRaw from "../../../../packages/content/threats/registry-core.json?raw";
 import bundleBackupArchivalRaw from "../../../../packages/content/types/backup-archival.json?raw";
+import bundleCiBuildFarmRaw from "../../../../packages/content/types/ci-build-farm.json?raw";
 import bundleColoRaw from "../../../../packages/content/types/colo.json?raw";
 import bundleDbaasRaw from "../../../../packages/content/types/dbaas.json?raw";
 import bundleDedicatedRaw from "../../../../packages/content/types/dedicated.json?raw";
@@ -50,6 +51,7 @@ import bundleServerlessRaw from "../../../../packages/content/types/serverless.j
 import bundleSharedWebRaw from "../../../../packages/content/types/shared-web.json?raw";
 import bundleTrunkGroupRaw from "../../../../packages/content/types/trunk-group-voip.json?raw";
 import sliceBackupArchivalRaw from "../../../../packages/content/waves/g1-backup-archival-first-quarter.json?raw";
+import sliceCiBuildFarmRaw from "../../../../packages/content/waves/g1-ci-build-farm-first-quarter.json?raw";
 import sliceColoRaw from "../../../../packages/content/waves/g1-colo-first-quarter.json?raw";
 import sliceDbaasRaw from "../../../../packages/content/waves/g1-dbaas-first-quarter.json?raw";
 import sliceDedicatedRaw from "../../../../packages/content/waves/g1-dedicated-first-quarter.json?raw";
@@ -153,6 +155,14 @@ const CORPUS_TABLES: Readonly<Record<CorpusTableId, CorpusTableEntry>> = Object.
     sliceStem: "g1-observability-first-quarter",
     sliceRaw: sliceObservabilityRaw,
     bundleRaw: bundleObservabilityRaw,
+  }),
+  // The CI/build-farm card (type 14, "Green Light" / "Untrusted Code, By
+  // Design") — Reclaim lineage via ADR-0017 #1, the FIRST type founded on a
+  // §1.4 card; additive-only join per the content-is-authority drift law.
+  "ci-build-farm": Object.freeze({
+    sliceStem: "g1-ci-build-farm-first-quarter",
+    sliceRaw: sliceCiBuildFarmRaw,
+    bundleRaw: bundleCiBuildFarmRaw,
   }),
 });
 

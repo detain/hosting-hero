@@ -8,8 +8,8 @@
  * Pool law (CLOSED by construction, two deliberate scopes — the first widened
  * by ADR-0014 #D5):
  *  1. PACK SCOPE: the pool draws from EVERY pack `i18n/packStore.ts`
- *     registers — all thirteen shipped packs (baseline shared-web + game plus the
- *     eleven type packs: backup-archival, colo, dbaas, dedicated, dns-hosting, exchange-colo,
+ *     registers — all fourteen shipped packs (baseline shared-web + game plus the
+ *     twelve type packs: backup-archival, ci-build-farm, colo, dbaas, dedicated, dns-hosting, exchange-colo,
  *     mail-hosting, object-storage, observability, serverless, trunk-group-voip).
  *     The registry widening is
  *     the i18n lane's call and it landed; this feed stays inside the
@@ -22,14 +22,18 @@
  *  partitioned roots through the §9.3 decision/flavour wall, so a decision
  *  key is unreachable here BY CONSTRUCTION, not by a filter this file trusts.
  *  Cross-pack twins are distinct pool entries keyed (packId, key) — never
- *  deduped by key. Census over the full thirteen-pack pool: the four vendor.reply
- *  lines ship slot-free in ALL THIRTEEN packs byte-identical, loading.tip.failover
+ *  deduped by key. Census over the full fourteen-pack pool: the four vendor.reply
+ *  lines ship slot-free in ALL FOURTEEN packs byte-identical, loading.tip.failover
  *  /two-is-one in both baseline packs byte-identical; every cross-pack twin
  *  whose TEXT diverges per pack (abuse.canon.upstream, abuse.canon.customer-
  *  dispute, intern.entry.bill, chatter.desk.stack) is slot-bearing wherever
  *  the pool would double-count it — chatter.desk.stack goes slot-free in
- *  mail-hosting only, so it enters exactly once. No key ever surfaces with
- *  two different texts: the feed never prints a pack-ambiguous line.
+ *  mail-hosting only, so it enters exactly once. ONE exception stands on disk
+ *  since the fourteenth pack: intern.entry.firstday ships slot-free in BOTH
+ *  observability and ci-build-farm with divergent texts (collision authored
+ *  @a47a9b5; resolution owed upstream — rename or slot-gate). The exception
+ *  SET is pinned exactly by __tests__/flavourFeed.test.ts, so no further
+ *  pack-ambiguous line can join by silence.
  *
  * Order law: the pool is sorted code-unit by key, ties broken by packId
  * (`compareCodeUnits`, the chrome text law) — one stable, locale-free order

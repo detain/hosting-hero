@@ -100,9 +100,9 @@ describe("FlavourFeed.vue", () => {
     // chip renders dead any more (the locked-button branch stays law for a
     // future bank whose root ships slots on everything)
     for (const [root, lines] of [
-      ["press", 4],
+      ["press", 6],
       ["forum", 11],
-      ["chatter", 19],
+      ["chatter", 21],
       ["ticket", 54],
     ] as const) {
       const chip = w.get(`[data-test="feed-root-${root}"]`);

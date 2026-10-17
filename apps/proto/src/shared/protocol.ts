@@ -270,6 +270,7 @@ export const CORPUS_WIRE_TABLE_IDS = Object.freeze([
   "backup-archival",
   "dbaas",
   "observability",
+  "ci-build-farm",
 ] as const);
 
 export type CorpusTableId = (typeof CORPUS_WIRE_TABLE_IDS)[number];
