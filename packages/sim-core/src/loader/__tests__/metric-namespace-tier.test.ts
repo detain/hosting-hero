@@ -48,11 +48,12 @@ describe("metricNamespaceTier — absent in every shipped doc (byte-identity law
     expect(serialized.includes("metricNamespaceTier")).toBe(false);
   });
 
-  test("all eleven shipped bundles on disk are pre-D9 — zero author the field", () => {
+  test("all twelve shipped bundles on disk are pre-D9 — zero author the field", () => {
     const typesDir = join(process.cwd(), "..", "content", "types");
     const ids = [
       "backup-archival",
       "colo",
+      "dbaas",
       "dedicated",
       "dns-hosting",
       "exchange-colo",
