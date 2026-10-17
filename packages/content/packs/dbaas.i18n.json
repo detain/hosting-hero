@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "packId": "pack:dbaas.i18n",
+  "appliesTo": "official:dbaas",
+  "locale": "en",
+  "note": "Swappable grammar pack (R46, §9.3/§9.11) for the database-as-a-service line — the twelfth card, founded on its own verbatim §1.3 verb line, 'Verb: isolate and throttle. The boss is a split brain.' (:2249), the first card whose roster verb arrived by the session-6 owner law call (loader lint carries isolate @7f47563). Machine-checked wall between namespaces: 'decision' strings appear while the player decides or loses (labels, terms, refusals, alerts, status rungs) and stay SOBER per §9.3 clauses 2-3; 'flavour' carries the recognition comedy for quiet surfaces. Authenticity law for this line (§9.3/§9.11): the drama is TRUTH AND CONTAINMENT — the pool that exhausts, the ribbon that stretches, the seam between two ledgers both answering politely — and the corruption beats are depicted only as states and consequence: a diverged minute, a throttled workload, a reconciliation invoice. No attack walkthroughs, no query exploits, no technique; the level teaches that redundancy is a promise two machines have to keep at once, not how to break either one.",
+  "slots": {
+    "nodeId": {
+      "kind": "entity",
+      "desc": "Board object the decision surface is about (primary drum / replica shelf / pool rail id)."
+    },
+    "verb": {
+      "kind": "text",
+      "desc": "Engine intent verb being refused (place/connect/configure/...)."
+    },
+    "availableAtTick": {
+      "kind": "tick",
+      "desc": "Tick at which the queued intent or a freed hand presents."
+    },
+    "relationKind": {
+      "kind": "text",
+      "desc": "Board relation of a cable (data/power/control/trust)."
+    },
+    "slotName": {
+      "kind": "entity",
+      "desc": "Socket designation on a node (drawer bay, ribbon anchor, witness rail position)."
+    },
+    "instanceName": {
+      "kind": "entity",
+      "desc": "One customer instance by designation — the half of the unit this line actually sells."
+    },
+    "customerName": {
+      "kind": "entity",
+      "desc": "An app-team account by name — the one writing the terrible query with sincere intent."
+    },
+    "poolCeiling": {
+      "kind": "number",
+      "desc": "Connections the pool admits at once — the dial between service and queue on this floor."
+    },
+    "heldPct": {
+      "kind": "number",
+      "desc": "Percent of the connection pool currently held — §3.3's patience column read as a gauge."
+    },
+    "lagMs": {
+      "kind": "number",
+      "desc": "Replication lag in milliseconds on the ribbon — the level's one HUD number (§8.x)."
+    },
+    "replicaName": {
+      "kind": "entity",
+      "desc": "A read replica by name — the copy answering politely from a minute nobody agrees is current."
+    },
+    "scanMs": {
+      "kind": "number",
+      "desc": "Milliseconds of one unindexed full scan — the §3.1 band (400-4,000) made audible."
+    },
+    "tenantsHit": {
+      "kind": "number",
+      "desc": "Tenants degraded by the single query — §2.5's success-law count, the scan's blast radius."
+    },
+    "failoverCount": {
+      "kind": "number",
+      "desc": "Failovers in the current band — the flap counter; more than one is weather, not recovery."
+    },
+    "divergedWrites": {
+      "kind": "number",
+      "desc": "Writes accepted by two primaries during the seam — the boss's ledger, counted in minutes."
+    },
+    "iopsSharePct": {
+      "kind": "number",
+      "desc": "Share of the drum's IOPS one workload holds — §2.10's fair-fight number as a price tag."
+    },
+    "versionName": {
+      "kind": "text",
+      "desc": "Major engine version the upgrade window opens on — the dependency's chosen calendar."
+    },
+    "windowHours": {
+      "kind": "number",
+      "desc": "Hours the maintenance gate holds — the window the customers will not accept, measured."
+    },
+    "ticketId": {
+      "kind": "entity",
+      "desc": "Customer support ticket number — the desk log of the line's real visitors."
+    },
+    "hour": {
+      "kind": "time",
+      "desc": "Clock hour an event lands at — the hour the pool filled or the seam opened."
+    },
+    "day": {
+      "kind": "number",
+      "desc": "Day of the quarter, for the intern's log and the drawer-installed date."
+    },
+    "hostName": {
+      "kind": "entity",
+      "desc": "A cellar or competitor in press/obituary copy."
+    }
+  },
+  "decision": {
+    "type.dbaas.name": "The Cellar",
+    "type.dbaas.codex": "The Cellar's floor: an instance + IOPS, sold to app teams who cannot lose data and will not stop querying it — 'You run the thing that cannot lose data, for people who will write terrible queries against it' (§1.3). Visitors are queries: small, chatty, millisecond-scale, some cheap and a few catastrophically expensive, one unindexed full scan able to eat every slot. The verb is isolate and throttle; the boss is a split brain — two ledgers diverging with an angry red seam while every gauge on the well-lit floor keeps shining. Scoring is replication lag and zero divergence, not uptime.",
+    "visitor.unit.instance-plus-iops": "an instance + IOPS",
+    "goal.dbaas.binding": "Slots and truth, not storage and hours: the pool that exhausts at {hour} decides what the day may promise, the lag ribbon stretched between two casks decides who is reading yesterday, and the witness in a third failure domain is the only object that makes a second primary illegal — the product is the write both ledgers agree on and the only instrument is the quorum you paid for.",
+    "scarce.dbaas.qos": "Everything here is sheddable exactly one way: the noisy tenant is throttled so the quiet ones can be served — 'per-tenant throttling and isolation' (§2.5 verbatim), the card's verb made policy. The cheap answer clamps the fat connection holders first; the expensive answer isolates them, and the ladder's mercy has a price: enforcement breeds angry churn (§2.10), so the QoS question on this floor is not who waits but who you tell. The meter sells truth, not priority, and the shed order rides the noisy-tenant throttle ladder (§7.8).",
+    "skin.dbaas.inspector": "Oxblood, brass and oak: heavy, central, well-lit objects with visible replication streams — 'The Cellar' (§1.3). Databases as casks and drums, indexes as card catalogues, replication as scribes copying ledgers, lag as a visible level difference between two casks, a long transaction as a clamp on the tap, the WAL as a scroll spooling onto the floor. The heartbeat pulse runs at transaction rate and stalls visibly when locked. The catastrophe never flashes the room down: it opens a red seam between two perfectly lit ledgers.",
+    "economy.dbaas.bad-month": "The corrupt commit every replica copied (§0.3's failure word 'Data corruption' wearing the level's own physics): one write forked in a quiet second, two ledgers each looking fine, and the discovery that the thing that cannot lose data lost the same minute twice — high margin, very sticky, and gravity only holds what was never diverged. Companion C prices no row for this line; the bad month is composed from its columns, and the absence is on record.",
+    "cac.dbaas.gravity-adoption-cycle": "§6.6 prices this family's shape without dollars — 'DBaaS | instance + storage + IOPS | very sticky (data gravity) | high | monthly | backup + expertise' (:23329) — and Companion B carries no dbaas row, so the cycle is authored from the row's own physics: a technical close that walks the customer's schema, a sale carried by expertise the line rents through a DBA hire, and an acquisition cost the gravity repays slowly, monthly, in a cohort that architecting-away takes years to attempt. Every figure stays unauthored until the family row is priced.",
+    "verbs.dbaas.transfer.1": "Isolation-thinking transfers everywhere: any line that lets tenants touch one shared thing now asks the question the drum asks at peak — which workload do you clamp so the others can breathe, who answers for the divergence between two true-looking copies, and when did 'both are up' stop meaning 'both agree'? The incident room said it first (the §7.8 set names isolate outright); the Cellar just sells it monthly.",
+    "relations.dbaas.mastery": "The cellar reads the cluster the way the lattice booked it — witness placed before doubt, throttle stance priced before the scan, fences tested in peacetime and read-your-writes routing paid for before an order ever vanished — a containment bonus everywhere the operator earns in quarters where the seam stayed a picture and every ledger agreed, because mastering isolation is knowing redundancy is a promise two machines have to keep at once (the §5.6 mastery table names no dbaas row; the buff's shape is the card's own lesson).",
+    "relations.dbaas.distillate": "Playbook: never buy redundancy without buying the referee — quorum, fencing and a single answer to 'which write is true'; read your own lag ribbon from the replica's side, price the throttle before the scan arrives, and treat 'everything is green' as a claim about instruments, not about facts; HA introduces its own failure class, and the class is won by the operator who made divergence illegal before it was profitable.",
+    "handover.dbaas.runs-out": "The pool. Every connection held is a slot sold twice in someone's imagination; when the ceiling lands the door stops opening for new queries — 'Connection pool exhausted' (§3.3's patience column, verbatim), the number-one real cause of the site being down (§4.3, verbatim lineage).",
+    "handover.dbaas.kills-you": "Data corruption (§0.3 failure column verbatim): not an outage, not a storm — two primaries both accepting writes and one honest question with two true-looking answers, discovered when the ledgers are compared by hand, in public, on the metric the whole line exists to hold.",
+    "handover.dbaas.customer-wants": "To place an order and see it: one write, one read, one truth, in that order, at millisecond scale — 'I placed my order and it's gone' (§4.3 verbatim) is the only sentence on this floor that has ever ended a contract; the replica may lag, the answer may not.",
+    "rosetta.dbaas.window": "The major-version window is the maintenance window with the landlord switched: shared-web freezes the business day to touch the live floor; here the calendar belongs to a dependency you don't own, arriving at a time chosen by someone else, and the card itself prices the politics — 'a maintenance window your customers will not accept' (§1.3 verbatim). The upgrade is the same cable, walked from the wrong end.",
+    "rosetta.dbaas.gravity": "The gravity tether is the renewal cliff read from the cellar: shared-web's cohort leaves at the cliff because switching is cheap, and this line's cohort stays because the data physically cannot afford the trip — 'very sticky (data gravity)' (§6.6 verbatim) — but the doc wrote the dark twin into the same law: gravity is retention until the day it is resentment, and a cohort that cannot leave starts architecting away.",
+    "scenarios.dbaas.order-vanished": "The Order That Vanished (§4.3 read-your-writes beat, verbatim core): a customer writes, reads immediately back, and sees the old page — 'I placed my order and it's gone' — because a replica is answering with yesterday's courtesy while the primary is healthy, the lag ribbon is inside spec, and every dashboard is green. The fix is a routing purchase; the lesson is that a readable present can still be a stale one. Consequence, not instruction: the read is walked, never diagrammed.",
+    "scenarios.dbaas.first-stampede": "The First Cache Stampede (§1.x Tier-3 signature moment, verbatim frame): the cache node reboots, the miss rate goes to 100%, every visitor hits the DB at once, the DB falls over, and the cache cannot warm because the DB is down. Surviving it needs the coalescing unlock, and the lesson is the tier's own — HA introduces its own failure class: split-brain, failover storms and stampedes exist because you added redundancy.",
+    "scenarios.dbaas.two-ledgers": "The Two Ledgers (§1.3 catastrophe image + §4.3 boss sentence, verbatim cores): two primaries, both accepting writes, data divergence you must later reconcile by hand — the angry red seam drawn between ledgers that each pass every local check. The reconciliation is priced in hands, hours and trust, never in technique; the boss has no attack story, only a calendar and a fence that wasn't bought.",
+    "alert.pool-exhausted": "Connection pool on {nodeId} at {heldPct}% of {poolCeiling}: new queries queue at the door while held ones stall in flight — the number-one real cause of 'the site is down' (§4.3 verbatim lineage). The throttle ladder and the ceiling dial are the two hands on this doorbell; both cost.",
+    "alert.lag-widening": "Replication lag on {replicaName} widened to {lagMs} ms against {nodeId}: the ribbon between the casks is stretching, reads answered there drift toward yesterday, and write-then-read traffic starts filing tickets before it files complaints (§4.3).",
+    "alert.failover-flap": "{nodeId} failed over for the {failoverCount}th time in the band: failovers triggered by a network blip (§4.3 verbatim core) — the witness votes, the fence hesitates, and each flap spends the trust the ribbon is supposed to hold. Buy the third failure domain or buy the incident page.",
+    "alert.split-brain-seam": "SPLIT ADVISORY on {nodeId}: a second accepting primary is visible at {hour}. Two ledgers are diverging — 'data divergence you must later reconcile by hand' (§4.3 verbatim) — and every local gauge is green. Isolate one side now; {divergedWrites} writes have already landed twice, and the seam does not widen politely.",
+    "alert.upgrade-window": "Major-version window opens at {hour} on {nodeId} for {versionName}: 'a maintenance window your customers will not accept' (§1.3 verbatim). The gate holds the lock leg of §2.11's cluster sentence; schedule the scans away from it or watch concurrency and correctness share one calendar.",
+    "terms.iops-tier": "IOPS tier — {iopsSharePct}% of the drum's breath, priced as a tier and contested as a fact: §0.3 sells 'An instance + IOPS' (:622) and §6.6 adds the storage leg (:23329). The tier decides who waits behind the unindexed scan, and the whole level argues that the cheap tier is a queue with better typography.",
+    "terms.isolation-stance": "Isolation stance — how hard the throttle bites {customerName}'s workload before the others breathe: per-tenant throttling and isolation are the registry's own counter list (§2.5), the card's verb made policy. Clamp early and the app teams churn; clamp late and one missing index takes down a shared node. The doc wrote both endings.",
+    "terms.read-your-writes": "Read-your-writes — the routing promise that a read after a write never answers from a copy that hasn't caught up: §4.3 names the bug ('Replication lag becomes a correctness bug') and the upgrade in the same breath. It is a paid object, not a config flag, and its price is the only sentence customers accept when the ribbon stretches.",
+    "refusal.hands-exhausted": "Both hands are committed. The {verb} intent is queued and presents when a hand frees at tick {availableAtTick}.",
+    "refusal.stamped-in-future": "The {verb} intent is stamped for tick {availableAtTick}, ahead of the current minute. Nothing was spent.",
+    "refusal.unknown-node": "No board object named {nodeId} exists at the current tick. Nothing was changed.",
+    "refusal.edge-exists": "A {relationKind} cable already links {nodeId} to those endpoints. The existing edge was left as it is.",
+    "refusal.slot-occupied": "{slotName} on {nodeId} is occupied. One supplier per socket; disconnect before you reconnect.",
+    "status.rung-1": "Investigating elevated error rates",
+    "status.rung-2": "Degraded performance",
+    "status.rung-3": "Partial outage",
+    "status.rung-4": "Major outage",
+    "status.rung-5": "We are aware of the fire."
+  },
+  "flavour": {
+    "ticket.subject.pool": "every query queues at {hour} — dashboards fully green",
+    "ticket.body.pool": "Ticket {ticketId}. I am not asking you to fix 'slow'. I am asking why every read from our app started queueing at {hour} while your console shows {instanceName} perfectly healthy and my own telemetry says {heldPct}% of {poolCeiling} connections held by transactions nobody can name. Your status page says 'investigating elevated error rates'. My checkout says gone. Please tell me which hand is on the throttle — yours or the ladder's. Also: we have been meaning to ask about the replica lag thing. We have not asked. That's the line I am here to move.",
+    "ticket.subject.stale": "customer ordered twice — says the first one vanished",
+    "ticket.body.stale": "Ticket {ticketId}. The order vanished, then reappeared forty seconds later as a second identical one, which is the part of the call that ended on speaker. Your brochure said eventual consistency; my customer heard eventually correct. {replicaName} was answering 'no order' while {nodeId} was still warm with it. We would like the routing upgrade, we would like the honest lag number you were too modest to quote, and we would like the postmortem to contain the word quorum.",
+    "ticket.subject.upgrade": "the maintenance window moved without us (again)",
+    "ticket.body.upgrade": "Ticket {ticketId}. Yes, the email said {versionName}. Yes, the window was given in a timezone we do not practice. What our monitoring says is that at {hour} the {nodeId} briefly held two opinions about the orders table and every dashboard celebrated the wrong one. We are not asking you to stop patching the dependency whose calendar you do not own. We are asking, politely, with a contract review attached: which dial makes divergence illegal, and what does buying the big one do to our tier's name.",
+    "press.headline.seam": "{hostName} incident was two healthy databases agreeing to disagree — customers learn 'up' was a plurality, not a promise, while the status feed held 'investigating' for the entire divergence.",
+    "press.headline.melt": "Cache reboot, 100% misses, one very popular drum: {hostName} explains why the stampede outlived the redundancy that invited it — 'HA introduces its own failure class,' reads the postmortem, opening paragraph, underlined.",
+    "forum.thread.quorum": "PSA for anyone selling read replicas with a straight face: put the witness in a THIRD failure domain before the next audit, not 'for now' in the primary's rack. We paid the fencing invoice twice this quarter and the second one cost more than the fence would have. The ribbon lies if the ack lies. The doc was right; the doc is always right about the thing you skipped.",
+    "forum.thread.scans": "Reminder that an unindexed {scanMs} ms plan is not a performance problem, it is a capacity problem wearing a business question's face: one tenant's growth chart ate {tenantsHit} tenants' worth of slots here before anyone found the missing index. We now throttle analytics at the pool ceiling and retain the DBA like firewood. Per-tenant isolation pricing is the cheapest insurance in this game. Yes, even yours.",
+    "chatter.desk.pulse": "The heartbeat pulse runs at transaction rate on {nodeId} and the whole floor reads its mood from it. Steady seek-LED chatter, scribes in perfect step — then the half-second stall when a long transaction clamps the tap and the aisle stops mid-sentence. Nobody says 'lock contention' out loud anymore. They say 'the drum hiccuped', which is funnier and somehow worse.",
+    "chatter.cellar.static": "Quiet night shift: cron chatter thinning, ribbons slack, ledgers copying in step — until {replicaName} answers a read in a voice so pleasant nobody thought to ask WHICH DAY it was reading from. The Cellar is the best-lit room in the game and the small hours are when you find out light and truth are billed by different vendors.",
+    "codex.isolate": "Isolate is the verb the incident room spoke before the Cellar sold it (the §7.8 mode set names it outright): to isolate is to make one side's truth cheaper than both sides' argument. The card pairs it with throttle because the boss arrives two ways — the workload that eats the room, and the redundancy that cannot agree about the room. The seal is meant for both.",
+    "codex.ha": "The tier lesson in one sentence: 'HA introduces its own failure class' (§1.x verbatim). Uptime was a number you could lose once; high availability is a relationship between machines that can lie to each other in front of you. Every redundancy you buy is a promise you must fence, witness and reconcile — and the seam between two true-looking ledgers is the only villain on this floor that never once rendered as an error.",
+    "loading.tip.plan": "A query plan is a forecast: the index you did not buy today is tomorrow's {scanMs} ms weather event, and the card-catalogue drawers are the ceiling you will meet at the {iopsSharePct}% tier. Browse early — the cheap tier is a queue with better typography.",
+    "loading.tip.seam": "If two databases answer the same question differently and both dashboards are green, you are not running a database, you are refereeing one. The ribbon between the casks tells you which copy is lying; the witness in the third failure domain decides which one is wrong.",
+    "intern.entry.drawer": "Day {day}: was sent to find 'the slow query' in the card catalogue. The senior DBA handed me a plan reading and said, 'the index is the drawer that was never installed.' We installed the drawer at {hour}; the plan went from {scanMs} ms to single digits and {customerName} filed a thank-you ticket. I have learned that is the only kind this floor prints when it is happy.",
+    "intern.entry.flap": "Day {day}: watched the failover flap — {failoverCount} promotions in one band, each announced like a coronation, each undoing the last. The witness voted correctly every time, which nobody mentioned at the review, because of course nobody did; the only thing anyone remembers about a referee is the fights it missed. The senior tech wrote 'buy more fence' on the sticky note. It is still on the monitor.",
+    "sticky.note.valve": "Taped to the throttle housing, hand-written: 'The expensive dial is the one you set BEFORE the scan.' Below it, in the same hand: 'And the witness is not optional. — everyone who ever reconciled a seam by hand'",
+    "abuse.canon.quarantine": "Isolation advisory for {customerName}: the workload profile on {instanceName} now exceeds this tier's fair share of {nodeId}. Per the plan you selected, analytical traffic is throttled at the pool ceiling so transactional tenants keep their slots — per-tenant throttling and isolation is a policy you bought, not a favor we are withholding. Change tier or change stance at the pricing desk; both keep the others lit.",
+    "abuse.canon.upgrade": "Window advisory: {versionName} maintenance on {nodeId} opens at {hour}, gate held {windowHours} h. Quorum fencing holds through the transition and a single accepting primary is guaranteed throughout — the fence is why. Read traffic may drift by the band your ribbon shows; write answers will not. This clause exists because of last time.",
+    "vendor.reply.firmware": "Have you tried updating to the latest firmware?",
+    "vendor.reply.log-bundle": "Please collect a full log bundle.",
+    "vendor.reply.known-issue": "This is a known issue, fixed in the next release (no ETA).",
+    "vendor.reply.inactive": "Closing due to inactivity.",
+    "achievement.quorum-held": "The Witness Voted and Both Ledgers Agreed.",
+    "achievement.zero-divergence": "No Seam, No Story.",
+    "achievement.throttle-earned": "The Throttle That Kept The Room.",
+    "canary.cellar-tally": "{heldPct}% pool, {lagMs} ms lag, the pulse steady and the scribes in step on {nodeId} — the casks, the ribbon and the witness are the same sentence, read at three prices."
+  },
+  "_provenance": {
+    "type.dbaas.name": "§1.3 card visual paragraph verbatim level identity ('\"The Cellar.\" Oxblood, brass and oak'); heading first segment 'The Managed Database' is the product word — the name slot carries the level identity, recorded choice; README §Key literals",
+    "type.dbaas.codex": "§1.3 card paragraph cores verbatim: first-sentence thesis, verb line, boss clause, query-visitor shape, catastrophe image (two ledgers, angry red seam); + §0.3 row columns; §3 visitor entry scale clause; README §Key literals",
+    "visitor.unit.instance-plus-iops": "§0.3 row unit column verbatim ('An instance + IOPS'); bundle key pin",
+    "goal.dbaas.binding": "§3.3 patience column (pool exhaustion) + §4.3 lag-ribbon/divergence law + §4.3 quorum-witness clause; README §Key literals",
+    "scarce.dbaas.qos": "§2.5 counter list verbatim ('per-tenant throttling and isolation') + §2.10 enforcement-churn clause + §7.8 shed-order frame; the throttle ladder authored from the card's verb pair; §9.3 clause-2 sober surface",
+    "skin.dbaas.inspector": "§1.3 visual paragraph verbatim cores (Cellar/oxblood-brass-oak, casks and drums, card catalogues, scribes copying ledgers, level-difference lag, clamp on the tap, WAL scroll) + §4.3 heartbeat-stall visibility + §8.10 well-lit law; §9.3 sober surface",
+    "economy.dbaas.bad-month": "AUTHORED from §0.3 failure column ('Data corruption') + §4.3 divergence clause — Companion C carries NO dbaas row (absence recorded, serverless precedent); README §Key literals",
+    "cac.dbaas.gravity-adoption-cycle": "§6.6 family row verbatim ('instance + storage + IOPS | very sticky (data gravity) | high | monthly | backup + expertise', :23329) + §6.x gravity/resentment law; Companion B prices no dbaas row — cycle qualitative, dollars unauthored; README §Key literals",
+    "verbs.dbaas.transfer.1": "§1.9 Portable Skill idiom applied to the isolation posture; §7.8 Incident Mode set names isolate outright; authored",
+    "relations.dbaas.mastery": "AUTHORED from the card's boss clause + §1.x HA-failure-class law — §5.6 mastery table names no dbaas row (absence recorded; field law per R68); README §Key literals",
+    "relations.dbaas.distillate": "§1.x :908 tier lesson + §4.3 fencing/witness/reconciliation clauses; playbook form per §1.9 distillate law; authored",
+    "handover.dbaas.runs-out": "§3.3 patience column verbatim ('Connection pool exhausted') + §4.3 number-one-real-cause clause; README §Key literals",
+    "handover.dbaas.kills-you": "§0.3 failure column verbatim ('Data corruption') + §4.3 boss sentence + §1.3 catastrophe image; README §Key literals",
+    "handover.dbaas.customer-wants": "§4.3 read-your-writes bug sentence verbatim ('I placed my order and it's gone'); README §Key literals",
+    "rosetta.dbaas.window": "README §Key literals; §1.3 maintenance-window clause ('your customers will not accept') + registry mod-update fact ('time chosen by someone else') translated to the baseline maintenance-window metric (§1.9 Rosetta law)",
+    "rosetta.dbaas.gravity": "README §Key literals; §6.6 'very sticky (data gravity)' + §6.x Lock-In dark twin translated to the baseline renewal-cliff metric (§1.9 Rosetta law)",
+    "scenarios.dbaas.order-vanished": "§4.3 Read Replica spec verbatim cores (write-then-read staleness; read-your-writes routing upgrade); consequence-only framing per §9.11",
+    "scenarios.dbaas.first-stampede": "§1.x Tier-3 signature moment verbatim frame (reboot/100% miss/every visitor at once/cannot warm) + §4.3 Coil melt clause + the tier lesson sentence; §9.3 register",
+    "scenarios.dbaas.two-ledgers": "§1.3 catastrophe image verbatim cores (two ledgers, angry red seam) + §4.3 split-brain/reconcile-by-hand clause; the boss depicted as state and cost, never method, §9.11",
+    "alert.pool-exhausted": "§3.3 patience column + §4.3 number-one-real-cause verbatim lineage; §9.3 clause-2 sober surface",
+    "alert.lag-widening": "§4.3 lag-as-correctness-bug law + §8.x HUD-swap lag instrument; §9.3 sober surface",
+    "alert.failover-flap": "§4.3 flapping-failovers clause verbatim core (network blip) + fencing/witness sub-build sentence; §9.3 sober surface",
+    "alert.split-brain-seam": "§4.3 split-brain definition verbatim core (two primaries, both accepting writes) + §1.3 seam image; consequence-only, §9.11; §9.3 sober surface",
+    "alert.upgrade-window": "§1.3 mechanics clause verbatim ('a maintenance window your customers will not accept') + §2.11 backup-lock leg; §9.3 sober surface",
+    "terms.iops-tier": "§0.3 unit column + §6.6 three-part unit (instance + storage + IOPS) + §2.10 fair-share frame; terms register",
+    "terms.isolation-stance": "§2.5 counter list verbatim + §1.3 'one tenant's missing index taking down a shared node' + §2.10 churn consequence; terms register",
+    "terms.read-your-writes": "§4.3 correctness-bug law + read-your-writes routing upgrade clause verbatim cores; terms register",
+    "refusal.hands-exhausted": "§9.3 clause-2 sober-surface law; engine door reason code; cross-pack byte-identical",
+    "refusal.stamped-in-future": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.unknown-node": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.edge-exists": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "refusal.slot-occupied": "§9.3 clause-2; engine door reason code; cross-pack byte-identical",
+    "status.rung-1": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-2": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-3": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-4": "§9.3 status-page euphemism ladder (verbatim)",
+    "status.rung-5": "§9.3 status-page euphemism ladder (verbatim)",
+    "ticket.subject.pool": "§3.3 patience column + §4.3 green-dashboard irony; ticket register",
+    "ticket.body.pool": "§4.3 'number-one real cause' dramatized from the app-team side + §7.8 dials (ceiling/throttle) named as the two hands; §9.3 ticket register; no technique named, §9.11",
+    "ticket.subject.stale": "§4.3 read-your-writes bug verbatim core; ticket register",
+    "ticket.body.stale": "§4.3 staleness sentence + 'eventual consistency' register joke authored around the bug law; routing upgrade priced; §9.11-safe",
+    "ticket.subject.upgrade": "§1.3 maintenance-window clause verbatim core; ticket register",
+    "ticket.body.upgrade": "§1.3 'will not accept' + §4.3 quorum/fencing wish-list dramatized from the tenant side; §9.11-safe (a calendar, not a method)",
+    "press.headline.seam": "§1.3 catastrophe as press register; §9.3 press format; consequence-only",
+    "press.headline.melt": "§1.x tier lesson sentence quoted inside press copy (the doc's own words as the apology); §9.3 press format",
+    "forum.thread.quorum": "§4.3 third-failure-domain clause in forum register; §9.3 industry-forum channel; the ribbon-lies beat from §4.3 silent-stop",
+    "forum.thread.scans": "§2.5 success law + §3.1 latency band + registry blast-radius fact dramatized in forum register; §9.3 forum channel",
+    "chatter.desk.pulse": "§4.3 heartbeat/stall visual verbatim cores as floor talk; chatter channel",
+    "chatter.cellar.static": "§4.3 silent-replica answer + §8.10 well-lit law as overheard floor talk; chatter channel; consequence-only, §9.11",
+    "codex.isolate": "§1.3 verb line verbatim + §7.8 Incident Mode set (isolate named) + throttle pair clause; codex register",
+    "codex.ha": "§1.x :908 tier lesson verbatim + §4.3 reconcile-by-hand law; codex register",
+    "loading.tip.plan": "§2.5 growth-law + §8.10 card-catalogue conceit + terms.iops-tier typography line; loading channel",
+    "loading.tip.seam": "§4.3 divergence/referee frame authored from the witness+fencing clauses; loading channel",
+    "intern.entry.drawer": "§1.3 'indexes as card catalogs' conceit + §2.5 DBA-hire counter dramatized; §9.3 Intern's Log",
+    "intern.entry.flap": "§4.3 flapping-failover law dramatized; 'buy more fence' sticky beat authored; §9.3 Intern's Log",
+    "sticky.note.valve": "§2.5 counter list + §4.3 fencing law rewritten as workshop wisdom; §9.3 sticky-note channel",
+    "abuse.canon.quarantine": "§2.5 'per-tenant throttling and isolation' verbatim as advisory text + §2.10 fair-share frame; notice-text only, §9.11",
+    "abuse.canon.upgrade": "§1.3 mechanics clause + §4.3 single-accepting-primary guarantee as window notice; notice-text only, §9.11",
+    "vendor.reply.firmware": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.log-bundle": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.known-issue": "§9.3 vendor comedy channel (verbatim)",
+    "vendor.reply.inactive": "§9.3 vendor comedy channel (verbatim)",
+    "achievement.quorum-held": "§4.3 quorum-witness clause survived whole; §9.3 achievement-name channel",
+    "achievement.zero-divergence": "§1.3 catastrophe prevented as victory; §9.3 achievement channel",
+    "achievement.throttle-earned": "§1.3 verb pair (isolate AND throttle) priced right; §9.3 achievement channel",
+    "canary.cellar-tally": "§4.3 pulse/ribbon/witness triad; canary-notice channel (precedent: colo canary.floor-tally, dedicated canary.row-tally, object-storage canary.comb-tally, voip canary.busy-wall-tally, serverless canary.warm-pool-tally, exchange-colo canary.coil-tally, backup canary.vault-tally)"
+  },
+  "_todo": "Era-variant objects unused on this line (bundle availableFrom null, §0.4 R66; the era grid dates no cell for database-as-a-service and the era-owner pass, not this lane, decides whether managed databases get the 2009 cPanel-era cell or their own). The win metric's threshold (held null per the object-storage authored-metric precedent — the doc gives only the 400-4,000ms visitor band, never an SLA), every pressure mapping in the wave slice, the diurnal amplitude, the pool ceiling and throttle ladder's bite curve, the lag band that trips each alert, the IOPS tier prices, the fence and witness invoices, the split-brain boss's registry entry (proposal rides bundle threats._todo), the §1.9 Portable-Skill row this line is absent from (authored absence, bundle verbs._todo cites), and Companion B/C's missing dbaas rows (CAC cycle and bad month authored qualitatively) stay PROVISIONAL-B / owner-law until the re-author sweep; the corruption beats deliberately carry no technique detail — their slots are consequences (milliseconds, percentages, counts, hours), never methods, per §9.11. "
+}

@@ -1,0 +1,352 @@
+{
+  "schemaVersion": "3.0",
+  "id": "official:dbaas",
+  "_todo": "All human strings are keys into file:packs/dbaas.i18n.json (Appendix A pack ref); literals quoted in README §Key literals. TWELFTH CARD of the OD-14(a) 20-launch canon: the §1.3 database-as-a-service card 'The Managed Database' / 'DBaaS' / 'The Cellar' / 'Read Replica' ships its verb line VERBATIM — 'Verb: isolate and throttle. The boss is a split brain.' (:2249) — and it is the first card whose dominant verb required a fresh owner law call rather than a standing blessing: the type-11 verb-wall row read 'a twelfth type needs a card that grounds a claimable verb or a fresh owner law call'; this card grounds the claim verbatim and the session-6 owner ruling extends the roster, with loader lint TIER_EXTENDED_VERBS carrying 'isolate' since @7f47563, ahead of this bundle. The card's named successor throttle stays OFF the roster per ADR-0014 #D2's one-verb-per-mechanic law (the lint docblock records it) and survives here as the line's real engine posture: the registry's per-tenant-throttling-isolation counter and the Debuffer mechanic ARE the throttle half, authored as data, not as a verb. DIFFERENTIATION RECORDED ON PURPOSE (§1.5/§3.12 lookalike-law sensitivity): this line's §0.3 fatality 'Data corruption' (:622) and object-storage's 'Silent data loss' are cousins, not twins — the bucket's rot is in STORED data, discovered at read, a past tense, and its containment is Shield; this line's corruption is divergence in LIVE state, two primaries both accepting writes while every client still gets a friendly answer ('serving stale data with a straight face', §4.3 :15604), a present tense, and its containment is Isolate. One breaks history; the other breaks the now. Pack authored at file:packs/dbaas.i18n.json — cac.dbaas.gravity-adoption-cycle is authored in Companion-B style from the §6.6 family row ('DBaaS | instance + storage + IOPS | very sticky (data gravity) | high | monthly | backup + expertise', :23329); note honestly that §6.6's B table carries NO priced dbaas row (serverless/exchange-colo precedent for unpriced CAC), so the cycle shape is authored and every dollar stays unauthored. handoverNote provenance: runsOut is §3.3's patience column verbatim ('Connection pool exhausted', :12502), killsYou is §0.3's fatality column verbatim ('Data corruption', :622) wearing the card's own catastrophe image ('two ledgers diverging with an angry red seam between them', §1.3), customerWants is §4.3's read-your-writes sentence verbatim in core ('I placed my order and it's gone', :15603).",
+
+  "meta": {
+    "name": "type.dbaas.name",
+    "codexSummary": "type.dbaas.codex",
+    "tone": "comedy",
+    "official": true,
+    "publishedAsEditableCard": true
+  },
+
+  "visitor": {
+    "nullable": false,
+    "unitTerm": "visitor.unit.instance-plus-iops",
+    "durationClass": "Session",
+    "stats": {
+      "patience": null,
+      "value": null,
+      "weight": null,
+      "loyalty": null,
+      "fragility": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "The §3 entry names this line's visitor outright — '### DBaaS — a query' (:12679) — and writes the shape without numbers: 'Small, chatty, millisecond-scale. Some are cheap; a few are catastrophically expensive, and one unindexed full scan (400–4,000ms) can eat every slot you have. The Noisy Query's actual weapon' (:12679 verbatim). All five authored null + these cites, never forged: patience is the ms band the R25 latency table owns ('Database (unindexed / full scan) | 400–4,000 | the Noisy Query's actual weapon', §3.1 :11545), weight 'Small, chatty' (§3.3 size column verbatim, :12502), value inverted by the very asymmetry the entry states — a million cheap reads and one catastrophic scan bill against the same pool, so per-visitor value is the wrong instrument; loyalty and fragility stay unauthored because §3.3's patience column answers with a STATE ('Connection pool exhausted'), not a scalar."
+    },
+    "patienceModel": {
+      "mode": "sigmoid-budget",
+      "params": {
+        "budgetMs": null,
+        "bounceSigmoid": null,
+        "tuningSheet": "PROVISIONAL-B",
+        "_todo": "mode 'sigmoid-budget' — the query is a session that holds a connection and gives up on a gradient: §3.3 gives the failure as pool exhaustion (:12502 verbatim column), which is queueing patience, the same shape the anchor's budget curve models. budgetMs null: the only authored numbers are the latency band 400–4,000ms (§3.1 :11545), and that band is the SCAN's cost, not the client's patience; the tuning sheet owns the client curve. bounceSigmoid null for the same reason. HONEST TENSION RECORDED: the §3.1 five-stat ledger's API-client row runs the sibling machine genre on '10,000, then hard fail; timeouts binary' — a binary patience was considered and declined: this line's visitor is a person's application retrying on their behalf inside a connection pool, not a script with a hard deadline, and §1.4's beat for this line is precisely that the retries come BACK ('every integration breaks at once and retries hammer you', :3131) — a binary timeout that never retries is a quieter, wrong machine. The binary arm stays the doc's, cited here, unchosen."
+      }
+    },
+    "party": {
+      "allOrNothing": false,
+      "size": null,
+      "_todo": "allOrNothing FALSE — exempt by the party-law reading the siblings established: the family exemplars are chains and delegations (a backup chain, a cabinet tour, a clan joining), and a query is atomic by nature — a statement either completes or errors on its own; there is no partial arrival to protect. The transactional atomicity this line IS famous for is data semantics (§4.3's write-then-read correctness bug), not arrival shape, and the two are never conflated into this flag. size null by exemption (only all-or-nothing parties author a size)."
+    },
+    "herding": {
+      "enabled": false,
+      "coefficient": null,
+      "_todo": "no herd law is authored for query traffic; the clustering that matters here is FAILURE-shaped, not arrival-shaped — when the pool exhausts, every client's retry library wakes at once and the storm is generated by the outage itself (§1.4 'retries hammer you', :3131), which is the retryAmplifies channel below, not herding. Herding vs retry storm never conflated, never invented; the coefficient stays null with the cite."
+    },
+    "populationEffect": false,
+    "retryAmplifies": true,
+    "cohortSpawn": {
+      "fromCustomerCard": true,
+      "tier": 3
+    },
+    "costPerInvocation": "per-instance-hour",
+    "trustReadable": true,
+    "archetypeRefs": [],
+    "_todo": "durationClass 'Session' — the §3.3 row calls the visitor 'Query / connection' (:12502 verbatim) and a connection is a held slot by definition: the §3.2 class law makes sessions the ones that 'consume a slot for their duration', and the whole scarce-resource thesis of this line (pool exhaustion, IOPS contention) only exists because each query holds. populationEffect FALSE with the reason on record: this line's attractor is DATA gravity — §6.x names DBaaS inside the retention list verbatim ('Hosting types: backup, object storage, DBaaS, archival, observability', :14051) and calls it 'the single best MRR quality in the game' — which acts on churn, not on arrival rate; recorded as declined, not overlooked, per the backup/colo precedent. retryAmplifies TRUE verbatim-grounded: §1.4's six-ways passage gives this line its own clause — 'API/DBaaS — every integration breaks at once and retries hammer you' (:3131 verbatim) — and §2.5's success law is the same mechanic measured: 'The threat grows with your success' (:7162). costPerInvocation 'per-instance-hour' — §3.3 revenue-model column verbatim (:12502). trustReadable TRUE — the deliberate inversion of type-11 recorded on purpose: the vault cannot see its own durability, but the cellar sees its present constantly and can be WRONG about it — the doc's skin row makes legibility the design ('heavy, central, well-lit objects with visible replication streams', §8.10 :31797 verbatim; the lag ribbon 'stretches visibly like a rubber band', §4.3), and the primary's heartbeat 'stalls visibly, so you can see lock contention' (:15585 area). The lesson of this line is not that the instrument is missing — it is that a readable present can still hide a diverged truth, which is why the boss is a split brain and not a stale gauge. archetypeRefs empty by authoring law: the visitor here IS the query (§3's entry title is the whole argument); the api-client archetype is the nearest costume on the registry but the visitor-registry censuses are the registry-owner's, flagged there, never borrowed here."
+  },
+
+  "goal": {
+    "nodeType": "cellar-cluster-floor",
+    "winCondition": {
+      "kind": "hold-metric",
+      "metric": "replication-lag-and-zero-divergence",
+      "threshold": null,
+      "_todo": "The held metric is authored from two doc lines fused: the HUD-swap slot names this level's one number — 'DBaaS shows *replication lag*' (§8.x :31663 verbatim) — and the catastrophe names the second half it protects — split brain as 'data divergence you must later reconcile by hand' (§4.3 :15615). §0.x's fifth-axis roster carries NO DBaaS row (its entries name game/backup/colo/CDN/email/DNS/GPU/regulated/bulletproof only), so the metric is authored in the object-storage tradition (that bundle authored 'disk-and-durability-math' the same way): named, not numbered. threshold null: the only authored ms figures are the visitor-latency band (§3.1 :11545) and a lag SLA typed into a bundle would be the promise-shaped dishonesty the backup entry pass forbids by family analogy; the tuning pass owns the number."
+    },
+    "loseCondition": {
+      "kind": "data-corruption"
+    },
+    "loseSlowlyGuard": {
+      "minWarningMinutes": 3
+    },
+    "bindingConstraintLine": "goal.dbaas.binding"
+  },
+
+  "scarce": {
+    "resourceId": "iops-and-durability",
+    "meterWidget": "replication-lag-rubber-band",
+    "meterBoundStat": "replication-lag",
+    "commercialSlider": "iops-tier-pricing",
+    "operationalDials": [
+      "connection-pool-ceiling",
+      "failover-aggressiveness",
+      "noisy-tenant-isolation-stance"
+    ],
+    "windowGrows": false,
+    "shedOrder": "noisy-tenant-throttle-ladder",
+    "qosAnswer": "scarce.dbaas.qos"
+  },
+
+  "tempo": {
+    "simTimeScale": "ms",
+    "permanentIncidentClock": false,
+    "contractTerms": {
+      "default": "monthly",
+      "escalator": false,
+      "grandfathering": false,
+      "_todo": "The contract block is this card's OWN family row verbatim — §6.6 'DBaaS | instance + storage + IOPS | very sticky (data gravity) | high | monthly | backup + expertise' (:23329). default 'monthly' verbatim from the billing column; note the register this sits in: the two colo lines bill 'monthly in advance' and backup bills annual, and the doc gives this family the plain monthly word, so the plain monthly word ships. The stickiness the row claims ('very sticky (data gravity)') is authored in economy.termStructure as the gravity shape and in §6.x's retention law, never forged into a churn scalar. escalator FALSE: no §6.12 term-structure instrument is authored for this family — recorded, not invented, the honesty rule type-10 applied where the doc was silent. grandfathering FALSE for the same reason; the engine's grandfathering instrument stays live for priced books that key it — this bundle keys nothing."
+    },
+    "seasonality": [],
+    "diurnalBaseline": "chatty-workday-sessions",
+    "_todo": "simTimeScale 'ms' — RIDES the anchor, and rides it on the doc's word: §3.3's latency column for this line says 'ms' verbatim (:12502) and the visitor entry opens 'Small, chatty, millisecond-scale' (:12679). §7.8e's granularity roster names no DBaaS row (its ladder runs 'Game servers run in milliseconds… Web hosting runs in seconds… Backup runs in hours… Colo runs in years', :27802 area) — the absence is recorded in the pack ledger, and where the doc leaves the family unlabeled, the family's own §3 rows label it plainly; unlike type-10's years-tension nothing here has to be argued into the tick clock, the ms IS the tick register. permanentIncidentClock false: §7.8e's always-on clause names the millisecond GAME type; the incident clock here is the lag ribbon, which stretches and is read, not a fuse welded to the floor. seasonality []: no dbaas season is authored; inventing a curve would move the waves-lane catalogue — recorded debt. diurnalBaseline 'chatty-workday-sessions' AUTHORED-FROM-VERBATIM: 'Small, chatty, millisecond-scale' (§3 :12679) × §0.2's portfolio-peak clause ('web peaks midday', :546 area, the same passage that makes opposite peaks a synergy) — the app teams behind §0.3's 'App teams' customer column (:622) work the business day, so the cellar's floor hums by daylight; the curve catalogue owns every number, PROVISIONAL-B."
+  },
+
+  "threats": {
+    "familyWeights": {
+      "malicious": 0.1,
+      "human": 0.2,
+      "entropic": 0.15,
+      "systemic": 0.25,
+      "customerAsThreat": 0.3,
+      "_todo": "customerAsThreat .30 — the card's first sentence is the thesis and it is customer-shaped: 'You run the thing that cannot lose data, for people who will write terrible queries against it' (§1.3 :2245 area verbatim), and the how-it-works line generalizes it — 'Every customer's query is your problem' — while §2.5 names the multi-tenant law outright: 'At multi-tenant scale (DBaaS, shared hosting), one tenant's missing index degrades everyone' (:7162). The two registry entries that carry the customerAsThreat flag — noisy-query-table-scan and hoarder-noisy-neighbor — are this level's signature events, so the leading weight is the corpus's stance made numeric. systemic .25 — the second seat is the card's own catastrophe family: the §2.11 cluster row reads 'DBaaS: Replication Lag, Split Brain, Long-Query Starvation, Backup Locks' (:9849) and §1.x's tier lesson is the design law — 'HA introduces its own failure class — split-brain, failover storms and stampedes exist *because* you added redundancy' (:908); lag, flap, divergence and the upgrade-day that 'arrives at a time chosen by someone else' are all systemic events wearing the redundancy the player bought. human .20 — the terrible queries are written by humans and arrive as tickets before they arrive as load: §3.3's patience column is a state ('Connection pool exhausted'), §4.3 calls connection exhaustion 'the number-one real cause of \"the site is down\"', and the hydra desk opens before the drum stalls. entropic .15 — the durability half of the scarcity pair ('IOPS + durability', §0.3 :622): pages wear, checksums find their rot, the WAL spool is a physical thing; second fiddle here precisely because this line's entropy is measured on LIVE state, where object-storage built its whole level on entropy of STORED state — the split between the two .3-led books is the same differentiation the top _todo records. malicious .10 — the card names NO adversary; where it flirts with one (recon, noise) it is consequence-only per §9.11, and the ten percent buys weather: scanners, drizzle, and the outsider who profits from the seam. Sum: .30+.25+.20+.15+.10 = 1.00 exactly (families.test renormalizes at 1e6 micro; this book is micro-exact as authored, exchange-colo/colo precedent)."
+    },
+    "activeFamilies": [
+      "malicious",
+      "human",
+      "entropic",
+      "systemic",
+      "customerAsThreat"
+    ],
+    "signatureThreats": [
+      { "id": "noisy-query-table-scan", "mechanical": true },
+      { "id": "hoarder-noisy-neighbor", "mechanical": true },
+      { "id": "slowloris-sipper", "mechanical": true },
+      { "id": "ticket-avalanche-hydra", "mechanical": true },
+      { "id": "mod-update-day", "mechanical": true },
+      { "id": "layer7-mimic", "mechanical": true },
+      { "id": "empty-server-spiral", "mechanical": true },
+      { "id": "scanner-drizzle", "mechanical": true }
+    ],
+    "unlockedByBuildables": {
+      "per-tenant-throttle": ["noisy-query-table-scan"],
+      "query-monitoring": ["hoarder-noisy-neighbor"],
+      "dba-retained-desk": ["mod-update-day"]
+    },
+    "twoFrontDraw": [
+      "bandwidth",
+      "concurrency",
+      "cash",
+      "data-integrity",
+      "hands",
+      "reputation"
+    ],
+    "waveTable": "file:waves/g1-dbaas-first-quarter.json",
+    "_todo": "Threat mapping law (dns/mail/dedicated/object-storage/voip/serverless/exchange-colo/colo/backup precedent — registry ids re-framed in _todo cites, zero new registry entries): the §2.11 cluster names this line's four signature events — 'Replication Lag, Split Brain, Long-Query Starvation, Backup Locks' (:9849) — and the registry carries exactly ONE of them outright: noisy-query-table-scan IS the starved long query, the corpus's own Debuffer with the 400–4,000ms unindexedScanMs slot and the counter list ('per-tenant-throttling-isolation' / 'query-monitoring' / 'dba-hire') written from the same §2.5 passage that names this line; wearing it unmodified is the reuse-first law at its purest — this card is the scan's home level. hoarder-noisy-neighbor = the IOPS half of the scarcity pair: '60% of the box's I/O degrading 200 neighbours' (registry fact, §2.10) re-framed from disk to drum — the neighbour who owns the seek head is this line's 40x friend. slowloris-sipper = the pool: the registry's slow-connection Sapper re-worn from web-server sockets to the connection pool of §3.3's patience column ('Connection pool exhausted'), the held connection that never finishes being this level's native crowd; it also carries this bundle's lookalike seed (deep-reader) per the §2.4/OD-18 law. ticket-avalanche-hydra = the app teams: §0.3's customer column verbatim (:622) filing at the desk before the meters move — the registry's one swarm-on-hands engine, home level duty. mod-update-day = the maintenance window your customers will not accept: 'a dependency you don't own breaks every instance at a time chosen by someone else' (registry fact) re-framed onto the major-version upgrade the §1.3 card's mechanics sentence promises, Splitter/Boss wearing the calendar. layer7-mimic = the replica with the straight face: 'a replica that silently stops replicating while still answering queries' (§4.3 :15604) is the corpus's one Mimic re-framed from traffic-noise onto a READ PATH — stale data served as fresh is the deception this level exists to teach, and the second seed this bundle carries for the lookalike law (power-shopper). empty-server-spiral = the flapping failover's trust leg: an HA cluster that fails over on a network blip and back again (§4.3 'flapping failovers') leaves a fleet of quiet half-nodes whose silence is the reputation event when the quarterly review reads the incident page; Healer/Spawner on reputation, the mirror of colo's grey floor and backup's empty row. scanner-drizzle = reconnaissance weather and the first checksum speckle: the §2.5 success-law's quiet soundtrack, the third seed this bundle carries (crawler). THE BOSS HAS NO ID: the §2.11 cluster names split brain and the §1.3 card calls it the boss — 'The boss is a split brain' (:2249) — and the registry has no entry for it, because the registry is a threat list and a split brain is a STATE the player's own redundancy produces (§1.x :908); it ships as the w5 envelope event + the split-brain-divergence-state nonPhysical mechanic, with a registry proposal left open for the registry-owner pass per the toll-fraud-boss precedent (:2743 area — a named boss riding authored absence rather than a forged entry). The backup lock and the divergence repair have no attacker either: they are the systemic weight the lag ribbon carries. activeFamilies carries ALL five — customerAsThreat leads at .3 on the strength of the card's first sentence, the third customer-led book in the corpus (colo/exchange-colo .35) and the first whose lead threat ships with a home level."
+  },
+
+  "skin": {
+    "palette": {
+      "dominant": "oxblood",
+      "accent": "lag amber",
+      "chord": [
+        "cask oak",
+        "brass fitting",
+        "liquid indigo",
+        "lag amber",
+        "lock red"
+      ]
+    },
+    "materialPreset": "preset:oxblood-brass-and-oak",
+    "visitorCostume": {
+      "hull": "teardrop-query-slip",
+      "propSlot": "unindexed-tab"
+    },
+    "heroSilhouette": "asset:hero.cellar-drawer-bank",
+    "heroObject": "card-catalogue-drawer-bank",
+    "meterFace": "replication-lag-rubber-band",
+    "catastropheFx": "fx:split-brain-seam",
+    "ambientSoundPack": "sound:drum-hum-and-seek-chatter",
+    "densityMultiplier": null,
+    "arrivalRhythm": "chatty-workday-sessions",
+    "homeAltitude": null,
+    "detailAltitude": null,
+    "commercialArtifactIcon": "asset:artifact.index-card-plan-tier",
+    "signatureMotion": "motion:split-brain-seam",
+    "signatureFrame": "frame:two-ledgers-red-seam",
+    "lodContract": {
+      "full": "asset:lod.cellar-drawer-bank.full",
+      "icon16": "asset:lod.cellar-drawer-bank.icon16",
+      "pip": "pip:lag-amber",
+      "aggregate": "agg:query-slip-stack",
+      "inspector": "skin.dbaas.inspector"
+    },
+    "_todo": "§8.10 'five assets plus eight parameter values': densityMultiplier/homeAltitude/detailAltitude unauthored for this type — never invented. Palette chord VERBATIM from the card's visual paragraph: 'Chord: cask oak · brass fitting · liquid indigo · lag amber · lock red' (§1.3 :2253); dominant 'oxblood' and accent 'lag amber' are the lane's pick from the card's own art direction — 'Oxblood, brass and oak' (verbatim, the same sentence) — with the accent lifted to the instrument that matters, the amber lag band the eye is trained to watch; flagged for owner palette ratification (serverless/exchange-colo/colo/backup precedent). Hero object: THE CARD-CATALOGUE DRAWER BANK — §8.10 names it outright: 'Hero: the card-catalogue drawer bank' (:31797 verbatim), the indexes-as-card-catalogs conceit (§1.3) made architecture; 'heavy, central, well-lit objects with visible replication streams' (verbatim) is the composition law — the Cellar is the one room in the game where nothing is hidden in the dark, and the drama is that the light still lies. Costume hull 'teardrop-query-slip' wears the duration-class shape law — 'teardrop = session' (§3.2 :11698) — × the §8.10 visitor word 'a query slip' (verbatim): paper slips, the card-catalogue register's own stock, some stamped and cheap, one long thing clamped across every drawer. meterFace bound to scarce.meterWidget per the R15 pairing law — the instrument is the doc's named meter twice over: 'DBaaS shows *replication lag*' (§8.x HUD swap) × 'a replication-lag rubber band (which visibly stretches)' (§8.10 verbatim). catastropheFx and signatureMotion are the SAME named event per the §8.x signature-motion roster — 'the Split-Brain Seam (DBaaS)' (:31907) — catastrophe and motion unified the way the drum's stall unifies its sound and its light: 'two ledgers diverging with an angry red seam between them' (§1.3 verbatim; lock red finally earned). signatureFrame 'two-ledgers-red-seam' is the catastrophe sentence as a still. ambientSoundPack from §4.3's component portrait verbatim cores — the drum's hum, 'seek-LED chatter', and the transaction-rate heartbeat that 'stalls visibly' when locked (§4.3) — the lock stall is the sound design's gunshot. commercialArtifactIcon 'index-card-plan-tier' folds the plan tier into the conceit: the pricing instrument is a catalogue card, and the upgrade rows the §1.3 card promises (pools, IOPS tiers) are punched into it. arrivalRhythm rides the tempo baseline name — the workday chatter of §0.3's 'App teams' (:622) arriving as slips, not waves. The lag ribbon stretches between two casks per the card's own depth rule — 'replication lag as a visible level difference between two casks' (verbatim) — which is why the aggregate at high altitude is a stack of slips and the detail at low altitude is the seam."
+  },
+
+  "eras": {
+    "availableFrom": null,
+    "obsoleteBy": null,
+    "eraOverrides": {},
+    "_todo": "§0.4's era grid has no dated cell for this line (its sketches name 1994 dial-up, 2001 dot-com colo, 2009 cPanel, 2016 cloud, 2024 GPU boom); managed databases as a hosting product are oldest-in-cloud (the doc's own Tier-3 lineage predates its 2016 sketch), but 'oldest-in-cloud' is a vibe, not a date, and inventing an era cell is the forged scalar this corpus refuses — every shipped bundle leaves the slot null pending the era-owner pass (R66 law); status is 'undocumented' to the era resolver until the owning pass."
+  },
+
+  "economy": {
+    "unitOfSale": "instance-plus-iops",
+    "revenueShape": "monthly-sticky-gravity",
+    "marginProfile": "high",
+    "cashTiming": "monthly",
+    "termStructure": {
+      "typical": "monthly",
+      "churn": "gravity-resistance-with-resentment-twin",
+      "_todo": "§6.6 revenue table verbatim: 'DBaaS | instance + storage + IOPS | very sticky (data gravity) | high | monthly | backup + expertise' (:23329) — Companion B prices no dbaas row (recorded honestly, the serverless/exchange-colo precedent), and Companion C names no dbaas bad-month row either (its rows end at satellite), so the two free-authored strings live in the pack and every scalar stays the doc's. typical 'monthly' verbatim. churn authored as the SHAPE rather than a rate: §6.x Data Gravity lists this line in its home sentence ('Hosting types: backup, object storage, DBaaS, archival, observability', :14051 verbatim) and calls the force 'Churn resistance that grows automatically with usage — the single best MRR quality in the game' (:14049 area); the dark twin is named too and is carried, not smoothed: 'data gravity is retention until the day it's resentment', the per-customer Lock-In Awareness stat that 'rises as their stored data grows and as they encounter egress pricing' (:14053) — the bundle authors the two-sided word, the engine authors no number."
+    },
+    "cacProfile": "cac.dbaas.gravity-adoption-cycle",
+    "ticketsPerCustomer": null,
+    "signatureCost": "backup-and-expertise",
+    "badMonth": "economy.dbaas.bad-month",
+    "fifthAxisScore": {
+      "metric": "replication-lag-and-zero-divergence",
+      "weight": null,
+      "tuningSheet": "PROVISIONAL-B",
+      "_todo": "§0.x fifth-axis roster carries no DBaaS row (its entries name game/backup/colo/CDN/email/DNS/GPU/regulated/bulletproof only); the metric rides the goal's authored instrument ('DBaaS shows *replication lag*', §8.x verbatim, fused with the divergence half per goal._todo — object-storage's authored 'disk-and-durability-math' is the house precedent for a named-not-numbered axis); the weight stays unauthored (R42 law)."
+    },
+    "realismToggles": {
+      "p95billing": false,
+      "demandCharges": false
+    },
+    "_todo": "unitOfSale 'instance-plus-iops' — §0.3 unit column verbatim ('An instance + IOPS', :622); the meters stay unreconciled into one word on purpose — §6.6 prices 'instance + storage + IOPS' with a THIRD dimension (storage) the §0.3 word omits — carry-both, forge-neither, the gb-vs-TB owner law wearing its IOPS clothes, and the storage half is precisely where the data-gravity churn shape comes from. marginProfile 'high' and cashTiming 'monthly': §6.6 margin and billing columns verbatim — note the register: this is the corpus's first 'high' margin row written as the single word 'high' (backup's row says 'good'); §6.x's Revenue-Quality band agrees, placing DBaaS in the GOLD list — 'multi-year contracted, high margin, low touch, direct-sourced (colo cross-connects, colo cabinets, backup/DR, DBaaS)' (:21927 verbatim). signatureCost 'backup-and-expertise': the revenue table's signature-cost column says 'backup + expertise' verbatim (:23329) — the doc put the DBA and the archive in the unit-of-cost column, which is this card's thesis wearing accounting: the line's margin exists because someone keeps the copies and someone reads the plans; the ampersand is hyphenated for slug law and the meaning rides untouched. cacProfile AUTHORED — the §6.6 family row is the grounding and Companion B carries NO dbaas price row, so the acquisition cycle is authored qualitatively (gravity makes the sale slow, sticky and technical: the pitch is expertise, the close is a schema review, the renewal is physics) with every dollar left unauthored; the pack carries the honesty note. ticketsPerCustomer null: no rate authored (§3.3's per-instance-hour is the revenue shape, the desk volume is the human .20 weight's business, and inventing a per-customer ticket rate would move §3.3's whole register). badMonth: Companion C prices no dbaas row (recorded absence, serverless precedent — its rows end at satellite); the authored bad month fuses §0.3's fatality word with §4.3's correctness bug — the corrupt commit every replica cheerfully copied. p95billing/demandCharges are the power/CDN-line instruments and neither is authored for this row — false twice, with the reason on record; the IOPS tier IS a demand-shaped price but §7.8d's demand-charges instrument is authored for watts, not writes, and re-keying it here would be an engine lane, not a bundle field."
+  },
+
+  "buildables": {
+    "paletteRef": "palette:shared-80",
+    "archetypeInstances": [
+      { "archetype": "concurrency-pool", "skin": "connection-pool" },
+      { "archetype": "two-face-rack", "skin": "primary-drum" },
+      { "archetype": "control-plane", "skin": "cellar-desk" }
+    ],
+    "distinct": [
+      "read-replica-shelf",
+      "quorum-witness",
+      "fencing-switch",
+      "per-tenant-throttle",
+      "query-monitoring",
+      "dba-retained-desk",
+      "point-in-time-desk",
+      "major-version-gate",
+      "card-catalogue-indexer",
+      "lag-ribbon-telemetry"
+    ],
+    "nonPhysical": [
+      "split-brain-divergence-state",
+      "pool-exhaustion-cliff",
+      "iops-contention-share"
+    ],
+    "_todo": "All distinct names cite the doc: read-replica-shelf from §4.3's named component ('Read Replica', :15599 area — 'Replication lag becomes a correctness bug', verbatim line) — the shelf is the drum's echo made furniture; quorum-witness VERBATIM-grounded ('a quorum witness in a third failure domain', §4.3 :15617) — the cheapest object on the floor and the only one that makes the boss illegal; fencing-switch from the same sentence's 'fencing/STONITH sub-build' (verbatim; the doc's own scare-quote is the comedy register, and the sub-build arrives as a switch you hope never throws); per-tenant-throttle VERBATIM from §2.5's counter list ('per-tenant throttling and isolation') — the dominant verb bought as hardware; query-monitoring and dba-retained-desk from the SAME counter list ('query monitoring' / 'a DBA hire') — the Meter and the Recover rungs the registry's noisy-query-table-scan entry already prices; point-in-time-desk from the §1.3 mechanics sentence ('point-in-time recovery', verbatim) — the scroll machine, the WAL spool made legible, this line's restore desk equivalent; major-version-gate from the §1.3 sentence the card refuses to accept ('major version upgrades with a maintenance window your customers will not accept', verbatim) — the gate holds the window the calendar chose; card-catalogue-indexer from the visual conceit ('indexes as card catalogs', verbatim) — buying indexes as DRAWERS is the corpus's first pricing of a query plan; lag-ribbon-telemetry from the §4.3 replica image ('a lag cord that stretches visibly like a rubber band', verbatim) — the meter made buildable, because on this level the instrument is the product. nonPhysical: split-brain-divergence-state is the boss made a board condition ('two primaries, both accepting writes', §4.3 verbatim) — the state the registry lacks and the envelope carries (threats._todo); pool-exhaustion-cliff is §3.3's patience column as physics ('Connection pool exhausted' — the number-one real cause, §4.3 verbatim); iops-contention-share is the hoarder's 60% and the scan's 40x read as a standing condition (§2.10, §2.5). archetypeInstances: the control-plane third joins the ten-skins roster per §7.8's shared-object law (web's cPanel, mail's webmail, dedicated's ipmi-console, dns's zone-editor, object-storage's bucket-policy, voip's fraud-desk, serverless's metering-plan, exchange-colo's audit-desk, colo's noc-desk, backup's vault-desk) — the cellar-desk is the eleventh skin; two-face-rack skins the PRIMARY DRUM because the rack-back law is this component's whole interiority ('the only component whose loss of confidentiality is catastrophic even if it stays up', §4.3 :15581 — the back of the drum is the data, and looking is the threat lane: 'new cable = new magenta threat lane', §4.3, capability over surface, Pillar P2); concurrency-pool skins the connection pool of §3.3 verbatim — the first corpus skin named by the failure itself."
+  },
+
+  "control": {
+    "pips": {
+      "hardware": null,
+      "software": null,
+      "network": null,
+      "data": null,
+      "_todo": "§0.2/§7.8f control-granularity authors the pip spread for shared/dedicated/colo/reseller/cloud/wholesale lines only (the one non-null corpus row remains dedicated's verbatim 'hardware and network'); the dbaas pip row awaits its ruleset-card pass — this lane IS the ruleset-card pass and the doc still names no spread for this line, so the scalars stay null + this cite, never invented (the corpus-wide law dns/mail/game-servers/object-storage/voip/serverless/exchange-colo/colo/backup all cite). The line DOES ship control prose — the isolation stance is a control decision over blast radius, and failover aggressiveness is control over the cluster's own reflexes — but no four-way spread is authored for them."
+    },
+    "keyhole": false,
+    "unclickableObjects": false,
+    "_todo": "keyhole FALSE — recorded on purpose against type-10's landlord wall. The doc's skin row is the argument made furniture: 'heavy, central, well-lit objects with visible replication streams' (§8.10 :31797 verbatim) — the Cellar is the most legible room in the game; every cask, drawer, ribbon and clamp is walkable and clickable, and §4.3 makes visibility the feature ('you can see lock contention' — the heartbeat stall). unclickableObjects FALSE with the same reading: this line's epistemic disease is not that the player cannot look, it is that looking at the readable present never proves the write landed on BOTH ledgers — every object answers, and the answers diverge. The distinction the corpus now carries three ways: the colo tenant cannot see in (door), the backup keeper cannot see through (proof cost, type-11), the dba sees everything and it still isn't enough (divergence) — the trust design's completed triad, all three authored, none invented."
+  },
+
+  "mechanics": [
+    "connection-pool-exhaustion",
+    "replication-lag-visibility",
+    "read-your-writes-bug",
+    "split-brain-divergence",
+    "failover-flap",
+    "cache-stampede-melt",
+    "noisy-tenant-starvation",
+    "maintenance-window-refusal",
+    "iops-tier-margin",
+    "triage-window"
+  ],
+
+  "verbs": {
+    "dominant": "Isolate",
+    "transfers": [
+      "verbs.dbaas.transfer.1"
+    ],
+    "_todo": "THE ROSTER'S OWN WORD, FIRST USE REQUIRING A LAW CALL — 'Verb: isolate and throttle. The boss is a split brain.' is the card's own line verbatim (§1.3 :2249), and where type-11 consumed a blessing the corpus had already written, this card's verb arrives with the owner's session-6 ruling: the roster extends for the twelfth type (the type-11 wall row said a twelfth needs 'a card that grounds a claimable verb or a fresh owner law call' — this card grounds, the ruling extends), loader lint carries 'isolate' in TIER_EXTENDED_VERBS as of @7f47563, and the §1.9 'never a seventh verb' line plus the §7.8 eight-verb census ride ADR-0015's amendment notes at closeout (that file is NOT edited here). The doc's engine vocabulary was already isolate-shaped: the §7.8 Incident Mode verb set runs 'isolate / failover / roll back / shed / communicate / escalate' (:26759 area) and §7.8's attention ladder names 'restart, isolate, shed' (:28826 area) — the verb the card chose is the verb the incident room already spoke; the named successor 'throttle' (the card's own pairing) stays OFF the roster per ADR-0014 #D2's one-verb-per-mechanic law and survives as the level's real second instrument — the throttle-isolate pair is the shed ladder and the per-tenant-throttle buildable, authored as mechanics, not minted as verbs. Roster census at this commit: Triage=shared-web, Place&Connect=game-servers, Tune=mail-hosting, Commit=dns-hosting, Observe=dedicated, Shield=object-storage, Maintain=trunk-group-voip, Scale=serverless, Sell=exchange-colo, Negotiate=colo, Schedule=backup-archival, Isolate=dbaas — the invariant roster's sole unclaimed slot is now Diagnose alone, and with the #D1 pair (negotiate/schedule) plus the session-6 extension (isolate) fully spent, a thirteenth type needs a card that grounds a NEW named verb or a fresh owner law call (MODULE-STATUS verb-wall row flips to LANDED at closeout). Honest note for the verb-shift ledger: the §1.3 CI/build-farm card ALSO names 'Verb: isolate, expire, reclaim' (:2679 area) — a second isolate-grounded card exists in the doc; should its type ever ship it rides the same roster word (dedicated Observe-style repeat precedent), and 'throttle', 'expire', 'reclaim', 'restart' all stay off-roster until an owner blesses them one at a time. HONEST DOOR GAP (g16 finding, RULED ADR-0014 #D2, AMENDED BY SESSION-6): 'Isolate' has no door enum member AT THIS COMMIT — the sibling door lane (L-V, per the ADR-0015 #2 authorization covering all five roster verbs) lands isolate-node after this bundle; until that commit the dominant verb is card IDENTITY and design posture, as with all six roster-verb siblings before it. The reinforcement is unusual in the other direction: of all seven extension verbs, Isolate is the only one whose engine seam is named on the card and ALREADY built as an incident mode — the door lane has a doc-blessed shape to fill."
+  },
+
+  "relations": {
+    "synergies": [
+      {
+        "with": "official:backup-archival",
+        "kind": "verification-gates-the-cellar",
+        "numbers": null,
+        "_todo": "§5.6's lattice row IS the pair, gate-shaped and verbatim: 'DBA staff + backup verification → unlocks Database-as-a-Service.' (:20803) — the unlock's second flag is the vault line's own product, so the synergy and the gate are one sentence: the cellar's point-in-time desk reaches back into the archive's verified copies, and §6.x's data-gravity census names both lines in the same list ('backup, object storage, DBaaS, archival, observability', :14051). §0.2's named synergy list ('backup + object storage' et al.) carries no dbaas pair-row; recorded rather than manufactured. No numeric benefit authored for this pair."
+      },
+      {
+        "with": "official:object-storage",
+        "kind": "same-gravity-different-tense",
+        "numbers": null,
+        "_todo": "§6.x Data Gravity's hosting-types list names this line and the bucket line in the same breath ('object storage, backup/DR, DBaaS, tape vaulting, video archive', :23417) — the two lines sell the same physics at different instants: the bucket freezes history for reads, the drum negotiates the present for writes, and the top _todo records the fatality split that keeps them from being one level. §4.3's component census supports the working pair (database backups ride the object store); no doc pair-row exists, no number is invented. No numeric benefit authored."
+      }
+    ],
+    "antagonisms": [],
+    "unlocks": {
+      "prereqSets": [
+        {
+          "tech": ["dba-staff", "backup-verification"],
+          "_todo": "§5.6 lattice verbatim: 'DBA staff + backup verification → unlocks Database-as-a-Service.' (:20803) — the gate's two tech flags copied complete, in order, with the row's own words; unlike backup's four-flag gate this row has exactly two and nothing was invented to pad the shape. The gate's story (a level unlocked by the PREVIOUS level's product plus a staff hire) is the corpus's cleanest capability-chain: the unlock sentence cites the lattice-owner pass, never a date."
+        }
+      ]
+    },
+    "pivots": {
+      "to": {},
+      "_todo": "§5.6 pivot rows touch this line from the inbound side only: the 'DBA staff + backup verification' gate above IS this card's entry, and it carries the doc's own strategic gloss by position — the lattice puts the cellar behind the vault, meaning the stabilize-the-business pivot stabilizes again into the never-lose-the-present line. No outbound pivot row is authored FROM dbaas in the lattice; the to-map stays empty rather than citing a phantom — never invented."
+    },
+    "masteryBuff": "relations.dbaas.mastery",
+    "distillate": "relations.dbaas.distillate",
+    "_todo": "mastery grounded on the §5.6 mastery LAW (field law per R68: the table names Game/Backup/Colo rows and NO dbaas row — the absence is the record, the buff text is authored from the card's own doctrine): 'the boss is a split brain' teaches that quorum is a purchase and isolation is a reflex; the buff's instrument is the control stance this line already holds (dial, ladder, witness), so no number is forged into the bundle and the buff text names the containment shape the doc names. The distillate is the taught lesson per the §1.9 distillate law, authored from the card's mechanics sentence: redundancy is not safety, it is a new failure class wearing safety's clothes (§1.x :908) — every later line inherits the reflex of asking who decides which write is true."
+  },
+
+  "ticketPack": "file:packs/dbaas.i18n.json",
+
+  "handoverNote": {
+    "runsOut": "handover.dbaas.runs-out",
+    "killsYou": "handover.dbaas.kills-you",
+    "customerWants": "handover.dbaas.customer-wants"
+  },
+
+  "rosettaCards": [
+    {
+      "canonical": "maintenance-window",
+      "alias": "major-version-window",
+      "line": "rosetta.dbaas.window"
+    },
+    {
+      "canonical": "renewal-cliff",
+      "alias": "gravity-tether",
+      "line": "rosetta.dbaas.gravity"
+    }
+  ],
+
+  "scenarios": {
+    "archetypeApplicability": [
+      "Convert",
+      "Diagnose"
+    ],
+    "analogues": {
+      "order-vanished": "scenarios.dbaas.order-vanished",
+      "first-stampede": "scenarios.dbaas.first-stampede",
+      "two-ledgers": "scenarios.dbaas.two-ledgers"
+    },
+    "_todo": "Convert is this line's archetype by the §1.9 row's own words made playable — 'Convert — maximize throughput of *good* traffic. Rate-limiting to survive is a loss.' (:5062 verbatim) — because this level's entire defense instrument (isolate AND throttle, the card's pair) is the sentence's named loss condition: the quarter is won by serving the good queries, and the easy win (clamp everything) is authored as the defeat; exchange-colo drew Convert first, and repeat draws are lawful (the roster is eleven archetypes, not a deck). Diagnose is the boss scenario — 'the board is already broken; find why' (:5065 verbatim) — which is a sentence written for split-brain reconciliation: two primaries, both 'healthy', the divergence already in the pages, and every gauge lit; the doc's own repair description is a diagnostic ('data divergence you must later reconcile by hand', §4.3). analogues authored from cited doc beats, consequence-only framing per §9.11: order-vanished (§4.3 replica spec verbatim — 'a user writes then immediately reads and sees old data — I placed my order and it's gone'), first-stampede (§1.x Tier-3 signature moment verbatim — the cache reboots, the miss rate goes to 100%, 'the DB falls over, and the cache cannot warm because the DB is down'), two-ledgers (§1.3 catastrophe image verbatim — two ledgers diverging, the angry red seam — the boss as scenario, reconciliation priced in hands and trust, never in technique)."
+  },
+
+  "guardrails": {
+    "depiction": "business-not-technique",
+    "arcMustEnd": true
+  }
+}

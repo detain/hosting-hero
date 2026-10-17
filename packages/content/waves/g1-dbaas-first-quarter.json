@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "3.0",
+  "id": "waves/g1-dbaas-first-quarter",
+  "type": "official:dbaas",
+  "purpose": "First-quarter wave slice for the twelfth Ruleset Card — the §1.3 database-as-a-service card 'The Managed Database' / 'DBaaS' / 'The Cellar' / 'Read Replica', the first card founded on a verb that required the session-6 roster extension, 'Verb: isolate and throttle. The boss is a split brain.' (:2249 verbatim) (12 of the 20-type launch canon, OD-14(a)). Slice shape mirrors the eleven shipped g1 siblings: a reconnaissance opening on the calmest loud floor in the game, a peak built from the line's two native crowds (held connections and app-team tickets), a trough where the enemy is a copy that stopped answering and a neighbour eating the drum, a surprise-with-composition wave carrying the line's signature event — the unindexed scan, Debuffer's home level — landing beside the upgrade nobody asked for, and a finale built on the card's own catastrophe: the stampede that melts a DB 'sized for a cached world' and the seam that opens between two ledgers while every gauge stays lit. Deliberately RULES-FREE (no rules block): §2.24 rule-carrier values stay in the g1 slices until the batch-D rule-adapter pass reads them for cross-type tables.",
+  "seed": 1,
+  "determinismNote": "Authored + seeded (§7.13): same seed replays identical arrival order; the sim core owns jitter streams off this seed.",
+  "rolesNote": "Every entry carries `role` = its PRIMARY threat role from threats/registry-core.json `roles[0]` (§2.1 Threat Role Taxonomy, 12-role vocabulary); wave `denominations` arrays are entry-derived, and every hard wave draws exactly TWO fronts (§2.1 Two-Front Law / §2.24).",
+
+  "par": {
+    "formula": "P(n) = 100 * 1.115^n * S(n)",
+    "growthPerWave": 1.115,
+    "base": 100,
+    "sawtooth": {
+      "kind": "rising-floor-sawtooth",
+      "values": null,
+      "_todo": "§1.7/MASTER_REPORT WS-1: sawtooth with rising floor — hard, easy, harder, easy-but-not-as-easy; the S(n) multiplier series is tuning-sheet territory (owner ratified sheet B 2026-10-09, ADR-0009 — OD-2 CLOSED; marker stays PROVISIONAL-B until the owner re-author sweep, S(n) series still unauthored)."
+    },
+    "cite": "reports/MASTER_REPORT.md WS-1 pressure formula P(n)=100x1.115^n xS(n)",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "baseline": {
+    "curve": "chatty-workday-sessions",
+    "neverZero": true,
+    "diurnalAmplitude": null,
+    "peakHourLocal": null,
+    "_todo": "§1.7: baseline continuous, diurnal, never zero. The rhythm name is authored from the card's own words (bundle tempo._todo carries the cites): 'Small, chatty, millisecond-scale' (§3 :12679) × §0.2's portfolio-peak clause placing web-family traffic at the midday crest ('web peaks midday', :546 area) × §0.3's customer column 'App teams' (:622) — the Cellar hums while the apps are open, and the slips come across the counter all day. neverZero holds in this line's register: at 03:00 the workday chatter thins to the cron jobs, the analytics exports and the replica catch-up reads — the drum never actually silences, it idles, and the idle is when the scans hide ('Some are cheap; a few are catastrophically expensive', §3 verbatim). The curve catalogue owns every number, PROVISIONAL-B.",
+    "tuningSheet": "PROVISIONAL-B"
+  },
+
+  "envelopes": [
+    {
+      "id": "order-that-vanished",
+      "kind": "customer",
+      "overWaves": [2],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "quiet-tail" },
+      "amplitude": null,
+      "telegraph": "the first correctness complaint is not an outage, it is a confusion: a user writes, reads back, and sees the old page — 'a user writes then immediately reads and sees old data — I placed my order and it's gone' (§4.3 verbatim) — and the ticket arrives while the pool is still green and the lag ribbon is still inside its band",
+      "source": "§4.3 Read Replica component pass verbatim (write-then-read staleness; 'Replication lag becomes a correctness bug'); §3 visitor entry 'The Noisy Query's actual weapon' frame (:12679)",
+      "compoundWave": "authored so the SCARCE thing is the truth of the present, not the speed of it: the customer envelope rides the peak because staleness is load-shaped — the hotter the pool, the wider the lag, the more 'gone' orders the desk files — and the fix the doc names ('the read-your-writes routing upgrade', §4.3) is a purchase, not a patch",
+      "_todo": "staleness-complaint rate → reputation/hands pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "silent-stop",
+      "kind": "threat",
+      "overWaves": [3],
+      "shape": { "ramp": "slow", "plateau": "sustained", "decay": "revealed-tail" },
+      "amplitude": null,
+      "composition": ["layer7-mimic"],
+      "telegraph": "the trough's enemy answers every query: a replica that silently stops replicating while still answering reads — 'serving stale data with a straight face' (§4.3 :15604 verbatim core) — the lag ribbon flat because the ribbon reads the last ack, not the missing stream, and the drift is a slow pile of reads that were true once",
+      "source": "§4.3 Read Replica pass verbatim (silent-stop failure); §2.11 cluster 'Replication Lag' leg (:9849); the registry's one Mimic re-framed onto a read path (bundle threats._todo carries the mapping)",
+      "compoundWave": "authored so the SCARCE thing is quorum, not throughput: the mimic (Mimic) spends trust by answering too well while the spiral (Healer/Spawner) turns the flapping fleet's silence into the quarterly story — 'flapping failovers triggered by a network blip' (§4.3 verbatim) are the trough's own weather",
+      "_todo": "stale-read depth → reputation/data-integrity pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "starvation-and-lock",
+      "kind": "threat",
+      "overWaves": [4],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "reset-tail" },
+      "amplitude": null,
+      "telegraph": "the surprise-with-composition wave lands the line's signature sentence whole: 'One tenant's unindexed analytical query starves everyone else's transactions; a backup takes a lock that blocks writes' (§2.11 :9849 verbatim) — the scan is 400–4,000ms of held slot wearing a business-question's face (§3.1 R25 band verbatim), and the upgrade window the card promised arrives 'at a time chosen by someone else' (registry mod-update fact), gate and starvation sharing one calendar",
+      "source": "§2.11 DBaaS cluster sentence verbatim (both legs); §3.1 latency table 'Database (unindexed / full scan) | 400–4,000' (:11545); §1.3 mechanics clause 'major version upgrades with a maintenance window your customers will not accept' (verbatim)",
+      "_todo": "scan-cost/lock-window → concurrency/data-integrity pressure mapping unauthored; PROVISIONAL-B."
+    },
+    {
+      "id": "melt-and-seam",
+      "kind": "threat",
+      "overWaves": [5],
+      "shape": { "ramp": "instant", "plateau": "sustained", "decay": "blackholed-tail" },
+      "amplitude": null,
+      "composition": ["udp-amplification-barrage", "layer7-mimic"],
+      "telegraph": "the finale arrives as the tier lesson the doc wrote for this exact board: 'A cache node reboots, the miss rate goes to 100%, every visitor hits the DB at once, the DB falls over, and the cache cannot warm because the DB is down' (§1.x Tier-3 signature moment verbatim, :906 area) — 'your DB, sized for a cached world, instantly melts' (§4.3 Coil pass) — and in the melt's blind second the fencing question answers itself wrong: 'two primaries, both accepting writes' (§4.3 verbatim), the seam opening between the ledgers while every gauge on the well-lit floor keeps shining",
+      "source": "§1.x Tier-3 signature moment verbatim (first cache stampede); §4.3 Cluster Manager pass ('split-brain... data divergence you must later reconcile by hand'); §1.3 catastrophe image ('two ledgers diverging with an angry red seam between them'); §4.3 Cache Layer melt clause verbatim",
+      "compoundWave": "the boss beat, authored as an EVENT because the registry has no split-brain entry and the boss is a STATE the player's own redundancy produces (§1.x :908 'HA introduces its own failure class'): the Tank stampede runs INBOUND at the drum — the registry's one raw-volume entry re-worn from reflexive amplification to the cache-miss melt, this flood is every coalesced request arriving uncoalesced at once — while the Mimic holds the reads smiling so nobody notices the writes have forked; the split-brain registry proposal rides bundle threats._todo for the registry-owner pass (toll-fraud-boss precedent)",
+      "_todo": "stampede-depth/divergence-window → bandwidth/concurrency/data-integrity pressure mapping unauthored; reconciliation cost (hands x hours x trust) unauthored; PROVISIONAL-B."
+    }
+  ],
+
+  "waves": [
+    {
+      "n": 1,
+      "title": "key.wave.1",
+      "parPct": 25,
+      "hardness": "opening",
+      "note": "Rule (b) honoured: first wave of any level ALWAYS <=40% of par (§1.7). Cold Start Minute governs the first 90s of sim-time: handover no threat, one FREE conversion, signature constraint asserts harmlessly with telegraph (§1.9). On this line the harmless assertion is the workday chatter landing clean inside a wide-open pool — slips across the counter, the lag ribbon slack, the heartbeat pulse steady at transaction rate, and the only anomalies are the small grey questions the cellar learns to ask out loud: a scanner's drizzle at the edge asking which databases are shy, a query plan that reads like a shrug, a tenant asking whether the replica is 'real-time real-time'. The quarter opens bright because §8.10 says this floor hides nothing — 'heavy, central, well-lit objects with visible replication streams' (verbatim) — and the card says what that light is for: 'You run the thing that cannot lose data, for people who will write terrible queries against it' (§1.3 verbatim).",
+      "entries": [
+        { "threat": "scanner-drizzle", "role": "Stealth", "pressurePct": 100, "band": "weather" }
+      ],
+      "denominations": ["data-integrity"]
+    },
+    {
+      "n": 2,
+      "title": "key.wave.2",
+      "parPct": 60,
+      "hardness": "peak",
+      "note": "Rising floor beat one — the ROUTINE catastrophe, and it is the line's two native crowds arriving together. Two-Front (§2.24): the pool fills with holders (Sapper — 'one slow connection held open is a slot that never frees'; the registry's sipper re-worn from web sockets to the connection pool of §3.3's patience column, 'Connection pool exhausted' verbatim, which §4.3 calls 'the number-one real cause of \"the site is down\"') spending concurrency on slowness that is individually unremarkable, while the app teams' desk begins its climb (Swarm — the hydra of write-then-read confusion, 'I placed my order and it's gone', §4.3 verbatim) spending hands on tickets whose only honest answer is a routing upgrade the player hasn't bought yet. Two tenants of the same moment, two instruments, one lesson of wave two: the present is what you cannot lose, and readable is not the same as true (§1.x :908 'degraded is harder to read than dead', verbatim core).",
+      "entries": [
+        { "threat": "slowloris-sipper", "role": "Sapper", "pressurePct": 55, "band": "storm" },
+        { "threat": "ticket-avalanche-hydra", "role": "Swarm", "pressurePct": 45, "band": "storm" }
+      ],
+      "denominations": ["concurrency", "hands"],
+      "entropyNote": "entropy budget here = f(estate age x size x (1 - maintenance spend)), NOT wave number (§2.24) — on this line maintenance spend IS the indexer and the monitor: 'query monitoring' and 'per-tenant throttling and isolation' are the registry's own counter list for this level's signature threat (§2.5), and the card prices the unspent version in its first sentence: 'people who will write terrible queries against it'."
+    },
+    {
+      "n": 3,
+      "title": "key.wave.3",
+      "parPct": 30,
+      "trough": true,
+      "hardness": "trough",
+      "note": "Rule (c): 30% is 50% below the preceding peak (60%) — >=45% satisfied. Dips are where the player builds (§1.7): the quorum witness, the fencing switch, the read-your-writes routing and the card-catalogue indexer all get their window here. But on this line the quiet has an attention problem: the neighbour's batch job has settled into the drum like a elbow in the ribs ('60% of the box's I/O degrading 200 neighbours invisibly until churn', registry §2.10 verbatim — the Parasite wearing IOPS instead of inodes), and the flapping fleet behind the mesh is a trust account withdrawing in silence — 'failovers triggered by a network blip' (§4.3 verbatim) leave a ribbon that reads calm because the replica acks lie prettily. Two fronts: concurrency x reputation — held IOPS starve the workday chatter while the spiral makes the half-dead replicas themselves the story the postmortem starts telling.",
+      "entries": [
+        { "threat": "hoarder-noisy-neighbor", "role": "Parasite", "pressurePct": 60, "band": "entropy" },
+        { "threat": "empty-server-spiral", "role": "Healer/Spawner", "pressurePct": 40, "band": "entropy" }
+      ],
+      "denominations": ["concurrency", "reputation"],
+      "note2": "the trough is also the silent-stop's middle frame: nothing visible happens for exactly the reason §4.3 gives — 'a replica that silently stops replicating while still answering queries' — the ribbon is flat because the ribbon is the lie's witness."
+    },
+    {
+      "n": 4,
+      "title": "key.wave.4",
+      "parPct": 75,
+      "hardness": "harder",
+      "note": "Compound-wave exemplar, cellar variant: the scan and the window land together — 'One tenant's unindexed analytical query starves everyone else's transactions; a backup takes a lock that blocks writes' (§2.11 :9849 verbatim; Debuffer debuts here, the every-4th-wave NEW ROLE beat, unseen in waves 1-3 — and this is the Debuffer's HOME level, the registry's one throttle-everyone mechanic wearing the §3.1 band verbatim: 400-4,000ms 'the Noisy Query's actual weapon'), while the major-version gate the player scheduled (or didn't) opens at 'a time chosen by someone else' (Splitter debuts too — mod-update-day re-framed onto §1.3's 'maintenance window your customers will not accept', the upgrade the doc promised wearing the dependency's calendar). Two fronts: concurrency (the pool dies one held slot at a time) x data-integrity (the lock that blocks writes is a correctness question asked by a calendar). secondIncident inside the same window because on this line every failure is two failures: the query that grew and the schema that never was.",
+      "entries": [
+        { "threat": "noisy-query-table-scan", "role": "Debuffer", "pressurePct": 60, "band": "storm" },
+        { "threat": "mod-update-day", "role": "Splitter", "pressurePct": 40, "band": "hunter" }
+      ],
+      "denominations": ["concurrency", "data-integrity"],
+      "secondIncident": "the upgrade window finds the scan mid-flight -> 1.8x multiplier applies (stated openly in the Codex, §2.24)."
+    },
+    {
+      "n": 5,
+      "title": "key.wave.5",
+      "parPct": 100,
+      "hardness": "quarter-finale",
+      "note": "The finale is the tier lesson completed: 'HA introduces its own failure class — split-brain, failover storms and stampedes exist *because* you added redundancy' (§1.x :908 verbatim), and the class arrives as one bad second multiplied — the cache reboots into a 100% miss wall and 'every visitor hits the DB at once' (signature moment verbatim; Tank — the registry's one raw-volume entry re-worn INBOUND: this flood is not amplification, it is coalescing failing, the uncoalesced million arriving at a drum sized for a cached world, §4.3 'instantly melts' verbatim core), while the straight-faced reads hold the floor calm for exactly the seconds the writes need to fork (Mimic — 'serving stale data with a straight face', §4.3 verbatim core; the reads smiling as the seam opens — 'two ledgers diverging with an angry red seam between them', §1.3 catastrophe verbatim; the boss with no registry id arrives as the envelope event, bundle threats._todo carries the proposal). Hard wave draws TWO fronts — bandwidth x concurrency — per §2.24: the pipe into the drum and the slots inside it. Win check: the quorum held, the ribbon stayed honest, no second primary ever took a write, and the seam stayed a picture in the Codex instead of a state on the board.",
+      "entries": [
+        { "threat": "udp-amplification-barrage", "role": "Tank", "pressurePct": 55, "band": "storm" },
+        { "threat": "layer7-mimic", "role": "Mimic", "pressurePct": 45, "band": "hunter" }
+      ],
+      "denominations": ["bandwidth", "concurrency"],
+      "triageWindow": "after any catastrophic failure in this wave: arrivals queue visibly outside, patience draining, hands freed 30s (§1.7)."
+    }
+  ],
+
+  "hudForecast": {
+    "nextWave": "solid glyphs with counts",
+    "wavePlusTwo": "silhouette, no counts",
+    "wavePlusThree": "\"?\"",
+    "cite": "§2.24 Wave Composition Bar + §1.7 'never surprise with size; surprise with composition'"
+  }
+}
