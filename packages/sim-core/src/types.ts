@@ -1943,6 +1943,24 @@ export interface RetryEvent extends SimEventBase {
   readonly unitId: EntityId;
   readonly retryOf: EntityId;
 }
+/** ADR-0017 · the re-entry MINT stamp (owner max-feature ruling 2026-10-17,
+ *  I-RA Option D). The driver mints matured re-entries (`re<mint>@<tick>`)
+ *  BETWEEN ticks — step 1's arrival roster never sees them, so nothing else
+ *  in the pipeline can label their terminals. This event carries the mint's
+ *  lineage into the EVENT STREAM only: zero GameState bytes, zero digest
+ *  participation (digestState folds state alone), zero wire. Distinct from
+ *  `retry` (the SCHEDULING-side stamp on the bouncing parent, causeId
+ *  `retry:<parent>:<depth>`); this is the MATURITY-side stamp on the child,
+ *  causeId `reentry:<childId>`. `retryOf` is null for viral re-entries
+ *  (referrals/returns — new customers with no bounced parent; `lineageRoot`
+ *  then falls back to the draft type, the driver's existing root grammar). */
+export interface ReentryEvent extends SimEventBase {
+  readonly kind: "reentry";
+  readonly unitId: EntityId;
+  readonly retryOf: EntityId | null;
+  readonly lineageRoot: EntityId;
+  readonly retryDepth: number;
+}
 /** Live or shadow (dry-run) policy firing — the ticker shows both so the
  *  3am fight is watchable (§B 2.4). */
 export interface RuleFiredEvent extends SimEventBase {
@@ -1996,6 +2014,7 @@ export type SimEvent =
   | BlockedFalsePositiveEvent
   | LandedEvent
   | RetryEvent
+  | ReentryEvent
   | RuleFiredEvent
   | InvoiceSettledEvent
   | CheckpointEvent

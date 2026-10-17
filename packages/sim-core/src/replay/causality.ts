@@ -66,6 +66,7 @@ function eventSubject(event: SimEvent): EntityId | undefined {
     case "blocked-false-positive":
     case "landed":
     case "retry":
+    case "reentry":
       return event.unitId;
     case "invoice-settled":
       return event.contractId;

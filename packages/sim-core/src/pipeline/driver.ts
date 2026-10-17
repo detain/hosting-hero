@@ -80,7 +80,7 @@ import type {
   UnitDraft,
   WaveEnvelope,
 } from "../types.ts";
-import { asEntityId, emptyMoneyBuckets } from "../types.ts";
+import { asCauseId, asEntityId, emptyMoneyBuckets } from "../types.ts";
 import { FIXED_UNIT, FIXED_ZERO } from "../kernel/fixed.ts";
 import {
   DEFAULT_TICK_US,
@@ -215,8 +215,9 @@ export interface UnlockDriverWiring {
 export interface TickResult {
   readonly state: GameState;
   /** Events from all steps, concatenated in canonical step order — door
-   *  events LEAD (the door runs before step 1), then arrival…, outcome…,
-   *  backpressure…, economics…. */
+   *  events LEAD (the door runs before step 1), then reentry… (matured
+   *  cross-tick re-entries mint before step 1 consumes them, ADR-0017),
+   *  then arrival…, outcome…, backpressure…, economics…. */
   readonly events: readonly SimEvent[];
   readonly outcomes: readonly Outcome[];
   readonly ruleFirings: readonly RuleFiring[];
@@ -544,7 +545,14 @@ export function createTickDriver(
     }
 
     /* ── cross-tick memory: mature pending re-entries ─────────────────── */
+    /* ADR-0017 · reentry attribution stamps (I-RA Option D): the mint is
+       invisible downstream — step 1 never emits an arrival event for it, and
+       a child that terminals in its OWN mint tick is pruned before any
+       consumer sweep can see it. The driver therefore stamps one ReentryEvent
+       per maturation, carrying (unitId, retryOf, lineageRoot, retryDepth)
+       into the event stream ONLY. No GameState bytes, no digest, no wire. */
     const matured: Unit[] = [];
+    const reentryEvents: SimEvent[] = [];
     const stillPending: PendingReentry[] = [];
     for (const entry of pending) {
       if (entry.readyAtTick > context.tick) {
@@ -555,6 +563,18 @@ export function createTickDriver(
       mintCounter += 1;
       retryDepthById.set(unitId, entry.retryDepth);
       matured.push(mintUnitFromDraft(entry.draft, unitId, context.tick));
+      reentryEvents.push(
+        Object.freeze({
+          kind: "reentry",
+          atUs: simNow,
+          tick: context.tick,
+          causeId: asCauseId(`reentry:${unitId}`),
+          unitId,
+          retryOf: entry.draft.retryOf,
+          lineageRoot: entry.lineageRoot,
+          retryDepth: entry.retryDepth,
+        }) satisfies SimEvent,
+      );
     }
     pending = stillPending;
 
@@ -1251,6 +1271,7 @@ export function createTickDriver(
 
     const events: SimEvent[] = [
       ...door.events, // the door is canonically BEFORE step 1
+      ...reentryEvents, // matured re-entries mint BEFORE step 1 (ADR-0017)
       ...arrivalOut.events,
       ...outcomeOut.events,
       ...backpressureOut.events,

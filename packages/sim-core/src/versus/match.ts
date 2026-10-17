@@ -1070,16 +1070,35 @@ function createVersusEngine(config: VersusMatchConfig): VersusEngine {
         const label = Number.isInteger(envelopeIndex) ? labels[envelopeIndex] ?? UNATTRIBUTED : UNATTRIBUTED;
         unitLabel.set(event.unitId, label);
       }
+      if (event.kind === "reentry") {
+        /* ADR-0017 (I-RA Option D): the driver stamps maturity BEFORE this
+           tick's outcomes, so by induction the parent is already labelled
+           (direct arrival leg, or its own reentry leg on an earlier tick)
+           before its child's terminals bump — the mint-tick bounce is no
+           longer unlabelable. Viral re-entries (`retryOf: null`) label
+           NOTHING by design: a referral/return is a NEW customer, not a
+           wave's traffic; versus disables the channel outright (referral/
+           return FIXED_ZERO), so the branch is structural honesty. */
+        if (event.retryOf === null) continue;
+        retryParent.set(event.unitId, event.retryOf);
+        const label = resolveUnitLabel(event.retryOf, unitLabel, retryParent);
+        if (label !== UNATTRIBUTED) unitLabel.set(event.unitId, label);
+        const cause = resolveArrivalCause(event.retryOf, arrivalCauseByUnit, retryParent);
+        if (cause !== undefined) arrivalCauseByUnit.set(event.unitId, cause);
+      }
       // Retry events are SELF-REFERENTIAL at scheduling (the pipeline emits
       // RetryEvent{unitId: X, retryOf: X} for the BOUNCING unit — the child
       // id does not exist yet). Writing from them here could only plant a
       // premature UNATTRIBUTED that poison-blocks the sweep's `has` guard;
-      // lineage belongs to propagateRetryLineage + resolveUnitLabel alone.
+      // child lineage flows from the reentry leg above; the live-unit sweep
+      // below remains defense-in-depth (idempotent `has` guards).
     }
 
-    // Lineage sweep: matured re-entries arrive as fresh ids WITHOUT arrival
-    // events (driver mints `re<counter>@<tick>`), so labels and root arrival
-    // causes propagate through the unit.retryOf chain here, every tick.
+    // Defense-in-depth sweep (ADR-0017 rider): re-entries whose labels did
+    // NOT flow through the reentry leg (foreign runners without the event,
+    // restored checkpoints mid-lineage) still propagate through the unit
+    // retryOf chain here, every tick. Idempotent `has` guards keep it a
+    // no-op once the event stream carries the lineage.
     propagateRetryLineage(game, unitLabel, arrivalCauseByUnit, retryParent);
 
     for (const outcome of result.outcomes) {
@@ -1215,7 +1234,9 @@ function resolveArrivalCause(
 }
 
 /** Walk each re-entry's retryOf chain to the nearest labelled ancestor.
- *  Bounded walk (guard 64) mirrors driver.resolveRoot. */
+ *  Bounded walk (guard 64) mirrors driver.resolveRoot. Since ADR-0017 the
+ *  reentry event leg labels matured children at mint time; this sweep keeps
+ *  the state-side path for runners and restores that never saw the event. */
 function propagateRetryLineage(
   game: GameState,
   unitLabel: Map<EntityId, string>,
@@ -1322,6 +1343,8 @@ function summarizeVersusEvent(
       return `${labelOf(event.unitId, unitLabel)} customer served (${at})`;
     case "retry":
       return `${labelOf(event.unitId, unitLabel)} retries (${at})`;
+    case "reentry":
+      return `${labelOf(event.unitId, unitLabel)} re-enters (${at})`;
     default:
       return `${event.kind}@${event.tick}`;
   }
@@ -1329,7 +1352,7 @@ function summarizeVersusEvent(
 
 /** Terminal events double as Outcome rows for the decisive-cause hunt —
  *  the outcome STREAM and the event STREAM carry the same causeIds. */
-interface EventOutcome {
+export interface EventOutcome {
   readonly unitId: EntityId;
   readonly terminal: OutcomeTerminal;
   readonly atUs: bigint;
@@ -1348,23 +1371,41 @@ function outcomeFromEvent(event: SimEvent): EventOutcome | null {
   }
 }
 
-function pickEffectCause(
-  run: VersusRun,
+/** File-exported (NOT barrelled) for the ADR-0017 structural pin in
+ *  match.test.ts — same seam style as threatFromWaveUnitId. */
+export function pickEffectCause(
+  run: Pick<VersusRun, "events" | "unitLabel" | "retryParent">,
   decisiveLabel: string,
   preferred: readonly OutcomeTerminal[],
+  tableId: string,
 ): EventOutcome | null {
   for (const terminal of preferred) {
     let best: EventOutcome | null = null;
+    let bestDirect = false;
     for (const event of run.events) {
       const outcome = outcomeFromEvent(event);
       if (outcome === null || outcome.terminal !== terminal) continue;
       // Same resolution the counters use — a decisive wave's terminal may
-      // ride a re-entry id that only the retryParent walk can label.
+      // ride a re-entry id that only the lineage walk can label.
       if (resolveUnitLabel(outcome.unitId, run.unitLabel, run.retryParent) !== decisiveLabel) continue;
-      if (best === null
-        || outcome.atUs > best.atUs
-        || (outcome.atUs === best.atUs && outcome.causeId > best.causeId)) {
+      /* ADR-0017 PREFERENCE LAW (pinned by the decisive-cause grammar test):
+         among labelled candidates, one whose RAW unitId wears the table's
+         arrival grammar (a minted threat, not a re-mint ghost) outranks any
+         lineage-attributed re-entry terminal — the decisive sentence names
+         the threat the deck fielded. Within one class: latest atUs, then
+         greatest causeId (the pre-ADR-0017 tie law, UNMOVED).
+         Direct discriminant = `${tableId}@` prefix: the pipeline stamps
+         arrivals `<tableId>@<tick>#<entry>.<i>` (the waves-plan `~` grammar
+         never reaches event unitIds), while the driver's re-mint counter
+         stamps ghosts `re<mint>@<tick>` — which never carry the table name. */
+      const isDirect = String(outcome.unitId).startsWith(`${tableId}@`);
+      const outranks = best === null
+        || (isDirect !== bestDirect
+          ? isDirect
+          : outcome.atUs > best.atUs || (outcome.atUs === best.atUs && outcome.causeId > best.causeId));
+      if (outranks) {
         best = outcome;
+        bestDirect = isDirect;
       }
     }
     if (best !== null) return best;
@@ -1378,6 +1419,7 @@ function explainDecisive(config: VersusMatchConfig, run: VersusRun, decisive: Pe
     run,
     decisiveLabel,
     decisive.landed > 0 ? Object.freeze(["landed"] as const) : Object.freeze(["bounced", "blocked-false-positive", "served"] as const),
+    config.tableId,
   );
   if (effectCause === null) {
     return { sentence: `Wave ${decisive.waveN ?? "?"} carried the pressure; no attributable terminal outcome was recorded.`, causeId: null };

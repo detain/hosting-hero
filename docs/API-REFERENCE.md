@@ -201,6 +201,30 @@ bookings stand; the shield (protection), the engine recovery clamp, and the
 priceKey-space books (pricing/sell/negotiate — the spot-eviction leg is the
 named future half needing a contract→capacity bridge) are EXCLUDED by law,
 falsifiably pinned in `__tests__/reclaim-consume.test.ts`.)
+REENTRY-ATTRIBUTION-LANE pass 2026-10-17 (wave-22 attribution, ADR-0017 —
+I-RA Option D: the driver stamps a NEW SimEvent kind `reentry` at re-mint
+MATURITY — the frozen union grows 11→12 (types +1 name `ReentryEvent`:
+`{kind:"reentry", atUs, tick, causeId "reentry:<childId>", unitId, retryOf,
+lineageRoot, retryDepth}`, the `retry` scheduling stamp's twin — `retry:`
+says a child was scheduled, `reentry:` says it arrived); concatenated in
+`TickResult.events` immediately AFTER the door's pair and BEFORE arrivals
+(maturity is pre-step-1 — the canonical order EXTENDS, never reshuffles);
+ZERO state bytes — nothing enters GameState, the digest, the projection
+wire, or the replay bundle, so every shipped digest is immune by
+construction (full serial green, not one literal touched); the versus
+"unattributed" floor collapses to ZERO: `match.ts` labels each re-mint
+child from its parent on the reentry leg (viral `retryOf: null` labels
+NOTHING — referrals are new customers, by design), `propagateRetryLineage`
+removes as defense-in-depth only, and `pickEffectCause` gained the
+PREFERENCE LAW (a terminal whose RAW unitId wears the table's ARRIVAL
+grammar `${tableId}@` outranks a lineage-labelled ghost — within a class
+the old latest-atUs tie stands; note the waves-plan `~` grammar never
+reaches event unitIds, the driver re-stamps arrivals `<tableId>@<tick>
+#<entry>.<i>`); the 1,040-blocked unattributed witness flips to a
+floor-CLOSED assertion (`#RA-era pin` comments, ×3 seeds); the re-mint
+GRAMMAR decision (I-P decision 6: ghost ids never parse as threats)
+stands UNTOUCHED — attribution moved to the lineage side exactly as the
+doctrine anticipated.)
 Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
@@ -237,7 +261,7 @@ Parsed from `packages/sim-core/package.json` (on disk, 2026-10-06):
 | `@hh/sim-core/replay` | `src/replay/index.ts` | ✅ 59 exports (barrel is an EXPLICIT name list) |
 | `@hh/sim-core/loader` | `src/loader/index.ts` | ✅ 89 exports |
 | `@hh/sim-core/save` | `src/save/index.ts` | ✅ 191 exports (later save-lane additions rode the row un-updated — count re-pinned at the 2026-10-13 docs-currency sweep) — **landed mid-audit (2026-10-06)**; root barrel carries it with 4 `save*` aliases (see disambiguation below) |
-| `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 78 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names (count re-pinned for the fingerprint-flip lane's `cardContentFingerprint` + the versus-pin-fix lane's `defaultPolicyCardIndex`, 2026-10-09; +1 `AFFIX_COST_MULTIPLIER_BPS` for hh-versus-deck-v2, 2026-10-17; +6 for affix-semantics-live V-2 @`eb4b86a` — `AFFIX_WAVE_DELTAS`/`AffixWaveDelta`/`DRAFT_AFFIX_DEFAULT_POOL`/`MAX_FEINT_WAVES_PER_DECK`/`feintBudgetViolations`/`pickDecisiveWave`; `threatFromWaveUnitId` is file-exported for the V-2 structural pin and deliberately NOT barrelled — api-verify is barrel-name based) |
+| `@hh/sim-core/versus` | `src/versus/index.ts` | ✅ 78 exports — async-Versus deck law (ADR-0004); EXPLICIT barrel, root star-collides with zero names (count re-pinned for the fingerprint-flip lane's `cardContentFingerprint` + the versus-pin-fix lane's `defaultPolicyCardIndex`, 2026-10-09; +1 `AFFIX_COST_MULTIPLIER_BPS` for hh-versus-deck-v2, 2026-10-17; +6 for affix-semantics-live V-2 @`eb4b86a` — `AFFIX_WAVE_DELTAS`/`AffixWaveDelta`/`DRAFT_AFFIX_DEFAULT_POOL`/`MAX_FEINT_WAVES_PER_DECK`/`feintBudgetViolations`/`pickDecisiveWave`; `threatFromWaveUnitId` is file-exported for the V-2 structural pin and deliberately NOT barrelled — api-verify is barrel-name based; `pickEffectCause` joins it in seam style for the ADR-0017 preference-law pin) |
 | `@hh/sim-core/coverage` | `src/coverage/index.ts` | ✅ 28 exports — Coverage Grid (hg §2.1 / P17): 12×9 dark-cell teaching matrix, MAX-combine cells, G2/P2 invitation bridge; EXPLICIT barrel, zero root collisions (summary type named `CoverageGridSummary` to avoid observed's `CoverageSummary`) |
 | `@hh/sim-core/unattended` | `src/unattended/index.ts` | ✅ 70 exports (count re-pinned at the 2026-10-13 docs-currency sweep) — The Long Weekend fast-forward + What-Would-Break forward sim (hg §9.2, WS-8); EXPLICIT barrel, zero root collisions |
 | `@hh/sim-core/unlocks` | `src/unlocks/index.ts` | ✅ 43 exports — hg §5 unlock-trigger engine v0 (scar/milestone/era/declared triggers + prereqSets consumer + codex ladder); observer-only, DIGEST-NEUTRAL, unwired in v0; EXPLICIT barrel, zero root collisions |
@@ -352,7 +376,7 @@ and `GameState` (§4.1). Data + one law each; zero behavior. Import:
 | `IntentRefusedEvent` | `interface { …base; kind: "intent-refused"; verb: string; intentSeq: number; reason: string }` | the door REFUSED — machine-prefixed `"<code>: <detail>"` (e.g. `"hands-exhausted: need 1, free 0 of 2"`); `verb` is the PlayerVerb string or a legacy carrier label ("verb:scale-out") | nothing consumed, RNG never consulted; refusals replay identically — as replay-logged as executions |
 | `DirectorDraw` | `interface { atTick; subject; value }` | seeded difficulty-director draw, replay-logged (§4.1) | logged input |
 | `Checkpoint` `ReplayContentHashes` `ReplayBundle` | `interface`s | ring checkpoint, content-hash identity triple, replay artifact (§3.3) | — |
-| `ArrivalEvent` `ServedEvent` `BouncedEvent` `BlockedFalsePositiveEvent` `LandedEvent` `RetryEvent` `RuleFiredEvent` `InvoiceSettledEvent` `CheckpointEvent` `IntentExecutedEvent` `IntentRefusedEvent` `SimEvent` | `interface`/discriminated union | the canonical event spine (R-11 terminals + rule/invoice/checkpoint + the door's executed/refused pair) | cause-stamped |
+| `ArrivalEvent` `ServedEvent` `BouncedEvent` `BlockedFalsePositiveEvent` `LandedEvent` `RetryEvent` `ReentryEvent` `RuleFiredEvent` `InvoiceSettledEvent` `CheckpointEvent` `IntentExecutedEvent` `IntentRefusedEvent` `SimEvent` | `interface`/discriminated union | the canonical event spine (R-11 terminals + rule/invoice/checkpoint + the door's executed/refused pair + the ADR-0017 reentry mint stamp — `reentry:<childId>` fires when a scheduled re-entry MINTS, carrying `retryOf`/`lineageRoot`/`retryDepth` verbatim from the draft; pure attribution, zero state) | cause-stamped |
 | `BoardEdgeRecord` | `interface { id: EntityId; relation: BoardRelation; from: EntityId; to: EntityId; slot: string \| null }` | one frozen edge of the pipeline-local board slice — the frozen mirror of topology/graph `Edge` (NO import; topology keeps its mutable MultiGraph for blast/domain math); ids mint with topology's `defaultEdgeId` convention so hosts correlate the two views | frozen record |
 | `BoardState` | `interface { version: number; edges: ReadonlyMap<EntityId, BoardEdgeRecord> }` | OPTIONAL GameState embed — the pipeline-local "what CAN happen" structural slice (§4.2 graph-is-map) that connect/disconnect mutate; `version` bumps on every mutation (topology's memoization convention); pre-door hosts compile and digest unchanged | Map iteration NEVER defines order — the digest sorts edges by id; lazy-materialized |
 | `HandToken` | `interface { index: number; busyUntilTick: SimTick; busyCauseId: CauseId \| null }` | one hand — free iff `busyUntilTick <= current tick` (occupancy is half-open `[start, busyUntilTick)`); `busyCauseId` names the intent event that took it | stable 0-based index = insertion order; §7.0 attribution |
@@ -466,7 +490,7 @@ driver calls `applyIntentDoor` BEFORE step 1 every tick. Import:
 | Export | Signature (as shipped) | Meaning | Determinism notes |
 |---|---|---|---|
 | `TickInputs` | `interface { envelopes; evidence; classes; dependencyEdges; retryPolicy; aggression; expressMaxConfidence; kneeRho?; routingLocks?; valueByUnit?; stormFactor?; suppressedRuleIds?; lanes?; externalIntents? }` | everything the steps need that `GameState` doesn't carry — host assembles per tick; replay-log fodder; `externalIntents` (readonly `ExternalIntent[]`) feeds the intent door — each entry EXACTLY ONCE (ambient-input contract, same as envelopes/evidence) | frozen data-in |
-| `TickResult` | `interface { state; events; outcomes; ruleFirings; intents; pressure; pendingReentries; doorReceipts; unlockProposals?; recoveryNotices?; corruptions? }` | one tick's complete answer; events concatenated in canonical step order — door events LEAD (the door runs before step 1); `doorReceipts` = per-intent door verdicts in (tick, seq) application order; `corruptions` = this tick's §3.1 corrupted completions, PRESENT ONLY while the corruption slice is live (the recoveryNotices seam law) | order-pinned |
+| `TickResult` | `interface { state; events; outcomes; ruleFirings; intents; pressure; pendingReentries; doorReceipts; unlockProposals?; recoveryNotices?; corruptions? }` | one tick's complete answer; events concatenated in canonical step order — door events LEAD (the door runs before step 1), then `reentry` stamps for children MATURED this tick (ADR-0017: the mint is pre-step-1, so the stream says WHO arrived before the steps run), then arrival/outcome/backpressure/economics; `doorReceipts` = per-intent door verdicts in (tick, seq) application order; `corruptions` = this tick's §3.1 corrupted completions, PRESENT ONLY while the corruption slice is live (the recoveryNotices seam law) | order-pinned |
 | `PendingReentry` | `interface { draft; readyAtTick; retryDepth; lineageRoot }` | checkpointable cross-tick driver memory (replay hand-off §3.3) | — |
 | `TickDriverOptions` | `interface { tickAdvance?; tickUs?; intents?; purgeProbeCap?; purgeVerifyTicks?; purgeTargetedMinNodes?; unlocks?: UnlockDriverWiring }` | fixed per-advance delta (default 1 real s @1× ⇒ exactly 1 tick); `intents` wires the door (hand costs/occupancy, placement validator, card lookup) — omitted = defaults, door still runs for any fed schedule; rec#5 knobs size the queue-attribution probe (probe cap 64 default, verify cadence 8, index floor 8 nodes); `unlocks` wires the §5 Phase-2 observer seam (see `UnlockDriverWiring` below) — omitted ⇒ `TickResult` carries no `unlockProposals` key at all | no wall clock |
 | `TickDriver` | `interface { advance(state, inputs): TickResult; exportPending(): { readonly pending: readonly PendingReentry[]; readonly depths: readonly (readonly [EntityId, number])[] } (frozen; `depths` carries the LIVE roster units' retry depths sorted byId — pre-F6 checkpoints dropped them and restored runs silently re-fuelled storm budgets); importPending(checkpoint, mintCounter): void; currentMintCounter(): number }` | the stateful scheduler object around pure steps — advance is pure w.r.t. GameState (the door runs FIRST inside every advance) | same (state,inputs) ⇒ same result |

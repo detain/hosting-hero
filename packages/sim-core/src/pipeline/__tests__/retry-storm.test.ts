@@ -150,4 +150,25 @@ describe("emergent retry storm (R-12)", () => {
     );
     for (const o of bounced.slice(0, 10)) expect(o.causeId.length).toBeGreaterThan(0);
   });
+
+  it("reentry events pair 1:1 with scheduled retries; the retry-kind stream is UNMOVED (ADR-0017 kind separation)", () => {
+    // Every retry STAMP schedules exactly one child; the storm quiets well
+    // before the 90-tick horizon (final roster empty, pinned above), so
+    // every scheduled child matures IN-RUN ⇒ exact bijection schedule↔maturity.
+    const totalRetries = storm.retriesPerTick.reduce((a, b) => a + b, 0);
+    expect(totalRetries).toBeGreaterThan(0);
+    const reentries = storm.results.flatMap((r) => r.events.filter((e) => e.kind === "reentry"));
+    expect(reentries.length).toBe(totalRetries);
+    // Storm children are bounce retries, never viral; grammar on both fields.
+    for (const e of reentries.slice(0, 8)) {
+      if (e.kind !== "reentry") continue;
+      expect(e.retryOf).not.toBeNull();
+      expect(String(e.causeId).startsWith("reentry:")).toBe(true);
+      expect(String(e.unitId).startsWith("re")).toBe(true);
+    }
+    // The control arm (maxRetries 0) never schedules ⇒ never matures:
+    expect(
+      control.results.reduce((n, r) => n + r.events.filter((e) => e.kind === "reentry").length, 0),
+    ).toBe(0);
+  });
 });

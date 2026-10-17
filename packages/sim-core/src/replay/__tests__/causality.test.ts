@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { ArrivalEvent, BouncedEvent, RetryEvent, SimEvent } from "../../types";
+import type { ArrivalEvent, BouncedEvent, ReentryEvent, RetryEvent, SimEvent } from "../../types";
 import { asCauseId, asEntityId } from "../../types";
 import { ReplayError } from "../canonical";
 import {
@@ -127,5 +127,23 @@ describe("causeRecordsFromEvents — the free SimEvent baseline", () => {
     expect(trace.factors.map((f) => f.causeId)).toEqual([C("e1"), C("e2"), C("e3")]);
     expect(redHerringLane(trace).join("\n")).toContain("checkpoint");
     expect(oneSentenceExplanation(trace)).toBe("arrival@1 → retry@2 → bounced@3");
+  });
+
+  it("reentry events carry the storm lineage — subject is the minted child (ADR-0017)", () => {
+    // The driver mints `re0@3` between ticks; only its reentry event makes
+    // the child's terminal traceable to the parent's arrival at all.
+    const arrival: ArrivalEvent = { kind: "arrival", atUs: 0n, tick: 1n, causeId: C("r1"), unitId: E("u1"), envelopeTableId: "spike" };
+    const retry: RetryEvent = { kind: "retry", atUs: 0n, tick: 2n, causeId: C("r2"), unitId: E("u1"), retryOf: E("u1") };
+    const reentry: ReentryEvent = {
+      kind: "reentry", atUs: 0n, tick: 3n, causeId: C("r3"),
+      unitId: E("re0@3"), retryOf: E("u1"), lineageRoot: E("u1"), retryDepth: 1,
+    };
+    const bounce: BouncedEvent = { kind: "bounced", atUs: 0n, tick: 3n, causeId: C("r4"), unitId: E("re0@3"), nodeId: E("edge") };
+    const parents = new Map([[C("r2"), C("r1")], [C("r3"), C("r2")], [C("r4"), C("r3")]]);
+    const records = causeRecordsFromEvents([arrival, retry, reentry, bounce], parents);
+    // Free enrichment: both child-side records now carry the mint as subject.
+    expect(records.filter((r) => r.subject === E("re0@3")).map((r) => r.causeId)).toEqual([C("r3"), C("r4")]);
+    const trace = traceContributingFactors(buildCauseIndex(records), C("r4"));
+    expect(trace.factors.map((f) => f.causeId)).toEqual([C("r1"), C("r2"), C("r3"), C("r4")]);
   });
 });

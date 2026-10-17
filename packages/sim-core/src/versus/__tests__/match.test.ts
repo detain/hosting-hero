@@ -8,12 +8,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { asMoney, asRunSeed, asRuleId, type ExternalIntent, type PolicyCard } from "../../types.ts";
+import { asCauseId, asEntityId, asMoney, asRunSeed, asRuleId, type EntityId, type ExternalIntent, type PolicyCard, type SimEvent } from "../../types.ts";
 import { digestState } from "../../pipeline/index.ts";
 import { createHarness } from "../../replay/index.ts";
 import type { StampedIntent } from "../../replay/index.ts";
 import type { ReplayContentHashes } from "../../types.ts";
-import { cardContentFingerprint, createVersusRunner, defaultPolicyCardIndex, initialVersusRunState, versusRuleBookHash, pickDecisiveWave, threatFromWaveUnitId, type PerWaveOutcome, type VersusMatchConfig, type VersusReserveIntent, type VersusRunState } from "../match.ts";
+import { cardContentFingerprint, createVersusRunner, defaultPolicyCardIndex, initialVersusRunState, versusRuleBookHash, pickDecisiveWave, pickEffectCause, threatFromWaveUnitId, type PerWaveOutcome, type VersusMatchConfig, type VersusReserveIntent, type VersusRunState } from "../match.ts";
 import { fromInt, fromRatio } from "../../kernel/fixed.ts";
 import { deckToWaveTable, resolveVersusMatch, scoreVersusMatch, stampReserveIntents } from "../match.ts";
 import { parseDefenseDeck, feintBudgetViolations, VersusError } from "../deck.ts";
@@ -91,10 +91,11 @@ describe("resolveVersusMatch — one full async resolution", () => {
     const waveRows = result.perWaveOutcomes.filter((row) => row.waveN !== null && row.label !== "unattributed");
     expect(waveRows).toHaveLength(8);
     expect(result.perWaveOutcomes.some((row) => row.label === "baseline")).toBe(true);
-    // Honest bookkeeping: matured re-entries that overflow-bounce in their
-    // OWN mint tick are unlabelable from outside the driver (no arrival
-    // event, pruned before the sweep) — they land in "unattributed", which
-    // may exist but must never swallow wave traffic.
+    // Honest bookkeeping (ADR-0017): matured re-entries carry their mint-tick
+    // lineage on driver-stamped `reentry` events, so terminals resolve to
+    // their wave rows — "unattributed" is ABSENT on healthy traffic by design
+    // (it could only ever hold viral lineages, which versus disables), and
+    // must never swallow wave traffic.
     for (const row of waveRows) {
       expect(row.waveN).not.toBeNull();
       expect(row.served + row.blocked + row.falsePositive + row.landed).toBeGreaterThan(0);
@@ -110,6 +111,57 @@ describe("resolveVersusMatch — one full async resolution", () => {
     expect(result.decisiveWaveN).toBeLessThanOrEqual(8);
     expect(result.attribution.startsWith(`Wave ${result.decisiveWaveN}:`)).toBe(true);
     expect(result.attributionCauseId).toContain("versus-live");
+  });
+
+  test("ADR-0017 preference law — the decisive cause names a DIRECT table-grammar terminal, never a re-mint ghost", () => {
+    // End-to-end shape pin: the shipped fixture's decisive wave is
+    // landed-dominant and its ghost terminals sit outside the preferred
+    // kinds, so this sentence alone does NOT falsify the law — the
+    // structural witness below (which owns both classes inside one
+    // preferred kind) is the flip-falsifier. Every terminal causeId embeds
+    // its unitId: a direct winner carries the pipeline arrival grammar
+    // `<tableId>@<tick>#<entry>.<i>`, a ghost carries `re<mint>@<tick>`.
+    expect(result.attributionCauseId).toMatch(/versus-live@\d+#\d+\.\d+/);
+    expect(result.attributionCauseId).not.toMatch(/\bre\d+@\d+/);
+  });
+
+  test("ADR-0017 preference law — STRUCTURAL witness: a later ghost breach cannot outrank an earlier direct one", () => {
+    // Both classes labelled to the decisive wave, the ghost strictly LATER
+    // — the pre-ADR-0017 tie (latest atUs) would name the ghost; the law
+    // must name the minted threat. Inverting `? isDirect` (match.ts) in
+    // this tree reddens leg 1; the control leg proves the law EXCLUDES the
+    // ghost only in competition and never drops it from a solo pool.
+    const tableId = "tvl";
+    const directUnit = asEntityId("tvl@12#0.0");
+    const ghostUnit = asEntityId("re9@13");
+    const direct = Object.freeze({
+      kind: "landed", tick: 12n, atUs: 12n * 60_000_000n,
+      causeId: asCauseId("breach:origin:tvl@12#0.0"),
+      unitId: directUnit, targetId: asEntityId("origin"),
+    } satisfies SimEvent);
+    const ghost = Object.freeze({
+      kind: "landed", tick: 130n, atUs: 130n * 60_000_000n,
+      causeId: asCauseId("breach:origin:re9@13"),
+      unitId: ghostUnit, targetId: asEntityId("origin"),
+    } satisfies SimEvent);
+    const run = Object.freeze({
+      events: Object.freeze([direct, ghost]),
+      unitLabel: new Map<EntityId, string>([
+        [directUnit, "wave-1"], [ghostUnit, "wave-1"],
+      ]),
+      retryParent: new Map<EntityId, EntityId>([[ghostUnit, directUnit]]),
+    });
+    const preferred = Object.freeze(["landed"] as const);
+    // 1. both classes → DIRECT wins despite the ghost's later atUs.
+    expect(pickEffectCause(run, "wave-1", preferred, tableId)?.causeId)
+      .toBe("breach:origin:tvl@12#0.0");
+    // 2. control: ghost-only pool still resolves (law excludes, never drops).
+    const ghostOnly = Object.freeze({ ...run, events: Object.freeze([ghost]) });
+    expect(pickEffectCause(ghostOnly, "wave-1", preferred, tableId)?.causeId)
+      .toBe("breach:origin:re9@13");
+    // 3. empty pool → null (early exit, no surprise).
+    const empty = Object.freeze({ ...run, events: Object.freeze([]) });
+    expect(pickEffectCause(empty, "wave-1", preferred, tableId)).toBeNull();
   });
 
   test("weights are DATA: two weight records → two scores", () => {
@@ -222,11 +274,12 @@ describe("versus lane — OD-1/OD-2 pin (weights are data, never a scorecard)", 
   });
 });
 
-describe("review pins — conservation and the honest unattributed floor", () => {
+describe("review pins — conservation and the CLOSED unattributed floor (ADR-0017)", () => {
   // Saturation probe (reviewer config shape): tight patience + heavy crowd
-  // makes every matured re-entry bounce in its OWN mint tick — pruned
-  // before any sweep sees it, with no arrival event to label it. Those
-  // terminals are the honest floor: unlabelable from outside the driver.
+  // made every matured re-entry bounce in its OWN mint tick. Pre-ADR-0017
+  // those terminals were unlabelable from outside the driver (no arrival
+  // event, pruned before the sweep) and floor-ed into "unattributed"; the
+  // driver's reentry events now carry the mint lineage, closing the floor.
   const COLUMNS = ["served", "blocked", "falsePositive", "landed"] as const;
 
   for (const seed of [4242n, 777n, 904n]) {
@@ -238,17 +291,27 @@ describe("review pins — conservation and the honest unattributed floor", () =>
       }
     });
 
-    test(`seed ${seed}: the unattributed row exists at its honest floor — all blocked, never a wave's traffic`, () => {
+    test(`seed ${seed}: the floor is closed — reentry events carry mint-tick lineage`, () => {
       const result = resolveVersusMatch(matchConfig({ seed: versusSeed(seed), matchTicks: 140 }));
       const stray = result.perWaveOutcomes.find((row) => row.label === "unattributed");
-      expect(stray, "saturation probe must reproduce the mint-tick-bounce floor").toBeDefined();
-      expect(stray?.waveN).toBeNull();
-      expect(stray!.blocked).toBeGreaterThan(0);
-      // Fingerprint from the forensic sweep: every floored terminal is a
-      // retry child killed while blocked — the other columns stay empty.
-      expect(stray!.served).toBe(0);
-      expect(stray!.landed).toBe(0);
-      expect(stray!.falsePositive).toBe(0);
+      // #RA-era pin: pre-ADR-0017 this row floor-ed at 1,040 all-blocked
+      // terminals on every seed (the forensic-sweep fingerprint: served /
+      // landed / falsePositive all zero — retry children killed while
+      // blocked). The row must now be ABSENT entirely.
+      expect(stray, "reentry lineage must label every mint-tick terminal").toBeUndefined();
+      // Totals are INVARIANT under the flip (bumps moved ROWS, never counts)
+      // — and every terminal that once floor-ed now resolves to a wave:
+      // with the stray row absent, the conservation leg above forces the
+      // wave+baseline rows to sum to the full totals. Self-derived; the old
+      // 1,040 witness is NOT re-encoded as a fresh literal.
+      expect(result.totals.blocked).toBeGreaterThan(0);
+      const waveBlocked = result.perWaveOutcomes
+        .filter((r) => r.waveN !== null)
+        .reduce((total, r) => total + r.blocked, 0);
+      const baselineBlocked = result.perWaveOutcomes
+        .filter((r) => r.waveN === null)
+        .reduce((total, r) => total + r.blocked, 0);
+      expect(waveBlocked + baselineBlocked).toBe(result.totals.blocked);
       // wave traffic is never swallowed: every wave row carries terminals
       for (const row of result.perWaveOutcomes.filter((r) => r.waveN !== null)) {
         expect(row.served + row.blocked + row.falsePositive + row.landed).toBeGreaterThan(0);
@@ -739,15 +802,17 @@ describe("I-P decision 6 — three-tag key-space pin + ruleBookHash id-inclusion
   });
 });
 
-describe("I-P decision 6 — the unattributed floor is grammar-forced", () => {
+describe("I-P decision 6 — re-mint grammar stands; attribution moved to the LINEAGE side (ADR-0017)", () => {
   test("attribution demands the `${tableId}~n~threat~ordinal` grammar — re-mint ids cannot wear it", () => {
-    // Driver re-minted units are `re<mint>@<tick>` ids — no tableId, no
-    // `~` — so their terminals can ONLY reach the "unattributed" row.
-    // The live floor (all-blocked, never a wave's traffic) is pinned
-    // behaviorally by the conservation tests above; this is the
-    // structural half: the floor is FORCED BY GRAMMAR, not a label-map
-    // accident. Widening attribution (re-mint stamps riding the arrival
-    // lineage) is a CROSS-LANE pipeline ticket — out of program.
+    // Driver re-minted units are `re<mint>@<tick>` ids — no tableId, no `~`.
+    // The GRAMMAR fact is UNMOVED (threatFromWaveUnitId is untouched, these
+    // legs stay falsifiable against it). What ADR-0017 inverted is the
+    // behavioral consequence: re-mint terminals no longer floor to
+    // "unattributed" — the driver stamps `reentry` events carrying (unitId,
+    // retryOf, lineageRoot), and versus labels children from the parent's
+    // leg at maturity. Attribution is LINEAGE-side, not grammar-side; the
+    // cross-lane widening the old comment deferred is now SHIPPED (the
+    // live-floor half is re-pinned by the conservation describe above).
     expect(threatFromWaveUnitId("versus-live~3~grudge-booter~0", "versus-live")).toBe("grudge-booter");
     expect(threatFromWaveUnitId("re7@99", "versus-live")).toBeNull();
     expect(threatFromWaveUnitId("re2@3", "versus-live")).toBeNull();
