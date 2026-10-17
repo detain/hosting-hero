@@ -24,6 +24,7 @@ export * from "./pricingDial";
 export * from "./recoveryWatch";
 export * from "./flavourFeed";
 export * from "./coopRoom";
+export * from "./coopRoomWire";
 export {
   buildCandidates,
   buildHudCandidates,

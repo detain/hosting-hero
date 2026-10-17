@@ -11,11 +11,19 @@
  * Zero timers, zero declared motion (the whole panel is click-driven).
  * Colors: era tokens + census-audited ledger hue vars (grey/amber/green/
  * alarm) only — the Strobe/Motion audit sees no animation surface here.
+ *
+ * TWO MODES (lane L-WS-B, ADR-0017): "Local demo" is the OD-9/OD-17-A
+ * single-browser play, byte-unchanged. "Wire" mounts the coopRoomWire
+ * controller — a real WebSocket seat of the two-browser co-op demo over the
+ * hh-coop-transport@1 dev carrier. THE ZERO-TIMER PIN SURVIVES BOTH MODES:
+ * the socket and the pump start ONLY on user click (connect / pump), never
+ * on mount, and every wire view is a recomputation of the controller's
+ * current state (wireTick invalidation, not a poller).
  */
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import type { CoopTimelineKind } from "@hh/sim-core/replay";
 import { COOP_MAX_SEAT_WRITERS } from "@hh/sim-core/save";
-import type { EntityId } from "@hh/sim-core/types";
+import { PlayerVerb, type EntityId } from "@hh/sim-core/types";
 import {
   attributionGuardStatus,
   attributionPreview,
@@ -33,6 +41,8 @@ import {
   stageRecord,
   vacateSeatInRoom,
 } from "./coopRoom";
+import { createCoopRoomWire } from "./coopRoomWire";
+import type { CoopRoomWire } from "./coopRoomWire";
 
 const TAPE_LIMIT = 10;
 
@@ -135,10 +145,134 @@ function isOpen(id: EntityId): boolean {
 function outbox(id: EntityId) {
   return pendingFeedOf(room.value, id);
 }
+
+/* ── Wire mode (lane L-WS-B): the same room, real seats ──
+ * The controller is a plain object — nothing inside it is reactive — so every
+ * interaction bumps wireTick and the derived views recompute wholesale.
+ * Zero timers still: the socket opens on connect-click, the pump runs on
+ * pump-click, nothing self-schedules. */
+
+const mode = ref<"local" | "wire">("local");
+const wireUrl = ref("ws://127.0.0.1:9210");
+const wireSeatId = ref("");
+const wire = ref<CoopRoomWire | null>(null);
+const wireError = ref<string | null>(null);
+const wireTick = ref(0);
+
+/** One guarded wire call: throws quote onto the visible error line (the
+ *  transport's dup-conflict included), and every call re-reads the whole
+ *  controller state through wireTick. Law 4 — the panel witnesses, never
+ *  swallows. */
+function onWire(run: () => void): void {
+  wireError.value = null;
+  try {
+    run();
+  } catch (error) {
+    wireError.value = error instanceof Error ? error.message : String(error);
+  }
+  wireTick.value += 1;
+}
+
+function onConnect(): void {
+  onWire(() => {
+    wire.value = createCoopRoomWire({ url: wireUrl.value.trim(), seat: wireSeatId.value.trim() });
+  });
+}
+
+function onDisconnect(): void {
+  onWire(() => {
+    wire.value?.dispose();
+    wire.value = null;
+  });
+}
+
+function onPump(): void {
+  onWire(() => void wire.value?.pump(1));
+}
+
+function onCatchUp(): void {
+  onWire(() => void wire.value?.catchUp());
+}
+
+function onNote(): void {
+  onWire(() => wire.value?.submitNote(`note from ${wire.value.seat}`));
+}
+
+function onLook(): void {
+  onWire(() => wire.value?.submitSightline("shared"));
+}
+
+function onPlace(): void {
+  onWire(() =>
+    wire.value?.submitAction(PlayerVerb.PlaceDevice, {
+      nodeId: `n-${wire.value.seat}`,
+      deviceKind: "server",
+      template: null,
+    }),
+  );
+}
+
+function onTalk(): void {
+  onWire(() =>
+    wire.value?.submitAction(PlayerVerb.Communicate, {
+      target: null,
+      note: `hello from ${wire.value.seat}`,
+    }),
+  );
+}
+
+function onLeaveSeat(): void {
+  onWire(() => wire.value?.leave());
+}
+
+function onRejoinSeat(): void {
+  onWire(() => wire.value?.join());
+}
+
+onBeforeUnmount(() => wire.value?.dispose());
+
+const wireTape = computed(() => {
+  void wireTick.value;
+  return wire.value?.tapeRows(TAPE_LIMIT) ?? [];
+});
+const wireLedger = computed(() => {
+  void wireTick.value;
+  return wire.value?.ledgerRows() ?? [];
+});
+const wireDigest = computed(() => {
+  void wireTick.value;
+  return wire.value?.localDigest() ?? null;
+});
+const wireLocalTick = computed(() => {
+  void wireTick.value;
+  return wire.value?.runnerTick() ?? 0n;
+});
+const wireHubTick = computed(() => {
+  void wireTick.value;
+  return wire.value?.hubTick() ?? null;
+});
+const wireDrops = computed(() => {
+  void wireTick.value;
+  return wire.value?.droppedSends() ?? 0;
+});
+const wireFaults = computed(() => {
+  void wireTick.value;
+  return wire.value?.faultsText() ?? [];
+});
+const wireOpen = computed(() => {
+  void wireTick.value;
+  return wire.value?.connected() ?? false;
+});
 </script>
 
 <template>
   <div class="room" data-test="coop-room" :data-tick="room.tick.toString()">
+    <div class="mode-bar" data-test="coop-mode-bar">
+      <button type="button" data-test="coop-mode-local" :data-active="mode === 'local'" @click="mode = 'local'">Local demo</button>
+      <button type="button" data-test="coop-mode-wire" :data-active="mode === 'wire'" @click="mode = 'wire'">Wire</button>
+    </div>
+
+    <template v-if="mode === 'local'">
     <div class="room-bar">
       <span class="tick" data-test="coop-tick">t{{ room.tick }}</span>
       <button type="button" data-test="coop-advance" @click="onAdvance">relay tick +1</button>
@@ -227,13 +361,83 @@ function outbox(id: EntityId) {
         </template>
       </section>
     </div>
+    </template>
+
+    <!-- WIRE MODE — two real browsers, one relay (lane L-WS-B, ADR-0017). -->
+    <template v-else>
+      <div class="room-bar">
+        <template v-if="wire === null">
+          <label class="verb">
+            url
+            <input v-model="wireUrl" type="text" size="24" data-test="coop-wire-url" />
+          </label>
+          <label class="verb">
+            seat
+            <input v-model="wireSeatId" type="text" size="10" data-test="coop-wire-seat" />
+          </label>
+          <button type="button" data-test="coop-wire-connect" :disabled="wireSeatId.trim() === ''" @click="onConnect">connect</button>
+        </template>
+        <template v-else>
+          <span class="tick" data-test="coop-wire-status" :data-open="String(wireOpen)">
+            seat {{ wire.seat }} · {{ wireOpen ? "socket open" : "socket closed" }}
+          </span>
+          <span class="tick" data-test="coop-wire-ticks">local t{{ wireLocalTick }} · hub t{{ wireHubTick ?? "—" }}</span>
+          <button type="button" data-test="coop-wire-pump" @click="onPump">pump +1</button>
+          <button type="button" data-test="coop-wire-catchup" @click="onCatchUp">catch up</button>
+          <button type="button" data-test="coop-wire-leave" :disabled="!wireOpen" @click="onLeaveSeat">leave seat</button>
+          <button type="button" data-test="coop-wire-rejoin" :disabled="wireOpen" @click="onRejoinSeat">rejoin seat</button>
+          <button type="button" data-test="coop-wire-disconnect" @click="onDisconnect">disconnect</button>
+        </template>
+        <span v-if="wireDrops > 0" class="seat-status" data-test="coop-wire-drops" :data-open="false">{{ wireDrops }} carrier drops</span>
+      </div>
+
+      <p v-if="wireError !== null" class="refusal" role="alert" data-test="coop-wire-error">{{ wireError }}</p>
+      <p v-for="(fault, i) in wireFaults" :key="`wf-${i}`" class="refusal" role="alert" data-test="coop-wire-fault">{{ fault }}</p>
+
+      <div v-if="wire !== null" class="acts" data-test="coop-wire-acts">
+        <button type="button" data-test="coop-wire-note" :disabled="!wireOpen" @click="onNote">note</button>
+        <button type="button" data-test="coop-wire-look" :disabled="!wireOpen" @click="onLook">sightline</button>
+        <button type="button" data-test="coop-wire-place" :disabled="!wireOpen" @click="onPlace">place device</button>
+        <button type="button" data-test="coop-wire-talk" :disabled="!wireOpen" @click="onTalk">communicate</button>
+      </div>
+
+      <div class="columns">
+        <section class="col">
+          <h5>wire tape — newest first</h5>
+          <ul v-if="wireTape.length > 0" class="tape">
+            <li v-for="row in wireTape" :key="row.key" class="tape-row" data-test="coop-wire-tape-row" :data-ghost="!row.seated">
+              <span class="ts">(t{{ row.tick }},s{{ row.seq }})</span>
+              <span class="who">{{ row.label }}</span>
+              <span class="kind">{{ row.kind }}</span>
+              <span class="what">{{ row.payloadText }}</span>
+              <span v-if="!row.seated" class="ghost">GHOST</span>
+            </li>
+          </ul>
+          <p v-else class="empty" data-test="coop-wire-tape-empty">no wire lines yet — the carrier answers on the next pump.</p>
+        </section>
+
+        <section class="col">
+          <h5>wire ledger + local sim digest</h5>
+          <ul v-if="wireLedger.length > 0" class="tape">
+            <li v-for="t in wireLedger" :key="`${t.participantId}-${t.joinedAtTick}`" class="tape-row" data-test="coop-wire-tenure-row">
+              <span class="who">{{ t.participantId }}</span>
+              <span class="kind">{{ t.open ? "seated" : "left" }}</span>
+              <span class="what">joined t{{ t.joinedAtTick }}{{ t.leftAtTick === null ? "" : ` · left t${t.leftAtTick}` }}</span>
+            </li>
+          </ul>
+          <p v-else class="empty" data-test="coop-wire-ledger-empty">ledger dark — no seat-state has arrived.</p>
+          <p class="digest" data-test="coop-wire-digest">local digest <code>{{ wireDigest ?? "—" }}</code></p>
+        </section>
+      </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .room { display: grid; gap: 8px; font-family: var(--hh-typeface); font-size: 11px; }
+.mode-bar { display: flex; gap: 6px; }
 .room-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.room-bar button, .seat-btns button, .acts button {
+.room-bar button, .mode-bar button, .seat-btns button, .acts button {
   border: 1px solid color-mix(in srgb, var(--hh-accent) 40%, transparent);
   background: transparent;
   color: var(--hh-accent);
@@ -242,7 +446,8 @@ function outbox(id: EntityId) {
   padding: 1px 8px;
   cursor: pointer;
 }
-.room-bar button:disabled, .seat-btns button:disabled, .acts button:disabled { opacity: .4; cursor: default; }
+.mode-bar button[data-active="true"] { color: var(--hh-hue-green); border-color: color-mix(in srgb, var(--hh-hue-green) 45%, transparent); }
+.room-bar button:disabled, .mode-bar button:disabled, .seat-btns button:disabled, .acts button:disabled { opacity: .4; cursor: default; }
 .tick { color: var(--hh-hue-grey); font-variant-numeric: tabular-nums; }
 .guard { margin-left: auto; color: var(--hh-hue-grey); }
 .guard[data-armed="true"] { color: var(--hh-hue-green); }
