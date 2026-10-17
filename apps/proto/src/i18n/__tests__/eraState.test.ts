@@ -12,7 +12,7 @@
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { computed, watchEffect } from "vue";
-import { DEFAULT_ERA_YEAR, era, getEra, setEra, type EraYear } from "../eraState.ts";
+import { DEFAULT_ERA_YEAR, ERA_YEARS, era, getEra, nextEra, setEra, type EraYear } from "../eraState.ts";
 import { t } from "../packStore.ts";
 import { describeRefusal } from "../refusalCopy.ts";
 import { noticeWireCopy, prepayLockCopy } from "../noticeCopy.ts";
@@ -28,6 +28,51 @@ describe("i18n/eraState · the shared ref mirrors the old constant", () => {
     setEra(1998);
     expect(getEra()).toBe(1998);
     expect(era.value).toBe(1998);
+  });
+});
+
+describe("i18n/eraState · the OD-22 ratified four-era canon + cycle law", () => {
+  it("ERA_YEARS is the closed ascending roster {1998,2008,2016,2026}; DEFAULT is a member", () => {
+    expect([...ERA_YEARS]).toEqual([1998, 2008, 2016, 2026]);
+    expect(ERA_YEARS.indexOf(DEFAULT_ERA_YEAR)).toBe(3);
+    expect(DEFAULT_ERA_YEAR).toBe(2026);
+  });
+
+  it("nextEra advances ascending through the canon and wraps 2026 → 1998", () => {
+    expect(nextEra(1998)).toBe(2008);
+    expect(nextEra(2008)).toBe(2016);
+    expect(nextEra(2016)).toBe(2026);
+    expect(nextEra(2026)).toBe(1998); // wrap — the shell cycle never stops at the demo pair
+  });
+
+  it("four clicks from DEFAULT land back on DEFAULT (a full canon lap)", () => {
+    let current: EraYear = getEra();
+    expect(current).toBe(DEFAULT_ERA_YEAR);
+    const visited: number[] = [];
+    for (let i = 0; i < 4; i += 1) {
+      current = nextEra(current);
+      visited.push(current);
+    }
+    expect(visited).toEqual([1998, 2008, 2016, 2026]);
+    expect(current).toBe(DEFAULT_ERA_YEAR);
+  });
+
+  it("setEra accepts every canon rung; copy ladder degrades honestly on unauthored years", () => {
+    // 2008/2016 have no authored era-variant text yet (campaign content wave);
+    // pickEraText's earlier/fallback ladder must resolve them, never throw —
+    // ticket.subject.cron (eraCodes 1998/2026) renders the EARLIER rung at
+    // 2008/2016 and the exact rung at 2026.
+    for (const year of ERA_YEARS) {
+      setEra(year);
+      expect(getEra()).toBe(year);
+      expect(() => t("shared-web", "ticket.subject.cron")).not.toThrow();
+    }
+    setEra(2008);
+    expect(t("shared-web", "ticket.subject.cron")).toBe("my hit counter doesnt go up"); // ladder → earlier (1998)
+    setEra(2016);
+    expect(t("shared-web", "ticket.subject.cron")).toBe("my hit counter doesnt go up"); // ladder → earlier (1998)
+    setEra(DEFAULT_ERA_YEAR);
+    expect(t("shared-web", "ticket.subject.cron")).toBe("my cron didnt run"); // exact rung
   });
 });
 

@@ -13,7 +13,7 @@
  */
 import { computed, ref } from "vue";
 import { asRunSeed, type RunSeed } from "@hh/sim-core/types";
-import { getEra, setEra } from "../i18n/eraState";
+import { getEra, nextEra, setEra } from "../i18n/eraState";
 import {
   defaultFlavourPool,
   flavourLineAt,
@@ -55,7 +55,8 @@ function chooseRoot(root: string | null): void {
 }
 
 function flipEra(): void {
-  setEra(getEra() === 2026 ? 1998 : 2026);
+  // Same N-way authority as App.vue's shell button (eraState.nextEra).
+  setEra(nextEra(getEra()));
 }
 </script>
 

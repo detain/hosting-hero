@@ -28,7 +28,7 @@ import { G1_INSTRUMENTS } from "./chrome/instruments/registry";
 import { ALL_GATE_MOUNTS, type GateMount } from "./gates";
 import { buildCandidates, formatMicroUsd, formatRunClock, isSpiking, worstState, rhoDisplayOf } from "./chrome/metrics";
 import { connectionState, ingestProjection, fault, projection as projectionRef } from "./state/observedStore";
-import { era, setEra } from "./i18n/eraState";
+import { era, nextEra, setEra } from "./i18n/eraState";
 import { SimClient, asWorkerLike, type WorkerLike } from "./bridge/simClient";
 import { globalBudget } from "./render/budget";
 import DecisionRail from "./decision/DecisionRail.vue"; // §7.6 marked-decision rail
@@ -133,7 +133,9 @@ function applyEra(): void {
 watch(era, applyEra);
 
 function toggleEra(): void {
-  setEra(era.value === 1998 ? 2026 : 1998);
+  // N-way canon cycle (OD-22 ratified four-phase axis) — eraState.nextEra is
+  // the single authority, wrapped at 2026 back to 1998.
+  setEra(nextEra(era.value));
   applyEra();
 }
 

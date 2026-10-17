@@ -3,8 +3,13 @@
  *   --hh-typeface · --hh-radius · --hh-surface · --hh-accent
  * Layout, hierarchy, iconography and spacing NEVER change with era; every
  * bezel in the game re-skins for free because they consume only these four.
- * The two demo eras below are deliberately far apart (§100s terminal steel
- * vs modern ink-glass) to prove the token law is real, not decorative.
+ * The four blocks below are the RATIFIED era canon (OD-22(c)): 1998 terminal
+ * steel, 2008 glassy web-2.0 (radius 6px per the §8.10 corner-radius ladder),
+ * 2016 flat dark dashboard (radius 4px), 2026 modern ink-glass. Accents are
+ * each era's key hue; every pairing survives the §8.14 AA census at all four
+ * rungs — chrome/__tests__/contrastAudit.test.ts parses THIS file as its
+ * era list, so widening here IS widening the audited gate. System-fallback
+ * stacks only — no webfont is fetched; the stack itself is the mechanism.
  */
 
 html[data-era="1998"] {
@@ -12,6 +17,20 @@ html[data-era="1998"] {
   --hh-radius: 0px;
   --hh-surface: #171d24;
   --hh-accent: #f2b133;
+}
+
+html[data-era="2008"] {
+  --hh-typeface: "Lucida Grande", "Segoe UI", Tahoma, sans-serif;
+  --hh-radius: 6px;
+  --hh-surface: #10222e;
+  --hh-accent: #3b9eff;
+}
+
+html[data-era="2016"] {
+  --hh-typeface: system-ui, "Roboto", "Segoe UI", "Helvetica Neue", sans-serif;
+  --hh-radius: 4px;
+  --hh-surface: #1b1e22;
+  --hh-accent: #1abc9c;
 }
 
 html[data-era="2026"] {

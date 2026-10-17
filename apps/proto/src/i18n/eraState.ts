@@ -4,11 +4,12 @@
  * (state/observedStore.ts): one `shallowRef`, free functions as the read/
  * write surface, no Pinia, no provide/inject.
  *
- * Why it lives here (i18n/): the era's only consumer today is COPY — the
- * packs carry era-variant templates and every resolution path (`t()`,
- * `describeRefusal`, the notice helpers) reads this ref to pick the year.
- * The shell keeps the VISUAL half of the toggle (data-era on <html>, the
- * 4-token re-skin) by importing the same ref.
+ * Why it lives here (i18n/): the era's consumer half is COPY — the packs
+ * carry era-variant templates and every resolution path (`t()`,
+ * `describeRefusal`, the notice helpers) reads this ref to pick the year —
+ * AND the ratified campaign-phase skin axis. The shell keeps the VISUAL half
+ * of the toggle (data-era on <html>, the 4-token re-skin) by importing the
+ * same ref.
  *
  * Reactivity law: readers call `getEra()` (or omit the `eraYear` argument,
  * whose default resolves through it) INSIDE their computed/render effect, so
@@ -16,16 +17,26 @@
  * Plain (non-era-variant) templates resolve byte-identically at every year —
  * flipping the era never churns their words, only their re-evaluation.
  *
- * Law 2: `EraYear` is the closed set of eras the packs actually author
- * (eraCodes 1998/2026 in shared-web; the other nine registered packs —
- * game and the eight type banks — ship zero era objects) — an
- * unauthored year is unrepresentable at this boundary, so `pickEraText`'s
- * earlier/fallback ladder never sees a caller typo.
+ * Law 2 (rewritten per OD-22(c), 2026-10-09b ratified): `EraYear` is the
+ * CLOSED era canon — exactly {1998, 2008, 2016, 2026}, the four campaign
+ * phases §8.10's corner-radius/surface ladder enumerates. The canon is the
+ * LAW axis, wider than today's authored copy on purpose: shared-web is the
+ * only pack authoring era-variant text and its `eraCodes` stay the demo pair
+ * 1998/2026 (the 2008/2016 copy rungs land with the campaign content wave).
+ * At an unauthored rung `pickEraText`'s earlier/fallback ladder degrades
+ * honestly to the nearest authored text — the skin changes, the words ride
+ * the ladder — so an unauthored year is a ratified PLACEHOLDER, never a
+ * caller typo: values outside the canon remain unrepresentable at this
+ * boundary, machine-pinned pack-side by loader/__tests__/era-canon.test.ts.
  */
 import { shallowRef, type Ref } from "vue";
 
-/** The two eras the shipped packs author (shared-web `eraCodes`). */
-export type EraYear = 1998 | 2026;
+/** The ratified OD-22(c) era canon, ascending — the single source of both
+ *  the `EraYear` union and the shell's toggle cycle order. */
+export const ERA_YEARS = [1998, 2008, 2016, 2026] as const;
+
+/** The closed era canon (§8.10 four-phase plan, OD-22 option (c) ratified). */
+export type EraYear = (typeof ERA_YEARS)[number];
 
 /** The era the toggle starts on — the former packStore.DEFAULT_ERA_YEAR,
  *  kept exact so pinning tests and the initial render never move. */
@@ -34,7 +45,8 @@ export const DEFAULT_ERA_YEAR: EraYear = 2026;
 /** The single shared toggle. Write ONLY through setEra(). */
 export const era: Ref<EraYear> = shallowRef<EraYear>(DEFAULT_ERA_YEAR);
 
-/** The one write path — App.vue's toggle button calls this. */
+/** The one write path — the shell toggle and the flavour-feed mirror call
+ *  this (directly, or through nextEra()'s cycle). */
 export function setEra(next: EraYear): void {
   era.value = next;
 }
@@ -42,4 +54,21 @@ export function setEra(next: EraYear): void {
 /** Read surface for copy resolvers: the CURRENT era year as a plain int. */
 export function getEra(): EraYear {
   return era.value;
+}
+
+/** The cycle law: advance to the NEXT canon year, wrapping 2026 → 1998.
+ *  Pure so both mirrors (App.vue's button, FlavourFeed's flip) and the test
+ *  share ONE authority — a divergent cycle in either mirror is untypable. */
+export function nextEra(current: EraYear): EraYear {
+  const index = ERA_YEARS.indexOf(current);
+  if (index === -1) {
+    throw new Error(`era canon: ${String(current)} is not a ratified era`);
+  }
+  const next = ERA_YEARS[(index + 1) % ERA_YEARS.length];
+  // Unreachable for a valid index over a non-empty tuple — the guard exists
+  // because noUncheckedIndexedAccess will not prove modular positions total.
+  if (next === undefined) {
+    throw new Error(`era canon: no rung after ${String(current)}`);
+  }
+  return next;
 }

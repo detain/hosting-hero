@@ -68,8 +68,8 @@ function styleCssOf(file: string): string {
 /* ------------------------------------------------------------ the AA gate */
 
 describe("contrast audit — the shipped chrome census meets WCAG AA", () => {
-  it("era-tokens.css parses to exactly the two demo eras (drift tripwire)", () => {
-    expect(REAL_ERAS.map((e) => e.era)).toEqual(["1998", "2026"]);
+  it("era-tokens.css parses to exactly the four canon eras (drift tripwire)", () => {
+    expect(REAL_ERAS.map((e) => e.era)).toEqual(["1998", "2008", "2016", "2026"]);
     for (const era of REAL_ERAS) expect(() => parseEraTokens(era)).not.toThrow();
   });
 
@@ -77,7 +77,7 @@ describe("contrast audit — the shipped chrome census meets WCAG AA", () => {
     expect(CHROME_CONTRAST_SPECS).toHaveLength(41);
   });
 
-  it("EVERY pairing passes its role floor, in BOTH eras (the gate)", () => {
+  it("EVERY pairing passes its role floor, in ALL FOUR canon eras (the gate)", () => {
     const grid = buildChromeInventory(REAL_ERAS);
     expect(grid).toHaveLength(CHROME_CONTRAST_SPECS.length * REAL_ERAS.length);
     const violations = findAaViolations(grid).map(formatPairFailure);

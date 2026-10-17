@@ -7,7 +7,8 @@
  * selection (the stage swaps live), Home/End jump to the ends.
  *
  * Styling obeys the era law: only the four --hh-* tokens carry identity, so
- * the rail re-skins 1998↔2026 for free. The selected row gets the accent
+ * the rail re-skins across the ratified four-era canon (1998/2008/2016/2026)
+ * for free. The selected row gets the accent
  * edge-bar and a surface lift — one quiet motion, no confetti.
  */
 import { ref, watch, nextTick } from "vue";

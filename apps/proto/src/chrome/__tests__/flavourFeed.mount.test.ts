@@ -120,11 +120,11 @@ describe("FlavourFeed.vue", () => {
     const w = mount(FlavourFeed);
     expect(getEra()).toBe(2026);
     await w.get('[data-test="feed-era"]').trigger("click");
-    expect(getEra()).toBe(1998); // the shell's own toggle sees the same ref
+    expect(getEra()).toBe(1998); // the shell's own toggle sees the same ref (2026 wraps to canon start)
     expect(w.get(".feed-meta").text()).toContain("1998");
     await w.get('[data-test="feed-era"]').trigger("click");
-    expect(getEra()).toBe(2026);
-    expect(w.get(".feed-meta").text()).toContain("2026");
+    expect(getEra()).toBe(2008); // N-way OD-22 canon cycle: 1998 → 2008, not back to 2026
+    expect(w.get(".feed-meta").text()).toContain("2008");
     w.unmount();
   });
 

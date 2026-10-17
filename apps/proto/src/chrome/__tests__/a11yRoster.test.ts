@@ -135,6 +135,8 @@ describe("roster ledger — the four live rows survive inspection", () => {
     expect(CHROME_CONTRAST_SPECS.length).toBeGreaterThanOrEqual(40);
     const eras = [
       parseEraTokens({ era: "1998", surface: "#171d24", accent: "#f2b133" }),
+      parseEraTokens({ era: "2008", surface: "#10222e", accent: "#3b9eff" }),
+      parseEraTokens({ era: "2016", surface: "#1b1e22", accent: "#1abc9c" }),
       parseEraTokens({ era: "2026", surface: "#0d131c", accent: "#35e0e6" }),
     ];
     expect(findAaViolations(buildChromeInventory(eras))).toStrictEqual([]);
