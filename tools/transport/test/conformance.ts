@@ -23,12 +23,12 @@ import { createTransportClient } from "../src/client.ts";
 import type { TransportClient } from "../src/client.ts";
 import { createInMemoryTransport } from "../src/inMemory.ts";
 import type { InMemoryTransport } from "../src/inMemory.ts";
-import { encodeFrame, TransportError } from "../src/codec.ts";
+import { decodeFrame, encodeFrame, TransportError } from "../src/codec.ts";
 import {
   TRANSPORT_PROTOCOL,
   TRANSPORT_PROTOCOL_VERSION,
 } from "../src/envelope.ts";
-import type { SeatViewWire } from "../src/envelope.ts";
+import type { SeatStateFrame, SeatViewWire, TransportCellWire } from "../src/envelope.ts";
 
 export const HEAD = { protocol: TRANSPORT_PROTOCOL, version: TRANSPORT_PROTOCOL_VERSION } as const;
 
@@ -397,6 +397,99 @@ export function runTransportConformance(name: string, makeWiring: (options?: Tra
       const bob = holders[1];
       expect(alice?.leftAtTick).toBeDefined();
       expect(bob?.leftAtTick).toBeUndefined(); // bob still seated
+    });
+
+    /* ════════ publish() — the host-sim-authoritative seam (I-TA (a)) ═══════ */
+
+    const fixedCell = (key: string, value: string): TransportCellWire => Object.freeze({
+      key,
+      encoding: "fixed" as const,
+      value,
+      fidelity: 4,
+      freshnessUs: "0",
+      coverage: "65536",
+      certainty: "65536",
+      status: "live" as const,
+    });
+
+    it("publish() re-fans the rider per seat — scope A never sees B's cells, existence included", () => {
+      const edgeView: SeatViewWire = { cells: Object.freeze([fixedCell("edge::rho", "3277")]) };
+      const originView: SeatViewWire = { cells: Object.freeze([fixedCell("origin::rho", "655")]) };
+      const w = makeWiring({ projectionSource: (seat) => (seat === "alice" ? edgeView : originView) });
+      w.alice.join();
+      w.bob.join();
+      w.settle();
+      const beforeAlice = w.framesTo("alice").length;
+      const beforeBob = w.framesTo("bob").length;
+      expect(w.hub.publish()).toBe(2); // both seats live → both fanned
+      const aliceRaws = w.framesTo("alice").slice(beforeAlice);
+      expect(aliceRaws).toHaveLength(1);
+      const aliceFrame = decodeFrame(aliceRaws[0] as string) as SeatStateFrame;
+      expect(aliceFrame.view?.cells.map((c) => c.key)).toEqual(["edge::rho"]);
+      // Existence isolation: bob's scoped key appears NOWHERE in alice's rider —
+      // not as a cell, not as a value, not as a mention. (Raw-substring probes
+      // are unsafe here: "ledger" itself spells "edge" — the law is about the
+      // DECODED rider keys.)
+      expect(aliceFrame.view?.cells.some((c) => c.key.includes("origin"))).toBe(false);
+      expect(aliceRaws[0]).not.toContain("origin");
+      const bobRaws = w.framesTo("bob").slice(beforeBob);
+      expect(bobRaws[0]).toContain("origin::rho");
+      const bobFrame = decodeFrame(bobRaws[0] as string) as SeatStateFrame;
+      expect(bobFrame.view?.cells.map((c) => c.key)).toEqual(["origin::rho"]);
+    });
+
+    it("publish() fans live seats only — the departed inbox stays frozen (@24426ec)", () => {
+      let tick = 0;
+      const w = makeWiring({ projectionSource: () => ({ cells: Object.freeze([fixedCell("x::rho", String((tick += 1)))]) }) });
+      w.alice.join();
+      w.carol.join();
+      w.settle();
+      w.relay.advanceTo(1n); // strict tenure law: leave on a later tick
+      w.carol.leave();
+      w.settle();
+      const carolFrozen = w.framesTo("carol").length;
+      const aliceBefore = w.framesTo("alice").length;
+      expect(w.hub.publish()).toBe(1); // carol is gone from the fan-out
+      expect(w.framesTo("carol")).toHaveLength(carolFrozen); // frozen across publish
+      const aliceNew = w.framesTo("alice").slice(aliceBefore);
+      expect(aliceNew).toHaveLength(1);
+      const aliceFrame = decodeFrame(aliceNew[0] as string) as SeatStateFrame;
+      const carolLedger = aliceFrame.ledger.seatHolders.find((s) => s.participantId === "carol");
+      expect(carolLedger?.leftAtTick).toBeDefined(); // alice's ledger witness stays truthful
+    });
+
+    it("publish() without a projectionSource posts the PRE-SEAM seat-state shape — omit-when-unset", () => {
+      const w = makeWiring(); // no projectionSource at all
+      w.alice.join();
+      w.settle();
+      const joinRaws = w.framesTo("alice");
+      expect(w.hub.publish()).toBe(1);
+      const published = decodeFrame(w.framesTo("alice").at(-1) as string);
+      expect(published.kind).toBe("seat-state");
+      // Byte-posture law: the JSON KEY SET of a published seat-state equals the
+      // join-time seat-state's — `view` never appears when unset.
+      const keySet = (raw: string): readonly string[] => Object.keys(JSON.parse(raw) as Record<string, unknown>).sort();
+      const joinFrame = JSON.parse(joinRaws.at(-1) as string) as Record<string, unknown>;
+      expect(joinFrame["kind"]).toBe("seat-state");
+      expect(keySet(w.framesTo("alice").at(-1) as string)).toEqual(keySet(joinRaws.at(-1) as string));
+      expect("view" in (JSON.parse(w.framesTo("alice").at(-1) as string) as Record<string, unknown>)).toBe(false);
+    });
+
+    it("publish() is idempotent per call — repeats are byte-equal and stamp nothing", () => {
+      const w = makeWiring({ projectionSource: () => ({ cells: Object.freeze([fixedCell("edge::rho", "42")]) }) });
+      w.alice.join();
+      w.bob.join();
+      w.settle();
+      const digestBefore = w.relay.timelineDigest();
+      const logBefore = w.relay.sharedLog().length;
+      const first = w.hub.publish();
+      const aliceMid = w.framesTo("alice").length;
+      const second = w.hub.publish();
+      expect(second).toBe(first); // same live count — a pure read, no state drift
+      const aliceRaws = w.framesTo("alice");
+      expect(aliceRaws[aliceMid]).toBe(aliceRaws.at(-1)); // byte-identical frames
+      expect(w.relay.timelineDigest()).toBe(digestBefore); // publish stamps nothing
+      expect(w.relay.sharedLog()).toHaveLength(logBefore); // publish appends nothing
     });
   });
 }

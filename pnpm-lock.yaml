@@ -196,6 +196,9 @@ importers:
 
   tools/host:
     dependencies:
+      '@hh/sim-core':
+        specifier: workspace:*
+        version: link:../../packages/sim-core
       relay-tools:
         specifier: workspace:*
         version: link:../relay
@@ -206,9 +209,6 @@ importers:
         specifier: 8.22.0
         version: 8.22.0
     devDependencies:
-      '@hh/sim-core':
-        specifier: workspace:*
-        version: link:../../packages/sim-core
       '@types/node':
         specifier: ^26.6.4
         version: 26.6.4

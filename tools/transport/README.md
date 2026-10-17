@@ -94,9 +94,12 @@ to the proto's `ObservedCellWire` (drift-pinned against
   byte-identical replays, `dropUntilResume`; hub inbound stays FIFO on
   purpose (acceptance-order law).
 - `src/server.ts` — `attachRelayHub` (sync throw → async fault verdict for
-  EVERY refusal, worker fault-channel precedent) and `createReplica` (the
-  re-hosting witness: append-replay of STAMPED records, never re-stamps;
-  writes to a replica fault `relay[replica-authority]`).
+  EVERY refusal, worker fault-channel precedent), the `publish()` handle seam
+  (I-TA variant-(a): a host that RUNS the sim re-fans the current `seat-state`
+  — ledger + lastStamp + per-seat `view` rider — on its own clock; timer-free,
+  idempotent per call, live seats only, zero envelope-schema change), and
+  `createReplica` (the re-hosting witness: append-replay of STAMPED records,
+  never re-stamps; writes to a replica fault `relay[replica-authority]`).
 - `src/client.ts` — `createTransportClient`: idempotence gate (law 3),
   page-chained `runCatchUp`/`resume` (the whole reconnect story is ONE frame
   type), `feedToDoor()`, bigint revival with a disclosed closed mirror of
@@ -107,13 +110,16 @@ to the proto's `ObservedCellWire` (drift-pinned against
   are absent INCLUDING existence.
 - `src/index.ts` — explicit barrel (no export-star).
 - `test/conformance.ts` — `runTransportConformance(name, factory)`: THE law
-  body (15 its). The socket twin reruns the same body; that is the carrier-
-  swap acceptance gate.
-- `test/{codec,inMemory,hub.conformance,permutations,fog,transportLaw}.test.ts`
-  — 84 tests: round-trips + ~16 malformed refusals, determinism byte-traces,
+  body (20 its, publish() seams included). The socket twin reruns the same
+  body; that is the carrier-swap acceptance gate.
+- `test/{codec,inMemory,hub.conformance,permutations,fog,publish,transportLaw}.test.ts`
+  — 91 tests: round-trips + ~16 malformed refusals, determinism byte-traces,
   the R4 resume-paging twin THROUGH FRAMES, hostile-permutation convergence
   (per-frame `digestState` equality, ×100 rebuild, seed-33 control), fog
-  A/B twins, the armed zero-timers/zero-escape law scan.
+  A/B twins, publish() fan-out determinism (×100 Set.size 1 over a scripted
+  join/submit/leave run with real `transportViewForStore` sources, per-seat
+  isolation + empty-rider present-not-absent), the armed zero-timers/
+  zero-escape law scan.
 
 Run: `pnpm -F transport-tools test` (vitest serial) · `pnpm -F transport-tools typecheck`.
 Sim usage is exclusively via `@hh/sim-core` subpath exports (`./types`,
@@ -140,6 +146,13 @@ barrel. Zero sim-core edits.
 - **Browser WebSocketTransport adoption** — a thin `TransportPort` over the
   real `WebSocket` in `apps/proto` (the inMemory twin is its test oracle);
   deliberately the first thing NOT built here.
+- **Thin-client consumption of the `view` rider** — topology (a) (wave-23
+  ruling 3b) makes the host FAN per-seat views via `publish()`, and the codec
+  + `client.view()`/`observed()` read side exist and are tested here; what no
+  browser consumes them through yet is the projection MOUNT: proto's HUD reads
+  its local `ObservedStore`, so a host-sim seat adopting the rider as its
+  display source is a proto-side follow-on (`createTransportClient`'s
+  `observed()` is the named seam), not built here — apps/ is its own lane.
 
 ## PROVISIONAL taste rows (owner ratification owed)
 

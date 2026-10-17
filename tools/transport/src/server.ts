@@ -23,7 +23,9 @@
  *  - zero save writes (the v0 incident-room law @10f05fb): the hub touches
  *    timeline records + the in-relay ledger only.
  *
- * Determinism law: no timers, no wall-clock; the host pumps drain().
+ * Determinism law: no timers, no wall-clock; the host pumps drain() — and a
+ * host that runs the sim itself additionally pumps publish() (the I-TA
+ * variant-(a) seam: fan current per-seat truth on the host's clock).
  */
 
 import type { CoopTimelineRecord } from "@hh/sim-core/replay";
@@ -77,6 +79,28 @@ export interface RelayHubHandle {
    *  of frames consumed. NEVER throws on wire verdicts — refusals ride out
    *  as fault frames (and stay observable via faults()). */
   drain(): number;
+  /** Push the CURRENT per-seat truth out without waiting for a wire event:
+   *  fan one seat-state frame (ledger + lastStamp + the OPTIONAL `view`
+   *  rider when a `projectionSource` is wired) to every LIVE seat. This is
+   *  the seam the host-sim-authoritative topology (I-TA variant (a)) needs —
+   *  a host that runs the engine itself must be able to publish fresh
+   *  projections on its own clock, not only as a side effect of join/leave/
+   *  submit. Inherited laws, all of them sendSeatStates' standing ones:
+   *
+   *   - fan-out is LIVE seats only — departed inboxes stay frozen
+   *     (the @24426ec freeze law, the same liveSeats() wall join/leave use);
+   *   - the view is NEVER broadcast cross-seat: `projectionSource` is called
+   *     per seat, so what scope A sees cannot leak into scope B's frame —
+   *     existence of an out-of-scope cell is not transmitted either;
+   *   - omit-when-unset: no `projectionSource` (or one returning undefined
+   *     for a seat) produces the EXACT seat-state shape shipped before this
+   *     seam existed — zero envelope-schema change, `seat-state` reused;
+   *   - timer-free and idempotent per call: publish() reads state and sends;
+   *     it schedules nothing. The HOST's interval calls it; it advances no
+   *     clock and stamps nothing (the relay remains the sole stamp authority).
+   *
+   *  Returns the number of seats fanned (the live count), for host telemetry. */
+  publish(): number;
   /** Every fault the hub has emitted (delivered or unaddressable), in order. */
   faults(): readonly HubFaultRecord[];
 }
@@ -132,11 +156,16 @@ export function attachRelayHub(
     });
   }
 
-  function sendSeatStates(): void {
+  /** Fan the current seat-state (ledger + lastStamp + optional per-seat view)
+   *  to every LIVE seat; returns the fan-out count. Every caller — join,
+   *  leave, submit and the public publish() — rides this one path, so the
+   *  seat-state shape is defined exactly once (omit-when-unset lives HERE). */
+  function sendSeatStates(): number {
     const ledger = ledgerToWire(relay.ledger());
     const last = lastLogStamp();
     const lastStamp: StampWire | null = last === null ? null : encodeStampWire(last);
     const sentAtTick = relay.tick().toString();
+    let fanned = 0;
     for (const seat of liveSeats()) {
       const view = options.projectionSource?.(seat);
       port.client(seat).send({
@@ -148,7 +177,9 @@ export function attachRelayHub(
         lastStamp,
         ...(view === undefined ? {} : { view }),
       });
+      fanned += 1;
     }
+    return fanned;
   }
 
   function broadcastToLive(record: CoopTimelineRecord): void {
@@ -286,6 +317,11 @@ export function attachRelayHub(
       const frames = hub.poll();
       for (const raw of frames) dispatch(raw);
       return frames.length;
+    },
+    publish(): number {
+      // The host-sim-authoritative seam (I-TA variant (a)): same private
+      // fan-out join/leave/submit ride, exposed for the host's own clock.
+      return sendSeatStates();
     },
     faults: () => Object.freeze([...emitted]),
   };
