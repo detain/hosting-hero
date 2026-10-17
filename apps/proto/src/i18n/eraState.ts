@@ -20,14 +20,17 @@
  * Law 2 (rewritten per OD-22(c), 2026-10-09b ratified): `EraYear` is the
  * CLOSED era canon — exactly {1998, 2008, 2016, 2026}, the four campaign
  * phases §8.10's corner-radius/surface ladder enumerates. The canon is the
- * LAW axis, wider than today's authored copy on purpose: shared-web is the
- * only pack authoring era-variant text and its `eraCodes` stay the demo pair
- * 1998/2026 (the 2008/2016 copy rungs land with the campaign content wave).
- * At an unauthored rung `pickEraText`'s earlier/fallback ladder degrades
- * honestly to the nearest authored text — the skin changes, the words ride
- * the ladder — so an unauthored year is a ratified PLACEHOLDER, never a
- * caller typo: values outside the canon remain unrepresentable at this
- * boundary, machine-pinned pack-side by loader/__tests__/era-canon.test.ts.
+ * LAW axis; the copy has since caught up with it: ADR-0018 program 1a (the
+ * L-ER canon quad-rung + the four era-copy fans) landed FOUR-RUNG eraCodes
+ * in all fourteen packs and era-variant bodies corpus-wide (42 keys — the
+ * per-pack census is machine-pinned by loader/__tests__/era-canon.test.ts
+ * and the pack-side roster by packs.test.ts). Inter-rung years (1999, 2011,
+ * 2025 …) and per-key unauthored rungs (object-storage's keys speak from
+ * 2008; codex.cardinality from 2016) still ride `pickEraText`'s
+ * earlier/fallback ladder — the skin changes, the words ride the ladder —
+ * so a rung a key never authored is a ratified DEGRADATION, never a caller
+ * typo: values outside the canon remain unrepresentable at this boundary,
+ * machine-pinned pack-side by loader/__tests__/era-canon.test.ts.
  */
 import { shallowRef, type Ref } from "vue";
 

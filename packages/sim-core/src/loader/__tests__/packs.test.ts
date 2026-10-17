@@ -7,7 +7,7 @@
  * clones — the shipped packs are never edited here.
  */
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { LoaderError, type LoaderErrorCode } from "../boundary";
@@ -27,6 +27,18 @@ const PACKS_DIR = join(process.cwd(), "..", "content", "packs");
 
 function packText(name: string): string {
   return readFileSync(join(PACKS_DIR, name), "utf8");
+}
+
+/** The fourteen disk packs (code-unit by file name) — the era-pin collector
+ *  (L-ER-G) widened this suite's real-corpus arms from the two baseline packs
+ *  to the whole bank so no type pack's era copy is policed only by the proto
+ *  flavour-feed pins. ADR-0018 program 1a landed era bodies in all of them. */
+const DISK_PACK_FILES: readonly string[] = readdirSync(PACKS_DIR)
+  .filter((name) => name.endsWith(".i18n.json"))
+  .sort();
+
+function packStem(file: string): string {
+  return file.replace(/\.i18n\.json$/, "");
 }
 
 function parsePackText(name: string): LoadedI18nPack {
@@ -69,9 +81,13 @@ function variantOf(pack: LoadedI18nPack, key: string): Extract<I18nTemplate, { k
 }
 
 describe("loadI18nPack — the two REAL packs parse through the strict boundary", () => {
-  test("both shipped packs load with zero errors", () => {
-    expect(() => parsePackText("shared-web.i18n.json")).not.toThrow();
-    expect(() => parsePackText("game.i18n.json")).not.toThrow();
+  test("all fourteen disk packs load through the strict boundary with zero errors (L-ER-G widening)", () => {
+    // the two baseline packs parse at module top (SHARED/GAME) — this arm
+    // proves the twelve type packs the era fans touched still parse too
+    expect(DISK_PACK_FILES.length).toBe(14);
+    for (const file of DISK_PACK_FILES) {
+      expect(() => parsePackText(file), file).not.toThrow();
+    }
   });
 
   test("header fields land as parsed strings", () => {
@@ -157,6 +173,114 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
       expect([...t.eras.keys()]).toEqual([1998, 2008, 2016, 2026]);
       expect(typeof t.fallback).toBe("string");
     }
+  });
+
+  test("era-variant roster across ALL FOURTEEN disk packs — the L-ER-G collector census, parsed through the strict boundary", () => {
+    // Same 42-key truth era-canon.test.ts counts on raw JSON, re-derived here
+    // through loadI18nPack: every one of the fourteen packs parses at the
+    // boundary AND its era-variant roster (key → ascending rungs actually
+    // authored) matches the disk table. Re-pinned from disk probes 2026-10-17;
+    // the rung SETS differ per key on purpose — packs whose product class was
+    // born mid-canon (object-storage, ci/colo/dbaas post-1998 copy, the
+    // cloud-native sketches in observability/serverless) author the LATER
+    // rungs and let the exact>earlier>fallback ladder degrade honestly.
+    // The shared registers (refusal.*/status.rung-*/vendor.reply.*) are plain
+    // everywhere — no era body was smuggled into a cross-pack twin line.
+    const expectRoster = new Map<string, ReadonlyMap<string, readonly number[]>>([
+      ["backup-archival", new Map([
+        ["forum.thread.rategb", [2008, 2016, 2026]],
+        ["loading.tip.rto", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.hollow", [2008, 2016, 2026]],
+      ])],
+      ["ci-build-farm", new Map([
+        ["chatter.desk.wall", [2008, 2016, 2026]],
+        ["chatter.runner.hum", [2008, 2016, 2026]],
+        ["forum.thread.matrix", [2008, 2016, 2026]],
+      ])],
+      ["colo", new Map([
+        ["chatter.desk.aisle", [2008, 2016, 2026]],
+        ["forum.thread.clamp", [2008, 2016, 2026]],
+        ["ticket.subject.reboot7", [2008, 2016, 2026]],
+      ])],
+      ["dbaas", new Map([
+        ["chatter.cellar.static", [2008, 2016, 2026]],
+        ["ticket.subject.pool", [2008, 2016, 2026]],
+        ["ticket.subject.upgrade", [2008, 2016, 2026]],
+      ])],
+      ["dedicated", new Map([
+        ["chatter.stable.smell", [1998, 2008, 2016, 2026]],
+        ["forum.thread.four-hours", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.leds-mean", [1998, 2008, 2016, 2026]],
+      ])],
+      ["dns-hosting", new Map([
+        ["codex.free-tier", [1998, 2008, 2026]], // the 2016 rung is not authored — the ladder covers it
+        ["loading.tip.throttle", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.zone-lockout", [1998, 2008, 2026]],
+      ])],
+      ["exchange-colo", new Map([
+        ["chatter.desk.equal", [1998, 2008, 2016, 2026]],
+        ["chatter.desk.eye", [1998, 2008, 2016, 2026]],
+        ["forum.thread.tier", [1998, 2008, 2016, 2026]],
+      ])],
+      ["game", new Map([
+        ["chatter.quiet.naming", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.griefed", [1998, 2008, 2016, 2026]],
+      ])],
+      ["mail-hosting", new Map([
+        ["abuse.canon.postmaster", [1998, 2008, 2016, 2026]],
+        ["ticket.body.list-bought", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.list-bought", [1998, 2008, 2016, 2026]],
+      ])],
+      ["object-storage", new Map([
+        ["chatter.desk.invisible", [2008, 2016, 2026]], // S3-alike: born after the 1998 rung
+        ["forum.thread.nines-promise", [2008, 2016, 2026]],
+        ["ticket.subject.where-my-data", [2008, 2016, 2026]],
+      ])],
+      ["observability", new Map([
+        ["chatter.wall.hum", [2008, 2016, 2026]],
+        ["codex.cardinality", [2016, 2026]], // cloud-native sketch: two rungs only
+        ["loading.tip.fan", [2008, 2016, 2026]],
+      ])],
+      ["serverless", new Map([
+        ["loading.tip.zero", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.first-visit", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.starved", [2016, 2026]], // true opening rung per §5.6's gate
+      ])],
+      ["shared-web", new Map([
+        ["loading.tip.cold-aisle", [1998, 2008, 2016, 2026]],
+        ["scenarios.shared-web.slashdot", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.cron", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.dev-left", [1998, 2008, 2016, 2026]],
+      ])],
+      ["trunk-group-voip", new Map([
+        ["ticket.body.monday-bill", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.e911", [1998, 2008, 2016, 2026]],
+        ["ticket.subject.nine-am", [1998, 2008, 2016, 2026]],
+      ])],
+    ]);
+    expect([...expectRoster.keys()].sort()).toEqual(DISK_PACK_FILES.map(packStem).sort());
+    let totalKeys = 0;
+    for (const file of DISK_PACK_FILES) {
+      const pack = parsePackText(file);
+      const found = new Map<string, readonly number[]>();
+      for (const map of [pack.decision, pack.flavour]) {
+        for (const [key, template] of map) {
+          if (template.kind === "era-variant") found.set(key, [...template.eras.keys()].sort((a, b) => a - b));
+        }
+      }
+      const expected = expectRoster.get(packStem(file))!;
+      totalKeys += found.size;
+      expect([...found.keys()].sort(), file).toEqual([...expected.keys()].sort());
+      for (const [key, rungs] of found) {
+        expect([...rungs], `${file} ${key}`).toEqual([...expected.get(key)!]);
+      }
+      // every authored rung must be DECLARED in the pack's eraCodes (the
+      // loader refuses the reverse direction; this pins the canon's own)
+      for (const rung of [...found.values()].flat()) {
+        expect(pack.eraCodes.has(rung), `${file} rung ${rung}`).toBe(true);
+      }
+    }
+    expect(totalKeys).toBe(42);
   });
 
   test("the result is deep-frozen and the maps are sealed (no .set surface)", () => {

@@ -50,18 +50,18 @@ threats/registry-core.json          16 mechanical threat entries (mail-hosting, 
 visitors/archetypes-core.json       9 visitor archetypes (mail-hosting, dns-hosting, dedicated, object-storage, trunk-group-voip, serverless, exchange-colo, colo, backup-archival, dbaas, observability and ci-build-farm reference NONE — their visitors are the message / the query / the sales inquiry / the PUT-GET / the call / the invocation / the cabinet lease itself / the cabinet-and-amps lease / the nightly job chain itself / the query slip itself / the never-ending metric stream itself / the queued build itself; see Type 3/4/5/6/7/8/9/10/11/12/13/14 notes)
 packs/shared-web.i18n.json          ticket pack for official:shared-web — 103 grammar templates, decision 42 / flavour 61; four era-quad keys (slashdot, ticket.subject.dev-left, ticket.subject.cron, loading.tip.cold-aisle) speak the OD-22(c) four-rung canon 1998/2008/2016/2026 (L-ER-B)
 packs/game.i18n.json                ticket pack for official:game-servers — 75 grammar templates, decision 34 / flavour 41; two pack-unique era-quad FLAVOUR keys (ticket.subject.griefed, chatter.quiet.naming) on the same four-rung axis (L-ER-B); decision namespace stays era-flat
-packs/mail-hosting.i18n.json        ticket pack for official:mail-hosting — 63 grammar templates, decision 32 / flavour 31
-packs/dns-hosting.i18n.json         ticket pack for official:dns-hosting — 65 grammar templates, decision 33 / flavour 32
-packs/dedicated.i18n.json           ticket pack for official:dedicated — 66 grammar templates, decision 34 / flavour 32
-packs/object-storage.i18n.json      ticket pack for official:object-storage — 67 grammar templates, decision 36 / flavour 31
-packs/trunk-group-voip.i18n.json    ticket pack for official:trunk-group-voip — 69 grammar templates, decision 38 / flavour 31
-packs/serverless.i18n.json          ticket pack for official:serverless — 68 grammar templates, decision 37 / flavour 31
-packs/exchange-colo.i18n.json       ticket pack for official:exchange-colo — 68 grammar templates, decision 37 / flavour 31
-packs/colo.i18n.json                ticket pack for official:colo — 68 grammar templates, decision 37 / flavour 31
-packs/backup-archival.i18n.json     ticket pack for official:backup-archival — 66 grammar templates, decision 37 / flavour 29
-packs/dbaas.i18n.json               ticket pack for official:dbaas — 66 grammar templates, decision 37 / flavour 29
-packs/observability.i18n.json     ticket pack for official:observability — 66 grammar templates, decision 37 / flavour 29
-packs/ci-build-farm.i18n.json     ticket pack for official:ci-build-farm — 66 grammar templates, decision 37 / flavour 29
+packs/mail-hosting.i18n.json        ticket pack for official:mail-hosting — 63 grammar templates, decision 32 / flavour 31; three era-variant FLAVOUR keys (ticket.subject.list-bought, ticket.body.list-bought, abuse.canon.postmaster — all quad-rung) speak the OD-22(c) canon (L-ER-E, ADR-0018 program 1a); decision namespace stays era-flat
+packs/dns-hosting.i18n.json         ticket pack for official:dns-hosting — 65 grammar templates, decision 33 / flavour 32; three era-variant FLAVOUR keys — loading.tip.throttle quad-rung, codex.free-tier and ticket.subject.zone-lockout on {1998,2008,2026} (unauthored 2016 rides the ladder; L-ER-D); decision namespace stays era-flat
+packs/dedicated.i18n.json           ticket pack for official:dedicated — 66 grammar templates, decision 34 / flavour 32; three quad-rung era-variant FLAVOUR keys (chatter.stable.smell, forum.thread.four-hours, ticket.subject.leds-mean — L-ER-F); decision namespace stays era-flat
+packs/object-storage.i18n.json      ticket pack for official:object-storage — 67 grammar templates, decision 36 / flavour 31; three era-variant FLAVOUR keys on {2008,2016,2026} (ticket.subject.where-my-data, chatter.desk.invisible, forum.thread.nines-promise — L-ER-F; the 1998 rung is DECLARED with zero bodies, an honest pre-S3 pre-era, and the fallback carries the current voice byte-ident); decision namespace stays era-flat
+packs/trunk-group-voip.i18n.json    ticket pack for official:trunk-group-voip — 69 grammar templates, decision 38 / flavour 31; three quad-rung era-variant FLAVOUR keys (ticket.subject.nine-am, ticket.body.monday-bill, ticket.subject.e911 — L-ER-E); decision namespace stays era-flat
+packs/serverless.i18n.json          ticket pack for official:serverless — 68 grammar templates, decision 37 / flavour 31; three era-variant FLAVOUR keys — loading.tip.zero and ticket.subject.first-visit quad-rung (the 1998/2008 bodies are the campaign's own not-invented-yet joke), ticket.subject.starved on {2016,2026} (L-ER-E); decision namespace stays era-flat
+packs/exchange-colo.i18n.json       ticket pack for official:exchange-colo — 68 grammar templates, decision 37 / flavour 31; three quad-rung era-variant FLAVOUR keys (chatter.desk.equal, chatter.desk.eye, forum.thread.tier — L-ER-F); decision namespace stays era-flat
+packs/colo.i18n.json                ticket pack for official:colo — 68 grammar templates, decision 37 / flavour 31; three era-variant FLAVOUR keys on {2008,2016,2026} (chatter.desk.aisle, forum.thread.clamp, ticket.subject.reboot7 — L-ER-C; pre-2008 ratings rooms ride the fallback voice); decision namespace stays era-flat
+packs/backup-archival.i18n.json     ticket pack for official:backup-archival — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys — loading.tip.rto quad-rung, forum.thread.rategb and ticket.subject.hollow on {2008,2016,2026} (L-ER-D); decision namespace stays era-flat
+packs/dbaas.i18n.json               ticket pack for official:dbaas — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys on {2008,2016,2026} (chatter.cellar.static, ticket.subject.pool, ticket.subject.upgrade — L-ER-C); decision namespace stays era-flat
+packs/observability.i18n.json     ticket pack for official:observability — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys — chatter.wall.hum and loading.tip.fan on {2008,2016,2026}, codex.cardinality on {2016,2026} (L-ER-D); decision namespace stays era-flat
+packs/ci-build-farm.i18n.json     ticket pack for official:ci-build-farm — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys on {2008,2016,2026} (chatter.desk.wall, chatter.runner.hum, forum.thread.matrix — L-ER-C); decision namespace stays era-flat
 script/validate.mjs                 Node-stdlib structural validator (no npm deps)
 ```
 
@@ -607,9 +607,11 @@ needs hands; the ingest needs pipe), and the flatline ships as envelope composit
 (`flatline-finale`) + the `blind-flatline` fatality — the doc gives this catastrophe NO
 threat id and none is forged. Two lookalike seeds re-worn (`scanner-drizzle`→`crawler`,
 `layer7-mimic`→`power-shopper`), no sixth invented. Pack: 66 templates, decision 37 /
-flavour 29, zero era objects (bundle eras null/null — the era grid dates no hosted-
-observability cell; the era-owner pass decides the 2016-cloud sketch), refusal×5 /
-status.rung×5 / vendor×4 byte-identical to siblings. `type.observability.name` pins the
+flavour 29; three era-variant FLAVOUR keys speak the canon since ADR-0018 program 1a
+(L-ER-D: chatter.wall.hum + loading.tip.fan on {2008,2016,2026}, codex.cardinality on
+{2016,2026} — the 2016-cloud sketch got its voice from the §8.10 kits, the shared
+registers ride plain byte-ident, and bundle eras stay null/null: expectation voice,
+never a shelf claim), refusal×5 / status.rung×5 / vendor×4 byte-identical to siblings. `type.observability.name` pins the
 heading's FIRST segment ("Who Watches") because the §Key literals sync extracts the first
 double-quoted span per row; the codename "Cardinality" rides `type.observability.codex`.
 
@@ -691,8 +693,10 @@ FREE until the batch-D rule-adapter pass; the Monday Morning Wall lands at w2 as
 (never a forged curve: the weekend-collapsing utilisation stays a SEASONALITY CLAIM recorded in
 `tempo._todo`, the backup "inventing a curve" precedent), the dead weekend trough is w3, the
 cache-poisoning composition is w4 (with the corpus's second-incident line), and w5 is the all-green
-finale whose beat is the fatal. Pack 66 templates 37/29, slots 18 all live, zero era objects
-(§0.4 names no CI cell — recorded), refusal×5 / status.rung×5 / vendor×4 byte-identical across
+finale whose beat is the fatal. Pack 66 templates 37/29, slots 18 all live; three era-variant FLAVOUR keys speak
+{2008,2016,2026} since ADR-0018 program 1a (L-ER-C: chatter.desk.wall, chatter.runner.hum,
+forum.thread.matrix — §0.4 still names no CI cell, so the 1998 rung rides the current-voice
+fallback), refusal×5 / status.rung×5 / vendor×4 byte-identical across
 all fourteen packs; `type.ci-build-farm.name` pins "Green Light" — the heading's FIRST segment,
 per the §Key literals first-span rule — and the codename "Untrusted Code, By Design" rides the
 codex. Unlocks ground on the §5.6 Automation ladder, whose rungs name the business outright

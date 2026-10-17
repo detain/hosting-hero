@@ -66,6 +66,24 @@ function offCanonYears(pack: unknown): number[] {
   return [...new Set(collectEraYears(pack))].filter((y) => !ERA_CANON.includes(y)).sort((a, b) => a - b);
 }
 
+/** How many template keys in this pack actually carry a {eras, ...} variant
+ *  object (decision + flavour namespaces). The year-axis census above can be
+ *  satisfied by eraCodes alone; this count proves the pack SPEAKS the axis,
+ *  not just declares it. Key identity/shape law stays in packs.test.ts —
+ *  this file counts, never parses. */
+function countEraVariantKeys(pack: unknown): number {
+  if (!isRecord(pack)) return 0;
+  let count = 0;
+  for (const root of ["decision", "flavour"]) {
+    const map = pack[root];
+    if (!isRecord(map)) continue;
+    for (const value of Object.values(map)) {
+      if (isRecord(value) && "eras" in value) count += 1;
+    }
+  }
+  return count;
+}
+
 const PACK_FILES: readonly string[] = readdirSync(join(CONTENT, "packs"))
   .filter((name) => name.endsWith(".i18n.json"))
   .sort();
@@ -91,19 +109,39 @@ describe("era canon — packs stay inside the ratified four-era axis (OD-22(c))"
     }
   });
 
-  it("at authoring time: shared-web and game carry the full four-rung canon; the other twelve packs carry zero era years", () => {
+  it("at authoring time: ALL FOURTEEN packs speak the full four-rung canon — the era axis is corpus-wide, 42 variant keys deep", () => {
     // Census of the CURRENT copy axis — L-ER-B landed the quad-rung copy on
-    // shared-web (4 era-quad keys) and game (2 era-quad flavour keys). The
-    // fan lanes (L-ER-C..F) re-pin this row as their packs join the axis.
-    // The ⊆canon assertion above NEVER bends; only this census moves.
+    // shared-web (4 era keys) and game (2); the L-ER-C..F fan waves then put
+    // THREE era keys in every one of the twelve type packs (36) — 42 keys total.
+    // The ⊆canon assertion above NEVER bends; only this census moves, and the
+    // era-pin collector (L-ER-G) re-derives it from disk, pack by pack.
     const authored = PACK_FILES.map((name) => [name, [...new Set(collectEraYears(parsePack(name)))].sort((a, b) => a - b)] as const);
     for (const [name, years] of authored) {
-      if (name === "shared-web.i18n.json" || name === "game.i18n.json") {
-        expect(years, name).toEqual([1998, 2008, 2016, 2026]);
-      } else {
-        expect(years, name).toEqual([]);
-      }
+      expect(years, name).toEqual([1998, 2008, 2016, 2026]);
     }
+    // Year presence alone is cheap (eraCodes); the variant-key counts prove
+    // every pack authors real era bodies. Re-derived from disk 2026-10-17.
+    const counts = authored.map(([name]) => [name, countEraVariantKeys(parsePack(name))] as const);
+    const EXPECTED: Record<string, number> = {
+      "shared-web.i18n.json": 4, // slashdot, dev-left, cron, cold-aisle (all quad-rung)
+      "game.i18n.json": 2, // griefed + quiet.naming (pack-unique flavour, quad-rung)
+      "backup-archival.i18n.json": 3,
+      "ci-build-farm.i18n.json": 3,
+      "colo.i18n.json": 3,
+      "dbaas.i18n.json": 3,
+      "dedicated.i18n.json": 3,
+      "dns-hosting.i18n.json": 3,
+      "exchange-colo.i18n.json": 3,
+      "mail-hosting.i18n.json": 3,
+      "object-storage.i18n.json": 3,
+      "observability.i18n.json": 3,
+      "serverless.i18n.json": 3,
+      "trunk-group-voip.i18n.json": 3,
+    };
+    for (const [name, count] of counts) {
+      expect(count, name).toBe(EXPECTED[name]);
+    }
+    expect(counts.reduce((n, [, c]) => n + c, 0)).toBe(42);
   });
 
   it("ARMED in-memory probe: a forged pack naming 2031/2044 IS reddened", () => {

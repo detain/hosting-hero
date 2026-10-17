@@ -7,9 +7,10 @@
  * the root wall drift-pinned against the loader's private FLAVOUR_ROOTS
  * literal, recoveryWatch's RECOVERY_WATCH_KINDS precedent); order is code-unit
  * stable; selection is deterministic per (seed, tick) with an
- * adjacent-distinctness law; the era seam moves ONLY the five era-variant
- * flavour keys in the pool — shared-web's three plus game's two, all quad-rung
- * since L-ER-B (the other twelve packs still ship zero era objects).
+ * adjacent-distinctness law; the era seam moves ONLY the twenty-nine zero-slot
+ * era-variant flavour keys in the pool — the fourteen-pack census re-derived
+ * by the L-ER-G collector from disk (fourteen packs × three-ish era keys, less
+ * the slotted ones the pool law keeps out; shared-web three, game two).
  * No DOM, no timers, no fs beyond the one drift-pin
  * source read.
  */
@@ -225,31 +226,89 @@ describe("flavourFeed · determinism", () => {
 
 describe("flavourFeed · era law", () => {
   it("a flip moves EXACTLY the era-variant keys and nothing else", () => {
+    // L-ER-G collector re-pin (ADR-0018 program 1a): the era fans put {eras,
+    // fallback} bodies on 42 keys corpus-wide; 29 of them are zero-slot
+    // flavour lines and ride the pool. The 1998↔2026 flip moves EIGHTEEN —
+    // the other eleven pool era-keys speak only the middle rungs (their 1998
+    // resolution rides the fallback, which the fans authored byte-identical
+    // to the 2026 body: post-birth product classes with a modern fallback
+    // voice). Every flat key re-derives byte-identically. Probed from disk
+    // 2026-10-17, not hand-guessed.
+    const textsAt = (packId: PackId, key: string): Map<number, string> =>
+      new Map([1998, 2008, 2016, 2026].map((y) => [y, t(packId, key, {}, y)] as const));
     const changed = new Set<string>();
+    const changedOnAnyRung = new Set<string>();
     for (const entry of POOL) {
-      const before = t(entry.packId, entry.key, {}, 1998);
-      const after = t(entry.packId, entry.key, {}, 2026);
-      if (before !== after) changed.add(entry.key);
+      const texts = textsAt(entry.packId, entry.key);
+      if (texts.get(1998) !== texts.get(2026)) changed.add(entry.key);
+      if (new Set(texts.values()).size > 1) changedOnAnyRung.add(entry.key);
     }
-    // L-ER-B widened the changed set from the shared-web trio to five: game's
-    // two pack-unique flavour keys (griefed, naming) joined the four-rung axis.
-    // The other twelve packs author zero era objects, so the pool widening
-    // stays era-safe; the flip test probes 1998 vs 2026, so the set pins the
-    // whole era-variant roster, not just the years compared.
     expect([...changed].sort(compareCodeUnits)).toStrictEqual([
+      "chatter.desk.equal",
+      "chatter.desk.eye",
       "chatter.quiet.naming",
+      "chatter.stable.smell",
+      "codex.free-tier",
+      "forum.thread.four-hours",
+      "forum.thread.tier",
       "loading.tip.cold-aisle",
+      "loading.tip.rto",
+      "loading.tip.throttle",
+      "loading.tip.zero",
       "ticket.subject.cron",
       "ticket.subject.dev-left",
       "ticket.subject.griefed",
+      "ticket.subject.leds-mean",
+      "ticket.subject.list-bought",
+      "ticket.subject.nine-am",
+      "ticket.subject.zone-lockout",
     ]);
-    expect(POOL.filter((e) => e.kind === "era-variant").map((e) => e.packId)).toStrictEqual([
-      "game",
-      "shared-web",
-      "shared-web",
-      "shared-web",
-      "game",
+    // the full four-rung sweep moves EXACTLY the pool's era-variant roster —
+    // no flat key churns on any rung, no era key hides from every rung:
+    const poolEraEntries = POOL.filter((e) => e.kind === "era-variant");
+    expect([...changedOnAnyRung].sort(compareCodeUnits)).toStrictEqual(
+      poolEraEntries.map((e) => e.key).sort(compareCodeUnits),
+    );
+    expect(changedOnAnyRung.size).toBe(29);
+    // era-safe majority: 272 pool lines, 29 speak the canon, 243 re-derive
+    // byte-identically at every rung (the twin/fallback flat-copy law):
+    expect(POOL.length - poolEraEntries.length).toBe(243);
+    expect(poolEraEntries.map((e) => [e.packId, e.key] as const)).toStrictEqual([
+      ["colo", "chatter.desk.aisle"],
+      ["exchange-colo", "chatter.desk.equal"],
+      ["exchange-colo", "chatter.desk.eye"],
+      ["object-storage", "chatter.desk.invisible"],
+      ["ci-build-farm", "chatter.desk.wall"],
+      ["game", "chatter.quiet.naming"],
+      ["ci-build-farm", "chatter.runner.hum"],
+      ["dedicated", "chatter.stable.smell"],
+      ["observability", "codex.cardinality"],
+      ["dns-hosting", "codex.free-tier"],
+      ["dedicated", "forum.thread.four-hours"],
+      ["object-storage", "forum.thread.nines-promise"],
+      ["exchange-colo", "forum.thread.tier"],
+      ["shared-web", "loading.tip.cold-aisle"],
+      ["observability", "loading.tip.fan"],
+      ["backup-archival", "loading.tip.rto"],
+      ["dns-hosting", "loading.tip.throttle"],
+      ["serverless", "loading.tip.zero"],
+      ["shared-web", "ticket.subject.cron"],
+      ["shared-web", "ticket.subject.dev-left"],
+      ["game", "ticket.subject.griefed"],
+      ["backup-archival", "ticket.subject.hollow"],
+      ["dedicated", "ticket.subject.leds-mean"],
+      ["mail-hosting", "ticket.subject.list-bought"],
+      ["trunk-group-voip", "ticket.subject.nine-am"],
+      ["colo", "ticket.subject.reboot7"],
+      ["dbaas", "ticket.subject.upgrade"],
+      ["object-storage", "ticket.subject.where-my-data"],
+      ["dns-hosting", "ticket.subject.zone-lockout"],
     ]);
+    // the slotted era keys (forum.thread.clamp {ampsDrawn}, forum.thread.matrix
+    // {jobCount}, abuse.canon.postmaster {providerDomain}, ticket.subject.e911
+    // {didNumber}… 13 corpus-wide) move under a flip too, but NEVER enter the
+    // zero-slot pool — the slot-free law test above pins them out by rendering
+    // every pool line with an EMPTY slot map and excluding every slotted key.
   });
 
   it("the feed honors the year it was handed", () => {

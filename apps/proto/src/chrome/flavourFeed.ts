@@ -51,10 +51,14 @@
  * pool. A pool of ONE has nothing to be distinct from and idles on it.
  *
  * Era seam: the text resolves through `packStore.t(packId, key, {}, eraYear)`
- * — the era-variant flavour keys (shared-web ships exactly three: the two
- * ticket subjects + the cold-aisle tip; every type pack ships zero) re-word
- * on a flip; every flat key re-derives byte-identically, per the eraState
- * law.
+ * — the era-variant flavour keys re-word on a flip; every flat key re-derives
+ * byte-identically, per the eraState law. Since ADR-0018 program 1a (the L-ER
+ * canon quad-rung + copy fans) the axis is corpus-wide: all fourteen packs
+ * declare the ratified {1998, 2008, 2016, 2026} eraCodes and author 42
+ * era-variant keys between them; 29 of those are zero-slot flavour lines that
+ * ride this pool (the collector re-pin, disk-probed 2026-10-17 — the exact
+ * roster is pinned by __tests__/flavourFeed.test.ts and the loader-side twin
+ * in loader/__tests__/era-canon.test.ts + packs.test.ts).
  */
 import { asRunSeed, type RunSeed, type SimMinute } from "@hh/sim-core/types";
 import { streamFor } from "@hh/sim-core/kernel";
