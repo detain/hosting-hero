@@ -137,6 +137,8 @@ const HONEST_ROWS: Readonly<Record<string, Record<string, unknown>>> = {
   },
   "shield-node": { targetNodeId: "web-1", effectiveAtBusinessMinute: null },
   "scale-node": { targetNodeId: "web-1", reservedSlots: 2, effectiveAtBusinessMinute: null },
+  "maintain-node": { targetNodeId: "web-1", openAtBusinessMinute: null, closeAtBusinessMinute: 60 },
+  "schedule-window": { targetNodeId: "web-1", openAtBusinessMinute: null, closeAtBusinessMinute: 480 },
 };
 
 describe("the wall accepts one honest row per verb", () => {

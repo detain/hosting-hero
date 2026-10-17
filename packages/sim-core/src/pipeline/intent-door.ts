@@ -44,6 +44,13 @@
  *    through pipeline/defaults.ts, never by the door — and the COST of
  *    warmth is not door-side either: the door never touches cash, host opex
  *    consumption of the book is the future seam),
+ *    maintain (maintain-node — the OPTIONAL ADR-0015 maintenance-attendance
+ *    book, STATE-NEUTRAL: the abandonment-die veto is read at step 9 through
+ *    pipeline/defaults.ts `maintainInForce`, never by the door),
+ *    schedule (schedule-window — the OPTIONAL ADR-0015 backup job-window
+ *    book, STATE-NEUTRAL: the deadline substitution is read at step 9 for
+ *    patience-mode "window" units through pipeline/defaults.ts
+ *    `jobWindowInForce`/`jobBandDistanceUs`, never by the door),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -95,6 +102,11 @@ import type {
   HandState,
   HandToken,
   InspectionDepth,
+  JobWindow,
+  JobWindowBook,
+  MaintainArgs,
+  MaintainBook,
+  MaintainWindow,
   NodeDiscipline,
   NodeRecord,
   PlaceDeviceArgs,
@@ -107,6 +119,7 @@ import type {
   ScaleArgs,
   ScaleBook,
   ScaleEntry,
+  ScheduleArgs,
   ShedLoadArgs,
   ShedOrder,
   ShieldArgs,
@@ -261,6 +274,17 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // class — COMMIT, 1 tick. The warmth lands at the step-5/6 capacity read
   // (pipeline/defaults.ts); the door only writes the book.
   [PlayerVerb.ScaleNode]: 1,
+  // ADR-0015 (Maintain 2/5): booking attendance is an on-site task, not a
+  // desk tap — the ATTENDANCE class (2 ticks, same window as
+  // disconnect-drain/shed-load/communicate). The veto lands at step 9
+  // (pipeline/defaults.ts `maintainInForce`); the door only writes the book.
+  [PlayerVerb.MaintainNode]: 2,
+  // ADR-0015 (Schedule 2/5): arming a calendar band is a TAP — 1 tick. The
+  // 26-hour-disaster law (hosting_game.md:1964: a mis-set window is how a
+  // night becomes a week) demands cheap re-arm, so the correction must never
+  // cost attendance-grade time. The deadline lands at step 9; the door only
+  // writes the book.
+  [PlayerVerb.ScheduleWindow]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -275,6 +299,8 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   [PlayerVerb.AdjustPrice]: 1,
   [PlayerVerb.Shield]: 1,
   [PlayerVerb.ScaleNode]: 1,
+  [PlayerVerb.MaintainNode]: 1,
+  [PlayerVerb.ScheduleWindow]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -446,6 +472,21 @@ export function createScaleBook(): ScaleBook {
   return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, ScaleEntry>()) });
 }
 
+/** Empty maintenance-attendance book (ADR-0015 Maintain 2/5) — hosts that
+ *  want the embed present from tick 0 mint it here; the `maintain-node`
+ *  handler materializes lazily without it. Node-keyed, last-write-wins per
+ *  node; expired bands are never pruned (expiry is a read-time law). */
+export function createMaintainBook(): MaintainBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, MaintainWindow>()) });
+}
+
+/** Empty backup job-window book (ADR-0015 Schedule 2/5) — hosts that want
+ *  the embed present from tick 0 mint it here; the `schedule-window` handler
+ *  materializes lazily without it. Node-keyed, last-write-wins per node. */
+export function createJobWindowBook(): JobWindowBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, JobWindow>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -489,6 +530,12 @@ interface Draft {
   shield: ShieldBook | null;
   /** ADR-0015 COW reserved-warmth book — null until a `scale-node` order lands. */
   scale: ScaleBook | null;
+  /** ADR-0015 COW maintenance-attendance book — null until a `maintain-node`
+   *  order lands. */
+  maintain: MaintainBook | null;
+  /** ADR-0015 COW backup job-window book — null until a `schedule-window`
+   *  order lands. */
+  schedule: JobWindowBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -569,6 +616,8 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   [PlayerVerb.AdjustPrice]: Object.freeze({ targetKind: "string", targetId: "string", newPriceMicroUsd: "bigint", effectiveAtBusinessMinute: "number-or-null" }),
   [PlayerVerb.Shield]: Object.freeze({ targetNodeId: "string", effectiveAtBusinessMinute: "number-or-null" }),
   [PlayerVerb.ScaleNode]: Object.freeze({ targetNodeId: "string", reservedSlots: "number", effectiveAtBusinessMinute: "number-or-null" }),
+  [PlayerVerb.MaintainNode]: Object.freeze({ targetNodeId: "string", openAtBusinessMinute: "number-or-null", closeAtBusinessMinute: "number" }),
+  [PlayerVerb.ScheduleWindow]: Object.freeze({ targetNodeId: "string", openAtBusinessMinute: "number-or-null", closeAtBusinessMinute: "number" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -1104,6 +1153,105 @@ function handleScaleNode(draft: Draft, args: ScaleArgs): HandlerVerdict {
   return { ok: true, detail: effectiveAt === null ? detail : `${detail},at=${String(effectiveAt)}` };
 }
 
+/** Shared band-shape law for the two ADR-0015 window books: open is the null
+ *  now-sentinel or a safe integer >= 0; close is a safe integer >= 0 STRICTLY
+ *  after open. A zero/negative-length band is a booking error, not a legal
+ *  no-op — refusing is cheaper than pretending an empty window holds units
+ *  (§2.24 hygiene "cheap but not free"). A null-open band is accepted with
+ *  close 0 (an armed band already expired at the minute clock's zero — inert
+ *  at read, honest history; the door compares numbers, never the clock). */
+function malformedBand(openAt: number | null, closeAt: number): boolean {
+  if (openAt !== null && (!Number.isSafeInteger(openAt) || openAt < 0)) return true;
+  if (!Number.isSafeInteger(closeAt) || closeAt < 0) return true;
+  return openAt !== null && closeAt <= openAt;
+}
+
+/** ADR-0015 (Maintain mechanic 2/5) MAINTAIN ↔ attendance — the ONLY side
+ *  effect is one frozen entry in the OPTIONAL `GameState.maintain` book
+ *  (absent ⇒ every pre-maintain digest byte-identical — the same embed law
+ *  as pricing/shield/scale). The door NEVER touches units, dice, or RNG:
+ *  the veto is read at step 9 through `maintainInForce` (pipeline/
+ *  defaults.ts), which holds the as-of + expiry law (a queued unit whose
+ *  queue-head node is manned as-of the business minute does NOT cast its
+ *  abandonment die — the unit HOLDS). §1.3 trunk-group-voip card "The
+ *  Switchboard" (hosting_game.md:1771) grounding: the trunk group is a
+ *  finite set of circuits and the switchboard is a person — when nobody
+ *  attends, callers give up (binary patience: they bounce; the card's
+ *  patienceModel row makes this the corpus's first "binary"-mode type).
+ *  The window EXPIRES — hygiene is periodic, so past `closeAtBusinessMinute`
+ *  the row is inert at read but KEPT as the history witness. Last-write-
+ *  wins per node: re-booking REPLACES the band and bumps the book version
+ *  (the §2.24 "cheap but not free" law is priced here as occupancy 2, the
+ *  ATTENDANCE class — manning a switchboard is an on-site task).
+ *  Wire types are parse-trusted (M2): the refusals own the value domain
+ *  only — empty id, malformed band, unknown node. */
+function handleMaintainNode(draft: Draft, args: MaintainArgs): HandlerVerdict {
+  const nodeId = args.targetNodeId as EntityId; // wire type trusted (parseEntry, M2)
+  if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
+  const openAt = args.openAtBusinessMinute;
+  const closeAt = args.closeAtBusinessMinute;
+  if (malformedBand(openAt, closeAt)) {
+    return { ok: false, reason: `bad-maintenance-window: open=${String(openAt)} must be null or a safe integer >= 0, close=${String(closeAt)} a safe integer >= 0 strictly after open` };
+  }
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
+  const base = draft.maintain ?? draft.origin.maintain ?? createMaintainBook();
+  const entries = new Map(base.entries);
+  entries.set(
+    nodeId,
+    Object.freeze({
+      openAtBusinessMinute: openAt,
+      closeAtBusinessMinute: closeAt,
+      shippedAtTick: draft.context.tick,
+    }),
+  );
+  draft.maintain = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  return { ok: true, detail: `node=${nodeId},open=${openAt === null ? "now" : String(openAt)},close=${String(closeAt)}` };
+}
+
+/** ADR-0015 (Schedule mechanic 2/5) SCHEDULE ↔ the job-window DEADLINE —
+ *  the ONLY side effect is one frozen entry in the OPTIONAL `GameState.schedule`
+ *  book (`JobWindowBook` — named for the jobs, deliberately NOT after §7.7
+ *  recovery windows, which are damage records living in `GameState.recovery`).
+ *  Absent ⇒ every pre-schedule digest byte-identical (the embed law). The
+ *  door NEVER touches units or RNG: the deadline substitution is read at
+ *  step 9 for patience-mode "window" units ONLY through `jobWindowInForce`
+ *  + `jobBandDistanceUs` (pipeline/defaults.ts). §1.3 backup/archival card
+ *  "Restore Point" grounding (hosting_game.md:1947/:1956/:4995): "the jobs
+ *  must complete inside a backup window or fail. They don't bounce; they
+ *  fail and retry" — a window-mode unit inside a live band gets its
+ *  effective budget REPLACED by the sim-time distance to the band edge:
+ *  a job that fits HOLDS (p = 0), a job that cannot finish by 06:00 FAILS
+ *  at the edge (p = 1, the certain path — zero RNG either way). The
+ *  26-hour-disaster law (:1964) prices the verb at occupancy 1 — the
+ *  calendar must be cheap to correct. Last-write-wins per node; expired
+ *  bands are inert at read, kept as history.
+ *  Wire types are parse-trusted (M2): the refusals own the value domain
+ *  only — empty id, malformed band, unknown node. */
+function handleScheduleWindow(draft: Draft, args: ScheduleArgs): HandlerVerdict {
+  const nodeId = args.targetNodeId as EntityId; // wire type trusted (parseEntry, M2)
+  if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
+  const openAt = args.openAtBusinessMinute;
+  const closeAt = args.closeAtBusinessMinute;
+  if (malformedBand(openAt, closeAt)) {
+    return { ok: false, reason: `bad-window-band: open=${String(openAt)} must be null or a safe integer >= 0, close=${String(closeAt)} a safe integer >= 0 strictly after open` };
+  }
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
+  const base = draft.schedule ?? draft.origin.schedule ?? createJobWindowBook();
+  const entries = new Map(base.entries);
+  entries.set(
+    nodeId,
+    Object.freeze({
+      openAtBusinessMinute: openAt,
+      closeAtBusinessMinute: closeAt,
+      shippedAtTick: draft.context.tick,
+    }),
+  );
+  draft.schedule = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  return { ok: true, detail: `node=${nodeId},open=${openAt === null ? "now" : String(openAt)},close=${String(closeAt)}` };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -1123,7 +1271,8 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
   if (
     draft.nodes === null && draft.board === null && draft.hands === null &&
     draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
-    draft.attention === null && draft.shield === null && draft.scale === null
+    draft.attention === null && draft.shield === null && draft.scale === null &&
+    draft.maintain === null && draft.schedule === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1145,6 +1294,8 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.attention !== null ? { attention: draft.attention } : {}),
     ...(draft.shield !== null ? { shield: draft.shield } : {}),
     ...(draft.scale !== null ? { scale: draft.scale } : {}),
+    ...(draft.maintain !== null ? { maintain: draft.maintain } : {}),
+    ...(draft.schedule !== null ? { schedule: draft.schedule } : {}),
   });
 }
 
@@ -1276,6 +1427,10 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleShield(draft, args as ShieldArgs);
       case PlayerVerb.ScaleNode:
         return handleScaleNode(draft, args as ScaleArgs);
+      case PlayerVerb.MaintainNode:
+        return handleMaintainNode(draft, args as MaintainArgs);
+      case PlayerVerb.ScheduleWindow:
+        return handleScheduleWindow(draft, args as ScheduleArgs);
     }
   })();
 
@@ -1344,6 +1499,8 @@ export function applyIntentDoor(
     pricing: null,
     shield: null,
     scale: null,
+    maintain: null,
+    schedule: null,
     events: [],
     receipts: [],
   };

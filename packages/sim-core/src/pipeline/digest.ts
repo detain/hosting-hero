@@ -282,6 +282,49 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0015 (Maintain 2/5) — the maintenance-attendance book (digest-switch
+  // law, same embed law as hands/board/pricing/shield/scale): absorbed ONLY
+  // when present, so every pre-maintain state (all shipped goldens) keeps
+  // byte-identical digests. Node ids sort code-unit (Map insertion order
+  // NEVER read); the null open edge takes the -1 sentinel slot (business
+  // minutes are >= 0 by door refusal law). The book is absorbed RAW, expired
+  // bands included — expiry is a READ-time law (maintainInForce); the digest
+  // witnesses what was booked, and pruning would rewrite history.
+  if (state.maintain !== undefined) {
+    sink.text("maintain").int(state.maintain.version);
+    const maintainIds = Array.from(state.maintain.entries.keys()).sort(byId);
+    sink.int(maintainIds.length);
+    for (const id of maintainIds) {
+      const rec = state.maintain.entries.get(id);
+      if (rec === undefined) continue;
+      sink
+        .text(id)
+        .int(rec.openAtBusinessMinute ?? -1)
+        .int(rec.closeAtBusinessMinute)
+        .int(rec.shippedAtTick);
+    }
+  }
+
+  // ADR-0015 (Schedule 2/5) — the backup job-window book (digest-switch law,
+  // same embed law as the other door books): absorbed ONLY when present, so
+  // every pre-schedule state (all shipped goldens) keeps byte-identical
+  // digests. Node ids sort code-unit; the null open edge takes the -1
+  // sentinel. Raw like maintain: expired bands stay in the witness.
+  if (state.schedule !== undefined) {
+    sink.text("schedule").int(state.schedule.version);
+    const scheduleIds = Array.from(state.schedule.entries.keys()).sort(byId);
+    sink.int(scheduleIds.length);
+    for (const id of scheduleIds) {
+      const rec = state.schedule.entries.get(id);
+      if (rec === undefined) continue;
+      sink
+        .text(id)
+        .int(rec.openAtBusinessMinute ?? -1)
+        .int(rec.closeAtBusinessMinute)
+        .int(rec.shippedAtTick);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.

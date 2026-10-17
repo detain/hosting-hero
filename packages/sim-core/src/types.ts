@@ -1238,6 +1238,37 @@ export enum PlayerVerb {
    *  warmth is NOT door-side (the door never touches cash; host opex
    *  consumption is the future seam, recorded in the door docblock). */
   ScaleNode = "scale-node",
+  /** ADR-0015 door-mechanics ruling (tier verbs 2/5 · Maintain): the 12th
+   *  door verb — the Maintain tier verb made playable (§1.3 trunk-group-voip
+   *  card "The Switchboard", hosting_game.md:1771; the §2.24 hygiene-win law
+   *  "cheap but not free" :14907). The door records the window into the
+   *  OPTIONAL `GameState.maintain` book (an open/close business-minute band
+   *  per node, last-write-wins); the effect is read at step 9 — a queued
+   *  unit whose queue-head node is under maintenance as-of the business
+   *  minute does NOT cast its abandonment die (ALL bounce modes: the unit
+   *  HOLDS instead of walking off). Attendance ABSORBS bounce risk — the
+   *  v0 choice is absorb-not-prevent: the wait still accrues, the unit just
+   *  never gives up while the switchboard is manned. The window EXPIRES
+   *  (hygiene is periodic): past `closeAtBusinessMinute` the entry is inert
+   *  at read but kept in the book as the history witness. */
+  MaintainNode = "maintain-node",
+  /** ADR-0015 door-mechanics ruling (tier verbs 2/5 · Schedule): the 13th
+   *  door verb — the Schedule tier verb made playable (§1.3 backup/archival
+   *  card "Restore Point", hosting_game.md:1947: "Dominant verb: Schedule.
+   *  Teaches: verification is the only proof; the window is the constraint";
+   *  the jobs "must complete inside a backup window or fail. They don't
+   *  bounce; they fail and retry" :1956; "Jobs that don't finish by 06:00
+   *  didn't happen" :4995). The door records the band into the OPTIONAL
+   *  `GameState.schedule` book (`JobWindowBook` — deliberately NOT named
+   *  after §7.7 recovery windows, which own their own slice); the effect is
+   *  read at step 9 ONLY for patience-mode "window" units: inside a live
+   *  band the unit's effective deadline becomes the sim-time distance to the
+   *  band edge, so a job that fits HOLDS (p = 0) and a job that cannot
+   *  finish by the edge FAILS there (p = 1 — the card's window that moved,
+   *  made mechanical). Threshold math, zero RNG — the window IS the
+   *  deadline. Maintain = attendance absorbs the risk; Schedule = the
+   *  calendar imposes it. */
+  ScheduleWindow = "schedule-window",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1253,6 +1284,8 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.AdjustPrice,
   PlayerVerb.Shield,
   PlayerVerb.ScaleNode,
+  PlayerVerb.MaintainNode,
+  PlayerVerb.ScheduleWindow,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1381,6 +1414,41 @@ export interface ScaleArgs {
   readonly effectiveAtBusinessMinute: SimMinute | null;
 }
 
+export interface MaintainArgs {
+  readonly verb: PlayerVerb.MaintainNode;
+  /** Node whose switchboard gets manned for the band — resolved against
+   *  `GameState.nodes` (same world-existence check as shield/scale; an
+   *  absent node is the `unknown-node` refusal). */
+  readonly targetNodeId: EntityId;
+  /** Business minute the maintenance window OPENS (inclusive). The null
+   *  sentinel = open from the executing tick (attendance starts now); a
+   *  future stamp arms the band — Dual-Clock as-of law, the same reading
+   *  discipline as the shield/scale books. */
+  readonly openAtBusinessMinute: SimMinute | null;
+  /** Business minute the window CLOSES (exclusive — the instant the crew
+   *  walks off, the abandonment die re-admits). Must exceed the open edge;
+   *  a zero-length band is a booking error, not a legal no-op (§2.24
+   *  hygiene is "cheap but not free" — an empty window buys nothing and
+   *  refusing it is cheaper than pretending it holds units). */
+  readonly closeAtBusinessMinute: SimMinute;
+}
+
+export interface ScheduleArgs {
+  readonly verb: PlayerVerb.ScheduleWindow;
+  /** Node whose job traffic gets a deadline band — resolved against
+   *  `GameState.nodes` (same world-existence check; `unknown-node`). */
+  readonly targetNodeId: EntityId;
+  /** Business minute the job window OPENS (inclusive). The null sentinel =
+   *  in force from the executing tick; a future stamp arms the band. */
+  readonly openAtBusinessMinute: SimMinute | null;
+  /** Business minute the window CLOSES (exclusive) — the trailing edge the
+   *  card's "Jobs that don't finish by 06:00 didn't happen" law made
+   *  mechanical: a window-mode job that cannot finish by this edge FAILS
+   *  there. Must exceed the open edge (same refuse-not-pretend law as
+   *  maintenance bands). */
+  readonly closeAtBusinessMinute: SimMinute;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1393,7 +1461,9 @@ export type PlayerVerbArgs =
   | ToggleSpeedArgs
   | AdjustPriceArgs
   | ShieldArgs
-  | ScaleArgs;
+  | ScaleArgs
+  | MaintainArgs
+  | ScheduleArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -1708,6 +1778,75 @@ export interface ScaleBook {
   readonly entries: ReadonlyMap<EntityId, ScaleEntry>;
 }
 
+/** One executed `maintain-node` order, frozen into the attendance book. The
+ *  record is the ENTIRE door side effect (ADR-0015, mirroring `ShieldEntry`/
+ *  `ScaleEntry`): the patience step READS this book at step 9 (pipeline/
+ *  defaults.ts `maintainInForce` owns the as-of law, mirroring corruption.ts
+ *  `nodeShielded`) — nothing in the door touches units, dice, or RNG.
+ *  `causeId` attribution lives on the minting `intent-executed` event
+ *  (`intent:<seq>`), mirroring every other door verb. */
+export interface MaintainWindow {
+  /** Business minute the band OPENS (inclusive). null = in force from the
+   *  executing tick (the crew is already at the board). */
+  readonly openAtBusinessMinute: SimMinute | null;
+  /** Business minute the band CLOSES (exclusive). Past this edge the entry
+   *  is INERT at read — hygiene is periodic (§2.24: the window is a band,
+   *  not a permanent upgrade) — but the row is KEPT in the book as the
+   *  history witness of who manned what, when. */
+  readonly closeAtBusinessMinute: SimMinute;
+  /** Macro tick the door executed the order (write-order witness; the book's
+   *  Map is keyed by node, never ordered — last-write-wins per node). */
+  readonly shippedAtTick: SimTick;
+}
+
+/** OPTIONAL `GameState` embed — the maintenance-attendance book
+ *  `maintain-node` writes (same embed law as board/hands/pricing/shield/
+ *  scale: absent ⇒ byte-identical digests everywhere; `pipeline/digest.ts`
+ *  absorbs it WHEN PRESENT, node ids sorted code-unit so Map insertion order
+ *  never leaks). Keyed by node id, LAST-WRITE-WINS per node (a fresh booking
+ *  replaces the node's band and bumps `version` — expired bands are NOT
+ *  pruned: the digest encodes the book raw, expiry is a READ-time law owned
+ *  by `maintainInForce`). */
+export interface MaintainBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<EntityId, MaintainWindow>;
+}
+
+/** One executed `schedule-window` order, frozen into the job-window band.
+ *  The record is the ENTIRE door side effect (ADR-0015): the patience step
+ *  READS this book at step 9 for patience-mode "window" units ONLY
+ *  (pipeline/defaults.ts `jobWindowInForce` + `jobBandDistanceUs` own the
+ *  as-of and conversion laws) — nothing in the door touches units or RNG.
+ *  Deliberately NOT named after §7.7 recovery windows — those are the
+ *  second-failure throttle's own slice (`GameState.recovery`); a job window
+ *  is a DEADLINE the player books on the calendar, not a damage record.
+ *  `causeId` attribution lives on the minting `intent-executed` event. */
+export interface JobWindow {
+  /** Business minute the band OPENS (inclusive). null = in force from the
+   *  executing tick (tonight's window, already open). */
+  readonly openAtBusinessMinute: SimMinute | null;
+  /** Business minute the band CLOSES (exclusive) — "Jobs that don't finish
+   *  by 06:00 didn't happen" (hosting_game.md:4995). Past this edge the
+   *  entry is INERT at read; the row is KEPT as the history witness. */
+  readonly closeAtBusinessMinute: SimMinute;
+  /** Macro tick the door executed the order (write-order witness;
+   *  last-write-wins per node). */
+  readonly shippedAtTick: SimTick;
+}
+
+/** OPTIONAL `GameState` embed — the backup job-window book `schedule-window`
+ *  writes (same embed law as the other door books: absent ⇒ byte-identical
+ *  digests everywhere; `pipeline/digest.ts` absorbs it WHEN PRESENT, node
+ *  ids sorted code-unit). Keyed by node id, LAST-WRITE-WINS per node —
+ *  re-arming the window is the cheap move (occupancy 1: the 26-hour-disaster
+ *  law, hosting_game.md:1964, says the calendar must never be expensive to
+ *  correct). Expired bands are NOT pruned; expiry is a READ-time law owned
+ *  by `jobWindowInForce`. */
+export interface JobWindowBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<EntityId, JobWindow>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -1917,4 +2056,24 @@ export interface GameState {
    *  so every pre-scale state — all shipped goldens — digests
    *  byte-identically. */
   readonly scale?: ScaleBook;
+  /** ADR-0015 embed — the maintenance-attendance (Maintain) book
+   *  `maintain-node` writes (see `MaintainBook`). Read at step 9 by the
+   *  patience step through the driver-forwarded input: a queued unit whose
+   *  queue-head node is manned as-of the business minute does NOT cast its
+   *  abandonment die (pipeline/defaults.ts owns the as-of law). OPTIONAL,
+   *  digest-switch law: `pipeline/digest.ts` absorbs it ONLY when present,
+   *  so every pre-maintain state — all shipped goldens — digests
+   *  byte-identically. */
+  readonly maintain?: MaintainBook;
+  /** ADR-0015 embed — the backup job-window (Schedule) book
+   *  `schedule-window` writes (see `JobWindowBook`). Read at step 9 by the
+   *  patience step ONLY for patience-mode "window" units: inside a live band
+   *  the unit's effective deadline becomes the sim-time distance to the
+   *  band's trailing edge (pipeline/defaults.ts owns the as-of + conversion
+   *  laws; the window IS the deadline — zero RNG). Distinct from
+   *  `GameState.recovery` (§7.7 second-failure windows — damage records, not
+   *  calendar deadlines). OPTIONAL, digest-switch law: `pipeline/digest.ts`
+   *  absorbs it ONLY when present, so every pre-schedule state — all shipped
+   *  goldens — digests byte-identically. */
+  readonly schedule?: JobWindowBook;
 }

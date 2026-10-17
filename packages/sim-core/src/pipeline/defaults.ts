@@ -79,9 +79,14 @@ import type {
   Unit,
   UnitDraft,
   CauseId,
+  ClockState,
   ObservedCell,
   ObservedKey,
   ObservedWrite,
+  JobWindow,
+  JobWindowBook,
+  MaintainBook,
+  MaintainWindow,
   ScaleBook,
   ScaleEntry,
   ShieldBook,
@@ -89,6 +94,7 @@ import type {
 import { asCauseId, asEntityId, observedKey, ResolutionBand } from "../types.ts";
 import { FIXED_SCALE, FIXED_UNIT, FIXED_ZERO, clampUnit, fromRatio, mul, sub } from "../kernel/fixed.ts";
 import { streamFor } from "../kernel/rng.ts";
+import { MICROS_PER_MIN } from "../kernel/time.ts";
 import {
   familyToIntent,
   type FamilyMixEntry,
@@ -878,6 +884,88 @@ export function applyScaleWarmth(
   return changed ? out : nodes;
 }
 
+/* ═══════════ Step 9 side law · Maintain/Schedule ↔ the patience die (ADR-0015) ═══════════ */
+
+/** Both ADR-0015 window books share ONE live-band law: a row is in force
+ *  from its open edge (the null sentinel = already open) INCLUSIVE until its
+ *  closing edge EXCLUSIVE. Past `closeAtBusinessMinute` the row is inert at
+ *  read — hygiene is periodic (§2.24: manning a switchboard buys the night,
+ *  not forever; the backup window is a band, not a permanent upgrade) — but
+ *  the book KEEPS the row as the history witness (digest absorbs raw). */
+function bandLive(band: MaintainWindow | JobWindow, atBusinessMinute: SimMinute): boolean {
+  if (band.openAtBusinessMinute !== null && atBusinessMinute < band.openAtBusinessMinute) return false;
+  return atBusinessMinute < band.closeAtBusinessMinute;
+}
+
+/** ADR-0015 door-mechanics ruling, Maintain 2/5 — the AS-OF + EXPIRY law of
+ *  the maintenance-attendance book, a flat twin of corruption.ts
+ *  `nodeShielded` and `scaleWarmInForce` (the as-of half), plus the band law
+ *  the pre-arm books never needed (`bandLive`). Accepting the optional book
+ *  keeps the caller's guard flat (Law 1): `undefined` book ⇒ null for every
+ *  node — the byte-identity switch. §1.3 trunk-group-voip card "The
+ *  Switchboard" (hosting_game.md:1771): when the board is attended callers
+ *  hold; when the crew walks off, the trunk group's binary patience bites. */
+export function maintainInForce(
+  maintain: MaintainBook | undefined,
+  nodeId: EntityId,
+  atBusinessMinute: SimMinute,
+): MaintainWindow | null {
+  if (maintain === undefined) return null;
+  const entry = maintain.entries.get(nodeId);
+  if (entry === undefined) return null;
+  return bandLive(entry, atBusinessMinute) ? entry : null;
+}
+
+/** ADR-0015 Schedule 2/5 — the job-window book's as-of + expiry law, the
+ *  exact twin of `maintainInForce` over `JobWindowBook`. Distinct from §7.7
+ *  recovery windows (`GameState.recovery` — the second-failure throttle's
+ *  damage records): this band is a DEADLINE the player booked on the
+ *  calendar, read only by patience-mode "window" units. */
+export function jobWindowInForce(
+  schedule: JobWindowBook | undefined,
+  nodeId: EntityId,
+  atBusinessMinute: SimMinute,
+): JobWindow | null {
+  if (schedule === undefined) return null;
+  const entry = schedule.entries.get(nodeId);
+  if (entry === undefined) return null;
+  return bandLive(entry, atBusinessMinute) ? entry : null;
+}
+
+/** ADR-0015 Schedule 2/5 — the band → SIM-TIME conversion that makes the
+ *  job window a patience budget: the distance from NOW to the band's
+ *  trailing edge, in sim µs, through the Dual-Clock laws (kernel/time.ts):
+ *  business advances at 43200/7 µs per real µs (`BUSINESS_SCALE_DEFAULT`,
+ *  exact by telescoping floor from zero — `shieldBusinessMinuteOf` reads the
+ *  same clock), sim advances at 60·speed µs per real µs (`simScale`).
+ *
+ *  FORMULA (accumulated-ratio): `distanceSimUs = remainingBusinessUs ×
+ *  clocks.simUs / clocks.businessUs`, where `remainingBusinessUs =
+ *  closeAt × 60_000_000 − businessUs`. At a CONSTANT speed the accumulated
+ *  sim:business ratio IS the current speed's ratio, so the conversion is
+ *  exact; under mixed speeds it weights the remaining edge by the run's
+ *  AVERAGE so-far (the player's speed history is deterministic replay input,
+ *  so this stays byte-reproducible either way). PROVISIONAL: this conversion
+ *  law is new mechanics postdating the ADR-0015 #1 numerics ratification —
+ *  house law ships new numerics PROVISIONAL with ADR-0015 mechanics context
+ *  (same posture as the Maintain v0 absorb-not-prevent choice).
+ *
+ *  Tick-0 fallback: businessUs 0 divides nothing — at 1× the law is exact by
+ *  construction (60 sim µs ÷ (43200/7) business µs = 7/720 per business µs),
+ *  so the first stamp uses `remaining × 7n / 720n`.
+ *
+ *  The guard clause answers "edge already passed" with ZERO budget — a live
+ *  band read through `jobWindowInForce` mathematically keeps remaining > 0
+ *  (floor-minute law: `minute < close` ⇒ `businessUs < close × MICROS_PER_
+ *  MIN`), so this line only fires for a mis-threaded caller: failing the job
+ *  is the honest floor, never inflating a dead band into infinite patience. */
+export function jobBandDistanceUs(band: JobWindow, clocks: ClockState): SimTimeUs {
+  const remainingBusinessUs = BigInt(band.closeAtBusinessMinute) * MICROS_PER_MIN - clocks.businessUs;
+  if (remainingBusinessUs <= 0n) return 0n;
+  if (clocks.businessUs <= 0n) return (remainingBusinessUs * 7n) / 720n;
+  return (remainingBusinessUs * clocks.simUs) / clocks.businessUs;
+}
+
 /* ═══════════════════════════ Step 7 · Inspect ═══════════════════════════ */
 
 /**
@@ -1108,15 +1196,27 @@ export function createPatienceCheckStep(
     let markedThisTick = false;
     /* ADR-0014 #D2 SHIELD pre-arm — the read is presence-gated: NO book on
      * input ⇒ zero business-clock math, zero behavior change (the exact
-     * byte-identity switch, same law as the `corruption` slice above). */
+     * byte-identity switch, same law as the `corruption` slice above).
+     * ADR-0015 2/5: the Maintain + Schedule books share the gate — ANY of
+     * the three window books present computes the business minute ONCE;
+     * all three absent keeps the pre-door shape exactly. */
     const shield = (input as PatienceCheckInExt).shield;
-    const atBusinessMin = shield === undefined ? 0 : shieldBusinessMinuteOf(input.context.clocks);
+    const maintain = (input as PatienceCheckInExt).maintain;
+    const schedule = (input as PatienceCheckInExt).schedule;
+    const atBusinessMin =
+      shield === undefined && maintain === undefined && schedule === undefined
+        ? 0
+        : shieldBusinessMinuteOf(input.context.clocks);
     for (const unit of input.units) {
       const predicted = waitByUnit.get(unit.id);
       if (predicted === undefined) continue; // only queued units bounce from patience
       if (unit.waitingOn !== null || unit.routeHops.length === 0) continue;
       const elapsed = unit.accumulatedLatencyUs + unit.inspectionCostUs;
       const mode = modeByType.get(unit.type) ?? "sigmoid-budget";
+      /* Queue-head node, hoisted once (routeHops[0] — the FIX-8 queue-member-
+       * implies-hop invariant names it): the shield veto, the attendance veto
+       * and the job-window budget all read the SAME head. */
+      const queueNode = unit.routeHops[0];
       if (mode === "corrupts") {
         /* §3.1 corrupt-not-bounce: exhaustion MARKS the unit once (die cast
          * never re-rolled — a unit already marked rides its verdict to the
@@ -1128,7 +1228,6 @@ export function createPatienceCheckStep(
          * never lands, the response completes as a plain served terminal.
          * Per-unit stream discipline means skipping this unit's draw shifts
          * nobody else's dice — the veto has zero blast radius. */
-        const queueNode = unit.routeHops[0];
         if (queueNode !== undefined && nodeShielded(shield, queueNode, atBusinessMin)) continue;
         marks.set(
           unit.id,
@@ -1137,7 +1236,39 @@ export function createPatienceCheckStep(
         markedThisTick = true;
         continue;
       }
-      const probability = patienceProbabilityFor(mode, elapsed, predicted, unit.patienceUs);
+      /* ADR-0015 (Maintain 2/5) ATTENDANCE VETO — gated BEFORE the
+       * abandonment die is cast, for EVERY bounce mode (corrupts branched
+       * away above; its exhaustion die stays shield-owned in v0 — honest
+       * division of labour between the two vetoes): a queued unit whose
+       * queue-head node is manned by a live band SKIPS the die entirely.
+       * The unit HOLDS — elapsed keeps accruing, the wait keeps
+       * re-predicting, capacity is still consumed; what attendance absorbs
+       * is the GIVING-UP, not the queueing (the v0 absorb-not-prevent
+       * choice, PROVISIONAL — new mechanics postdating the ADR-0015 #1
+       * numerics ratification, house law ships PROVISIONAL with mechanics
+       * context). Zero blast radius exactly as the shield veto cites above:
+       * "skipping this unit's draw shifts nobody else's dice" — and with
+       * NO book on input this line answers null without touching a Map. */
+      if (queueNode !== undefined && maintainInForce(maintain, queueNode, atBusinessMin) !== null) continue;
+      /* ADR-0015 (Schedule 2/5) WINDOW-AS-DEADLINE — patience-mode "window"
+       * BRANCH ONLY: inside a live band the job's effective budget becomes
+       * the sim-time distance to the band's trailing edge
+       * (`jobBandDistanceUs`), replacing the unit's authored patience —
+       * "the window is the constraint" (hosting_game.md:1947). A job that
+       * fits HOLDS (p = 0); a job that cannot finish by the edge FAILS
+       * THERE (p = 1 — the certain path: "Jobs that don't finish by 06:00
+       * didn't happen" :4995; the engine's fail terminal is the bounce, the
+       * card's "they fail and RETRY" is the retry-policy layer above).
+       * Threshold math, ZERO RNG: window mode answers p ∈ {0,1} and both
+       * answers skip the "bounce" draw — the band never touches the stream.
+       * No live band (or no book at all) ⇒ the authored budget governs —
+       * byte-identical to every pre-schedule run, pinned both ways. */
+      const band =
+        mode === "window" && queueNode !== undefined
+          ? jobWindowInForce(schedule, queueNode, atBusinessMin)
+          : null;
+      const budgetUs = band === null ? unit.patienceUs : jobBandDistanceUs(band, input.context.clocks);
+      const probability = patienceProbabilityFor(mode, elapsed, predicted, budgetUs);
       if (probability <= FIXED_ZERO) continue;
       const certain = probability >= FIXED_UNIT;
       if (
@@ -1161,11 +1292,15 @@ export function createPatienceCheckStep(
   };
 }
 
-/** Driver-supplied extra: the live corruption slice (absent = dormant) and
- *  the ADR-0014 #D2 pre-arm book (absent = the shield veto never reads). */
+/** Driver-supplied extra: the live corruption slice (absent = dormant), the
+ *  ADR-0014 #D2 pre-arm book (absent = the shield veto never reads), and the
+ *  two ADR-0015 2/5 window books (absent = attendance veto inert / window
+ *  mode keeps its authored budget — the byte-identity switch per book). */
 export interface PatienceCheckInExt extends PatienceCheckIn {
   readonly corruption?: CorruptionState;
   readonly shield?: ShieldBook;
+  readonly maintain?: MaintainBook;
+  readonly schedule?: JobWindowBook;
 }
 
 /** Step-9 out-of-band answer: the merged slice whenever the channel is

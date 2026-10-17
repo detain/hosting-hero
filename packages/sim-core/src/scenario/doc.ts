@@ -341,6 +341,16 @@ export const SCENARIO_INTENT_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Re
     reservedSlots: "number",
     effectiveAtBusinessMinute: "null|number",
   }),
+  "maintain-node": Object.freeze({
+    targetNodeId: "string",
+    openAtBusinessMinute: "null|number",
+    closeAtBusinessMinute: "number",
+  }),
+  "schedule-window": Object.freeze({
+    targetNodeId: "string",
+    openAtBusinessMinute: "null|number",
+    closeAtBusinessMinute: "number",
+  }),
 });
 
 /** One scheduled player verb on the door's rail. The runner stamps seq =

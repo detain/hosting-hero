@@ -884,6 +884,12 @@ export function createTickDriver(
        * byte-identical (the step reads it only when present). A shield the
        * door planted THIS tick guards marks from THIS tick. */
       ...(worked.shield !== undefined ? { shield: worked.shield } : {}),
+      /* ADR-0015 2/5 — the two window books ride the SAME Ext channel,
+       * same ABSENT-key byte-identity law: no maintain/schedule slice ⇒
+       * no key ⇒ the step's vetoes never read. A band the door planted
+       * THIS tick governs the die from THIS tick. */
+      ...(worked.maintain !== undefined ? { maintain: worked.maintain } : {}),
+      ...(worked.schedule !== undefined ? { schedule: worked.schedule } : {}),
     };
     // The default patience step answers with the merged corruption slice via
     // the out-of-band Ext field (defaults.ts module header); a swapped-in
