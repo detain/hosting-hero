@@ -8,6 +8,7 @@ one deterministic in-memory carrier, the hub adapter that welds the relay to
 a port, the idempotent client, the fog serializer, and the conformance law
 body a future socket twin must pass. What does NOT live here: sockets,
 rooms, auth, MySQL notary writes, Dragonfly fan-out. Those are Workerman's.
+- **Production carrier obligation:** `CARRIER-CONTRACT.md` — protocol identity, the laws, storage roles, and the replayable conformance trace.
 
 **PASSAGE (how a click becomes a co-op fact):** a player's door intent is
 built client-side into a `submit` frame (`codec.encodeFrame`, key order by
