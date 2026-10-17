@@ -538,6 +538,30 @@ export const UNIT_HOLD = new Map<EntityId, EntityId>();
  *    POSITION: the fenced skip-branch stays the FIRST branch of §(c); a
  *    fenced node never reaches the ceiling guard — fence beats throttle
  *    (the emergency outranks the dial), pinned falsifiably.
+ *  - L-RS (ADR-0016 successor program) adds the RESTART as a third presence
+ *    on the same channel: `restartFence`/`restartDrop` (pipeline/restart.ts,
+ *    driver-threaded) are the two LIVE-window sets of the bounded reboot.
+ *    The fence leg joins the §(c) skip-branch condition (`!fenced &&
+ *    !restartFenced` — an isolate and a restart zero admissions the same
+ *    way; `keep` mode is EXACTLY the bounded isolate — the keep==fence twin,
+ *    pinned). The drop leg opens §(c′), BETWEEN §(c) and §(d): every
+ *    in-window tick the node's entire queue — including this tick's §(a)
+ *    joins — walks the EXISTED shed channel, byte-for-byte the §(d)
+ *    hard-ceiling shape (`shed.push` loop, `queue.length = 0`,
+ *    `queueDirty = true`) so the driver's R-06 reorder, the rec#5 purge
+ *    attribution, and the R8 F-2 terminal PRESET branch all apply UNCHANGED
+ *    — cause `outcome:<unitId>`, event kind "bounced", nodeId via
+ *    routeHops[0]; ZERO new event kinds, ZERO dice. §(b) releases run
+ *    BEFORE the flush (completion-before-purge: work finishing at the reboot
+ *    minute is SERVED, not a casualty) and occupied arms are NEVER evicted
+ *    (true kill-in-flight stays DEFERRED — the wedge-state reason lives in
+ *    pipeline/restart.ts). Restart-into-hard-ceiling double-pushes the same
+ *    unit into `shed`; the driver's `candidateSeen` makes it idempotent —
+ *    bounced ONCE (pinned). Ladder of severity, all three on the same
+ *    channel: throttle-partial < restart-keep (bounded fence) <
+ *    restart-drop (bounded fence + queue flush) ≤ isolate (indefinite
+ *    fence). Fields ABSENT ⇒ every branch identity — shipped digests
+ *    byte-identical (zero-golden default).
  * `ServeIn` itself stays the frozen contract; like ArrivalInExt /
  * PatienceCheckInExt / BackpressureInExt this rides as an optional field
  * the base step reads through a cast.
@@ -548,6 +572,13 @@ export interface ServeInExt extends ServeIn {
   /** Node id → admission-ceiling slots REMOVED this tick (frozen by
    *  throttle.ts; live cuts only, `cut >= 1` — an idle book omits the key). */
   readonly throttleCuts?: ReadonlyMap<EntityId, number>;
+  /** Node ids inside a LIVE restart window this tick — the fence leg
+   *  (frozen by restart.ts; drop ⊆ fence — an idle book omits the key). */
+  readonly restartFence?: ReadonlySet<EntityId>;
+  /** Node ids inside a LIVE restart window with `dropQueued` this tick —
+   *  the §(c′) flush leg (frozen by restart.ts; a book without live drop
+   *  rows omits the key). */
+  readonly restartDrop?: ReadonlySet<EntityId>;
 }
 
 export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
@@ -555,6 +586,8 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
   const simNow = context.clocks.simUs;
   const isolationFence = (input as ServeInExt).isolationFence;
   const throttleCuts = (input as ServeInExt).throttleCuts;
+  const restartFence = (input as ServeInExt).restartFence;
+  const restartDrop = (input as ServeInExt).restartDrop;
   const unitById = new Map<EntityId, Unit>();
   for (const unit of input.units) unitById.set(unit.id, unit);
 
@@ -612,6 +645,10 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
     // truth below are untouched by the flag — a fence stops RECEIVING new
     // work, never keeps in-flight work from finishing.
     const fenced = isolationFence !== undefined && isolationFence.has(nodeId);
+    // L-RS restart fence leg: the SAME skip as isolation (a live reboot
+    // window takes no new work either); `keep` mode is exactly this — the
+    // bounded isolate twin. The flush leg below is the `drop` difference.
+    const restartFenced = restartFence !== undefined && restartFence.has(nodeId);
     // rec#2 (copy-on-write discipline): queue/slot arrays materialize ONLY
     // when this tick has something to change on this node. An untouched node
     // flows through with its frozen arrays and its own record identity —
@@ -733,7 +770,7 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
     // walks off — never-evict honored, the roster never written.
     const cut = throttleCuts?.get(nodeId);
     const ceiling = cut === undefined ? Infinity : slotCount - cut;
-    while (!fenced && queue !== null && queue.length > 0) {
+    while (!fenced && !restartFenced && queue !== null && queue.length > 0) {
       const head = queue[0];
       if (head === undefined) break;
       const unit = unitById.get(head);
@@ -772,6 +809,27 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
           blocked: false,
         }),
       );
+    }
+
+    // (c′) RESTART flush leg (L-RS, ADR-0016): a live `drop` window walks
+    // the ENTIRE queue — this tick's §(a) joins included — through the
+    // EXISTED shed channel, byte-for-byte the §(d) hard-ceiling shape, so
+    // every downstream law rides unchanged: the driver's orderShedForTick
+    // reorder, the rec#5 purge attribution, and the R8 F-2 terminal PRESET
+    // branch ("bounced", cause `outcome:<unitId>`, zero dice, nodeId = the
+    // rebooting node via routeHops[0]). Runs AFTER §(b) releases and §(c)
+    // admissions — completion-before-purge: work that finished at the
+    // reboot minute is served, not a casualty; occupied arms are never
+    // evicted (kill-in-flight DEFERRED, see pipeline/restart.ts). On a
+    // hard-ceiling node the same unit may be pushed by both legs; the
+    // driver's candidateSeen first-writer makes the terminal idempotent —
+    // bounced ONCE (pinned). ZERO dice: the flush casts nothing, so
+    // surviving units' patience patterns on OTHER nodes are byte-identical
+    // to the unarmed run (per-unit-key stream law, pinned falsifiably).
+    if (restartDrop !== undefined && restartDrop.has(nodeId) && queue !== null && queue.length > 0) {
+      for (const unitId of queue) shed.push(unitId);
+      queue.length = 0;
+      queueDirty = true;
     }
 
     // (d) discipline: hard-ceiling sheds the residual queue instantly

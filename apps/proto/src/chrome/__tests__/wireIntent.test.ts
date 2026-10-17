@@ -531,4 +531,41 @@ describe("full bridge — a bigint price survives SimClient → wire → worker-
     expect(receipts[0]!.detail).toBe("throttle-node: target=edge,cut=1,eff=now,rel=480");
     client.destroy();
   });
+
+  // L-RS (ADR-0016 successor program): the EIGHTEENTH verb — the LAST
+  // unbuilt §7.16 Act-row verb ("drain, restart, isolate, shed") — crosses
+  // the FULL bridge like its fence and cut siblings. `dropQueued` is a
+  // closed-vocab STRING {drop,keep} (ArgWireType has no boolean arm) and
+  // `releaseAtBusinessMinute` is a REQUIRED plain `number` (an unbounded
+  // restart would be isolate-node under another name) — so again NO
+  // BIGINT/NULLABLE mirror row is added and NO revival dance runs. This
+  // pin proves the order EXECUTES at the door with the canonical detail
+  // grammar (drop leg present, numeric rel — never the fence's
+  // "indefinite" word).
+  it("restart-node survives SimClient → wire → worker-host → door and executes", () => {
+    const { fake, client, frames } = bridge();
+    client.sendPlayerVerb(
+      {
+        verb: "restart-node",
+        targetNodeId: "edge",
+        dropQueued: "drop",
+        effectiveAtBusinessMinute: null,
+        releaseAtBusinessMinute: 480,
+      },
+      "business",
+    );
+    fake.pump(2);
+    const last = fake.lastIntent;
+    expect(last).not.toBeNull();
+    if (last === null || last.payload.kind !== "player-verb") throw new Error("worker never saw the intent");
+    const args = last.payload.args as unknown as Record<string, unknown>;
+    expect(args["targetNodeId"]).toBe("edge");
+    expect(args["dropQueued"]).toBe("drop"); // a plain JSON string — the {drop,keep} vocab, no revival
+    expect(args["effectiveAtBusinessMinute"]).toBeNull();
+    expect(args["releaseAtBusinessMinute"]).toBe(480); // required number — no null arm exists
+    const receipts = frames.flatMap((f) => f.notices).filter((n) => n.kind === "intent-executed");
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]!.detail).toBe("restart-node: target=edge,drop=drop,eff=now,rel=480");
+    client.destroy();
+  });
 });

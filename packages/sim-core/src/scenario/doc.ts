@@ -377,6 +377,12 @@ export const SCENARIO_INTENT_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Re
     effectiveAtBusinessMinute: "null|number",
     releaseAtBusinessMinute: "null|number",
   }),
+  "restart-node": Object.freeze({
+    targetNodeId: "string",
+    dropQueued: "string",
+    effectiveAtBusinessMinute: "null|number",
+    releaseAtBusinessMinute: "number",
+  }),
 });
 
 /** One scheduled player verb on the door's rail. The runner stamps seq =

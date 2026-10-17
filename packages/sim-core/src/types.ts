@@ -1362,6 +1362,38 @@ export enum PlayerVerb {
    *  the explicit lift amendment (last-write-wins; no dedicated un-throttle
    *  verb in v0, the fence posture again). */
   ThrottleNode = "throttle-node",
+  /** ADR-0016 successor program (lane L-RS): the 18th door verb — the LAST
+   *  unbuilt §7.16 Act-row verb. The Act-row law (~:28825: "every object's
+   *  inspector has an 'Act' row of at most four one-click emergency verbs…
+   *  drain, restart, isolate, shed") named four; drain rides
+   *  `disconnect-drain`, shed rides `shed-load`, isolate became
+   *  `isolate-node` (ADR-0015 @86cff89) — Restart closes the row (the
+   *  wave-20 rider at ~:28838 recorded it as "the unbuilt named successor";
+   *  this is that blessing, owner ruling 2026-10-17). §7.5's reference
+   *  durations (~:26741: "restart a service **20s**") price it as a desk
+   *  tap — COMMIT class, one hand / one tick, the Act-row one-click law
+   *  again. A RESTART is a BOUNDED fence plus a queue flush: the door
+   *  records the WINDOW and the FLUSH MODE into the OPTIONAL
+   *  `GameState.restart` book — half-open `[effective, release)` like the
+   *  fence, but the release leg is REQUIRED (wire type `number`, never
+   *  null): an unbounded restart would be structurally indistinguishable
+   *  from `isolate-node`, and the door refuses to fork the fence under
+   *  another name. While a restart is live the node admits NO new work
+   *  (the fence leg VERBATIM, `ServeInExt.restartFence`), and with
+   *  `dropQueued` ("drop") EVERY in-window tick its whole waiting queue —
+   *  including this tick's joins — walks the EXISTED hard-ceiling shed
+   *  channel (§(c′), byte-for-byte the §(d) shape: driver `orderShedForTick`
+   *  reorder, rec#5 attribution, R8 F-2 terminal PRESET branch, cause
+   *  `outcome:<unitId>`, event kind "bounced" — zero new event kinds, zero
+   *  dice). `keep` is the pure bounded fence (the legibility ladder:
+   *  throttle-partial < keep-fence < drop-flush). Occupied/in-flight arms
+   *  are NEVER evicted — §(b) releases run FIRST, so work finishing at the
+   *  reboot minute is SERVED, not a casualty (completion-before-purge; a
+   *  true process-kill that evicts in-flight stays DEFERRED, wedge-state
+   *  reason in `pipeline/restart.ts`). At `release` the node rejoins
+   *  queue-empty. The engine reader is `pipeline/restart.ts`
+   *  (`nodeRestartWindow`/`restartSets`); the door writes ONLY the book. */
+  RestartNode = "restart-node",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1383,6 +1415,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.NegotiateTerms,
   PlayerVerb.IsolateNode,
   PlayerVerb.ThrottleNode,
+  PlayerVerb.RestartNode,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1695,6 +1728,47 @@ export interface ThrottleArgs {
   readonly releaseAtBusinessMinute: SimMinute | null;
 }
 
+/** ADR-0016 successor program (`RestartNode` — the 18th verb, the LAST
+ *  unbuilt §7.16 Act-row verb: "drain, restart, isolate, shed"). */
+export interface RestartArgs {
+  readonly verb: PlayerVerb.RestartNode;
+  /** Node to restart — resolved against `GameState.nodes` (the fence's
+   *  world-existence check reused verbatim; an absent node is the
+   *  `unknown-node` refusal). The restart never touches the node's records:
+   *  the roster is NOT rewritten and occupied slots are NOT evicted — the
+   *  fence leg blocks admissions and the flush leg walks the queue through
+   *  the EXISTED shed channel at the step-5 read
+   *  (`pipeline/restart.ts` + `defaults.ts` §(c)/(c′)). */
+  readonly targetNodeId: EntityId;
+  /** Flush mode — the closed vocab {drop, keep} carried on the wire as a
+   *  STRING (ArgWireType has no boolean arm; off-vocab is the
+   *  `bad-drop-mode` refusal, the negotiate `bad-tone` twin) and stored as
+   *  a boolean in the book. "drop" = bounded fence PLUS an every-tick queue
+   *  flush (the reboot kills the backlog — §(c′)); "keep" = the pure bounded
+   *  fence (queue ages under patience, the rung between throttle and isolate
+   *  on the legibility ladder). NAMED `dropQueued`, not "dropInFlight":
+   *  "in-flight" is the occupied-slot work this verb deliberately does NOT
+   *  evict (§(b) completion-before-purge); the field drops QUEUED units. */
+  readonly dropQueued: "drop" | "keep";
+  /** Business-clock effective minute (Dual-Clock law §4.4 — the
+   *  fence/throttle as-of discipline VERBATIM): the null sentinel = restart
+   *  from the executing tick; a future stamp is armed but NOT yet law,
+   *  honored same-tick by `nodeRestartWindow`. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+  /** Business-clock RELEASE minute — the reboot window is HALF-OPEN
+   *  `[effective, release)`, the fence's window law VERBATIM (release
+   *  strictly exclusive: at `release` the node admits again, queue-empty).
+   *  REQUIRED on the wire (plain `number`, NOT number-or-null): a null
+   *  release is STRUCTURAL garbage (M2 throws) because an unbounded restart
+   *  is structurally `isolate-node` under another name — the door refuses to
+   *  fork the fence. When both minutes are non-null, `release` must be
+   *  strictly greater than `effective` (`release-before-effective` refusal,
+   *  reused); a null effective with release 0 is accepted as
+   *  already-expired inert history (the maintain close-0 posture, lane
+   *  L-DM2 @5987ef1). */
+  readonly releaseAtBusinessMinute: SimMinute;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1713,7 +1787,8 @@ export type PlayerVerbArgs =
   | SellOfferArgs
   | NegotiateTermsArgs
   | IsolateArgs
-  | ThrottleArgs;
+  | ThrottleArgs
+  | RestartArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -2260,6 +2335,50 @@ export interface ThrottleBook {
   readonly entries: ReadonlyMap<EntityId, ThrottleEntry>;
 }
 
+/** ADR-0016 successor program (`RestartNode`) — one reboot record per node.
+ *  The door stamps the WINDOW and the FLUSH MODE and NOTHING else; the fold
+ *  reads it as-of business minutes (`nodeRestartWindow`). No base-roster
+ *  anchor lives here (the `IsolateEntry`/`ThrottleEntry` posture): the
+ *  restart never writes the roster — it blocks admissions and walks the
+ *  queue through the existing shed channel — so there is nothing to restore
+ *  when it lifts, and occupied arms are trivially never evicted. */
+export interface RestartEntry {
+  /** Macro tick the door executed the order (write-order witness;
+   *  last-write-wins per node). */
+  readonly shippedAtTick: SimTick;
+  /** Stored flush mode: the wire's closed {drop, keep} string parsed to a
+   *  boolean at the door (`true` = the queue flush §(c′) runs every
+   *  in-window tick; `false` = pure bounded fence, the queue ages under
+   *  patience). A booked row is never re-parsed downstream. */
+  readonly dropQueued: boolean;
+  /** Business minute the reboot starts; null = from `shippedAtTick`
+   *  (same-tick pre-arm honored — the `ShieldEntry`/`IsolateEntry` as-of
+   *  twin). */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+  /** Business minute the reboot ENDS, STRICTLY exclusive — the window is
+   *  half-open `[effective, release)`, at `release` the node admits again,
+   *  queue-empty (the fence's release leg, made REQUIRED: a restart without
+   *  an end is an isolate, and the door's wire type enforces the
+   *  distinction). No null sentinel exists for this leg: the digest writes
+   *  it raw. Expired rows are KEPT as history witness, inert at read — the
+   *  maintain/schedule/isolate/throttle read-time expiry law; nothing is
+   *  ever pruned, the digest encodes rows raw. */
+  readonly releaseAtBusinessMinute: SimMinute;
+}
+
+/** OPTIONAL `GameState` embed — the restart-node book `restart-node` writes
+ *  (same embed law as the other door books: absent ⇒ byte-identical digests
+ *  everywhere; `pipeline/digest.ts` absorbs it WHEN PRESENT). Keyed by node
+ *  id — LAST-WRITE-WINS per node: re-arming replaces the standing window
+ *  (a shorter window is the amendment that lifts early; there is no
+ *  dedicated un-restart verb in v0, and none is needed — the REQUIRED
+ *  release leg bounds every reboot by construction). `version` bumps per
+ *  materialized write — the board/pricing memoization convention. */
+export interface RestartBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<EntityId, RestartEntry>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -2547,4 +2666,25 @@ export interface GameState {
    *  (digest-switch law: `pipeline/digest.ts` absorbs it ONLY when
    *  present). */
   readonly throttle?: ThrottleBook;
+  /** ADR-0016 successor-program embed — the restart-node (Restart) book
+   *  `restart-node` writes (see `RestartBook`): a half-open reboot window
+   *  `[effective, release)` per node, last-write-wins, the release leg
+   *  REQUIRED (an unbounded restart would be an isolate under another
+   *  name). The BOUNDED fence sibling of isolate and the FLUSH sibling of
+   *  throttle: while a window is live the step-5 serve input admits nothing
+   *  new to the node (`ServeInExt.restartFence` — the fence leg VERBATIM),
+   *  and with `dropQueued` the node's entire waiting queue — including this
+   *  tick's §(a) joins — walks the EXISTED hard-ceiling shed channel every
+   *  in-window tick (§(c′), byte-for-byte the §(d) shape: driver reorder +
+   *  rec#5 attribution + R8 F-2 terminal PRESET branch, zero new event
+   *  kinds, zero dice). Occupied/in-flight arms are NEVER evicted — §(b)
+   *  releases run first (completion-before-purge; the true process-kill
+   *  stays DEFERRED). `dropQueued=false` is the pure bounded fence
+   *  (throttle-partial < keep-fence < drop-flush). At `release` the node
+   *  rejoins queue-empty. The as-of law lives ONCE in `pipeline/restart.ts`
+   *  (`nodeRestartWindow`/`restartSets`); the driver threads the two sets
+   *  as presence-only `ServeInExt` extensions — absent/idle book ⇒ zero
+   *  calls ⇒ every shipped golden byte-identical (digest-switch law:
+   *  `pipeline/digest.ts` absorbs it ONLY when present). */
+  readonly restart?: RestartBook;
 }

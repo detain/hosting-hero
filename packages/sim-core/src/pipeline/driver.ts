@@ -113,6 +113,7 @@ import {
 } from "./defaults.ts";
 import { isolatedNodeIds } from "./isolation.ts";
 import { throttleCuts } from "./throttle.ts";
+import { restartSets } from "./restart.ts";
 import {
   foldCorruptionTerminals,
   shieldBusinessMinuteOf,
@@ -651,8 +652,25 @@ export function createTickDriver(
      * base the cut discounts). Zero RNG at this site. */
     const throttleCutMap =
       worked.throttle !== undefined ? throttleCuts(worked.throttle, shieldBusinessMinuteOf(context.clocks)) : null;
+    /* ADR-0016 successor program · Restart: with a booked restart slice, the
+     * LIVE reboot windows (same as-of minute, same single floor-division
+     * helper `shieldBusinessMinuteOf` — the fourth reuse after shield/scale,
+     * isolate, and throttle; the L-DM1 name-it law) ride the serve input as
+     * TWO presence-only sets: `restartFence` (every live window — the §(c)
+     * skip leg, the isolate posture) and `restartDrop` (the live `drop` rows
+     * — the §(c′) flush leg, drop ⊆ fence). NO book — or a book with zero
+     * live windows (`restartSets` answers null legs: idle/expired/
+     * armed-not-yet) — ⇒ both keys are omitted entirely and the input object
+     * is byte-identical to the unarmed run (zero-call law). The flush walks
+     * the EXISTED shed channel (R8 F-2 PRESET branch, zero dice — the same
+     * terminal shape a hard ceiling already produces), so restart shares no
+     * ledger with the door beyond the book itself. Zero RNG at this site. */
+    const restartWindows =
+      worked.restart !== undefined ? restartSets(worked.restart, shieldBusinessMinuteOf(context.clocks)) : null;
+    const restartFence = restartWindows?.fence ?? null;
+    const restartDrop = restartWindows?.drop ?? null;
     const serveIn: ServeInExt =
-      isolationFence === null && throttleCutMap === null
+      isolationFence === null && throttleCutMap === null && restartFence === null && restartDrop === null
         ? { context, units, nodes: serveInput }
         : {
             context,
@@ -660,6 +678,8 @@ export function createTickDriver(
             nodes: serveInput,
             ...(isolationFence !== null ? { isolationFence } : {}),
             ...(throttleCutMap !== null ? { throttleCuts: throttleCutMap } : {}),
+            ...(restartFence !== null ? { restartFence } : {}),
+            ...(restartDrop !== null ? { restartDrop } : {}),
           };
     const serveOut = steps.serve(serveIn);
     // R-06 class-aware shed (audit fix, §7.11): a hard-ceiling node sheds its WHOLE

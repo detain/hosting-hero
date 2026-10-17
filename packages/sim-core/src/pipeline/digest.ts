@@ -430,6 +430,34 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0016 successor program RESTART — the optional restart-node reboot
+  // book (digest-switch law, same embed law as the others): absorbed ONLY
+  // when present, so every pre-restart state (all shipped goldens) keeps
+  // byte-identical digests. Node ids sort code-unit (Map insertion order
+  // NEVER read); the effective leg takes the -1 null-sentinel (the door's
+  // >= 0 law keeps it unambiguous), but release is written RAW with NO
+  // sentinel — the wire type makes it REQUIRED (an unbounded restart would
+  // be an isolate; there is no -1 row to encode). dropQueued rides as a
+  // BOOL — the flush leg participates: keep and drop of the same window are
+  // DIFFERENT laws and must digest differently. Raw like isolate/throttle:
+  // expired rows stay in the book as witness (read-time expiry in
+  // pipeline/restart.ts).
+  if (state.restart !== undefined) {
+    sink.text("restart").int(state.restart.version);
+    const restartKeys = Array.from(state.restart.entries.keys()).sort(byId);
+    sink.int(restartKeys.length);
+    for (const key of restartKeys) {
+      const rec = state.restart.entries.get(key);
+      if (rec === undefined) continue;
+      sink
+        .text(key)
+        .int(rec.shippedAtTick)
+        .bool(rec.dropQueued)
+        .int(rec.effectiveAtBusinessMinute ?? -1)
+        .int(rec.releaseAtBusinessMinute);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.

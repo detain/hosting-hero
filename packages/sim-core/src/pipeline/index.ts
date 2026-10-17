@@ -22,4 +22,5 @@ export * from "./recovery/tracker.ts";
 export * from "./corruption.ts";
 export * from "./isolation.ts";
 export * from "./throttle.ts";
+export * from "./restart.ts";
 export { digestState } from "./digest.ts";

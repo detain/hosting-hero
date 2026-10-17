@@ -77,6 +77,20 @@
  *    truncated, no unit evicted; the door REFUSES `cut >= roster` pointing
  *    at `isolate-node`, so the fence stays the total case and every booked
  *    throttle is a PARTIAL cut),
+ *    restart (restart-node — the OPTIONAL ADR-0016 successor reboot book,
+ *    the LAST unbuilt §7.16 Act-row verb, STATE-NEUTRAL: while the bounded
+ *    window is live the node admits nothing (the fence leg, driver-threaded
+ *    `ServeInExt.restartFence`) and, in "drop" mode, its whole waiting queue
+ *    walks the EXISTED hard-ceiling shed channel each in-window tick
+ *    (§(c′), byte-for-byte the §(d) shape — driver reorder, rec#5
+ *    attribution, R8 F-2 terminal PRESET branch, zero new event kinds, zero
+ *    dice; the as-of law is pipeline/restart.ts
+ *    `nodeRestartWindow`/`restartSets`), never by the door; the door writes
+ *    ONLY the book — no roster is written, occupied arms are NEVER evicted
+ *    (§(b) releases run first — completion-before-purge; true
+ *    kill-in-flight stays DEFERRED); the release leg is REQUIRED on the
+ *    wire (plain `number`): an unbounded restart would be `isolate-node`
+ *    under another name, and the door refuses to fork the fence),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -149,6 +163,9 @@ import type {
   PriceOverrideBook,
   PriceOverrideRecord,
   PriceTargetKind,
+  RestartArgs,
+  RestartBook,
+  RestartEntry,
   ScaleArgs,
   ScaleBook,
   ScaleEntry,
@@ -402,6 +419,14 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // 2026-10-17) — occupancy pinned red on drift. The cut lands at step 5
   // (pipeline/throttle.ts + defaults.ts §(c)); the door only writes the book.
   [PlayerVerb.ThrottleNode]: 1,
+  // ADR-0016 successor program (Restart): the §7.16 Act-row one-click law
+  // covers the last unbuilt row verb ⇒ the COMMIT class (1 tick), same
+  // window as isolate-node/throttle-node; §7.5's reference durations
+  // (~:26741: "restart a service **20s**") price the desk tap. PROVISIONAL
+  // taste (post-ratify new numeric, 2026-10-17) — occupancy pinned red on
+  // drift. The reboot lands at step 5 (pipeline/restart.ts + defaults.ts
+  // §(c)/(c′)); the door only writes the book.
+  [PlayerVerb.RestartNode]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -438,6 +463,11 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   // the other COMMIT-class verbs (PROVISIONAL taste, occupancy table above;
   // the one-click Act-row law makes it a tap, not an attendance).
   [PlayerVerb.ThrottleNode]: 1,
+  // ADR-0016 (Restart): one desk hand to pull the reboot lever — same cost
+  // as the other COMMIT-class verbs (PROVISIONAL taste, occupancy table
+  // above; the one-click Act-row law makes it a tap, not an attendance;
+  // §7.5: "restart a service 20s").
+  [PlayerVerb.RestartNode]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -663,6 +693,16 @@ export function createThrottleBook(): ThrottleBook {
   return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, ThrottleEntry>()) });
 }
 
+/** Empty restart book (ADR-0016 successor program · Restart) — hosts that
+ *  want the door fed an unarmed-but-present board state can seed one; the
+ *  fold law is the same as the other books (an EMPTY book still switches the
+ *  digest, an ABSENT field never does). Keyed by node id; every booked
+ *  window is BOUNDED by construction (the wire's required release leg —
+ *  a never-ending restart would be an `isolate-node` under another name). */
+export function createRestartBook(): RestartBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, RestartEntry>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -722,6 +762,8 @@ interface Draft {
   isolate: IsolateBook | null;
   /** ADR-0016 COW throttle book — null until a `throttle-node` order lands. */
   throttle: ThrottleBook | null;
+  /** ADR-0016 COW restart book — null until a `restart-node` order lands. */
+  restart: RestartBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -819,6 +861,14 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   // NO new ArgWireType arm is needed and JSON's plain numbers cross the
   // proto bridge without the bigint revival dance (wireIntent pin).
   [PlayerVerb.ThrottleNode]: Object.freeze({ targetNodeId: "string", cutSlots: "number", effectiveAtBusinessMinute: "number-or-null", releaseAtBusinessMinute: "number-or-null" }),
+  // ADR-0016 Restart: `dropQueued` rides the closed-vocab STRING leg (the
+  // negotiate `tone` family — ArgWireType has no boolean arm; the {drop,
+  // keep} value domain is the handler's refusal space). `releaseAtBusinessMinute`
+  // is a REQUIRED plain `number` — the fence's nullable release leg is
+  // DELIBERATELY not reused: an unbounded restart is structurally
+  // `isolate-node` under another name, and the door refuses to fork the
+  // fence; null release is structural garbage (M2 throws).
+  [PlayerVerb.RestartNode]: Object.freeze({ targetNodeId: "string", dropQueued: "string", effectiveAtBusinessMinute: "number-or-null", releaseAtBusinessMinute: "number" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -1733,6 +1783,86 @@ function handleThrottleNode(draft: Draft, args: ThrottleArgs): HandlerVerdict {
   return { ok: true, detail };
 }
 
+/**
+ * `restart-node` handler (ADR-0016 successor program · lane L-RS) — the
+ * LAST unbuilt §7.16 Act-row verb (hosting_game.md ~:28825: "an 'Act' row of
+ * at most four one-click emergency verbs… drain, restart, isolate, shed";
+ * the wave-20 rider at ~:28838 recorded restart as "the unbuilt named
+ * successor" — this is the blessing). §7.5's reference durations (~:26741:
+ * "restart a service **20s**") price the desk tap ⇒ COMMIT class, one hand /
+ * one tick, the one-click law again. The door books the WINDOW and the FLUSH
+ * MODE — a half-open `[effective, release)` reboot per node, last-write-wins
+ * — and the engine reader (`pipeline/restart.ts`, consumed at the step-5
+ * serve input in `pipeline/defaults.ts` §(c)/(c′)) zeroes admissions while
+ * live and, in "drop" mode, walks the whole waiting queue through the
+ * EXISTED hard-ceiling shed channel every in-window tick (zero dice, zero
+ * new event kinds). Wire types are parse-trusted (M2): `dropQueued` is a
+ * closed-vocab `string` (a BOOLEAN `true` is structural garbage — the
+ * speedX wrong-TYPE throw precedent), both minute legs keep the fence's
+ * discipline but `releaseAtBusinessMinute` is a REQUIRED `number`: null
+ * release THROWS at the wall, because an unbounded restart would be
+ * structurally indistinguishable from `isolate-node` and the door refuses to
+ * fork the fence under another name. State-neutral by law: no unit, no slot,
+ * no roster, no queue, no RNG, no cash is touched here — the reboot is READ
+ * downstream, never enforced at the door (the fence posture VERBATIM).
+ *
+ * Refusal grammar: the fence's five codes reused VERBATIM
+ * (`empty-node-id` / `bad-effective-minute: …` / `bad-release-minute: …` /
+ * `release-before-effective: …` / `unknown-node: "<id>"`) plus ONE new
+ * phrase — `bad-drop-mode` (the negotiate `bad-tone` twin: the value domain
+ * is the handler's, checked at the fence's shape-leg position right after
+ * `empty-node-id`). The `bad-release-minute` check still guards the VALUE
+ * domain (non-safe-integer or < 0) even though the TYPE wall has already
+ * made null unreachable — verbatim phrase reuse spends no new census code,
+ * and the "(or null = indefinite)" tail of the shared string is honest for
+ * the fence family that raised it first. There is NO range leg: a restart
+ * reads no roster (unlike throttle's `cut >= roster`), and the required
+ * release leg makes an indefinite "restart-equals-fence" authoring
+ * impossible at the wire, so no pointing refusal is needed.
+ */
+function handleRestartNode(draft: Draft, args: RestartArgs): HandlerVerdict {
+  const nodeId = args.targetNodeId as EntityId; // wire type trusted (parseEntry, M2)
+  if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
+  const dropMode = args.dropQueued;
+  if (dropMode !== "drop" && dropMode !== "keep") {
+    return { ok: false, reason: `bad-drop-mode: "${String(dropMode)}" not in {drop,keep}` };
+  }
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const releaseAt = args.releaseAtBusinessMinute;
+  if (!Number.isSafeInteger(releaseAt) || releaseAt < 0) {
+    return { ok: false, reason: `bad-release-minute: ${String(releaseAt)} must be a safe integer >= 0 (or null = indefinite)` };
+  }
+  if (effectiveAt !== null && releaseAt <= effectiveAt) {
+    return {
+      ok: false,
+      reason: `release-before-effective: release ${String(releaseAt)} must be > effective ${String(effectiveAt)} (the reboot window is half-open [effective, release))`,
+    };
+  }
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
+  const base = draft.restart ?? draft.origin.restart ?? createRestartBook();
+  const entries = new Map<EntityId, RestartEntry>(base.entries);
+  entries.set(
+    nodeId,
+    Object.freeze({
+      shippedAtTick: draft.context.tick,
+      dropQueued: dropMode === "drop",
+      effectiveAtBusinessMinute: effectiveAt,
+      releaseAtBusinessMinute: releaseAt,
+    }),
+  );
+  draft.restart = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  const detail =
+    `target=${nodeId}` +
+    `,drop=${dropMode}` +
+    `,eff=${effectiveAt === null ? "now" : String(effectiveAt)}` +
+    `,rel=${String(releaseAt)}`;
+  return { ok: true, detail };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -1754,7 +1884,8 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
     draft.attention === null && draft.shield === null && draft.scale === null &&
     draft.maintain === null && draft.schedule === null && draft.sell === null &&
-    draft.negotiate === null && draft.isolate === null && draft.throttle === null
+    draft.negotiate === null && draft.isolate === null && draft.throttle === null &&
+    draft.restart === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1782,6 +1913,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.negotiate !== null ? { negotiate: draft.negotiate } : {}),
     ...(draft.isolate !== null ? { isolate: draft.isolate } : {}),
     ...(draft.throttle !== null ? { throttle: draft.throttle } : {}),
+    ...(draft.restart !== null ? { restart: draft.restart } : {}),
   });
 }
 
@@ -1925,6 +2057,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleIsolateNode(draft, args as IsolateArgs);
       case PlayerVerb.ThrottleNode:
         return handleThrottleNode(draft, args as ThrottleArgs);
+      case PlayerVerb.RestartNode:
+        return handleRestartNode(draft, args as RestartArgs);
     }
   })();
 
@@ -1999,6 +2133,7 @@ export function applyIntentDoor(
     negotiate: null,
     isolate: null,
     throttle: null,
+    restart: null,
     events: [],
     receipts: [],
   };
