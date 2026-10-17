@@ -104,11 +104,22 @@ import {
 } from "../replay/causality.ts";
 import {
   deckLegalityViolations,
+  feintBudgetViolations,
   VersusError,
+  type ThreatAffix,
   type ThreatCensusEntry,
   type ThreatDeck,
   type ThreatDeckEntry,
 } from "./deck.ts";
+import {
+  AFFIX_WAVE_DELTAS,
+  applyShareCuts,
+  applyShapeToWindow,
+  foldShapePermille,
+  foldWindowMinutes,
+  VERSUS_AFFIX_FEINT_RULES,
+  VERSUS_AFFIX_SI_MULTIPLIERS,
+} from "./affixes.ts";
 
 /* ═══════════════════════════ conversion constants ═══════════════════════════ */
 
@@ -311,32 +322,123 @@ export function deckToWaveTable(deck: ThreatDeck, options: DeckScheduleOptions):
     }
   }
 
+  // Affix semantics (I-P V-2): one affix per deck entry, read after
+  // binning so deltas never disturb placement legality. Entries repeat
+  // ACROSS waves (fill-cycling), hence threatId → affix, not slot-carried.
+  const affixByThreatId = new Map<string, ThreatAffix | undefined>();
+  for (const entry of deck.entries) {
+    if (!affixByThreatId.has(entry.threatId)) {
+      affixByThreatId.set(entry.threatId, entry.affix);
+    }
+  }
+  const deltaOf = (threatId: string) => {
+    const affix = affixByThreatId.get(threatId);
+    if (affix === undefined) return null;
+    const delta = AFFIX_WAVE_DELTAS[affix];
+    return delta.live ? delta : null; // data-only slugs convert as plain
+  };
+
+  // Feint-budget deck law (§2.13 two-stage): live two-stage entries on
+  // two DIFFERENT waves mean two feint levels — the waves/parse adjacency
+  // door would refuse the table anyway, so the deck refuses it as data
+  // first (legality-as-Data precedent). Same-wave pair is legal: one flag.
+  const feintWaveNs = bins
+    .filter((bin) => bin.slots.some((slot) => deltaOf(slot.threatId)?.setsFeint === true))
+    .map((bin) => bin.n);
+  const feintViolation = feintBudgetViolations(feintWaveNs)[0];
+  if (feintViolation !== undefined) {
+    throw new VersusError("DECK_ILLEGAL", `schedule.${feintViolation.code}`, feintViolation.detail);
+  }
+
   const targets: readonly string[] = options.targets ?? Object.freeze(["origin"]);
+  const baseWindow = options.windowMinutes ?? VERSUS_DEFAULT_WINDOW_MINUTES;
+  const anyFeint = feintWaveNs.length > 0;
+  const anySecondIncident = bins.some((bin) =>
+    bin.slots.some((slot) => deltaOf(slot.threatId)?.setsSecondIncident === true));
   const raw = {
     id: options.tableId,
     typeBundleId: options.typeBundleId,
     tuningSheet: options.tuningSheet ?? "B",
     unitsPerPressurePoint: options.unitsPerPressurePoint ?? 1,
+    ...(anyFeint || anySecondIncident
+      ? {
+        rules: {
+          ...(anyFeint ? { feints: VERSUS_AFFIX_FEINT_RULES } : {}),
+          ...(anySecondIncident ? { ...VERSUS_AFFIX_SI_MULTIPLIERS } : {}),
+        },
+      }
+      : {}),
     waves: bins.map((bin) => {
-      const shares = VERSUS_SHARE_LADDERS[bin.slots.length as keyof typeof VERSUS_SHARE_LADDERS];
-      return {
-        n: bin.n,
-        windowMinutes: options.windowMinutes ?? VERSUS_DEFAULT_WINDOW_MINUTES,
+      // Wave-level folds (inert when the bin carries no live contributor):
+      const scales: number[] = [];
+      const shapes: (readonly [number, number, number])[] = [];
+      let binFeint = false;
+      let binSecondIncident = false;
+      for (const slot of bin.slots) {
+        const delta = deltaOf(slot.threatId);
+        if (delta === null) continue;
+        if (delta.windowScalePct !== undefined) scales.push(delta.windowScalePct);
+        if (delta.shapePermille !== undefined) shapes.push(delta.shapePermille);
+        if (delta.setsFeint === true) binFeint = true;
+        if (delta.setsSecondIncident === true) binSecondIncident = true;
+      }
+      const windowMinutes = foldWindowMinutes(baseWindow, scales);
+      const shape = foldShapePermille(shapes);
+      // A shape contributor OWNS the profile — per-option ramp/plateau/
+      // decay are overridden here by design (the affix says when traffic
+      // arrives; the host's default profile cannot also claim those legs).
+      // With only WINDOW contributors, a SHRUNK window rescales the chosen
+      // legs proportionally (floor ramp/decay, plateau absorbs the
+      // remainder) so the parse door's sum ≤ window law can never be
+      // broken by a bounded fold. Without contributors the legs pass
+      // through byte-identically — including a host's malformed oversized
+      // profile, which stays the parse door's verdict, not our rewrite.
+      const hostLegs = {
         rampMin: options.rampMinutes ?? VERSUS_DEFAULT_RAMP_MINUTES,
         plateauMin: options.plateauMinutes ?? VERSUS_DEFAULT_PLATEAU_MINUTES,
         decayMin: options.decayMinutes ?? VERSUS_DEFAULT_DECAY_MINUTES,
+      };
+      const hostLegSum = hostLegs.rampMin + hostLegs.plateauMin + hostLegs.decayMin;
+      const profile = shape !== null
+        ? applyShapeToWindow(windowMinutes, shape) ?? hostLegs
+        : scales.length > 0 && windowMinutes < hostLegSum
+          ? (() => {
+            const rampMin = Math.floor((hostLegs.rampMin * windowMinutes) / hostLegSum);
+            const decayMin = Math.floor((hostLegs.decayMin * windowMinutes) / hostLegSum);
+            return Object.freeze({ rampMin, plateauMin: windowMinutes - rampMin - decayMin, decayMin });
+          })()
+          : hostLegs;
+      const ladder = VERSUS_SHARE_LADDERS[bin.slots.length as keyof typeof VERSUS_SHARE_LADDERS];
+      const shares = applyShareCuts(
+        ladder,
+        bin.slots.map((slot) => slot.threatId),
+        bin.slots.map((slot) => deltaOf(slot.threatId)?.shareCutPct !== undefined),
+        AFFIX_WAVE_DELTAS["rate-shaped"].shareCutPct as number,
+      );
+      return {
+        n: bin.n,
+        windowMinutes,
+        ...profile,
         parPct: VERSUS_PAR_LADDER_PCT[bin.n - 1] as number,
         hard: false,
+        ...(binFeint ? { feint: true } : {}),
+        ...(binSecondIncident ? { secondIncident: true } : {}),
         entries: bin.slots.map((slot, index) => {
           const meta = censusOf(slot.threatId);
+          const delta = deltaOf(slot.threatId);
+          const entryTargets = delta?.targetsOverride === "all"
+            ? targets
+            : delta?.targetsOverride === "first"
+              ? [targets[0] as string]
+              : targets;
           return {
             threatId: slot.threatId,
             role: slot.role,
             family: meta.family,
-            band: meta.band,
+            band: delta?.bandOverride ?? meta.band,
             sharePct: shares[index] as number,
             denominations: [meta.denomination],
-            targets,
+            targets: entryTargets,
           };
         }),
       };
@@ -599,7 +701,16 @@ function boardEdgeRecords(edges: readonly VersusEdgeCommit[]): readonly BoardEdg
 }
 
 /** Canonical fold of the doctrine — same family as the deck commitment
- *  (sorted-key tagged JSON + avalanche FNV), distinct domain tag. */
+ *  (sorted-key tagged JSON + avalanche FNV), distinct domain tag.
+ *
+ *  Unlike the per-card identity law (`hh-card-v1`, which strips `card.id`),
+ *  THIS fold deliberately absorbs each card's `id`: it hashes the committed
+ *  BOOK as presented — identity of the whole doctrine, labels included. Two
+ *  same-content books under different card ids are therefore DIFFERENT here
+ *  while `cardContentFingerprint` binds them; that is the point — the doctrine
+ *  commit is a snapshot of the exact cards (ids and all), not a content-only
+ *  key. The two tags (`hh-versus-book-v1` ≠ `hh-card-v1`) keep the key-spaces
+ *  disjoint so a card fingerprint can never be mistaken for a book hash. */
 export function versusRuleBookHash(ruleBook: readonly PolicyCard[]): string {
   const json = JSON.stringify(encodeTaggedTree(ruleBook, (problem) => {
     throw new VersusError("WRONG_TYPE", "match.ruleBookHash", `canonical fold refused (${problem.kind})`);
@@ -1182,8 +1293,9 @@ function labelOf(unitId: EntityId, unitLabel: ReadonlyMap<EntityId, string>): st
   return unitLabel.get(unitId) ?? UNATTRIBUTED;
 }
 
-/** `${tableId}~${n}~${threatId}~${ordinal}` — the waves/generate grammar. */
-function threatFromWaveUnitId(unitId: string, tableId: string): string | null {
+/** `${tableId}~${n}~${threatId}~${ordinal}` — the waves/generate grammar.
+ *  (file-exported for the V-2 structural pin; not barrelled.) */
+export function threatFromWaveUnitId(unitId: string, tableId: string): string | null {
   if (!unitId.startsWith(`${tableId}~`)) return null;
   return unitId.split("~")[2] ?? null;
 }
@@ -1464,13 +1576,20 @@ export function initialVersusRunState(config: VersusMatchConfig): VersusRunState
   return simulateVersus(config, 0, []).state;
 }
 
-/** Full async resolution: run the committed match and produce the verdict. */
-export function resolveVersusMatch(config: VersusMatchConfig): MatchResult {
-  const run = simulateVersus(config, config.matchTicks, stampReserveIntents(config.defender.reserveIntents ?? []));
-  const rows = perWaveRows(run.counters, config.customerBaseline !== undefined);
-  const totals = run.state.totals;
-
-  // Decisive wave: heaviest landed, tie → most blocked, tie → lowest n.
+/**
+ * THE decisive-wave tie law (owner-ratified 2026-10-17, I-P decision 5;
+ * extracted VERBATIM from resolveVersusMatch — behavior byte-ident, the
+ * truth table is pinned in the versus tests): heaviest landed carries the
+ * match; on equal landed the wave with more blocked wins; on a full tie
+ * the LOWEST wave number wins (rows scan in wave order and replacement is
+ * strict->, so the earlier face keeps the crown). Baseline and unattributed
+ * rows (waveN null) can never be decisive. All-zero outcome ⇒ wave 1 — the
+ * opener is the default face of the story, never a null verdict.
+ */
+export function pickDecisiveWave(rows: readonly PerWaveOutcome[]): PerWaveOutcome {
+  if (rows.length === 0) {
+    throw new VersusError("OUT_OF_RANGE", "match.pickDecisiveWave", "an empty outcome roster has no decisive wave");
+  }
   let decisive = rows[0] as PerWaveOutcome;
   for (const row of rows) {
     if (row.waveN === null) continue;
@@ -1479,6 +1598,17 @@ export function resolveVersusMatch(config: VersusMatchConfig): MatchResult {
       decisive = row;
     }
   }
+  return decisive;
+}
+
+/** Full async resolution: run the committed match and produce the verdict. */
+export function resolveVersusMatch(config: VersusMatchConfig): MatchResult {
+  const run = simulateVersus(config, config.matchTicks, stampReserveIntents(config.defender.reserveIntents ?? []));
+  const rows = perWaveRows(run.counters, config.customerBaseline !== undefined);
+  const totals = run.state.totals;
+
+  // Decisive wave: heaviest landed, tie → most blocked, tie → lowest n.
+  const decisive = pickDecisiveWave(rows);
 
   const attribution = explainDecisive(config, run, decisive);
   return Object.freeze({

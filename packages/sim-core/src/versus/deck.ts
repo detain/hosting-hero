@@ -501,6 +501,7 @@ export const DECK_LEGALITY_CODES = [
   "MINIMUM_ROLES_UNMET",
   "ROLE_QUOTA_EXCEEDED",
   "UNKNOWN_THREAT",
+  "FEINT_BUDGET_EXCEEDED",
 ] as const;
 export type DeckLegalityCode = (typeof DECK_LEGALITY_CODES)[number];
 
@@ -582,4 +583,27 @@ export function deckLegalityViolations(
   }
 
   return violations;
+}
+
+/** Feint cap (deck law): how many distinct waves a single deck may arm
+ *  with a live two-stage decoy. */
+export const MAX_FEINT_WAVES_PER_DECK = 1;
+
+/** The §2.13 two-stage affix arms a wave with a decoy (the rules.feints
+ *  block the converter authors caps maxPerLevel at 1). A deck whose live
+ *  two-stage entries land on TWO DIFFERENT waves schedules two feint
+ *  levels — the waves/parse adjacency door would refuse the table anyway,
+ *  so the deck law refuses it as data first (legality-as-Data precedent;
+ *  the converter surfaces the same code as schedule.feint-budget).
+ *  Same-wave pairs are LEGAL: one wave, one flag. Pure and data-only —
+ *  callers decide throw vs report. */
+export function feintBudgetViolations(
+  feintWaveNs: readonly number[],
+): readonly DeckLegalityViolation[] {
+  const distinct = [...new Set(feintWaveNs)].sort((a, b) => a - b);
+  if (distinct.length <= MAX_FEINT_WAVES_PER_DECK) return Object.freeze([]);
+  return Object.freeze([{
+    code: "FEINT_BUDGET_EXCEEDED",
+    detail: `two-stage affixes feint ${distinct.length} waves [${distinct.join(", ")}] — the feint budget is ${MAX_FEINT_WAVES_PER_DECK} wave per deck (§2.13 two-stage; same-wave pair is legal, one flag)`,
+  }]);
 }

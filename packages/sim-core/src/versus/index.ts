@@ -7,6 +7,7 @@
  * export *) so the root re-export collision census is auditable.
  *
  *   deck.ts    — ThreatDeck/DefenseDeck documents + strict boundary parsers
+ *   affixes.ts — §2.13 affix mix-in tables + the per-wave fold laws
  *   draft.ts   — seeded 1-of-3 draft picker + drafted-deck validator
  *   commit.ts  — blind-commit envelope (canonical fold, reveal-verify)
  *   match.ts   — deck→WaveTable conversion + composed async resolution
@@ -23,12 +24,14 @@ export {
   DECK_LEGALITY_CODES,
   MAX_DECK_ENTRIES,
   MAX_DECK_THREATS,
+  MAX_FEINT_WAVES_PER_DECK,
   MAX_THREATS_PER_DENOMINATION,
   MIN_DISTINCT_ROLES,
   VersusError,
   buildCounterMap,
   buildRegistryCensus,
   deckLegalityViolations,
+  feintBudgetViolations,
   parseDefenseDeck,
   parseThreatDeck,
 } from "./deck.ts";
@@ -45,8 +48,17 @@ export type {
   VersusErrorCode,
 } from "./deck.ts";
 
+/* affixes.ts */
+export {
+  AFFIX_WAVE_DELTAS,
+} from "./affixes.ts";
+export type {
+  AffixWaveDelta,
+} from "./affixes.ts";
+
 /* draft.ts */
 export {
+  DRAFT_AFFIX_DEFAULT_POOL,
   DRAFT_VIOLATION_CODES,
   draftThreatDeck,
   validateDraftedDeck,
@@ -89,6 +101,7 @@ export {
   defaultPolicyCardIndex,
   initialVersusRunState,
   deckToWaveTable,
+  pickDecisiveWave,
   resolveVersusMatch,
   scoreVersusMatch,
   stampReserveIntents,

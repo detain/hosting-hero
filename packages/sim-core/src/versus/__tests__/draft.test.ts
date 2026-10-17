@@ -11,8 +11,12 @@ import { asRunSeed } from "../../types.ts";
 import {
   VersusError,
   parseThreatDeck,
+  DECK_LEGALITY_CODES,
+  MAX_DECK_THREATS,
+  AFFIX_VOCABULARY,
 } from "../deck.ts";
 import {
+  DRAFT_AFFIX_DEFAULT_POOL,
   DRAFT_VIOLATION_CODES,
   compensateExactCostSum,
   draftThreatDeck,
@@ -20,8 +24,10 @@ import {
   type DraftCandidate,
   type DraftOptions,
 } from "../draft.ts";
+import { AFFIX_WAVE_DELTAS } from "../affixes.ts";
+import { deckToWaveTable } from "../match.ts";
 import { commitDeck } from "../commit.ts";
-import { CENSUS, COUNTERS, RAW_DECK_MAIN, parseDeck } from "./fixtures.ts";
+import { CENSUS, COUNTERS, RAW_DECK_MAIN, RAW_DECK_WIDE, parseDeck } from "./fixtures.ts";
 
 const DRAFT_POOL: readonly string[] = Object.freeze([
   "scanner-drizzle",
@@ -207,11 +213,15 @@ describe("draftThreatDeck — scriptedPicks (script the CHOICE, never the dice)"
 });
 
 describe("validateDraftedDeck", () => {
-  test("a drafted deck over the real registry validates clean", () => {
+  test("a drafted deck over the real registry carries NO legality violation (advisory aside)", () => {
     // 6-pick draft: four 2500 slots would need pool ≥ picks; use 2500×4.
     const { deck } = draftThreatDeck(draftOptions(asRunSeed(21n)));
     const violations = validateDraftedDeck(deck, { census: CENSUS, counters: COUNTERS });
-    expect(violations).toEqual([]);
+    // I-P decision 3: this 4-threat draft sits under the §2.24 8–10 pool
+    // band, so exactly ONE row rides along — the POOL_BAND_NARROW
+    // ADVISORY (reported, never thrown). Legality itself stays clean.
+    expect(violations.filter((v) => v.code !== "POOL_BAND_NARROW")).toEqual([]);
+    expect(violations.map((v) => v.code)).toEqual(["POOL_BAND_NARROW"]);
   });
 
   test("missing counter map entry reports COUNTER_ABSENT (R-15 analog)", () => {
@@ -219,8 +229,11 @@ describe("validateDraftedDeck", () => {
     const trimmed = new Map(COUNTERS);
     trimmed.delete("slowloris-sipper");
     const violations = validateDraftedDeck(deck, { census: CENSUS, counters: trimmed });
-    expect(violations.map((violation) => violation.code)).toEqual(["COUNTER_ABSENT"]);
-    expect(violations[0]?.threatId).toBe("slowloris-sipper");
+    // Deck-scoped advisory first (RAW_DECK_MAIN spans under the pool
+    // band), then the per-entry counter row — ordering is insertion law.
+    expect(violations.map((violation) => violation.code)).toEqual(["POOL_BAND_NARROW", "COUNTER_ABSENT"]);
+    expect(violations[0]?.threatId).toBeUndefined();
+    expect(violations[1]?.threatId).toBe("slowloris-sipper");
   });
 
   test("legality failures flow through as rows, never throws", () => {
@@ -242,10 +255,93 @@ describe("validateDraftedDeck", () => {
       "COUNTER_ABSENT",
       "DENOMINATION_QUOTA_EXCEEDED",
       "MINIMUM_ROLES_UNMET",
+      "POOL_BAND_NARROW",
       "POOL_CAP_EXCEEDED",
       "ROLE_QUOTA_EXCEEDED",
       "UNKNOWN_THREAT",
     ]);
+  });
+});
+
+/* ═══════════ I-P decision 3 — §2.24 pool-band advisory, ceiling stands ═══════════ */
+
+describe("I-P decision 3 — the 8–10 pool band is a reported advisory, never a law-break", () => {
+  test("the deck CEILING stays MAX_DECK_THREATS = 10 (§2.24's band upper bound)", () => {
+    expect(MAX_DECK_THREATS).toBe(10);
+  });
+
+  test("a ten-threat deck on the exact cap carries no advisory and no cap violation", () => {
+    const violations = validateDraftedDeck(parseDeck(RAW_DECK_WIDE), { census: CENSUS, counters: COUNTERS });
+    expect(violations).toEqual([]);
+  });
+
+  test("a six-threat deck reports POOL_BAND_NARROW exactly once, deck-scoped, count-honest", () => {
+    const violations = validateDraftedDeck(parseDeck(RAW_DECK_MAIN), { census: CENSUS, counters: COUNTERS });
+    expect(violations.map((v) => v.code)).toEqual(["POOL_BAND_NARROW"]);
+    expect(violations[0]?.threatId).toBeUndefined(); // deck-scoped row
+    expect(violations[0]?.detail).toContain("6 distinct threats");
+  });
+
+  test("the advisory is reported, never thrown, and invisible to the converter", () => {
+    // Not a deck-legality code — the advisory lives ONLY in the draft
+    // validator's union, so deckLegalityViolations cannot grow it and
+    // the converter never sees it.
+    expect(DECK_LEGALITY_CODES).not.toContain("POOL_BAND_NARROW");
+    expect(() => deckToWaveTable(parseDeck(RAW_DECK_MAIN), {
+      census: CENSUS, tableId: "versus-narrow-ok", typeBundleId: "shared-web",
+    })).not.toThrow();
+  });
+});
+
+/* ═══════ I-P V-2 — the default affix pool: dice cannot promise dead spice ═══════ */
+
+describe("I-P V-2 — DRAFT_AFFIX_DEFAULT_POOL is exactly the LIVE slugs", () => {
+  const DATA_ONLY = "piggybacked-on-a-maintenance-window" as const;
+
+  test("fifteen live slugs; slug 12 excluded; derivation equals the delta table", () => {
+    expect(DRAFT_AFFIX_DEFAULT_POOL.length).toBe(15);
+    expect(AFFIX_VOCABULARY.length).toBe(16);
+    expect(DRAFT_AFFIX_DEFAULT_POOL).not.toContain(DATA_ONLY);
+    expect(DRAFT_AFFIX_DEFAULT_POOL).toEqual(AFFIX_VOCABULARY.filter((a) => AFFIX_WAVE_DELTAS[a].live));
+  });
+
+  test("dice drafts on the default pool never hand out the data-only slug", () => {
+    let spiced = 0;
+    for (let seed = 1n; seed <= 20n; seed += 1n) {
+      const { deck } = draftThreatDeck(draftOptions(asRunSeed(seed), {
+        affixPool: DRAFT_AFFIX_DEFAULT_POOL,
+        affixChanceBps: 10_000, // the dice always roll — affordability may still downgrade
+      }));
+      for (const entry of deck.entries) {
+        if (entry.affix === undefined) continue;
+        spiced += 1;
+        expect(DRAFT_AFFIX_DEFAULT_POOL).toContain(entry.affix);
+        expect(entry.affix).not.toBe(DATA_ONLY);
+      }
+    }
+    // Non-vacuity: across twenty seeds the spice genuinely lands (the
+    // 10_000bps-pinned slugs cost exactly their slot, so the downgrade
+    // law lets them through) — the exclusion above is a live filter,
+    // not an empty sweep.
+    expect(spiced).toBeGreaterThan(0);
+  });
+
+  test("a host FORCING the data-only slug into the pool cannot put it on the wire: the draft is byte-ident to its plain twin", () => {
+    // The affordability-downgrade law (hh-versus-deck-v2) caps presentation
+    // at slot + banked discount; a 20_000 bps slug costs double its slot,
+    // so it is ALWAYS shown plain — the dice roll, the deck never carries
+    // it. (The authored path — a host hand-writing the slug into a deck —
+    // is legal and pinned by the slug-12 test in match.test.ts: it rides
+    // the wire, pays the premium in its authored cost, and deltas nothing.)
+    const forced = draftThreatDeck(draftOptions(asRunSeed(7n), {
+      affixPool: [DATA_ONLY],
+      affixChanceBps: 10_000,
+    }));
+    const plain = draftThreatDeck(draftOptions(asRunSeed(7n)));
+    expect(JSON.stringify(forced.deck)).toBe(JSON.stringify(plain.deck));
+    expect(commitDeck(forced.deck).deckHash).toBe(commitDeck(plain.deck).deckHash);
+    // And the sim law behind it: the delta table declares the slug dead.
+    expect(AFFIX_WAVE_DELTAS[DATA_ONLY].live).toBe(false);
   });
 });
 

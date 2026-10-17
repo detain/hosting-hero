@@ -32,6 +32,7 @@ import {
   AFFIX_COST_MULTIPLIER_BPS,
   AFFIX_VOCABULARY,
   deckLegalityViolations,
+  MAX_DECK_THREATS,
   VersusError,
   type DeckLegalityCode,
   type ThreatAffix,
@@ -39,6 +40,7 @@ import {
   type ThreatDeck,
   type ThreatDeckEntry,
 } from "./deck.ts";
+import { AFFIX_WAVE_DELTAS } from "./affixes.ts";
 
 /* ═══════════════════════════ presentation model ═══════════════════════════ */
 
@@ -104,6 +106,11 @@ export interface DraftOutcome {
 }
 
 const MAX_OFFER_SIZE = 4;
+
+/** §2.24 pool band, lower reading (I-P decision 3): 8–10 is the DRAFTABLE
+ *  POOL band. Falling below it is an authoring ADVISORY (POOL_BAND_NARROW,
+ *  reported never thrown) — the deck ceiling stays MAX_DECK_THREATS. */
+const POOL_BAND_MIN_DISTINCT_THREATS = 8;
 
 /* ═══════════════════ affix cost math (hh-versus-deck-v2) ═══════════════════ */
 
@@ -220,6 +227,21 @@ function rollAffix(rng: RngStream, affixPool: readonly ThreatAffix[], affixChanc
   if (rng.range(10000) >= affixChanceBps) return null;
   return affixPool[rng.range(affixPool.length)] ?? null;
 }
+
+/**
+ * The affix pool a spice-enabled draft SHOULD pass as `options.affixPool`:
+ * exactly the LIVE §2.13 slugs, derived from AFFIX_WAVE_DELTAS so the
+ * dice can never offer spice the engine can't deliver — slug 12
+ * ("piggybacked-on-a-maintenance-window") is data-only in v0 (I-P V-2).
+ * DERIVED, not hand-authored: when slug 12 grows a live delta, this pool
+ * follows automatically and the V1 byte-comparison law keeps plain-only
+ * DEFAULT drafts (options.affixPool ?? []) untouched either way.
+ * A host FORCING slug 12 into its own affixPool stays legal: the wire
+ * byte, the 2.0× cost premium, and zero sim delta (pinned by test).
+ */
+export const DRAFT_AFFIX_DEFAULT_POOL: readonly ThreatAffix[] = Object.freeze(
+  AFFIX_VOCABULARY.filter((affix) => AFFIX_WAVE_DELTAS[affix].live),
+);
 
 /** Deterministic 1-of-3 draft. Throws VersusError (fail loud, boundary
  *  codes) on structurally impossible requests — the dice never rescue a
@@ -358,6 +380,7 @@ export function draftThreatDeck(options: DraftOptions): DraftOutcome {
 
 export const DRAFT_VIOLATION_CODES = [
   "POOL_CAP_EXCEEDED",
+  "POOL_BAND_NARROW",
   "DENOMINATION_QUOTA_EXCEEDED",
   "MINIMUM_ROLES_UNMET",
   "ROLE_QUOTA_EXCEEDED",
@@ -390,6 +413,17 @@ export function validateDraftedDeck(
   input: DraftValidationInput,
 ): readonly DraftViolation[] {
   const violations: DraftViolation[] = [...deckLegalityViolations(deck, input.census)];
+  // §2.24 pool-band reading (I-P decision 3): "8–10" is the DRAFTABLE POOL
+  // band — the deck CEILING stays MAX_DECK_THREATS (10). The lower bound is
+  // an authoring ADVISORY, reported never thrown: a deck of fewer than 8
+  // distinct threats drains the pool band. Deck-scoped row (no threatId).
+  const distinctThreats = new Set(deck.entries.map((entry) => entry.threatId)).size;
+  if (distinctThreats < POOL_BAND_MIN_DISTINCT_THREATS) {
+    violations.push({
+      code: "POOL_BAND_NARROW",
+      detail: `deck spans ${distinctThreats} distinct threats; §2.24's 8–10 pool band asks for at least ${POOL_BAND_MIN_DISTINCT_THREATS} (advisory — deck ceiling ${MAX_DECK_THREATS} stands)`,
+    });
+  }
   for (const entry of deck.entries) {
     const known = input.counters.get(entry.threatId);
     if (known === undefined || known.length === 0) {
