@@ -1660,3 +1660,40 @@ Storm bisection at n2,000 (digest): @100 → 83 · @400 → 54 · **@1,024 (the 
 ### Program status
 
 **ADR-0014 D1–D9 landed and, with this wave, measured** — the audit→completion program carries zero ⚠️ headings. Remaining drives are owner-gated (eleventh-card law call, tier-verb door mechanics for Negotiate/Schedule, OD-10/OD-12 playtest numerics) or BLOCKED-BY-PLAN (types 11+, campaign/perspective content, era expansion). Full battery belongs to the wave-18 closeout.
+
+## WAVE-19 closeout — session-5 rulings land: endless full-carry re-raise, relay frictions become in-repo law, the 11th card on Schedule (2026-10-16e)
+
+**Context.** Session-5's owner agenda met the standing queue wave-17 left open. Six rulings, all executed as ADR-0014 amendments: (a) the endless save posture re-raise the #D8 landing demanded was GRANTED — full-carry campaign mirror; (b) the eleventh-card law call was ANSWERED — the Schedule card ships; (c) NO tier-verb door mechanics authorized — card-identity-only stands; (d) `MetricNamespaceTier` KEPT PRIVATE; (e) the ADR-0014 #D6 relay spike's four law frictions resolved IN-REPO per delegation — transport stays open; (f) OD-7/OD-9/OD-15 + the OD-11 mirror detail CONFIRMED CLOSED per ADR-0013. Joint review verdict on the stack: PROCEED, zero critical / zero major (one stale-comment MINOR + 3 nits rode the witness commit).
+
+### Ledger (by lane)
+
+- **L-E @`c9e34c7`** — endless re-raised to **campaign-mirror FULL-CARRY**: `save/modes.ts` gains `CAMPAIGN_MIRROR_MODES = [endless]` + `campaignMirrorRow()` whose kind is DERIVED from `campaignRow` (20 append / 12 instance / 0 deny — zero hand-authored rows, no drift seam); endless leaves the Matrix-B cohort; all @1660fd2 machinery stands (writeGuard throw-on-pending unreachable-by-construction, `pendingOd8Rows()`→`[]`, guardBatch atomicity, buildMatrix fail-loud); matrix census 192 LIVE / 0 pending UNCHANGED; deny census 140→112 (four shadow modes only); flip-back probe reddens exactly 4 witnesses — falsifiable re-pins. §2.5 "the Long Save continuing in place" rides as LAW not data; the ledger-four interim is preserved as the record of what governed ~1 day. Endless LOOP/tier scoping stays DEFERRED per OD-16(a).
+- **L-RH @`500c134`+@`6d0bc1e`** — ADR-0014 #D6 spike frictions hardened into law per agenda item (e): (1) same-tick joins legal, ledger canonically ordered `(joinedAtTick asc, participantId code-unit)` — hosts applying the same joins in any order converge byte-equal; (2) re-join = NEW TENURE ROW (disjoint chronological half-open tenures; `participantSeatedAt` resolves per tenure; gap = ghost author; open tenure refuses a second row); (3) joiner catch-up relay-side, ZERO save writes, dup-never-twice through `orderCoopTimeline` (a first joiner gets the log as-of join; a re-joiner only the tail past their frozen inbox); (4) MIN_WRITERS RATIFIED as recorded-writers history law (distinct participants ever seated, not live seats). @`24426ec` current-seats-only broadcast stands. Relay tests 22→27 (refusal pins → positive law pins); save dir 147→158. **L-W @`16e3137`** re-cut the two proto coopRoom witnesses + stale docblock (comment-only) to the hardened laws. Transport (PHP/Workerman) + wire mechanics (seq policy, payload opacity until the door, O(n²) append self-check, paged catch-up) remain OPEN out-of-repo.
+- **L-T11 @`6c0e074`** — 11th OD-14(a) type `official:backup-archival`: §1.3 "Restore Point" / "The Vault" / "Bit Rot", dominant verb **Schedule VERBATIM** — first Schedule-founded card; the #D1 blessing pair (Negotiate+Schedule) FULLY SPENT. Hooks 5/9 vs anchor (R15 restore-test-freshness triplet, R16 restore-SLA-tier slider, R17 three dials, R18 simTimeScale HOURS — first corpus use of the `window` patience vocab, with the years-vs-ms honest tension authored into `_todo`, R22 ten mechanics); rides R19/R20/R21/R23 with the R21 HONEST INVERSION (keyhole/unclickable FALSE/FALSE vs colo's TRUE/TRUE — the wall is proof-cost). familyWeights entropic .30 / customerAsThreat .25 / malicious .15 / human .15 / systemic .15 = 1e6 micro-exact — entropic-dominant FIRST in the corpus. Rules-free wave slice (par 100/1.115/S, max 240 w5 UNMOVED), 8 registry threat reuses, zero registry edits, both lookalike seeds re-worn. Pack 66 templates (37/29), zero era objects, refusal/status/vendor byte-ident, first backup CAC priced (`cac.backup-archival.protection-cycle`, Companion B "spiking on restore"). Pins 5 files/6 sites count-neutral re-cuts (determinism 10→11, real-content roster, metric-namespace-tier ten→eleven, families 10→11, storm-cap 10→11); content README 311 `_todo`/13 census, 96 Key-literals rows, Verb-Shift row flipped.
+- **L-i18n @`51f1020`** — packStore registers the 11th pack; flavour pool 204/166→**219/177 SELF-DERIVED** (the #D5 accepted-cost law), roster total 712→778; roots ticket 52 / ach 33 / chatter 19 / codex 18 / loading 30 / sticky 11 / vendor 44, forum 8 / press 3 / abuse 1 unchanged; era trio strict-unchanged; firmware twins 11 byte-ident. Boot.corpus wire-join rider (CORPUS_WIRE_TABLE_IDS + CORPUS_TABLES additive — the @`286b406` precedent shape).
+
+### Battery (ONE authoritative run at this tree, this closeout)
+
+| Gate | Result |
+|---|---|
+| sim-core full serial | **147 files / 2,501 tests, exit 0, ZERO goldens moved** (+14 = L-RH +11, type-11 data loops +3; files UNMOVED) |
+| proto full serial | **95 files / 1,051 passed, ALL GREEN** — pool re-roll + coop witnesses count-neutral self-derived re-pins |
+| tools/relay | **27/27** |
+| headless | **53/5 — parity real `b0162ab5` / stub `a9b4b7b8` HELD** |
+| api-verify | **PASS — 1,601 names, ZERO export delta** |
+| ci-verify | **5/5 PASS** |
+| `pnpm -r typecheck` | **6/6 Done** |
+| canary | **PASS — 133 files** |
+| content validate | **exit 0 — bundles=11 / waves=11 / packs=11 · 311 `_todo` + 13 pack markers · 41 JSON files** |
+
+### Census — ONE marker moved (g)
+
+✅321 · 🔧1,007 · ⚠️0 · ❌2,231 · 📝30 = 3,589 (heading-level recount, method-pinned — the ❌2,232→2,231 / 🔧1,006→1,007 pair IS the delta). The move: §1.3 Backup/archival ❌→🔧 `6c0e074` (card ships as data; holds 🔧 not ✅ because Schedule has no door mechanic — agenda item (c)). Holds — zero other moves: Endless / Survival keeps 🔧 (LOOP unscoped); the transport leg carries no marker (out-of-repo lane).
+
+### Owner state after this wave
+
+The session-5 agenda is SPENT: (a) executed @c9e34c7, (b) answered @6c0e074, (c)/(d) recorded no-ops, (e) hardened in-repo @500c134+@6d0bc1e, (f) confirmations recorded (OD-7/9/15 + OD-11 mirror). What remains owner-gated: the **twelfth card** law call (Diagnose bless vs a further roster amendment — D1(iii) MERGE stays forbidden), tier-verb door mechanics IF ever wanted (Scale/Maintain/Sell/Negotiate/Schedule — item (c) declined for now), OD-10/OD-12 playtest numerics, the ~40 unnamed OD-2 taste constants, and the **co-op transport lane** (PHP/Workerman, out-of-repo; the in-repo law surface it needed is now closed). BLOCKED-BY-PLAN stands for types 12+, campaign/perspective content, era expansion.
+
+### Program status
+
+**Session-5 rulings: fully executed.** Eleven hosting types as data, the blessed verb pair spent, endless full-carry as law, relay laws hardened from spike to save — the repo-side co-op ledger has no open questions left for the transport lane to answer with rulings. Waves 1–19 landed; this closeout's doc rows ride the stack and the closeout SHA stamp rides the follow-up one-liner on hosting_game.md's status block per precedent.

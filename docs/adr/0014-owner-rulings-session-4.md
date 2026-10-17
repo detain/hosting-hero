@@ -32,6 +32,13 @@ lanes may ship generic colo founded on **Negotiate** and backup/GPU/HPC/satellit
 "read the patient" candidate is the named example) — a card-identity bless, still owner-confirmed at
 authoring time. (iii) **re-claim/MERGE stays FORBIDDEN** — a card naming a verb another card holds as
 dominant remains a Verb-Shift merge candidate, never a type.
+>
+> **SPENT 2026-10-16 (session-5 closeout):** both blessed roster verbs now carry cards — **Negotiate**
+> on `official:colo` "Amps and Aisles" @`9bb86f4` + **Schedule** on `official:backup-archival`
+> "Restore Point" @`6c0e074` (first Schedule-founded card). **Diagnose** remains the sole unclaimed
+> invariant with still no §1.3 card naming it — a twelfth type card is a fresh owner law call. Per
+> agenda item (c) no tier-verb door mechanics are authorized: Schedule joins Scale/Maintain/Sell/
+> Negotiate as card identity only (Shield @`d3b1db3` stays the only built door leg).
 
 **D2 — Tier-extension door mechanic: (c) full `PlayerVerb` enum extension.** One verb per paired
 mechanic, taken in mechanics order: **Shield ↔ corruption first** (pre-arm a node against the
@@ -83,6 +90,17 @@ disable and the dead-slot law ride unchanged.
 join/leave delivery, re-join-as-new-row, per-seat projection. **PHP/Workerman stays the
 service-transport choice per OD-5(b) — the spike does not reopen it**; it is a portable-library proof
 of the relay contract, not the shipped transport.
+>
+> **HARDENED 2026-10-16 (session-5 owner ruling, agenda item (e)):** spike → in-repo laws — the
+> spike's four law frictions were resolved IN-REPO per owner delegation: same-tick joins legal under
+> canonical `(joinedAtTick asc, participantId code-unit)` ledger order (byte-equal ledgers under any
+> submission order), re-join-as-new-row with per-tenure seat resolution (disjoint chronological
+> half-open tenures; gap = ghost author), joiner catch-up relay-side with ZERO save writes
+> (dup-never-twice through `orderCoopTimeline`), and MIN_WRITERS RATIFIED as recorded-writers history
+> law (distinct participants ever seated, not live seats) @`500c134`+@`6d0bc1e`; departed-seat
+> broadcast (current seats only) stands from @`24426ec`. Transport (PHP/Workerman) remains OPEN —
+> the wire mechanics the transport lane owes (seq policy, payload opacity until the door, the O(n²)
+> append self-check, paged catch-up) are untouched by this hardening.
 
 **D7 — Build-state wire: (a) additive `boot.build?` lands NOW.** The worker-corpus leftover ("no build
 state rides the wire yet") resolves as an **additive-optional boot field**; PROTOCOL_VERSION stays 1
@@ -94,6 +112,16 @@ the **32 `PENDING_OD8` endless rows get a build lane to flip LIVE** — `writeGu
 retired for those rows, the `WRITE_ACCESS_MATRIX`/mode-matrix pins re-cut, `pendingOd8Rows()`
 converging to empty. OD-8's endless carve-out is ruled **build it**. (Queue, not build — on disk the
 rows stay `PENDING_OD8` until the lane lands.)
+>
+> **AMENDED 2026-10-16 (session-5 owner ruling, agenda item (a)):** the posture condition recorded at
+> landing — re-raising beyond the ledger four would need a fresh owner ruling, not an inference from
+> the mirror — **met the same day**: endless is re-raised to the **campaign-mirror full-carry**
+> @`c9e34c7` (`CAMPAIGN_MIRROR_MODES`; row kinds derived from `campaignRow` — 20 append / 12 instance
+> / 0 deny; matrix census 192 LIVE / 0 pending UNCHANGED; deny census 140→112; flip-back probe reddens
+> exactly 4 witnesses — falsifiable). The flip + every #D8 mechanism stand. **Ledger-four survives as
+> recorded law for the ADR-0009 cohort only** (scenario/daily/consultant/blitz — 112 standing deny
+> rows); it governed the endless 32 for ~1 day and that interim stays in the record, not erased. The
+> endless **LOOP**/mode-tier scoping stays DEFERRED per OD-16(a) — save-slice posture only.
 
 **D9 — `metricNamespaceTier` (OD-4b residual): QUEUED into the next loader lane.** The schema field +
 loader parse + lint-leg fold is housekeeping — bundle data, never engine branching (the ratified 4b
@@ -109,6 +137,8 @@ residual reading stands).
      flavour-feed pool/era pins per D5.
   4. **`boot.build?` lane** — additive wire field per D7, byte-identity twins when absent.
   5. **Endless save-slice lane** — flip the 32 `PENDING_OD8` rows LIVE with matrix-pin re-cuts per D8.
+     **LANDED @`1660fd2`; posture superseded @`c9e34c7` (see the D8 amendment — session-5 re-raise to
+     campaign-mirror full-carry).**
   6. **Type-10 content lane** — generic colo founded on Negotiate (post-lint-amendment) per D1; the
      Diagnose-bless card route per D1(i) waits on its authoring-time owner confirm.
   7. **Node relay spike lane** — in-repo co-op relay proof per D6.
