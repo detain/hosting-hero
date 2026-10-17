@@ -251,9 +251,13 @@ describe("HUD-LAB mount manifest (integrator contract)", () => {
     w.unmount();
   });
 
-  it("is frozen in the exact GATE_MOUNTS shape", () => {
+  it("is frozen in the exact GATE_MOUNTS shape", async () => {
     expect(Object.isFrozen(GATE_MOUNTS)).toBe(true);
-    expect(GATE_MOUNTS.length).toBe(1);
+    // RE-PIN (wave-23 chrome adoption, owner ruling 2026-10-17): the barrel
+    // ships TWO stage mounts now — HUD-LAB stays [0] (this pin's original
+    // contract), COOP enters second (the §9.1 incident room as its own rail
+    // stage). 1 → 2 is the only count move; no existing field changed.
+    expect(GATE_MOUNTS.length).toBe(2);
     const entry = GATE_MOUNTS[0]!;
     expect(Object.isFrozen(entry)).toBe(true);
     expect(entry.gateId).toBe("HUD-LAB");
@@ -262,5 +266,16 @@ describe("HUD-LAB mount manifest (integrator contract)", () => {
     expect(entry.component).toBe(HudLabPanel);
     expect(typeof entry.title).toBe("string");
     expect(typeof entry.description).toBe("string");
+
+    const coop = GATE_MOUNTS[1]!;
+    expect(Object.isFrozen(coop)).toBe(true);
+    expect(coop.gateId).toBe("COOP");
+    expect(coop.mountId).toBe("coop-room");
+    expect(coop.slot).toBe("stage");
+    // Identity pin via the barrel's OWN import (re-importing the SFC here
+    // would only test Vue's module cache, not the manifest wiring):
+    expect(coop.component).toBe((await import("../CoopRoom.vue")).default);
+    expect(typeof coop.title).toBe("string");
+    expect(typeof coop.description).toBe("string");
   });
 });

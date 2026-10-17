@@ -22,7 +22,9 @@ import { PORT_GLYPHS } from "./portShapes.ts";
 import type { PortSpec } from "./portShapes.ts";
 import { latencyLadderRows, type HopLoad } from "./latencyDelta.ts";
 import { describeRefusal, type RefusalContext } from "../../i18n/refusalCopy.ts";
-import type { Fixed } from "@hh/sim-core/types";
+import NodeActRow from "../../chrome/NodeActRow.vue";
+import type { TickFacts } from "../../runner/simCoreRunner.ts";
+import type { PlayerIntent, Fixed } from "@hh/sim-core/types";
 
 const props = withDefaults(defineProps<{ readonly seed?: number }>(), { seed: 904 });
 const session = new G4Session(props.seed);
@@ -288,6 +290,23 @@ function refusalLineFor(receipt: ReceiptView): ReturnType<typeof describeRefusal
   });
 }
 
+/* ── §7.16 Act row (wave-23 chrome adoption) ─────────────────────────── */
+
+/** Facts for the inspector's emergency verbs. The `snap.value.tick` read is
+ *  the reactivity pulse: `session.tickFacts()` is an imperative accessor, so
+ *  the ref that step() replaces is what makes this computed re-evaluate. */
+const actFacts = computed<TickFacts>(() => {
+  void snap.value.tick;
+  return session.tickFacts();
+});
+
+/** The Act row's sink: mint stays in chrome/actRow.ts (single site), the
+ *  session stamps, and the step executes or refuses at the door. */
+function submitAct(intent: PlayerIntent): void {
+  session.submitActIntent(intent);
+  step();
+}
+
 function refusalText(receipt: ReceiptView): string {
   return refusalLineFor(receipt).text;
 }
@@ -549,6 +568,15 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
           ⤺ {{ refusalDisplay.text }}
         </p>
 
+        <!-- §7.16 Act row (wave-23 chrome adoption): the object inspector's
+             emergency verbs, mounted on the board they belong to. Mint stays
+             in chrome/actRow.ts; the session's door executes or refuses; the
+             receipt lands in the log below. -->
+        <section class="g4-actrow" data-test="g4-act-row" aria-label="Act row">
+          <h3>act row · §7.16</h3>
+          <NodeActRow :facts="actFacts" :submit="submitAct" />
+        </section>
+
         <ol class="g4-log" data-test="receipt-log">
           <li v-for="r in visibleReceipts" :key="r.seq" :class="`g4-receipt--${r.outcome}`">
             <b>[{{ r.outcome === "executed" ? "✓" : "✗" }}]</b>
@@ -691,6 +719,12 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 .g4-btn--commit { border-width: 2px; font-weight: 700; }
 
 .g4-rail { display: flex; flex-direction: column; gap: 10px; font-size: 11.5px; }
+
+/* §7.16 Act row container (wave-23). HUE LAW: var()-only — NodeActRow ships
+   its own scoped styles from the chrome ledger; this wrapper just separates
+   the rail zones on the gate-local ink chord (color-mix pattern of .g4-log). */
+.g4-actrow { border-top: 1px dashed color-mix(in srgb, var(--g4-ink) 35%, transparent); padding-top: 8px; }
+.g4-actrow h3 { margin: 0 0 6px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
 .g4-hands { display: flex; gap: 8px; }
 .g4-hand { border: 1px solid currentColor; border-radius: var(--hh-radius, 12px); padding: 3px 8px; }
 .g4-hand--busy { color: var(--g4-hue-power); animation: g4-tick 1.2s steps(2) infinite; }

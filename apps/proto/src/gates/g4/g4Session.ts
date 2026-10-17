@@ -23,8 +23,10 @@ import {
   type ExternalIntent,
   type Fixed,
   type GameState,
+  type PlayerIntent,
   type PlayerVerbArgs,
   type RunSeed,
+  type SimEvent,
   type SimTick,
 } from "@hh/sim-core/types";
 import { FIXED_ZERO, fromRatio, initialClocks, streamFor } from "@hh/sim-core/kernel";
@@ -39,6 +41,7 @@ import {
 } from "@hh/sim-core/pipeline";
 import { canonicalDigest } from "@hh/sim-core/replay";
 import { canConnect } from "@hh/sim-core/topology";
+import type { TickFacts } from "../../runner/simCoreRunner.ts";
 import { latencyDeltaUs, type HopLoad, type LatencyDelta } from "./latencyDelta.ts";
 import { buildTermsCard, type TermsCard } from "./termsCard.ts";
 import type { PortSpec } from "./portShapes.ts";
@@ -176,6 +179,11 @@ export class G4Session {
   private readonly pending: ExternalIntent[] = [];
   private readonly clientLabels = new Map<number, string>();
   private readonly receipts: ReceiptView[] = [];
+  /** The LAST advance's frozen event stream (never mutated, never copied) —
+   *  the §7.16 Act row reads its receipt line through `tickFacts()`, the same
+   *  post-advance facts shape the lab stepper exposes (TickFacts twin in
+   *  runner/simCoreRunner). Empty before the first step: nothing has happened. */
+  private lastEvents: readonly SimEvent[] = Object.freeze([]);
   /** Shift-memo: same action, same consequence ⇒ no prompt (§9.13 #4). */
   private readonly memoSkips = new Set<string>();
 
@@ -377,6 +385,33 @@ export class G4Session {
 
   /* ── the tick ──────────────────────────────────────────────────────── */
 
+  /**
+   * The §7.16 Act-row sink (wave-23 adoption): take the chrome-minted
+   * PlayerIntent WHOLE — its payload args are already door-shaped
+   * (actRow.ts is the single mint site, VERB_ARG_SHAPES source-drift-pinned)
+   * — stamp it for the next tick through the SAME queue the cables ride, and
+   * honour its own clock (actIntentClock: minute-window acts are "business",
+   * packet-world drain/shed stay "sim", §4.4). The session remains the stamp
+   * authority (seq/atUs/tick) — NodeActRow's local seq counter is decorative,
+   * exactly like the drag/click origin label: the sim sees the intent, not
+   * the gesture that produced it.
+   */
+  submitActIntent(intent: PlayerIntent): void {
+    const payload = intent.payload;
+    if (payload.kind !== "player-verb") {
+      throw new Error(`g4[not-player-verb]: the Act row mints player-verbs, got "${payload.kind}"`);
+    }
+    this.queue(payload.args, `${payload.args.verb} act`, intent.clock);
+  }
+
+  /** Post-advance facts for the §7.16 Act row: the FULL frozen GameState
+   *  (nodes, hands, board, all seven books) plus the last tick's event
+   *  stream. A read-only LOCAL accessor — the G4Snapshot shape is untouched,
+   *  so every existing determinism/receipts pin is immune by construction. */
+  tickFacts(): TickFacts {
+    return Object.freeze({ events: this.lastEvents, game: this.game });
+  }
+
   step(): G4Snapshot {
     const due = this.pending.splice(0, this.pending.length);
     const result = this.driver.advance(this.game, Object.freeze({
@@ -390,6 +425,7 @@ export class G4Session {
       externalIntents: Object.freeze(due),
     }));
     this.game = result.state;
+    this.lastEvents = result.events;
     for (const receipt of result.doorReceipts) {
       this.receipts.push(
         Object.freeze({
@@ -414,7 +450,7 @@ export class G4Session {
 
   /* ── internals ─────────────────────────────────────────────────────── */
 
-  private queue(args: PlayerVerbArgs, clientLabel: string): void {
+  private queue(args: PlayerVerbArgs, clientLabel: string, clock: PlayerIntent["clock"] = "sim"): void {
     const nextTick = this.game.context.tick + 1n;
     this.doorSeq += 1;
     this.clientLabels.set(this.doorSeq, `${clientLabel} @${String(nextTick)}`);
@@ -423,7 +459,7 @@ export class G4Session {
         tick: nextTick,
         intent: Object.freeze({
           seq: this.doorSeq,
-          clock: "sim" as const,
+          clock,
           atUs: nextTick * 60_000_000n,
           origin: "player" as const,
           payload: Object.freeze({ kind: "player-verb" as const, args }),

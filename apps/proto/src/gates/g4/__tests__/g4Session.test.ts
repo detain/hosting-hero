@@ -8,6 +8,8 @@
  *  - the whole script replays to identical digests (determinism).
  */
 import { describe, expect, it } from "vitest";
+import { asEntityId, PlayerVerb, type PlayerIntent } from "@hh/sim-core/types";
+import { actIntentClock, mintActIntent } from "../../../chrome/actRow.ts";
 import { G4Session, powerEdgeId, profileFor } from "../g4Session.ts";
 
 /** Advance to the (inclusive) end of tick `n` (session starts at tick 0). */
@@ -251,5 +253,72 @@ describe("G4Session · determinism over identical scripts", () => {
     expect(JSON.stringify(profileFor("switch", "sw-9"), (_k, v) => (typeof v === "bigint" ? v.toString() : v))).toBe(
       JSON.stringify(profileFor("switch", "sw-9"), (_k, v) => (typeof v === "bigint" ? v.toString() : v)),
     );
+  });
+});
+
+/* ── wave-23 chrome adoption · the §7.16 Act-row seam ─────────────────── */
+
+describe("G4Session · the Act-row seam (submitActIntent / tickFacts)", () => {
+  /** Mirror of NodeActRow.fire()'s mint+carry law: the intent rides WHOLE —
+   *  clock included — and the session keeps the stamp authority. */
+  const isolateIntent = (nodeId: string, seq: number): PlayerIntent =>
+    Object.freeze({
+      seq,
+      clock: actIntentClock(PlayerVerb.IsolateNode),
+      atUs: 0n,
+      origin: "player" as const,
+      payload: Object.freeze({
+        kind: "player-verb" as const,
+        args: mintActIntent(PlayerVerb.IsolateNode, nodeId, 0, { lift: false }),
+      }),
+    });
+
+  it("tickFacts() before any step: empty events, frozen frame, real state", () => {
+    const s = new G4Session(904);
+    const facts = s.tickFacts();
+    expect(Object.isFrozen(facts)).toBe(true);
+    expect(facts.events.length).toBe(0);
+    expect(Number(facts.game.context.tick)).toBe(0);
+  });
+
+  it("tickFacts() carries the LAST advance's events (never a stale frame)", () => {
+    const s = new G4Session(904);
+    open(s); // one step: two place-device intents EXECUTE
+    const first = s.tickFacts().events;
+    expect(first.some((e) => e.kind === "intent-executed")).toBe(true);
+    const nextFrame = s.step(); // quiet tick, nothing queued
+    expect(nextFrame.tick).toBe(2n);
+    expect(s.tickFacts().events.length).toBe(0); // stale stream replaced, not appended
+  });
+
+  it("submitActIntent refuses a non-verb carrier — the rail mints player-verbs", () => {
+    const s = new G4Session(904);
+    const slider = { seq: 0, clock: "sim", atUs: 0n, origin: "player", payload: { kind: "slider", control: "dial", value: 0 } };
+    expect(() => s.submitActIntent(slider as unknown as PlayerIntent)).toThrow(/g4\[not-player-verb\]/);
+  });
+
+  it("an isolated node goes through the SAME door: book lands, receipt speaks, clock rides business", () => {
+    const s = new G4Session(904);
+    open(s);
+    toTick(s, 4); // hands free again
+    const before = s.snapshot();
+    s.submitActIntent(isolateIntent("web-1", 7));
+    s.step();
+    const facts = s.tickFacts();
+    // The engine book — read back through the facts the Act row renders:
+    const entry = facts.game.isolate?.entries.get(asEntityId("web-1"));
+    expect(entry).toBeDefined();
+    expect(entry?.effectiveAtBusinessMinute).toBe(null); // fence drops now
+    expect(entry?.releaseAtBusinessMinute).toBe(null); // indefinite until replaced/lifted
+    // The receipt — executed, and the intent-executed event is on the frame:
+    const executed = facts.events.filter((e) => e.kind === "intent-executed");
+    expect(executed.length).toBe(1);
+    const receipt = s.snapshot().receipts.at(-1);
+    expect(receipt?.outcome).toBe("executed");
+    expect(receipt?.verb).toBe(PlayerVerb.IsolateNode);
+    // The clock rode through the queue (minute-window acts are "business"):
+    expect(actIntentClock(PlayerVerb.IsolateNode)).toBe("business");
+    // Isolate is a BOOK, not a wire: the board version never moved.
+    expect(s.snapshot().boardVersion).toBe(before.boardVersion);
   });
 });
