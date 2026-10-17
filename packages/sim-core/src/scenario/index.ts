@@ -73,3 +73,21 @@ export {
   theLongWeekendDoc,
 } from "./scenarios.ts";
 export type { ScenarioWire } from "./scenarios.ts";
+
+export {
+  PERSPECTIVE_BANNABLE_VERBS,
+  PERSPECTIVE_EXPRESSIBILITY,
+  PERSPECTIVE_IDS,
+  PERSPECTIVE_V0,
+  applyPerspectiveToDoorConfig,
+  isCellHidden,
+  perspectiveReportFor,
+  projectPerspectiveView,
+} from "./perspective.ts";
+export type {
+  PerspectiveId,
+  PerspectiveSpec,
+  PerspectiveVerbFate,
+  PerspectiveViewProjection,
+  ScenarioPerspectiveReport,
+} from "./perspective.ts";

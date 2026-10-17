@@ -31,6 +31,8 @@ import type {
 } from "../unattended/index.ts";
 import { parseGuardList, type ParsedGuard } from "../unattended/index.ts";
 import type { CompanyDeathCause, Covenant } from "../economy/index.ts";
+import type { PerspectiveId } from "./perspective.ts";
+import { PERSPECTIVE_IDS } from "./perspective.ts";
 import { parseFamilyWeightsTable } from "../waves/families.ts";
 import type { FamilyShare } from "../waves/families.ts";
 import {
@@ -540,6 +542,12 @@ export interface ScenarioDoc {
     readonly lose: readonly ObjectivePredicate[];
   };
   readonly limits: ScenarioLimits;
+  /** §1.2 perspective seat (L-CP2): a CLOSED-ROSTER id whose row composes
+   *  only EXISTING seams — verb dominance through the door's host
+   *  validators, sight through a pure cell projection, goal inversion as
+   *  doc data. OPTIONAL-FORWARD like rungs 6/8/10: absent ⇒ the doc gains
+   *  no key and every shipped wire rides byte-stand (sparse-key law). */
+  readonly perspective?: { readonly id: PerspectiveId };
 }
 
 /* ─────────────────────────── the error family ─────────────────────────── */
@@ -1569,7 +1577,27 @@ const DOC_FIELDS = [
   "signals",
   "objectives",
   "limits",
+  "perspective",
 ] as const;
+
+/** §1.2 (L-CP2): the perspective row — `{id}` exactly, id in the CLOSED v0
+ *  roster (perspective.ts). null/undefined ⇒ absent (the pre-L-CP2 byte
+ *  shape, kept exact); an unknown id is BAD_ENUM naming the whole roster;
+ *  any other key is the usual unknown-field refusal. The row carries only
+ *  an id BY DESIGN — every mechanic is the engine's, chosen by the roster,
+ *  never negotiated on the wire. "Any perspective level that needs a
+ *  seventh verb gets cut or becomes a cutscene" (:1212): this wall is where
+ *  that authoring law is enforced. */
+function parsePerspectiveRow(raw: unknown, path: string): ScenarioDoc["perspective"] {
+  if (raw === undefined || raw === null) return undefined;
+  const src = asRecord(raw, path, "BAD_RECORD");
+  requireKeys(src, ["id"], ["id"], path, "BAD_RECORD");
+  const id = readString(src, "id", path, "BAD_ENUM");
+  if (!(PERSPECTIVE_IDS as readonly string[]).includes(id)) {
+    bad("BAD_ENUM", `${path}.id`, `unknown perspective "${id}" — the v0 closed roster: ${PERSPECTIVE_IDS.join(", ")}`);
+  }
+  return Object.freeze({ id: id as PerspectiveId });
+}
 
 /** Parse untrusted wire JSON into a deep-frozen ScenarioDoc. The ONLY
  *  sanctioned entry point to the type — internal code trusts the result. */
@@ -1612,6 +1640,7 @@ export function parseScenarioDoc(raw: unknown): ScenarioDoc {
   const signals = parseSignals(src.signals ?? {}, new Set(contracts.map((spec) => spec.id)), `${path}.signals`);
   const objectives = parseObjectives(src.objectives, `${path}.objectives`);
   const limits = parseLimits(src.limits, `${path}.limits`);
+  const perspective = parsePerspectiveRow(src.perspective, `${path}.perspective`);
 
   /* Cross-section law: burns and cliffs scheduled beyond the clock cap are
      dead authoring bugs — refuse them instead of silently never firing. */
@@ -1659,6 +1688,9 @@ export function parseScenarioDoc(raw: unknown): ScenarioDoc {
     signals,
     objectives,
     limits,
+    // L-CP2 rides as a CONDITIONAL key: an unarmed doc never grows it
+    // (the rungs 6/8/10 law — "their doc objects gain no keys").
+    ...(perspective === undefined ? {} : { perspective }),
   });
 }
 

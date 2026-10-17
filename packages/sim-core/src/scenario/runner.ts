@@ -36,6 +36,7 @@ import type {
   EntityId,
   ExternalIntent,
   GameState,
+  ObservedKey,
   PlayerIntent,
   PlayerVerbArgs,
   RunSeed,
@@ -119,6 +120,8 @@ import {
 } from "../internal/tickFold.ts";
 import type { ObjectivePredicate, ScenarioDoc, ScenarioIntent, ScenarioSignals } from "./doc.ts";
 import { ScenarioError, scenarioIncidentCause, scenarioSeed, scenarioSignalsActive } from "./doc.ts";
+import type { PerspectiveSpec, ScenarioPerspectiveReport } from "./perspective.ts";
+import { applyPerspectiveToDoorConfig, perspectiveReportFor, PERSPECTIVE_V0 } from "./perspective.ts";
 import type { ObjectiveProgress, ScenarioObservation } from "./objectives.ts";
 import { objectiveHolds, objectiveLine, progressAll } from "./objectives.ts";
 
@@ -138,6 +141,12 @@ export interface ScenarioRunConfig {
    *  slices + registry meta the citation resolves against (see corpus.ts
    *  — the browser-safe seam; sim-core never reads fs). */
   readonly corpus?: CorpusAuthority;
+  /** L-CP2 (§1.2): a host-supplied ScopedReadView-shaped cell map for the
+   *  report's sight PROJECTION. The scenario lane mints no cells and the
+   *  simulation never reads this — it only lets the report answer "what
+   *  would this seat have not seen?". Ignored when the doc names no
+   *  perspective (no perspective ⇒ no report key at all). */
+  readonly perspectiveView?: ReadonlyMap<ObservedKey, unknown>;
 }
 
 /** Cumulative trace census — the report's "what happened" roll-up. */
@@ -178,6 +187,12 @@ export interface ScenarioReport {
   readonly trace: ScenarioTrace;
   readonly cashStartMicroUsd: bigint;
   readonly cashEndMicroUsd: bigint;
+  /** L-CP2: present ONLY on perspective-armed docs (sparse-key law). A
+   *  record of the seat — its sight namespaces, the verbs the tapes land
+   *  on, and (when a view was supplied) the projected cell census. The
+   *  `observation` above stays WHOLE TRUTH under every seat: seeing is not
+   *  being, hide never reaches the fold (pinned by the whole-truth test). */
+  readonly perspective?: ScenarioPerspectiveReport;
 }
 
 /* The F4/F5 refusal law (negative-bucket regex, settle-shape parse, opex
@@ -758,6 +773,14 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     throw new Error(`scenario[BAD_INT] at 'runScenario.tickCap': expected a safe integer ≥ 1, got ${String(cap)}`);
   }
   const runSeed = scenarioSeed(seed, offset);
+  /* L-CP2: resolve the seat BEFORE the mint — noc-shift's three hands are a
+   * minting fact (state.hands is the authority; the door's fallback mirrors
+   * it, the pre-existing two-reading law at :845). Unarmed docs keep the
+   * doc's own capacity byte-for-byte. PERSPECTIVE_V0 is exhaustive over the
+   * parsed roster (doc.ts BAD_ENUM wall), so the lookup can never miss. */
+  const perspectiveSpec: PerspectiveSpec | undefined =
+    doc.perspective === undefined ? undefined : PERSPECTIVE_V0[doc.perspective.id];
+  const effectiveHandCapacity = perspectiveSpec?.handCapacity ?? doc.limits.handCapacity;
   const totalTicks = Math.min(cap, doc.limits.maxSimMinutes);
   /* Corpus citations resolve through the shipped waves pipeline against
      the host-injected slices, on THIS run's seed (the same (seed, waveN,
@@ -782,7 +805,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     ruleBook: Object.freeze([]),
     ruleBookHash: SCENARIO_RULE_BOOK_HASH,
     guards: Object.freeze([]),
-    handCapacity: doc.limits.handCapacity,
+    handCapacity: effectiveHandCapacity,
     engineVersion: SCENARIO_ENGINE_VERSION,
     /* Wave five: the corrupts arm re-tunes the patience budget (queued
      * units past patience corrupt instead of bouncing). Applied ONLY when
@@ -852,7 +875,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
    * freeze validators answer only under the tape, both inclusive ends. */
   const freezeRow = doc.limits.freeze;
   const doorIntents: IntentDoorConfig = Object.freeze({
-    handCapacity: Math.max(1, doc.limits.handCapacity),
+    handCapacity: Math.max(1, effectiveHandCapacity),
     ...(attentionLimit === undefined ? {} : { attentionCost: attentionLimit.cost }),
     ...(freezeRow === undefined
       ? {}
@@ -863,11 +886,18 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
             isUnderTheTape(freezeRow, query.context.tick) ? FREEZE_REJECTION : null,
         }),
   });
+  /* L-CP2 composition (the freeze pattern one rung further): an unarmed doc
+   * keeps the EXACT door object above; an armed doc gets the perspective's
+   * unconditional tapes merged over it — a perspective ban subsumes the
+   * freeze band (never lets the verb through at any minute), while an
+   * unbanned verb's freeze validator rides on untouched. */
+  const armedDoorIntents: IntentDoorConfig =
+    perspectiveSpec === undefined ? doorIntents : applyPerspectiveToDoorConfig(doorIntents, perspectiveSpec);
   const driver = createTickDriver(
     slots,
     streamFor(runSeed, "root", 0),
     game0.context.clocks,
-    doc.intents.length > 0 ? { intents: doorIntents } : {},
+    doc.intents.length > 0 ? { intents: armedDoorIntents } : {},
   );
 
   /* ── money lane (the roster registers ONCE through the batch API) ── */
@@ -1209,5 +1239,9 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     }),
     cashStartMicroUsd: cashStart,
     cashEndMicroUsd: finalObs.cashFreeMicroUsd,
+    // L-CP2 sparse-key law: unarmed docs never grow the `perspective` key.
+    ...(perspectiveSpec === undefined
+      ? {}
+      : { perspective: perspectiveReportFor(perspectiveSpec, config.perspectiveView) }),
   });
 }
