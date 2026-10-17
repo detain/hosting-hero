@@ -141,6 +141,17 @@ export const INVARIANT_VERBS = [
  *  verb another card holds as dominant stays a merge candidate, never a
  *  type), and the canon-leg mechanics are UNCHANGED.
  *
+ *  Session-6 owner ruling (2026-10-16, ADR-0015 route) blessed a SEVENTH
+ *  extended verb — Isolate, founded verbatim on the §1.3 DBaaS card ("Verb:
+ *  isolate and throttle. The boss is a split brain."). The roster is now
+ *  seven verbs and no longer a pure §7.8-eight-verb subset: Isolate names no
+ *  §7.8 item at all. Like #D1 this is a law change INSIDE ADR-0005's already-
+ *  ratified per-tier-verb-sets frame, riding the #D1 precedent route. The
+ *  §7.8 corollary line and the §1.9 "it may never introduce a seventh verb"
+ *  law (hosting_game.md:4979) get doc-amendment notes at closeout — that file
+ *  is NOT edited here. The card's named successors throttle/restart stay OFF
+ *  the roster: ADR-0014 #D2's one-verb-per-mechanic law stands.
+ *
  *  Honest gap (reports/audit/group-16.md g16 finding): none of these verbs
  *  exists in the closed eight-verb PLAYER_VERBS door enum and no verb-
  *  acquisition mechanic ships. A tier-extension dominant verb is therefore a
@@ -155,6 +166,7 @@ export const TIER_EXTENDED_VERBS = [
   "sell",
   "negotiate",
   "schedule",
+  "isolate",
 ] as const;
 
 /** Canon-leg truth: the dominant verb is groundable in a ratified set — the
