@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§3.1 five-stat example, verbatim: 'A DNS query is patience 100ms / value ~0 / weight ~0 / loyalty n/a / fragility low'. patience authored as the doc's single explicit scalar for this line; value/weight '~0', loyalty 'n/a', fragility 'low' stay qualitative — '~0' is not a signed budget and 'n/a' is not a number, so null + this cite, never a forged zero."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": 100,
         "bounceSigmoid": [0.6, 1.0, 1.6],
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "budgetMs = the §3.1 patience 100ms, same authoring pair shared-web uses for its 3000ms. bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline. §3.2 Query row names the failure modes the budget guards: 'SERVFAIL/timeout' at '~100ms'."
       }
     },
@@ -201,7 +201,7 @@
     "fifthAxisScore": {
       "metric": "global-resolution-success-and-query-latency",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.3 fifth-axis table verbatim: 'DNS on global resolution success and query latency'. R42 score weight not authored."
     },
     "realismToggles": {

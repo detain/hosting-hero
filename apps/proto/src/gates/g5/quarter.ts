@@ -480,7 +480,7 @@ export function runQuarter(options: RunQuarterOptions): QuarterResult {
       `g5/quarter: content drift — wave ${incidentWindow.id} slot 3 opens at ${incidentWindow.incidentStartMin}, script strikes at ${INCIDENT_MIN}`,
     );
   }
-  const tuningSheetMarker = readTuningSheetMarker(options.sharedWebWire); // PROVISIONAL label, carried not resolved
+  const tuningSheetMarker = readTuningSheetMarker(options.sharedWebWire); // ratification stamp, carried not resolved
   const runSeed = asRunSeed(options.seed);
   const cfg = gate5Config();
 
@@ -644,17 +644,21 @@ export function parseWaveTable(wire: unknown): ParsedWaveTable {
   };
 }
 
-/** The bundle wire carries economy.tuningSheet as a PROVISIONAL string
- *  ("PROVISIONAL-B"); the loader's LoadedEconomy does not surface it, and
- *  this gate carries the marker only — it never resolves it via
- *  resolveActiveSheet() (whose OD-2 default is the ratified sheet B; the
- *  wire marker is authored content data, untouched here). */
+/** The bundle wire carries economy.tuningSheet as a ratification stamp —
+ *  "RATIFIED-B" since the owner re-author sweep 2026-10-17 (ADR-0009 ratified
+ *  sheet B; this closes the ADR-0015 #1 NOT-in-set ledger); the legacy
+ *  "PROVISIONAL-B" form still parses here (tolerance — pre-sweep fixtures and
+ *  the sibling content that keeps its honest PROVISIONAL tag). The loader's
+ *  LoadedEconomy does not surface the value either way, and this gate carries
+ *  the marker only — it never resolves it via resolveActiveSheet() (whose
+ *  OD-2 default is the ratified sheet B; the wire marker is authored content
+ *  data, untouched here). */
 function readTuningSheetMarker(wire: unknown): string {
   const sheet = (wire as { economy?: { tuningSheet?: unknown } })?.economy?.tuningSheet;
   if (typeof sheet !== "string" || sheet.length === 0) {
     throw new Gate5Error("g5/quarter: shared-web wire lacks economy.tuningSheet marker");
   }
-  return sheet; // e.g. "PROVISIONAL-B" — never resolved to numbers here
+  return sheet; // e.g. "RATIFIED-B" — never resolved to numbers here
 }
 
 /* ───────────────────────────── conservation laws ───────────────────────────── */

@@ -41,7 +41,7 @@ describe("g5 projection · wire fidelity (the UI's ?raw bytes ARE the shipped co
   it("shared-web bundle parses to the anchor type id", () => {
     const wire = JSON.parse(sharedWebRaw) as { id: string; economy: { tuningSheet: string } };
     expect(wire.id).toBe("official:shared-web");
-    expect(wire.economy.tuningSheet).toMatch(/PROVISIONAL/);
+    expect(wire.economy.tuningSheet).toMatch(/^RATIFIED-B$/);
   });
 
   it("g1 wave table is the 5-wave quarter script", () => {

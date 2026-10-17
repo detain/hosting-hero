@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§3.2 ledger row verbatim: 'VoIP/SIP | Call | Continuous, jitter-sensitive | Instant | Jitter, loss, one-way audio | Per-minute / per-channel' — the patience column reads 'Instant', which is a CLASS not a scalar, and the binary model below is the doc's own instrument for it ('Binary: it either connects with good audio or it doesn't. No partial credit.', §3.2 visitor-unit section); authoring a milliseconds number under 'Instant' would contradict the line's identity. value/weight/loyalty/fragility: §3.1 five-stat examples exist only for DNS/colo units; nothing authored for this line — nulls with this cite, never forged zeros."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": null,
         "bounceSigmoid": null,
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "mode 'binary' (PATIENCE_MODES vocabulary; FIRST corpus use — the vocabulary has carried this mode in anticipation and §3.2 names it for this exact line): 'Binary: it either connects with good audio or it doesn't. No partial credit.' plus the card's 'a dropped call is a total loss, not a slow bounce' (§1.3) — the call either seats on a free channel with acceptable audio or it is gone; there is no queued-impatient middle. budgetMs null: 'Instant' patience prices no scalar budget, and a forged one would turn the binary law into a timer. bounceSigmoid null: there is no bounce S-curve when failure is binary and total — the WS-1 R-60 LUT applies to patience-limited lines, not connect-or-lose ones. Both nulls await the owner re-author sweep."
       }
     },
@@ -200,7 +200,7 @@
     "fifthAxisScore": {
       "metric": "jitter-and-packet-loss",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.3 line table verbatim: 'Voice / VoIP / SIP trunking | Jitter + packet loss | Toll fraud | Businesses + carriers | A channel / a DID' — the scarce column is this line's fifth-axis frame (same law object-storage cites); R42 score weight not authored."
     },
     "realismToggles": {

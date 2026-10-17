@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§3.2 ledger row verbatim: 'Object storage | PUT/GET | Variable | Seconds | 503, slow | Per-GB + per-request' — patience authored 2000ms as the low end of the doc's 'Seconds' class (the GET service itself is ladder'd 20-80ms, §3.x latency ladder); 'Variable' size and the plural 'Seconds' price no exact scalar, so PROVISIONAL-B. value/weight/loyalty/fragility: §3.1 five-stat examples exist only for DNS/colo units; nothing authored for this line — nulls with this cite, never forged zeros."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": 2000,
         "bounceSigmoid": [0.6, 1.0, 1.6],
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "budgetMs = the §3.2 'Seconds' patience class, same authoring pair shared-web (3000ms) and dns (100ms) use for their ledger rows. bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline. §3.2 names this line's failure readout as '503, slow' — the 503-shock subtraction is engine-side, not a bundle scalar."
       }
     },
@@ -201,7 +201,7 @@
     "fifthAxisScore": {
       "metric": "disk-and-durability-math",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.3 line table verbatim: 'Object storage / S3-alike | Disk + durability math | Silent data loss | Developers, backup vendors | A GB-month' — the scarce column is this line's fifth-axis frame; R42 score weight not authored."
     },
     "realismToggles": {

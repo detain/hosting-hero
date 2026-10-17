@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "The §3.1 five-stat ledger names this line's visitor in its own thesis sentence — 'reskinning them is how one system covers page loads, game sessions, backup jobs, inference requests, and a colo tenant touring the building' (:11445) — and the §3.3 costume row writes the shape without numbers: 'Backup | Job | Huge, scheduled | Retries | Window overrun, checksum fail' (:12493). All five authored null + these cites, never forged. The doc's own qualitative words are the shape: patience 'infinite, but the *window* is finite' (§3.2 ledger row :11964 verbatim — the patience slot is deliberately unnumbered because the line does not use the patience axis at all), value inverted by §3.2's visitor spec — 'the restore is worth 10× the reputation of any backup job' (:12608) — weight 'Huge, scheduled' (§3.3 size column verbatim), fragility 'a job that runs past the window is a partial failure that compounds into tomorrow's' (§3.2 :12595 verbatim)."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": null,
         "bounceSigmoid": null,
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "mode 'window' — the engine seam was BUILT named for this line: the pipeline's R25 mirror documents 'window — hard cutoff (backup's \"window module\")' (src/pipeline/defaults.ts step-9), and the §3.2 ledger row commands the choice verbatim: 'Backup job | infinite, but the *window* is finite | patience is the wrong model; use the window' (:11964). First corpus USE of the mode; the doc's backup-host spec is the design it implements: 'it won't bounce, it'll retry — but it is absolutely intolerant of the window closing' (:12595). budgetMs null by authoring law: the window's length is never authored as a scalar — the card's only window numbers are failure-state prose ('a backup window that grew to 26 hours', §1.3; 'Jobs that don't finish by 06:00 didn't happen', §1.9) and the tuning sheet owns the band. bounceSigmoid null by MODE LAW — the mode has no gradient: 'p = 1 once elapsed + predicted ≥ budget, else 0' (defaults.ts); the whole point of the row is that the sigmoid is the wrong instrument."
       }
     },
@@ -207,7 +207,7 @@
     "fifthAxisScore": {
       "metric": "rpo-rto-restore-success",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.x fifth-axis row verbatim: 'Backup host on **RPO/RTO achieved and restore success rate**' (:638) — the three-instrument axis joined into one slug the same way colo joined its four-fold row; the weight stays unauthored (R42 law; the entry pass forbids the promise-typed number, see goal._todo)."
     },
     "realismToggles": {

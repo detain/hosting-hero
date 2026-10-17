@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "The §3.1 five-stat ledger rows this line verbatim in QUALITATIVE terms — the colo tour entry: 'patience months / value enormous / weight one cabinet row / loyalty 5 years / fragility catastrophic' (:11463) — and the section's own law demands numbers the doc never writes. All five authored null + this cite, never forged (exchange-colo ships the same ledger for its variant; the family row is this card's home, the variant's carry was its honest borrowing). The doc's own words are the fatal shape: 'fragility catastrophic' is the qualitative read of the facility-power fatality (§0.3 failure column verbatim), and 'loyalty 5 years' is the lease clock owned by tempo/contract law, not a bounce scalar."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": null,
         "bounceSigmoid": null,
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "mode 'resident' — the §3.2 exemplar is this line's unit named verbatim: 'a colo lease and a GPU training run feel identical to manage' and such a unit 'consumes committed capacity and cannot be shed at all' (:11689). First corpus USE was type-9's (credit stays there); this is the family's HOME claim of its own lease — the engine vocabulary (src/pipeline/defaults.ts PATIENCE_MODE_VOCAB: 'once it has joined a queue it WAITS — capacity is held, not abandoned') describes the tenant that plugs in and never leaves. budgetMs/bounceSigmoid null BY MODE LAW (the mode never consults a budget); the §3.1 patience word 'months' is lease-clock prose, not a LUT input — flagged for the tuning pass."
       }
     },
@@ -207,7 +207,7 @@
     "fifthAxisScore": {
       "metric": "occupancy-pue-sla-satisfaction",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.x fifth-axis row verbatim: 'Colo on occupancy, PUE, SLA adherence, and tenant satisfaction' (:637) — four instruments for one line, the widest axis entry in the corpus, so the single-metric slot carries the joined slug and the weight stays unauthored (R42 law; exchange-colo precedent for shipping the row's own frame: theirs took §0.3's scarce column, this card has a named four-fold axis and it is quoted complete)."
     },
     "realismToggles": {

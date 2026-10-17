@@ -91,9 +91,9 @@ describe("G5 group 0 — scorecard is ratified (OD-1, 2026-10-09), and this gate
     expect(getActiveScorecard(defaultScorecardConfig).id).toBe("commitment-convergence");
   });
 
-  it("resolveActiveSheet resolves sheet B (OD-2 flip) — G5 carries the wire's PROVISIONAL marker, never resolves it", () => {
+  it("resolveActiveSheet resolves sheet B (OD-2 flip) — G5 carries the wire's RATIFIED stamp, never resolves it", () => {
     expect(resolveActiveSheet().id).toBe("B");
-    expect(theQuarter().tuningSheetMarker).toMatch(/^PROVISIONAL/);
+    expect(theQuarter().tuningSheetMarker).toMatch(/^RATIFIED/);
   });
 
   it("the quarter is composed from the REAL shared-web content, parsed at the boundary", () => {

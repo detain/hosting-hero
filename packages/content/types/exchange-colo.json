@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "The §3.1 five-stat ledger rows this line verbatim in QUALITATIVE terms only — 'A colo tour is `patience months / value enormous / weight one cabinet row / loyalty 5 years / fragility catastrophic`' (:11463, the colo family entry; the family label is the doc's, the variant premium is unpriced) — and the section's own law ('Five numbers. Same five slots.' around it) demands numbers the doc never writes for this line. All five authored as null + this cite, never forged zeros, same law serverless cites for its unpriced stats; the qualitative ledger rides here so the tuning pass can find it. The fragility word the doc does choose ('catastrophic') is this line's fatality shape, not a scalar: the card's catastrophe ('one tenant gets a 40ns advantage and the others riot', §1.3 verbatim) is the qualitative read of it."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": null,
         "bounceSigmoid": null,
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "mode 'resident' — FIRST corpus use of the mode (voip's 'binary' first-use precedent): the pipeline vocabulary carries it (src/pipeline/defaults.ts PATIENCE_MODE_VOCAB; docblock 'resident — the sticky session (§App A durationClass Resident): once it has joined a queue it WAITS — capacity is held, not abandoned'), and §3.2 names this line's unit as its exemplar verbatim: 'Resident (a tenant or training job that occupies a slot for the whole level) consumes committed capacity and cannot be shed at all — which is precisely why a colo lease and a GPU training run feel identical to manage' (:11689). The cabinet does not abandon the queue; the drama is never bounce-attrition, it is what a resident unit's un-terminable presence DOES to the shared meter. budgetMs/bounceSigmoid null BY MODE LAW (the mode never consults a budget — patienceProbabilityFor returns the zero-bounce arm); the §3.1 patience ledger word ('months', :11463) is lease-clock prose owned by tempo/contract law, not a bounce LUT input — flagged for the tuning pass."
       }
     },
@@ -205,7 +205,7 @@
     "fifthAxisScore": {
       "metric": "microseconds-cable-length",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.3 line table verbatim: 'Financial exchange colo | Microseconds / cable length | Unequal latency between tenants | Trading firms | A cabinet three metres closer' — the scarce column is this line's fifth-axis frame (serverless precedent: the row's own scarce word IS the axis); R42 score weight not authored."
     },
     "realismToggles": {

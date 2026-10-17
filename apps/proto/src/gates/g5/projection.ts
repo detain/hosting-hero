@@ -519,7 +519,7 @@ function cardExplain(s: G5Signing, result: QuarterResult, minute: number): Expla
       { name: "signed", value: `day ${s.signDay}` },
       { name: "cliff", value: `minute ${originalCliffOf(s.contractId)}` },
       { name: "bundle", value: result.bundleId },
-      { name: "sheet", value: `${result.tuningSheetMarker} (PROVISIONAL — carried, never resolved here)` },
+      { name: "sheet", value: `${result.tuningSheetMarker} (carried, never resolved here)` },
       { name: "as-of", value: businessStamp(minute) },
     ],
   };

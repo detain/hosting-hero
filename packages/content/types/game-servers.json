@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§3.2/§3.3 author patience as TWO-PHASE (2,000ms to connect, then ping-bound ~90ms) — no single scalar exists to put here; value = per-slot monthly (§3.3 revenue) is account-level not unit-level; loyalty is 'brutal and instant' (§1.3) with no scalar; fragility = delayed-bounce-angry (§3.3) qualitative."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": 90,
         "bounceSigmoid": [0.6, 1.0, 1.6],
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "§3.3 patience ~90ms ping (G6 anchor: 'sigmoid-budget (game, 90ms)'). Join phase 2,000ms (§3.2 game player joining) is modelled as the connection handshake cost, not the session budget. Rage-quit cliff 'above ~80ms sustained' (§1.3) and ping-chip bands green<30/amber<80/red (§3.3) are HUD/readability anchors; jitter-worse-than-latency (§1.3) is engine-side."
       }
     },
@@ -40,7 +40,7 @@
     "herding": {
       "enabled": true,
       "coefficient": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§3.3 herding law: full attracts, empty repels — coefficient value not authored in doc."
     },
     "populationEffect": true,
@@ -206,7 +206,7 @@
     "fifthAxisScore": {
       "metric": "tick-stability",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "R42: per-type fifth axis = tick stability (§0.3 scarce 'Latency + tick budget'; meter reads it); score weight not authored."
     },
     "realismToggles": {
@@ -222,7 +222,7 @@
       "launchMultiplier": 20,
       "launchWeeks": 6,
       "evaporationPct": 85,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§1.3 verbatim: 'demand 20x for 6 weeks, then 85% evaporates' — multipliers doc'd; the §1.3 'Launch Window' variant's 10x-or-0.1x-at-12:01 is the authored event-envelope analogue, not this row."
     },
     "_todo": "cacProfile: §6.6 companion B authors CAC only for shared web ($65-150 affiliate CPA); game-servers CAC/TTP unauthored. ticketsPerCustomer: §1.3 'Tickets at 2am from 14-year-olds' attests volume but no rate."

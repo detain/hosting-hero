@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§12521 (sales-inquiry ledger row) authors the dedicated-era visitor qualitatively — slow, high-value, needs a human — and no per-inquiry patience/value scalars exist in §3.1/§3.2 for this line. Value is account-level (server/month, §6.6 'Dedicated | server/month'), loyalty is contract-level (churn 1-2%/mo, Companion A), fragility unauthored. Never forged into numbers; null + this cite per README §Never-invent-numbers."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": null,
         "bounceSigmoid": [0.6, 1.0, 1.6],
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline and mail-hosting. budgetMs unauthored for dedicated: the line's clock pressure is the 4-hour hardware-replacement expectation (§1.3 card) which is a fulfillment SLA, not a visitor wait budget; the sales inquiry's patience is human-scale and doc'd only as 'slow' (§12521) — same null-per-law mail cites for its provider-side budget."
       }
     },
@@ -197,7 +197,7 @@
     "fifthAxisScore": {
       "metric": "rack-utilization",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.3 fifth-axis table carries NO dedicated row (its lines score density, tick budget, inbox placement, resolution success) — metric authored from the §15395 verbatim law 'Utilization is the whole game', weight unauthored per R42 (OD-14 fifth-axis rows may stay null; never invented)."
     },
     "realismToggles": {

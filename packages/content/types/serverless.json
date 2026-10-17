@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§3.1 latency-ladder row verbatim: 'Cold start (serverless) | 300–1,500' — patience authored at the ladder's top (1500ms), the ceiling of what the first visitor after idle actually waits; the 300ms floor is the warm-pool purchase's reward, not the patience line. The §3.3 unit entry prices the deeper truth: 'the only unit in the game whose patience cost is set by the arrival history of other units' — that arrival-history coupling is engine-side, not a bundle scalar, and carries no authored number. value/weight/loyalty/fragility: §3.1 five-stat examples exist only for DNS/colo units; nothing authored for this line — nulls with this cite, never forged zeros."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": 1500,
         "bounceSigmoid": [0.6, 1.0, 1.6],
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "budgetMs = the §3.1 cold-start ladder ceiling (300–1,500ms), the same ledger-row authoring pair shared-web (3000ms) and dns (100ms) use for their units; the mayfly's own life is under a second (card verbatim 'vanish in under a second') but what it WAITS for is the cold start. bounceSigmoid = WS-1 R-60 LUT anchors (10%@0.6x, 50%@1.0x, 95%@1.6x of budget), same law as baseline."
       }
     },
@@ -200,7 +200,7 @@
     "fifthAxisScore": {
       "metric": "cold-start-latency-and-warm-pool",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.3 line table verbatim: 'Serverless / functions | Cold-start latency / warm pool | Noisy multi-tenant blast radius | App devs | An invocation' — the scarce column is this line's fifth-axis frame; R42 score weight not authored."
     },
     "realismToggles": {

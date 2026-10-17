@@ -98,7 +98,7 @@ const incidentBanner = computed(() => {
         <p class="g5-sub">
           gate G5 · §9.13 · bundle
           <b>{{ quarter?.bundleId ?? "…" }}</b>
-          · sheet <b>{{ quarter?.tuningSheetMarker ?? "…" }}</b> (PROVISIONAL — carried, never resolved)
+          · sheet <b>{{ quarter?.tuningSheetMarker ?? "…" }}</b> (carried, never resolved)
           · no scorecard (OD-1): ledger primitives only
         </p>
       </div>

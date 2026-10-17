@@ -11,7 +11,7 @@
 // LAW (§2.4 / OD-18 / ADR-0013 ruling 9: threat.lookalikeOf names the visitor
 // archetype it masks; direction checked, ids resolved, >=1 mimic-seed per shipped
 // bundle),
-// null=>_todo discipline, PROVISIONAL-[ABC] tuningSheet markers, §1.7 wave
+// null=>_todo discipline, (PROVISIONAL|RATIFIED)-[ABC] tuningSheet markers, §1.7 wave
 // authoring rules, and i18n ticket-pack conformance: packs exist for every
 // file:packs/ ref, cover every bundle-referenced key, obey the decision/flavour
 // namespace wall (§9.3 clause 2), keep README §Key literals verbatim-synced,
@@ -58,7 +58,22 @@ const MOTIONS = ["advance","hold","sweep","boil","match","walk","crystallize","o
 const DURATION_CLASSES = ["Instant","Session","BatchJob","Resident"];
 const PATIENCE_MODES = ["sigmoid-budget","window","value-decay","resident","binary","corrupts","none"];
 const VISITOR_FAMILIES = ["Browsers","Buyers","Machines","Amplifiers","Costs","Evaluators"];
-const TUNING_RE = /^PROVISIONAL-[ABC]$/;
+// Tuning-sheet wire stamp grammar — BOTH ratification forms accepted.
+// ADR-0009 (OD-2, 2026-10-09) ratified sheet B; the owner re-author sweep
+// (2026-10-17, closes the ADR-0015 #1 NOT-in-set ledger) flipped the twelve
+// type bundles' `"tuningSheet"` fields from PROVISIONAL-B to RATIFIED-B.
+// Legacy PROVISIONAL-[ABC] stays VALID (tolerance law, mirroring the
+// boot.build unknown-key rule): waves/ slices and the threat registry still
+// carry the pre-sweep form, and any fixture authored before the sweep must
+// keep parsing. HONESTY LAW (comment-level, not machine-policed): only sheet
+// B was ratified, so RATIFIED-B is the sole truthful RATIFIED pairing — a
+// hypothetical A/C card must keep its PROVISIONAL tag (OD-2 kept A/C honestly
+// tagged in the engine: waves/pressure.ts TUNING_SHEETS A/C status stays
+// PROVISIONAL). The letter suffix is the only part the engine ever reads —
+// and only via host-passed options (bare "A"|"B"|"C" into waves/foreign.ts /
+// versus/match.ts); the stamp string itself is a loader convention key,
+// stripped at parse and never resolved.
+const TUNING_RE = /^(PROVISIONAL|RATIFIED)-[ABC]$/;
 const ID_RE = /^([a-z0-9][a-z0-9-]*:)?[a-z0-9][a-z0-9-]*$/;
 const VISUAL_SLUG_RE = /^[a-z][a-z0-9-]*$/; // §8.18 manifest slug: lowercase-hyphenated render name
 const JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
@@ -151,7 +166,7 @@ const scanNulls = (node, where, sink = todos) => {
     }
   }
   if ("tuningSheet" in node && !TUNING_RE.test(node.tuningSheet)) {
-    fail(`${where}.tuningSheet`, `'${node.tuningSheet}' must match PROVISIONAL-[ABC]`);
+    fail(`${where}.tuningSheet`, `'${node.tuningSheet}' must match (PROVISIONAL|RATIFIED)-[ABC]`);
   }
   if (typeof node._todo === "string" && node._todo.trim()) sink.push([where, node._todo]);
   Object.entries(node).forEach(([k, v]) => { if (k !== "_todo") scanNulls(v, `${where}.${k}`, sink); });

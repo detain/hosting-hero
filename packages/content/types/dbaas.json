@@ -21,7 +21,7 @@
       "weight": null,
       "loyalty": null,
       "fragility": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "The §3 entry names this line's visitor outright — '### DBaaS — a query' (:12679) — and writes the shape without numbers: 'Small, chatty, millisecond-scale. Some are cheap; a few are catastrophically expensive, and one unindexed full scan (400–4,000ms) can eat every slot you have. The Noisy Query's actual weapon' (:12679 verbatim). All five authored null + these cites, never forged: patience is the ms band the R25 latency table owns ('Database (unindexed / full scan) | 400–4,000 | the Noisy Query's actual weapon', §3.1 :11545), weight 'Small, chatty' (§3.3 size column verbatim, :12502), value inverted by the very asymmetry the entry states — a million cheap reads and one catastrophic scan bill against the same pool, so per-visitor value is the wrong instrument; loyalty and fragility stay unauthored because §3.3's patience column answers with a STATE ('Connection pool exhausted'), not a scalar."
     },
     "patienceModel": {
@@ -29,7 +29,7 @@
       "params": {
         "budgetMs": null,
         "bounceSigmoid": null,
-        "tuningSheet": "PROVISIONAL-B",
+        "tuningSheet": "RATIFIED-B",
         "_todo": "mode 'sigmoid-budget' — the query is a session that holds a connection and gives up on a gradient: §3.3 gives the failure as pool exhaustion (:12502 verbatim column), which is queueing patience, the same shape the anchor's budget curve models. budgetMs null: the only authored numbers are the latency band 400–4,000ms (§3.1 :11545), and that band is the SCAN's cost, not the client's patience; the tuning sheet owns the client curve. bounceSigmoid null for the same reason. HONEST TENSION RECORDED: the §3.1 five-stat ledger's API-client row runs the sibling machine genre on '10,000, then hard fail; timeouts binary' — a binary patience was considered and declined: this line's visitor is a person's application retrying on their behalf inside a connection pool, not a script with a hard deadline, and §1.4's beat for this line is precisely that the retries come BACK ('every integration breaks at once and retries hammer you', :3131) — a binary timeout that never retries is a quieter, wrong machine. The binary arm stays the doc's, cited here, unchosen."
       }
     },
@@ -207,7 +207,7 @@
     "fifthAxisScore": {
       "metric": "replication-lag-and-zero-divergence",
       "weight": null,
-      "tuningSheet": "PROVISIONAL-B",
+      "tuningSheet": "RATIFIED-B",
       "_todo": "§0.x fifth-axis roster carries no DBaaS row (its entries name game/backup/colo/CDN/email/DNS/GPU/regulated/bulletproof only); the metric rides the goal's authored instrument ('DBaaS shows *replication lag*', §8.x verbatim, fused with the divergence half per goal._todo — object-storage's authored 'disk-and-durability-math' is the house precedent for a named-not-numbered axis); the weight stays unauthored (R42 law)."
     },
     "realismToggles": {
