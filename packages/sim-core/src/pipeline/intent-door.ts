@@ -91,6 +91,16 @@
  *    kill-in-flight stays DEFERRED); the release leg is REQUIRED on the
  *    wire (plain `number`): an unbounded restart would be `isolate-node`
  *    under another name, and the door refuses to fork the fence),
+ *    reclaim (reclaim-node — the OPTIONAL ADR-0017 #3 tombstone book,
+ *    STATE-NEUTRAL: the void is materialized at the six player-booking
+ *    capacity reads (steps 5/9) through pipeline/reclaim.ts
+ *    (`reclaimInForce`/`reclaimIndex`/`voidedByTombstone`), never by the
+ *    door — the door writes ONLY the book: no roster written, no queue
+ *    truncated, no occupied arm evicted, no unit/queue/board/cash/RNG
+ *    touched; collecting an unbooked node is a legal no-op — the door keeps
+ *    no "nothing-to-collect" refusal (the corpus spot law is "reclaimable
+ *    at ANY moment"), and the shield pre-arm / recovery windows /
+ *    priceKey-space books are load-bearing EXCLUSIONS of the void),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -163,6 +173,9 @@ import type {
   PriceOverrideBook,
   PriceOverrideRecord,
   PriceTargetKind,
+  ReclaimArgs,
+  ReclaimBook,
+  ReclaimEntry,
   RestartArgs,
   RestartBook,
   RestartEntry,
@@ -426,6 +439,18 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // reboot lands at step 5 (pipeline/restart.ts + defaults.ts
   // §(c)/(c′)); the door only writes the book.
   [PlayerVerb.RestartNode]: 1,
+  // ADR-0017 #1/#3 (Reclaim): collecting a node's stale bookings is the same
+  // one-click desk tap as pulling the reboot lever — §7.5's reference
+  // durations floor family (~:26741: "restart a service **20s**") plus the
+  // corpus spot law "~:24851: reclaimable at any moment" (collecting must
+  // never be expensive or it is not "at any moment") ⇒ the COMMIT class,
+  // same window as isolate-node/throttle-node/restart-node. PROVISIONAL
+  // taste (post-ratify new numeric, 2026-10-17) — occupancy pinned red on
+  // drift. The ADR-0016 #11 ratify register CLOSED (e2a1bba) BEFORE this
+  // verb existed, so house law ships the new numeric PROVISIONAL with
+  // mechanics context. The void lands at the six reads
+  // (pipeline/reclaim.ts + steps 5/9); the door only writes the book.
+  [PlayerVerb.ReclaimNode]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -473,6 +498,13 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   // Act-row law makes it a tap, not an attendance).
   // §7.5: "restart a service 20s". RATIFIED 2026-10-17 (ADR-0016 #11).
   [PlayerVerb.RestartNode]: 1,
+  // ADR-0017 #3 (Reclaim): one desk hand to collect a node's stale bookings
+  // — same cost as the other COMMIT-class verbs (occupancy table above; the
+  // corpus spot law "reclaimable at any moment" prices it as a tap, never
+  // an attendance). PROVISIONAL taste (post-ratify new numeric, 2026-10-17)
+  // — the ADR-0016 #11 register closed before this verb existed; see the
+  // occupancy row.
+  [PlayerVerb.ReclaimNode]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -708,6 +740,16 @@ export function createRestartBook(): RestartBook {
   return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, RestartEntry>()) });
 }
 
+/** Empty reclaim tombstone book (ADR-0017 #3 · Reclaim) — hosts that want
+ *  the door fed an unarmed-but-present board state can seed one; the fold
+ *  law is the same as the other books (an EMPTY book still switches the
+ *  digest, an ABSENT field never does). Keyed by node id; LAST-WRITE-WINS;
+ *  the tombstone never expires (no release leg — amendments are the only
+ *  motion, and re-collecting an unbooked node is a legal no-op). */
+export function createReclaimBook(): ReclaimBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, ReclaimEntry>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -769,6 +811,9 @@ interface Draft {
   throttle: ThrottleBook | null;
   /** ADR-0016 COW restart book — null until a `restart-node` order lands. */
   restart: RestartBook | null;
+  /** ADR-0017 #3 COW reclaim tombstone book — null until a `reclaim-node`
+   *  order lands. */
+  reclaim: ReclaimBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -874,6 +919,7 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   // `isolate-node` under another name, and the door refuses to fork the
   // fence; null release is structural garbage (M2 throws).
   [PlayerVerb.RestartNode]: Object.freeze({ targetNodeId: "string", dropQueued: "string", effectiveAtBusinessMinute: "number-or-null", releaseAtBusinessMinute: "number" }),
+  [PlayerVerb.ReclaimNode]: Object.freeze({ targetNodeId: "string", effectiveAtBusinessMinute: "number-or-null" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -1868,6 +1914,49 @@ function handleRestartNode(draft: Draft, args: RestartArgs): HandlerVerdict {
   return { ok: true, detail };
 }
 
+/**
+ * `reclaim-node` handler (ADR-0017 #1/#3 · lane L-DM5) — the §1.4 CI/build-
+ * farm card's THIRD verb, verbatim "~:2679 `Verb: isolate, expire, reclaim`"
+ * (isolate landed @86cff89, expire rides its release legs, reclaim closes
+ * the row). A RECLAIM is a TOMBSTONE, not an act of destruction: the door
+ * records one frozen entry into the OPTIONAL `GameState.reclaim` book and
+ * touches NOTHING else — no roster written, no queue truncated, no occupied
+ * arm evicted, no unit/board/cash/RNG touched (the shield/scale state-
+ * neutrality VERBATIM). The VOID is materialized at the six player-booking
+ * capacity reads (steps 5/9) through `pipeline/reclaim.ts`: while armed,
+ * every booking that shipped AT OR BEFORE the tombstone answers inert, and
+ * bookings shipped AFTER it stand — the rebuild half of the cycle. Guards:
+ * the shield trio `empty-node-id` → `bad-effective-minute` → `unknown-node`
+ * reused BYTE-EXACT (the zero-new-census law — reclaim is the first
+ * tier-extension verb to add NO refusal phrase at all). NO "nothing-to-
+ * collect" refusal exists: collecting an unbooked node is a legal no-op, the
+ * corpus spot law is "reclaimable at ANY moment" (~:24851) and a future
+ * stamp is the scheduled collection. The tombstone never expires (no
+ * release leg — amendments LWW; Shield's un-shieldable posture, aimed at
+ * promises instead of protection). */
+function handleReclaimNode(draft: Draft, args: ReclaimArgs): HandlerVerdict {
+  const nodeId = args.targetNodeId as EntityId; // wire type trusted (parseEntry, M2)
+  if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
+  const base = draft.reclaim ?? draft.origin.reclaim ?? createReclaimBook();
+  const entries = new Map<EntityId, ReclaimEntry>(base.entries);
+  entries.set(
+    nodeId,
+    Object.freeze({
+      shippedAtTick: draft.context.tick,
+      effectiveAtBusinessMinute: effectiveAt,
+    }),
+  );
+  draft.reclaim = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  const detail = `target=${nodeId}` + `,eff=${effectiveAt === null ? "now" : String(effectiveAt)}`;
+  return { ok: true, detail };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -1890,7 +1979,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     draft.attention === null && draft.shield === null && draft.scale === null &&
     draft.maintain === null && draft.schedule === null && draft.sell === null &&
     draft.negotiate === null && draft.isolate === null && draft.throttle === null &&
-    draft.restart === null
+    draft.restart === null && draft.reclaim === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1919,6 +2008,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.isolate !== null ? { isolate: draft.isolate } : {}),
     ...(draft.throttle !== null ? { throttle: draft.throttle } : {}),
     ...(draft.restart !== null ? { restart: draft.restart } : {}),
+    ...(draft.reclaim !== null ? { reclaim: draft.reclaim } : {}),
   });
 }
 
@@ -2064,6 +2154,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleThrottleNode(draft, args as ThrottleArgs);
       case PlayerVerb.RestartNode:
         return handleRestartNode(draft, args as RestartArgs);
+      case PlayerVerb.ReclaimNode:
+        return handleReclaimNode(draft, args as ReclaimArgs);
     }
   })();
 
@@ -2139,6 +2231,7 @@ export function applyIntentDoor(
     isolate: null,
     throttle: null,
     restart: null,
+    reclaim: null,
     events: [],
     receipts: [],
   };

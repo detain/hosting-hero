@@ -46,7 +46,8 @@
  * `__tests__/isolation-consume.test.ts`).
  */
 
-import type { EntityId, IsolateBook, SimMinute } from "../types.ts";
+import type { EntityId, IsolateBook, ReclaimEntry, SimMinute } from "../types.ts";
+import { voidedByTombstone } from "./reclaim.ts";
 
 /** As-of law for ONE node's fence — the `nodeShielded` twin, widened by
  *  the release leg. In force at business minute `atBusinessMinute` iff:
@@ -58,7 +59,12 @@ import type { EntityId, IsolateBook, SimMinute } from "../types.ts";
  *    is armed but NOT yet law — the `PriceOverrideRecord` discipline); and
  *  - the fence has NOT EXPIRED: `releaseAtBusinessMinute === null`
  *    (indefinite) OR `atBusinessMinute < release` — the half-open `[eff,
- *    rel)` boundary, so at exactly `release` the node admits again.
+ *    rel)` boundary, so at exactly `release` the node admits again; and
+ *  - the fence is NOT RECLAIMED (ADR-0017 #3): when a live reclaim index is
+ *    threaded and the fence shipped AT OR BEFORE its node's tombstone, the
+ *    destroy-and-rebuild cycle collected it — the fence answers inert at
+ *    read while the book keeps it raw (history-witness posture VERBATIM).
+ *    Omitted/null index ⇒ zero void checks, the pre-reclaim law exact.
  *
  *  Expired rows answer false here while remaining in the book (history
  *  witness, digest raw). Pure; zero RNG. */
@@ -66,6 +72,7 @@ export function nodeIsolated(
   isolate: IsolateBook | undefined,
   nodeId: EntityId,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): boolean {
   if (isolate === undefined) return false;
   const entry = isolate.entries.get(nodeId);
@@ -74,25 +81,31 @@ export function nodeIsolated(
     entry.effectiveAtBusinessMinute === null ||
     atBusinessMinute >= entry.effectiveAtBusinessMinute;
   if (!armed) return false;
-  return entry.releaseAtBusinessMinute === null || atBusinessMinute < entry.releaseAtBusinessMinute;
+  if (!(entry.releaseAtBusinessMinute === null || atBusinessMinute < entry.releaseAtBusinessMinute)) {
+    return false;
+  }
+  return !voidedByTombstone(entry.shippedAtTick, reclaims?.get(nodeId));
 }
 
 /** The LIVE fence set at business minute `atBusinessMinute`, for the step-5
  *  serve input. Returns `null` (NOT an empty set) when there is nothing to
- *  enforce — no book, an empty book, or every row armed-not-yet/expired —
- *  so the driver can omit `ServeInExt.isolationFence` entirely and the serve
- *  input stays byte-identical to the unarmed run (idle book costs ZERO).
+ *  enforce — no book, an empty book, every row armed-not-yet/expired, or
+ *  every live row RECLAIMED (ADR-0017 #3 — the void reads clean capacity,
+ *  so a collected fence costs the serve input nothing) — so the driver can
+ *  omit `ServeInExt.isolationFence` entirely and the serve input stays
+ *  byte-identical to the unarmed run (idle book costs ZERO).
  *  Otherwise a frozen Set of fenced node ids. Pure; deterministic iteration
  *  over insertion order (the set's membership is order-independent at the
  *  consumption site); zero RNG. */
 export function isolatedNodeIds(
   isolate: IsolateBook | undefined,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): ReadonlySet<EntityId> | null {
   if (isolate === undefined || isolate.entries.size === 0) return null;
   let fenced: Set<EntityId> | null = null;
   for (const nodeId of isolate.entries.keys()) {
-    if (!nodeIsolated(isolate, nodeId, atBusinessMinute)) continue;
+    if (!nodeIsolated(isolate, nodeId, atBusinessMinute, reclaims)) continue;
     if (fenced === null) fenced = new Set<EntityId>();
     fenced.add(nodeId);
   }

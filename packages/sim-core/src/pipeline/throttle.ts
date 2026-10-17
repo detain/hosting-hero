@@ -60,7 +60,8 @@
  * `__tests__/throttle-consume.test.ts`).
  */
 
-import type { EntityId, SimMinute, ThrottleBook } from "../types.ts";
+import type { EntityId, ReclaimEntry, SimMinute, ThrottleBook } from "../types.ts";
+import { voidedByTombstone } from "./reclaim.ts";
 
 /** As-of law for ONE node's cut — the `nodeIsolated` twin, widened by the
  *  value leg. In force at business minute `atBusinessMinute` iff:
@@ -76,7 +77,13 @@ import type { EntityId, SimMinute, ThrottleBook } from "../types.ts";
  *  - the cut has NOT EXPIRED: `releaseAtBusinessMinute === null`
  *    (indefinite) OR `atBusinessMinute < release` — the half-open `[eff,
  *    rel)` boundary VERBATIM, so at exactly `release` the full ceiling is
- *    back, strictly.
+ *    back, strictly; and
+ *  - the cut is NOT RECLAIMED (ADR-0017 #3): when a live reclaim index is
+ *    threaded and the cut shipped AT OR BEFORE its node's tombstone, the
+ *    destroy-and-rebuild cycle collected it — the ceiling answers restored
+ *    (null) at read while the book keeps the row raw (history-witness
+ *    posture VERBATIM). Omitted/null index ⇒ zero void checks, the
+ *    pre-reclaim law exact.
  *
  *  Expired rows answer null here while remaining in the book (history
  *  witness, digest raw). Returns the LIVE cutSlots. Pure; zero RNG. */
@@ -84,6 +91,7 @@ export function nodeThrottleCut(
   throttle: ThrottleBook | undefined,
   nodeId: EntityId,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): number | null {
   if (throttle === undefined) return null;
   const entry = throttle.entries.get(nodeId);
@@ -93,27 +101,31 @@ export function nodeThrottleCut(
     atBusinessMinute >= entry.effectiveAtBusinessMinute;
   if (!armed) return null;
   if (entry.releaseAtBusinessMinute !== null && atBusinessMinute >= entry.releaseAtBusinessMinute) return null;
+  if (voidedByTombstone(entry.shippedAtTick, reclaims?.get(nodeId))) return null;
   return entry.cutSlots;
 }
 
 /** The LIVE cut map at business minute `atBusinessMinute`, for the step-5
  *  serve input — node id → discounted admission slots (every entry with
  *  `nodeThrottleCut` non-null). Returns `null` (NOT an empty map) when
- *  there is nothing to enforce — no book, an empty book, or every row
- *  armed-not-yet/expired/cut-0 — so the driver can OMIT the
- *  `ServeInExt.throttleCuts` key entirely and the serve input stays
- *  byte-identical to the unarmed run (idle book costs ZERO). Otherwise a
+ *  there is nothing to enforce — no book, an empty book, every row
+ *  armed-not-yet/expired/cut-0, or every live row RECLAIMED (ADR-0017 #3
+ *  — the void reads the full ceiling, so a collected cut costs the serve
+ *  input nothing) — so the driver can OMIT the `ServeInExt.throttleCuts`
+ *  key entirely and the serve input stays byte-identical to the unarmed
+ *  run (idle book costs ZERO). Otherwise a
  *  frozen Map; insertion order is the book's key order and never leaks
  *  into semantics (the consumption site reads by node id only). Pure;
  *  zero RNG. */
 export function throttleCuts(
   throttle: ThrottleBook | undefined,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): ReadonlyMap<EntityId, number> | null {
   if (throttle === undefined || throttle.entries.size === 0) return null;
   let live: Map<EntityId, number> | null = null;
   for (const [nodeId, entry] of throttle.entries) {
-    if (nodeThrottleCut(throttle, nodeId, atBusinessMinute) === null) continue;
+    if (nodeThrottleCut(throttle, nodeId, atBusinessMinute, reclaims) === null) continue;
     if (live === null) live = new Map<EntityId, number>();
     live.set(nodeId, entry.cutSlots);
   }

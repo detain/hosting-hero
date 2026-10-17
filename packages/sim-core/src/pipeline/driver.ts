@@ -114,6 +114,7 @@ import {
 import { isolatedNodeIds } from "./isolation.ts";
 import { throttleCuts } from "./throttle.ts";
 import { restartSets } from "./restart.ts";
+import { reclaimIndex } from "./reclaim.ts";
 import {
   foldCorruptionTerminals,
   shieldBusinessMinuteOf,
@@ -601,6 +602,20 @@ export function createTickDriver(
      * object passes through by identity — zero copies, byte-identity. */
     const throttled =
       recoveryCfg !== undefined ? throttleServeNodes(worked.nodes, worked.recovery) : worked.nodes;
+    /* ADR-0017 #3 · Reclaim tombstones: with a booked reclaim slice, the LIVE
+     * tombstones (as-of the business minute — another reuse of the single
+     * floor-division helper `shieldBusinessMinuteOf`, the L-DM1 law) are
+     * computed ONCE per tick and threaded into the six void-capable player
+     * booking reads below (steps 5 and 9). NO book — or a book with zero
+     * armed tombstones (`reclaimIndex` answers null) — ⇒ every threaded read
+     * takes the pre-reclaim law exact and the patience input keeps its
+     * historical key set (zero-call byte-identity switch). The index voids
+     * ONLY bookings shipped at-or-before their node's tombstone
+     * (`voidedByTombstone`); strictly-later bookings stand — the
+     * destroy-and-rebuild cycle. Zero RNG at this site; the reclaim book
+     * itself is written ONLY by the door. */
+    const reclaims =
+      worked.reclaim !== undefined ? reclaimIndex(worked.reclaim, shieldBusinessMinuteOf(context.clocks)) : null;
     /* ADR-0015 · Scale reserved warmth: with a booked scale slice, the node
      * serves its authored roster PLUS the warmth in force (as-of the
      * business minute; recovery windows defer). NO book ⇒ the fold is never
@@ -616,6 +631,7 @@ export function createTickDriver(
             worked.scale,
             shieldBusinessMinuteOf(context.clocks),
             worked.recovery,
+            reclaims,
           )
         : throttled;
     /* ADR-0015 session-6 · Isolate fence: with a booked isolation slice, the
@@ -635,7 +651,9 @@ export function createTickDriver(
      * downstream; the clock fold is called once per fenced-relevant tick
      * only when the slice is present. Zero RNG at this site. */
     const isolationFence =
-      worked.isolate !== undefined ? isolatedNodeIds(worked.isolate, shieldBusinessMinuteOf(context.clocks)) : null;
+      worked.isolate !== undefined
+        ? isolatedNodeIds(worked.isolate, shieldBusinessMinuteOf(context.clocks), reclaims)
+        : null;
     /* ADR-0016 successor program · Throttle: with a booked throttle slice,
      * the LIVE cuts (same as-of minute, same `shieldBusinessMinuteOf`
      * single-division helper — the L-DM1 reuse precedent, third reuse) ride
@@ -651,7 +669,9 @@ export function createTickDriver(
      * clamped view) and is ADDITIVE under scale warmth (warmth raises the
      * base the cut discounts). Zero RNG at this site. */
     const throttleCutMap =
-      worked.throttle !== undefined ? throttleCuts(worked.throttle, shieldBusinessMinuteOf(context.clocks)) : null;
+      worked.throttle !== undefined
+        ? throttleCuts(worked.throttle, shieldBusinessMinuteOf(context.clocks), reclaims)
+        : null;
     /* ADR-0016 successor program · Restart: with a booked restart slice, the
      * LIVE reboot windows (same as-of minute, same single floor-division
      * helper `shieldBusinessMinuteOf` — the fourth reuse after shield/scale,
@@ -666,7 +686,9 @@ export function createTickDriver(
      * terminal shape a hard ceiling already produces), so restart shares no
      * ledger with the door beyond the book itself. Zero RNG at this site. */
     const restartWindows =
-      worked.restart !== undefined ? restartSets(worked.restart, shieldBusinessMinuteOf(context.clocks)) : null;
+      worked.restart !== undefined
+        ? restartSets(worked.restart, shieldBusinessMinuteOf(context.clocks), reclaims)
+        : null;
     const restartFence = restartWindows?.fence ?? null;
     const restartDrop = restartWindows?.drop ?? null;
     const serveIn: ServeInExt =
@@ -957,6 +979,12 @@ export function createTickDriver(
        * THIS tick governs the die from THIS tick. */
       ...(worked.maintain !== undefined ? { maintain: worked.maintain } : {}),
       ...(worked.schedule !== undefined ? { schedule: worked.schedule } : {}),
+      /* ADR-0017 #3 — the LIVE tombstone index rides the SAME Ext channel,
+       * same ABSENT-key byte-identity law: null (no book / nothing armed) ⇒
+       * no key ⇒ the attendance veto and the window-as-deadline read take the
+       * pre-reclaim law exact. The shield veto never consults it (§8.9
+       * exclusion: protection is not a capacity booking). */
+      ...(reclaims !== null ? { reclaims } : {}),
     };
     // The default patience step answers with the merged corruption slice via
     // the out-of-band Ext field (defaults.ts module header); a swapped-in

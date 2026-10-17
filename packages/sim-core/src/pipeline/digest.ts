@@ -458,6 +458,32 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0017 #3 RECLAIM — the optional reclaim-node tombstone book
+  // (digest-switch law, same embed law as the others): absorbed ONLY when
+  // present, so every pre-reclaim state (all shipped goldens) keeps
+  // byte-identical digests. Node ids sort code-unit (Map insertion order
+  // NEVER read); the effective leg takes the -1 null-sentinel (the door's
+  // >= 0 law keeps it unambiguous), and there is NO release leg to encode —
+  // the tombstone never expires, so the shippedAtTick VOID BOUNDARY is the
+  // field that carries the law: two tombstones of equal effective minute
+  // shipped on different ticks void DIFFERENT sets of bookings and must
+  // digest differently. Raw like isolate/throttle/restart: superseded-by-
+  // LWW tombstones stay in the book as history witness (read-time arming in
+  // pipeline/reclaim.ts).
+  if (state.reclaim !== undefined) {
+    sink.text("reclaim").int(state.reclaim.version);
+    const reclaimKeys = Array.from(state.reclaim.entries.keys()).sort(byId);
+    sink.int(reclaimKeys.length);
+    for (const key of reclaimKeys) {
+      const rec = state.reclaim.entries.get(key);
+      if (rec === undefined) continue;
+      sink
+        .text(key)
+        .int(rec.shippedAtTick)
+        .int(rec.effectiveAtBusinessMinute ?? -1);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.

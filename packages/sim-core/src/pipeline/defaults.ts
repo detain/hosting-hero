@@ -87,6 +87,7 @@ import type {
   JobWindowBook,
   MaintainBook,
   MaintainWindow,
+  ReclaimEntry,
   ScaleBook,
   ScaleEntry,
   ShieldBook,
@@ -112,6 +113,7 @@ import {
 import { bounceProbability, patienceRatioBps } from "./bounce.ts";
 import { DEFAULT_KNEE_RHO, effectiveRho, hockeyStickWaitUs, makeSlots, utilization } from "./queue.ts";
 import { shieldBusinessMinuteOf, nodeShielded } from "./corruption.ts";
+import { voidedByTombstone } from "./reclaim.ts";
 
 /* ═══════════════════════ Extension inputs (driver-supplied) ═════════════════ */
 
@@ -915,17 +917,28 @@ export const defaultQueueWaitStep: TickStep<QueueWaitIn, QueueWaitOut> = (input)
  *  `effectiveAtBusinessMinute === null` is law from the executing tick; a
  *  future stamp is armed but NOT yet law. Accepting the optional book keeps
  *  the caller's guard flat (Law 1): `undefined` book ⇒ null for every node
- *  — the byte-identity switch. §1.3 serverless card "Cold Start": "a
- *  Chrysalis Pool of pre-warmed shells is the buildable: buying warmth is
- *  buying the absence of a stutter." */
+ *  — the byte-identity switch. ADR-0017 #3 RECLAIM void: when a live
+ *  reclaim index is threaded and the warmth shipped AT OR BEFORE its node's
+ *  tombstone, the destroy-and-rebuild cycle collected the reservation — the
+ *  entry reads INERT (null, no padding) while the book keeps it raw; a
+ *  re-booking after the tombstone STANDS (the rebuild). Omitted/null index
+ *  ⇒ zero void checks, the pre-reclaim law exact. §1.3 serverless card
+ *  "Cold Start": "a Chrysalis Pool of pre-warmed shells is the buildable:
+ *  buying warmth is buying the absence of a stutter." */
 export function scaleWarmInForce(
   scale: ScaleBook | undefined,
   nodeId: EntityId,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): ScaleEntry | null {
   if (scale === undefined) return null;
   const entry = scale.entries.get(nodeId);
   if (entry === undefined) return null;
+  // ADR-0017 #3 void FIRST — order-irrelevant to the answer (an unarmed row
+  // reads null either way; a voided one reads null either way) and the
+  // ternary below is DRIFT-PINNED verbatim by internal/__tests__/warmth-cost
+  // .test.ts against the tickFold.ts twin: do not restructure it.
+  if (voidedByTombstone(entry.shippedAtTick, reclaims?.get(nodeId))) return null;
   return entry.effectiveAtBusinessMinute === null || atBusinessMinute >= entry.effectiveAtBusinessMinute
     ? entry
     : null;
@@ -977,18 +990,24 @@ function scaleOccupiedFloor(slots: readonly NodeSlotRecord[]): number {
  * close. A booking made DURING a window anchors `baseRosterSlots` at the
  * throttled length (the door reads the live roster) — deterministic and
  * disclosed.
+ *
+ * ADR-0017 #3 RECLAIM VOID: the threaded tombstone index (null = nothing
+ * armed) is forwarded to `scaleWarmInForce` — a collected reservation
+ * simply reads inert, so the node serves its authored clean capacity; the
+ * recovery deferral law is UNTOUCHED (engine authority, never voided).
  */
 export function applyScaleWarmth(
   nodes: ReadonlyMap<EntityId, NodeRecord>,
   scale: ScaleBook | undefined,
   atBusinessMinute: SimMinute,
   recovery: RecoveryState | undefined,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): ReadonlyMap<EntityId, NodeRecord> {
   if (scale === undefined || scale.entries.size === 0) return nodes;
   let changed = false;
   const out = new Map<EntityId, NodeRecord>();
   for (const [nodeId, record] of nodes) {
-    const warm = scaleWarmInForce(scale, nodeId, atBusinessMinute);
+    const warm = scaleWarmInForce(scale, nodeId, atBusinessMinute, reclaims);
     if (warm === null || (recovery !== undefined && recovery.windows.has(nodeId))) {
       out.set(nodeId, record);
       continue;
@@ -1030,17 +1049,24 @@ function bandLive(band: MaintainWindow | JobWindow, atBusinessMinute: SimMinute)
  *  `nodeShielded` and `scaleWarmInForce` (the as-of half), plus the band law
  *  the pre-arm books never needed (`bandLive`). Accepting the optional book
  *  keeps the caller's guard flat (Law 1): `undefined` book ⇒ null for every
- *  node — the byte-identity switch. §1.3 trunk-group-voip card "The
+ *  node — the byte-identity switch. ADR-0017 #3 RECLAIM void: a live
+ *  reclaim index threaded with the attendance shipped AT OR BEFORE its
+ *  node's tombstone collects it — the veto answers inert (null) and the
+ *  abandonment die rolls again, while the book keeps the band raw; a
+ *  re-booked band after the tombstone STANDS. Omitted/null index ⇒ zero
+ *  void checks, the pre-reclaim law exact. §1.3 trunk-group-voip card "The
  *  Switchboard" (hosting_game.md:1771): when the board is attended callers
  *  hold; when the crew walks off, the trunk group's binary patience bites. */
 export function maintainInForce(
   maintain: MaintainBook | undefined,
   nodeId: EntityId,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): MaintainWindow | null {
   if (maintain === undefined) return null;
   const entry = maintain.entries.get(nodeId);
   if (entry === undefined) return null;
+  if (voidedByTombstone(entry.shippedAtTick, reclaims?.get(nodeId))) return null;
   return bandLive(entry, atBusinessMinute) ? entry : null;
 }
 
@@ -1048,15 +1074,20 @@ export function maintainInForce(
  *  exact twin of `maintainInForce` over `JobWindowBook`. Distinct from §7.7
  *  recovery windows (`GameState.recovery` — the second-failure throttle's
  *  damage records): this band is a DEADLINE the player booked on the
- *  calendar, read only by patience-mode "window" units. */
+ *  calendar, read only by patience-mode "window" units. ADR-0017 #3 RECLAIM
+ *  void: same tombstone law as `maintainInForce` — a collected window
+ *  answers null and the unit's AUTHORED deadline governs again (window mode
+ *  reverts to its budget), the book keeps the row raw. */
 export function jobWindowInForce(
   schedule: JobWindowBook | undefined,
   nodeId: EntityId,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): JobWindow | null {
   if (schedule === undefined) return null;
   const entry = schedule.entries.get(nodeId);
   if (entry === undefined) return null;
+  if (voidedByTombstone(entry.shippedAtTick, reclaims?.get(nodeId))) return null;
   return bandLive(entry, atBusinessMinute) ? entry : null;
 }
 
@@ -1331,6 +1362,14 @@ export function createPatienceCheckStep(
     const shield = (input as PatienceCheckInExt).shield;
     const maintain = (input as PatienceCheckInExt).maintain;
     const schedule = (input as PatienceCheckInExt).schedule;
+    /* ADR-0017 #3 — the LIVE reclaim tombstone index (driver-threaded,
+     * null/absent = nothing armed). It deliberately does NOT join the
+     * business-minute gate below: with no maintain/schedule book the two
+     * void-capable readers short-circuit on their own `undefined` book
+     * before ever consulting the index, so an reclaim-only run keeps the
+     * pre-door shape (zero clock math) — the shield veto below NEVER
+     * consults it (protection is not capacity). */
+    const reclaims = (input as PatienceCheckInExt).reclaims ?? null;
     const atBusinessMin =
       shield === undefined && maintain === undefined && schedule === undefined
         ? 0
@@ -1377,7 +1416,7 @@ export function createPatienceCheckStep(
        * context). Zero blast radius exactly as the shield veto cites above:
        * "skipping this unit's draw shifts nobody else's dice" — and with
        * NO book on input this line answers null without touching a Map. */
-      if (queueNode !== undefined && maintainInForce(maintain, queueNode, atBusinessMin) !== null) continue;
+      if (queueNode !== undefined && maintainInForce(maintain, queueNode, atBusinessMin, reclaims) !== null) continue;
       /* ADR-0015 (Schedule 2/5) WINDOW-AS-DEADLINE — patience-mode "window"
        * BRANCH ONLY: inside a live band the job's effective budget becomes
        * the sim-time distance to the band's trailing edge
@@ -1393,7 +1432,7 @@ export function createPatienceCheckStep(
        * byte-identical to every pre-schedule run, pinned both ways. */
       const band =
         mode === "window" && queueNode !== undefined
-          ? jobWindowInForce(schedule, queueNode, atBusinessMin)
+          ? jobWindowInForce(schedule, queueNode, atBusinessMin, reclaims)
           : null;
       const budgetUs = band === null ? unit.patienceUs : jobBandDistanceUs(band, input.context.clocks);
       const probability = patienceProbabilityFor(mode, elapsed, predicted, budgetUs);
@@ -1421,14 +1460,19 @@ export function createPatienceCheckStep(
 }
 
 /** Driver-supplied extra: the live corruption slice (absent = dormant), the
- *  ADR-0014 #D2 pre-arm book (absent = the shield veto never reads), and the
+ *  ADR-0014 #D2 pre-arm book (absent = the shield veto never reads), the
  *  two ADR-0015 2/5 window books (absent = attendance veto inert / window
- *  mode keeps its authored budget — the byte-identity switch per book). */
+ *  mode keeps its authored budget — the byte-identity switch per book), and
+ *  the ADR-0017 #3 LIVE reclaim tombstone index (absent/null = no void
+ *  checks; when armed it collects pre-tombstone attendance/job windows at
+ *  the two window reads ONLY — the shield veto and the corruption slice are
+ *  engine/protection surfaces, NEVER voided). */
 export interface PatienceCheckInExt extends PatienceCheckIn {
   readonly corruption?: CorruptionState;
   readonly shield?: ShieldBook;
   readonly maintain?: MaintainBook;
   readonly schedule?: JobWindowBook;
+  readonly reclaims?: ReadonlyMap<EntityId, ReclaimEntry>;
 }
 
 /** Step-9 out-of-band answer: the merged slice whenever the channel is

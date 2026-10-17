@@ -194,6 +194,7 @@ const HONEST_ROWS: Readonly<Record<string, Record<string, unknown>>> = {
     effectiveAtBusinessMinute: null,
     releaseAtBusinessMinute: 480,
   },
+  "reclaim-node": { targetNodeId: "web-1", effectiveAtBusinessMinute: null },
 };
 
 describe("the wall accepts one honest row per verb", () => {

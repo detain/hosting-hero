@@ -58,7 +58,8 @@
  * `__tests__/restart-consume.test.ts`).
  */
 
-import type { EntityId, RestartBook, RestartEntry, SimMinute } from "../types.ts";
+import type { EntityId, ReclaimEntry, RestartBook, RestartEntry, SimMinute } from "../types.ts";
+import { voidedByTombstone } from "./reclaim.ts";
 
 /** As-of law for ONE node's reboot — the `nodeIsolated`/`nodeThrottleCut`
  *  twin, widened by the value leg (the row itself, not a cut). In force at
@@ -72,7 +73,13 @@ import type { EntityId, RestartBook, RestartEntry, SimMinute } from "../types.ts
  *  - the reboot has NOT EXPIRED: `atBusinessMinute < releaseAtBusinessMinute`
  *    — the half-open `[eff, rel)` boundary, release STRICT (the null leg
  *    cannot exist: the door's wire type makes release REQUIRED, so a row
- *    that never ends is unrepresentable and this reader trusts its parse).
+ *    that never ends is unrepresentable and this reader trusts its parse); and
+ *  - the reboot is NOT RECLAIMED (ADR-0017 #3): when a live reclaim index is
+ *    threaded and the window shipped AT OR BEFORE its node's tombstone, the
+ *    destroy-and-rebuild cycle collected it — the scheduled reboot never
+ *    fires (null at read) while the book keeps the row raw (history-witness
+ *    posture VERBATIM). Omitted/null index ⇒ zero void checks, the
+ *    pre-reclaim law exact.
  *
  *  Expired rows answer null here while remaining in the book (history
  *  witness, digest raw). Returns the LIVE entry — `dropQueued` is the
@@ -81,6 +88,7 @@ export function nodeRestartWindow(
   restart: RestartBook | undefined,
   nodeId: EntityId,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): RestartEntry | null {
   if (restart === undefined) return null;
   const entry = restart.entries.get(nodeId);
@@ -90,6 +98,7 @@ export function nodeRestartWindow(
     atBusinessMinute >= entry.effectiveAtBusinessMinute;
   if (!armed) return null;
   if (atBusinessMinute >= entry.releaseAtBusinessMinute) return null;
+  if (voidedByTombstone(entry.shippedAtTick, reclaims?.get(nodeId))) return null;
   return entry;
 }
 
@@ -102,8 +111,10 @@ export function nodeRestartWindow(
  *    their queue through the shed channel each tick.
  *
  *  Either leg is `null` (NOT an empty set) when it has nothing to enforce —
- *  no book, an empty book, every row armed-not-yet/expired, or (for the
- *  drop leg) no live drop row — so the driver omits the corresponding
+ *  no book, an empty book, every row armed-not-yet/expired, every live row
+ *  RECLAIMED (ADR-0017 #3 — a collected reboot never fires, costing the
+ *  serve input nothing), or (for the drop leg) no live drop row — so the
+ *  driver omits the corresponding
  *  `ServeInExt` key entirely and the serve input stays byte-identical to
  *  the unarmed run (idle book costs ZERO). `drop ⊆ fence` always. Frozen
  *  sets; insertion order is the book's key order and never leaks into
@@ -111,12 +122,13 @@ export function nodeRestartWindow(
 export function restartSets(
   restart: RestartBook | undefined,
   atBusinessMinute: SimMinute,
+  reclaims: ReadonlyMap<EntityId, ReclaimEntry> | null = null,
 ): { readonly fence: ReadonlySet<EntityId> | null; readonly drop: ReadonlySet<EntityId> | null } {
   let fence: Set<EntityId> | null = null;
   let drop: Set<EntityId> | null = null;
   if (restart !== undefined) {
     for (const [nodeId, entry] of restart.entries) {
-      if (nodeRestartWindow(restart, nodeId, atBusinessMinute) === null) continue;
+      if (nodeRestartWindow(restart, nodeId, atBusinessMinute, reclaims) === null) continue;
       if (fence === null) fence = new Set<EntityId>();
       fence.add(nodeId);
       if (!entry.dropQueued) continue;

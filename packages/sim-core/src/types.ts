@@ -1394,6 +1394,39 @@ export enum PlayerVerb {
    *  queue-empty. The engine reader is `pipeline/restart.ts`
    *  (`nodeRestartWindow`/`restartSets`); the door writes ONLY the book. */
   RestartNode = "restart-node",
+  /** ADR-0017 #1/#3 (lane L-DM5): the 19th door verb — the FOURTEENTH type's
+   *  card verb made playable (§1.4 CI/build-farm card, hosting_game.md :2677
+   *  `### "Green Light" / "Untrusted Code, By Design" — CI / build-farm
+   *  hosting`, verb line ~:2679 "**Verb: isolate, expire, reclaim.**" — the
+   *  same line that grounded the fence's expiry leg @86cff89; `isolate` and
+   *  `expire` (the release legs) landed with that verb and its successors,
+   *  and `reclaim` is the named successor that lands HERE). The corpus
+   *  economics are the spot line (~:24851: "**Spot/preemptible** monetizes
+   *  the residual and is reclaimable at any moment.") — a reclaim is the
+   *  destroy-and-rebuild cycle: the node comes back CLEAN. The door records
+   *  a TOMBSTONE into the OPTIONAL `GameState.reclaim` book — one entry per
+   *  node, last-write-wins, NO release leg (the tombstone never expires;
+   *  re-book AFTER the tombstone is the rebuild half of the cycle) — and
+   *  touches nothing else: no roster written, no queue truncated, no
+   *  occupied arm evicted, no unit/board/cash/RNG touched (state-neutral,
+   *  the shield/scale posture VERBATIM). The VOID law is the whole verb:
+   *  while a reclaim is in force for a node, every player booking that node
+   *  carried — scale warmth, isolate fence, throttle cut, restart window,
+   *  maintain band, schedule job window — answers INERT at read, returning
+   *  the node to its AUTHORED clean capacity; only bookings SHIPPED BEFORE
+   *  the tombstone (`entry.shippedAtTick <= tombstone.shippedAtTick`) are
+   *  voided — later bookings stand (the rebuild). The engine reader is
+   *  `pipeline/reclaim.ts` (`reclaimInForce`/`reclaimIndex`, consumed by the
+   *  six player-booking reads at steps 5/9); EXCLUSIONS are load-bearing:
+   *  the `shield` pre-arm is protection not capacity (voiding it would
+   *  silently HARM — never touched), §7.7 recovery is ENGINE authority (the
+   *  isolation.ts separation law), and the priceKey-space books
+   *  (pricing/sell/negotiate) are excluded v0 (host/economy consumers; the
+   *  spot-eviction leg is the named future half). §7.5's desk-tap floor
+   *  family (~:26741: "restart a service **20s**") prices it COMMIT class —
+   *  one hand / one tick; collecting an unbooked node is a LEGAL no-op (the
+   *  "at any moment" law — there is nothing-to-collect to refuse). */
+  ReclaimNode = "reclaim-node",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1416,6 +1449,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.IsolateNode,
   PlayerVerb.ThrottleNode,
   PlayerVerb.RestartNode,
+  PlayerVerb.ReclaimNode,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1769,6 +1803,28 @@ export interface RestartArgs {
   readonly releaseAtBusinessMinute: SimMinute;
 }
 
+export interface ReclaimArgs {
+  readonly verb: PlayerVerb.ReclaimNode;
+  /** Node to reclaim (collect its bookings) — resolved against
+   *  `GameState.nodes` (the shield/fence world-existence check reused
+   *  verbatim; an absent node is the `unknown-node` refusal). The reclaim
+   *  never touches the node's records: the roster is NOT rewritten, the
+   *  queue NOT truncated, occupied arms NOT evicted — the TOMBSTONE is a
+   *  pure read-side void at the six player-booking capacity reads
+   *  (`pipeline/reclaim.ts`, steps 5/9). Collecting an unbooked node is a
+   *  legal no-op: the door keeps no "nothing-to-collect" refusal (the corpus
+   *  spot line is "reclaimable at ANY moment", hosting_game.md ~:24851). */
+  readonly targetNodeId: EntityId;
+  /** Business-clock effective minute (Dual-Clock law §4.4 — the shield's
+   *  as-of discipline VERBATIM, same field name and same wire type): the
+   *  null sentinel = law from the executing tick; a future stamp is armed
+   *  but NOT yet law (`reclaimInForce` answers null until the minute).
+   *  Amendments are last-write-wins: the tombstone never expires on its
+   *  own, and there is NO release leg — re-booking after the tombstone is
+   *  the rebuild half of the destroy-and-rebuild cycle. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1788,7 +1844,8 @@ export type PlayerVerbArgs =
   | NegotiateTermsArgs
   | IsolateArgs
   | ThrottleArgs
-  | RestartArgs;
+  | RestartArgs
+  | ReclaimArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -2379,6 +2436,44 @@ export interface RestartBook {
   readonly entries: ReadonlyMap<EntityId, RestartEntry>;
 }
 
+/**
+ * One executed `reclaim-node` order frozen into the tombstone book — the
+ * ENTIRE door side effect (ADR-0017 #3). EXACTLY the `ShieldEntry` shape
+ * (`shippedAtTick` + one nullable business-minute leg), and `shippedAtTick`
+ * is LOAD-BEARING here in a way it never was for the shield: the void law
+ * compares it against every booking's `shippedAtTick`
+ * (`reclaim.ts` `voidedByTombstone` — `<=` voids, `>` stands). Attribution
+ * `intent:<seq>` rides the minting event, never the record; null effective =
+ * law from the executing tick; the tombstone NEVER expires (no release leg —
+ * amendments are the only motion, and re-booking after the tombstone is the
+ * rebuild half of the destroy-and-rebuild cycle).
+ */
+export interface ReclaimEntry {
+  /** Macro tick the tombstone was shipped (the VOID BOUNDARY: bookings whose
+   *  `shippedAtTick` is `<=` this answer inert at read; strictly-later
+   *  bookings stand). */
+  readonly shippedAtTick: SimTick;
+  /** Business-clock effective minute; null = law from the executing tick, a
+   *  future stamp is armed-but-not-law (`reclaimInForce`). */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+}
+
+/** The OPTIONAL `GameState.reclaim` embed — the reclaim tombstone book
+ *  (same embed law as the other door books: absent ⇒ byte-identical digests
+ *  everywhere; `pipeline/digest.ts` absorbs it WHEN PRESENT). Keyed by node
+ *  id — LAST-WRITE-WINS per node: a later reclaim replaces the standing
+ *  tombstone and its `shippedAtTick` moves the void boundary FORWARD —
+ *  everything shipped up to the NEWER stamp answers inert, which is exactly
+ *  what the destroy-and-rebuild cycle does when you destroy twice;
+ *  `version` bumps per
+ *  materialized write — the board/pricing memoization convention. There is
+ *  no un-reclaim verb: the tombstone is permanent law until a NEWER booking
+ *  (shipped after it) outlives it — which is exactly the rebuild. */
+export interface ReclaimBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<EntityId, ReclaimEntry>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -2687,4 +2782,33 @@ export interface GameState {
    *  calls ⇒ every shipped golden byte-identical (digest-switch law:
    *  `pipeline/digest.ts` absorbs it ONLY when present). */
   readonly restart?: RestartBook;
+  /** ADR-0017 #3 embed — the reclaim-node (Reclaim) tombstone book
+   *  `reclaim-node` writes (see `ReclaimBook`): one permanent VOID boundary
+   *  per node, last-write-wins, no release leg (the tombstone never
+   *  expires — re-booking after it is the rebuild half of the
+   *  destroy-and-rebuild cycle; §1.4 "~:2679 `Verb: isolate, expire,
+   *  reclaim`"). THE VOID LAW: while a reclaim is in force for a node
+   *  (armed as-of the business minute), every PLAYER booking that node
+   *  carried — scale warmth, isolate fence, throttle cut, restart window,
+   *  maintain band, schedule job window — answers INERT at read, returning
+   *  the node to its AUTHORED clean capacity ("reclaimable at any moment",
+   *  ~:24851 — the spot-collector's node comes back empty of promises).
+   *  Only bookings SHIPPED BEFORE the tombstone (`entry.shippedAtTick <=
+   *  tombstone.shippedAtTick`) are voided — later bookings STAND. The void
+   *  reads NOTHING ELSE: `shield` is protection not capacity (stripping it
+   *  would silently HARM — pinned exclusion), §7.7 recovery windows/clamps
+   *  are ENGINE authority (the isolation.ts separation law), and the
+   *  priceKey-space books (pricing/sell/negotiate) are EXCLUDED v0 — their
+   *  consumers are the host/economy lane (contract signing, not node
+   *  capacity; the spot-eviction leg of the corpus card is the named future
+   *  half, requiring a contract→capacity bridge nobody has designed — do
+   *  NOT "complete" this by force). The as-of + void laws live ONCE in
+   *  `pipeline/reclaim.ts` (`reclaimInForce`/`reclaimIndex`/
+   *  `voidedByTombstone`); the driver threads the LIVE index as a
+   *  presence-only trailing param into the six reads — absent/idle book ⇒
+   *  zero calls ⇒ every shipped golden byte-identical (digest-switch law:
+   *  `pipeline/digest.ts` absorbs it ONLY when present). The reclaim writes
+   *  NO roster, evicts NO occupied arm, touches NO unit/queue/board/cash/
+   *  RNG — the clean-capacity read is the whole mechanic. */
+  readonly reclaim?: ReclaimBook;
 }

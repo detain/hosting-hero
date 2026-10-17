@@ -383,6 +383,10 @@ export const SCENARIO_INTENT_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Re
     effectiveAtBusinessMinute: "null|number",
     releaseAtBusinessMinute: "number",
   }),
+  "reclaim-node": Object.freeze({
+    targetNodeId: "string",
+    effectiveAtBusinessMinute: "null|number",
+  }),
 });
 
 /** One scheduled player verb on the door's rail. The runner stamps seq =

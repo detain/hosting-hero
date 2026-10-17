@@ -23,4 +23,5 @@ export * from "./corruption.ts";
 export * from "./isolation.ts";
 export * from "./throttle.ts";
 export * from "./restart.ts";
+export * from "./reclaim.ts";
 export { digestState } from "./digest.ts";
