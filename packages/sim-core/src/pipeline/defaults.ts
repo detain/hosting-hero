@@ -523,7 +523,21 @@ export const UNIT_HOLD = new Map<EntityId, EntityId>();
  *    stay byte-untouched, so an occupied floor can never be evicted and
  *    throttleServeNodes' board-drift throw is structurally unreachable;
  *  - ABSENT fence set (no book seeded) ⇒ every branch below is identity —
- *    shipped digests byte-identical (zero-golden default).
+ *    shipped digests byte-identical (zero-golden default);
+ *  - L-TR (ADR-0016 successor program) adds a SECOND, PARTIAL discount on
+ *    the same channel: `throttleCuts` (pipeline/throttle.ts, driver-
+ *    threaded) maps node id → slots removed from the ADMISSION ceiling.
+ *    A throttled node admits while `occupied + need ≤ slots.length(view)
+ *    − cut` — capacity-as-CLAMP, the roster is NEVER written (materialized
+ *    shrink REJECTED: it would poison throttleServeNodes' `fullSlots`
+ *    capture and make the player's cut PERMANENT through a restoration
+ *    window; and a bps-probability admit is REJECTED because step 5 is
+ *    dice-FREE and its digests depend on it). An over-cap node (occupied
+ *    already past the ceiling) admits NOTHING until work walks off —
+ *    never-evict honored, releases (§(b)) untouched. PRECEDENCE BY CODE
+ *    POSITION: the fenced skip-branch stays the FIRST branch of §(c); a
+ *    fenced node never reaches the ceiling guard — fence beats throttle
+ *    (the emergency outranks the dial), pinned falsifiably.
  * `ServeIn` itself stays the frozen contract; like ArrivalInExt /
  * PatienceCheckInExt / BackpressureInExt this rides as an optional field
  * the base step reads through a cast.
@@ -531,12 +545,16 @@ export const UNIT_HOLD = new Map<EntityId, EntityId>();
 export interface ServeInExt extends ServeIn {
   /** Node ids fenced against NEW admissions this tick (frozen by isolation.ts). */
   readonly isolationFence?: ReadonlySet<EntityId>;
+  /** Node id → admission-ceiling slots REMOVED this tick (frozen by
+   *  throttle.ts; live cuts only, `cut >= 1` — an idle book omits the key). */
+  readonly throttleCuts?: ReadonlyMap<EntityId, number>;
 }
 
 export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
   const { context, nodes } = input;
   const simNow = context.clocks.simUs;
   const isolationFence = (input as ServeInExt).isolationFence;
+  const throttleCuts = (input as ServeInExt).throttleCuts;
   const unitById = new Map<EntityId, Unit>();
   for (const unit of input.units) unitById.set(unit.id, unit);
 
@@ -704,6 +722,17 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
     // work, the queue array is left exactly as §(a) built it (no
     // truncation, no eviction, and even the phantom purge — a hygiene
     // WRITE — stays silent: the fence writes nothing).
+    // L-TR throttle clamp (ADR-0016): the ADMISSION ceiling the viewed
+    // roster offers once the player's live cut is discounted. No cut for
+    // this node ⇒ Infinity ⇒ the guard below is provably inert
+    // (byte-identity). It is a SECOND guard on the channel, positioned
+    // INSIDE the loop AFTER the fenced skip-branch — fence beats throttle
+    // by code position (the emergency outranks the dial). `slotCount -
+    // free.length` is what §(b) left occupied right now, so an over-cap
+    // node (occupancy already past the ceiling) admits NOTHING until work
+    // walks off — never-evict honored, the roster never written.
+    const cut = throttleCuts?.get(nodeId);
+    const ceiling = cut === undefined ? Infinity : slotCount - cut;
     while (!fenced && queue !== null && queue.length > 0) {
       const head = queue[0];
       if (head === undefined) break;
@@ -719,6 +748,7 @@ export const defaultServeStep: TickStep<ServeIn, ServeOut> = (input) => {
       const need = slotsNeeded(unit.sizeCost);
       const free = freeIndices();
       if (free.length < need) break;
+      if (ceiling !== Infinity && (slotCount - free.length) + need > ceiling) break;
       queue.shift();
       queueDirty = true;
       const taken = free.slice(0, need);

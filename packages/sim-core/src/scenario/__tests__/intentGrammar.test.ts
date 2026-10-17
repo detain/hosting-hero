@@ -182,6 +182,12 @@ const HONEST_ROWS: Readonly<Record<string, Record<string, unknown>>> = {
     effectiveAtBusinessMinute: null,
     releaseAtBusinessMinute: 480,
   },
+  "throttle-node": {
+    targetNodeId: "web-1",
+    cutSlots: 1,
+    effectiveAtBusinessMinute: null,
+    releaseAtBusinessMinute: 480,
+  },
 };
 
 describe("the wall accepts one honest row per verb", () => {

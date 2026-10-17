@@ -66,6 +66,17 @@
  *    `nodeIsolated`/`isolatedNodeIds`, the gate is pipeline/defaults.ts
  *    `defaultServeStep` §(c)), never by the door; the door writes ONLY the
  *    book — no roster is written, no queue truncated, no unit evicted),
+ *    throttle (throttle-node — the OPTIONAL ADR-0016 successor capacity-cut
+ *    book, the dbaas card's OWN second verb ("isolate and throttle"),
+ *    STATE-NEUTRAL: the cut discounts the step-5 ADMISSION ceiling through
+ *    the driver-threaded cut map (the as-of law is pipeline/throttle.ts
+ *    `nodeThrottleCut`/`throttleCuts`, the gate is pipeline/defaults.ts
+ *    `defaultServeStep` §(c)), never by the door; the door writes ONLY the
+ *    book — no roster is written (capacity-as-CLAMP; materialized shrink
+ *    REJECTED — it would poison recovery's fullSlots capture), no queue
+ *    truncated, no unit evicted; the door REFUSES `cut >= roster` pointing
+ *    at `isolate-node`, so the fence stays the total case and every booked
+ *    throttle is a PARTIAL cut),
  *    hands+events (everything), events-only (shed-load/communicate/
  *    toggle-speed). units/lanes/observed/cash/ledger/contracts are NEVER
  *    reachable from the door (audit-tested by reference identity);
@@ -153,6 +164,9 @@ import type {
   SimEvent,
   SimTick,
   SimTimeUs,
+  ThrottleArgs,
+  ThrottleBook,
+  ThrottleEntry,
   TickContext,
   ToggleSpeedArgs,
 } from "../types.ts";
@@ -381,6 +395,13 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   // lands at step 5 (pipeline/isolation.ts + defaults.ts §(c)); the door
   // only writes the book.
   [PlayerVerb.IsolateNode]: 1,
+  // ADR-0016 successor program (Throttle): the §7.16 Act-row law covers this
+  // one too — dropping a capacity cut is the same one-click emergency dial as
+  // dropping a fence ⇒ the COMMIT class (1 tick), same window as
+  // isolate-node/shield-node. PROVISIONAL taste (post-ratify new numeric,
+  // 2026-10-17) — occupancy pinned red on drift. The cut lands at step 5
+  // (pipeline/throttle.ts + defaults.ts §(c)); the door only writes the book.
+  [PlayerVerb.ThrottleNode]: 1,
 });
 
 export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Object.freeze({
@@ -413,6 +434,10 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   // as the other COMMIT-class verbs (PROVISIONAL taste, occupancy table
   // above; the one-click Act-row law makes it a tap, not an attendance).
   [PlayerVerb.IsolateNode]: 1,
+  // ADR-0016 (Throttle): one desk hand to drop a capacity cut — same cost as
+  // the other COMMIT-class verbs (PROVISIONAL taste, occupancy table above;
+  // the one-click Act-row law makes it a tap, not an attendance).
+  [PlayerVerb.ThrottleNode]: 1,
 });
 
 /* ═══════════════════════════ Drain choreography (§7.2 R54) ═══════════════ */
@@ -628,6 +653,16 @@ export function createIsolateBook(): IsolateBook {
   return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, IsolateEntry>()) });
 }
 
+/** Empty throttle book (ADR-0016 successor program · Throttle) — hosts that
+ *  want the door fed an unarmed-but-present board state can seed one; the
+ *  fold law is the same as the other books (an EMPTY book still switches the
+ *  digest, an ABSENT field never does). Keyed by node id; every booked cut
+ *  is a PARTIAL discount on the admission ceiling (the door's `[0, roster)`
+ *  range check keeps the total case owned by `isolate-node`). */
+export function createThrottleBook(): ThrottleBook {
+  return Object.freeze({ version: 0, entries: Object.freeze(new Map<EntityId, ThrottleEntry>()) });
+}
+
 /** Composite book key. `targetKind` is a colon-free closed vocabulary, so the
  *  first-colon split is exact even for namespaced ids ("plan:pro-2026"
  *  and "sku:cb:bandwidth" both round-trip through `parsePriceOverrideKey`). */
@@ -685,6 +720,8 @@ interface Draft {
   /** ADR-0015 session-6 COW isolation book — null until an `isolate-node`
    *  order lands. */
   isolate: IsolateBook | null;
+  /** ADR-0016 COW throttle book — null until a `throttle-node` order lands. */
+  throttle: ThrottleBook | null;
   readonly events: SimEvent[];
   readonly receipts: IntentReceipt[];
 }
@@ -777,6 +814,11 @@ const VERB_ARG_SHAPES: Readonly<Record<PlayerVerb, Readonly<Record<string, ArgWi
   [PlayerVerb.SellOffer]: Object.freeze({ targetKind: "string", targetId: "string", offerPriceMicroUsd: "bigint", termMonths: "number", effectiveAtBusinessMinute: "number-or-null" }),
   [PlayerVerb.NegotiateTerms]: Object.freeze({ targetKind: "string", targetId: "string", tone: "string", concessionMicroUsd: "bigint-or-null", termMonthsExtension: "number-or-null", effectiveAtBusinessMinute: "number-or-null" }),
   [PlayerVerb.IsolateNode]: Object.freeze({ targetNodeId: "string", effectiveAtBusinessMinute: "number-or-null", releaseAtBusinessMinute: "number-or-null" }),
+  // ADR-0016 Throttle: the fence's minute legs VERBATIM (both number-or-null)
+  // plus the plain-`number` cut — same family as scale's reservedSlots, so
+  // NO new ArgWireType arm is needed and JSON's plain numbers cross the
+  // proto bridge without the bigint revival dance (wireIntent pin).
+  [PlayerVerb.ThrottleNode]: Object.freeze({ targetNodeId: "string", cutSlots: "number", effectiveAtBusinessMinute: "number-or-null", releaseAtBusinessMinute: "number-or-null" }),
 });
 
 /** Boundary parse (Law 2): validate WIRE TYPES of one fed entry; a pass here
@@ -1610,6 +1652,87 @@ function handleIsolateNode(draft: Draft, args: IsolateArgs): HandlerVerdict {
   return { ok: true, detail };
 }
 
+/**
+ * `throttle-node` handler (ADR-0016 successor program · lane L-TR) — the
+ * dbaas card's OWN second verb, verbatim §1.3 "The Managed Database"
+ * (hosting_game.md ~:2253: "**Verb: isolate and throttle.**"): the
+ * PLAYER-AUTHORED PARTIAL capacity cut, the soft-degrade sibling of the
+ * total fence above. §7.16's Act-row one-click law (~:28825) lands it in
+ * the COMMIT class exactly like isolate-node. The door books the WINDOW
+ * and the CUT — a half-open `[effective, release)` discount per node,
+ * last-write-wins — and the engine reader (`pipeline/throttle.ts`,
+ * consumed at the step-5 serve input in `pipeline/defaults.ts` §(c))
+ * discounts the node's ADMISSION ceiling at read time. Wire types are
+ * parse-trusted (M2): `cutSlots` is a plain `number`, both minutes are
+ * `number | null` by `VERB_ARG_SHAPES`; the handler owns only the VALUE
+ * domains. State-neutral by law: no unit, no slot, no roster, no queue,
+ * no RNG, no cash is touched here — the cut is READ downstream, never
+ * enforced at the door (the isolate posture VERBATIM).
+ *
+ * Refusal grammar: the fence's five codes reused VERBATIM
+ * (`empty-node-id` / `bad-effective-minute: …` / `bad-release-minute: …
+ * (or null = indefinite)` / `release-before-effective: …` /
+ * `unknown-node: "<id>"`) plus ONE new phrase — `bad-cut-slots` — raised
+ * in two legs: the shape leg (not a safe integer ≥ 0, checked before the
+ * minute legs like scale's `bad-reserved-slots` family position) and the
+ * RANGE leg `cut >= roster` (checked after `unknown-node`, because the
+ * roster is only known once the node exists). The range leg is what keeps
+ * the fence the TOTAL case: "throttle everything" is not a cut of
+ * roster — it is a fence, and the refusal says so
+ * ("for a total fence use isolate-node"). A cut of 0 is the explicit lift
+ * amendment (booked, reads inert — `nodeThrottleCut` answers null).
+ */
+function handleThrottleNode(draft: Draft, args: ThrottleArgs): HandlerVerdict {
+  const nodeId = args.targetNodeId as EntityId; // wire type trusted (parseEntry, M2)
+  if (nodeId.length === 0) return { ok: false, reason: "empty-node-id" };
+  const cutSlots = args.cutSlots;
+  if (!Number.isSafeInteger(cutSlots) || cutSlots < 0) {
+    return { ok: false, reason: `bad-cut-slots: ${String(cutSlots)} must be a safe integer in [0, roster) (0 = explicit lift amendment; for a total fence use isolate-node)` };
+  }
+  const effectiveAt = args.effectiveAtBusinessMinute;
+  if (effectiveAt !== null && (!Number.isSafeInteger(effectiveAt) || effectiveAt < 0)) {
+    return { ok: false, reason: `bad-effective-minute: ${String(effectiveAt)} must be a safe integer >= 0 (or null = now)` };
+  }
+  const releaseAt = args.releaseAtBusinessMinute;
+  if (releaseAt !== null && (!Number.isSafeInteger(releaseAt) || releaseAt < 0)) {
+    return { ok: false, reason: `bad-release-minute: ${String(releaseAt)} must be a safe integer >= 0 (or null = indefinite)` };
+  }
+  if (effectiveAt !== null && releaseAt !== null && releaseAt <= effectiveAt) {
+    return {
+      ok: false,
+      reason: `release-before-effective: release ${String(releaseAt)} must be > effective ${String(effectiveAt)} (the cut window is half-open [effective, release))`,
+    };
+  }
+  const nodes = draft.nodes ?? draft.origin.nodes;
+  if (!nodes.has(nodeId)) return { ok: false, reason: `unknown-node: "${nodeId}"` };
+  // RANGE leg of bad-cut-slots — the live-roster check (the scale lane's
+  // baseRosterSlots-from-live-roster precedent): cut ∈ [0, roster). This is
+  // the door's promise that every booked throttle is PARTIAL; the total
+  // case belongs to the fence.
+  const roster = nodes.get(nodeId)!.slots.length;
+  if (cutSlots >= roster) {
+    return { ok: false, reason: `bad-cut-slots: ${String(cutSlots)} must be a safe integer in [0, ${String(roster)}) (0 = explicit lift amendment; for a total fence use isolate-node)` };
+  }
+  const base = draft.throttle ?? draft.origin.throttle ?? createThrottleBook();
+  const entries = new Map<EntityId, ThrottleEntry>(base.entries);
+  entries.set(
+    nodeId,
+    Object.freeze({
+      shippedAtTick: draft.context.tick,
+      cutSlots,
+      effectiveAtBusinessMinute: effectiveAt,
+      releaseAtBusinessMinute: releaseAt,
+    }),
+  );
+  draft.throttle = Object.freeze({ version: base.version + 1, entries: Object.freeze(entries) });
+  const detail =
+    `target=${nodeId}` +
+    `,cut=${String(cutSlots)}` +
+    `,eff=${effectiveAt === null ? "now" : String(effectiveAt)}` +
+    `,rel=${releaseAt === null ? "indefinite" : String(releaseAt)}`;
+  return { ok: true, detail };
+}
+
 /** Read-only view of the draft for the placement validator (it must see
  *  devices placed EARLIER in the same tick, never a stale board — and,
  *  F5, never a stale TickContext either: snapshots take the stamped build). */
@@ -1631,7 +1754,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     draft.ruleBook === null && draft.ruleBookHash === null && draft.pricing === null &&
     draft.attention === null && draft.shield === null && draft.scale === null &&
     draft.maintain === null && draft.schedule === null && draft.sell === null &&
-    draft.negotiate === null && draft.isolate === null
+    draft.negotiate === null && draft.isolate === null && draft.throttle === null
   ) {
     if (!forSnapshot) return draft.origin;
     return Object.freeze({ ...draft.origin, context: draft.context });
@@ -1658,6 +1781,7 @@ function buildState(draft: Draft, forSnapshot = false): GameState {
     ...(draft.sell !== null ? { sell: draft.sell } : {}),
     ...(draft.negotiate !== null ? { negotiate: draft.negotiate } : {}),
     ...(draft.isolate !== null ? { isolate: draft.isolate } : {}),
+    ...(draft.throttle !== null ? { throttle: draft.throttle } : {}),
   });
 }
 
@@ -1799,6 +1923,8 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
         return handleNegotiateTerms(draft, args as NegotiateTermsArgs);
       case PlayerVerb.IsolateNode:
         return handleIsolateNode(draft, args as IsolateArgs);
+      case PlayerVerb.ThrottleNode:
+        return handleThrottleNode(draft, args as ThrottleArgs);
     }
   })();
 
@@ -1872,6 +1998,7 @@ export function applyIntentDoor(
     sell: null,
     negotiate: null,
     isolate: null,
+    throttle: null,
     events: [],
     receipts: [],
   };

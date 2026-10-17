@@ -496,4 +496,39 @@ describe("full bridge — a bigint price survives SimClient → wire → worker-
     expect(receipts[0]!.detail).toBe("isolate-node: target=edge,eff=now,rel=480");
     client.destroy();
   });
+
+  // L-TR (ADR-0016 successor program): the SEVENTEENTH verb — the dbaas
+  // card's OWN second verb ("isolate and throttle") — crosses the FULL
+  // bridge like its fence sibling. `cutSlots` is a plain `number` (the
+  // scale reservedSlots family), so again NO BIGINT/NULLABLE mirror row is
+  // added and NO revival dance runs — the drift pins above prove the engine
+  // tables say so, and this pin proves the order still EXECUTES at the door
+  // with the canonical detail grammar (cut leg present, lift words rel
+  // "indefinite").
+  it("throttle-node survives SimClient → wire → worker-host → door and executes", () => {
+    const { fake, client, frames } = bridge();
+    client.sendPlayerVerb(
+      {
+        verb: "throttle-node",
+        targetNodeId: "edge",
+        cutSlots: 1,
+        effectiveAtBusinessMinute: null,
+        releaseAtBusinessMinute: 480,
+      },
+      "business",
+    );
+    fake.pump(2);
+    const last = fake.lastIntent;
+    expect(last).not.toBeNull();
+    if (last === null || last.payload.kind !== "player-verb") throw new Error("worker never saw the intent");
+    const args = last.payload.args as unknown as Record<string, unknown>;
+    expect(args["targetNodeId"]).toBe("edge");
+    expect(args["cutSlots"]).toBe(1); // a plain JSON number — no bigint revival touched it
+    expect(args["effectiveAtBusinessMinute"]).toBeNull();
+    expect(args["releaseAtBusinessMinute"]).toBe(480);
+    const receipts = frames.flatMap((f) => f.notices).filter((n) => n.kind === "intent-executed");
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]!.detail).toBe("throttle-node: target=edge,cut=1,eff=now,rel=480");
+    client.destroy();
+  });
 });

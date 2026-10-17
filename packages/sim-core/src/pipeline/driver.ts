@@ -112,6 +112,7 @@ import {
   UNIT_HOLD,
 } from "./defaults.ts";
 import { isolatedNodeIds } from "./isolation.ts";
+import { throttleCuts } from "./throttle.ts";
 import {
   foldCorruptionTerminals,
   shieldBusinessMinuteOf,
@@ -634,10 +635,32 @@ export function createTickDriver(
      * only when the slice is present. Zero RNG at this site. */
     const isolationFence =
       worked.isolate !== undefined ? isolatedNodeIds(worked.isolate, shieldBusinessMinuteOf(context.clocks)) : null;
+    /* ADR-0016 successor program · Throttle: with a booked throttle slice,
+     * the LIVE cuts (same as-of minute, same `shieldBusinessMinuteOf`
+     * single-division helper — the L-DM1 reuse precedent, third reuse) ride
+     * the serve input as a presence-only cut map; `defaultServeStep` §(c)
+     * then discounts each cut node's ADMISSION ceiling (capacity-as-clamp —
+     * the viewed roster is never written, so recovery's fullSlots capture
+     * and the authored board stay pristine). NO book — or a book with zero
+     * live cuts (`throttleCuts` returns null: idle/expired/armed-not-yet/
+     * cut-0 rows) — ⇒ the key is omitted entirely and the input object is
+     * byte-identical to the unarmed run (zero-call law). Precedence: the
+     * fence stays the TOTAL case and beats the cut by code position at
+     * §(c); the cut COMPOSES min-of-clamps with recovery (it reads the
+     * clamped view) and is ADDITIVE under scale warmth (warmth raises the
+     * base the cut discounts). Zero RNG at this site. */
+    const throttleCutMap =
+      worked.throttle !== undefined ? throttleCuts(worked.throttle, shieldBusinessMinuteOf(context.clocks)) : null;
     const serveIn: ServeInExt =
-      isolationFence === null
+      isolationFence === null && throttleCutMap === null
         ? { context, units, nodes: serveInput }
-        : { context, units, nodes: serveInput, isolationFence };
+        : {
+            context,
+            units,
+            nodes: serveInput,
+            ...(isolationFence !== null ? { isolationFence } : {}),
+            ...(throttleCutMap !== null ? { throttleCuts: throttleCutMap } : {}),
+          };
     const serveOut = steps.serve(serveIn);
     // R-06 class-aware shed (audit fix, §7.11): a hard-ceiling node sheds its WHOLE
     // residual queue each tick, but the order shed units enter the terminal ledger

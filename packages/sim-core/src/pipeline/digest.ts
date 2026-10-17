@@ -404,6 +404,32 @@ export function digestState(state: GameState): HashHex {
     }
   }
 
+  // ADR-0016 successor program THROTTLE — the optional throttle-node cut
+  // book (digest-switch law, same embed law as the others): absorbed ONLY
+  // when present, so every pre-throttle state (all shipped goldens) keeps
+  // byte-identical digests. Node ids sort code-unit (Map insertion order
+  // NEVER read); both minute edges take the -1 null-sentinel and the door's
+  // >= 0 law keeps the sentinel unambiguous; cutSlots rides raw (its door
+  // domain >= 0 makes it unambiguous too, and 0 = the lift amendment —
+  // booked-and-inert to the fold, STILL distinct in the digest: the
+  // amendment is history). Raw like isolate/maintain/sell: expired rows
+  // stay in the book as witness (read-time expiry in pipeline/throttle.ts).
+  if (state.throttle !== undefined) {
+    sink.text("throttle").int(state.throttle.version);
+    const throttleKeys = Array.from(state.throttle.entries.keys()).sort(byId);
+    sink.int(throttleKeys.length);
+    for (const key of throttleKeys) {
+      const rec = state.throttle.entries.get(key);
+      if (rec === undefined) continue;
+      sink
+        .text(key)
+        .int(rec.shippedAtTick)
+        .int(rec.cutSlots)
+        .int(rec.effectiveAtBusinessMinute ?? -1)
+        .int(rec.releaseAtBusinessMinute ?? -1);
+    }
+  }
+
   // OD-6(a)/OD-4a — the ATTENTION denomination (digest-switch law, same embed
   // law as hands/board/pricing): absorbed ONLY when present, so every
   // pre-attention state (all shipped goldens) keeps byte-identical digests.

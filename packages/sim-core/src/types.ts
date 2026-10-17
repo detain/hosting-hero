@@ -1333,6 +1333,35 @@ export enum PlayerVerb {
    *  `releaseAtBusinessMinute` is indefinite until explicitly replaced
    *  (the amendment IS the lift; no dedicated un-isolate verb in v0). */
   IsolateNode = "isolate-node",
+  /** ADR-0016 successor program (lane L-TR): the 17th door verb — the dbaas
+   *  card's OWN second verb, verbatim §1.3 "The Managed Database"
+   *  (hosting_game.md ~:2253): "**Verb: isolate and throttle.**" Isolate
+   *  landed the total fence (`isolate-node`, ADR-0015 @86cff89); Throttle
+   *  lands the PLAYER-AUTHORED PARTIAL capacity cut — "lose capacity" as a
+   *  deliberate trade (§1.3: "throttle everything (lose capacity)"), the
+   *  soft-degrade sibling of the engine's automatic recovery clamp. The §7.16
+   *  Act-row one-click law (~:28825) again lands it in the COMMIT class: one
+   *  hand / one tick. The door records the CUT into the OPTIONAL
+   *  `GameState.throttle` book — a half-open window `[effective, release)`
+   *  per node, last-write-wins, cut ∈ [0, roster) — and touches nothing
+   *  else: no units, no slots, no roster, no RNG, no cash (state-neutral,
+   *  the fence posture VERBATIM, both minute legs reused). The engine reader
+   *  is `pipeline/throttle.ts` (`nodeThrottleCut`/`throttleCuts`), consumed
+   *  at the step-5 serve input as a CAPACITY-AS-CLAMP on ADMISSIONS
+   *  (`ServeInExt.throttleCuts`, `defaultServeStep` §(c)): a throttled node
+   *  admits while `occupied + need ≤ slots.length(view) − cut`; the roster
+   *  is NEVER written (materialized shrink was REJECTED — it poisons
+   *  recovery's `fullSlots` capture and would make the cut permanent through
+   *  a restoration window), over-cap nodes admit nothing until work walks
+   *  off (never-evict honored), and the fence stays the TOTAL case — the
+   *  door REFUSES `cut >= roster` pointing at `isolate-node`. The legibility
+   *  the card demands — "CPUs throttle by visibly *shrinking the maximum* of
+   *  their utilization donut — a beautifully legible way to show 'your
+   *  ceiling dropped'" (hosting_game.md ~:2247) — is HUD-side on the cut
+   *  book; the sim keeps the authored roster as ground truth. A cut of 0 is
+   *  the explicit lift amendment (last-write-wins; no dedicated un-throttle
+   *  verb in v0, the fence posture again). */
+  ThrottleNode = "throttle-node",
 }
 
 /** Enumeration of the closed verb set (door guard + host introspection). */
@@ -1353,6 +1382,7 @@ export const PLAYER_VERBS: readonly PlayerVerb[] = Object.freeze([
   PlayerVerb.SellOffer,
   PlayerVerb.NegotiateTerms,
   PlayerVerb.IsolateNode,
+  PlayerVerb.ThrottleNode,
 ]);
 
 /** Board relation mirror of topology's EdgeKind (id-space twin, no import). */
@@ -1629,6 +1659,42 @@ export interface IsolateArgs {
   readonly releaseAtBusinessMinute: SimMinute | null;
 }
 
+/** ADR-0016 successor program (`ThrottleNode` — the 17th verb, the dbaas
+ *  card's OWN second verb: §1.3 "Verb: isolate and throttle."). */
+export interface ThrottleArgs {
+  readonly verb: PlayerVerb.ThrottleNode;
+  /** Node whose admission ceiling drops — resolved against `GameState.nodes`
+   *  (the fence's world-existence check reused verbatim; an absent node is
+   *  the `unknown-node` refusal). The cut never touches the node's records:
+   *  the roster is NOT shrunk, the queue is NOT truncated, occupied slots
+   *  are NOT evicted — the discount is applied at the step-5 admissions
+   *  read (`pipeline/throttle.ts` + `defaults.ts` §(c)). */
+  readonly targetNodeId: EntityId;
+  /** Slots of NEW-ADMISSION ceiling removed, value domain `[0, roster)`
+   *  where roster is the node's live `slots.length` at the door. 0 is the
+   *  explicit LIFT amendment (book the row, law answers null); `cut >=
+   *  roster` is refused with `bad-cut-slots` pointing at `isolate-node` —
+   *  the total case belongs to the fence, and the door's range check is
+   *  what keeps every throttle a PARTIAL cut. Structural type (safe
+   *  integer) is M2's parse wall; the value domain is the handler's. */
+  readonly cutSlots: number;
+  /** Business-clock effective minute (Dual-Clock law §4.4 — a throttle is a
+   *  business act, the fence/shield as-of discipline VERBATIM): the null
+   *  sentinel = cut from the executing tick; a future stamp is armed but NOT
+   *  yet law, honored same-tick by `nodeThrottleCut`. */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+  /** Business-clock RELEASE minute — the cut window is HALF-OPEN
+   *  `[effective, release)`, the fence's window law VERBATIM (ADR-0016
+   *  #D8-style reuse, no new grammar): at `release` the node admits at full
+   *  ceiling again, strictly. The null sentinel = indefinite until
+   *  explicitly replaced (last-write-wins; the cut-0 amendment IS the
+   *  lift). When both minutes are non-null, `release` must be strictly
+   *  greater than `effective` (`release-before-effective` refusal, reused);
+   *  a null effective with release 0 is accepted as already-expired inert
+   *  history (the maintain close-0 posture, lane L-DM2 @5987ef1). */
+  readonly releaseAtBusinessMinute: SimMinute | null;
+}
+
 /** The closed discriminated union of verb args. */
 export type PlayerVerbArgs =
   | PlaceDeviceArgs
@@ -1646,7 +1712,8 @@ export type PlayerVerbArgs =
   | ScheduleArgs
   | SellOfferArgs
   | NegotiateTermsArgs
-  | IsolateArgs;
+  | IsolateArgs
+  | ThrottleArgs;
 
 /** IntentPayload arm the door executes. */
 export interface PlayerVerbPayload {
@@ -2149,6 +2216,50 @@ export interface IsolateBook {
   readonly entries: ReadonlyMap<EntityId, IsolateEntry>;
 }
 
+/** ADR-0016 successor program (`ThrottleNode`) — one cut record per node.
+ *  The door stamps the WINDOW and the CUT and NOTHING else; the fold reads
+ *  it as-of business minutes (`nodeThrottleCut`). No base-roster anchor
+ *  lives here (unlike `ScaleEntry`): the cut discounts the ADMISSION ceiling
+ *  at read time and never writes the roster — so there is nothing to
+ *  restore when it lifts, and occupied arms are trivially never evicted. */
+export interface ThrottleEntry {
+  /** Macro tick the door executed the order (write-order witness;
+   *  last-write-wins per node). */
+  readonly shippedAtTick: SimTick;
+  /** Admission-ceiling slots REMOVED while the window is in force, value
+   *  domain `[0, roster)` enforced at the door (roster = the node's live
+   *  `slots.length` — the scale lane's live-roster-check precedent). A
+   *  booked cut is never re-validated downstream: if a foreign board later
+   *  shrinks the view below it, §(c)'s ceiling arithmetic admits nothing
+   *  (min-of-clamps composes), the book stays inert-but-carried, and no
+   *  throw is possible. 0 = the explicit lift amendment (reads null —
+   *  indistinguishable from absent to the fold, kept raw in the book). */
+  readonly cutSlots: number;
+  /** Business minute the cut drops; null = from `shippedAtTick`
+   *  (same-tick pre-arm honored — the `ShieldEntry`/`IsolateEntry` as-of
+   *  twin). */
+  readonly effectiveAtBusinessMinute: SimMinute | null;
+  /** Business minute the cut lifts, STRICTLY exclusive — the window is
+   *  half-open `[effective, release)`, at `release` the node admits at full
+   *  ceiling again (the fence's release leg VERBATIM). Null = indefinite
+   *  until explicitly replaced. Expired rows are KEPT as history witness,
+   *  inert at read — the maintain/schedule/isolate read-time expiry law;
+   *  nothing is ever pruned, the digest encodes rows raw. */
+  readonly releaseAtBusinessMinute: SimMinute | null;
+}
+
+/** OPTIONAL `GameState` embed — the throttle-node book `throttle-node`
+ *  writes (same embed law as the other door books: absent ⇒ byte-identical
+ *  digests everywhere; `pipeline/digest.ts` absorbs it WHEN PRESENT). Keyed
+ *  by node id — LAST-WRITE-WINS per node: re-throttling replaces the
+ *  standing window (a cut of 0 is the amendment that lifts; there is no
+ *  dedicated un-throttle verb in v0). `version` bumps per materialized
+ *  write — the board/pricing memoization convention. */
+export interface ThrottleBook {
+  readonly version: number;
+  readonly entries: ReadonlyMap<EntityId, ThrottleEntry>;
+}
+
 /* ═══════════════════════ Attention denominations (OD-6/OD-23/OD-4a) ═══════ */
 
 /** The TWO attention denominations (§7.5 · OD-6(a) one pool, one special
@@ -2418,4 +2529,22 @@ export interface GameState {
    *  (digest-switch law: `pipeline/digest.ts` absorbs it ONLY when
    *  present). */
   readonly isolate?: IsolateBook;
+  /** ADR-0016 successor-program embed — the throttle-node (Throttle) book
+   *  `throttle-node` writes (see `ThrottleBook`): a half-open cut window
+   *  `[effective, release)` per node, last-write-wins, cut ∈ [0, roster).
+   *  The player-authored PARTIAL sibling of both the engine's automatic
+   *  recovery clamp AND the isolate fence (total case): while a cut is in
+   *  force the step-5 serve input discounts the node's ADMISSION ceiling by
+   *  `cutSlots` — capacity-as-clamp at `defaultServeStep` §(c) — while the
+   *  roster is never written, in-flight and queued work completes or bounces
+   *  under the existing patience law, and over-cap nodes admit nothing until
+   *  work walks off (never-evict honored; materialized shrink REJECTED — it
+   *  poisons recovery's `fullSlots` capture, making the cut permanent
+   *  through a restoration window). The as-of law lives ONCE in
+   *  `pipeline/throttle.ts` (`nodeThrottleCut`/`throttleCuts`); the driver
+   *  threads the cut map as a presence-only `ServeInExt.throttleCuts` —
+   *  absent/idle book ⇒ zero calls ⇒ every shipped golden byte-identical
+   *  (digest-switch law: `pipeline/digest.ts` absorbs it ONLY when
+   *  present). */
+  readonly throttle?: ThrottleBook;
 }
