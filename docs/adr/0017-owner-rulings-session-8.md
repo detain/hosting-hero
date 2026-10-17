@@ -13,7 +13,7 @@ transport caps STAND — is recorded in its natural home, **ADR-0016 #11** (amen
 is this wave's ratify, its #10 register is what #3 below GROWS, its transport frame is what
 #4 adopts, its attribution ticket is what #5 closes), ADR-0015 (session 6 — the door-mechanics
 frame #3 continues, the Act-row pricing #3 rides), ADR-0014 (session 4 — #D1(iii) repeat/merge
-law, #D2 door-extension route), ADR-0013 (session 3 — the read-time expiry law #1 leans on).
+law, #D2 door-extension route), ADR-0013 (session 3 — the read-time expiry law #1 leans on). **Wave-23 amendment (this record re-opened at its closeout, 2026-10-18):** the session's follow-on rulings land as #7 (topology (a) closed in-repo, ruling 3b @`61efe31`) and #8 (chrome adoption 2a @`945fba6`; type-program CEASE 1a; pack-prose STANDS 6b); #6 (game-feel ratify 4a @`f6f1d4b`) rode the chain commit itself. Two review-findings prose corrections ride this amendment: the #6 STANDS list's `noticeSurface` entry (stale — those voices were ratified @`18c3f6a`) and the inherited PROVISIONAL-B waves-slice count (re-derived 27→31 by pin-exact grep; ADR-0016 #1 carries the dated append-correction). #1–#5 stand as authored.
 
 ## Context
 
@@ -165,11 +165,11 @@ headers, two `it()` titles — the wave-20 pricingDial / wave-21 sell-accept pre
 title flips, disclosed in the commit body). **What STANDS PROVISIONAL (explicit):** the
 `tools/transport` caps (`MAX_FRAME_BYTES` 65_536, `DEFAULT_LOG_BUDGET` 10_000, `maxPageSize` 64 —
 real-carrier gate), the tuning-sheet A/C letters and their status enum (`waves/pressure.ts` —
-OD-2 ratified B, ADR-0009), the legacy `PROVISIONAL-B` content residue (27 waves-slice + 16
-registry-core sites — the validator-tolerance law), the audio ducking envelope (audition gate),
+OD-2 ratified B, ADR-0009), the legacy `PROVISIONAL-B` content residue (waves-slice count RE-DERIVED at the wave-23 closeout: **31** sites by the pin-exact grep across the fourteen shipped slices — the inherited 27 predated the observability and ci-build-farm slices' pairs; + 16 registry-core
+sites — the validator-tolerance law), the audio ducking envelope (audition gate),
 the substrate spike taste rows (first-mount gate), the 7,000 t/s bench budget, the motionAudit
 programmer-art coverage estimates and the absolute readability numerics (render-harness gate),
-the g5 fixture-local money/wave text and `noticeSurface` provisional voices (copy-voice batch),
+the g5 fixture-local money/wave text (wave-23 correction: `noticeSurface` is NOT a residue — its fallback voices were RATIFIED @`18c3f6a`'s copy-voice batch; the STANDS entry as originally written was stale),
 the decision-rail `DECISION_*` taste consts (outside this sweep's file scope — same playtest
 set), `economy/config.ts`'s label-vocabulary legend, and test titles that merely describe
 numerics without owning a ratification label (the wave-20/21 skip discipline).
@@ -178,6 +178,16 @@ dispositioned — Sell/Warmth/Relationship/door-rows by #11; affix costs, wave d
 Negotiation bumps, coverage mid-band, the reclaim pair, the Act-row numerics and the family-law
 sweep by this bullet; everything else STANDS under the named gates above. Changing a value
 ratified here is a law-change event, never a tuning tweak — the ADR-0015 #1 discipline, unbroken.
+
+**#7 — TOPOLOGY (a) IS CLOSED IN-REPO: the host-sim-authoritative variant ships as a `tools/host --sim` mode behind the ratified portable-lib default, and the seat-state `publish()` re-fan is the missing fan.** (Owner ruling 3b, wave-23.)
+The wave-22 posture left MP-topology option (a) — a host that OWNS the engine and fogs per seat — playable only seat-side: the hub could relay, but nothing on it could re-fresh a seat's view on the host's own clock. The landed seam: `RelayHubHandle.publish(): number` is a PUBLIC re-fan of the hub's EXISTING private seat-state send (ledger + lastStamp + optional per-seat view rider). It mints no new laws — it INHERITS each one, pinned: the @`24426ec` departed-freeze (live seats only), the view-NEVER-broadcast-cross-seat law (`projectionSource` is called per seat), the omit-when-unset rider shape, zero envelope-schema change (reuses `seat-state`; PROTOCOL_VERSION stays 1), timer-free and idempotent per call (the host's interval CALLS it; it schedules nothing, stamps nothing, advances no clock). On the carrier side `simLoop.ts` (325 ln) runs ONE `createTickDriver` world on a fixed boot seed as the SOLE door feeder — `relay.advanceTo → hub.drain → relay.feedFrom → driver.advance` with `externalIntents`, `applyIntentDoor` running INSIDE the driver per the spike-runner parity — merges observed per node (the apps/proto `simCoreRunner` pattern mirrored honestly, zero `apps/` import) and fogs through `projectSeat`/entityScope via `hub.publish()`. Out-of-scope keys are absent INCLUDING existence, witnessed over loopback real sockets at `decodeFrame` level. Named limits, recorded not papered: v0 host-sim runs pipeline physics + observed ONLY — no economy/money lane (the proto runner owns cash; double-authoring the money fold was refused); browser thin-client consumption of the per-seat rider awaits a proto seam; seat→scope mapping is host config. Both topologies now stand side by side: (b) is the DEFAULT with byte-ident wire frames (its suite green unaided), (a) is `--sim`.
+> Landed by `61efe31` (transport 84→91: conformance +4 its, `publish.test.ts` +3; host 14→19: `simLoop.host.test.ts` 5 — byte-equal digest trails AND seat-state transcripts from twin same-seed hosts; `@hh/sim-core` moved devDep→dep, lockfile delta importer-scoped exactly 6 lines; ZERO packages/sim-core edits).
+
+**#8 — WAVE-23 FOLLOW-ON OWNER RULINGS: chrome adoption (2a) LANDS, the TYPE PROGRAM CEASES at fourteen (1a), and pack-JSON prose STANDS (6b).**
+> **Adoption (2a), landed `945fba6`:** the review F-1 posture of #4 is DISCHARGED — `ALL_GATE_MOUNTS` now spreads the chrome barrel's mounts (HUD-LAB + COOP trail the six §9.13 gates as NON-gate rail entries, the sandbox/sim-lab precedent — the six gates stay six), and the §7.16 Act row mounts on the G4 drag-a-cable board, minting through the session's own stamp-authority queue and the REAL door (`G4Snapshot` shape untouched; every determinism/receipts pin immune). F-1-corrected build ledger, independently RE-MEASURED at review (worktree A/B at parent `f6f1d4b`): `sim.worker` 900.25 kB UNMOVED with IDENTICAL content hash — the zero-delta law proven, not argued; index 1,385.72→1,549.06 kB (+163.34 = the intended adoption cost, entry-side); fakeWorker 568.28→544.10 kB (redistribution). Proto 99f/1,112 → **100f/1,121** (+1f/+9t: `appAdoption.test.ts` 5 incl. the full DOM→door→receipt loop; `g4Session.test.ts` 4 Act-row seam legs; one disclosed count-neutral `hudLab.mount` length-pin re-cut 1→2).
+> **Game-feel ratify (4a):** recorded as this ADR's #6 — discharged in the same session at `f6f1d4b`; the split's engineering half (transport caps) STANDS untouched.
+> **Type program (1a):** FOURTEEN shipped; the owner STOPS the type program at fourteen. Roster exhaustion remains LAW — any future card still cannot claim off-roster, and #D1(iii) MERGE stays forbidden — but the fifteenth-card law call is a CEASED ask: no fifteenth lanes are commissioned; re-arming is owner-only. The standing direction is DEPTH-work (eras, campaign, adoption — this wave's #7/#8-adoption legs are its first expressions). The named candidates (GPU/HPC/satellite→Schedule repeats, the ci isolate-word, §7.5 incident vocabulary, bulletproof ⚔️) are dispositioned as RECORD, not queue.
+> **Pack prose (6b):** the `_todo`/provenance prose in `packages/content/packs/**` and the registry `facts` / wave `note` strings STAND as authored — they are provenance DEBTS, not lying labels; the copy-voice batch's sweep scope stays code + decision voices, and the L-CV note (content packs never swept) is RULED, not owed.
 
 ## Consequences
 

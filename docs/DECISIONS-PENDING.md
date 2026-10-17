@@ -135,6 +135,8 @@
 > `intern.entry.firstday` shipped slot-free in BOTH observability and ci-build-farm with divergent texts —
 > CURED @`c317efd` by renaming the ci key to `intern.entry.board` (values byte-ident); every slot-free twin
 > is byte-ident across all fourteen packs and the divergent-set pin flipped to falsifiable empty.
+>
+> **2026-10-18 session-8 follow-on rulings (wave-23 program), executed as ADR-0017 #6–#8:** the owner answered the wave-22 residual agenda by letter. **1a — the TYPE PROGRAM CEASES at fourteen:** roster exhaustion stays LAW but the fifteenth-card ask is CLOSED BY STOP; no fifteenth lanes are commissioned; depth-work (eras/campaign/adoption) is the standing direction. **2a — chrome adoption** @`945fba6`: HUD-LAB + COOP ride the rail as NON-gate stages (the six §9.13 gates stay six), the §7.16 Act row mounts on the G4 board through the real door; review F-1 (barrel unmounted) DISCHARGED; build ledger independently RE-MEASURED (worker hash-identical 900.25 kB; index +163.34 kB entry-side = the intended cost; fakeWorker 544.10; proto 100f/1,121). **3b — topology (a) CLOSED IN-REPO** @`61efe31` (ADR-0017 #7): `publish()` seat-state re-fan (laws inherited, timer-free, idempotent) + `tools/host --sim` host-owned engine with per-seat fog; topology (b) default byte-ident; production PHP/Workerman UNCHANGED; browser view-rider thin client NAMED-owed. **4a — game-feel ratify** @`f6f1d4b`: the register's game-feel half flips to `RATIFIED 2026-10-17 (ADR-0017 #6)` (30 source sites/7 files, values byte-zero, 4 test literals). **6b — pack-JSON prose STANDS:** `_todo`/provenance texts are provenance DEBTS, not lying labels; copy-voice scope unchanged.
 
 **Source of truth:** `reports/MASTER_REPORT.md §6`. Citations: a bare `§N.M` = a section of `MASTER_REPORT.md`; source-doc headings are always written `hosting_game.md §x.y`.
 **Rule for implementers:** none of these may be resolved silently in code. Each maps to a named config knob in `docs/PHASE1-PLAN.md` / `docs/CONVENTIONS.md §5`. **§0 legend:** OPEN = owner decision requested; PENDING = sub-decision created *by* a ratified decision, recommendation given, owner sign-off outstanding.
@@ -251,7 +253,7 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 
 ## Fresh owner asks (2026-10-17, wave-21 closeout — raised by the wave-21 lanes, none is a reopening)
 
-- **FIFTEENTH type card — OWNER LAW CALL.** ANSWERED for the fourteenth: `official:ci-build-farm`
+- **FIFTEENTH type card — OWNER LAW CALL — CEASED 2026-10-17 (owner ruling 1a, ADR-0017 #8): the TYPE PROGRAM STOPS at fourteen; no fifteenth lanes unless the owner re-arms; exhaustion stays LAW for any future card. The candidates below stand as RECORD, not queue.** ANSWERED for the fourteenth: `official:ci-build-farm`
   "Green Light" claimed **Reclaim** @`a47a9b5` (eighth extended verb / fifth amendment @`ff8615c`; first
   §1.4-founded card, first door-before-card landing — ADR-0017 #1; the CI/build-farm→Isolate MERGE
   question was mooted by claiming the card's THIRD word instead). The roster is EXHAUSTED at six
@@ -269,7 +271,7 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
   (ADR-0017 #3, lane L-HUD @`a28e764`): the Act row is PLAYER-FACING in the prototype — ACT chips
   drain/restart/isolate/shed + DESK readouts throttle/reclaim/warmth/shield on the lab stepper, one
   mint site through the door grammar alone (+33 its). The WORLD-CANVAS inspector and the donut
-  fence/clamp ring renders stay OPEN.**
+  fence/clamp ring renders stay OPEN — WAVE-23 @`945fba6` additionally rode the Act row onto the G4 drag-a-cable board (DOM panel) through the real door, and ratified the desk numerics (ADR-0017 #6).**
 - **Per-tenant WARCT valuation leg DEFERRED.** The relationship ledger @`5e8ce75` landed the trust meter;
   §1.3 "Amps and Aisles"'s "what is this tenant worth across the whole lease" (WARCT) valuation leg is an
   owner-recorded DEFERRAL (ADR-0016 #8), not a gap.
@@ -297,13 +299,14 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
   the BROWSER seat client @`96bd238` (seven interface truths honored, idempotence proven over real sockets)
   + `tools/host` thin Node DEV carrier @`af55b61` (ws 8.22.0, maxPayload carrier-close 1009, localhost-no-auth
   by ruling) landed in-repo; the PRODUCTION PHP/Workerman carrier, per-seat fog and paging policy stay
-  out-of-repo.**
+  out-of-repo.** **WAVE-23 (ruling 3b, ADR-0017 #7 @`61efe31`): topology (a) CLOSED IN-REPO — `tools/host --sim` runs the host-owned engine + fog over the `publish()` seam; production carrier/auth/paging POLICY stay the out-of-repo ask; the browser thin-client view-rider is NAMED-owed (bullet below).**
+- **Browser thin-client view-rider consumption (topology (a)).** The per-seat fogged rider fans host-side via `hub.publish()` @`61efe31` (ADR-0017 #7) and the browser half of the wire exists @`96bd238`+`945fba6`; what no browser yet does is mount the RIDER's projected cells into its HUD in place of the local sim — the named next rung, awaits a proto seam.
 - **PROVISIONAL register (ADR-0016 #10, SPLIT 2026-10-17 by ADR-0016 #11 @`e2a1bba`):** the game-balance
   half — sell acceptance dice ×5, warmth rate $25/slot-mo, relationship ×11 trust deltas, door occupancy/
   hand rows across the eight verbs — is **RATIFIED 2026-10-17**; the transport taste caps (frame 65_536 /
   log 10_000 / page 64) + PROVISIONAL-B-style residue **STAND PROVISIONAL** by ruling. Wave-22 additions
   JOINING the register (ADR-0017 #3): reclaim-node occupancy/hand 1/1 (the #11 register CLOSED before the
-  verb existed), `RESTART_WINDOW_MINUTES = 5`, lift-at-next-boundary desk ergonomics — ratify-on-playtest.
+  verb existed), `RESTART_WINDOW_MINUTES = 5`, lift-at-next-boundary desk ergonomics — ratify-on-playtest. → **DISCHARGED 2026-10-18 by ADR-0017 #6 @`f6f1d4b`: the game-feel half of the register (affix costs, Negotiation bumps, coverage mid-band, reclaim door rows, Act-row desk numerics, family-law sweep) is RATIFIED 2026-10-17 — values byte-zero; the transport-caps opt-in note STANDS.**
 
 ### Wave-21 asks — disposition (answered by session-8 / wave 22; preserved as record)
 

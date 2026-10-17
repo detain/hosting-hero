@@ -143,9 +143,12 @@ barrel. Zero sim-core edits.
 - **Option-C interference** (ADR-0013 ruling 8 unmodeled) — seat-to-seat
   contention is still not in the sim; the transport neither models nor masks
   it.
-- **Browser WebSocketTransport adoption** — a thin `TransportPort` over the
-  real `WebSocket` in `apps/proto` (the inMemory twin is its test oracle);
-  deliberately the first thing NOT built here.
+- **Browser WebSocketTransport adoption** — **LANDED SINCE:** the thin
+  `TransportPort` over the real `WebSocket` shipped @`96bd238`
+  (`apps/proto/src/transport/wsClientPort.ts` — seven interface truths,
+  real-socket conformance against `tools/host`), was app-mounted @`945fba6`,
+  and @`61efe31` (ADR-0017 #7) added the `publish()` seat-state re-fan the
+  host clock drives; the inMemory twin remains its test oracle.
 - **Thin-client consumption of the `view` rider** — topology (a) (wave-23
   ruling 3b) makes the host FAN per-seat views via `publish()`, and the codec
   + `client.view()`/`observed()` read side exist and are tested here; what no

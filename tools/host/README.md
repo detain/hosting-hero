@@ -87,6 +87,13 @@ resolved `TransportPort` shapes for BOTH sides of the wire, stated against
 `test/wsConformance.test.ts` and `test/hostHarness.ts` — that is the
 integration contract lane L-WS-B mirrors in the browser.
 
+**pump()/pumpTo() ritual disclosure (wave-23 review F-3):** in mode (b) the
+pumps run ONLY the two-line relay ritual (`advanceTo` + `drain`) and NEVER
+call `hub.publish()` — timer-free by law, so a mode-(b) host that wants a
+fresh seat-state re-fan between membership events must invoke
+`hub.publish()` itself as an explicit ritual step; in mode (a) `sim.step()`
+publishes on the host clock.
+
 ## Topology (a) — what is proven, what is owed
 
 Pinned in `test/simLoop.host.test.ts` (loopback sockets, manual clock, real

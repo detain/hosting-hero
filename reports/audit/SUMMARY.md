@@ -1838,3 +1838,41 @@ The session-8 agenda is SPENT. The wall has MOVED but stands: **the fifteenth ca
 ### Program status
 
 **Session-8 rulings: fully executed.** Fourteen hosting types as data (six sections' worth of card homes — §1.4 cracked open); nineteen door verbs (refusal census 46 — and for the first time a tier verb shipped WITHOUT touching it); co-op crossed from relay-spike to playable two-browser session on the portable-lib topology; the versus unattributed floor — three waves old, grammar-locked, the ugliest honest row in the deck — collapsed to zero without moving one digest byte; §2.13's second leg closed the affix story. DISCLOSURES: **F-1** — the L-WS-B commit-body's index ledger misattributed +2.97 kB to the browser client: the true delta is ~0; the +2.79 kB rode in earlier with L-DM5 door strings, and the chrome co-op barrel has ZERO app-graph importers today (pre-adoption posture by design — "demo playable" = jsdom tests + the dev host, not the built app surface; history is immutable, this record is the correction). **Gates truth** — F-2: validate pack-markers are 16 not 15 (ci pack +1, legitimate); F-3/F-4: the §2.13 flip and the host package.json exports row are landed here. ORIGIN STILL CLEAN: `ls-remote` verified `e7d9150` at this closeout — NO sixth external push this wave (all five prior anomalies stayed ff-valid, ours). Zero-golden law HELD across all eleven commits plus closeout. Next drivable work: none without an owner ruling — the program stands at the fifteenth-card wall.
+## WAVE-23 closeout — session-8 follow-on rulings 1a/2a/3b/4a/6b: the type program CEASES at fourteen, chrome is ADOPTED into the app graph (F-1 discharged), topology (a) closes in-repo, and the game-feel register discharges with values byte-zero (2026-10-18)
+
+**Context.** Wave-22 ended at a wall of fresh asks; the owner answered by letter: 1a STOP the type program at fourteen (exhaustion stays LAW; depth-work is the direction), 2a adopt the chrome into the app graph, 3b close the topology-(a) question in-repo, 4a ratify the game-feel numerics, 6b let the pack-JSON prose stand as provenance debts. Three build lanes landed and reviewed (joint review PROCEED, zero critical/major); this closeout carries the doc sweep, the two ADR prose corrections the review found, and the census recount.
+
+### Ledger (by lane)
+
+- **L-RS3 @`f6f1d4b`** — ADR-0017 #6 (ruling 4a): game-feel batch-ratify — **30 source sites across 7 files** (versus/deck.ts ×18, versus/affixes.ts ×1 umbrella, economy/config.ts ×4, coverage/matrix.ts ×1, chrome/actRow.ts ×2, pipeline/intent-door.ts ×2, pipeline/defaults.ts ×2) + **4 test literals**; every flip is the grep-able literal `RATIFIED 2026-10-17 (ADR-0017 #6)`; machine values byte-zero (string-aware token diff); transport caps + the named playtest gates STAND.
+- **L-ADP @`945fba6`** — ruling 2a: chrome ADOPTED — `ALL_GATE_MOUNTS` spreads CHROME (HUD-LAB + COOP as NON-gate rail stages, sandbox/sim-lab precedent — the six §9.13 gates stay six); the §7.16 Act row mounts on the G4 board through the REAL door (`submitActIntent` on the session's own stamp-authority queue; G4Snapshot untouched); review F-1 DISCHARGED; proto 99f/1,112 → **100f/1,121** (`appAdoption.test.ts` 5 incl. the full DOM→door→receipt loop, `g4Session.test.ts` +4, one disclosed count-neutral length-pin re-cut).
+- **L-TRN @`61efe31`** — ADR-0017 #7 (ruling 3b): topology (a) closed in-repo — `RelayHubHandle.publish(): number` re-fans the existing seat-state (ledger+lastStamp+optional per-seat rider) timer-free/idempotent with every law inherited (@`24426ec` departed-freeze, per-seat-only view, omit-when-unset, V1 envelope); `tools/host simLoop.ts` 325 ln: one `createTickDriver` world, SOLE door feeder, per-seat `projectSeat` fog, absent-keys-including-existence proven at `decodeFrame` over loopback; topology (b) default byte-ident; transport 84→**91**, host 14→**19**; named limits: no economy lane v0, browser view-rider thin client owed, seat→scope host config.
+- **Closeout @this commit** — ADR-0017 gains #7/#8 + the status amendment and carries the review's two prose corrections: (F-1) the #6 STANDS list dropped its stale `noticeSurface` voices claim (ratified @`18c3f6a`); (F-2) the inherited PROVISIONAL-B waves-slice count re-derived **27→31** by pin-exact grep (dated append on the ADR-0016 #1 record; #11's restatement points at #1 and reads through it). hosting_game.md: status block → wave-23, §7.16 rider (G4 mount + numerics discharged), §9.13 six-gates rider, §1.4 CEASED law-note, appendix rows, WAVE-23 tail — ZERO heading markers moved. MODULE-STATUS 14-leg sweep; DECISIONS-PENDING blockquote + fresh-ask updates; API-REFERENCE ratify-lag corrections (the #D4/#6 labels were on disk, the doc rows lagged); tools/transport + tools/host README rungs (incl. the F-3 pumpTo mode-(b) ritual disclosure).
+
+### Battery (ONE authoritative set at this closeout tree — the push ceremony re-runs the full set)
+
+| Gate | Result |
+|---|---|
+| sim-core full serial | **169 files / 3,199 tests, exit 0, ZERO goldens moved** — UNMOVED from wave-22: the whole chain touched zero packages/sim-core files (f6f1d4b comment/label text + 4 count-neutral test literals) |
+| proto full serial | **100 files / 1,121 passed, ALL GREEN** (99/1,112 +1f/+9t @`945fba6`) |
+| relay / transport / host | **42/42 · 91/91 · 19/19** (transport +`publish.test.ts`; host +`simLoop.host.test.ts`) |
+| headless | **53/5 — parity real `b0162ab5` / stub `a9b4b7b8` HELD** |
+| api-verify | **PASS — 1,693 names, INERT across the whole wave** (zero export names moved) |
+| ci-verify | **5/5 PASS** |
+| `pnpm -r typecheck` | **8/8 Done** |
+| canary | **PASS — 140-era** |
+| content validate | **exit 0 — bundles=14 / waves=14 / packs=14 · 412 `_todo` + 16 pack markers** |
+| vite build | **worker 900.25 kB (IDENTICAL content hash vs pre-adoption) / fakeWorker 544.10 / index 1,549.06 kB** @`945fba6` — re-measured independently at review; +163.34 entry-side = the intended adoption cost |
+| scenario specLine guard | **7 files / 430 GREEN** (hosting_game insertions verified non-§1.5; zero specLine re-pins needed) |
+
+### Census — ZERO markers moved
+
+✅321 · 🔧1,011 · ⚠️0 · ❌2,227 · 📝30 = 3,589 — UNCHANGED from wave-22, disk-confirmed at this closeout by the code-unit heading-scan method (`^#{1,4} ` lines, both ⚠ variants). A ratify-labels/adoption/transport wave: the §7.16 and §9.13 riders and the §1.4 stop law-note are blockquote text, not heading markers; the #6 sweep flips comment labels, not headings.
+
+### Owner state after this wave
+
+The TYPE PROGRAM is CEASED (1a) — fourteen shipped, roster exhaustion stays LAW, the fifteenth ask is closed by stop, re-arming is owner-only. Adoption (2a) and topology (a) (3b) landed; the game-feel register (4a) discharged with values byte-zero; pack prose (6b) stands. Standing defers, named: WARCT valuation leg, in-flight-kill wedge, slug-12 consumer, render-harness readability numerics (OD-10/12), coverage deck-preview proto leg, `DECISION_*` playtest consts flag, PHP/Workerman production carrier, browser view-rider thin client, audio audition, substrate taste rows, bench 7k budget, tuning-sheet A/C letters, PROVISIONAL-B residue (31+16 sites — re-author targets the bundles).
+
+### Program status
+
+**Session-8 is fully spent, both halves.** The program now holds a BUILT app surface for the chrome it authored (F-1 closed — the barrel's mounts are runtime entries, the Act row plays through the real door on the G4 board), a two-topology co-op carrier with the engine-authoritative variant playable in-repo behind `--sim`, and a CLOSED game-feel register whose engineering half stands by design. The notable meta-fact: the review INDEPENDENTLY RE-MEASURED the wave-22 F-1 build ledger and the wave-23 adoption ledger — the "+163.34 index, worker hash-identical" figures are instrument readings, and the stale 27-site residue count was caught and corrected by dated append rather than rewrite. Origin unmoved all wave — no external-push incident. Phase-1 gates: six stay six. Next: owner wall again — depth-work agenda (eras/campaign/adoption rungs), the transport next rung, and whatever 1a re-arm decision may someday come.

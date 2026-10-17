@@ -51,6 +51,8 @@ pretended otherwise. The validator enum moved in the SAME commit, widened to
 > is exactly what lets the corpus stand half-converted without a lie. Disk truth at closeout:
 > **42** RATIFIED-B sites across all thirteen bundles (the 13th card @`9e9f377` was AUTHORED
 > straight into the ratified grammar — the flip now guides new authoring, not just old).
+>
+> *[2026-10-18 — wave-23 closeout correction, dated append (the record above stands as authored): the **27** waves-slice count was true at the wave-21 tree; disk truth re-derived by the pin-exact grep at the wave-23 closeout is **31** — the two slices that shipped after the count (observability, ci-build-farm) each authored a `PROVISIONAL-B` pair. The 16 registry-core sites and the tolerance-law reasoning are unchanged.]*
 
 **#2 — VERSUS DESIGN LAWS RESOLVED MAX-FEATURE** (I-P design-lane decisions 1–6, superseding the
 ADR-0009 keeps and ADR-0015 #1's "separate ask" posture — the asks are answered, the fingerprints
