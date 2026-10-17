@@ -36,6 +36,7 @@ import type { CorpusDriveOptions } from "../runner/simCoreRunner";
 import type { BootCorpusWire, CorpusTableId } from "./protocol";
 
 import registryRaw from "../../../../packages/content/threats/registry-core.json?raw";
+import bundleBackupArchivalRaw from "../../../../packages/content/types/backup-archival.json?raw";
 import bundleColoRaw from "../../../../packages/content/types/colo.json?raw";
 import bundleDedicatedRaw from "../../../../packages/content/types/dedicated.json?raw";
 import bundleDnsRaw from "../../../../packages/content/types/dns-hosting.json?raw";
@@ -46,6 +47,7 @@ import bundleObjectStorageRaw from "../../../../packages/content/types/object-st
 import bundleServerlessRaw from "../../../../packages/content/types/serverless.json?raw";
 import bundleSharedWebRaw from "../../../../packages/content/types/shared-web.json?raw";
 import bundleTrunkGroupRaw from "../../../../packages/content/types/trunk-group-voip.json?raw";
+import sliceBackupArchivalRaw from "../../../../packages/content/waves/g1-backup-archival-first-quarter.json?raw";
 import sliceColoRaw from "../../../../packages/content/waves/g1-colo-first-quarter.json?raw";
 import sliceDedicatedRaw from "../../../../packages/content/waves/g1-dedicated-first-quarter.json?raw";
 import sliceDnsRaw from "../../../../packages/content/waves/g1-dns-hosting-first-quarter.json?raw";
@@ -123,6 +125,13 @@ const CORPUS_TABLES: Readonly<Record<CorpusTableId, CorpusTableEntry>> = Object.
     sliceStem: "g1-colo-first-quarter",
     sliceRaw: sliceColoRaw,
     bundleRaw: bundleColoRaw,
+  }),
+  // The backup/archival card (type 11, "Restore Point") — Schedule lineage;
+  // additive-only join per the content-is-authority drift law.
+  "backup-archival": Object.freeze({
+    sliceStem: "g1-backup-archival-first-quarter",
+    sliceRaw: sliceBackupArchivalRaw,
+    bundleRaw: bundleBackupArchivalRaw,
   }),
 });
 

@@ -15,10 +15,11 @@ import {
 } from "../packStore.ts";
 
 describe("i18n/packStore · loads the shipped packs through the loader boundary", () => {
-  it("all ten disk packs parse at init, frozen, ids exact (ADR-0014 #D5)", () => {
+  it("all eleven disk packs parse at init, frozen, ids exact (ADR-0014 #D5)", () => {
     expect([...PACK_IDS]).toEqual([
       "shared-web",
       "game",
+      "backup-archival",
       "colo",
       "dedicated",
       "dns-hosting",
@@ -36,7 +37,7 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
     // 103 = 98 + the three economy-notice keys (contract-activated /
     // covenant-breached / chargeback-posted, docs-sync lane) + the two
     // canonical-death keys (death-imminent / company-dissolved, lane L4).
-    // The seven type-pack totals are the disk truth re-derived per pack.
+    // The type-pack totals are the disk truth re-derived per pack.
     expect(packOf("shared-web").decision.size + packOf("shared-web").flavour.size).toBe(103);
     expect(packOf("game").decision.size + packOf("game").flavour.size).toBe(75);
     expect(packOf("dedicated").decision.size + packOf("dedicated").flavour.size).toBe(66);
@@ -49,8 +50,11 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
     expect(packOf("trunk-group-voip").decision.size + packOf("trunk-group-voip").flavour.size).toBe(
       69,
     );
-    // roster total: 712 templates across the ten packs
-    expect(PACK_IDS.reduce((n, id) => n + packOf(id).decision.size + packOf(id).flavour.size, 0)).toBe(712);
+    expect(
+      packOf("backup-archival").decision.size + packOf("backup-archival").flavour.size,
+    ).toBe(66);
+    // roster total: 778 templates across the eleven packs
+    expect(PACK_IDS.reduce((n, id) => n + packOf(id).decision.size + packOf(id).flavour.size, 0)).toBe(778);
   });
 
   it("t() resolves a plain decision template with slot fill", () => {

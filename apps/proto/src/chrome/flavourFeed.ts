@@ -8,8 +8,8 @@
  * Pool law (CLOSED by construction, two deliberate scopes — the first widened
  * by ADR-0014 #D5):
  *  1. PACK SCOPE: the pool draws from EVERY pack `i18n/packStore.ts`
- *     registers — all ten shipped packs (baseline shared-web + game plus the
- *     eight type packs: colo, dedicated, dns-hosting, exchange-colo,
+ *     registers — all eleven shipped packs (baseline shared-web + game plus the
+ *     nine type packs: backup-archival, colo, dedicated, dns-hosting, exchange-colo,
  *     mail-hosting, object-storage, serverless, trunk-group-voip). The registry widening is
  *     the i18n lane's call and it landed; this feed stays inside the
  *     registration law and inherits the full corpus automatically.
@@ -21,8 +21,8 @@
  *  partitioned roots through the §9.3 decision/flavour wall, so a decision
  *  key is unreachable here BY CONSTRUCTION, not by a filter this file trusts.
  *  Cross-pack twins are distinct pool entries keyed (packId, key) — never
- *  deduped by key. Census over the full ten-pack pool: the four vendor.reply
- *  lines ship slot-free in ALL TEN packs byte-identical, loading.tip.failover
+ *  deduped by key. Census over the full eleven-pack pool: the four vendor.reply
+ *  lines ship slot-free in ALL ELEVEN packs byte-identical, loading.tip.failover
  *  /two-is-one in both baseline packs byte-identical; every cross-pack twin
  *  whose TEXT diverges per pack (abuse.canon.upstream, abuse.canon.customer-
  *  dispute, intern.entry.bill, chatter.desk.stack) is slot-bearing wherever

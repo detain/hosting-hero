@@ -2,9 +2,9 @@
  * i18n · pack store — the proto UI's copy layer over the shipped grammar packs.
  *
  * §9.11's "adding a type is a data task" proved end-to-end in the browser:
- * the SAME packs packages/content/script/validate.mjs keeps — ALL TEN on
- * disk (712 templates: shared-web 103, trunk-group-voip 69, exchange-colo
- * 68, serverless 68, colo 68, object-storage 67, dedicated 66, dns-hosting
+ * the SAME packs packages/content/script/validate.mjs keeps — ALL ELEVEN on
+ * disk (778 templates: shared-web 103, trunk-group-voip 69, exchange-colo
+ * 68, serverless 68, colo 68, object-storage 67, backup-archival 66, dedicated 66, dns-hosting
  * 65, game 75, mail-hosting 63; widened by ADR-0014 #D5) — are parsed at module init
  * through the loader's boundary
  * (`loadI18nPack` — already tested in sim-core; this file is a thin, loud
@@ -30,6 +30,7 @@
  */
 import sharedWebWire from "../../../../packages/content/packs/shared-web.i18n.json?raw";
 import gameWire from "../../../../packages/content/packs/game.i18n.json?raw";
+import backupArchivalWire from "../../../../packages/content/packs/backup-archival.i18n.json?raw";
 import coloWire from "../../../../packages/content/packs/colo.i18n.json?raw";
 import dedicatedWire from "../../../../packages/content/packs/dedicated.i18n.json?raw";
 import dnsHostingWire from "../../../../packages/content/packs/dns-hosting.i18n.json?raw";
@@ -50,10 +51,11 @@ import {
 
 /** Every shipped pack, by its short consumer-facing id (ADR-0014 #D5: the
  *  roster is the full disk truth — the two baseline packs keep their leading
- *  order, the eight type packs follow code-unit sorted). */
+ *  order, the nine type packs follow code-unit sorted). */
 export type PackId =
   | "shared-web"
   | "game"
+  | "backup-archival"
   | "colo"
   | "dedicated"
   | "dns-hosting"
@@ -66,6 +68,7 @@ export type PackId =
 export const PACK_IDS: readonly PackId[] = Object.freeze([
   "shared-web",
   "game",
+  "backup-archival",
   "colo",
   "dedicated",
   "dns-hosting",
@@ -85,6 +88,7 @@ export { DEFAULT_ERA_YEAR } from "./eraState.ts";
 const PARSED: Readonly<Record<PackId, LoadedI18nPack>> = Object.freeze({
   "shared-web": loadI18nPack(JSON.parse(sharedWebWire)),
   game: loadI18nPack(JSON.parse(gameWire)),
+  "backup-archival": loadI18nPack(JSON.parse(backupArchivalWire)),
   colo: loadI18nPack(JSON.parse(coloWire)),
   dedicated: loadI18nPack(JSON.parse(dedicatedWire)),
   "dns-hosting": loadI18nPack(JSON.parse(dnsHostingWire)),
