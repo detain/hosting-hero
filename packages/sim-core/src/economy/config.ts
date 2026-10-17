@@ -346,6 +346,36 @@ export interface NegotiationConfig {
   readonly concessionPresenceBps: bigint;
 }
 
+/* ─────────────── scale warmth billing (ADR-0016 mechanic C) ────────────── */
+
+/** The price of RESERVED WARMTH behind the money-lane fold
+ *  (`internal/tickFold.ts`, ADR-0016 mechanic C — warmth cost, the Scale
+ *  money leg: the door's `scale-node` bookings are CHARGED here, never by
+ *  the door itself — the door never touches cash, its own law). Grounded
+ *  §1.3 serverless "Cold Start" / Chrysalis Pool (hosting_game.md):
+ *  "a Chrysalis Pool of pre-warmed shells is the buildable: buying warmth
+ *  is buying the absence of a stutter" — and absence has a line item.
+ *  Direction law: ONE derived draft per business-month roll, amount =
+ *  Σ in-force `reservedSlots` × this rate under the as-of law (the
+ *  `scaleWarmInForce` twin); zero in force ⇒ NO draft (the ≥1 µ$ burn
+ *  boundary, review F6 — nothing to bill is nothing to post). The section
+ *  is OPTIONAL on EconomyConfig (postMortem law — sibling hosts hand-build
+ *  config literals); the fold reads `cfg.warmth ?? DEFAULT_WARMTH_CONFIG`. */
+export interface WarmthConfig {
+  /** Micro-USD charged per in-force reserved slot per business month
+   *  (25_000_000n = $25 per warm slot per month — a rack-slot rental
+   *  order of magnitude, the doc's §6.4 opex register style).
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly rateMicroUsdPerSlotMonth: bigint;
+}
+
+/** The shipped default warmth book — the fold bills this rate whenever a
+ *  host never names `cfg.warmth` (the `DEFAULT_POST_MORTEM_CONFIG`
+ *  pattern: shared frozen const, single source, never restated inline). */
+export const DEFAULT_WARMTH_CONFIG: WarmthConfig = Object.freeze({
+  rateMicroUsdPerSlotMonth: 25_000_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — $25/slot/month
+});
+
 /* ─────────────── blameless post-mortem filing gate (§7.7, g21) ─────────── */
 
 /** The adjudication limit behind `economy/postmortem.ts` (audit g21: the
@@ -386,6 +416,10 @@ export interface EconomyConfig {
   readonly death: DeathConfig;
   readonly pricing: PricingConfig;
   readonly negotiation: NegotiationConfig;
+  /** ADR-0016 mechanic C scale-warmth billing — OPTIONAL (postMortem law:
+   *  sibling hosts hand-build config literals). The money-lane fold reads
+   *  `cfg.warmth ?? DEFAULT_WARMTH_CONFIG`. */
+  readonly warmth?: WarmthConfig | undefined;
   /** §7.7 post-mortem filing gate — OPTIONAL (unlike every section above):
    *  sibling hosts hand-build config literals, and a REQUIRED key would
    *  break their typecheck for a fold that is input-gated anyway. The fold
@@ -518,6 +552,7 @@ export function defaultEconomyConfig(): EconomyConfig {
       concessionPresenceBps: 300n, // money talks in every tone (+3%; 0n booked = stance, no bump)
     },
     postMortem: DEFAULT_POST_MORTEM_CONFIG, // §7.7 — shared frozen default book
+    warmth: DEFAULT_WARMTH_CONFIG, // ADR-0016 mechanic C — shared frozen default book
   };
 }
 

@@ -110,6 +110,7 @@ import {
   GUARD_TRAILING_WINDOW_MIN,
   buildSample,
   collectFacts,
+  createWarmthCursor,
   dependencyEdgesFor,
   foldMoneyLaneTick,
   openingDraftFor,
@@ -964,6 +965,13 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
   let outcome: ScenarioOutcome = "timeout";
   let stopReason = "";
   let game = withCashMirror(game0, econ);
+  /* ADR-0016 mechanic C (L-N3): mirror-mint of fastForward's cursor — the
+     scenario lane's missions carry no Scale book at run start (v0 is
+     hands-off autoplay; the door writes the book only in hosts feeding
+     player intents), so this is `undefined` and the fold's opex path is
+     IDENTITY — every shipped mission digest byte-ident. The seam exists
+     so a scale-arming doc lights the charge without a third fold copy. */
+  const warmthCursor = createWarmthCursor(game0);
   const cashStart = game.cash.free;
   const mintFacts: TickFacts = Object.freeze({
     minute: game.context.minute,
@@ -1044,6 +1052,9 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
         cfg: ecoCfg,
         contracts: contractsBook,
         opexDrafts: opexByMinute.get(minute) ?? [],
+        /* ADR-0016 mechanic C: undefined cursor ⇒ identity opex path ⇒
+           shipped mission digests byte-ident (see the mint above). */
+        warmth: warmthCursor,
         topic: "scenario",
         dunningEngineOwned: doc.limits.dunningEngineOwned,
         witness: refusalWitness,

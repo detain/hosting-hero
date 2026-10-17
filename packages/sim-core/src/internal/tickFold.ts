@@ -1,8 +1,10 @@
 /**
  * internal/tickFold.ts — the SHARED per-tick host fold, the single home for
  * the sequence every tick-boundary host performs around the driver:
- * scheduled-opex posting with the ledger-refusal bounce, the economy tick
- * with the insolvent-settle boundary (review F4), the OD-25(a) refuse-
+ * scheduled-opex posting (plus the ADR-0016 mechanic C derived
+ * scale-warmth draft at every business-month roll) with the ledger-
+ * refusal bounce, the economy tick with the insolvent-settle boundary
+ * (review F4), the OD-25(a) refuse-
  * settlements witness stream feeding the float-death watch (review F5),
  * the notary cash mirror, and the closed-vocab guardrail sampling.
  *
@@ -57,6 +59,7 @@ import type {
   GameState,
   NodeRecord,
   RunSeed,
+  ScaleEntry,
   SimEvent,
   SimMinute,
   SimTick,
@@ -66,7 +69,7 @@ import { FIXED_ONE, FIXED_ZERO, compare, fromRatio } from "../kernel/fixed.ts";
 import { MICROS_PER_MIN } from "../kernel/time.ts";
 import type { EconomyConfig, EconomyState, EntryDraft, RevenueColourTags } from "../economy/index.ts";
 import type { RefusedSettlement } from "../economy/index.ts";
-import { postEntry, remainingSec, runEconomyTick } from "../economy/index.ts";
+import { DEFAULT_WARMTH_CONFIG, postEntry, remainingSec, runEconomyTick } from "../economy/index.ts";
 import { compareCodeUnits } from "./canonical.ts";
 import type { GuardMetric, GuardrailSample } from "../unattended/guardrails.ts";
 
@@ -175,6 +178,82 @@ function opexWitnessFor(topic: string, draft: TickFoldOpexDraft): RefusedSettlem
   });
 }
 
+/* ═══════════════════════ scale warmth — the month-roll derived draft (ADR-0016 mechanic C) ══════════ */
+
+/** The business-calendar month the warmth cursor rolls on — the SAME
+ *  43,200-minute grid `attentionMonthOf` (unattended/fastForward.ts
+ *  @eff5694) copies from economy's rollBusinessMonth: the law is COPIED,
+ *  not imported — internal/ must not reach unattended/ or pipeline/ at
+ *  runtime (header dependency law), and the mint helper carries no cfg to
+ *  derive it from `cfg.calendar.minutesPerMonth`. The clock is monotonic,
+ *  so plain floor division is the exact twin of economy's floorDiv. */
+const WARMTH_MONTH_MINUTES = 43_200;
+
+function warmthMonthOf(game: GameState): number {
+  return Math.floor(Number(game.context.clocks.businessUs / MICROS_PER_MIN) / WARMTH_MONTH_MINUTES);
+}
+
+/** The host-carried month identity for the warmth leg — the witness-array
+ *  posture verbatim (plain mutable object, minted by the host, advanced IN
+ *  PLACE by the fold). The cursor holds MONTH IDENTITY, never an amount: a
+ *  month charges exactly once across the run, and a mid-month `scale-node`
+ *  last-write-wins amendment re-prices only at the NEXT roll (the card's
+ *  rhythm — reserve for the rush, withdraw after it). */
+export interface MoneyLaneWarmthCursor {
+  monthCursor: number;
+}
+
+/** Mint the run's warmth cursor from the state the host STARTS on. A run
+ *  with no Scale book returns `undefined` — the zero-path switch, the same
+ *  absent-means-inert law as every door-book forward (@984759b empty⇒
+ *  omitted). A run that carries the book seeds the CURRENT month, so the
+ *  first charge lands on the first roll INTO the next month: rent for the
+ *  coming period, the payroll-g5 rhythm (`gate5:opex:payroll:mN`). */
+export function createWarmthCursor(game: GameState): MoneyLaneWarmthCursor | undefined {
+  return game.scale === undefined ? undefined : { monthCursor: warmthMonthOf(game) };
+}
+
+/** AS-OF twin of pipeline/defaults.ts `scaleWarmInForce` (the entry half —
+ *  the caller has already looked the entry up): a null effective stamp is
+ *  law, a future stamp is ARMED BUT NOT CHARGEABLE. The condition line is
+ *  a private verbatim copy (import direction forbids reaching pipeline/);
+ *  `__tests__/warmth-cost.test.ts` source-pins the two bodies against each
+ *  other — the elasticity.ts PRICE_KEY_KINDS `readFileSync` mirror law. */
+function warmthInForceAt(entry: ScaleEntry, atBusinessMinute: SimMinute): ScaleEntry | null {
+  return entry.effectiveAtBusinessMinute === null || atBusinessMinute >= entry.effectiveAtBusinessMinute
+    ? entry
+    : null;
+}
+
+/** The fold's per-tick warmth question: has the business calendar entered
+ *  a NEW month, and if so what is the bill? Returns ONE derived draft or
+ *  null — and ALWAYS consumes the month identity when the cursor rolls: a
+ *  zero-amount month still passed (scale-to-zero withdraws the line, not
+ *  the calendar). Σ over the book's IN-FORCE entries × the warmth rate
+ *  (`cfg.warmth ?? DEFAULT_WARMTH_CONFIG` — single source, never inlined).
+ *  The draft then rides the ORDINARY opex loop below: it POSTS when the
+ *  bankroll covers it and BOUNCES when it doesn't (witness identity
+ *  `<topic>:opex:scale-warmth:mN` carries the memo through the
+ *  OPEX-REFUSED ×N census) — the fold invents no second refusal law. */
+function deriveWarmthDraft(p: MoneyLaneTickParams): TickFoldOpexDraft | null {
+  const cursor = p.warmth;
+  if (cursor === undefined) return null;
+  const month = warmthMonthOf(p.game);
+  if (month <= cursor.monthCursor) return null;
+  cursor.monthCursor = month;
+  const businessMinute = Number(p.game.context.clocks.businessUs / MICROS_PER_MIN);
+  let slots = 0;
+  if (p.game.scale !== undefined) {
+    for (const entry of p.game.scale.entries.values()) {
+      if (warmthInForceAt(entry, businessMinute) !== null) slots += entry.reservedSlots;
+    }
+  }
+  if (slots === 0) return null;
+  const amountMicroUsd = BigInt(slots) * (p.cfg.warmth ?? DEFAULT_WARMTH_CONFIG).rateMicroUsdPerSlotMonth;
+  if (amountMicroUsd < 1n) return null;
+  return Object.freeze({ atMinute: p.minute, amountMicroUsd, memo: `scale-warmth:m${month}` });
+}
+
 /* ═══════════════════════════ notary mirror + outage fan-out ═══════════════════════ */
 
 /** Mirror the ledger's cash + journal seq into GameState (the notary
@@ -247,6 +326,14 @@ export interface MoneyLaneTickParams {
    *  boundary laws — ≥1 µ$ and (atMinute,memo) uniqueness — are the
    *  host's ingestion concern and stay there, review F6). */
   readonly opexDrafts: readonly TickFoldOpexDraft[];
+  /** ADR-0016 mechanic C warmth cursor (host-carried, minted ONCE per run
+   *  via `createWarmthCursor`): PRESENT ⇒ the fold derives at most one
+   *  `scale-warmth:mN` draft per business-month roll and PREPENDS it to
+   *  `opexDrafts` (the derived line posts before authored lines sharing
+   *  the minute — deterministic ledger order). ABSENT/undefined ⇒ the
+   *  loop iterates `opexDrafts` BY IDENTITY — every scale-absent run
+   *  byte-ident (the zero-golden law's load-bearing arm). */
+  readonly warmth?: MoneyLaneWarmthCursor | undefined;
   /** Ledger identity prefix: "unattended" | "scenario". */
   readonly topic: string;
   readonly dunningEngineOwned: boolean;
@@ -280,9 +367,9 @@ export interface MoneyLaneTickResult {
 }
 
 /**
- * The ONE money-lane tick fold (opex → economy tick → refusal witnesses →
- * seq-clear), byte-identical to the loops both lanes ran before
- * consolidation.
+ * The ONE money-lane tick fold (warmth-derived + scheduled opex → economy
+ * tick → refusal witnesses → seq-clear), byte-identical to the loops both
+ * lanes ran before consolidation.
  *
  * INSOLVENT-SETTLE BOUNDARY (review F4): economy/ refuses negative buckets
  * by THROWING a raw RangeError from deep inside settle → draftEntry →
@@ -316,7 +403,10 @@ export function foldMoneyLaneTick(p: MoneyLaneTickParams): MoneyLaneTickResult {
   let refusedBurnsThisTick = 0;
   let opexBounces = 0;
 
-  for (const draft of p.opexDrafts) {
+  const warmthDraft = deriveWarmthDraft(p);
+  const drafts = warmthDraft === null ? p.opexDrafts : [warmthDraft, ...p.opexDrafts];
+
+  for (const draft of drafts) {
     if (econ.cash.free < draft.amountMicroUsd) {
       opexBounces += 1;
       refusedBurnsThisTick += 1;

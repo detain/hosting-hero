@@ -130,6 +130,7 @@ import {
   budgetMinRemainingSec,
   buildSample,
   collectFacts,
+  createWarmthCursor,
   dependencyEdgesFor,
   foldMoneyLaneTick,
   openingDraftFor,
@@ -941,6 +942,13 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
      calendar month whether the ledger is alive or not. Cursor seeded from
      game0 (0 today; stays honest if a host ever primes mid-quarter). */
   let attentionMonthCursor: number = attentionMonthOf(game0);
+  /* ADR-0016 mechanic C (L-N3): the warmth cursor rides the SAME calendar
+     authority as the attention seam, minted ONCE from game0. No weekend
+     mints a Scale book at run start today (the door writes it mid-run in
+     hosts that feed player intents), so this is `undefined` — the zero
+     path — and every shipped weekend digest byte-ident; the seam lights up
+     the moment a host carries the book into runUnattended. */
+  const warmthCursor = createWarmthCursor(game0);
   const cashStart: bigint = game.cash.free;
   let arrivalsSeen = 0;
   let stop: UnattendedStop | null = null;
@@ -995,6 +1003,13 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
         cfg: ecoCfg,
         contracts: contractsBook,
         opexDrafts: opexByMinute.get(minute) ?? [],
+        /* ADR-0016 mechanic C: the fold derives the `scale-warmth:mN`
+           draft at every month roll when the cursor exists (see the fold's
+           params docblock). No new warn: a bounced warmth line carries its
+           identity through the witness memo (`<topic>:opex:scale-warmth:
+           mN`) inside the existing OPEX-REFUSED ×N census. Undefined
+           cursor ⇒ the drafts list rides by identity (byte-identity law). */
+        warmth: warmthCursor,
         topic: "unattended",
         dunningEngineOwned: config.money?.dunningEngineOwned ?? false,
         witness: refusalWitness,
