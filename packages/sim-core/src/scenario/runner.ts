@@ -1055,6 +1055,13 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
         /* ADR-0016 mechanic C: undefined cursor ⇒ identity opex path ⇒
            shipped mission digests byte-ident (see the mint above). */
         warmth: warmthCursor,
+        /* ADR-0016 mechanic B honest gap: no shipped mission doc can carry a
+           sell-offer book — the door is never fed `sell-offer` intents in v0
+           (rung-8 vocabulary has no sell predicate), so `game.sell` is absent
+           and tickFold's presence-gated spread keeps every mission digest
+           byte-identical. No sellMarketRates leg here either: the fold's
+           installed-base anchor is the only authority a mission could ever
+           reach, and inventing scenario sell semantics is a future rung. */
         topic: "scenario",
         dunningEngineOwned: doc.limits.dunningEngineOwned,
         witness: refusalWitness,

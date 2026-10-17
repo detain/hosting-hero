@@ -41,6 +41,7 @@ import {
 } from "./runway.ts";
 import { initialReputationLedger, type ReputationLedger } from "./reputation.ts";
 import type { RelationshipLedger } from "./relationship.ts";
+import type { SellVerdict } from "./sell.ts";
 import type {
   CompanyDeathRecord,
   DeathWarningRecord,
@@ -118,6 +119,14 @@ export interface EconomyState {
    *  key law). `trustByKey` iteration order is code-unit-ascending by
    *  construction (the sorted-map house law). */
   readonly relationships?: RelationshipLedger | undefined;
+  /** ADR-0016 mechanic B sell acceptance verdicts (economy/sell.ts): market
+   *  opinion on each `sell-offer` key, code-unit sorted, persisted so a
+   *  replay never re-rolls. THE FOLD BOOKS NO MONEY — a verdict is a dice
+   *  result, never an invoice. The key is ABSENT until the first fresh
+   *  fingerprint adjudication (absent-while-idle, death-key law): every
+   *  shipped host's serialization stays byte-identical until someone
+   *  actually prices an offer the market can anchor. */
+  readonly sellVerdicts?: ReadonlyMap<string, SellVerdict> | undefined;
 }
 
 export function emptyEconomyState(): EconomyState {

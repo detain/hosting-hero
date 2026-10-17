@@ -475,6 +475,47 @@ export const DEFAULT_POST_MORTEM_CONFIG: PostMortemConfig = Object.freeze({
   maxAttributableChanges: 1, // RATIFIED 2026-10-16 (ADR-0015 #1) — the doc's "two changes" example
 });
 
+/* ─────────────── sell acceptance dice (ADR-0016 mechanic B) ────────────── */
+
+/** The market-adjudication curve behind `economy/sell.ts` (mechanic B: the
+ *  `sell-offer` book gets VERDICTS, not money — the fold rolls one die per
+ *  fresh offer fingerprint against an anchored market rate). Shape mirrors
+ *  `PricingConfig`: base at the dead-band, coefficient × out-of-band
+ *  leverage, clamped both ways. The clamp asymmetry is law: the ceiling is
+ *  strictly below 10,000 bps — a sale is never certain (the retention-floor
+ *  lesson, ADR-0014 #D4, now a two-domain shape). The section is OPTIONAL
+ *  on EconomyConfig (postMortem law — sibling hosts hand-build config
+ *  literals); the fold reads `cfg.sell ?? DEFAULT_SELL_CONFIG`. */
+export interface SellConfig {
+  /** Acceptance at-market (inside the dead band), basis points.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly acceptBaseBps: bigint;
+  /** bps of acceptance lost per 10,000 bps of out-of-band price deviation
+   *  (150% leverage — harsher than churn's 150/80/50 family because the
+   *  counterparty here walks away whole).
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly acceptCoefficientBps: bigint;
+  /** Inclusive no-move band around the anchor, bps — elasticity twin.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly acceptDeadBandBps: bigint;
+  /** Never hopeless: a bargain still cannot reach certainty-of-zero.
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly acceptFloorBps: bigint;
+  /** Never certain: strictly below BPS_DEN (ADR-0014 #D4 asymmetry law).
+   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+  readonly acceptCeilingBps: bigint;
+}
+
+/** The shipped default sell book — the fold reads `cfg.sell ??
+ *  DEFAULT_SELL_CONFIG` (the `DEFAULT_POST_MORTEM_CONFIG` pattern). */
+export const DEFAULT_SELL_CONFIG: SellConfig = Object.freeze({
+  acceptBaseBps: 7_500n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — at-market offers close three-quarters of the time
+  acceptCoefficientBps: 15_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — 150% out-of-band leverage
+  acceptDeadBandBps: 1_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — ±10% inertia, pricing.deadBandBps twin
+  acceptFloorBps: 1_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — never hopeless
+  acceptCeilingBps: 9_500n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — NEVER certain (ADR-0014 #D4 two-domain law)
+});
+
 /* ─────────────────────────────── root config ──────────────────────────── */
 
 export interface EconomyConfig {
@@ -500,6 +541,10 @@ export interface EconomyConfig {
    *  sibling hosts hand-build config literals). The money-lane fold reads
    *  `cfg.warmth ?? DEFAULT_WARMTH_CONFIG`. */
   readonly warmth?: WarmthConfig | undefined;
+  /** ADR-0016 mechanic B sell acceptance dice (economy/sell.ts) — OPTIONAL
+   *  (postMortem law: sibling hosts hand-build config literals). The fold
+   *  reads `cfg.sell ?? DEFAULT_SELL_CONFIG`. */
+  readonly sell?: SellConfig | undefined;
   /** §7.7 post-mortem filing gate — OPTIONAL (unlike every section above):
    *  sibling hosts hand-build config literals, and a REQUIRED key would
    *  break their typecheck for a fold that is input-gated anyway. The fold
@@ -634,6 +679,7 @@ export function defaultEconomyConfig(): EconomyConfig {
     relationships: DEFAULT_RELATIONSHIP_CONFIG, // ADR-0016 mechanic A — shared frozen trust book
     postMortem: DEFAULT_POST_MORTEM_CONFIG, // §7.7 — shared frozen default book
     warmth: DEFAULT_WARMTH_CONFIG, // ADR-0016 mechanic C — shared frozen default book
+    sell: DEFAULT_SELL_CONFIG, // ADR-0016 mechanic B — shared frozen default book
   };
 }
 

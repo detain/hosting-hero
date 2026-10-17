@@ -42,10 +42,13 @@ import {
   asMoney,
   type AttentionState,
   type EntityId,
+  type MoneyUnit,
   type NegotiateBook,
   type NegotiationTerm,
   type PriceOverrideBook,
   type PriceTargetKind,
+  type SellBook,
+  type SellOffer,
 } from "../../types.ts";
 import { runUnattended } from "../index.ts";
 import type { UnattendedReport, RunUnattendedConfig } from "../index.ts";
@@ -380,6 +383,116 @@ describe("negotiation book forwarding (lane @a760771+ ADR-0015 5/5 host seam)", 
        the talk moves the money the door itself never touches. */
     expect(cashEnd(bare)).toBe(62078000n);
     expect(cashEnd(talked)).toBe(62_053_720n);
+  });
+});
+
+/* ─────── seam 1a′: sell acceptance dice (ADR-0016 mechanic B) ─────── */
+
+/**
+ * economy/sell.ts consuming the door's sell-offer book (@a760771):
+ * `GameState.sell.entries` rides every economy input as
+ * `EconomyTickIn.sellOffers` (the tickFold spread mirrors the negotiate leg
+ * EXACTLY), and the money config's `sellMarketRates` forwards as
+ * `EconomyTickIn.sellMarketRates`. The dice roll on the NEW "economy/sell"
+ * stream domain, so no existing slot sequence moves. THE LAW THIS SUITE
+ * GUARDS: a verdict is market OPINION — cashEnd must ride the bare twin
+ * EXACTLY in every adjudicating arm (the money goldens' byte-safety proof
+ * at host level, not just at fold level).
+ */
+describe("sell-offer book forwarding (mechanic B, ADR-0016 host seam)", () => {
+  const KEYED = new Map<EntityId, string>([[asEntityId("ctr-fwd-1"), "plan:basic"]]);
+
+  function sellBookFor(
+    kind: PriceTargetKind,
+    id: string,
+    offerPriceMicroUsd: bigint,
+    effectiveAtBusinessMinute: number | null = null,
+  ): SellBook {
+    const entry: SellOffer = Object.freeze({
+      targetKind: kind,
+      targetId: asEntityId(id),
+      offerPriceMicroUsd: asMoney(offerPriceMicroUsd),
+      termMonths: 12,
+      shippedAtTick: 0n,
+      effectiveAtBusinessMinute,
+    });
+    return Object.freeze({ version: 1, entries: Object.freeze(new Map([[`${kind}:${id}`, entry]])) });
+  }
+
+  it("market rates WITHOUT a book are inert: reportIdentity byte-identical (sparse-key law)", () => {
+    const ratesOnly = runUnattended(
+      cfg({
+        money: Object.freeze({
+          ...hourlyMoney(KEYED),
+          sellMarketRates: new Map<string, MoneyUnit>([["plan:basic", asMoney(900_000_000n)]]),
+        }),
+      }),
+    );
+    const bare = runUnattended(cfg({ money: hourlyMoney() }));
+    expect(reportIdentity(ratesOnly)).toBe(reportIdentity(bare));
+    expect(ratesOnly.sellVerdictCensus).toBeUndefined();
+  });
+
+  it("a book no contract anchors and no catalog rates: money-neutral, census absent, digest moves (presence law)", () => {
+    const orphan = runUnattended(cfg({ money: hourlyMoney(), sell: sellBookFor("plan", "none", 700_000_000n) }));
+    const bare = runUnattended(cfg({ money: hourlyMoney() }));
+    expect(cashEnd(orphan)).toBe(cashEnd(bare));
+    expect([...orphan.summary.invoiceEvents]).toEqual([...bare.summary.invoiceEvents]);
+    expect(orphan.sellVerdictCensus).toBeUndefined();
+    // The EMBEDDED book rides GameState.sell — digest-switch presence law,
+    // same posture as the negotiate mismatched arm:
+    expect(orphan.finalDigest).not.toBe(bare.finalDigest);
+  });
+
+  it("a FUTURE-DATED offer is not-yet-law: no dice, census absent, digest moves (as-of discipline)", () => {
+    const future = runUnattended(
+      cfg({ money: hourlyMoney(KEYED), sell: sellBookFor("plan", "basic", 700_000_000n, 100_000) }),
+    );
+    const bare = runUnattended(cfg({ money: hourlyMoney() }));
+    expect(cashEnd(future)).toBe(cashEnd(bare));
+    expect([...future.summary.invoiceEvents]).toEqual([...bare.summary.invoiceEvents]);
+    expect(future.sellVerdictCensus).toBeUndefined();
+    expect(future.finalDigest).not.toBe(bare.finalDigest);
+  });
+
+  it("an anchored offer rolls EXACTLY ONE verdict and moves NO cash: census appears, cashEnd byte-equal", () => {
+    const priced = runUnattended(
+      cfg({ money: hourlyMoney(KEYED), sell: sellBookFor("plan", "basic", 700_000_000n) }),
+    );
+    const bare = runUnattended(cfg({ money: hourlyMoney(KEYED) })); // same signings, no book
+    /* THE zero-money law at host level: the ONLY money-visible difference
+       between an adjudicated weekend and its bare twin is the ADDITIVE
+       census keys — every bucket, invoice and digest-of-money byte-safe. */
+    expect(cashEnd(priced)).toBe(cashEnd(bare));
+    expect(priced.sellVerdictCensus).toBeDefined();
+    expect(priced.sellVerdictCensus!.accepted + priced.sellVerdictCensus!.refused).toBe(1);
+    // Probe literals (this engine build, UA_SEED): the 700M-vs-720M bargain
+    // clamps to the ceiling and the seed decides — pinned so a stream-domain
+    // change reddens HERE, never silently.
+    expect(priced.sellVerdictCensus).toEqual({ accepted: 1, refused: 0 });
+    const census = [...priced.summary.invoiceEvents].filter(([kind]) => kind.startsWith("sell-"));
+    expect(census).toEqual([["sell-accepted", 1]]);
+    expect(priced.finalDigest).not.toBe(bare.finalDigest); // embed, not money
+  });
+
+  it("the catalog rate OVERRIDES the installed base — same offer, opposite market verdict", () => {
+    /* The installed base anchors `plan:basic` at 720M (the contract's MRC),
+       where a 700M offer is a ceiling-clamped bargain ⇒ the UA_SEED weekend
+       ACCEPTS (arm above). The host catalog says the market is 300M — the
+       identical offer is now a 133% PREMIUM, floor-clamped ⇒ REFUSED. One
+       roll, same seed/minute/key: the flip IS the catalog-authority proof
+       (and the census stays exactly one verdict either way). */
+    const withCatalog = runUnattended(
+      cfg({
+        money: Object.freeze({
+          ...hourlyMoney(KEYED),
+          sellMarketRates: new Map<string, MoneyUnit>([["plan:basic", asMoney(300_000_000n)]]),
+        }),
+        sell: sellBookFor("plan", "basic", 700_000_000n),
+      }),
+    );
+    expect(withCatalog.sellVerdictCensus).toEqual({ accepted: 0, refused: 1 });
+    expect(cashEnd(withCatalog)).toBe(cashEnd(runUnattended(cfg({ money: hourlyMoney(KEYED) }))));
   });
 });
 

@@ -1702,6 +1702,13 @@ export class SimCoreRunner implements SimRunner {
              embedded book's term map IS negotiations' type; absent book ⇒
              key omitted ⇒ the golden-carrying input shape byte-identical. */
           ...(this.game.negotiate !== undefined ? { negotiations: this.game.negotiate.entries } : {}),
+          /* Sell-offer forward (ADR-0016 mechanic B, mirrors the negotiate
+             leg): embedded book's offer map IS sellOffers' type; absent
+             book ⇒ key omitted ⇒ the money-golden-carrying input shape
+             byte-identical. No sellMarketRates leg: the proto host has no
+             catalog authority — offers anchor on keyed contract MRCs (the
+             priceKeys seam) or stay honestly unadjudicated. */
+          ...(this.game.sell !== undefined ? { sellOffers: this.game.sell.entries } : {}),
           /* Empty buffer ⇒ key omitted ⇒ the pre-death input shape (and the
              goldens riding it) byte-identical. */
           ...(this.pendingRefusalWitness.length > 0

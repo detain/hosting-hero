@@ -57,6 +57,7 @@ import type {
   EntityId,
   Fixed,
   GameState,
+  MoneyUnit,
   NodeRecord,
   RunSeed,
   ScaleEntry,
@@ -334,6 +335,12 @@ export interface MoneyLaneTickParams {
    *  loop iterates `opexDrafts` BY IDENTITY — every scale-absent run
    *  byte-ident (the zero-golden law's load-bearing arm). */
   readonly warmth?: MoneyLaneWarmthCursor | undefined;
+  /** ADR-0016 mechanic B host catalog authority for the sell dice
+   *  (priceKey -> market rate µ$): forwarded verbatim into EconomyTickIn
+   *  .sellMarketRates. ABSENT ⇒ key omitted ⇒ offers anchor only on the
+   *  installed base (or stay unadjudicated) — every sell-absent run
+   *  byte-ident (the zero-golden law's load-bearing arm). */
+  readonly sellMarketRates?: ReadonlyMap<string, MoneyUnit> | undefined;
   /** Ledger identity prefix: "unattended" | "scenario". */
   readonly topic: string;
   readonly dunningEngineOwned: boolean;
@@ -441,6 +448,13 @@ export function foldMoneyLaneTick(p: MoneyLaneTickParams): MoneyLaneTickResult {
          .negotiations' type. Absent book ⇒ key omitted ⇒ every shipped
          money digest byte-identical (@984759b law). */
       ...(game.negotiate !== undefined ? { negotiations: game.negotiate.entries } : {}),
+      /* Sell-offer forward (ADR-0016 mechanic B, mirrors the negotiations
+         seam EXACTLY): the embedded book's offer map IS EconomyTickIn
+         .sellOffers' type. Absent book ⇒ key omitted ⇒ every shipped money
+         digest byte-identical (@984759b law). The market-rates catalog is
+         the host's config leg, presence-gated the same way. */
+      ...(game.sell !== undefined ? { sellOffers: game.sell.entries } : {}),
+      ...(p.sellMarketRates !== undefined ? { sellMarketRates: p.sellMarketRates } : {}),
       /* Empty buffer ⇒ key omitted ⇒ every pre-existing input shape
          (and every witness riding it) byte-identical. */
       ...(witness.length > 0 ? { refusedSettlements: Object.freeze([...witness]) } : {}),

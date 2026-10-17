@@ -29,6 +29,9 @@
  *   5 renewal cliffs — fire exactly at the term-end business minute (§6.12);
  *     BEFORE the calendar, so a renew restarts the grid on the same tick and
  *     a lapse never writes a zombie invoice
+ *   5.5 sell acceptance dice — market verdicts on the sell-offer book
+ *     (ADR-0016 mechanic B, economy/sell.ts): one persisted roll per fresh
+ *     fingerprint, notices only, the fold books NO money
  *   6 invoice calendar — AR credit at issue, backlog drain while seeded
  *     promise remains (§6.4 "billing 1st")
  *   7 payment attempts at due — card-failure roll (5–9%/mo, §6.4)
@@ -66,12 +69,13 @@ import {
   type PriceOverrideRecord,
   type RevenueQualityBand,
   type RunSeed,
+  type SellOffer,
   type SimMinute,
   type TickContext,
 } from "../types.ts";
 import { compare, fromRatio } from "../kernel/fixed.ts";
 import { streamFor } from "../kernel/rng.ts";
-import { type BudgetSpendAction, type EconomyConfig } from "./config.ts";
+import { type BudgetSpendAction, type EconomyConfig, DEFAULT_SELL_CONFIG } from "./config.ts";
 import { appendJournal, draftEntry, type Journal } from "./ledger.ts";
 import {
   cyclePeriodMinutes,
@@ -94,6 +98,7 @@ import { bpsOf, BPS_DEN } from "./money.ts";
 import { floorDiv } from "./intMath.ts";
 import { applyFactorBps, priceElasticityFor } from "./elasticity.ts";
 import { activeNegotiation, negotiatedBillingBase, negotiationRetentionFactorBps } from "./negotiate.ts";
+import { adjudicateSellOffers, sellAnchorFromContracts, type SellVerdict } from "./sell.ts";
 import {
   applyRelationshipEncounters,
   relationshipTrustBps,
@@ -291,6 +296,20 @@ export interface EconomyTickIn {
    *  the override-chain head (grandfather still WINS, ADR-0014 #D4), and
    *  a term extension rolls the renewed cliff forward. */
   readonly negotiations?: ReadonlyMap<string, NegotiationTerm> | undefined;
+  /** ADR-0016 mechanic B — the door's frozen sell-offer book (`GameState
+   *  .sell.entries`, keyed `<kind>:<id>` — the priceKey grammar) forwarded
+   *  per fold (internal/tickFold.ts mirrors the negotiations seam EXACTLY:
+   *  presence-only, absent book ⇒ key omitted ⇒ every shipped money digest
+   *  byte-identical). Each fresh fingerprint rolls ONE acceptance die
+   *  (economy/sell.ts) against an anchored market rate and persists its
+   *  verdict; the fold books NO money — a verdict is market opinion, never
+   *  an invoice (the sell-offer cash-untouched law, door @a760771 twin). */
+  readonly sellOffers?: ReadonlyMap<string, SellOffer> | undefined;
+  /** Host catalog authority for the sell dice: priceKey -> market rate in
+   *  micro-USD. Where absent, the MRC of the lowest-EntityId contract with
+   *  a matching `priceKey` anchors the offer; where NEITHER exists the
+   *  offer stays UNADJUDICATED (no denominator, no dice, no roll). */
+  readonly sellMarketRates?: ReadonlyMap<string, MoneyUnit> | undefined;
   /**
    * LONG-SAVE retention (perf audit #3), OPT-IN default OFF:
    * settled-and-fully-resolved invoices (paid/written-off with no live
@@ -353,7 +372,15 @@ export type EconomyNoticeKind =
   /** §7.7 "if two changes were in-flight, the post-mortem cannot attribute
    *  a cause": the card earns nothing (and per the host-side unlocks law,
    *  no progression — the engine only raises this notice). */
-  | "postmortem-unattributed";
+  | "postmortem-unattributed"
+  /** ADR-0016 mechanic B: the market would take this sell-offer at its
+   *  anchored rate (economy/sell.ts). A VERDICT, not money — no bucket
+   *  moves, the host decides whether to sign the deal out-of-band. */
+  | "sell-accepted"
+  /** ADR-0016 mechanic B: the market passed on this offer. Reputation-
+   *  neutral v0 — a refused price is market information, not a company
+   *  failing (§5.10 has no verb for "customer said no"). */
+  | "sell-refused";
 
 /** Economy-side observations for HUD/rules (not SimEvents: types.ts owns
  *  that closed union; the orchestrator maps the ones it wants across). */
@@ -445,6 +472,10 @@ interface Working {
    *  the talk, phase 12.55 the outcomes, the ledger materializes at the
    *  first fact and rides `EconomyState.relationships` thereafter. */
   relationships: RelationshipLedger | null;
+  /** ADR-0016 mechanic B sell verdicts (economy/sell.ts): null while NOTHING
+   *  has ever adjudicated (pre-B byte-identity); step 5.5 stamps fresh
+   *  fingerprints, carried verdicts ride until an amendment re-rolls. */
+  sellVerdicts: ReadonlyMap<string, SellVerdict> | null;
   observedWrites: ObservedWrite[];
   entries: LedgerEntry[];
   events: InvoiceSettledEvent[];
@@ -526,6 +557,7 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     companyDeath: null,
     postMortemRows: [...(input.prior.postMortemLog ?? [])],
     relationships: input.prior.relationships ?? null,
+    sellVerdicts: input.prior.sellVerdicts ?? null,
     observedWrites: [],
     entries: [],
     events: [],
@@ -728,6 +760,43 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     if (outcome.kind === "lapsed") {
       settleCancellationRefunds(w, id, now, post);
       unwindBacklog(w, id, now, post);
+    }
+  }
+
+  /* 5.5 sell acceptance dice (ADR-0016 mechanic B, economy/sell.ts).
+   *  Gated on the book OR persisted verdicts (absent-while-idle: with
+   *  neither, the helper is never called and every shipped digest rides
+   *  byte-identical). Anchors resolve catalog-first, installed-base-second;
+   *  a zero gross NEVER moves — verdicts and notices only. */
+  if (input.sellOffers !== undefined || w.sellVerdicts !== null) {
+    const anchorRows: Array<{ priceKey: string; mrcMicroUsd: MoneyUnit }> = [];
+    for (const id of ids) {
+      // EntityId-sorted iteration ⇒ sellAnchorFromContracts first-wins =
+      // the lowest-EntityId keyed contract's MRC per priceKey.
+      const priceKey = w.econ.get(id)?.priceKey;
+      if (priceKey === undefined) continue;
+      const contract = contracts.get(id);
+      if (contract === undefined) continue;
+      anchorRows.push({ priceKey, mrcMicroUsd: contract.mrcMicroUsd });
+    }
+    const sellRun = adjudicateSellOffers({
+      prior: w.sellVerdicts,
+      offers: input.sellOffers,
+      marketRates: input.sellMarketRates,
+      contractAnchor: sellAnchorFromContracts(anchorRows),
+      now,
+      runSeed,
+      cfg: cfg.sell ?? DEFAULT_SELL_CONFIG,
+    });
+    w.sellVerdicts = sellRun.verdicts;
+    for (const { key, verdict } of sellRun.fresh) {
+      w.notices.push({
+        kind: verdict.accepted ? "sell-accepted" : "sell-refused",
+        contractId: asEntityId(key),
+        atBusinessMin: now,
+        causeId: asCauseId(`economy:sell:${key}:${now}`),
+        amount: verdict.offerPriceMicroUsd,
+      });
     }
   }
 
@@ -985,6 +1054,9 @@ export function runEconomyTick(input: EconomyTickIn): EconomyTickOut {
     // ADR-0016 mechanic A: the key exists iff a fact ever booked (encounter
     // or outcome) — absent-while-idle, death-key law.
     ...(w.relationships !== null ? { relationships: w.relationships } : {}),
+    // ADR-0016 mechanic B: the key exists iff a verdict was ever stamped —
+    // absent-while-idle, death-key law.
+    ...(w.sellVerdicts !== null ? { sellVerdicts: w.sellVerdicts } : {}),
   };
   return {
     state,
@@ -1545,6 +1617,12 @@ function noticeReputationKind(kind: EconomyNoticeKind): ReputationSignalKind | n
       return "chargeback";
     case "sla-credit-due":
       return "major-incident";
+    case "sell-accepted":
+    case "sell-refused":
+      // ADR-0016 mechanic B: market opinion on an offer the player priced.
+      // A refused quote is not a company failing (§5.10 has no such verb)
+      // and an accepted one signs no money — explicitly neutral, tested.
+      return null;
     default:
       return null;
   }

@@ -65,6 +65,7 @@ import type {
   EntityId,
   Fixed,
   GameState,
+  MoneyUnit,
   NegotiateBook,
   NodeRecord,
   ObservedCell,
@@ -74,6 +75,7 @@ import type {
   QosClassDef,
   RetryPolicy,
   RunSeed,
+  SellBook,
   SimMinute,
   SimTick,
   SimTimeUs,
@@ -280,6 +282,12 @@ export interface UnattendedMoneyConfig {
    *  reach it. Sparse by law — contracts without a entry register exactly
    *  as before (byte-ident records). */
   readonly priceKeys?: ReadonlyMap<EntityId, string>;
+  /** ADR-0016 mechanic B catalog authority for the sell dice (priceKey ->
+   *  market rate µ$), forwarded into every economy fold via
+   *  internal/tickFold.ts. ABSENT ⇒ offers anchor on the installed base
+   *  only (keyed contract MRC) or stay unadjudicated — key omitted per
+   *  tick ⇒ byte-ident weekends (@984759b law). */
+  readonly sellMarketRates?: ReadonlyMap<string, MoneyUnit>;
 }
 
 /** The board cast — plain structural records (hosts and tests hand data;
@@ -382,6 +390,13 @@ export interface RunUnattendedConfig {
    *  economy fold (internal/tickFold.ts owns the leg); ABSENT ⇒ key omitted
    *  ⇒ every shipped weekend digest byte-identical. */
   readonly negotiate?: NegotiateBook;
+  /** ADR-0016 mechanic B sell-offer book (door lane @a760771): embedded
+   *  post-mint exactly like `pricing`/`negotiate` and forwarded as
+   *  `EconomyTickIn.sellOffers` on every economy fold (internal/tickFold.ts
+   *  owns the leg); ABSENT ⇒ key omitted ⇒ every shipped weekend digest
+   *  byte-identical. Verdicts move NO money — the fold stamps market
+   *  opinion + notices (economy/sell.ts). */
+  readonly sell?: SellBook;
   /** §7.7 recovery engine (ADR-0012 wiring, lane @cdb2bc5): arming the
    *  driver's recovery fold — struggle detection, windows, strikes, locks
    *  and gradual-restoration throttling run inside the SIM and ride the
@@ -487,6 +502,11 @@ export interface UnattendedReport {
    *  every window closes — an armed-but-quiet weekend must still show the
    *  honest empty array, and every unarmed report stays byte-identical. */
   readonly recoveryNotices?: readonly RecoveryNotice[];
+  /** ADR-0016 mechanic B sell-verdict census (accepted / refused notices for
+   *  the whole run). Sparse: absent unless at least one verdict fired, so
+   *  every pre-sell `reportIdentity` pair stays byte-identical. Derived from
+   *  the notice stream — no second counter to drift. */
+  readonly sellVerdictCensus?: { readonly accepted: number; readonly refused: number };
 }
 
 /* ═══ per-tick facts + sampling ═══ minted in internal/tickFold.ts (the
@@ -558,11 +578,12 @@ export function mintInitialState(
      frozen — a host-side spread is the sanctioned embed point. Absent ⇒
      the SAME state object flows on (identity, not a copy — zero digest
      churn for every pre-pricing weekend). */
-  return config.pricing !== undefined || config.negotiate !== undefined
+  return config.pricing !== undefined || config.negotiate !== undefined || config.sell !== undefined
     ? Object.freeze({
         ...state,
         ...(config.pricing !== undefined ? { pricing: config.pricing } : {}),
         ...(config.negotiate !== undefined ? { negotiate: config.negotiate } : {}),
+        ...(config.sell !== undefined ? { sell: config.sell } : {}),
       })
     : state;
 }
@@ -1010,6 +1031,11 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
            mN`) inside the existing OPEX-REFUSED ×N census. Undefined
            cursor ⇒ the drafts list rides by identity (byte-identity law). */
         warmth: warmthCursor,
+        /* ADR-0016 mechanic B: the host catalog rides the fold verbatim;
+           undefined ⇒ key omitted inside the fold ⇒ sell dice anchor on the
+           installed base only (byte-identity law for every sell-absent
+           weekend — the money digests never see this leg). */
+        sellMarketRates: config.money?.sellMarketRates,
         topic: "unattended",
         dunningEngineOwned: config.money?.dunningEngineOwned ?? false,
         witness: refusalWitness,
@@ -1221,6 +1247,10 @@ function assembleReport(
 ): UnattendedReport {
   const cashEnd: bigint = econ !== null ? econ.cash.free : finalGame.cash.free;
   const sortedNotices = [...summary.notices.entries()].sort((a, b) => compareCodeUnits(a[0], b[0]));
+  /* ADR-0016 mechanic B sparse witness: derived from the same notice census
+     the report already carries — the census keys exist iff a verdict fired. */
+  const sellAccepted = summary.notices.get("sell-accepted") ?? 0;
+  const sellRefused = summary.notices.get("sell-refused") ?? 0;
   const buckets: UnattendedHourBucket[] = [];
   for (const hourKey of [...hours.keys()].sort((a, b) => a - b)) {
     buckets.push(closeHour(hours.get(hourKey) as HourAcc));
@@ -1264,6 +1294,11 @@ function assembleReport(
     /* Sparse recovery witness (see UnattendedReport.recoveryNotices): the
        WIRED flag governs, not the self-clearing state slice. */
     ...(recoveryNotices !== null ? { recoveryNotices: Object.freeze([...recoveryNotices]) } : {}),
+    /* Sparse sell-verdict witness (see UnattendedReport.sellVerdictCensus):
+       no verdict ⇒ no key ⇒ every pre-mechanic-B report byte-identical. */
+    ...(sellAccepted + sellRefused > 0
+      ? { sellVerdictCensus: Object.freeze({ accepted: sellAccepted, refused: sellRefused }) }
+      : {}),
   });
 }
 
