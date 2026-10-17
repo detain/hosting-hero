@@ -25,9 +25,11 @@ import RecoveryWatch from "./RecoveryWatch.vue";
 import AttentionCard from "./AttentionCard.vue";
 import CorpusMissionCard from "./CorpusMissionCard.vue";
 import FlavourFeed from "./FlavourFeed.vue";
+import NodeActRow from "./NodeActRow.vue";
 import CoopRoom from "./CoopRoom.vue";
 import { buildHudCandidates, formatMicroUsd, formatRunClock, hudPermanentRows, rhoDisplayOf } from "./metrics";
 import { planPromotion, toggleUserPin, type MetricCandidate } from "./promotion";
+import type { PlayerIntent } from "@hh/sim-core/types";
 import { globalExplain } from "./explainRegistry";
 import { allStatusChips } from "./statusChip";
 import { businessDaysUntil } from "./clockRibbon";
@@ -182,6 +184,24 @@ const payrollRow = computed(() => {
 });
 
 const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlots: 2 }));
+
+/* ═══════════════ §7.16 Act row — one-click emergency desk (L-HUD) ═══════════
+ * Reactivity rides the projection singleton (every ingestProjection bumps
+ * .seq), then reads the runner's post-advance TickFacts — books, hands and
+ * door events included. Submit follows the PricingDial law: hand the intent
+ * to the door (runner stamps tick+1) and step once on the SAME click, so
+ * the receipt and the book flip land together. Zero timers in this card. */
+
+const actFacts = computed(() => {
+  void projection.value?.seq; // re-evaluate on every ingested frame
+  return runner?.lastTickFacts() ?? null;
+});
+
+function submitAct(intent: PlayerIntent): void {
+  if (runner === null) return;
+  runner.submit(intent);
+  step();
+}
 </script>
 
 <template>
@@ -264,6 +284,11 @@ const sharedPlan = computed(() => planPromotion(candidates.value, { promotedSlot
         <section class="card" data-hud-optional="true" data-test="lab-corpus">
           <h4>Corpus mission — the g1 wave table through the scenario seam (proto host leg)</h4>
           <CorpusMissionCard />
+        </section>
+
+        <section class="card" data-hud-optional="true" data-test="lab-act-row">
+          <h4>Act row — §7.16 one-click emergency desk: drain · restart · isolate · shed (+ throttle/reclaim/warmth desk)</h4>
+          <NodeActRow :facts="actFacts" :submit="runner === null ? null : submitAct" />
         </section>
 
         <section class="card" data-hud-optional="true" data-test="lab-flavour">

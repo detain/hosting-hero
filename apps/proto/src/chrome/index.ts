@@ -23,6 +23,7 @@ export * from "./deathWatch";
 export * from "./pricingDial";
 export * from "./recoveryWatch";
 export * from "./flavourFeed";
+export * from "./actRow";
 export * from "./coopRoom";
 export * from "./coopRoomWire";
 export {
@@ -53,6 +54,7 @@ export { default as LossCard } from "./LossCard.vue";
 export { default as PricingDial } from "./PricingDial.vue";
 export { default as RecoveryWatch } from "./RecoveryWatch.vue";
 export { default as FlavourFeed } from "./FlavourFeed.vue";
+export { default as NodeActRow } from "./NodeActRow.vue";
 export { default as CoopRoom } from "./CoopRoom.vue";
 
 /**
