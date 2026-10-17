@@ -6,7 +6,9 @@ threads, "keep going with all of this, go with recommendations, MAX feature") wi
 max-feature approval on every thread. This record is authored at closeout AFTER the build lanes
 landed — every decision below is cited to its commit, and all numbers are disk-verified (the
 `PlayerVerb` enum carries **18** values at `24f90bc`; the refusal census is **46**, machine-pinned;
-api-verify PASSes at **1,682** names after this record's docs pass). Cross-references: ADR-0009
+api-verify PASSes at **1,682** names after this record's docs pass). **Amended the same day by a
+follow-on owner ruling: #11 — the game-balance subset of the #10 register is RATIFIED; the
+transport caps and the PROVISIONAL-B-style residue STAND (split posture).** Cross-references: ADR-0009
 (the calibration wave — its "keeps" list is what #2 below supersedes), ADR-0013 (session 3),
 ADR-0014 (session 4 — #D1(i) is the bless route #7 consumes; #D4's ceiling asymmetry is the law
 #9 mirrors), ADR-0015 (session 6 — #1's residue is #1 below, its follow-up taste-numeric grammar
@@ -225,25 +227,61 @@ signs-through-priceKey path stands — the dice decide WHETHER the market takes 
 only host-side.
 
 **#10 — THE NEW PROVISIONAL REGISTER** (this ADR discharges the "PROVISIONAL (ADR-0015 follow-up
-taste numeric)" label grammar the session-7 lanes used for post-ratify numerics; all listed sites
-carry that exact label; ratify-on-playtest is the default disposition):
+taste numeric)" label grammar the session-7 lanes used for post-ratify numerics — the register
+collects the sites however their comment phrases the label; ratify-on-playtest is the default
+disposition, and **#11 the same day RATIFIED the game-balance subset**, retiring the "PROVISIONAL
+(ADR-0015 follow-up taste numeric)" literal entirely):
 
 - **Sell acceptance ×5** (`economy/config.ts` `DEFAULT_SELL_CONFIG`): `acceptBaseBps` 7_500 ·
   `acceptCoefficientBps` 15_000 (150 % out-of-band leverage — harsher than the 150/80/50 family
   because the counterparty walks away WHOLE) · `acceptDeadBandBps` 1_000 · `acceptFloorBps` 1_000
-  · `acceptCeilingBps` 9_500 — @`24f90bc`.
+  · `acceptCeilingBps` 9_500 — @`24f90bc`. **Ratified by #11.**
 - **Warmth rate ×1** (`DEFAULT_WARMTH_CONFIG`): 25 Mµ$/slot/month — @`1efe12a`.
+  **Ratified by #11.**
 - **Relationship deltas ×11** (`DEFAULT_RELATIONSHIP_CONFIG`): the nine §1.3-cited bps deltas +
-  the ±1_000 trust band — @`5e8ce75`.
+  the ±1_000 trust band — @`5e8ce75`. **Ratified by #11.**
 - **Throttle/Restart door rows** (`intent-door.ts`): occupancy 1 / handCost 1 each, COMMIT class —
-  @`81b0589`/`fd91138` (the isolate/shield siblings already carry the same tag).
+  @`81b0589`/`fd91138` (the isolate sibling already carried the same tag; shield's rows never wore
+  one — #D2-era, ratified by class). **Ratified by #11 — which swept the tag's whole verb family.**
 - **Transport taste rows** (`tools/transport`): log-budget ceilings, delay/permutation knob ranges,
-  catch-up page size — @`0da14b8`.
+  catch-up page size — @`0da14b8`. **STANDS PROVISIONAL (the #11 split ruling — engineering caps,
+  not game balance).**
 - (Adjacent, its OWN grammar: `AFFIX_COST_MULTIPLIER_BPS`'s 17 values — `PROVISIONAL (2026-10-17,
   owner ratify-on-playtest)`, pinned in the API-REFERENCE versus row.)
 
 Changing any register value is an owner decision event, not a tuning tweak — the ADR-0015 #1
 discipline, extended to the wave-21 additions.
+
+**#11 — GAME-BALANCE SPLIT RATIFY (same-day follow-on ruling, 2026-10-17).** The owner RATIFIED
+the game-balance subset of the #10 register in **split posture**: the transport engineering caps
+are not game balance and STAND PROVISIONAL. Every ratified site flips its comment label to the one
+grep-able literal `RATIFIED 2026-10-17 (ADR-0016 #11)` — a comment/text sweep; machine values are
+byte-identical (strip-comment token diff proves zero code change; the full battery re-ran green on
+the flipped labels alone). The enumeration, in the #10 register's own terms:
+
+- **Sell acceptance ×5** (`economy/config.ts` `DEFAULT_SELL_CONFIG`): 7_500 · 15_000 · 1_000 ·
+  1_000 · 9_500 bps — the never-certain two-domain law survives ratification UNCHANGED in shape
+  (#D4's asymmetry is the law, the number is the tune).
+- **Warmth rate ×1** (`DEFAULT_WARMTH_CONFIG`): 25 Mµ$/slot/month.
+- **Relationship deltas ×11** (`DEFAULT_RELATIONSHIP_CONFIG`): the nine §1.3-cited bps accruals +
+  the ±1_000 trust band.
+- **Door occupancy/hand-cost rows ×8 verbs** (`pipeline/intent-door.ts`): scale 1/1 · maintain 2/1 ·
+  schedule 1/1 · sell 1/1 · negotiate 2/1 · isolate 1/1 · throttle 1/1 · restart 1/1 — the two rows
+  #10 registered plus their six ADR-0015 siblings ("the six verbs' occupancy/hand-cost rows",
+  ADR-0015 #2), which the same `post-ratify new numeric` grammar bound into one family. The
+  occupancy/handCost VALUES are what is ratified; the class assignments they encode (COMMIT vs
+  ATTENDANCE) were already card law.
+
+**What STANDS PROVISIONAL:** the `tools/transport` taste rows (`MAX_FRAME_BYTES` 65_536,
+`DEFAULT_LOG_BUDGET` 10_000, default `maxPageSize` 64 — their `transportLaw.test.ts` label greps
+keep them honestly tagged by construction), the `AFFIX_COST_MULTIPLIER_BPS` values (their own
+2026-10-17 ratify-on-playtest grammar), the `NegotiationConfig` tone/concession bumps,
+`PostMortemConfig.maxAttributableChanges` (the R3b skip stands), the coverage-row taste, and the
+legacy `PROVISIONAL-B` content residue (27 waves-slice + 16 registry-core sites — the #1 residue
+ruling). **Label-grammar discharge (reviewer Minor-1):** with #11 the "PROVISIONAL (ADR-0015
+follow-up taste numeric)" literal is RETIRED — no live source or doc site wears it anymore; it
+survives only as the historical label this register describes. Changing a ratified #11 numeric is
+now a law-change event, never a tuning tweak — the ADR-0015 #1 discipline, unbroken.
 
 ## Consequences
 

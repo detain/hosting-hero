@@ -578,12 +578,12 @@ describe("mechanic B contracts pinned in source", () => {
     const sellSource = readFileSync(fileURLToPath(new URL("../sell.ts", import.meta.url)), "utf8");
     expect(sellSource).toContain("priceKey");
   });
-  it("defaultEconomyConfig ships the sell book; all five PROVISIONAL taste labels intact", () => {
+  it("defaultEconomyConfig ships the sell book; all five ratified labels (ADR-0016 #11) intact", () => {
     const cfg = defaultEconomyConfig();
     expect(cfg.sell).toBe(DEFAULT_SELL_CONFIG); // shared frozen default (postMortem pattern)
     const configSource = readFileSync(fileURLToPath(new URL("../config.ts", import.meta.url)), "utf8");
     const labels = [
-      ...configSource.matchAll(/accept\w+: .*PROVISIONAL \(ADR-0015 follow-up taste numeric\)/g),
+      ...configSource.matchAll(/accept\w+: .*RATIFIED 2026-10-17 \(ADR-0016 #11\)/g),
     ];
     expect(labels).toHaveLength(5);
   });

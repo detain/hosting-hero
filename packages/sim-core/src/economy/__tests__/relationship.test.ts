@@ -14,7 +14,7 @@
  * rapport +25 / firm +10 / legal −15 / renewed +50 / lapsed −80 /
  * dunning-stage −100 / suspended −100 / dunning-recovered +50 /
  * invoice-paid-after-stage +50 / churned-voluntary −200 / written-off −400,
- * clamped to [−1_000, +1_000] — ALL PROVISIONAL taste numerics.
+ * clamped to [−1_000, +1_000] — RATIFIED 2026-10-17 (ADR-0016 #11).
  */
 
 import { readFileSync } from "node:fs";

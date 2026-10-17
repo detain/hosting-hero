@@ -375,56 +375,55 @@ export const DEFAULT_INTENT_OCCUPANCY_TICKS: Readonly<Record<PlayerVerb, number>
   [PlayerVerb.Shield]: 1,
   // ADR-0015 (Scale 1/5): booking reserved warmth is the same desk decision
   // class — COMMIT, 1 tick. The warmth lands at the step-5/6 capacity read
-  // (pipeline/defaults.ts); the door only writes the book. PROVISIONAL taste
-  // (post-ratify new numeric, 2026-10-16) — occupancy pinned red on drift.
+  // (pipeline/defaults.ts); the door only writes the book.
+  // RATIFIED 2026-10-17 (ADR-0016 #11) — occupancy pinned red on drift.
   [PlayerVerb.ScaleNode]: 1,
   // ADR-0015 (Maintain 2/5): booking attendance is an on-site task, not a
   // desk tap — the ATTENDANCE class (2 ticks, same window as
   // disconnect-drain/shed-load/communicate). The veto lands at step 9
   // (pipeline/defaults.ts `maintainInForce`); the door only writes the book.
-  // PROVISIONAL taste (post-ratify new numeric, 2026-10-16) — occupancy
-  // pinned red on drift.
+  // RATIFIED 2026-10-17 (ADR-0016 #11) — occupancy pinned red on drift.
   [PlayerVerb.MaintainNode]: 2,
   // ADR-0015 (Schedule 2/5): arming a calendar band is a TAP — 1 tick. The
   // 26-hour-disaster law (hosting_game.md:1964: a mis-set window is how a
   // night becomes a week) demands cheap re-arm, so the correction must never
   // cost attendance-grade time. The deadline lands at step 9; the door only
-  // writes the book. PROVISIONAL taste (post-ratify new numeric, 2026-10-16)
-  // — occupancy pinned red on drift.
+  // writes the book. RATIFIED 2026-10-17 (ADR-0016 #11) — occupancy pinned
+  // red on drift.
   [PlayerVerb.ScheduleWindow]: 1,
   // ADR-0015 (Sell 3/5): signing an offer is a desk decision — the COMMIT
-  // class (1 tick), same hand cost. PROVISIONAL taste (post-ratify new
-  // numeric): selling space/latency is a contract tap like a price order.
+  // class (1 tick), same hand cost. RATIFIED 2026-10-17 (ADR-0016 #11):
+  // selling space/latency is a contract tap like a price order.
   // The door only writes the book; the sale closes host-side through the
   // existing economy priceKey seam (OD-24(a) part-1 posture).
   [PlayerVerb.SellOffer]: 1,
   // ADR-0015 (Negotiate 5/5): a negotiation is the card's combat — "a
   // ticket/conversation system with a tenant" (§1.3 "Amps and Aisles",
   // hosting_game.md:1637) — conversation costs ATTENDANCE, so it joins the
-  // communicate cohort (2 ticks), not the desk-tap COMMIT class. PROVISIONAL
-  // taste numeric (ADR-0015 mechanics authorization), pinned red on drift.
+  // communicate cohort (2 ticks), not the desk-tap COMMIT class.
+  // RATIFIED 2026-10-17 (ADR-0016 #11) — occupancy pinned red on drift.
   [PlayerVerb.NegotiateTerms]: 2,
   // ADR-0015 session-6 roster extension (Isolate): the §7.16 Act-row law
   // says ONE-CLICK ("an 'Act' row of at most four one-click emergency
   // verbs… drain, restart, isolate, shed") ⇒ the COMMIT class (1 tick),
-  // same window as shield-node/adjust-price. PROVISIONAL taste (post-ratify
-  // new numeric, 2026-10-16) — occupancy pinned red on drift. The fence
-  // lands at step 5 (pipeline/isolation.ts + defaults.ts §(c)); the door
-  // only writes the book.
+  // same window as shield-node/adjust-price.
+  // RATIFIED 2026-10-17 (ADR-0016 #11) — occupancy pinned red on drift. The
+  // fence lands at step 5 (pipeline/isolation.ts + defaults.ts §(c)); the
+  // door only writes the book.
   [PlayerVerb.IsolateNode]: 1,
   // ADR-0016 successor program (Throttle): the §7.16 Act-row law covers this
   // one too — dropping a capacity cut is the same one-click emergency dial as
   // dropping a fence ⇒ the COMMIT class (1 tick), same window as
-  // isolate-node/shield-node. PROVISIONAL taste (post-ratify new numeric,
-  // 2026-10-17) — occupancy pinned red on drift. The cut lands at step 5
+  // isolate-node/shield-node. RATIFIED 2026-10-17 (ADR-0016 #11) —
+  // occupancy pinned red on drift. The cut lands at step 5
   // (pipeline/throttle.ts + defaults.ts §(c)); the door only writes the book.
   [PlayerVerb.ThrottleNode]: 1,
   // ADR-0016 successor program (Restart): the §7.16 Act-row one-click law
   // covers the last unbuilt row verb ⇒ the COMMIT class (1 tick), same
   // window as isolate-node/throttle-node; §7.5's reference durations
-  // (~:26741: "restart a service **20s**") price the desk tap. PROVISIONAL
-  // taste (post-ratify new numeric, 2026-10-17) — occupancy pinned red on
-  // drift. The reboot lands at step 5 (pipeline/restart.ts + defaults.ts
+  // (~:26741: "restart a service **20s**") price the desk tap.
+  // RATIFIED 2026-10-17 (ADR-0016 #11) — occupancy pinned red on drift. The
+  // reboot lands at step 5 (pipeline/restart.ts + defaults.ts
   // §(c)/(c′)); the door only writes the book.
   [PlayerVerb.RestartNode]: 1,
 });
@@ -441,32 +440,38 @@ export const DEFAULT_INTENT_HAND_COST: Readonly<Record<PlayerVerb, number>> = Ob
   [PlayerVerb.AdjustPrice]: 1,
   [PlayerVerb.Shield]: 1,
   // ADR-0015 (Scale 1/5): one desk hand to book warmth — same cost as the
-  // other COMMIT-class verbs (PROVISIONAL taste, occupancy table above).
+  // other COMMIT-class verbs — RATIFIED 2026-10-17 (ADR-0016 #11); see the
+  // occupancy table above.
   [PlayerVerb.ScaleNode]: 1,
   // ADR-0015 (Maintain 2/5): one hand to book attendance (the attendance
-  // shows in the 2-tick occupancy, occupancy table above; PROVISIONAL taste).
+  // shows in the 2-tick occupancy, occupancy table above).
+  // RATIFIED 2026-10-17 (ADR-0016 #11).
   [PlayerVerb.MaintainNode]: 1,
   // ADR-0015 (Schedule 2/5): one hand to arm a calendar band — same cost as
-  // the other COMMIT-class verbs (PROVISIONAL taste, occupancy table above).
+  // the other COMMIT-class verbs — RATIFIED 2026-10-17 (ADR-0016 #11); see
+  // the occupancy table above.
   [PlayerVerb.ScheduleWindow]: 1,
   // ADR-0015 (Sell 3/5): one desk hand to sign an offer — same cost as the
-  // other COMMIT-class verbs (PROVISIONAL taste, occupancy table above).
+  // other COMMIT-class verbs — RATIFIED 2026-10-17 (ADR-0016 #11); see the
+  // occupancy table above.
   [PlayerVerb.SellOffer]: 1,
   // ADR-0015 (Negotiate 5/5): one hand to open the conversation (the
   // attendance shows in the 2-tick occupancy, occupancy table above).
   [PlayerVerb.NegotiateTerms]: 1,
   // ADR-0015 session-6 (Isolate): one desk hand to drop a fence — same cost
-  // as the other COMMIT-class verbs (PROVISIONAL taste, occupancy table
-  // above; the one-click Act-row law makes it a tap, not an attendance).
+  // as the other COMMIT-class verbs (occupancy table above; the one-click
+  // Act-row law makes it a tap, not an attendance).
+  // RATIFIED 2026-10-17 (ADR-0016 #11).
   [PlayerVerb.IsolateNode]: 1,
   // ADR-0016 (Throttle): one desk hand to drop a capacity cut — same cost as
-  // the other COMMIT-class verbs (PROVISIONAL taste, occupancy table above;
-  // the one-click Act-row law makes it a tap, not an attendance).
+  // the other COMMIT-class verbs (occupancy table above; the one-click
+  // Act-row law makes it a tap, not an attendance).
+  // RATIFIED 2026-10-17 (ADR-0016 #11).
   [PlayerVerb.ThrottleNode]: 1,
   // ADR-0016 (Restart): one desk hand to pull the reboot lever — same cost
-  // as the other COMMIT-class verbs (PROVISIONAL taste, occupancy table
-  // above; the one-click Act-row law makes it a tap, not an attendance;
-  // §7.5: "restart a service 20s").
+  // as the other COMMIT-class verbs (occupancy table above; the one-click
+  // Act-row law makes it a tap, not an attendance).
+  // §7.5: "restart a service 20s". RATIFIED 2026-10-17 (ADR-0016 #11).
   [PlayerVerb.RestartNode]: 1,
 });
 

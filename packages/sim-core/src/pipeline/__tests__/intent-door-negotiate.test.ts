@@ -37,8 +37,8 @@
  *  - the ONLY state effect is one frozen entry in the OPTIONAL
  *    `GameState.negotiate` book; cash/units/nodes/lanes NEVER move;
  *  - occupancy/hand cost: 1 hand, 2 ticks (ATTENDANCE class — a
- *    conversation costs time, the communicate sibling; PROVISIONAL taste
- *    numeric, post-ratify, pinned red on drift);
+ *    conversation costs time, the communicate sibling);
+ *    RATIFIED 2026-10-17 (ADR-0016 #11), post-ratify, pinned red on drift;
  *  - M2 wire wall: all six arg keys are STRUCTURAL (missing/wrong type
  *    throws IntentDoorError); the `bigint-or-null` carrier refuses
  *    string/number garbage but takes the EXPLICIT null sentinel;
@@ -217,7 +217,7 @@ describe("negotiate-terms — execution and the term book", () => {
     );
   });
 
-  it("attendance-class occupancy ladder: 1 hand, 2 ticks, busyUntil = tick + 2 (PROVISIONAL taste, pinned)", () => {
+  it("attendance-class occupancy ladder: 1 hand, 2 ticks, busyUntil = tick + 2 (RATIFIED 2026-10-17 (ADR-0016 #11), pinned)", () => {
     expect(DEFAULT_INTENT_HAND_COST[PlayerVerb.NegotiateTerms]).toBe(1);
     expect(DEFAULT_INTENT_OCCUPANCY_TICKS[PlayerVerb.NegotiateTerms]).toBe(2);
     const result = applyIntentDoor(baseState(1), ctx(5n), [ext(5n, 1, ARM)]);

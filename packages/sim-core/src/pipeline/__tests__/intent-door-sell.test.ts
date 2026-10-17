@@ -35,8 +35,8 @@
  *    falsifiable core: an executed offer leaves freeCashMicroUsd identical
  *    armed-vs-unarmed on the same seed (money moves ONLY via the host
  *    reading the book — proven live below on the driver);
- *  - occupancy/hand cost: 1/1 desk decision (COMMIT class — PROVISIONAL
- *    taste numeric, post-ratify, pinned red on drift);
+ *  - occupancy/hand cost: 1/1 desk decision (COMMIT class);
+ *    RATIFIED 2026-10-17 (ADR-0016 #11), post-ratify, pinned red on drift;
  *  - M2 wire wall: all five arg keys are STRUCTURAL (missing/wrong type
  *    throws IntentDoorError); the bigint carrier refuses string/number
  *    garbage at parse; the explicit `null` sentinel is the only "now" form;
@@ -211,7 +211,7 @@ describe("sell-offer — execution and the offer book", () => {
     );
   });
 
-  it("commit-class occupancy ladder: 1 hand, 1 tick, busyUntil = tick + 1 (PROVISIONAL taste, pinned)", () => {
+  it("commit-class occupancy ladder: 1 hand, 1 tick, busyUntil = tick + 1 (RATIFIED 2026-10-17 (ADR-0016 #11), pinned)", () => {
     expect(DEFAULT_INTENT_HAND_COST[PlayerVerb.SellOffer]).toBe(1);
     expect(DEFAULT_INTENT_OCCUPANCY_TICKS[PlayerVerb.SellOffer]).toBe(1);
     const result = applyIntentDoor(baseState(1), ctx(5n), [ext(5n, 1, ARM)]);

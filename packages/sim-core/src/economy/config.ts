@@ -363,63 +363,63 @@ export interface NegotiationConfig {
  *  reads `cfg.relationships ?? DEFAULT_RELATIONSHIP_CONFIG`. */
 export interface RelationshipConfig {
   /** Trust earned per booked rapport negotiation encounter.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly toneRapportBps: bigint;
   /** Trust earned per booked firm negotiation encounter — the arithmetic
    *  half-works on the meter too.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly toneFirmBps: bigint;
   /** Trust COST per booked legal negotiation encounter (stored as the
    *  magnitude; relationship.ts applies it NEGATIVE — "each with a legal
    *  and reputational cost", §1.3 Enforce ladder).
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly toneLegalBps: bigint;
   /** Trust earned when the tenant renews at the cliff.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly renewedBps: bigint;
   /** Trust burned when the tenant lapses at the cliff.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly lapsedBps: bigint;
   /** Trust burned per dunning stage entry; `suspended` rides this same
    *  magnitude (the spec's dunning-stage/suspended slash group — a
    *  suspension IS the ladder's hardest stage).
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly dunningStageBps: bigint;
   /** Trust repaired by a dunning recovery; `invoice-paid` (after-stage)
    *  rides this same magnitude (the dunning-recovered/invoice-paid-after-
    *  stage slash group).
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly dunningRecoveredBps: bigint;
   /** Heavy trust burn when the account is written off.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly writtenOffBps: bigint;
   /** Heavy trust burn when the logo leaves on its own.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly voluntaryChurnBps: bigint;
   /** Inclusive clamp floor of the signed reading.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly trustFloorBps: bigint;
   /** Inclusive clamp ceiling of the signed reading — a ±10-point goodwill
    *  band around 1.0, reachable by sustained talking (40 rapport
    *  encounters) or by bullying (a write-off alone is 400 of the 1000).
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly trustCeilingBps: bigint;
 }
 
 /** The shipped default trust book — shared frozen const, single source,
  *  never restated inline (the `DEFAULT_POST_MORTEM_CONFIG` pattern). */
 export const DEFAULT_RELATIONSHIP_CONFIG: RelationshipConfig = Object.freeze({
-  toneRapportBps: 25n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — goodwill accrues gently
-  toneFirmBps: 10n, // PROVISIONAL (ADR-0015 follow-up taste numeric)
-  toneLegalBps: 15n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — applied NEGATIVE (the card's cost)
-  renewedBps: 50n, // PROVISIONAL (ADR-0015 follow-up taste numeric)
-  lapsedBps: 80n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — leaving stings more than staying pays
-  dunningStageBps: 100n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — the shared stage/suspension damage rung
-  dunningRecoveredBps: 50n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — the shared recovery/paid-after-stage repair rung
-  writtenOffBps: 400n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — heavy
-  voluntaryChurnBps: 200n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — heavy
-  trustFloorBps: -1_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric)
-  trustCeilingBps: 1_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric)
+  toneRapportBps: 25n, // RATIFIED 2026-10-17 (ADR-0016 #11) — goodwill accrues gently
+  toneFirmBps: 10n, // RATIFIED 2026-10-17 (ADR-0016 #11)
+  toneLegalBps: 15n, // RATIFIED 2026-10-17 (ADR-0016 #11) — applied NEGATIVE (the card's cost)
+  renewedBps: 50n, // RATIFIED 2026-10-17 (ADR-0016 #11)
+  lapsedBps: 80n, // RATIFIED 2026-10-17 (ADR-0016 #11) — leaving stings more than staying pays
+  dunningStageBps: 100n, // RATIFIED 2026-10-17 (ADR-0016 #11) — the shared stage/suspension damage rung
+  dunningRecoveredBps: 50n, // RATIFIED 2026-10-17 (ADR-0016 #11) — the shared recovery/paid-after-stage repair rung
+  writtenOffBps: 400n, // RATIFIED 2026-10-17 (ADR-0016 #11) — heavy
+  voluntaryChurnBps: 200n, // RATIFIED 2026-10-17 (ADR-0016 #11) — heavy
+  trustFloorBps: -1_000n, // RATIFIED 2026-10-17 (ADR-0016 #11)
+  trustCeilingBps: 1_000n, // RATIFIED 2026-10-17 (ADR-0016 #11)
 });
 
 /* ─────────────── scale warmth billing (ADR-0016 mechanic C) ────────────── */
@@ -441,7 +441,7 @@ export interface WarmthConfig {
   /** Micro-USD charged per in-force reserved slot per business month
    *  (25_000_000n = $25 per warm slot per month — a rack-slot rental
    *  order of magnitude, the doc's §6.4 opex register style).
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly rateMicroUsdPerSlotMonth: bigint;
 }
 
@@ -449,7 +449,7 @@ export interface WarmthConfig {
  *  host never names `cfg.warmth` (the `DEFAULT_POST_MORTEM_CONFIG`
  *  pattern: shared frozen const, single source, never restated inline). */
 export const DEFAULT_WARMTH_CONFIG: WarmthConfig = Object.freeze({
-  rateMicroUsdPerSlotMonth: 25_000_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — $25/slot/month
+  rateMicroUsdPerSlotMonth: 25_000_000n, // RATIFIED 2026-10-17 (ADR-0016 #11) — $25/slot/month
 });
 
 /* ─────────────── blameless post-mortem filing gate (§7.7, g21) ─────────── */
@@ -488,32 +488,32 @@ export const DEFAULT_POST_MORTEM_CONFIG: PostMortemConfig = Object.freeze({
  *  literals); the fold reads `cfg.sell ?? DEFAULT_SELL_CONFIG`. */
 export interface SellConfig {
   /** Acceptance at-market (inside the dead band), basis points.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly acceptBaseBps: bigint;
   /** bps of acceptance lost per 10,000 bps of out-of-band price deviation
    *  (150% leverage — harsher than churn's 150/80/50 family because the
    *  counterparty here walks away whole).
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly acceptCoefficientBps: bigint;
   /** Inclusive no-move band around the anchor, bps — elasticity twin.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly acceptDeadBandBps: bigint;
   /** Never hopeless: a bargain still cannot reach certainty-of-zero.
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly acceptFloorBps: bigint;
   /** Never certain: strictly below BPS_DEN (ADR-0014 #D4 asymmetry law).
-   *  PROVISIONAL (ADR-0015 follow-up taste numeric). */
+   *  RATIFIED 2026-10-17 (ADR-0016 #11). */
   readonly acceptCeilingBps: bigint;
 }
 
 /** The shipped default sell book — the fold reads `cfg.sell ??
  *  DEFAULT_SELL_CONFIG` (the `DEFAULT_POST_MORTEM_CONFIG` pattern). */
 export const DEFAULT_SELL_CONFIG: SellConfig = Object.freeze({
-  acceptBaseBps: 7_500n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — at-market offers close three-quarters of the time
-  acceptCoefficientBps: 15_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — 150% out-of-band leverage
-  acceptDeadBandBps: 1_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — ±10% inertia, pricing.deadBandBps twin
-  acceptFloorBps: 1_000n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — never hopeless
-  acceptCeilingBps: 9_500n, // PROVISIONAL (ADR-0015 follow-up taste numeric) — NEVER certain (ADR-0014 #D4 two-domain law)
+  acceptBaseBps: 7_500n, // RATIFIED 2026-10-17 (ADR-0016 #11) — at-market offers close three-quarters of the time
+  acceptCoefficientBps: 15_000n, // RATIFIED 2026-10-17 (ADR-0016 #11) — 150% out-of-band leverage
+  acceptDeadBandBps: 1_000n, // RATIFIED 2026-10-17 (ADR-0016 #11) — ±10% inertia, pricing.deadBandBps twin
+  acceptFloorBps: 1_000n, // RATIFIED 2026-10-17 (ADR-0016 #11) — never hopeless
+  acceptCeilingBps: 9_500n, // RATIFIED 2026-10-17 (ADR-0016 #11) — NEVER certain (ADR-0014 #D4 two-domain law)
 });
 
 /* ─────────────────────────────── root config ──────────────────────────── */
