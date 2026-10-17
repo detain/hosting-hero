@@ -94,14 +94,14 @@ describe("FlavourFeed.vue", () => {
     w.unmount();
   });
 
-  it("every chip SPEAKS since #D5 — forum rides the rail enabled with 9 lines", async () => {
+  it("every chip SPEAKS since #D5 — forum rides the rail enabled with 11 lines", async () => {
     const w = mount(FlavourFeed);
     // the widening brought slot-free forum threads from the type packs; no
     // chip renders dead any more (the locked-button branch stays law for a
     // future bank whose root ships slots on everything)
     for (const [root, lines] of [
-      ["press", 3],
-      ["forum", 9],
+      ["press", 4],
+      ["forum", 11],
       ["chatter", 19],
       ["ticket", 54],
     ] as const) {

@@ -12,7 +12,7 @@
  * `wireIntentToPlayerIntent` in the codec, E2b).
  *
  * Content arrives as `?raw` build-time strings (the corpusMission /
- * coverage-grid pattern: vite embeds, zero fs in any thread). All TWELVE
+ * coverage-grid pattern: vite embeds, zero fs in any thread). All THIRTEEN
  * shipped g1 slices are wired, each paired with the MATCHING type bundle for
  * the invitation law; the wire names a table by its shipped slice identity —
  * the JSON's own `type` minus the `official:` prefix — drift-pinned against
@@ -45,6 +45,7 @@ import bundleExchangeColoRaw from "../../../../packages/content/types/exchange-c
 import bundleGameServersRaw from "../../../../packages/content/types/game-servers.json?raw";
 import bundleMailHostingRaw from "../../../../packages/content/types/mail-hosting.json?raw";
 import bundleObjectStorageRaw from "../../../../packages/content/types/object-storage.json?raw";
+import bundleObservabilityRaw from "../../../../packages/content/types/observability.json?raw";
 import bundleServerlessRaw from "../../../../packages/content/types/serverless.json?raw";
 import bundleSharedWebRaw from "../../../../packages/content/types/shared-web.json?raw";
 import bundleTrunkGroupRaw from "../../../../packages/content/types/trunk-group-voip.json?raw";
@@ -57,6 +58,7 @@ import sliceExchangeColoRaw from "../../../../packages/content/waves/g1-exchange
 import sliceGameServersRaw from "../../../../packages/content/waves/g1-game-servers-first-quarter.json?raw";
 import sliceMailHostingRaw from "../../../../packages/content/waves/g1-mail-hosting-first-quarter.json?raw";
 import sliceObjectStorageRaw from "../../../../packages/content/waves/g1-object-storage-first-quarter.json?raw";
+import sliceObservabilityRaw from "../../../../packages/content/waves/g1-observability-first-quarter.json?raw";
 import sliceServerlessRaw from "../../../../packages/content/waves/g1-serverless-first-quarter.json?raw";
 import sliceSharedWebRaw from "../../../../packages/content/waves/g1-shared-web-first-quarter.json?raw";
 import sliceTrunkGroupRaw from "../../../../packages/content/waves/g1-trunk-group-first-quarter.json?raw";
@@ -143,6 +145,14 @@ const CORPUS_TABLES: Readonly<Record<CorpusTableId, CorpusTableEntry>> = Object.
     sliceStem: "g1-dbaas-first-quarter",
     sliceRaw: sliceDbaasRaw,
     bundleRaw: bundleDbaasRaw,
+  }),
+  // The monitoring card (type 13, "Who Watches" / "Cardinality") — Diagnose
+  // lineage via the ADR-0014 #D1(i) prose-implication bless; additive-only
+  // join per the content-is-authority drift law.
+  observability: Object.freeze({
+    sliceStem: "g1-observability-first-quarter",
+    sliceRaw: sliceObservabilityRaw,
+    bundleRaw: bundleObservabilityRaw,
   }),
 });
 

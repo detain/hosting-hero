@@ -15,7 +15,7 @@ import {
 } from "../packStore.ts";
 
 describe("i18n/packStore · loads the shipped packs through the loader boundary", () => {
-  it("all twelve disk packs parse at init, frozen, ids exact (ADR-0014 #D5)", () => {
+  it("all thirteen disk packs parse at init, frozen, ids exact (ADR-0014 #D5)", () => {
     expect([...PACK_IDS]).toEqual([
       "shared-web",
       "game",
@@ -27,6 +27,7 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
       "exchange-colo",
       "mail-hosting",
       "object-storage",
+      "observability",
       "serverless",
       "trunk-group-voip",
     ]);
@@ -55,8 +56,9 @@ describe("i18n/packStore · loads the shipped packs through the loader boundary"
       packOf("backup-archival").decision.size + packOf("backup-archival").flavour.size,
     ).toBe(66);
     expect(packOf("dbaas").decision.size + packOf("dbaas").flavour.size).toBe(66);
-    // roster total: 844 templates across the twelve packs
-    expect(PACK_IDS.reduce((n, id) => n + packOf(id).decision.size + packOf(id).flavour.size, 0)).toBe(844);
+    expect(packOf("observability").decision.size + packOf("observability").flavour.size).toBe(66);
+    // roster total: 910 templates across the thirteen packs
+    expect(PACK_IDS.reduce((n, id) => n + packOf(id).decision.size + packOf(id).flavour.size, 0)).toBe(910);
   });
 
   it("t() resolves a plain decision template with slot fill", () => {

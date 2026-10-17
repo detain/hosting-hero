@@ -2,9 +2,9 @@
  * i18n · pack store — the proto UI's copy layer over the shipped grammar packs.
  *
  * §9.11's "adding a type is a data task" proved end-to-end in the browser:
- * the SAME packs packages/content/script/validate.mjs keeps — ALL TWELVE on
- * disk (844 templates: shared-web 103, trunk-group-voip 69, exchange-colo
- * 68, serverless 68, colo 68, object-storage 67, backup-archival 66, dbaas 66, dedicated 66, dns-hosting
+ * the SAME packs packages/content/script/validate.mjs keeps — ALL THIRTEEN on
+ * disk (910 templates: shared-web 103, trunk-group-voip 69, exchange-colo
+ * 68, serverless 68, colo 68, object-storage 67, backup-archival 66, dbaas 66, dedicated 66, observability 66, dns-hosting
  * 65, game 75, mail-hosting 63; widened by ADR-0014 #D5) — are parsed at module init
  * through the loader's boundary
  * (`loadI18nPack` — already tested in sim-core; this file is a thin, loud
@@ -38,6 +38,7 @@ import dnsHostingWire from "../../../../packages/content/packs/dns-hosting.i18n.
 import exchangeColoWire from "../../../../packages/content/packs/exchange-colo.i18n.json?raw";
 import mailHostingWire from "../../../../packages/content/packs/mail-hosting.i18n.json?raw";
 import objectStorageWire from "../../../../packages/content/packs/object-storage.i18n.json?raw";
+import observabilityWire from "../../../../packages/content/packs/observability.i18n.json?raw";
 import serverlessWire from "../../../../packages/content/packs/serverless.i18n.json?raw";
 import trunkGroupVoipWire from "../../../../packages/content/packs/trunk-group-voip.i18n.json?raw";
 import { getEra } from "./eraState.ts";
@@ -52,7 +53,7 @@ import {
 
 /** Every shipped pack, by its short consumer-facing id (ADR-0014 #D5: the
  *  roster is the full disk truth — the two baseline packs keep their leading
- *  order, the ten type packs follow code-unit sorted). */
+ *  order, the eleven type packs follow code-unit sorted). */
 export type PackId =
   | "shared-web"
   | "game"
@@ -64,6 +65,7 @@ export type PackId =
   | "exchange-colo"
   | "mail-hosting"
   | "object-storage"
+  | "observability"
   | "serverless"
   | "trunk-group-voip";
 
@@ -78,6 +80,7 @@ export const PACK_IDS: readonly PackId[] = Object.freeze([
   "exchange-colo",
   "mail-hosting",
   "object-storage",
+  "observability",
   "serverless",
   "trunk-group-voip",
 ] as const);
@@ -99,6 +102,7 @@ const PARSED: Readonly<Record<PackId, LoadedI18nPack>> = Object.freeze({
   "exchange-colo": loadI18nPack(JSON.parse(exchangeColoWire)),
   "mail-hosting": loadI18nPack(JSON.parse(mailHostingWire)),
   "object-storage": loadI18nPack(JSON.parse(objectStorageWire)),
+  observability: loadI18nPack(JSON.parse(observabilityWire)),
   serverless: loadI18nPack(JSON.parse(serverlessWire)),
   "trunk-group-voip": loadI18nPack(JSON.parse(trunkGroupVoipWire)),
 } satisfies Record<PackId, LoadedI18nPack>);

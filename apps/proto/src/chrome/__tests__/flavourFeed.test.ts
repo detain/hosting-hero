@@ -2,8 +2,8 @@
  * Front-of-House flavour feed — pure law pins.
  *
  * Proves the four header laws: the pool is CLOSED to slot-free flavour keys
- * of ALL TEN registered packs since ADR-0014 #D5 (colo joined the roster at
- * the type-10 landing — its 17 slot-free lines are the blessed pool re-roll; decision keys unreachable,
+ * of ALL THIRTEEN registered packs since ADR-0014 #D5 (the roster grew pack by
+ * pack with the type cards — observability's 19 slot-free lines are the thirteenth-pack re-roll; decision keys unreachable,
  * the root wall drift-pinned against the loader's private FLAVOUR_ROOTS
  * literal, recoveryWatch's RECOVERY_WATCH_KINDS precedent); order is code-unit
  * stable; selection is deterministic per (seed, tick) with an
@@ -61,15 +61,15 @@ describe("flavourFeed · pool closure", () => {
       // keyed (packId, key), so the guard is per-entry, not global-keyed
       expect(packOf(entry.packId).decision.has(entry.key), `decision key '${entry.key}' in the feed`).toBe(false);
     }
-    // anti-vacuity: the twelve decision maps are real, this test has teeth
+    // anti-vacuity: the thirteen decision maps are real, this test has teeth
     expect(decisionKeys.size).toBeGreaterThan(150);
   });
 
-  it("the #D5 pool census: 233 entries / 187 distinct keys (disk truth)", () => {
-    // re-derived empirically from the twelve registered packs — entries count
+  it("the #D5 pool census: 252 entries / 202 distinct keys (disk truth)", () => {
+    // re-derived empirically from the thirteen registered packs — entries count
     // the (packId, key) pairs, distinct keys collapse the byte-ident twins
-    expect(POOL.length).toBe(233);
-    expect(new Set(POOL.map((e) => e.key)).size).toBe(187);
+    expect(POOL.length).toBe(252);
+    expect(new Set(POOL.map((e) => e.key)).size).toBe(202);
     // the widening moved every entry count EXCEPT the trio of baseline-only
     // loading tips: slot-free flavour per pack (sorted code-unit by packId)
     const perPack = new Map<PackId, number>();
@@ -84,6 +84,7 @@ describe("flavourFeed · pool closure", () => {
       ["game", 22],
       ["mail-hosting", 20],
       ["object-storage", 18],
+      ["observability", 19],
       ["serverless", 17],
       ["shared-web", 38],
       ["trunk-group-voip", 19],
@@ -116,10 +117,10 @@ describe("flavourFeed · pool closure", () => {
     );
     expect(sorted).toStrictEqual([...POOL]);
     // the (key,packId) pair is a genuine total order: since #D5 the four
-    // vendor replies ship slot-free in ALL TWELVE packs byte-identical, and the
+    // vendor replies ship slot-free in ALL THIRTEEN packs byte-identical, and the
     // two loading tips coexist as game+shared-web twins
     const firmware = POOL.filter((e) => e.key === "vendor.reply.firmware");
-    expect(firmware.length).toBe(12);
+    expect(firmware.length).toBe(13);
     expect(firmware.map((e) => e.packId)).toEqual(
       [...firmware.map((e) => e.packId)].sort(compareCodeUnits),
     );
@@ -278,11 +279,11 @@ describe("flavourFeed · root filter", () => {
 
   it("forum SPEAKS since #D5 — its slot-free lines arrived with the type packs", () => {
     const forum = flavourPoolForRoots(["forum"]);
-    expect(forum.length).toBe(9); // 9 of 9 forum lines ride the pool
+    expect(forum.length).toBe(11); // 11 of 11 forum lines ride the pool
     // none from the baseline packs — every shared-web/game forum thread still
     // carries slots; the type banks authored slot-free threads
     expect(new Set(forum.map((e) => e.packId))).toEqual(
-      new Set(["dbaas", "dedicated", "dns-hosting", "exchange-colo", "object-storage", "serverless", "trunk-group-voip"]),
+      new Set(["dbaas", "dedicated", "dns-hosting", "exchange-colo", "object-storage", "observability", "serverless", "trunk-group-voip"]),
     );
     expect(forum.some((e) => e.packId === "shared-web" || e.packId === "game")).toBe(false);
     // falsifiable: the baseline banks DO hold forum copy — all slotted, all out
@@ -300,18 +301,20 @@ describe("flavourFeed · root filter", () => {
     let total = 0;
     for (const [, n] of counts) total += n;
     expect(total).toBe(POOL.length); // every line owned by exactly one root
-    // full root census over the twelve-pack pool (disk truth, #D5 + colo + backup-archival + dbaas re-roll)
+    // full root census over the thirteen-pack pool (disk truth, #D5 + colo + backup-archival + dbaas + observability re-roll)
     expect([...counts.entries()]).toEqual([
-      ["abuse", 1],
-      ["achievement", 36],
+      ["abuse", 3],
+      ["achievement", 39],
+      ["canary", 1],
       ["chatter", 19],
-      ["codex", 20],
-      ["forum", 9],
-      ["loading", 31],
-      ["press", 3],
+      ["codex", 22],
+      ["forum", 11],
+      ["intern", 2],
+      ["loading", 33],
+      ["press", 4],
       ["sticky", 12],
       ["ticket", 54],
-      ["vendor", 48],
+      ["vendor", 52],
     ]);
     const names = [...counts.keys()];
     expect(names).toStrictEqual([...names].sort(compareCodeUnits));

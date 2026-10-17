@@ -8,9 +8,10 @@
  * Pool law (CLOSED by construction, two deliberate scopes — the first widened
  * by ADR-0014 #D5):
  *  1. PACK SCOPE: the pool draws from EVERY pack `i18n/packStore.ts`
- *     registers — all twelve shipped packs (baseline shared-web + game plus the
- *     ten type packs: backup-archival, colo, dbaas, dedicated, dns-hosting, exchange-colo,
- *     mail-hosting, object-storage, serverless, trunk-group-voip). The registry widening is
+ *     registers — all thirteen shipped packs (baseline shared-web + game plus the
+ *     eleven type packs: backup-archival, colo, dbaas, dedicated, dns-hosting, exchange-colo,
+ *     mail-hosting, object-storage, observability, serverless, trunk-group-voip).
+ *     The registry widening is
  *     the i18n lane's call and it landed; this feed stays inside the
  *     registration law and inherits the full corpus automatically.
  *  2. SLOT-FREE TEMPLATES ONLY: `fillTemplateBody` takes an EXACT slot set,
@@ -21,8 +22,8 @@
  *  partitioned roots through the §9.3 decision/flavour wall, so a decision
  *  key is unreachable here BY CONSTRUCTION, not by a filter this file trusts.
  *  Cross-pack twins are distinct pool entries keyed (packId, key) — never
- *  deduped by key. Census over the full twelve-pack pool: the four vendor.reply
- *  lines ship slot-free in ALL TWELVE packs byte-identical, loading.tip.failover
+ *  deduped by key. Census over the full thirteen-pack pool: the four vendor.reply
+ *  lines ship slot-free in ALL THIRTEEN packs byte-identical, loading.tip.failover
  *  /two-is-one in both baseline packs byte-identical; every cross-pack twin
  *  whose TEXT diverges per pack (abuse.canon.upstream, abuse.canon.customer-
  *  dispute, intern.entry.bill, chatter.desk.stack) is slot-bearing wherever
