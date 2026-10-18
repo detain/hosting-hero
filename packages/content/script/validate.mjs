@@ -15,9 +15,13 @@
 // authoring rules, and i18n ticket-pack conformance: packs exist for every
 // file:packs/ ref, cover every bundle-referenced key, obey the decision/flavour
 // namespace wall (§9.3 clause 2), keep README §Key literals verbatim-synced,
-// declare every {slot} they use, and carry zero §9.11 technique vocabulary.
-// Exit non-zero on any failure; prints the _todo inventory (packs get their own
-// separate counter so the bundle inventory stays the number downstream lanes pin).
+// declare every {slot} they use, and carry zero §9.11 technique vocabulary,
+// and POLICY DECK books (schema/policy-deck.schema.json + hand-enforced
+// validatePolicyCard grammar walls, dup card ids, appliesTo resolution,
+// §9.11 scans over every deck string, door-carrier coverage warnings).
+// Exit non-zero on any failure; prints the _todo inventory (packs and decks get
+// their own separate counters so the bundle inventory stays the number
+// downstream lanes pin).
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +31,7 @@ const errors = [];
 const warnings = [];
 const todos = [];
 const packTodos = []; // pack _todo markers counted separately: the bundle inventory is a pinned number
+const deckTodos = []; // deck _todo markers counted separately, same law (structural card nulls are NOT never-invent nulls)
 
 const fail = (where, msg) => errors.push(`${where}: ${msg}`);
 const warn = (where, msg) => warnings.push(`${where}: ${msg}`);
@@ -104,6 +109,30 @@ const TECHNIQUE_BANS = [
   [/:\(\)\s*\{[^}]*\|[^}]*\}/, "fork-bomb shape"],
   [/\bbase64\s+(-d|--decode)\b/i, "payload-decoding command"],
 ];
+
+// ---------- policy-deck vocabulary (hand-copied EXACT member lists, this file's
+// BANDS/FAMILIES posture) — sources of truth: policy/grammar.ts:35-74 closed
+// sets + types.ts PolicyCard. Drift here reddens the forged-deck probes below. ----------
+const POLICY_COMPARATORS = [">", "<", "changed", "fails", "completes"];
+const POLICY_METRIC_UNITS = ["percent", "us", "ms", "count", "micro-usd", "ratio", "minutes"];
+const POLICY_ACTION_IDS = ["scale-out", "shed-class", "page", "open-ticket", "dispatch-remote-hands", "raise-inspection-depth", "failover", "run-runbook", "drain", "queue-change"];
+const POLICY_BANDS = ["inform", "consult", "execute"];
+const POLICY_SCOPE_KINDS = ["object", "role", "query", "class", "estate"];
+const POLICY_THRESHOLD_KINDS = ["value", "class-ref", "event-name"];
+const POLICY_ELSE_TARGETS = ["band", "role", "runbook"];
+// The six PolicyActionIds the door translates into player verbs
+// (intent-door.ts RULE_CARRIER_MAP). Anything else — failover,
+// dispatch-remote-hands, queue-change, run-runbook — is the bought-verb wall
+// (:795-799): legal content, refuses at the door. Deck cards that can ONLY do
+// that get a WARN (confirm-authored-as-wall-content), never a fail.
+const RULE_MAPPED_CARRIERS = new Set(["raise-inspection-depth", "drain", "shed-class", "scale-out", "page", "open-ticket"]);
+const BIGINT_STR_RE = /^-?\d+$/;
+const NON_NEG_BIGINT_STR_RE = /^\d+$/;
+// Exact-key fences. Declared as additionalProperties:false in the schema, but
+// the interpreter only polices OBJECT-form additionalProperties (:148-151) —
+// boolean false is silently permissive — so the fence is hand-rolled here.
+const DECK_KEYS = ["schemaVersion", "deckId", "name", "appliesTo", "cards", "_provenance", "_todo"];
+const CARD_KEYS = ["id", "scope", "when", "for", "then", "unless", "else", "band", "upkeepMicroUsd"];
 
 // ---------- minimal JSON Schema (draft 2020-12 subset) interpreter ----------
 const typeOk = (v, t) =>
@@ -623,9 +652,154 @@ for (const rel of wavesRel) {
   });
 }
 
+// ---------- policy decks (schema/policy-deck.schema.json; §7.14/§B policy cards) ----------
+// G7 content-decks 1/4: the FILE leg for JSON book files later lanes author into
+// packages/content/decks/. Zero decks ship today — an absent/empty dir is vacuously
+// green. Every wall below mirrors `validatePolicyCard` clause-for-clause
+// (packages/sim-core/src/policy/grammar.ts:217-272); bigint fields ride the house
+// decimal-string form (WireFixed/WireUs law — revival into bigints is the
+// boot.rules rider's job, not the file's). No embedded hashes: the door keys cards
+// by a HOST-OWNED opaque hash (protocol.ts:355-362), so a deck that shipped one
+// would be a lie the fence here keeps out (unknown-field deny).
+const deckSchemaRel = "schema/policy-deck.schema.json";
+const deckSchema = readJson(deckSchemaRel);
+if (!deckSchema) { console.error("deck schema unreadable; aborting"); process.exit(1); }
+if (deckSchema.$schema !== "https://json-schema.org/draft/2020-12/schema") fail(deckSchemaRel, "not draft 2020-12");
+
+const decksRel = dataFiles.filter((f) => f.startsWith("decks") && f.endsWith(".json"));
+
+const denyExtras = (where, node, allowed) => {
+  for (const k of Object.keys(node))
+    if (!allowed.includes(k)) fail(where, `unknown field '${k}' — the deck-file fence (strict loader UNKNOWN_FIELD posture; schema declares additionalProperties:false, this allow-list is the enforcement the interpreter cannot do)`);
+};
+
+const isStr = (v) => typeof v === "string" && v.length > 0;
+const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+
+// predicate := metric, comparator, threshold (grammar.ts checkPredicate/checkThreshold).
+const checkDeckPredicate = (p, where) => {
+  if (!isObj(p)) { fail(where, "predicate must be an object"); return; }
+  denyExtras(where, p, ["metric", "comparator", "threshold"]);
+  ["metric", "comparator", "threshold"].forEach((k) => { if (!(k in p)) fail(where, `missing required key '${k}'`); });
+  const t = p.threshold;
+  if (!isObj(t)) { fail(`${where}.threshold`, "threshold must be an object"); return; }
+  if (!POLICY_THRESHOLD_KINDS.includes(t.kind)) return; // schema string-enum already reddened it
+  if (t.kind === "value") {
+    if (!isObj(t) || !("amount" in t) || typeof t.amount !== "string" || !BIGINT_STR_RE.test(t.amount)) fail(`${where}.threshold`, "value threshold needs 'amount' as a decimal string (Fixed bigint form)");
+    if (!POLICY_METRIC_UNITS.includes(t.unit)) fail(`${where}.threshold`, `unit "${t.unit}" is not in the closed enum`); // grammar.ts:178-182
+    denyExtras(`${where}.threshold`, t, ["kind", "amount", "unit"]);
+  } else {
+    // ">"/"<" need a numeric threshold; class-ref/event-name pair only with
+    // changed/fails/completes (grammar.ts:188-194).
+    if (p.comparator === ">" || p.comparator === "<")
+      fail(`${where}.comparator`, `comparator "${p.comparator}" requires a value threshold, got ${t.kind}`);
+    if (t.kind === "class-ref") {
+      if (!isStr(t.classId)) fail(`${where}.threshold`, "class-ref threshold needs a non-empty classId");
+      denyExtras(`${where}.threshold`, t, ["kind", "classId"]);
+    } else {
+      if (!isStr(t.name)) fail(`${where}.threshold`, "event-name threshold needs a non-empty name");
+      denyExtras(`${where}.threshold`, t, ["kind", "name"]);
+    }
+  }
+};
+
+const checkDeckAction = (a, where) => {
+  if (!isObj(a)) { fail(where, "action must be an object"); return; }
+  denyExtras(where, a, ["id", "runbookName", "value"]);
+  ["id", "runbookName", "value"].forEach((k) => { if (!(k in a)) fail(where, `missing required key '${k}'`); }); // PolicyActionWire presence law
+  if (a.id === "run-runbook") {
+    if (!isStr(a.runbookName)) fail(where, "run-runbook requires a non-empty runbookName"); // grammar.ts:201-203
+  } else if (a.runbookName !== null) {
+    fail(where, "runbookName is only legal on run-runbook"); // grammar.ts:204-206
+  }
+  if ("value" in a && a.value !== null && !BIGINT_STR_RE.test(String(a.value))) fail(`${where}.value`, "action value must be a decimal string or null");
+};
+
+const checkDeckCard = (card, where, seenIds) => {
+  if (!isObj(card)) { fail(where, "card must be an object"); return; }
+  denyExtras(where, card, CARD_KEYS);
+  ["id", "scope", "when", "then", "band", "upkeepMicroUsd"].forEach((k) => { if (!(k in card)) fail(where, `missing required key '${k}'`); });
+  if (isStr(card.id)) {
+    if (seenIds.has(card.id)) fail(where, `duplicate card id '${card.id}' within this deck (door card-id-collision law: handlePolicyCardCommit refuses a book holding the id twice)`);
+    else seenIds.add(card.id);
+  }
+  const s = card.scope;
+  if (!isObj(s)) fail(`${where}.scope`, "scope must be an object");
+  else {
+    denyExtras(`${where}.scope`, s, ["kind", "ref"]);
+    if (!POLICY_SCOPE_KINDS.includes(s.kind)) fail(`${where}.scope`, `scope kind "${s.kind}" is not in the closed enum`); // grammar.ts:222-225
+    else if (s.kind !== "estate" && !isStr(s.ref)) fail(where, "non-estate scope requires a non-empty ref"); // grammar.ts:226-228
+    else if (s.kind === "estate" && s.ref !== null) fail(where, "estate scope ref must be null"); // grammar.ts:229-231
+  }
+  if (Array.isArray(card.when)) card.when.forEach((p, i) => checkDeckPredicate(p, `${where}.when[${i}]`)); // 1..3 arity: interpreter minItems/maxItems (probe-verified)
+  if (card.for !== undefined) {
+    const w4 = `${where}.for`;
+    if (!isObj(card.for)) fail(w4, "for must be an object");
+    else {
+      denyExtras(w4, card.for, ["durationUs"]);
+      if (typeof card.for.durationUs !== "string" || !BIGINT_STR_RE.test(card.for.durationUs) || BigInt(card.for.durationUs) <= 0n)
+        fail(w4, "FOR durationUs must be a positive bigint of µs (decimal string)"); // grammar.ts:244-248
+    }
+  }
+  if (Array.isArray(card.then)) {
+    card.then.forEach((a, i) => checkDeckAction(a, `${where}.then[${i}]`));
+    if (card.then.length > 0 && card.then.every((a) => isObj(a) && !RULE_MAPPED_CARRIERS.has(a.id)))
+      warn(`${where}.then`, `[${card.then.map((a) => a.id).join(", ")}] cannot execute through the door (outside the six RULE_CARRIER_MAP verbs — the bought-verb wall, intent-door.ts:795-799); confirm authored as wall-content`);
+  }
+  if (Array.isArray(card.unless)) card.unless.forEach((p, i) => checkDeckPredicate(p, `${where}.unless[${i}]`));
+  if (card.else !== undefined) {
+    const wE = `${where}.else`;
+    if (!isObj(card.else)) fail(wE, "else must be an object");
+    else {
+      denyExtras(wE, card.else, ["to", "ref"]);
+      if (!POLICY_ELSE_TARGETS.includes(card.else.to)) fail(wE, `ELSE target "${card.else.to}" is not band|role|runbook`); // grammar.ts:253-255
+      if (!isStr(card.else.ref)) fail(wE, "ELSE ref must be a non-empty string"); // grammar.ts:256-258
+      else if (card.else.to === "band" && !POLICY_BANDS.includes(card.else.ref)) fail(wE, `ELSE band "${card.else.ref}" is not inform|consult|execute`); // grammar.ts:259-261
+    }
+  }
+  if (typeof card.upkeepMicroUsd === "string" && !NON_NEG_BIGINT_STR_RE.test(card.upkeepMicroUsd))
+    fail(`${where}.upkeepMicroUsd`, "upkeepMicroUsd must be a non-negative bigint of µ$ (decimal string)"); // grammar.ts:266-268
+};
+
+// §9.11 over EVERY deck string — ids, refs, names, runbook names, cites alike.
+const scanDeckStrings = (node, where) => {
+  if (typeof node === "string") {
+    for (const [re, what] of TECHNIQUE_BANS) { const hit = node.match(re); if (hit) fail(where, `§9.11 technique ban-list: contains ${what} ('${hit[0]}')`); }
+    return;
+  }
+  if (Array.isArray(node)) { node.forEach((el, i) => scanDeckStrings(el, `${where}[${i}]`)); return; }
+  if (isObj(node)) for (const [k, v] of Object.entries(node)) scanDeckStrings(v, `${where}.${k}`);
+};
+
+const deckFirstSeen = new Map(); // card id -> rel of first deck shipping it (cross-deck dup = WARN)
+for (const rel of decksRel) {
+  const deck = readJson(rel);
+  if (!deck) continue;
+  validateAgainst(deckSchema, deck, rel);
+  if (deck.schemaVersion !== 1) fail(rel, `schemaVersion ${JSON.stringify(deck.schemaVersion)} — the deck file version space has exactly one member: 1 (interpreter polices string enums only; hand wall)`);
+  denyExtras(rel, deck, DECK_KEYS);
+  // null=>_todo discipline on the HOUSE objects only — scope.ref/runbookName/value
+  // nulls are STRUCTURAL grammar (types.ts:721-746), never never-invent placeholders.
+  if (isObj(deck._provenance)) scanNulls(deck._provenance, `${rel}._provenance`, deckTodos);
+  if (typeof deck._todo === "string" && deck._todo.trim()) deckTodos.push([rel, deck._todo]);
+  if (isStr(deck.appliesTo) && !(bundleIds.has(deck.appliesTo) || /^core:[a-z0-9][a-z0-9-]*$/.test(deck.appliesTo)))
+    fail(`${rel}.appliesTo`, `'${deck.appliesTo}' resolves to no shipped bundle id and is not reserved core:* (honest law: v0 decks have no bundle claimant — no reverse orphan law is invented)`);
+  scanDeckStrings(deck, rel);
+  const seenIds = new Set();
+  (Array.isArray(deck.cards) ? deck.cards : []).forEach((card, i) => {
+    const w = `${rel}.cards[${i}](${card?.id ?? "???"})`;
+    checkDeckCard(card, w, seenIds);
+    if (isStr(card?.id)) {
+      const first = deckFirstSeen.get(card.id);
+      if (first !== undefined && first !== rel) warn(w, `card id '${card.id}' also ships in ${first} — duplicate across co-shipped decks (hosts keying lookup by id must adjudicate)`);
+      else if (first === undefined) deckFirstSeen.set(card.id, rel);
+    }
+  });
+}
+
 // ---------- report ----------
-console.log(`checked: ${[schemaRel, threatRegistrySchemaRel, visitorRegistrySchemaRel, packSchemaRel, paletteSchemaRel, "threats/registry-core.json", "visitors/archetypes-core.json", ...bundlesRel, ...wavesRel, ...palettesRel, ...packsClaimed].length} files`);
-console.log(`bundles=${bundlesRel.length} threats=${threatIds.size} archetypes=${archetypeIds.size} palettes=${paletteArchetypes.size} waves=${wavesRel.length} packs=${parsedPacks.length}`);
+console.log(`checked: ${[schemaRel, threatRegistrySchemaRel, visitorRegistrySchemaRel, packSchemaRel, paletteSchemaRel, deckSchemaRel, "threats/registry-core.json", "visitors/archetypes-core.json", ...bundlesRel, ...wavesRel, ...palettesRel, ...packsClaimed, ...decksRel].length} files`);
+console.log(`bundles=${bundlesRel.length} threats=${threatIds.size} archetypes=${archetypeIds.size} palettes=${paletteArchetypes.size} waves=${wavesRel.length} packs=${parsedPacks.length} decks=${decksRel.length}`);
 for (const { rel, pack } of parsedPacks) {
   const d = Object.keys(pack.decision ?? {}).length;
   const f = Object.keys(pack.flavour ?? {}).length;
@@ -643,6 +817,10 @@ if (todos.length) {
 if (packTodos.length) {
   console.log(`\nPACK TODO INVENTORY (${packTodos.length} _todo markers — separate counter; bundle inventory above is untouched):`);
   packTodos.forEach(([where, note]) => console.log(`  # ${where}\n      ${note}`));
+}
+if (deckTodos.length) {
+  console.log(`\nDECK TODO INVENTORY (${deckTodos.length} _todo markers — separate counter; bundle inventory above is untouched):`);
+  deckTodos.forEach(([where, note]) => console.log(`  $ ${where}\n      ${note}`));
 }
 if (errors.length) {
   console.error(`\nFAIL — ${errors.length} error(s):`);
