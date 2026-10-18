@@ -97,4 +97,4 @@ export {
   composeEraPlan,
   eraRefusalReason,
 } from "./eraAvailability.ts";
-export type { EraPlan } from "./eraAvailability.ts";
+export type { EraPlan, EraTransition } from "./eraAvailability.ts";

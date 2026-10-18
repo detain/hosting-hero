@@ -123,7 +123,7 @@ import type { ObjectivePredicate, ScenarioDoc, ScenarioIntent, ScenarioSignals }
 import { ScenarioError, scenarioIncidentCause, scenarioSeed, scenarioSignalsActive } from "./doc.ts";
 import type { PerspectiveSpec, ScenarioPerspectiveReport } from "./perspective.ts";
 import { applyPerspectiveToDoorConfig, perspectiveReportFor, PERSPECTIVE_V0 } from "./perspective.ts";
-import type { EraPlan } from "./eraAvailability.ts";
+import type { EraPlan, EraTransition } from "./eraAvailability.ts";
 import { applyEraAvailabilityToDoorConfig, composeEraPlan } from "./eraAvailability.ts";
 import type { LoadedTypeBundle } from "../loader/bundle.ts";
 import type { ObjectiveProgress, ScenarioObservation } from "./objectives.ts";
@@ -162,6 +162,18 @@ export interface ScenarioRunConfig {
    *  gate place-device deviceKinds this run (loaded, boundary-parsed — the
    *  host supplies it exactly like the corpus authority supplies slices). */
   readonly eraBundle?: LoadedTypeBundle;
+  /** L-ER-T (wave-26 owner ruling): the era TRANSITION calendar — each step
+   *  says "from this SIM BUSINESS minute, the world year becomes `eraYear`"
+   *  (inclusive at the step; the opening `eraYear` owns minute 0, so steps
+   *  are strictly ascending and start at minute ≥ 1 — the parse walls live
+   *  in `composeEraPlan`/`parseEraTransitions`, the pairing wall here).
+   *  Rides the eraYear+eraBundle pair (never a bare calendar — a bare year
+   *  would invent availability). Absent or EMPTY ⇒ `eraYearAt` stays the
+   *  EXACT run-frozen constant: every shipped wire and every frozen-era
+   *  arm byte-stands (digest-pinned pre-edit at 0c2549e; the report grows
+   *  the `transitions` echo INSIDE the sparse `era` key ONLY for a
+   *  non-empty calendar). */
+  readonly eraTransition?: readonly EraTransition[];
 }
 
 /** Cumulative trace census — the report's "what happened" roll-up. */
@@ -210,9 +222,10 @@ export interface ScenarioReport {
   readonly perspective?: ScenarioPerspectiveReport;
   /** L-EM (ADR-0019 program 4): present ONLY on era-armed runs (sparse-key
    *  law — every eraless wire, all 31 shipped, never grows the key). The
-   *  run-frozen play-era record: which world-year the door gated against
-   *  and which type line authored the windows. */
-  readonly era?: { readonly eraYear: number; readonly bundleId: string };
+   *  play-era record: which world-year the run OPENS in, which type line
+   *  authored the windows, and (L-ER-T, sparse WITHIN the sparse key) the
+   *  frozen transition calendar when one was armed. */
+  readonly era?: { readonly eraYear: number; readonly bundleId: string; readonly transitions?: readonly EraTransition[] };
   /** L-GUARD (ADR-0019 program 2): present ONLY when a signal-minute found
    *  `free` below the cfg-owned chargeback fee — the funding-honest record
    *  of every fee the ledger refused (sorted-visit order). Sparse-key law:
@@ -875,7 +888,19 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     if (!Number.isSafeInteger(config.eraYear) || config.eraYear < 0) {
       throw new Error(`scenario[BAD_INT] at 'runScenario.eraYear': expected a safe integer ≥ 0, got ${String(config.eraYear)}`);
     }
-    eraPlan = composeEraPlan(config.eraBundle, config.eraYear);
+    /* L-ER-T: the transition calendar rides the armed pair; every step
+       wall (ascending / minute ≥ 1 / safe ints / entry shape) lives in
+       parseEraTransitions — composeEraPlan is the authority BOTH this
+       runner and tools/host call, so one set of walls guards both hosts. */
+    eraPlan = composeEraPlan(
+      config.eraBundle,
+      config.eraYear,
+      config.eraTransition === undefined ? {} : { transitions: config.eraTransition },
+    );
+  } else if (config.eraTransition !== undefined) {
+    throw new Error(
+      `scenario[BAD_ERA] at 'runScenario.eraTransition': eraTransition rides the eraYear+eraBundle pair — a bare calendar has no world to step (${String(config.eraTransition.length)} steps armed, eraYear ${String(config.eraYear)}, eraBundle ${config.eraBundle === undefined ? "undefined" : config.eraBundle.id})`,
+    );
   }
   /* L-CP2: resolve the seat BEFORE the mint — noc-shift's three hands are a
    * minting fact (state.hands is the authority; the door's fallback mirrors
@@ -1003,8 +1028,11 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
   /* L-EM ERA-LAST stage (the perspective header's documented chain:
    * freeze tapes → perspective gate → era gate). Unarmed runs pass the
    * perspective object through BY IDENTITY — no clone, no re-freeze: eraless
-   * is today's byte path. Armed, a zero-gate plan grows no canExecute key
-   * (the zero-ban rule), so an all-available era still behaves identically. */
+   * is today's byte path. Armed, a plan that gates NO year grows no
+   * canExecute key (the zero-ban rule), so an all-available era still
+   * behaves identically; L-ER-T a stepping plan is armed from t0 and the
+   * gate consults the as-of year per intent — the step is closure arithmetic
+   * over the injected business clock, NOT state (door untouched). */
   const armedDoorIntents: IntentDoorConfig =
     eraPlan === undefined ? perspectiveDoorIntents : applyEraAvailabilityToDoorConfig(perspectiveDoorIntents, eraPlan);
   const driver = createTickDriver(
@@ -1359,10 +1387,17 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
       ? {}
       : { perspective: perspectiveReportFor(perspectiveSpec, config.perspectiveView) }),
     // L-EM sparse-key law: eraless runs (all 31 shipped wires by default)
-    // never grow the `era` key.
+    // never grow the `era` key. L-ER-T: the `transitions` echo is sparse
+    // WITHIN the era key — frozen-era arms keep the exact pilot record.
     ...(eraPlan === undefined
       ? {}
-      : { era: Object.freeze({ eraYear: eraPlan.eraYear, bundleId: eraPlan.bundleId }) }),
+      : {
+          era: Object.freeze({
+            eraYear: eraPlan.eraYear,
+            bundleId: eraPlan.bundleId,
+            ...(eraPlan.transitions.length > 0 ? { transitions: eraPlan.transitions } : {}),
+          }),
+        }),
     // L-GUARD sparse-key law: funded runs never grow the `chargebackFeeRefusals` key.
     ...(acc.chargebackFeeRefusals.length > 0
       ? { chargebackFeeRefusals: Object.freeze([...acc.chargebackFeeRefusals]) }
