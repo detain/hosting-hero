@@ -354,6 +354,18 @@
               "chromeTokens": { "type": "string", "description": "Era = 4 CSS tokens (WS-7 kept law)." }
             }
           }
+        },
+        "availability": {
+          "type": "object",
+          "description": "L-EM era tech-availability windows (§0.4 'not invented yet', ADR-0019 program 4). techId → {from, to} year strings; absent legs read undocumented (neither grant nor deny); window semantics mirror loader/eras.ts resolveEraAvailability's four statuses. Optional — absent = the bundle-level availableFrom/obsoleteBy gate the whole line.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "from": { "type": ["string", "null"], "pattern": "^\\d{4}$", "description": "Inclusive introduction year; null/absent = undated start = undocumented." },
+              "to": { "type": ["string", "null"], "pattern": "^\\d{4}$", "description": "Exclusive retirement year (§1.6 'retires some buildables'); null/absent = never." },
+              "_todo": { "type": "string" }
+            }
+          }
         }
       }
     },

@@ -66,9 +66,9 @@
  *  closure vets first (it is the outer, last-composed layer) and DELEGATES
  *  to it for every verb it does not ban — the same query object passed
  *  through, so no state or context re-derivation. The era filter (lane L-EM,
- *  scenario/eraAvailability.ts — NOT this file, NOT yet built) chains AFTER
- *  perspective: `applyEraToDoorConfig(applyPerspectiveToDoorConfig(cfg, seat),
- *  era)`; the composition signature `(config, spec)` is deliberately the
+ *  scenario/eraAvailability.ts @LANDED ADR-0019 program 4) chains AFTER
+ *  perspective: `applyEraAvailabilityToDoorConfig(applyPerspectiveToDoorConfig(cfg, seat),
+ *  era)`; the composition signature `(config, plan|spec)` is deliberately the
  *  shape every further filter layer reuses, each one wrapping the hook below.
  *
  *  Zero GameState/digest changes. Import law: ../types.ts +

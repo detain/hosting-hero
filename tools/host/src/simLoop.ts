@@ -53,8 +53,13 @@ import {
   initialClocks,
   streamFor,
 } from "@hh/sim-core/kernel";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createDefaultSlots, createInitialState, createTickDriver, digestState, makeSlots } from "@hh/sim-core/pipeline";
 import type { IntentReceipt } from "@hh/sim-core/pipeline";
+import { loadTypeBundle } from "@hh/sim-core/loader";
+import type { LoadedTypeBundle } from "@hh/sim-core/loader";
+import { applyEraAvailabilityToDoorConfig, composeEraPlan } from "@hh/sim-core/scenario";
 import type { GameState } from "@hh/sim-core/types";
 import { asCauseId, asEntityId, asRunSeed, observedKey, ResolutionBand } from "@hh/sim-core/types";
 import type {
@@ -154,6 +159,26 @@ export interface HostSimOptions {
    *  a shared-world demo, honest because the README says so; per-seat scopes
    *  stay the tested posture. */
   readonly defaultScope?: readonly string[] | "all";
+  /** L-EM (ADR-0019 program 4) — the era mechanics PILOT leg, the same
+   *  `--era <year>` knob the scenario runner carries as `eraYear`: when set,
+   *  the boot door config grows the era gate over the pilot bundle below.
+   *  Absent (the default, and every existing test) ⇒ the door object is
+   *  EXACTLY today's `{ handCapacity }` — byte-ident boot, zero new state. */
+  readonly eraYear?: number;
+  /** Override the pilot bundle (repo-relative or absolute path to a type
+   *  bundle JSON). Only consulted when `eraYear` is set. */
+  readonly eraBundlePath?: string;
+}
+
+/** The pilot line is `official:shared-web` — the §0.4 exemplar (#1: its
+ *  `availableFrom: "2009"` fallback ALONE gates the 1998 run) and the one
+ *  bundle the dev carrier's demo seats place against. Resolved relative to
+ *  THIS file so the flag works from any cwd; read lazily, only when armed. */
+const HOST_ERA_PILOT_BUNDLE = new URL("../../../packages/content/types/shared-web.json", import.meta.url);
+
+function loadEraPilotBundle(path: string | undefined): LoadedTypeBundle {
+  const file = path === undefined ? fileURLToPath(HOST_ERA_PILOT_BUNDLE) : path;
+  return loadTypeBundle(JSON.parse(readFileSync(file, "utf8")) as unknown);
 }
 
 export interface HostStepReport {
@@ -228,8 +253,17 @@ export function createHostSim(deps: HostSimDeps): HostSimHandle {
       returnProbability: FIXED_ZERO,
     }),
   );
+  /* L-EM era stage (the door-config twin of the runner's ERA-LAST compose):
+   * unarmed the door config is the exact pre-rung frozen `{ handCapacity }`;
+   * armed with `--era <year>` the pilot bundle's availability windows gate
+   * place-device through the same `applyEraAvailabilityToDoorConfig` the
+   * scenario runner rides — one authority, host-voiced refusals. */
+  const eraYear = deps.options?.eraYear;
+  const doorIntents = Object.freeze({ handCapacity });
   const driver = createTickDriver(slots, streamFor(runSeed, "root", 0), clocks, {
-    intents: Object.freeze({ handCapacity }),
+    intents: eraYear === undefined
+      ? doorIntents
+      : applyEraAvailabilityToDoorConfig(doorIntents, composeEraPlan(loadEraPilotBundle(deps.options?.eraBundlePath), eraYear)),
   });
   const store = new ObservedStore();
   const digests: string[] = [];

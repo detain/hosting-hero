@@ -187,6 +187,12 @@
     "availableFrom": "2001",
     "obsoleteBy": null,
     "eraOverrides": {},
+    "availability": {
+      "cross-connect-faucet": {
+        "from": "2001",
+        "_todo": "§0.4 grid names '2001 dot-com colo' — derived from the dated-bundle row L-DATES landed @f5faced; no independently forged device date"
+      }
+    },
     "_todo": "Dated 2026-10-18 by the owner-delegated era-dating pass (ADR-0019 program 8 — the era-owner pass this slot deferred to). Grounding is the doc's OWN prose: §0.4's grid sentence names this cell verbatim — '2001 dot-com colo' (:653) — and this card IS that family row (§0.3 'Colocation'); the same sentence's '2009 shared-hosting-and-cPanel' cell is the precedent that grounded the shared-web shelf date, so sketch-grading is the established law here, not a new license. The pack's 1998 rung already canonizes the pre-2001 interval ('rather than claiming the line existed in canon'), so the date denies nothing the copy asserts and grants nothing the doc never named — the verbatim quote's presence in hosting_game.md is machine-pinned by loader/__tests__/era-dating.test.ts (R66 anti-forgery gate). The capability gates the doc ALSO authors for this line ('Your own facility + power headroom → unlocks Colocation', §5.6 :20787) ride relations.unlocks instead — tier progression is not a shelf date. obsoleteBy null = never obsoleted on-page."
   },
 

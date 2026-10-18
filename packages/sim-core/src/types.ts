@@ -1029,6 +1029,10 @@ export interface BundleEras {
   readonly availableFrom?: string;
   readonly obsoleteBy?: string | null;
   readonly eraOverrides?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+  /** L-EM (ADR-0019 program 4) — techId → {from?, to?} availability window
+   *  (§0.4 "not invented yet"). Keep in step with loader LoadedTechWindow;
+   *  absent = every tech on the line falls back to the bundle-level dates. */
+  readonly availability?: Readonly<Record<string, { readonly from?: string | null; readonly to?: string | null; readonly _todo?: string }>>;
 }
 
 export interface BundleEconomy {

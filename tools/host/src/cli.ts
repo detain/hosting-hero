@@ -56,6 +56,35 @@ function parseScopes(argv: readonly string[]): HostSimScopes {
   return scopes;
 }
 
+/** `--era <year>` (L-EM, ADR-0019 program 4) — arms the era mechanics pilot
+ *  on the host-sim door: with `--sim`, a 1998 run refuses `place-device`
+ *  intents for techs the pilot bundle (official:shared-web, or
+ *  `--era-bundle <path>`) does not grant in that year. Absent ⇒ the door is
+ *  byte-ident to the pre-era host. */
+function parseEra(argv: readonly string[]): number | undefined {
+  const at = argv.indexOf("--era");
+  if (at === -1) return undefined;
+  const raw = argv[at + 1];
+  const year = raw === undefined ? Number.NaN : Number(raw);
+  if (!Number.isSafeInteger(year) || year < 0) {
+    console.error(`host-tools dev: --era expects a non-negative integer year, got "${String(raw)}"`);
+    process.exit(1);
+  }
+  return year;
+}
+
+/** `--era-bundle <path>` — override the pilot type-bundle JSON path. */
+function parseEraBundle(argv: readonly string[]): string | undefined {
+  const at = argv.indexOf("--era-bundle");
+  if (at === -1) return undefined;
+  const raw = argv[at + 1];
+  if (raw === undefined || raw.length === 0 || raw.startsWith("--")) {
+    console.error("host-tools dev: --era-bundle expects a path to a type-bundle JSON");
+    process.exit(1);
+  }
+  return raw;
+}
+
 /** `--token SECRET` — OPT-IN dev token auth (default absent keeps the
  *  standing localhost-no-auth posture). Seats connect `ws://…/?token=SECRET`. */
 function parseToken(argv: readonly string[]): string | undefined {
@@ -73,9 +102,20 @@ async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const sim = argv.includes("--sim");
   const token = parseToken(argv);
+  const eraYear = parseEra(argv);
+  const eraBundlePath = parseEraBundle(argv);
   const handle = await startHost({
     port: parsePort(argv),
-    ...(sim ? { sim: { scopes: parseScopes(argv), defaultScope: "all" as const } } : {}),
+    ...(sim
+      ? {
+          sim: {
+            scopes: parseScopes(argv),
+            defaultScope: "all" as const,
+            ...(eraYear === undefined ? {} : { eraYear }),
+            ...(eraBundlePath === undefined ? {} : { eraBundlePath }),
+          },
+        }
+      : {}),
     ...(token === undefined ? {} : { auth: { secret: token } }),
   });
   const posture = sim ? "host-sim topology (a) — the host owns the engine, seats get fogged views" : "relay-only topology (b) — browsers run local sims, the host stamps and relays";

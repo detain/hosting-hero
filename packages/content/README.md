@@ -753,7 +753,7 @@ are approved, superseding the ≤60-per-pack task-line guidance (the validator k
 floor and sets no ceiling; most provenance cites are §9.3 verbatim doc seeds, so
 trimming would delete doc-mandated content). Pack `_todo` markers
 print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
-(412 since the type-14 ci-build-farm authoring pass 2026-10-17; 377 at type-13, 343 at type-12, 311 at type-11, 278 at type-10, 245 at type-9, 212 at type-8, 186 at type-7, 159 at type-6, 133 at type-5, 108 at type-4, 84 at type-3, 63 at wave-1) is untouched by
+(413 since the L-EM era-availability row in colo.json 2026-10-18; 412 at the type-14 ci-build-farm authoring pass 2026-10-17; 377 at type-13, 343 at type-12, 311 at type-11, 278 at type-10, 245 at type-9, 212 at type-8, 186 at type-7, 159 at type-6, 133 at type-5, 108 at type-4, 84 at type-3, 63 at wave-1) is untouched by
 pack authoring — no test pins the printed number, though sibling lane memory
 quotes the wave-1 figure.
 

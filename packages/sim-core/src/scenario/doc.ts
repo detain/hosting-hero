@@ -1620,8 +1620,11 @@ export function parseScenarioDoc(raw: unknown): ScenarioDoc {
     bad("BAD_BRIEF", `${path}.brief`, `${brief.length} chars exceeds the ${SCENARIO_BRIEF_MAX_CHARS}-char mission-blurb wall`);
   }
 
+  // L-EM (ADR-0019 program 4): the era-probe wire cites the era home sections
+  // (§1.6 The Era Track / §0.4 the grid) — every other wire stays a §1.5
+  // mission citation; the wall widens its GRAMMAR, never its discipline.
   const specRef = readString(src, "specRef", path, "BAD_SPEC");
-  if (!specRef.startsWith("§1.5")) bad("BAD_SPEC", `${path}.specRef`, `a scenario must cite its §1.5 heading, got "${specRef}"`);
+  if (!(specRef.startsWith("§1.5") || specRef.startsWith("§1.6") || specRef.startsWith("§0.4"))) bad("BAD_SPEC", `${path}.specRef`, `a scenario must cite its §1.5 mission heading (era wires may cite §1.6/§0.4), got "${specRef}"`);
   let specLine: number | null = null;
   if (src.specLine !== undefined) specLine = readInt(src, "specLine", path, "BAD_SPEC", 1, 10_000_000);
 

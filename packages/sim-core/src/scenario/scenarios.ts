@@ -116,6 +116,13 @@
  *    ninety-percent truth: the segments keep their organic cover labels
  *    while the arrival die rolls every mint's identity from the authored
  *    familyWeights table, and the census counts the ROLL.
+ *  - the-not-invented-yet → "The Era Track" (~line 4572, L-EM): the §0.4
+ *    grid sentence "Whole branches of the tech tree are greyed out with
+ *    'not invented yet'" as ENGINE FACT — the era is run CONFIG (eraYear +
+ *    eraBundle), never doc data, so this wire's eraless byte-stand pins
+ *    with all thirty siblings; the flip test arms 1998 and the door
+ *    refuses the cPanel-era placements PRE-PAYMENT while the safe kind
+ *    still executes.
  */
 
 import type { ScenarioDoc } from "./doc.ts";
@@ -2043,6 +2050,62 @@ const FREE_TIER_FLOOD_MIX_WIRE = {
   },
 } satisfies ScenarioWire;
 
+/* ───────────── The Not-Invented-Yet — era pilot (§0.4/§1.6, L-EM) ───────────── */
+
+/** §1.6 "The Era Track" (:4572) + §0.4's grid sentence (:656), through the
+ *  L-EM era door stage (scenario/eraAvailability.ts — ADR-0019 program 4):
+ *  the FIRST engine implementation of "not invented yet". The era arms from
+ *  run CONFIG (eraYear + eraBundle), never from the wire, so this doc is
+ *  eraless like its thirty siblings and rides their byte-stand law.
+ *  ERALESS / 2026: all three place-device intents execute (the dated
+ *  shared-web line lives; the safe "generic" kind belongs to no dated line —
+ *  the never-invents law: the gate denies only what the line NAMES). The
+ *  1998 flip: the two cPanel-era placements refuse at the door PRE-PAYMENT
+ *  (hands never touched — L-CE posture) while web-3 still places; the lose
+ *  line `intents-refused-above:place-device:0` fires at the first refusal
+ *  — per-verb rung-9 dimension, ZERO new predicate vocab. The board node
+ *  web-1 kind "shared-web" rides untouched on purpose: the board is the
+ *  host's gift; the door is the player's hand, and only the hand greys. */
+const NOT_INVENTED_YET_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-not-invented-yet",
+  name: "The Not-Invented-Yet",
+  brief:
+    "The calendar says 1998 and the tech tree agrees: the door refuses both shared-web placements without taking a single hand — 'not invented yet' as engine fact — while the plain generic box still slides in. Arm 2026: the identical script executes three for three.",
+  specRef: "§1.6 The Era Track",
+  specLine: 4572,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "era-weather",
+    segments: [
+      { fromMinute: 0, ratePerMin: 2 },
+      { fromMinute: 60, ratePerMin: 14 },
+      { fromMinute: 120, ratePerMin: 2 },
+    ],
+  },
+  intents: [
+    { atTick: 20, verb: "place-device", args: { nodeId: "web-2", deviceKind: "shared-web", template: null } },
+    { atTick: 30, verb: "place-device", args: { nodeId: "web-3", deviceKind: "generic", template: null } },
+    { atTick: 150, verb: "place-device", args: { nodeId: "web-4", deviceKind: "shared-web", template: null } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      // All three placements EXECUTE eraless (and in 2026): strict > 2.
+      { kind: "intents-executed-above", verb: "place-device", count: 2 },
+    ],
+    lose: [
+      // The 1998 flip: the FIRST era refusal is the witness (strict > 0).
+      { kind: "intents-refused-above", verb: "place-device", count: 0 },
+    ],
+  },
+  limits: { maxSimMinutes: 240 },
+} satisfies ScenarioWire;
+
 /** id → the WIRE record it was authored as (JSON round-trip targets for
  *  hosts and the library tests — data, never parsed state). */
 export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Object.freeze({
@@ -2076,6 +2139,7 @@ export const SHIPPED_SCENARIO_WIRES: Readonly<Record<string, ScenarioWire>> = Ob
   [COPYCAT_WIRE.id]: COPYCAT_WIRE,
   [UNDERSTAFFED_SUNDAY_TRIAGE_WIRE.id]: UNDERSTAFFED_SUNDAY_TRIAGE_WIRE,
   [FREE_TIER_FLOOD_MIX_WIRE.id]: FREE_TIER_FLOOD_MIX_WIRE,
+  [NOT_INVENTED_YET_WIRE.id]: NOT_INVENTED_YET_WIRE,
 });
 
 /* ─────────────────────────── trusted records ─────────────────────────── */
@@ -2116,6 +2180,7 @@ const theRansomCustomerDoc: ScenarioDoc = parseScenarioDoc(RANSOM_CUSTOMER_WIRE)
 const theCopycatDoc: ScenarioDoc = parseScenarioDoc(COPYCAT_WIRE);
 const understaffedSundayTriageDoc: ScenarioDoc = parseScenarioDoc(UNDERSTAFFED_SUNDAY_TRIAGE_WIRE);
 const freeTierFloodMixDoc: ScenarioDoc = parseScenarioDoc(FREE_TIER_FLOOD_MIX_WIRE);
+const notInventedYetDoc: ScenarioDoc = parseScenarioDoc(NOT_INVENTED_YET_WIRE);
 
 /** Ids in narrative order (the library index). */
 export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
@@ -2149,6 +2214,7 @@ export const SHIPPED_SCENARIO_IDS: readonly string[] = Object.freeze([
   theCopycatDoc.id,
   understaffedSundayTriageDoc.id,
   freeTierFloodMixDoc.id,
+  notInventedYetDoc.id,
 ]);
 
 /** id → trusted doc. */
@@ -2183,6 +2249,7 @@ export const SHIPPED_SCENARIOS: Readonly<Record<string, ScenarioDoc>> = Object.f
   [theCopycatDoc.id]: theCopycatDoc,
   [understaffedSundayTriageDoc.id]: understaffedSundayTriageDoc,
   [freeTierFloodMixDoc.id]: freeTierFloodMixDoc,
+  [notInventedYetDoc.id]: notInventedYetDoc,
 });
 
 /** Look one shipped doc up by id — fail-loud on a miss (typos are bugs). */

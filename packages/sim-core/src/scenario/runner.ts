@@ -123,6 +123,9 @@ import type { ObjectivePredicate, ScenarioDoc, ScenarioIntent, ScenarioSignals }
 import { ScenarioError, scenarioIncidentCause, scenarioSeed, scenarioSignalsActive } from "./doc.ts";
 import type { PerspectiveSpec, ScenarioPerspectiveReport } from "./perspective.ts";
 import { applyPerspectiveToDoorConfig, perspectiveReportFor, PERSPECTIVE_V0 } from "./perspective.ts";
+import type { EraPlan } from "./eraAvailability.ts";
+import { applyEraAvailabilityToDoorConfig, composeEraPlan } from "./eraAvailability.ts";
+import type { LoadedTypeBundle } from "../loader/bundle.ts";
 import type { ObjectiveProgress, ScenarioObservation } from "./objectives.ts";
 import { objectiveHolds, objectiveLine, progressAll } from "./objectives.ts";
 
@@ -148,6 +151,17 @@ export interface ScenarioRunConfig {
    *  would this seat have not seen?". Ignored when the doc names no
    *  perspective (no perspective ⇒ no report key at all). */
   readonly perspectiveView?: ReadonlyMap<ObservedKey, unknown>;
+  /** L-EM (§0.4, ADR-0019 program 4): the RUN-FROZEN play-era world year —
+   *  the engine never reads the shell's reactive eraState; the host mints
+   *  it with the run. Must be supplied TOGETHER with `eraBundle` (never
+   *  invent availability from a bare year). Absent ⇒ zero change: the door
+   *  config object is EXACTLY today's and every shipped wire byte-stands
+   *  (all 31 shipped wires are eraless by construction; roster-pinned). */
+  readonly eraYear?: number;
+  /** L-EM: the type line whose `eras.availability` rows and line-level dates
+   *  gate place-device deviceKinds this run (loaded, boundary-parsed — the
+   *  host supplies it exactly like the corpus authority supplies slices). */
+  readonly eraBundle?: LoadedTypeBundle;
 }
 
 /** Cumulative trace census — the report's "what happened" roll-up. */
@@ -194,6 +208,11 @@ export interface ScenarioReport {
    *  `observation` above stays WHOLE TRUTH under every seat: seeing is not
    *  being, hide never reaches the fold (pinned by the whole-truth test). */
   readonly perspective?: ScenarioPerspectiveReport;
+  /** L-EM (ADR-0019 program 4): present ONLY on era-armed runs (sparse-key
+   *  law — every eraless wire, all 31 shipped, never grows the key). The
+   *  run-frozen play-era record: which world-year the door gated against
+   *  and which type line authored the windows. */
+  readonly era?: { readonly eraYear: number; readonly bundleId: string };
   /** L-GUARD (ADR-0019 program 2): present ONLY when a signal-minute found
    *  `free` below the cfg-owned chargeback fee — the funding-honest record
    *  of every fee the ledger refused (sorted-visit order). Sparse-key law:
@@ -840,6 +859,24 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     throw new Error(`scenario[BAD_INT] at 'runScenario.tickCap': expected a safe integer ≥ 1, got ${String(cap)}`);
   }
   const runSeed = scenarioSeed(seed, offset);
+  /* L-EM (ADR-0019 program 4): the era arm parses at the boundary — year and
+     line MUST ride together (a bare year would invent availability the doc
+     never dates; a bare line has no world to gate against). Absent pair ⇒
+     `eraPlan` stays undefined and the door object below is EXACTLY today's,
+     so all 31 shipped eraless wires byte-stand (falsifier: runner-level
+     digest equality pinned in eraAvailability.test.ts). */
+  if ((config.eraYear === undefined) !== (config.eraBundle === undefined)) {
+    throw new Error(
+      `scenario[BAD_ERA] at 'runScenario.eraYear': eraYear and eraBundle arm TOGETHER — got eraYear ${String(config.eraYear)}, eraBundle ${config.eraBundle === undefined ? "undefined" : config.eraBundle.id}`,
+    );
+  }
+  let eraPlan: EraPlan | undefined;
+  if (config.eraYear !== undefined && config.eraBundle !== undefined) {
+    if (!Number.isSafeInteger(config.eraYear) || config.eraYear < 0) {
+      throw new Error(`scenario[BAD_INT] at 'runScenario.eraYear': expected a safe integer ≥ 0, got ${String(config.eraYear)}`);
+    }
+    eraPlan = composeEraPlan(config.eraBundle, config.eraYear);
+  }
   /* L-CP2: resolve the seat BEFORE the mint — noc-shift's three hands are a
    * minting fact (state.hands is the authority; the door's fallback mirrors
    * it, the pre-existing two-reading law at :845). Unarmed docs keep the
@@ -961,8 +998,15 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
    * gate fires before payment and before the per-verb validators, so a
    * banned verb's freeze validator is never even consulted; an unbanned
    * verb's freeze validator rides on untouched, by identity. */
-  const armedDoorIntents: IntentDoorConfig =
+  const perspectiveDoorIntents: IntentDoorConfig =
     perspectiveSpec === undefined ? doorIntents : applyPerspectiveToDoorConfig(doorIntents, perspectiveSpec);
+  /* L-EM ERA-LAST stage (the perspective header's documented chain:
+   * freeze tapes → perspective gate → era gate). Unarmed runs pass the
+   * perspective object through BY IDENTITY — no clone, no re-freeze: eraless
+   * is today's byte path. Armed, a zero-gate plan grows no canExecute key
+   * (the zero-ban rule), so an all-available era still behaves identically. */
+  const armedDoorIntents: IntentDoorConfig =
+    eraPlan === undefined ? perspectiveDoorIntents : applyEraAvailabilityToDoorConfig(perspectiveDoorIntents, eraPlan);
   const driver = createTickDriver(
     slots,
     streamFor(runSeed, "root", 0),
@@ -1314,6 +1358,11 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     ...(perspectiveSpec === undefined
       ? {}
       : { perspective: perspectiveReportFor(perspectiveSpec, config.perspectiveView) }),
+    // L-EM sparse-key law: eraless runs (all 31 shipped wires by default)
+    // never grow the `era` key.
+    ...(eraPlan === undefined
+      ? {}
+      : { era: Object.freeze({ eraYear: eraPlan.eraYear, bundleId: eraPlan.bundleId }) }),
     // L-GUARD sparse-key law: funded runs never grow the `chargebackFeeRefusals` key.
     ...(acc.chargebackFeeRefusals.length > 0
       ? { chargebackFeeRefusals: Object.freeze([...acc.chargebackFeeRefusals]) }

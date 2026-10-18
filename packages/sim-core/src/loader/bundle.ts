@@ -194,10 +194,24 @@ export interface LoadedSkin {
   readonly lodContract: LoadedLodContract;
 }
 
+/** One §0.4 per-tech availability window row (L-EM, ADR-0019 program 4).
+ *  Both null = the row documents nothing = neither grant nor deny; the
+ *  four-status law lives in eras.ts resolveTechAvailability. */
+export interface LoadedTechWindow {
+  readonly from: YearString | null;
+  readonly to: YearString | null;
+}
+
 export interface LoadedEras {
   readonly availableFrom: YearString | null;
   readonly obsoleteBy: YearString | null;
   readonly eraOverrides: Readonly<Record<string, OpaqueJsonRecord>>;
+  /** §0.4 "Whole branches of the tech tree are greyed out with 'not invented
+   *  yet.'" — techId → its OWN window; absent techs fall back to the
+   *  bundle-level dates (the line's date gates the whole line). Optional on
+   *  the wire; every shipped bundle today omits it, so loaded state stays
+   *  byte-identical to pre-L-EM parses except for the frozen empty default. */
+  readonly availability: Readonly<Record<string, LoadedTechWindow>>;
 }
 
 /** §1.3 authored chargeback extension (README "Never invent numbers").
@@ -718,10 +732,20 @@ const SKIN_PLAN: Plan = {
   ),
 };
 
+/** L-EM per-tech window row: the same 4-digit year law as the bundle-level
+ *  dates; `_todo` rides the convention strip. Absent legs are null, never
+ *  invented — an undated start reads undocumented, exactly like the
+ *  bundle-level availableFrom law it mirrors. */
+const TECH_WINDOW_PLAN: Plan = {
+  from: opt(nullable(pattern(/^\d{4}$/, "a 4-digit era year (§0.4 R66)")), null),
+  to: opt(nullable(pattern(/^\d{4}$/, "a 4-digit era year (§0.4 R66)")), null),
+};
+
 const ERAS_PLAN: Plan = {
   availableFrom: req(nullable(pattern(/^\d{4}$/, "a 4-digit era year (§0.4 R66)"))),
   obsoleteBy: req(nullable(pattern(/^\d{4}$/, "a 4-digit era year (§0.4 R66)"))),
   eraOverrides: req((v, p) => keyMap(opaqueRecord)(v, p)),
+  availability: opt((v, p) => keyMap((w, q) => parseObject(w, q, TECH_WINDOW_PLAN))(v, p), Object.freeze({})),
 };
 
 const ECONOMY_PLAN: Plan = {
@@ -1010,6 +1034,7 @@ function toLoadedBundle(parsed: JsonRecord): LoadedTypeBundle {
       availableFrom: eras.availableFrom as YearString | null,
       obsoleteBy: eras.obsoleteBy as YearString | null,
       eraOverrides: eras.eraOverrides as LoadedEras["eraOverrides"],
+      availability: eras.availability as LoadedEras["availability"],
     },
     economy: {
       unitOfSale: economy.unitOfSale as string,

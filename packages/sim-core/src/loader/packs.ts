@@ -223,16 +223,23 @@ function sealedMap<K, V>(entries: readonly (readonly [K, V])[]): ReadonlyMap<K, 
     },
     get: (key: K): V | undefined => map.get(key),
     has: (key: K): boolean => map.has(key),
-    keys: (): IterableIterator<K> => map.keys(),
-    values: (): IterableIterator<V> => map.values(),
-    entries: (): IterableIterator<[K, V]> => map.entries(),
+    // Return types are INFERRED, not hand-annotated: under an ES2022 lib the
+    // native Map members yield IterableIterator, under an ES2024+ lib (any
+    // consumer program whose @types pull it in, e.g. tools/host) they yield
+    // MapIterator with [Symbol.dispose] — either way the sealed facade's
+    // iterator members satisfy ReadonlyMap EXACTLY, because they ARE the
+    // Map's own iterators. Pinning `IterableIterator` here by hand broke the
+    // facade's ReadonlyMap assignability in richer-lib programs (L-EM).
+    keys: () => map.keys(),
+    values: () => map.values(),
+    entries: () => map.entries(),
     forEach: (
       callback: (value: V, key: K, map: ReadonlyMap<K, V>) => void,
       thisArg?: unknown,
     ): void => {
       map.forEach((value, key) => callback.call(thisArg, value, key, map));
     },
-    [Symbol.iterator]: (): IterableIterator<[K, V]> => map.entries(),
+    [Symbol.iterator]: () => map.entries(),
   });
 }
 

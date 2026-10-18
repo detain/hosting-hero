@@ -91,3 +91,10 @@ export type {
   PerspectiveViewProjection,
   ScenarioPerspectiveReport,
 } from "./perspective.ts";
+
+export {
+  applyEraAvailabilityToDoorConfig,
+  composeEraPlan,
+  eraRefusalReason,
+} from "./eraAvailability.ts";
+export type { EraPlan } from "./eraAvailability.ts";

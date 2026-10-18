@@ -1,7 +1,7 @@
 /** perspective.test.ts — §1.2 perspective levels at FULL POWER (L-CP2 → L-PERS).
  *
  *  The three laws this suite exists to hold:
- *  1. SPARSE-KEY: an unarmed doc never grows a key — all thirty shipped
+ *  1. SPARSE-KEY: an unarmed doc never grows a key — all thirty-one shipped
  *     wires parse, run, and report byte-stand (the roster loops in
  *     runner.test.ts green UNAIDED are the standing falsifier; the parse
  *     group below re-proves it at the wall).
