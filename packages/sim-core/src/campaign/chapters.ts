@@ -1,12 +1,15 @@
-/** chapters.ts — the authored campaign content (Prologue + Act I + Act II).
+/** chapters.ts — the authored campaign content (Prologue + Act I + Act II + Act III).
  *
- *  This module is DATA riding law, zero new authority: three `hh-campaign@1`
- *  documents parsed through the L-CP1 wall (`parseCampaignDoc`), four
+ *  This module is DATA riding law, zero new authority: four `hh-campaign@1`
+ *  documents parsed through the L-CP1 wall (`parseCampaignDoc`), twelve
  *  perspective-bearing or bespoke scenario documents (`hh-scenario@1`)
  *  authored in-module because `runScenario` accepts host-authored docs without
  *  scenarios.ts registration (the L-CP3 PerspectiveScenarioWire precedent —
  *  two §1.2 seats in Act I, one seat plus THE HARDEST LESSON death level in
- *  Act II), and a chapter-meta ledger (archetype / specLine / perspective /
+ *  Act II, and eight Act III levels — two seats, three authored homages of
+ *  §1.5 fiction, and the bespoke beats including the exit run-up; see the
+ *  ACT_THREE notes for the corpse-audit roster law) — and a chapter-meta
+ *  ledger (archetype / specLine / perspective /
  *  tier) that the `CampaignChapterSpec` wire deliberately does NOT
  *  carry — the §1.9 11-archetype taxonomy and its no-consecutive law are an
  *  AUTHORING discipline enforced by chapters.test.ts, not engine state.
@@ -18,10 +21,20 @@
  *    under 30% of the campaign; no two consecutive levels share a tag.
  *  - OD-19 adopted act table (docs/DECISIONS-PENDING.md, ADR-0013 ruling 10):
  *    Prologue (T0–0.5, first mastery inside 3 minutes) / Act I panic→process.
+ *  - §1.9 Act III (Tiers 5–6) — "8 levels, 30–45 minutes each, portfolio and
+ *    geography" (:5126): shipped as NINE minute-scale beats on the same carry
+ *    machinery — the 8→9 supersession is cadence-law arithmetic, recorded in
+ *    the ACT_THREE docblock, and §1.9's per-act floor of two perspective
+ *    levels is FINALLY satisfiable at that length (seats at tour indices
+ *    21 and 26 — gaps 5 and 5 under the standing global every-5 law).
  *  - §1.6 carry-over-thin + the three floors (~:4310): below the cash floor a
  *    SCRIPTED BRIDGE replaces the war chest — every chapter after the first
  *    opens at the bridge, so the act is playable regardless of how thin the
  *    last win left the bankroll.
+ *  - §1.11 The Ratchet Audit (:5349): "a level that tests only your
+ *    carried-over automation", the doc's own audit sentence — "the *ideal*
+ *    play is to do nothing and watch" (:5353). Act III c-2 plays it with a
+ *    ZERO-intent rail and a win line that fails the moment a hand moves.
  *
  *  Honest disclosures (probe-derived, not asserted):
  *  - NO SHIPPED registry doc dies in-campaign with a `lose:death-by-cause:any@`
@@ -30,9 +43,25 @@
  *    the shipped doc), so Act I tests assert the win-through ledger. Act II
  *    answers the gap with an AUTHORED level that dies in the shape — the
  *    §1.6 shortening made playable (see ACT_TWO notes: probe trail verbatim).
- *  - §1.9's per-act "two perspective levels" floor is met by Act I; the
- *    Prologue is exempt BY OD-19 (first-mastery-inside-3-minutes: a seat swap
+ *  - §1.9's per-act "two perspective levels" floor is met by Act I, filed as
+ *    direct tension by Act II (one seat — a 7-beat act cannot hold two seats
+ *    ≥5 apart after the vigil at tour index 10), and RESTORED by Act III:
+ *    seats c-4/c-9 land at indices 21 and 26, gaps 5 and 5 — the first act to
+ *    satisfy §1.9's floor-of-two without breaking the global every-5 cadence.
+ *    The Prologue is exempt BY OD-19 (first-mastery-inside-3-minutes: a seat swap
  *    before the player knows the default seat is tuition friction, not shape).
+ *  - Act III's re-ride roster is CORPSE-filtered (wave-26 probe trail,
+ *    ACT_THREE docblock verbatim): every shipped §1.5 storm doc the design
+ *    dossier proposed either opens ABOVE the scripted bridge (the-covenant
+ *    100B, review-bomb 1B, the-sev-0 500M — the never-poorer cash-floor law
+ *    refuses silent rebases and no new thin-ride exception is granted) or
+ *    rides to a WIN AS A DISSOLVED COMPANY (an empty book arms §2.9's
+ *    churn-floor watch from t1, the three-day spell executes the company at
+ *    ~t44 cash-independently, and a doc without a death lose-line grades the
+ *    corpse — the law Act II filed). Three beats therefore RE-AUTHOR the same
+ *    §1.5 fiction with the §1.6 floor clause the campaign cadence will not
+ *    wait for; the one true re-ride (c-3 understaffed-sunday) fires its
+ *    win@40 before the floor can speak.
  *  - The cash-floor numerics are PROVISIONAL (OD-19 carries no ratified
  *    numbers): threshold/bridge below are grounded from shipped-doc openings
  *    (bridge 300_000_000 µ$ = the-price-hike's own war chest, the leanest
@@ -89,8 +118,12 @@ export interface ChapterMeta {
   readonly perspectiveId?: string;
   /** §2.11 tier the beat rides. Prologue/Act I teach T0–2 by OD-19 fiat and
    *  ship no row; every Act II chapter declares 3 or 4 (§1.9 :5117's
-   *  "Tiers 3–4"), and the lint law reads the rise from these numbers. */
-  readonly tier?: 3 | 4;
+   *  "Tiers 3–4"), and every Act III chapter declares 5 or 6 (§1.9 :5126's
+   *  "Act III (Tiers 5–6)"), the lint law reading the rise from these
+   *  numbers. Tier 5/6 has no bespoke engine mechanics at the level layer —
+   *  the beats ride BUILT door verbs and the board itself, fiction-as-data
+   *  per ADR-0018's ceiling list (ACT_THREE docblock). */
+  readonly tier?: 3 | 4 | 5 | 6;
 }
 
 /* ------------------------------------------------------------------ */
@@ -314,6 +347,413 @@ const NOC_ONCALL_DESK_WIRE = {
   },
 } satisfies PerspectiveScenarioWire;
 
+/* ------------------------------------------------------------------ */
+/* Act III authored docs — homages, seats, bespoke beats (wave-26)      */
+/* ------------------------------------------------------------------ */
+
+/** c-1 homage: the §1.5 "Metastable" fiction (surge-then-wall on an eight-slot
+ *  edge, :4092) re-authored with the ONE clause the campaign cadence cannot
+ *  wait for — a live book. The shipped registry doc runs contracts:[]; under
+ *  the scripted bridge its empty arms §2.9's churn-floor from t1, the
+ *  three-day spell dissolves the company at ~t44, and with no death lose-line
+ *  the doc rides to a WIN AS A CORPSE (probe 2026-10-18:
+ *  observation.deaths ["churn-collapse"] at win@240) — the grading law Act II
+ *  filed. Two quiet monthly accounts keep the floor silent; the board, the
+ *  traffic ladder, the guard and the win clock are the registry's verbatim.
+ *  The Convert archetype: the beat converts a surge into a survived hour. */
+const METASTABLE_WINDOW_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-metastable-window",
+  name: "The Metastable Window",
+  brief:
+    "Act III opens where Act II's prevention ended: a surge that would cascade if the book went quiet. The eight-slot edge hums, a three-minute storm breaks over it, and the degraded wall waits for one unlucky backlog. Survive the quarter-hour after the ladder.",
+  specRef: "§1.5 Metastable (campaign-authored Act III homage — the §1.6 floor clause added)",
+  specLine: 4092,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "sw-01", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: true },
+    { id: "sw-02", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: true },
+  ],
+  traffic: {
+    tableId: "storm-window-ladder",
+    segments: [
+      { fromMinute: 0, ratePerMin: 4 },
+      { fromMinute: 30, ratePerMin: 16 },
+      { fromMinute: 33, ratePerMin: 4 },
+    ],
+  },
+  objectives: {
+    win: [{ kind: "survive-minutes", minutes: 240 }],
+    lose: [],
+  },
+  limits: {
+    maxSimMinutes: 240,
+    guardrails: [{ type: "cascadeCollapse", degradedPctGt: 50, sustainedMin: 10 }],
+  },
+} satisfies ScenarioWire;
+
+/** c-2 the Ratchet Audit played (§1.11 :5349, "a level that tests only your
+ *  carried-over automation"; :3675 names the Long Weekend "the model for the
+ *  recurring Ratchet Audit"): the doc's OWN audit sentence is the design
+ *  brief — "the *ideal* play is to do nothing and watch" (:5353). So the rail
+ *  is EMPTY BY LAW, and the win line makes idleness a gate:
+ *  intents-executed-below {count:1} fails the moment one hand moves. The
+ *  three-node board hums at rho≈0 on a monthly book; Endure the quarter.
+ *  (Act III's first Endure census row; the archetype chain c-1→c-2 converts→
+ *  endures, no consecutive share.) */
+const QUARTER_THAT_RAN_ITSELF_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-quarter-that-ran-itself",
+  name: "The Quarter That Ran Itself",
+  brief:
+    "The automation you carried here is the whole level: a green three-node board, a monthly book that signs itself, and traffic that never asks for you. The ratchet audit is no test of hands — the ideal play is to do nothing and watch, and the ledger grades exactly that.",
+  specRef: "§1.5 The Ratchet Audit (campaign-authored Act III level — §1.11 :5349)",
+  specLine: 5353,
+  board: {
+    nodes: [
+      { id: "qr-web", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 },
+      { id: "qr-db", kind: "shared-web", slots: 100, serviceTimeUs: 4_000_000 },
+      { id: "qr-edge", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 },
+    ],
+    edges: [],
+  },
+  contracts: [
+    { id: "qr-01", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 9_000, termMonths: 1, autoRenew: true },
+    { id: "qr-02", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 9_000, termMonths: 1, autoRenew: true },
+  ],
+  traffic: {
+    tableId: "ratchet-hum",
+    segments: [{ fromMinute: 0, ratePerMin: 1 }],
+  },
+  intents: [],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 60 },
+      { kind: "bounces-below", count: 1 },
+      { kind: "intents-executed-below", count: 1 },
+    ],
+    lose: [{ kind: "death-by-cause", cause: "any" }],
+  },
+  limits: { maxSimMinutes: 90 },
+} satisfies ScenarioWire;
+
+/** c-4 seat: the Datacenter Tech (§1.2 :1215 "Place/Connect only, no Observe
+ *  (you're *told* what to do and it's wrong)"; detail heading :1328 "Remote
+ *  Hands"), on the Tier-5 geography fiction (:961 "Two Datacenters, One
+ *  Company"). The seat's full-power canExecute ban roster (15 verbs — L-PERS
+ *  @817c82c) IS the fiction: someone else's portfolio decisions execute
+ *  around you, and the only lawful hands are the ones that move metal. The
+ *  12-node two-hall board is pure topology DATA — tier 5/6 never had bespoke
+ *  engine mechanics at the level layer; Act III labels the fiction-as-data
+ *  (ADR-0018 ceiling list). The rail places and cables in both halls and
+ *  reaches ONCE for the phone the seat does not carry: the LIVE
+ *  perspective-forbids refusal is the floor-tech's whole career in one row.
+ *  hide ["company::"] + no policy book ride the seat row untouched — the win
+ *  line still gates on the refused census: seeing-is-not-being is a PROJECTION
+ *  law, and the support vigil proved (Act I, win@30) that hidden company
+ *  facts never blind the objective fold. */
+const FLOOR_AND_AISLE_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-floor-and-aisle",
+  name: "The Floor and the Aisle",
+  brief:
+    "Two datacenters, one company, and you are the hands in the aisle. Place and cable what the portfolio decided in halls you will never price or phone: build the row that wins the beat, and let one swallowed reach for the desk phone stand as the year's performance review.",
+  specRef: "§1.5 The Floor and the Aisle (campaign-authored perspective level)",
+  specLine: 1215,
+  perspective: { id: "datacenter-tech" },
+  board: {
+    nodes: [
+      { id: "dc-a1", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-a2", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-a3", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-a4", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-a5", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-a6", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-b1", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-b2", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-b3", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-b4", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-b5", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+      { id: "dc-b6", kind: "shared-web", slots: 40, serviceTimeUs: 2_000_000 },
+    ],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "floor-and-aisle",
+    // Green-site arithmetic again: 1/min against 480 slots — the lesson is
+    // entirely at the door, the bounces gate is an ASSERTION.
+    segments: [{ fromMinute: 0, ratePerMin: 1 }],
+  },
+  intents: [
+    // The lawful hands: rack new metal in hall A and cable it into the row;
+    // the same in hall B. place-device CREATES the node (the door's
+    // node-exists law keeps it honest — the floor-tech racks what the
+    // portfolio ordered, it does not re-rack what already stands).
+    { atTick: 5, verb: "place-device", args: { nodeId: "rack-a7", deviceKind: "web", template: null } },
+    { atTick: 9, verb: "connect-ports", args: { relation: "data", from: "rack-a7", to: "dc-a2", slot: null } },
+    { atTick: 17, verb: "place-device", args: { nodeId: "rack-b7", deviceKind: "web", template: null } },
+    { atTick: 21, verb: "connect-ports", args: { relation: "data", from: "rack-b7", to: "dc-b2", slot: null } },
+    // The reach the seat does not carry — LIVE perspective-forbids witness.
+    { atTick: 13, verb: "communicate", args: { target: null, note: "floor-to-desk" } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 40 },
+      { kind: "intents-executed-above", verb: "place-device", count: 1 },
+      { kind: "intents-executed-above", verb: "connect-ports", count: 1 },
+      { kind: "intents-refused-above", verb: "communicate", count: 0 },
+      { kind: "intents-executed-below", count: 6 },
+      { kind: "bounces-below", count: 1 },
+    ],
+    lose: [{ kind: "death-by-cause", cause: "any" }],
+  },
+  limits: { maxSimMinutes: 60 },
+} satisfies PerspectiveScenarioWire;
+
+/** c-5 the portfolio beat played with the BUILT tier verbs (§1.9 :5126 "Act
+ *  III (Tiers 5–6) — portfolio and geography"): scale-node reserves capacity
+ *  the market may not need (the growth), reclaim-node voids bookings at the
+ *  tombstone (the shrink). The Shrink archetype — the doc's beat line is the
+ *  ledger contracting under the door's own LWW law. One monthly account keeps
+ *  the churn floor silent to t90; the rail is four rows, two verbs, executed
+ *  censuses as win gates. Geography law from the door code, not a new
+ *  mechanic: scale/reclaim were BUILT at the spine (@c8b92a2/@8037a4f) long
+ *  before any level named them — Act III rides them as data, ceiling honored
+ *  (ADR-0018 1a). */
+const GROWTH_THAT_SHRANK_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-growth-that-shrank-itself",
+  name: "The Growth That Shrank Itself",
+  brief:
+    "Portfolio work at the scale desk: book two capacity pads, then reclaim them before the forecast you never read becomes a graveyard. Growth is a booking, shrink is a tombstone, and the beat rides the door's own arithmetic between them.",
+  specRef: "§1.5 The Growth That Shrank Itself (campaign-authored Act III level — §1.9 :5126 portfolio)",
+  specLine: 5126,
+  board: {
+    nodes: [
+      { id: "gr-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 },
+      { id: "gr-2", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 },
+      { id: "gr-3", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 },
+      { id: "gr-4", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 },
+    ],
+    edges: [],
+  },
+  contracts: [
+    { id: "gr-01", mrcMicroUsd: 1_000_000, billingCycle: "monthly", termEndMin: 9_000, termMonths: 1, autoRenew: true },
+  ],
+  traffic: {
+    tableId: "growth-shrink",
+    segments: [{ fromMinute: 0, ratePerMin: 2 }],
+  },
+  intents: [
+    { atTick: 6, verb: "scale-node", args: { targetNodeId: "gr-1", reservedSlots: 2, effectiveAtBusinessMinute: null } },
+    { atTick: 14, verb: "reclaim-node", args: { targetNodeId: "gr-1", effectiveAtBusinessMinute: null } },
+    { atTick: 20, verb: "scale-node", args: { targetNodeId: "gr-2", reservedSlots: 2, effectiveAtBusinessMinute: null } },
+    { atTick: 28, verb: "reclaim-node", args: { targetNodeId: "gr-2", effectiveAtBusinessMinute: null } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 60 },
+      { kind: "intents-executed-above", verb: "scale-node", count: 1 },
+      { kind: "intents-executed-above", verb: "reclaim-node", count: 1 },
+      { kind: "intents-executed-below", count: 6 },
+      { kind: "bounces-below", count: 1 },
+    ],
+    lose: [{ kind: "death-by-cause", cause: "any" }],
+  },
+  limits: { maxSimMinutes: 90 },
+} satisfies ScenarioWire;
+
+/** c-6 homage: the §1.5 "DDoS Season" gradient fiction (:3994, the four-step
+ *  hourly climb on a ten-slot edge) re-authored with the floor clause — same
+ *  board, same ladder, same cascadeCollapse wall, same win clock; the shipped
+ *  doc's empty book corpse-fails the campaign cadence exactly as the
+ *  metastable twin does (probe: deaths ["churn-collapse"] at win@240).
+ *  Act III's second Endure (c-5 Shrink ≠ c-6 Endure ≠ c-7 Negotiate), the
+ *  long gradient against a book that never needed defending. */
+const LONG_GRADIENT_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-long-gradient",
+  name: "The Long Gradient",
+  brief:
+    "No single wave, just the season: an attack baseline that climbs every hour for four hours past a ten-slot edge. The gradient that stays polite ends the clock with the node out of the degraded wall; the bounces ledger is the season's whole weather report. Endure the curve.",
+  specRef: "§1.5 DDoS Season (campaign-authored Act III homage — the §1.6 floor clause added)",
+  specLine: 3994,
+  board: {
+    nodes: [{ id: "edge-1", kind: "shared-web", slots: 10, serviceTimeUs: 20_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "lg-01", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: true },
+    { id: "lg-02", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: true },
+  ],
+  traffic: {
+    tableId: "long-gradient",
+    segments: [
+      { fromMinute: 0, ratePerMin: 3 },
+      { fromMinute: 60, ratePerMin: 5 },
+      { fromMinute: 120, ratePerMin: 7 },
+      { fromMinute: 180, ratePerMin: 8 },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "bounces-below", count: 40 },
+    ],
+    lose: [],
+  },
+  limits: {
+    maxSimMinutes: 240,
+    guardrails: [{ type: "cascadeCollapse", degradedPctGt: 50, sustainedMin: 10 }],
+  },
+} satisfies ScenarioWire;
+
+/** c-7 the run-up (§1.5 "Sell the Company" :4014; the doc's own split
+ *  recommendation :4019 names this level "the run-up"). The EXIT ending's
+ *  grammar is supplied here: the win line carries sell-accepted-above, and
+ *  runner.ts's verdict-observed stopReason rides that predicate into the
+ *  terminal record — the rung AC-E's endCampaign selects `exit` on
+ *  (^win:sell-accepted-above:, @61a1c3b). Anchor law (installed base, NOT a
+ *  catalog — the scenario runner never wires sellMarketRates; the only price
+ *  authority a doc may reach is its own keyed book, sell.ts's anchor):
+ *  plan:long-sale anchors at ls-01's 50M MRC, sku:long-sale-b at ls-02's 30M.
+ *  Offers at 60% of anchor sit past the acceptance-clamp's deep-cheap ceiling
+ *  (9,500 bps of 10,000 — acceptance is near-certain but NEVER certain,
+ *  ADR-0016 #11), so the win line is count:0 (≥1 accepted) and every rail
+ *  row is a fresh fingerprint: the t30/t45 re-offers bump shippedAtTick at
+ *  the door and RE-ROLL the dice — four rolls per run is the insurance
+ *  arithmetic. The per-seed census is probe-pinned in chapters.test.ts.
+ *  Negotiate, not the doc's Reach-State label at :4015 — the beat negotiates
+ *  with the market itself (design authority: I-AC3 dossier, owner-approved). */
+const LONG_SALE_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-long-sale",
+  name: "The Long Sale",
+  brief:
+    "The run-up is not a board fight — it is a price negotiation with the market. Two keyed accounts anchor the book; four offers at sixty cents on the anchor ask the dice what the ledger already knows. Land one acceptance inside the hour and the exit opens.",
+  specRef: "§1.5 Sell the Company — the run-up (campaign-authored Act III level)",
+  specLine: 4019,
+  board: {
+    nodes: [{ id: "ls-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "ls-01", mrcMicroUsd: 50_000_000, billingCycle: "monthly", termEndMin: 9_000, termMonths: 1, autoRenew: true, priceKey: "plan:long-sale" },
+    { id: "ls-02", mrcMicroUsd: 30_000_000, billingCycle: "monthly", termEndMin: 9_000, termMonths: 1, autoRenew: true, priceKey: "sku:long-sale-b" },
+  ],
+  traffic: {
+    tableId: "long-sale",
+    segments: [{ fromMinute: 0, ratePerMin: 1 }],
+  },
+  intents: [
+    { atTick: 10, verb: "sell-offer", args: { targetKind: "plan", targetId: "long-sale", offerPriceMicroUsd: "30000000", termMonths: 12, effectiveAtBusinessMinute: null } },
+    { atTick: 14, verb: "sell-offer", args: { targetKind: "sku", targetId: "long-sale-b", offerPriceMicroUsd: "18000000", termMonths: 12, effectiveAtBusinessMinute: null } },
+    { atTick: 30, verb: "sell-offer", args: { targetKind: "plan", targetId: "long-sale", offerPriceMicroUsd: "30000000", termMonths: 12, effectiveAtBusinessMinute: null } },
+    { atTick: 45, verb: "sell-offer", args: { targetKind: "sku", targetId: "long-sale-b", offerPriceMicroUsd: "18000000", termMonths: 12, effectiveAtBusinessMinute: null } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 60 },
+      { kind: "sell-accepted-above", count: 0 },
+    ],
+    lose: [{ kind: "death-by-cause", cause: "any" }],
+  },
+  limits: { maxSimMinutes: 90 },
+} satisfies ScenarioWire;
+
+/** c-8 homage: the §1.5 "Free Tier Flood" fiction (:3590, the dice-free
+ *  family census) re-authored with the floor clause — same 60-slot edge, the
+ *  same organic→malicious ladder, the same family win/lose ceilings the
+ *  registry pins as seed-invariant (organic 1,680 / malicious 3,120 mints at
+ *  integer rates: zero dice, zero corpse risk from the traffic leg). The
+ *  Diagnose archetype: the beat reads the institution's own flood curve.
+ *  The shipped doc's contracts:[] arms the churn-floor the same way the
+ *  storm twins do (probe: deaths ["churn-collapse"]); two monthly accounts
+ *  keep the book alive the only way Act III accepts. */
+const INSTITUTION_WATCH_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-institution-watch",
+  name: "The Institution Watch",
+  brief:
+    "Two hours of genuine blogs, then the miners arrive: the free tier turns the edge queue into a census of intentions. Keep the abuse ceiling down without strangling the organic stream that made the tier worth running — the families are the read.",
+  specRef: "§1.5 Free Tier Flood (campaign-authored Act III homage — the §1.6 floor clause added)",
+  specLine: 3590,
+  board: {
+    nodes: [{ id: "edge-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    { id: "iw-01", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: true },
+    { id: "iw-02", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: true },
+  ],
+  traffic: {
+    tableId: "institution-watch-mix",
+    segments: [
+      { fromMinute: 0, ratePerMin: 8, family: "organic" },
+      { fromMinute: 60, ratePerMin: 20, family: "organic" },
+      { fromMinute: 120, ratePerMin: 26, family: "malicious" },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "family-arrivals-above", family: "organic", count: 1200 },
+      { kind: "family-arrivals-below", family: "malicious", count: 3201 },
+    ],
+    lose: [{ kind: "family-arrivals-above", family: "malicious", count: 3200 }],
+  },
+  limits: { maxSimMinutes: 240 },
+} satisfies ScenarioWire;
+
+/** c-9 seat: Red Team Friday (§1.2 :1217 "the same six verbs with the goal
+ *  node inverted"; detail heading :1254). The seat row is ZERO-mechanics by
+ *  design (L-PERS roster: hide[], refuse[], lookupPolicyCards true — the
+ *  perspective exists in the OBJECTIVE, and :1213's law line reads "re-author
+ *  objectives, not mechanics"): every verb legal, the board tiny, the traffic
+ *  mean. The win line INVERTS the campaign's founding gesture — where the
+ *  prologue teaches to hold the queue, this beat WINS BY BREAKING IT:
+ *  bounces-above {count:24} on a two-slot target under eight visits a minute
+ *  (≈2/min steady bounce + retry amplification) is an attacker's scorecard.
+ *  win@25 lands before the empty-book churn-floor can speak (t44), so the
+ *  contracts row stays honestly empty and the lose line stays honestly
+ *  absent — the inversion reaches its clock. The one communicate row is the
+ *  taunt: executed, counted, legal — zero-ban armed witness. */
+const RED_TEAM_FRIDAY_WIRE = {
+  schema: "hh-scenario@1",
+  id: "red-team-friday",
+  name: "Red Team Friday",
+  brief:
+    "Same hands, same door, inverted objective: you are Friday's attacker with the runbook on your side. Two slots against eight visitors a minute, and a ledger grading bounces as the honest scorecard. Break the target by twenty-five and the red team wins.",
+  specRef: "§1.5 Red Team Friday (campaign-authored perspective level — §1.2 :1217)",
+  specLine: 1217,
+  perspective: { id: "red-team-friday" },
+  board: {
+    nodes: [{ id: "target-1", kind: "shared-web", slots: 2, serviceTimeUs: 20_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "red-team-queue",
+    segments: [{ fromMinute: 0, ratePerMin: 8 }],
+  },
+  intents: [
+    { atTick: 5, verb: "communicate", args: { target: null, note: "red-team-found-this" } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 25 },
+      { kind: "bounces-above", count: 24 },
+      { kind: "intents-executed-above", verb: "communicate", count: 0 },
+    ],
+    lose: [],
+  },
+  limits: { maxSimMinutes: 60 },
+} satisfies PerspectiveScenarioWire;
+
 /** The docs this module OWNS (authored, not registered in scenarios.ts).
  *  Hosts resolve chapter docs via `docOf = (id) => CHAPTER_AUTHORED_DOCS[id]
  *  ?? shippedScenario(id)` — the L-CP1 authority seam, unchanged. */
@@ -322,6 +762,14 @@ export const CHAPTER_AUTHORED_DOCS: Readonly<Record<string, ScenarioDoc>> = Obje
   "support-desk-vigil": parseScenarioDoc(SUPPORT_DESK_VIGIL_WIRE),
   "the-hardest-lesson": parseScenarioDoc(HARDEST_LESSON_WIRE),
   "noc-oncall-desk": parseScenarioDoc(NOC_ONCALL_DESK_WIRE),
+  "the-metastable-window": parseScenarioDoc(METASTABLE_WINDOW_WIRE),
+  "the-quarter-that-ran-itself": parseScenarioDoc(QUARTER_THAT_RAN_ITSELF_WIRE),
+  "the-floor-and-aisle": parseScenarioDoc(FLOOR_AND_AISLE_WIRE),
+  "the-growth-that-shrank-itself": parseScenarioDoc(GROWTH_THAT_SHRANK_WIRE),
+  "the-long-gradient": parseScenarioDoc(LONG_GRADIENT_WIRE),
+  "the-long-sale": parseScenarioDoc(LONG_SALE_WIRE),
+  "the-institution-watch": parseScenarioDoc(INSTITUTION_WATCH_WIRE),
+  "red-team-friday": parseScenarioDoc(RED_TEAM_FRIDAY_WIRE),
 });
 
 /* ------------------------------------------------------------------ */
@@ -567,18 +1015,144 @@ export const ACT_TWO_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
 export const CAMPAIGN_ACT_TWO: CampaignDoc = parseCampaignDoc(ACT_TWO_WIRE);
 
 /* ------------------------------------------------------------------ */
+/* ACT III — prevention → boredom (Tiers 5–6, §1.9 :5126)               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Nine chapters on the §1.9 Act-III line (:5126 "portfolio and geography"),
+ * the prevention act exhaling into the machinery it built: the ratchet audit
+ * played with a ZERO-intent rail (c-2 — §1.11's own audit sentence made
+ * law: "the *ideal* play is to do nothing and watch" :5353), the floor-tech's
+ * 12-node two-datacenter aisle where the seat's ban roster IS the Tier-5
+ * fiction (c-4 — :961 "Two Datacenters, One Company", :1328 "Remote Hands"),
+ * the portfolio beat riding the BUILT scale/reclaim spine as pure data (c-5),
+ * and the run-up that feeds the exit ending's grammar (c-7 — §1.5 :4019's
+ * "the run-up", the sell-accepted-above win carrier the terminal stopReason
+ * rides into endCampaign's `exit` selection, AC-E @61a1c3b). The act closes
+ * on the goal inverted: Red Team Friday (c-9), §1.2 :1217's "same six verbs
+ * with the goal node inverted" — perspective-as-objective, zero mechanics.
+ *
+ * THE 8→9 SUPERSESSION (arithmetic, not taste): §1.9 :5126 names EIGHT
+ * levels; this ships NINE, and the campaign's own cadence law forces the
+ * extra beat. The global every-5 seat law has ridden chapters.test.ts since
+ * Act I (a-8 at tour index 10, b-6 at 16 — the 7-beat Act II physically
+ * could not host its second seat inside the act, and filed the tension).
+ * Act III restores §1.9's per-act floor of TWO perspective levels: an
+ * 8-beat act places the second seat at index ≤25, a gap of 4 behind a
+ * first seat at ≥21 (or pushes the first to 20, a gap of 4 behind b-6);
+ * only a NINTH beat lets the pair land at 21 and 26 — gaps 5 and 5, the
+ * FIRST act satisfying the floor under the standing law. The lint test
+ * re-derives every position; the supersession is the tour's shape, pinned.
+ *
+ * DESIGN AUTHORITY: I-AC3 dossier (owner-approved, wave-26 "go with
+ * recommendations"). Roster substitutions vs the dossier's letters, all
+ * probe-forced (the corpse audit, header disclosure above):
+ * - c-1/c-6/c-8 are authored HOMAGES of the metastable (:4092) / ddos-season
+ *   (:3994) / free-tier-flood (:3590) fiction — the registry docs' empty
+ *   books churn-die cash-independently at ~t44 and none carries a death
+ *   lose-line, so under the campaign clock they win as CORPSES (probe
+ *   2026-10-18: observation.deaths ["churn-collapse"] at win@240/240/60).
+ *   Each homage keeps board/traffic/guard/clock VERBATIM and adds the two
+ *   monthly accounts the §1.6 floor needs; the meta↔doc specLine equality
+ *   law holds (the homage cites its fiction's own line).
+ * - c-3 is the act's only TRUE registry re-ride: understaffed-sunday
+ *   (:3673) fires win@40 BEFORE the churn-floor's t44 verdict — probe-clean
+ *   at the bridge, deaths [] (the dossier's the-covenant/review-bomb
+ *   candidates open at 100B/1B, violating the never-poorer law; the-sev-0's
+ *   500M does too; no new thin-ride exception is granted — the exception
+ *   machinery stays Act II's alone, and the lint pin "excepted ⇒ ACT_TWO"
+ *   is the falsifier that keeps it so).
+ * - the-tier-ceiling law: tiers 5/6 never had bespoke level mechanics in the
+ *   engine (ADR-0018 ceiling list) — the built door verbs (scale/reclaim/
+ *   sell/shield) are the mechanics, and the geography is BOARD DATA. Act III
+ *   labels the fiction as data; nothing is invented, nothing is forced.
+ * - archetype census: Convert/Endure/Reach-State/Build-to-Spec/Shrink/
+ *   Endure/Negotiate/Diagnose/Reach-State — the b-7 Diagnose→c-1 Convert
+ *   boundary holds, all adjacencies distinct, the two Endures non-adjacent.
+ *   The whole-tour Endure census becomes 4 of 27 (14.8%, under §1.9's 30%
+ *   cap) — the disclosed re-pin from 2.
+ *
+ * PROBE TRAIL (2026-10-18 — literals are what the shipped chain actually did,
+ * never what the design wished; full witnesses ride chapters.test.ts):
+ * - solo tour on a PLAIN founder (no testimony — the act never dies):
+ *   c-1 win@240 (base doc, $0 open → 8,199,000 µ$), c-2 win@60 (intents
+ *   EXECUTED 0 — the ratchet gate is live), c-3 win@40, c-4 win@40 (place×2 +
+ *   connect×2 EXECUTED, communicate REFUSED perspective-forbids), c-6 win@240,
+ *   c-5 win@60 (scale-node + reclaim-node EXECUTED — the BUILT tier verbs
+ *   carrying a Tier-5 beat), c-7 win:sell-accepted-above:0@60, c-8 win@240,
+ *   c-9 win@25 (bounces 95 — the inversion scores its own damage). 0 edges.
+ * - the FIRST c-4 draft died at t44: place-device onto an EXISTING board node
+ *   refuses `node-exists` — the verb CREATES. Re-authored to rack the new
+ *   ids rack-a7/rack-b7 beside the halls; the beat is now the floor-tech's
+ *   true work (you add to the portfolio; you never price or phone it).
+ * - the contract CLIFF law (doc.ts: cliff ≤ maxSimMinutes, "the renewal drama
+ *   can never play" is a refusal, not a footnote) re-cliffed every floor
+ *   account: 24_000 biz-min for the 240 clocks, 9_000 for the 90s.
+ * - five campaign seeds: all nine stopReasons identical on every offset;
+ *   c-7 acceptance census at the bridge [4,4,4,3,4] (the one offset-3 refusal
+ *   is the 9,500-bps ceiling honestly disagreeing — the count:0 win line
+ *   carries it regardless). A SEVEN-beat run-up prefix (same chapter ids ⇒
+ *   same per-chapter seeds) ends `exit` on the terminal carrier; the full
+ *   nine-beat tour ends `quiet-handoff` — surviving is not selling.
+ * - homages at the bridge: win@240 with deaths [] and 308,199,000 µ$ landing
+ *   (300M + two 5M invoices, dunning-quiet) — the registry twins corpse at
+ *   the same clock (deaths ["churn-collapse"]), the §1.6 floor clause heals.
+ * - digests: solo 7f0853575030d719 (×100 Set.size 1, twin byte-equal);
+ *   four-arc tail bd36d3be169cf130 with the three earlier arc digests
+ *   RE-PROVEN UNMOVED (28df3ca4e6c90977 / 86595ae9b21853b3 / 18ef1b5675d0ea27).
+ */
+const ACT_THREE_WIRE = {
+  schema: "hh-campaign@1",
+  id: "act-three-prevention-to-boredom",
+  name: "Act Three — Prevention Into Boredom",
+  chapters: [
+    { chapterId: "c-1-storm-window", scenarioId: "the-metastable-window" },
+    { chapterId: "c-2-quarter-that-ran-itself", scenarioId: "the-quarter-that-ran-itself" },
+    { chapterId: "c-3-understaffed-sunday", scenarioId: "understaffed-sunday" },
+    { chapterId: "c-4-floor-and-aisle", scenarioId: "the-floor-and-aisle" },
+    { chapterId: "c-5-growth-that-shrank", scenarioId: "the-growth-that-shrank-itself" },
+    { chapterId: "c-6-long-gradient", scenarioId: "the-long-gradient" },
+    { chapterId: "c-7-long-sale", scenarioId: "the-long-sale" },
+    { chapterId: "c-8-institution-watch", scenarioId: "the-institution-watch" },
+    { chapterId: "c-9-red-team-friday", scenarioId: "red-team-friday" },
+  ],
+  carry: CARRY_RULE,
+} as const;
+
+/** Act III beat ledger. Homages/re-rides cite their fiction's own §1.5 line
+ *  (the meta↔doc equality law pins authored docs to their wire; the c-3
+ *  re-ride equals the registry doc's citation), seats cite their §1.2 roster
+ *  lines, bespoke beats cite their law sentences. */
+export const ACT_THREE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
+  "c-1-storm-window": { archetype: "Convert", specLine: 4092, tier: 5 },
+  "c-2-quarter-that-ran-itself": { archetype: "Endure", specLine: 5353, tier: 5 },
+  "c-3-understaffed-sunday": { archetype: "Reach-State", specLine: 3673, tier: 5 },
+  "c-4-floor-and-aisle": { archetype: "Build-to-Spec", specLine: 1215, tier: 5, perspectiveId: "datacenter-tech" },
+  "c-5-growth-that-shrank": { archetype: "Shrink", specLine: 5126, tier: 5 },
+  "c-6-long-gradient": { archetype: "Endure", specLine: 3994, tier: 6 },
+  "c-7-long-sale": { archetype: "Negotiate", specLine: 4019, tier: 6 },
+  "c-8-institution-watch": { archetype: "Diagnose", specLine: 3590, tier: 6 },
+  "c-9-red-team-friday": { archetype: "Reach-State", specLine: 1217, tier: 6, perspectiveId: "red-team-friday" },
+});
+
+/** The parsed Act Three. */
+export const CAMPAIGN_ACT_THREE: CampaignDoc = parseCampaignDoc(ACT_THREE_WIRE);
+
+/* ------------------------------------------------------------------ */
 /* Combined authoring ledger (lint-law target for chapters.test.ts)     */
 /* ------------------------------------------------------------------ */
 
-/** Every chapter id → its §1.9 meta, all three arcs, insertion-ordered by act. */
+/** Every chapter id → its §1.9 meta, all four arcs, insertion-ordered by act. */
 export const CAMPAIGN_CHAPTER_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
   ...PROLOGUE_META,
   ...ACT_ONE_META,
   ...ACT_TWO_META,
+  ...ACT_THREE_META,
 });
 
-/** The three campaign docs in play order (Prologue before Act I before Act
- *  II — OD-19's act table, ADR-0019 program 3 extending it). */
+/** The four campaign docs in play order (Prologue before Act I before Act
+ *  II before Act III — OD-19's act table, ADR-0019 program 3 extended by the
+ *  wave-26 full-tour rung). */
 export const CAMPAIGN_ROSTER = Object.freeze(
-  [CAMPAIGN_PROLOGUE, CAMPAIGN_ACT_ONE, CAMPAIGN_ACT_TWO] as const,
+  [CAMPAIGN_PROLOGUE, CAMPAIGN_ACT_ONE, CAMPAIGN_ACT_TWO, CAMPAIGN_ACT_THREE] as const,
 );

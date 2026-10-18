@@ -1368,7 +1368,20 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     }
     if (allHold(obs, doc.objectives.win)) {
       outcome = "won";
-      stopReason = `win@${game.context.minute}`;
+      // Verdict-observed exit grammar (I-AC3, wave-26): when the win line
+      // carries a sell-accepted-above predicate, the terminal stopReason
+      // NAMES it — `win:sell-accepted-above:<count>@<minute>` — because the
+      // §9.9 exit ending selects on exactly that carrier
+      // (campaign/endings.ts SELL_ACCEPTED_SHAPE @61a1c3b; the selection is
+      // a pure read-projection, no new state). Every other doc keeps the
+      // plain `win@<minute>` stamp byte-for-byte: no shipped wire in the
+      // registry or the campaign carries the kind in its win line today,
+      // so this branch is a no-op on all 31 missions and all prior arcs.
+      const exitCarrier = doc.objectives.win.find((p) => p.kind === "sell-accepted-above");
+      stopReason =
+        exitCarrier === undefined
+          ? `win@${game.context.minute}`
+          : `win:${objectiveLine(exitCarrier)}@${game.context.minute}`;
       break;
     }
   }

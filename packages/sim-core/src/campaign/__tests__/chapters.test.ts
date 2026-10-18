@@ -1,12 +1,13 @@
 /**
  * chapters.test.ts — the authored campaign content (L-CP3 + ADR-0019 program 3).
  *
- * Three halves:
- * 1. The §1.9 AUTHORING lint loop over the whole three-arc tour (archetypes
+ * Five halves:
+ * 1. The §1.9 AUTHORING lint loop over the whole four-arc tour (archetypes
  *    non-consecutive, Endure under 30%, perspective cap + every-5 cadence,
- *    the Act II T3→T4 tier rhythm, unique ids, meta↔doc specLine agreement,
- *    hosting_game.md text anchors, the bridge-never-poorer cash-floor law
- *    with its ONE named thin-ride exception).
+ *    the Act II T3→T4 and Act III T5→T6 tier rhythms, unique ids, meta↔doc
+ *    specLine agreement, hosting_game.md text anchors, the bridge-never-poorer
+ *    cash-floor law with its ONE named thin-ride exception — Act III adds
+ *    ZERO exceptions: every c-doc opens at or below the bridge).
  * 2. The RUNTIME truth: prologue + Act I keep their probe-confirmed win-through
  *    ledgers untouched; ACT II ships the headline — the first authored chapter
  *    that DIES IN THE SHAPE, so chain.ts succession fires through a real
@@ -15,7 +16,19 @@
  *    shape-driven: raise the bridge and the same doc wins with zero edges.
  * 3. The THREE-ARC CHAIN (prologue → Act I → testimony → Act II) on one real
  *    lineage graph, where the parent carries fifteen settled chapters and the
- *    child boots the closing beats.
+ *    child boots the closing beats. Kept SEPARATE from the four-arc test on
+ *    purpose: its three digests are the byte-stand proof that Act III's
+ *    content addition moved no earlier arc (re-asserted identically there too).
+ * 4. The ACT THREE chain — nine beats, all won, zero edges: the ratchet audit
+ *    played with empty hands (c-2), the two §1.2 seats LIVE at the campaign
+ *    door (c-4's first-ever datacenter-tech seat — 15 bans biting; c-9's
+ *    zero-mechanics inversion), the scale/reclaim portfolio beat, the c-7
+ *    exit-carrier stopReason end-to-end, and the run-up-prefix EXIT witness
+ *    (the tour that plays all nine hands off; the tour that SELLS ends in
+ *    `exit` — §1.5 :4019's split made literal).
+ * 5. The FOUR-ARC CHAIN — 27 beats on one real lineage graph: the Act II
+ *    child inherits the whole Act III tour, and every earlier digest is
+ *    re-checked UNMOVED on the same construction.
  *
  * Every pinned outcome below was produced by running the chain (probes
  * 2026-10-17 / 2026-10-18) — the lane's law is probe-don't-fake, and these
@@ -41,6 +54,7 @@ import {
   applyCarryToDoc,
   childManifestSpent,
   digestCampaignReport,
+  endCampaign,
   parseCampaignDoc,
   runCampaign,
   spendInheritanceOnChild,
@@ -48,9 +62,11 @@ import {
 import type { CampaignAuthority, CampaignDoc, CampaignReport } from "../index";
 import {
   ACT_ONE_META,
+  ACT_THREE_META,
   ACT_TWO_META,
   ACT_TWO_THIN_RIDE_EXCEPTIONS,
   CAMPAIGN_ACT_ONE,
+  CAMPAIGN_ACT_THREE,
   CAMPAIGN_ACT_TWO,
   CAMPAIGN_ARCHETYPES,
   CAMPAIGN_CHAPTER_META,
@@ -124,6 +140,10 @@ const SHARED_ACT_ONE = run(CAMPAIGN_ACT_ONE);
 /** One shared Act-II traversal (≈1,483 ticks incl. the t73 dissolution). */
 const SHARED_ACT_TWO = runUnlocked(CAMPAIGN_ACT_TWO);
 const CHILD_ID = "successor:act-two-process-to-prevention:0";
+/** One shared Act-III traversal (≈1,245 ticks, nine beats, zero deaths — the
+ *  plain founder needs NO unlock testimony here: Act III never dies, which is
+ *  exactly what "prevention into boredom" means at the ledger). */
+const SHARED_ACT_THREE = run(CAMPAIGN_ACT_THREE);
 
 /** The whole-tour chapter list in play order (lint target). */
 const TOUR: readonly { campaignId: string; chapterId: string }[] = CAMPAIGN_ROSTER.flatMap(
@@ -139,6 +159,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     [CAMPAIGN_PROLOGUE, PROLOGUE_META],
     [CAMPAIGN_ACT_ONE, ACT_ONE_META],
     [CAMPAIGN_ACT_TWO, ACT_TWO_META],
+    [CAMPAIGN_ACT_THREE, ACT_THREE_META],
   ];
 
   it("every chapter id is unique across the whole content", () => {
@@ -172,15 +193,23 @@ describe("chapter meta — the §1.9 authoring law", () => {
   it("Endure stays under 30% of the whole campaign", () => {
     const all = Object.values(CAMPAIGN_CHAPTER_META);
     const enduring = all.filter((row) => row.archetype === "Endure").length;
-    expect(enduring).toBe(2); // a-6 the-quiet-month + b-2 the-slow-week-after
+    // wave-26 DISCLOSED re-pin 2→4: Act III adds its two Endure beats — the
+    // ratchet audit played (c-2, §1.11 :5353) and the long gradient (c-6).
+    expect(enduring).toBe(4); // a-6 + b-2 + c-2 + c-6; 4/27 = 14.8%, under §1.9's 30% cap
     expect(enduring / all.length).toBeLessThan(0.3);
   });
 
-  it("perspective levels: exactly three, cap 1/chapter, five-beat cadence, roster ids", () => {
+  it("perspective levels: exactly five, cap 1/chapter, five-beat cadence, roster ids", () => {
     const seatIds = Object.entries(CAMPAIGN_CHAPTER_META)
       .filter(([, row]) => row.perspectiveId !== undefined)
       .map(([id]) => id);
-    expect(seatIds).toEqual(["a-2-apprentice-desk", "a-8-support-vigil", "b-6-oncall-desk"]);
+    expect(seatIds).toEqual([
+      "a-2-apprentice-desk",
+      "a-8-support-vigil",
+      "b-6-oncall-desk",
+      "c-4-floor-and-aisle",
+      "c-9-red-team-friday",
+    ]);
     for (const id of seatIds) {
       const row = CAMPAIGN_CHAPTER_META[id]!;
       expect((PERSPECTIVE_IDS as readonly string[]).includes(row.perspectiveId!), row.perspectiveId).toBe(true);
@@ -191,6 +220,13 @@ describe("chapter meta — the §1.9 authoring law", () => {
     // this cadence: a 7-beat act cannot hold two seats ≥5 apart after the
     // vigil at tour index 10 (16 and 21 — 21 is outside the act). Tension
     // recorded in the ACT_TWO docblock; full-12 expansion owns it.
+    // WAVE-26 RESOLUTION: Act III RESTORES the per-act floor of two WITHOUT
+    // touching the global cadence — seats c-4/c-9 land at tour indices 21 and
+    // 26 (gaps 5 and 5), the first act satisfying §1.9's own sentence. The
+    // 8-level design (:5126) is superseded to NINE beats by the cadence
+    // arithmetic itself: an 8-beat Act III forces either seat pair to a gap
+    // of 4 (20→24 inside 18–25, or 21→25 behind b-6's 16). The lint loop
+    // below is the machine proof; the ACT_THREE docblock carries the record.
     const positions = seatIds.map((id) => TOUR.findIndex((row) => row.chapterId === id));
     for (let i = 1; i < positions.length; i += 1) {
       expect(positions[i]! - positions[i - 1]!).toBeGreaterThanOrEqual(5);
@@ -200,12 +236,16 @@ describe("chapter meta — the §1.9 authoring law", () => {
     expect(resolveChapterDoc("apprentice-desk-shift").perspective?.id).toBe("apprentice");
     expect(resolveChapterDoc("support-desk-vigil").perspective?.id).toBe("support-queue");
     expect(resolveChapterDoc("noc-oncall-desk").perspective?.id).toBe("noc-shift");
+    // Wave-26's two Act-III seats ride the same join — the scenario doc owns
+    // the perspective row, the campaign wire never does.
+    expect(resolveChapterDoc("the-floor-and-aisle").perspective?.id).toBe("datacenter-tech");
+    expect(resolveChapterDoc("red-team-friday").perspective?.id).toBe("red-team-friday");
     for (const chapter of CAMPAIGN_PROLOGUE.chapters) {
       expect(resolveChapterDoc(chapter.scenarioId).perspective, chapter.chapterId).toBeUndefined();
     }
   });
 
-  it("tier rhythm: Act II declares §1.9's Tiers 3–4 rising, earlier acts declare none", () => {
+  it("tier rhythm: Act II rises T3→T4, Act III rises T5→T6, earlier acts declare none", () => {
     for (const id of [...Object.keys(PROLOGUE_META), ...Object.keys(ACT_ONE_META)]) {
       expect(CAMPAIGN_CHAPTER_META[id]!.tier, id).toBeUndefined(); // OD-19 T0–3 by fiat
     }
@@ -214,6 +254,15 @@ describe("chapter meta — the §1.9 authoring law", () => {
     for (let i = 1; i < tiers.length; i += 1) {
       expect(tiers[i]!).toBeGreaterThanOrEqual(tiers[i - 1]!); // the rise, never a drop
     }
+    // Act III (§1.9 :5126 "Act III (Tiers 5–6)"): the same non-decreasing law
+    // over the {5,6} band, plus the act-boundary rise — b-7's T4 hands the
+    // tour to c-1's T5, the tier never falls anywhere on the twenty-seven.
+    const tiers3 = CAMPAIGN_ACT_THREE.chapters.map((c) => CAMPAIGN_CHAPTER_META[c.chapterId]!.tier);
+    for (const tier of tiers3) expect(tier === 5 || tier === 6, String(tier)).toBe(true);
+    for (let i = 1; i < tiers3.length; i += 1) {
+      expect(tiers3[i]!).toBeGreaterThanOrEqual(tiers3[i - 1]!);
+    }
+    expect(tiers3[0]!).toBeGreaterThan(tiers[tiers.length - 1]!); // 5 > 4 at the seam
   });
 
   it("every scenarioId resolves through the authority; every chapter meta rides its doc", () => {
@@ -240,6 +289,14 @@ describe("chapter meta — the §1.9 authoring law", () => {
     expect(book[1271 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
     expect(book[35154 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
     expect(book[5125 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
+    // Wave-26 Act III anchors (design authority I-AC3; substring truth on the
+    // quoted line, verified by reading the lines as authored):
+    expect(book[5126 - 1]).toContain("Act III (Tiers 5–6)"); // the act law, same sentence
+    expect(book[5126 - 1]).toContain("8 levels"); // the design figure the cadence supersedes to nine
+    expect(book[5353 - 1]).toContain("do nothing and watch"); // §1.11 Ratchet Audit — c-2's law sentence
+    expect(book[1215 - 1]).toContain("Place/Connect only"); // §1.2 datacenter-tech — c-4's seat
+    expect(book[1217 - 1]).toContain("goal node inverted"); // §1.2 red-team-friday — c-9's seat
+    expect(book[4019 - 1]).toContain("the run-up"); // §1.5 Sell the Company split — c-7's level
     // Shipped-mission specLines ride each doc's OWN citation (the meta↔doc
     // equality law above) — the book's heading lines drift as sibling lanes
     // insert content, and this lane never re-pins another doc's anchor.
@@ -277,7 +334,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     }
   });
 
-  it("named-cast caps ride the §1.6 law (3 staff / 12 cast) in all three arcs", () => {
+  it("named-cast caps ride the §1.6 law (3 staff / 12 cast) in all four arcs", () => {
     for (const doc of CAMPAIGN_ROSTER) {
       expect(doc.carry.staffCap).toBe(3);
       expect(doc.carry.castCap).toBe(12);
@@ -605,5 +662,214 @@ describe("perspective chapters — the tapes bite (L-CP2 law, in-content)", () =
     // never noise to the chain.
     expect(digestCampaignReport(run(CAMPAIGN_ACT_ONE))).toBe(digestCampaignReport(SHARED_ACT_ONE));
     expect(digestCampaignReport(runUnlocked(CAMPAIGN_ACT_TWO))).toBe(digestCampaignReport(SHARED_ACT_TWO));
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* 7. ACT III — prevention into boredom: the exit grammar rides          */
+/* ------------------------------------------------------------------ */
+
+describe("act three chain — prevention into boredom (wave-26 full tour)", () => {
+  const report = SHARED_ACT_THREE; // collected once — nine beats, zero deaths
+
+  it("nine beats, all won, zero edges — nobody has to die in the boredom act", () => {
+    expect(report.campaignId).toBe("act-three-prevention-to-boredom");
+    expect(report.chapterRecords.map((r) => [r.chapterId, r.outcome, r.stopReason])).toEqual([
+      ["c-1-storm-window", "won", "win@240"],
+      ["c-2-quarter-that-ran-itself", "won", "win@60"],
+      ["c-3-understaffed-sunday", "won", "win@40"],
+      ["c-4-floor-and-aisle", "won", "win@40"],
+      ["c-5-growth-that-shrank", "won", "win@60"],
+      ["c-6-long-gradient", "won", "win@240"],
+      ["c-7-long-sale", "won", "win:sell-accepted-above:0@60"],
+      ["c-8-institution-watch", "won", "win@240"],
+      ["c-9-red-team-friday", "won", "win@25"],
+    ]);
+    // c-1 is index 0: the BASE doc untouched — its authored opening rides its
+    // own $0 book (the monthly floor clause keeps the churn watch silent; the
+    // 8.2M landing is the invoice-free quiet of a 240-minute clock).
+    expect(report.chapterRecords[0]!.cashStartMicroUsd).toBe(0n);
+    expect(report.chapterRecords[0]!.cashEndMicroUsd).toBe(8_199_000n);
+    for (const record of report.chapterRecords.slice(1)) {
+      expect(record.cashStartMicroUsd, record.chapterId).toBe(300_000_000n);
+    }
+    for (const record of report.chapterRecords) {
+      expect(record.settledFacets, record.chapterId).toEqual([
+        "attributionEvents", "finances", "museum", "medals",
+      ]);
+    }
+    expect(report.edgesSpawned).toHaveLength(0); // prevention: no death to succeed
+    expect(report.finalNodeId).toBe("co");
+  });
+
+  it("the run-up SELLS: a seven-beat prefix ending c-7 selects the `exit` ending — verdict-observed end-to-end", { timeout: 600_000 }, () => {
+    // §1.5 :4019's own split made literal: THE CAMPAIGN THAT SELLS ends at the
+    // sale. The prefix is a data replay of the same chapter wires — per-chapter
+    // seeds ride chapterId, so the c-7 record here is the SAME beat the full
+    // tour plays (identical stopReason, identical cash witnesses).
+    const prefix = parseCampaignDoc({
+      schema: "hh-campaign@1",
+      id: "act-three-the-run-up",
+      name: "Act Three — The Run-Up (prefix)",
+      chapters: CAMPAIGN_ACT_THREE.chapters.slice(0, 7).map((c) => ({ chapterId: c.chapterId, scenarioId: c.scenarioId })),
+      carry: CAMPAIGN_ACT_THREE.carry,
+    });
+    const sold = run(prefix);
+    expect(sold.chapterRecords.every((r) => r.outcome === "won")).toBe(true);
+    const terminal = sold.chapterRecords[6]!;
+    expect(terminal.stopReason).toBe("win:sell-accepted-above:0@60"); // the AC-B carrier grammar AC-E awaits
+    expect(terminal.cashEndMicroUsd).toBe(369_372_000n);
+    const ending = endCampaign(sold, getNode(sold.finalGraph, sold.finalNodeId));
+    expect(ending.kind).toBe("exit"); // @61a1c3b SELL_ACCEPTED_SHAPE on the REAL string
+    expect(ending.title).toBe("The Exit");
+    expect(ending.evidence.deathStopReason).toBeNull();
+    expect(ending.evidence.medals).toBe(7);
+  });
+
+  it("but the FULL nine-beat tour hands off instead: quiet-handoff — the anti-lie of the exit grammar", () => {
+    // Playing past the sale into the red-team inversion means you DID NOT
+    // SELL: surviving is not selling, and endCampaign reads only the
+    // terminal beat — c-9's plain `win@25` selects the handoff. The exit
+    // ending cannot be reached by merely outlasting Act III.
+    const ending = endCampaign(report, getNode(report.finalGraph, report.finalNodeId));
+    expect(ending.kind).toBe("quiet-handoff");
+    expect(ending.title).toBe("The Quiet Handoff");
+    expect(ending.evidence.medals).toBe(9);
+    expect(ending.evidence.scars).toBe(0); // nine clean wins, no death testimony
+    expect(ending.evidence.deathStopReason).toBeNull();
+  });
+
+  it("five campaign seeds: every beat wins on every offset, the exit carrier never flickers", { timeout: 600_000 }, () => {
+    for (let off = 0; off < 5; off += 1) {
+      const { graph, nodeId } = founder();
+      const alt = runCampaign(CAMPAIGN_ACT_THREE, BASE_SEED, { graph, nodeId, authority, seedOffset: off });
+      expect(alt.chapterRecords.map((r) => r.stopReason), `offset ${off}`).toEqual([
+        "win@240", "win@60", "win@40", "win@40", "win@60", "win@240",
+        "win:sell-accepted-above:0@60", "win@240", "win@25",
+      ]);
+    }
+  });
+
+  it("c-2 ratchet audit at the bridge: the do-nothing proof — zero hands, zero bounces, won on the clock", () => {
+    const rebased = applyCarryToDoc(CHAPTER_AUTHORED_DOCS["the-quarter-that-ran-itself"]!, {
+      openingCashMicroUsd: 300_000_000n, contractCasts: [], staffCast: [], scarCount: 0,
+    });
+    const r = runScenario(rebased, BASE_SEED, {});
+    expect(r.outcome).toBe("won");
+    expect(r.stopReason).toBe("win@60");
+    expect(r.observation.intentsExecuted).toBe(0); // the win line GATES idleness
+    expect(r.observation.bounces).toBe(0);
+    expect(r.observation.deaths).toEqual([]);
+  });
+
+  it("c-7 acceptance census at the bridge ×5 seeds: [4,4,4,3,4] accepted — the win rides ≥1, never certainty", () => {
+    // 9,500 bps is the ceiling, NOT 10,000 (ADR-0016 #11: acceptance is never
+    // certain). Offset 3's single refusal is the dice honestly disagreeing —
+    // and the count:0 win line still carries it. Recorded, never re-rolled.
+    const rebased = applyCarryToDoc(CHAPTER_AUTHORED_DOCS["the-long-sale"]!, {
+      openingCashMicroUsd: 300_000_000n, contractCasts: [], staffCast: [], scarCount: 0,
+    });
+    const census: [number, number][] = [];
+    for (let off = 0; off < 5; off += 1) {
+      const r = runScenario(rebased, BASE_SEED, { seedOffset: off });
+      expect(r.stopReason, `offset ${off}`).toBe("win:sell-accepted-above:0@60");
+      census.push([r.observation.sellVerdicts!.accepted, r.observation.sellVerdicts!.refused]);
+    }
+    expect(census).toEqual([[4, 0], [4, 0], [4, 0], [3, 1], [4, 0]]);
+  });
+
+  it("c-4 the floor-tech seat is LIVE: first campaign datacenter-tech — metal moves, the phone refuses", () => {
+    const r = runScenario(CHAPTER_AUTHORED_DOCS["the-floor-and-aisle"]!, BASE_SEED, {});
+    expect(r.outcome).toBe("won");
+    expect(r.stopReason).toBe("win@40");
+    expect(r.perspective?.id).toBe("datacenter-tech"); // armed via the seat row
+    expect(r.observation.intentsExecutedByVerb).toEqual({ "connect-ports": 2, "place-device": 2 });
+    expect(r.observation.intentsRefusedByVerb).toEqual({ communicate: 1 }); // LIVE perspective-forbids
+    expect(r.observation.deaths).toEqual([]);
+  });
+
+  it("c-9 the inversion seat: zero bans armed, target breaks by design — 95 bounces graded as wins", () => {
+    const r = runScenario(CHAPTER_AUTHORED_DOCS["red-team-friday"]!, BASE_SEED, {});
+    expect(r.outcome).toBe("won");
+    expect(r.stopReason).toBe("win@25");
+    expect(r.perspective?.id).toBe("red-team-friday"); // the row is alive with NOTHING withheld
+    expect(r.observation.bounces).toBe(95); // bounces-above:24 is strictly-greater — pinned per probe
+    expect(r.observation.intentsExecuted).toBe(1); // the taunt lands; the seat never forbids
+  });
+
+  it("the homages never grade a corpse: deaths [] at the bridge (the §1.6 floor clause heals them)", () => {
+    // The registry twins (metastable/ddos/free-tier-flood) churn-die cash-
+    // independently at ~t44 with an empty book and no death lose-line; the
+    // homages re-author the SAME fiction with two monthly accounts and pin
+    // deaths [] — the corpse audit's roster law, executed as content.
+    for (const id of ["the-metastable-window", "the-long-gradient", "the-institution-watch"]) {
+      const rebased = applyCarryToDoc(CHAPTER_AUTHORED_DOCS[id]!, {
+        openingCashMicroUsd: 300_000_000n, contractCasts: [], staffCast: [], scarCount: 0,
+      });
+      const r = runScenario(rebased, BASE_SEED, {});
+      expect(r.outcome, id).toBe("won");
+      expect(r.stopReason, id).toBe("win@240");
+      expect(r.observation.deaths, id).toEqual([]);
+      expect(r.cashEndMicroUsd, id).toBe(308_199_000n); // 300M bridge + two 5M invoices, dunning-quiet
+    }
+  });
+
+  it("digest ×100 Set.size 1 + byte-equal twin over the nine-beat tour", { timeout: 600_000 }, () => {
+    const digests = new Set<string>();
+    for (let i = 0; i < 100; i += 1) digests.add(digestCampaignReport(report));
+    expect(digests.size).toBe(1);
+    expect(digestCampaignReport(run(CAMPAIGN_ACT_THREE))).toBe(digestCampaignReport(SHARED_ACT_THREE));
+    expect(digestCampaignReport(report)).toBe("7f0853575030d719"); // run-captured 2026-10-18 (plain founder; self-derived, disclosed in commit body)
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* 8. FOUR-ARC CHAIN — the full tour on one real lineage graph          */
+/* ------------------------------------------------------------------ */
+
+describe("four-arc chain — twenty-seven beats, one real lineage graph", () => {
+  it("the Act II child walks all of Act III; every earlier digest byte-stands UNMOVED", { timeout: 900_000 }, () => {
+    const first = run(CAMPAIGN_PROLOGUE);
+    const second = runCampaign(CAMPAIGN_ACT_ONE, BASE_SEED, {
+      graph: first.finalGraph, nodeId: first.finalNodeId, authority,
+    });
+    const graph = seedTestimony(second.finalGraph, second.finalNodeId, "pre-seed-arc2");
+    const third = runCampaign(CAMPAIGN_ACT_TWO, BASE_SEED, { graph, nodeId: second.finalNodeId, authority });
+    const fourth = runCampaign(CAMPAIGN_ACT_THREE, BASE_SEED, {
+      graph: third.finalGraph, nodeId: third.finalNodeId, authority,
+    });
+
+    expect(digestCampaignReport(first)).toBe("28df3ca4e6c90977"); // UNMOVED by two acts of content
+    expect(digestCampaignReport(second)).toBe("86595ae9b21853b3"); // UNMOVED
+    expect(digestCampaignReport(third)).toBe("18ef1b5675d0ea27"); // UNMOVED — per-arc digest scoping holds;
+    // and the runner's exit-grammar edit moves NOTHING here: no beat before
+    // Act III carries a sell-accepted-above win line, so every plain
+    // `win@<minute>` stamp is byte-for-byte the string it always was.
+    expect(digestCampaignReport(fourth)).toBe("bd36d3be169cf130"); // run-captured 2026-10-18 (child node, self-derived)
+
+    // The successor's full career: three Act-II beats, nine Act-III beats,
+    // zero further edges — the tour never dies twice.
+    expect(fourth.chapterRecords.map((r) => [r.nodeId, r.outcome, r.stopReason])).toEqual([
+      [CHILD_ID, "won", "win@240"],
+      [CHILD_ID, "won", "win@60"],
+      [CHILD_ID, "won", "win@40"],
+      [CHILD_ID, "won", "win@40"],
+      [CHILD_ID, "won", "win@60"],
+      [CHILD_ID, "won", "win@240"],
+      [CHILD_ID, "won", "win:sell-accepted-above:0@60"],
+      [CHILD_ID, "won", "win@240"],
+      [CHILD_ID, "won", "win@25"],
+    ]);
+    expect(fourth.edgesSpawned).toHaveLength(0);
+    expect(fourth.finalNodeId).toBe(CHILD_ID);
+    // The parent's career is FROZEN at the obituary — Act III adds nothing.
+    const parent = getNode(fourth.finalGraph, asEntityId("co"));
+    expect(parent.museum).toHaveLength(15);
+    expect(parent.medals.filter((m) => m.kind === "chapter-won")).toHaveLength(14);
+    // The child closes the tour unsold: the handoff ending reads the SAME
+    // terminal beat it always would (the exit still needs the carrier).
+    const ending = endCampaign(fourth, getNode(fourth.finalGraph, fourth.finalNodeId));
+    expect(ending.kind).toBe("quiet-handoff");
+    expect(ending.evidence.medals).toBe(12); // b-5..b-7 + c-1..c-9
   });
 });

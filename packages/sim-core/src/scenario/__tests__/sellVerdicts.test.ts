@@ -242,7 +242,10 @@ describe("LIVE falsifier — verdicts through the real sell book", () => {
     const report = runScenario(doc, BASE_SEED, { seedOffset: 0 });
     // Both arms win ONLY once the pair exists — the stop law read the verdicts.
     expect(report.outcome).toBe("won");
-    expect(report.stopReason).toBe("win@4");
+    // Wave-26 AC-B: the win line carries sell-accepted-above, so the
+    // verdict-observed exit grammar names it (runner.ts; the §9.9 exit
+    // ending's carrier — disclosed re-pin of the plain "win@4" stamp).
+    expect(report.stopReason).toBe("win:sell-accepted-above:0@4");
     expect(report.endTick).toBe(4n);
     expect(report.observation.sellVerdicts).toEqual({ accepted: 1, refused: 1 });
     expect(report.observation.intentsExecuted).toBe(2);
