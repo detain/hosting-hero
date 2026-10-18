@@ -1055,12 +1055,13 @@ export interface SimCoreRunnerOptions {
    *  UI-supplied feed would be sell fiction the player grades. ABSENT ⇒ the
    *  key is OMITTED per fold (@984759b law) ⇒ the boot goldens
    *  (ca8863849cb3db32 / 780b1cbc61dff760) and money goldens
-   *  (25_005_307_300n / 25_109_732_500n) byte-stand. PRESENT-BUT-EMPTY is
-   *  behaviorally identical: an empty Map spreads through, sell.ts anchor-
-   *  misses every key and the money fold keeps identity (pinned
+   *  (25_005_307_300n / 25_109_732_500n) byte-stand. EMPTY⇒OMISSION rides
+   *  the SAME law (wave-28 owner-ratified hygiene symmetry): the spread site
+   *  drops the key on a size-0 Map — EXACTLY the scenario leg's sellCatalog
+   *  collapse (@984759b, scenario/runner.ts), so empty ≡ absent is ONE input
+   *  shape at the fold, not merely equal behaviour (pinned
    *  simCoreRunner.catalog.test.ts — empty-option 100-frame digests
-   *  byte-equal to OFF); the scenario leg collapses empty⇒omission at its
-   *  own seam. ZERO boot/protocol
+   *  byte-equal to OFF + a source pin on the collapse guard). ZERO boot/protocol
    *  change: the catalog never crosses the worker wire v0 (PROTOCOL_VERSION
    *  stays 1) — a future `boot.catalog` rider is the candidate, NOT built
    *  here; construction-site hosts (fakeWorker tests) pass it directly. */
@@ -1154,7 +1155,9 @@ export class SimCoreRunner implements SimRunner {
   private readonly corruptionOutageSecPerCorruption: bigint | undefined;
   /* ADR-0016 mechanic B host catalog leg (L-SMR, option above): undefined on
      every default runner — the fold spread below stays dead and the shipped
-     goldens ride untouched. */
+     goldens ride untouched. An EMPTY Map joins that dead spread: the collapse
+     to key-free absence lives at the spread site (scenario-law symmetry,
+     wave-28 hygiene), so the stored option stays the host's verbatim book. */
   private readonly sellMarketRates: ReadonlyMap<string, MoneyUnit> | undefined;
   private readonly plans = new Map<number, WavePlan>();
   private readonly envelopes = new Map<number, WaveEnvelope>();
@@ -1845,13 +1848,17 @@ export class SimCoreRunner implements SimRunner {
              book ⇒ key omitted ⇒ the money-golden-carrying input shape
              byte-identical. The catalog leg (L-SMR, wave-27): the host
              option — never a panel feed (world fact, era posture) — rides
-             beside it with the SAME presence law; absent ⇒ key omitted,
+             beside it with the collapse law (wave-28 hygiene symmetry, the
+             scenario leg's sellCatalog EXACT mirror @984759b): absent OR
+             size-0 ⇒ key omitted, so empty ≡ absent is ONE input shape;
              offers anchor on keyed contract MRCs (the priceKeys seam) or
              stay honestly unadjudicated. A non-empty catalog WITHOUT a book
              is inert by the fold's own gate (tick.ts 5.5), so the boot and
              money goldens byte-stand in every catalog-only arm. */
           ...(this.game.sell !== undefined ? { sellOffers: this.game.sell.entries } : {}),
-          ...(this.sellMarketRates !== undefined ? { sellMarketRates: this.sellMarketRates } : {}),
+          ...(this.sellMarketRates !== undefined && this.sellMarketRates.size > 0
+            ? { sellMarketRates: this.sellMarketRates }
+            : {}),
           /* Empty buffer ⇒ key omitted ⇒ the pre-death input shape (and the
              goldens riding it) byte-identical. */
           ...(this.pendingRefusalWitness.length > 0

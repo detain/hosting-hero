@@ -14,7 +14,9 @@
  *     goldens ca8863849cb3db32 / 780b1cbc61dff760 (seed 1) and the money
  *     goldens 25_005_307_300n / 25_109_732_500n (seed 42);
  *   - a catalog armed WITHOUT any sell book is inert by the fold's own gate
- *     (nothing adjudicates), digests equal; an EMPTY option equals OFF.
+ *     (nothing adjudicates), digests equal; an EMPTY option equals OFF —
+ *     collapsed to key-free absence at the spread site (wave-28 symmetry,
+ *     the guard source-pinned, scenario leg EXACT mirror).
  *
  *  ON-PATH (the leg is real) — seed 42, probe-pinned at this lane:
  *   - a sell-offer through the door books in both arms (f2 receipt identical);
@@ -34,6 +36,7 @@ import { canonicalDigest } from "@hh/sim-core/replay";
 import { asMoney, type MoneyUnit, type PlayerIntent, type PlayerVerbArgs } from "@hh/sim-core/types";
 import { encodeProjection, type SimProjection } from "../shared/protocol";
 import { SimCoreRunner } from "../runner/simCoreRunner";
+import runnerSource from "../runner/simCoreRunner.ts?raw";
 
 const TICKS = 100;
 
@@ -122,7 +125,14 @@ describe("catalog seam OFF-path (option available, unarmed = dead weight, byte-f
     expect(frames[TICKS - 1]?.freeCashMicroUsd).toBe(25_109_732_500n);
   });
 
-  it("an EMPTY catalog option equals OFF: 100-frame digests byte-equal", () => {
+  it("an EMPTY catalog option COLLAPSES to key-free absence (scenario-law symmetry): guard pinned, digests byte-equal to OFF", () => {
+    /* Wave-28 owner-ratified hygiene: the spread site mirrors the scenario
+       leg's sellCatalog collapse (@984759b, scenario/runner.ts) — a size-0
+       Map never rides EconomyTickIn as a present-but-empty key. The source
+       pin is the STRUCTURAL half (red on any revert to presence-only); the
+       digest twin is the behavioral half, and under the collapse it gets
+       stronger: empty ≡ absent is now literally ONE input shape at the fold. */
+    expect(runnerSource).toMatch(/this\.sellMarketRates !== undefined && this\.sellMarketRates\.size > 0/);
     const runner = new SimCoreRunner({ seed: 42, sellMarketRates: new Map<string, MoneyUnit>() });
     expect(frameDigests(runner)).toEqual(frameDigests(plainRunner(42)));
   });
