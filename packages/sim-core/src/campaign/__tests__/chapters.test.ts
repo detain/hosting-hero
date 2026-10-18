@@ -2,7 +2,7 @@
  * chapters.test.ts — the authored campaign content (L-CP3 + ADR-0019 program 3).
  *
  * Five halves:
- * 1. The §1.9 AUTHORING lint loop over the whole four-arc tour (archetypes
+ * 1. The §1.9 AUTHORING lint loop over the whole five-arc tour (archetypes
  *    non-consecutive, Endure under 30%, perspective cap + every-5 cadence,
  *    the Act II T3→T4 and Act III T5→T6 tier rhythms, unique ids, meta↔doc
  *    specLine agreement, hosting_game.md text anchors, the bridge-never-poorer
@@ -34,6 +34,11 @@
  * 5. The FOUR-ARC CHAIN — 32 beats on one real lineage graph: the Act II
  *    child inherits the whole Act III tour, and every earlier digest is
  *    re-checked UNMOVED on the same construction.
+ * 6. The EXIT ARC (L-V3, §E) — the two-beat money-at-the-end sibling: c-7's
+ *    doc DECLARED and host-catalog-armed, the sale PAID, the exit edge rides
+ *    the chain with its cash slice (gift forced null), the heir opens ON THE
+ *    PROCEEDS (exitFunded law — never the bridge), and the tour's OWN
+ *    four-arc digests stand re-checked with the arm absent.
  *
  * Every pinned outcome below was produced by running the chain (probes
  * 2026-10-17 / 2026-10-18) — the lane's law is probe-don't-fake, and these
@@ -43,8 +48,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { asEntityId, asRunSeed } from "../../types";
-import type { EntityId, RunSeed } from "../../types";
+import { asEntityId, asMoney, asRunSeed } from "../../types";
+import type { EntityId, MoneyUnit, RunSeed } from "../../types";
 import {
   emptyLineageGraph,
   foundCompany,
@@ -75,6 +80,8 @@ import {
   CAMPAIGN_ACT_TWO,
   CAMPAIGN_ARCHETYPES,
   CAMPAIGN_CHAPTER_META,
+  CAMPAIGN_EXIT,
+  CAMPAIGN_EXIT_META,
   CAMPAIGN_PROLOGUE,
   CAMPAIGN_ROSTER,
   CHAPTER_AUTHORED_DOCS,
@@ -165,6 +172,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     [CAMPAIGN_ACT_ONE, ACT_ONE_META],
     [CAMPAIGN_ACT_TWO, ACT_TWO_META],
     [CAMPAIGN_ACT_THREE, ACT_THREE_META],
+    [CAMPAIGN_EXIT, CAMPAIGN_EXIT_META],
   ];
 
   it("every chapter id is unique across the whole content", () => {
@@ -201,6 +209,8 @@ describe("chapter meta — the §1.9 authoring law", () => {
     // wave-26 re-pin 2→4 (c-2 + c-6), wave-27 DISCLOSED re-pin 4→5: b-8
     // collections-week is an Endure beat — the accounts arrive on their own
     // calendar and the act endures the ledger. 5/32 = 15.6%.
+    // WAVE-28: the tour grows to 34 beats and the count HOLDS at five — the
+    // exit arc wears Negotiate (x-1) + Inherit (x-2), no Endure. 5/34 = 14.7%.
     expect(enduring).toBe(5); // a-6 + b-2 + b-8 + c-2 + c-6, under §1.9's 30% cap
     expect(enduring / all.length).toBeLessThan(0.3);
   });
@@ -279,6 +289,14 @@ describe("chapter meta — the §1.9 authoring law", () => {
       expect(tiers3[i]!).toBeGreaterThanOrEqual(tiers3[i - 1]!);
     }
     expect(tiers3[0]!).toBeGreaterThan(tiers[tiers.length - 1]!); // 5 > 4 at the seam
+    // The Exit arc (§E, L-V3): money-at-the-end's two beats ride the TOP rung
+    // — T6 at both posts, the tour never falls anywhere on the thirty-four.
+    // The seam law here is >= (NOT the strict > of the 4->5 act seam): the
+    // exit is not a new act rising, it is the same tour's last rung extended
+    // — c-9's T6 hands to x-1's T6 as the company changes hands, not bands.
+    const tiersX = CAMPAIGN_EXIT.chapters.map((c) => CAMPAIGN_CHAPTER_META[c.chapterId]!.tier);
+    for (const tier of tiersX) expect(tier === 6, String(tier)).toBe(true);
+    expect(tiersX[0]!).toBeGreaterThanOrEqual(tiers3[tiers3.length - 1]!); // 6 >= 6 at the seam
   });
 
   it("every scenarioId resolves through the authority; every chapter meta rides its doc", () => {
@@ -353,7 +371,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     }
   });
 
-  it("named-cast caps ride the §1.6 law (3 staff / 12 cast) in all four arcs", () => {
+  it("named-cast caps ride the §1.6 law (3 staff / 12 cast) in all five arcs", () => {
     for (const doc of CAMPAIGN_ROSTER) {
       expect(doc.carry.staffCap).toBe(3);
       expect(doc.carry.castCap).toBe(12);
@@ -970,5 +988,204 @@ describe("four-arc chain — thirty-two beats, one real lineage graph", () => {
     const ending = endCampaign(fourth, getNode(fourth.finalGraph, fourth.finalNodeId));
     expect(ending.kind).toBe("quiet-handoff");
     expect(ending.evidence.medals).toBe(17); // b-5..b-12 + c-1..c-9
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* 6. THE EXIT ARC (L-V3, §E) — money at the end rides the chain        */
+/* ------------------------------------------------------------------ */
+
+describe("exit arc — money at the end rides the chain (§E, L-V3)", () => {
+  // The HOST ARM the arc is designed for: a market catalog strictly ABOVE the
+  // doc's own asks (plan 30M ask vs 40M market; sku 18M ask vs 24M). The
+  // deviation math clamps to the 9_500 bps accept ceiling (RATIFIED ADR-0016
+  // #11) — near-certain, never certain: the sale is still dice.
+  const RATES: ReadonlyMap<string, ReadonlyMap<string, MoneyUnit>> = new Map([
+    ["x-1-armed-close", new Map<string, MoneyUnit>([
+      ["plan:long-sale", asMoney(40_000_000n)],
+      ["sku:long-sale-b", asMoney(24_000_000n)],
+    ])],
+  ]);
+  function runArc(seedOffset: number, armed: boolean = true): CampaignReport {
+    const { graph, nodeId } = founder();
+    return runCampaign(CAMPAIGN_EXIT, BASE_SEED, {
+      graph: seedTestimony(graph, nodeId),
+      nodeId,
+      authority,
+      seedOffset,
+      ...(armed ? { sellMarketRates: RATES } : {}),
+    });
+  }
+  /** One shared armed traversal (≈150 engine ticks across both beats). */
+  const SHARED_EXIT = runArc(0);
+
+  it("roster shape: the Exit is the fifth arc; the c-7 shipped row stays key-absent", () => {
+    expect(CAMPAIGN_ROSTER).toHaveLength(5);
+    expect(CAMPAIGN_ROSTER[4]!.id).toBe("exit-the-heir-opens");
+    expect(CAMPAIGN_EXIT.chapters.map((c) => [c.chapterId, c.scenarioId, c.exitKind ?? null])).toEqual([
+      ["x-1-armed-close", "the-long-sale", "strategic-acquisition"],
+      ["x-2-heir-opens", "the-quarter-that-ran-itself", null],
+    ]);
+    // c-7 — the sibling beat whose doc x-1 re-uses — must NOT grow the key:
+    // the declaration lives on the CAMPAIGN row, the scenario doc is untouched.
+    const c7 = CAMPAIGN_ACT_THREE.chapters.find((c) => c.chapterId === "c-7-long-sale")!;
+    expect("exitKind" in c7).toBe(false);
+  });
+
+  it("the PAID close: exit edge with slice, gift FORCED null, heir plays on", { timeout: 600_000 }, () => {
+    const r = SHARED_EXIT;
+    expect(r.campaignId).toBe("exit-the-heir-opens");
+    expect(r.chapterRecords.map((x) => [x.nodeId, x.chapterId, x.outcome, x.stopReason])).toEqual([
+      ["co", "x-1-armed-close", "won", "win:sell-accepted-above:0@60"],
+      ["successor:exit-the-heir-opens:0", "x-2-heir-opens", "won", "win@60"],
+    ]);
+    // The declaring record carries the sparse stamp; the heir's stays absent.
+    expect(r.chapterRecords[0]!.exitKind).toBe("strategic-acquisition");
+    expect("exitKind" in r.chapterRecords[1]!).toBe(false);
+    expect(r.edgesSpawned).toHaveLength(1);
+    const edge = r.edgesSpawned[0]!;
+    expect(edge.type).toBe("exit");
+    // Money at the end, machine-pinned (run-captured 2026-10-18): the edge
+    // carries a 24M µ$ cash slice — headline 48M (both books accepted at
+    // their final offers) × diligence product floored at 5_000 bps
+    // (concentration 7500 / reputation 9000 / term-coverage 5000 legs) ×
+    // strategic-acquisition's kind factor 10_000.
+    expect(edge.manifest.cashSliceMicroUsd).toBe(24_000_000n);
+    // A PAID heir takes no gift: lineage refuses a failure-only unlock on an
+    // exit edge, so the 4th testimony node n-4-style milestone NEVER rides.
+    expect(edge.manifest.failureOnlyUnlock).toBeNull();
+    expect(edge.manifest.keptNodes).toEqual([asEntityId("cdn-edge"), asEntityId("rack-a"), asEntityId("rack-b")]);
+    expect(edge.manifest.doctrine.id).toBe(asEntityId("doctrine:unwritten:exit-the-heir-opens"));
+    expect(edge.preservedMuseumExhibitIds).toEqual(["chapter:exit-the-heir-opens:x-1-armed-close:0"]);
+    // Play-on: x-2 runs on the HEIR node and bootstraps the manifest exactly
+    // once — the 3-node law applies to exit spawns (testimony founder).
+    const heir = getNode(r.finalGraph, r.finalNodeId);
+    expect(heir.identity.name).toBe("Successor of First Light Inc");
+    expect(heir.parentId).toBe(asEntityId("co"));
+    expect(heir.nodesUnlocked.map((u) => `${u.node}:${u.via}`)).toEqual([
+      "cdn-edge:testimony", "rack-a:testimony", "rack-b:testimony",
+    ]);
+    expect(r.chapterRecords[1]!.bootstrapped).toBe(true);
+    expect(childManifestSpent(heir)).toBe(true);
+  });
+
+  it("the exitFunded law at arc scale: the heir opens on the PROCEEDS, never the bridge", { timeout: 600_000 }, () => {
+    const r = SHARED_EXIT;
+    const slice = r.edgesSpawned[0]!.manifest.cashSliceMicroUsd!;
+    const x2 = r.chapterRecords[1]!;
+    // The discovered trap, made falsifiable: the slice (24M) sits FAR below
+    // the bridge (300M) and far below the threshold — under the pre-§E carry
+    // law x-2 opened RICHER than the sale paid, on a 300M phantom, and the
+    // exit heir was indistinguishable from a failure heir. The law now
+    // exempts the paid heir: cashStart is the slice VERBATIM.
+    expect(x2.cashStartMicroUsd).toBe(slice);
+    expect(x2.cashStartMicroUsd).toBe(24_000_000n);
+    expect(Number(x2.cashStartMicroUsd)).toBeLessThan(Number(CAMPAIGN_EXIT.carry.cashFloor.bridgeMicroUsd));
+    // The heir's settled career money is x-2's OWN cashEnd — it ran its
+    // chapter on the proceeds, and the ledger closes on them (not on bridge
+    // scale: 28,099,500 µ$ is nowhere near 300M arithmetic).
+    expect(getNode(r.finalGraph, r.finalNodeId).finances.cashMicroUsd).toBe(x2.cashEndMicroUsd);
+    expect(x2.cashEndMicroUsd).toBe(28_099_500n);
+  });
+
+  it("x-1 census x5 (armed): the sale is dice — offset 2 books one refusal and a PAID 15M", { timeout: 900_000 }, () => {
+    // Run-captured 2026-10-18 witnesses. Per offset: exit edge slice (the
+    // ONLY sale number the chain record surfaces), the heir's opening (law:
+    // it EQUALS the slice on every seed), x-2's settled close, and the arc
+    // digest. Offset 2 is the honest scar: the sku's SECOND offer refuses,
+    // the headline shrinks to 30M and the slice to 15M — the heir opens
+    // smaller, still PAID, and x-2 still wins.
+    const LEDGER: readonly (readonly [string, string, string, string])[] = [
+      ["24000000", "24000000", "28099500", "b4f7777519ebc0a8"],
+      ["24000000", "24000000", "32199000", "41109fcf67c40ec3"],
+      ["15000000", "15000000", "23199000", "fb7ab9bd3bfac7ca"],
+      ["24000000", "24000000", "32199000", "6598a67ebcf6cb9d"],
+      ["24000000", "24000000", "28099500", "88dbd147c1d13d41"],
+    ];
+    for (let off = 0; off < 5; off += 1) {
+      const r = runArc(off);
+      expect(r.chapterRecords[0]!.stopReason, `offset ${off}`).toBe("win:sell-accepted-above:0@60");
+      expect(r.chapterRecords[0]!.cashEndMicroUsd, `offset ${off}`).toBe(69_372_000n);
+      expect(r.edgesSpawned[0]!.manifest.cashSliceMicroUsd, `offset ${off}`).toBe(BigInt(LEDGER[off]![0]));
+      expect(r.chapterRecords[1]!.cashStartMicroUsd, `offset ${off}`).toBe(BigInt(LEDGER[off]![1]));
+      expect(r.chapterRecords[1]!.stopReason, `offset ${off}`).toBe("win@60");
+      expect(r.chapterRecords[1]!.cashEndMicroUsd, `offset ${off}`).toBe(BigInt(LEDGER[off]![2]));
+      expect(digestCampaignReport(r), `offset ${off}`).toBe(LEDGER[off]![3]);
+    }
+    // The verdict censuses themselves ride the observation rail (a direct
+    // scenario repro at each chapter seed — the chain record is the
+    // digest-bearing surface; the census is the disclosure).
+    const CENSUS: readonly (readonly [number, number])[] = [[4, 0], [4, 0], [3, 1], [4, 0], [4, 0]];
+    const heads: readonly string[] = ["48000000", "48000000", "30000000", "48000000", "48000000"];
+    for (let off = 0; off < 5; off += 1) {
+      const r = runArc(off);
+      const repro = runScenario(resolveChapterDoc("the-long-sale"), r.chapterRecords[0]!.runSeed, {
+        sellMarketRates: RATES.get("x-1-armed-close")!,
+        exitDeclaration: { exitKind: "strategic-acquisition" },
+      });
+      expect(repro.observation.sellVerdicts, `offset ${off}`).toEqual({ accepted: CENSUS[off]![0], refused: CENSUS[off]![1] });
+      expect(`${repro.exitPayout!.headlineOfferMicroUsd}`, `offset ${off}`).toBe(heads[off]);
+    }
+  });
+
+  it("the arm at THESE rates is digest-identical to unarmed x5 — disclosed honestly", { timeout: 900_000 }, () => {
+    // At 30M/18M asks both anchors (50M/30M authored, 40M/24M catalog) put
+    // the deviation past the 9_500 bps ceiling clamp, and the sell roll
+    // stream does not read the anchor — so the armed and unarmed censuses
+    // coincide on every one of the five offsets. The host arm's bite is at
+    // the CONFIG and ANCHOR level (chain.test.ts pins the config spread; the
+    // catalog overrides the mrc anchor the verdict is priced against); a
+    // catalog WITHIN the ladder band would move the census. This pin exists
+    // so a future lane cannot claim this witness proves more than it does.
+    for (let off = 0; off < 5; off += 1) {
+      expect(digestCampaignReport(runArc(off, false)), `offset ${off}`).toBe(digestCampaignReport(runArc(off, true)));
+    }
+  });
+
+  it("digest x100 Set.size 1 + byte-equal twin + the pinned arc digest", { timeout: 900_000 }, () => {
+    const digests = new Set<string>();
+    for (let i = 0; i < 100; i += 1) digests.add(digestCampaignReport(SHARED_EXIT));
+    expect(digests.size).toBe(1);
+    expect(digestCampaignReport(runArc(0))).toBe(digestCampaignReport(SHARED_EXIT));
+    expect(digestCampaignReport(SHARED_EXIT)).toBe("b4f7777519ebc0a8"); // run-captured 2026-10-18 (self-derived, armed posture)
+  });
+
+  it("endCampaign answers for the whole arc: the paid mid-chain declaration is TRUTH", { timeout: 600_000 }, () => {
+    // The §E walk sees x-1's declared close — won on the sell-accepted
+    // grammar — and passes it as the paid-heir truth. The TERMINAL (x-2)
+    // never declared, so the readout narrates the ordinary handoff and the
+    // exit evidence keys stay ABSENT: a mid-chain declaration validates,
+    // it does not narrate (the ending is still the tour's last word).
+    const ending = endCampaign(SHARED_EXIT, getNode(SHARED_EXIT.finalGraph, SHARED_EXIT.finalNodeId), CAMPAIGN_EXIT);
+    expect(ending.kind).toBe("quiet-handoff");
+    expect("declaredExitKind" in ending.evidence).toBe(false);
+    expect("exitObserved" in ending.evidence).toBe(false);
+  });
+
+  it("LIVE falsifier: a declaring chapter that never reaches its sale answers for itself (early-halt walk)", { timeout: 600_000 }, () => {
+    // Tick-cap the declaring chapter below its sale clock: x-1 TIMES OUT at
+    // t30, the tour halts there (a timeout is an ending, not a death — no
+    // edge), and the doc's FINAL chapter never played. The terminal check
+    // looks at x-2 (undeclared) and stays silent — the per-chapter walk
+    // judges the terminal record of a MID-chain declaration and throws,
+    // NAMING the chapter. Pre-§E this exact hole was the slice(0,-1) trim.
+    const haltDoc = parseCampaignDoc({
+      schema: "hh-campaign@1",
+      id: "exit-arc-halt-test",
+      name: "The Exit That Was Not",
+      chapters: [
+        { chapterId: "x-1-armed-close", scenarioId: "the-long-sale", tickCap: 30, exitKind: "strategic-acquisition" },
+        { chapterId: "x-2-heir-opens", scenarioId: "the-quarter-that-ran-itself" },
+      ],
+      carry: CAMPAIGN_EXIT.carry,
+    });
+    const { graph, nodeId } = founder();
+    const r = runCampaign(haltDoc, BASE_SEED, { graph: seedTestimony(graph, nodeId), nodeId, authority, sellMarketRates: RATES });
+    expect(r.chapterRecords).toHaveLength(1);
+    expect(r.chapterRecords[0]!.stopReason).toBe("timeout@30");
+    expect(r.edgesSpawned).toHaveLength(0); // a timeout is not a paid close — no exit edge
+    expect(() => endCampaign(r, getNode(r.finalGraph, r.finalNodeId), haltDoc)).toThrow(
+      /^campaign: DOC_LIE at 'campaign "exit-arc-halt-test" chapter "x-1-armed-close"': the doc declares "strategic-acquisition" but the simulation closed on "timeout@30" — endings are observed, not authored$/,
+    );
   });
 });

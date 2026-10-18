@@ -40,6 +40,42 @@ describe("projectChapterCarry — the bridge law", () => {
   });
 });
 
+describe("projectChapterCarry — the exitFunded exception (L-V3 law change)", () => {
+  // §2.5 "failure is poorer, not paid" honored in REVERSE: a child born of an
+  // EXIT edge whose manifest slice was spent was PAID — a sale-scale number
+  // sits far under the floor, and bridging it would swamp the payout and make
+  // the exit heir indistinguishable from a failure heir. exitFunded=true says
+  // "this node's incoming edge was an exit edge and the slice was spent":
+  // the heir opens on its paid cash, no bridge, at ANY magnitude.
+  const below = nodeWith({ finances: { cashCapped: false, cashMicroUsd: asMoney(99n), mrrMicroUsd: asMoney(0n), deferredRevenueMicroUsd: asMoney(0n), runwayMin: 0, debt: [] } });
+  const atFloor = nodeWith({ finances: { cashCapped: false, cashMicroUsd: asMoney(100n), mrrMicroUsd: asMoney(0n), deferredRevenueMicroUsd: asMoney(0n), runwayMin: 0, debt: [] } });
+
+  it("exit-funded below the floor opens on its PAID cash — NO bridge", () => {
+    expect(projectChapterCarry(below, rules, true).openingCashMicroUsd).toBe(99n);
+  });
+
+  it("the SAME node without the posture still bridges — falsifiable both ways", () => {
+    // death-heir posture (explicit false) and the L-V2 default (2-arg call)
+    // are the same door: poorer, not paid, rides every non-exit child.
+    expect(projectChapterCarry(below, rules, false).openingCashMicroUsd).toBe(40n);
+    expect(projectChapterCarry(below, rules).openingCashMicroUsd).toBe(40n);
+  });
+
+  it("exitFunded is an EXEMPTION, never an addition: above the floor changes nothing", () => {
+    expect(projectChapterCarry(atFloor, rules, true).openingCashMicroUsd).toBe(100n);
+    expect(projectChapterCarry(atFloor, rules, false).openingCashMicroUsd).toBe(100n);
+  });
+
+  it("zero slice is still paid truth: an exit heir at $0 opens at $0, not on the bridge", () => {
+    // The law does NOT special-case magnitude — an heir whose valuation paid
+    // nothing (a distressed sale) is still not a failure heir; the tour tells
+    // it the truth the ledger holds, even when the truth is zero.
+    const zero = nodeWith({ finances: { cashCapped: false, cashMicroUsd: asMoney(0n), mrrMicroUsd: asMoney(0n), deferredRevenueMicroUsd: asMoney(0n), runwayMin: 0, debt: [] } });
+    expect(projectChapterCarry(zero, rules, true).openingCashMicroUsd).toBe(0n);
+    expect(projectChapterCarry(zero, rules, false).openingCashMicroUsd).toBe(40n);
+  });
+});
+
 describe("projectChapterCarry — cast law", () => {
   const node = nodeWith({
     finances: { cashCapped: false, cashMicroUsd: asMoney(1_000n), mrrMicroUsd: asMoney(0n), deferredRevenueMicroUsd: asMoney(0n), runwayMin: 0, debt: [] },

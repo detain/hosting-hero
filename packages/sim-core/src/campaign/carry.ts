@@ -10,6 +10,12 @@
  * - Cash bridge law: a company that ends a chapter below the floor opens the
  *   next one on the bridge (poorer, not paid); above the floor it carries its
  *   own cash. Either way the number lands in limits.initialFreeMicroUsd.
+ * - exitFunded exception (L-V3 law change): a child born of an EXIT edge whose
+ *   manifest slice was SPENT was PAID, not failed — §2.5's "failure is poorer,
+ *   not paid" honored in reverse. Bridging an exit heir at sale-scale cash
+ *   (a slice sits far under the floor) would swamp the payout and make the
+ *   heir indistinguishable from a failure-heir. An exit-funded heir opens on
+ *   its paid cash, full stop.
  * - Cast law: active, paying customer books ride into the next chapter as
  *   contract casts (grudge-bearers first, then code-unit-sorted) and capped; churned ghosts do NOT ride
  *   (they haunt the museum, not the balance sheet).
@@ -51,11 +57,14 @@ function castSlug(customerId: string): string {
 
 /**
  * The bridge law, machine-visible: strictly below the floor ⇒ bridge;
- * at or above ⇒ carry the company's own cash.
+ * at or above ⇒ carry the company's own cash. The exitFunded posture (L-V3)
+ * switches the bridge OFF entirely: the node's incoming edge was an exit edge
+ * and its cash slice was spent, so the cash under the floor is PROCEEDS —
+ * bridging it would be the lie ("poorer, not paid" only speaks of failures).
  */
-export function projectChapterCarry(node: CompanyNode, rules: CampaignCarryRules): CampaignCarryProjection {
+export function projectChapterCarry(node: CompanyNode, rules: CampaignCarryRules, exitFunded = false): CampaignCarryProjection {
   const cash = node.finances.cashMicroUsd;
-  const openingCashMicroUsd = cash < rules.cashFloor.thresholdMicroUsd ? rules.cashFloor.bridgeMicroUsd : cash;
+  const openingCashMicroUsd = exitFunded || cash >= rules.cashFloor.thresholdMicroUsd ? cash : rules.cashFloor.bridgeMicroUsd;
 
   const staffCap = Math.min(rules.staffCap, CARRY_STAFF_CAP);
   const staffCast: CarryStaffFact[] = node.staff.slice(0, staffCap).map((row) => ({

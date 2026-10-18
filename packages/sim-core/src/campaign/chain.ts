@@ -8,12 +8,20 @@
  * chapter's facts settle through save/settle.ts — the Long Save's writer —
  * so the next chapter's carry projection sees them.
  *
- * Succession (§9.9, "failure is poorer, not paid"):
+ * Succession (§9.9 + §1.6, L-V3 rides both edges of the money-at-end law):
  *  - a death-by-company-dissolution stopReason with chapters remaining spawns
  *    a `failure_restart` edge with a manifest built from ledger law: kept
  *    nodes = first 3 code-unit-sorted unlocks (the 3-node law — fewer is a
  *    fail-loud refusal, not a silent truncation), carried playbook ≤ 8,
  *    cashSliceMicroUsd = null (cash NEVER crosses a failure edge).
+ *  - a WON chapter whose report carries the runner-paid `exitPayout` spawns an
+ *    EXIT edge (succession "exit"): the SAME 3-node law and manifest shape,
+ *    but cashSliceMicroUsd = the sale's cash slice and failureOnlyUnlock is
+ *    FORCED null (lineage refuses a gift on an exit edge — the heir is paid,
+ *    not gifted). The exit is the MOMENT, not the end (§1.6 prestige): the
+ *    remaining chapters play on the heir, and the heir's FIRST carry opening
+ *    rides its paid cash — never the bridge (the exitFunded law, carry.ts).
+ *    A declaring chapter that is terminal halts with the heir in the graph.
  *  - the child's FIRST chapter spends that manifest exactly once through
  *    lineage.ts's applyInheritanceManifest — the named bootstrap seam. An
  *    un-bootstrapped child starts on ZERO inherited cash (spawnChildFromParent
@@ -26,7 +34,7 @@
  * pairwise-divergent yet identical across twin runs.
  */
 
-import type { EntityId, RunSeed } from "../types.ts";
+import type { EntityId, MoneyUnit, RunSeed } from "../types.ts";
 import { asEntityId, asRunSeed } from "../types.ts";
 import { digestCanonicalValue } from "../replay/canonical.ts";
 import type {
@@ -70,6 +78,13 @@ export interface CampaignRunOptions {
   readonly nodeId: EntityId;
   readonly authority: CampaignAuthority;
   readonly seedOffset?: number;
+  /** Nested HOST ARM (L-V3): chapterId -> priceKey -> market rate in µ$.
+   *  The campaign lane forwards the whole host catalog to the chain and the
+   *  chain hands each chapter only ITS flat slice, as ScenarioRunConfig
+   *  .sellMarketRates (the runner's BAD_MONEY wall remains the money-parse
+   *  authority). Absent, or no entry for a chapter ⇒ that chapter's config
+   *  key is OMITTED — the tour's shipped chapters byte-stand. */
+  readonly sellMarketRates?: ReadonlyMap<string, ReadonlyMap<string, MoneyUnit>>;
 }
 
 export interface CampaignReport {
@@ -176,7 +191,15 @@ function chapterBatch(runId: string, chapterId: string, outcome: CampaignRunOutc
   return { writes, facets: writes.map((row) => row.facet) };
 }
 
-function buildSuccessionManifest(node: CompanyNode, campaignId: string, endTick: bigint): InheritanceManifest {
+/**
+ * Manifest from ledger law. `paidCashSliceMicroUsd` (exit edges only, L-V3)
+ * switches the two money/gift fields as a PAIR: the slice rides and the
+ * failure-only gift is FORCED null — lineage law refuses a gift on an exit
+ * edge (`succession !== "failure_restart" && failureOnlyUnlock !== null` is a
+ * validation failure), and rightly so: an heir that was just PAID does not
+ * also get the good datacenter handed to it.
+ */
+function buildSuccessionManifest(node: CompanyNode, campaignId: string, endTick: bigint, paidCashSliceMicroUsd?: MoneyUnit): InheritanceManifest {
   const distinct: string[] = [];
   for (const row of node.nodesUnlocked.map((unlock) => unlock.node).sort((a, b) => (a === b ? 0 : a < b ? -1 : 1))) {
     if (!distinct.includes(row)) distinct.push(row);
@@ -192,8 +215,11 @@ function buildSuccessionManifest(node: CompanyNode, campaignId: string, endTick:
       adoptedAtTick: endTick,
     },
     playbook: node.playbook.filter((slot) => slot.carried).sort((a, b) => (a.runbookId === b.runbookId ? 0 : a.runbookId < b.runbookId ? -1 : 1)).slice(0, PLAYBOOK_CARRY_CAP),
-    cashSliceMicroUsd: null,
-    failureOnlyUnlock: distinct.length > 3 ? (asEntityId(distinct[3] as string)) : null,
+    cashSliceMicroUsd: paidCashSliceMicroUsd ?? null,
+    failureOnlyUnlock:
+      paidCashSliceMicroUsd !== undefined
+        ? null
+        : distinct.length > 3 ? (asEntityId(distinct[3] as string)) : null,
     handwritingParent: node.id,
   };
 }
@@ -210,6 +236,10 @@ export function runCampaign(campaign: CampaignDoc, seed: RunSeed, options: Campa
   let nodeId = options.nodeId;
   const chapterRecords: CampaignChapterRecord[] = [];
   const edgesSpawned: InheritanceEdge[] = [];
+  // Set the tick an EXIT edge is spawned; consumed by the heir's first carry
+  // projection (exitFunded law, carry.ts) so the paid slice is never swamped
+  // by the bridge. Death successions do NOT set it — "poorer, not paid" lives.
+  let exitFunded = false;
 
   for (const [index, chapter] of campaign.chapters.entries()) {
     let node = getNode(graph, nodeId);
@@ -225,8 +255,17 @@ export function runCampaign(campaign: CampaignDoc, seed: RunSeed, options: Campa
     const docForRun =
       index === 0
         ? baseDoc
-        : applyCarryToDoc(baseDoc, projectChapterCarry(node, campaign.carry));
-    const config: ScenarioRunConfig = chapter.tickCap === undefined ? {} : { tickCap: chapter.tickCap };
+        : applyCarryToDoc(baseDoc, projectChapterCarry(node, campaign.carry, exitFunded));
+    exitFunded = false; // consumed exactly once — later chapters live on the ordinary bridge law
+    const catalog = options.sellMarketRates?.get(chapter.chapterId);
+    const config: ScenarioRunConfig = {
+      ...(chapter.tickCap === undefined ? {} : { tickCap: chapter.tickCap }),
+      // §E amendment: declaration is positional-free — ANY declaring chapter
+      // forwards its kind to the runner's exit wall (BAD_ENUM there). Undeclared
+      // chapters grow NO key: the {} / {tickCap} config shapes byte-stand.
+      ...(chapter.exitKind === undefined ? {} : { exitDeclaration: { exitKind: chapter.exitKind } }),
+      ...(catalog === undefined ? {} : { sellMarketRates: catalog }),
+    };
     const runSeed = seedForChapter(baseRunSeed, chapter.chapterId);
     const report = options.authority.run(docForRun, runSeed, config);
     const outcome = assertOutcome(report.outcome, `campaign "${campaign.id}" chapter "${chapter.chapterId}"`);
@@ -259,9 +298,29 @@ export function runCampaign(campaign: CampaignDoc, seed: RunSeed, options: Campa
       cashEndMicroUsd: report.cashEndMicroUsd,
       settledFacets: batch.facets,
       bootstrapped,
+      ...(chapter.exitKind === undefined ? {} : { exitKind: chapter.exitKind }),
     });
 
-    if (outcome === "won") continue;
+    if (outcome === "won") {
+      // EXIT EDGE (L-V3): the runner PAID this close (sell-accepted grammar +
+      // declaration ⇒ report.exitPayout). The tour's exit is a moment — spawn
+      // the heir on the proceeds and play on. No payout ⇒ ordinary win.
+      if (report.exitPayout !== undefined) {
+        const manifest = buildSuccessionManifest(node, campaign.id, report.endTick, report.exitPayout.cashSliceMicroUsd);
+        const spawn = spawnChildFromParent(graph, nodeId, {
+          childId: `successor:${campaign.id}:${edgesSpawned.length}`,
+          name: `Successor of ${node.identity.name}`,
+          foundedAtTick: report.endTick,
+          manifest,
+          succession: "exit",
+        });
+        graph = spawn.graph;
+        nodeId = spawn.child.id;
+        edgesSpawned.push(spawn.edge);
+        exitFunded = true;
+      }
+      continue;
+    }
     const isLastChapter = index === campaign.chapters.length - 1;
     if (!isLastChapter && outcome === "lost" && DEATH_SHAPE.test(report.stopReason)) {
       const manifest = buildSuccessionManifest(node, campaign.id, report.endTick);

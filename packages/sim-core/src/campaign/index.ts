@@ -6,7 +6,11 @@
  * CampaignAuthority (host wraps scenario/runScenario — the engine is never
  * imported here), settles the run through save/settle.ts, and projects carry
  * into the next chapter. Death mid-campaign spawns a §9.9 failure_restart
- * successor whose first chapter spends the inheritance manifest exactly once.
+ * successor whose first chapter spends the inheritance manifest exactly once;
+ * a WON chapter whose close the runner PAID (exitPayout — declared exit + the
+ * sell-accepted grammar, §E/L-V3) spawns an `exit` successor carrying the cash
+ * slice, and the tour plays on the heir (its first opening rides the slice,
+ * never the bridge — the exitFunded carry law).
  *
  * Zero GameState/EconomyState/CompanyNode field additions: the state-freeze
  * law rides; every fact a campaign needs already has a facet.

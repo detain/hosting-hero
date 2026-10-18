@@ -4,8 +4,8 @@
  * 2-chapter SMOKING campaign over the REAL scenario authority.
  */
 import { describe, expect, it } from "vitest";
-import { asEntityId, asRunSeed } from "../../types";
-import type { EntityId, RunSeed } from "../../types";
+import { asEntityId, asMoney, asRunSeed } from "../../types";
+import type { EntityId, MoneyUnit, RunSeed } from "../../types";
 import {
   applyInheritanceManifest,
   emptyLineageGraph,
@@ -30,7 +30,7 @@ import {
 } from "../index";
 import type { CampaignAuthority, CampaignDoc } from "../index";
 
-function campaignDoc(chapters: { chapterId: string; scenarioId: string; tickCap?: number }[]): CampaignDoc {
+function campaignDoc(chapters: { chapterId: string; scenarioId: string; tickCap?: number; exitKind?: string }[]): CampaignDoc {
   return parseCampaignDoc({
     schema: CAMPAIGN_SCHEMA, id: "chain-test", name: "Chain Test",
     chapters,
@@ -59,6 +59,14 @@ interface ScriptedRun {
   readonly stopReason?: string;
   readonly cashEnd?: bigint;
   readonly foreignOutcome?: string;
+  /** L-V3: forge the runner's PAID close (the exitPayout key the real runner
+   *  grows only on won + sell-grammar + declaration). Absent ⇒ the forged
+   *  report grows NO key — the ordinary-win posture byte-stands. */
+  readonly exitPayout?: {
+    readonly exitKind: string;
+    readonly headlineOfferMicroUsd: bigint;
+    readonly cashSliceMicroUsd: bigint;
+  };
 }
 
 function scriptedAuthority(_doc: CampaignDoc, script: readonly ScriptedRun[]): CampaignAuthority & { readonly seen: { doc: ScenarioDoc; seed: RunSeed; config: ScenarioRunConfig }[] } {
@@ -76,6 +84,7 @@ function scriptedAuthority(_doc: CampaignDoc, script: readonly ScriptedRun[]): C
         endTick: 10n, endMinute: 10, endDigest: "000000000000000a",
         observation: {}, objectives: { win: [], lose: [] }, trace: {},
         cashStartMicroUsd: d.limits.initialFreeMicroUsd, cashEndMicroUsd: step?.cashEnd ?? 4_000n,
+        ...(step?.exitPayout === undefined ? {} : { exitPayout: step.exitPayout }),
       } as unknown as ScenarioReport;
     },
   };
@@ -202,6 +211,115 @@ describe("runCampaign — death → succession (§9.9)", () => {
     const edge = report.edgesSpawned[0];
     expect(edge?.manifest.keptNodes).toEqual([asEntityId("n-5"), asEntityId("n-6"), asEntityId("n-7")]);
     expect(edge?.manifest.failureOnlyUnlock).toBe(asEntityId("n-8"));
+  });
+});
+
+describe("runCampaign — the exit edge spawns on a PAID close (§E, L-V3)", () => {
+  const PAID: ScriptedRun = {
+    outcome: "won",
+    stopReason: "win:sell-accepted-above:0@60",
+    cashEnd: 500n,
+    exitPayout: { exitKind: "strategic-acquisition", headlineOfferMicroUsd: 30_000n, cashSliceMicroUsd: 1_200n },
+  };
+
+  it("won + payout grows the exit edge: slice rides, gift FORCED null, the heir plays on", () => {
+    const doc = campaignDoc([
+      { chapterId: "one", scenarioId: "s-a", exitKind: "strategic-acquisition" },
+      { chapterId: "two", scenarioId: "s-b" },
+    ]);
+    const { graph, nodeId } = founderGraph(["n-1", "n-2", "n-3", "n-4"]);
+    const authority = scriptedAuthority(doc, [PAID, { outcome: "won", cashEnd: 2_000n }]);
+    const report = runCampaign(doc, asRunSeed(904n), { graph, nodeId, authority });
+
+    // the declaring record carries the sparse stamp; the heir's record stays key-absent
+    expect(report.chapterRecords[0]?.exitKind).toBe("strategic-acquisition");
+    expect("exitKind" in (report.chapterRecords[1] ?? {})).toBe(false);
+    // the exit EDGE: paid slice rides, gift is refused by law (lineage: an
+    // heir that was just PAID does not also get the good datacenter)
+    expect(report.edgesSpawned.length).toBe(1);
+    const edge = report.edgesSpawned[0];
+    expect(edge?.type).toBe("exit");
+    expect(edge?.manifest.cashSliceMicroUsd).toBe(1_200n); // machine-pinned: PAID, not null
+    expect(edge?.manifest.failureOnlyUnlock).toBeNull(); // the n-4 gift is FORCED away
+    expect(edge?.manifest.keptNodes).toEqual([asEntityId("n-1"), asEntityId("n-2"), asEntityId("n-3")]);
+    // play-on: the heir is the active node and the 3-node law applies to exit edges too
+    expect(report.finalNodeId).toBe("successor:chain-test:0");
+    expect(report.chapterRecords[1]?.nodeId).toBe("successor:chain-test:0");
+    expect(report.chapterRecords[1]?.bootstrapped).toBe(true);
+    const child = getNode(report.finalGraph, report.finalNodeId);
+    expect(child.nodesUnlocked.map((u) => `${u.node}:${u.via}`)).toEqual(["n-1:testimony", "n-2:testimony", "n-3:testimony"]);
+    expect(childManifestSpent(child)).toBe(true);
+    // the declaration reaches the runner as its own config key (the chain never
+    // interprets it — the runner's exit wall owns semantics)
+    expect(authority.seen[0]?.config).toEqual({ exitDeclaration: { exitKind: "strategic-acquisition" } });
+  });
+
+  it("the exitFunded law at the chain seam: the heir opens ON THE PROCEEDS, never the bridge", () => {
+    // carry floor 5_000 / bridge 1_000; the slice 1_200 sits UNDER the floor —
+    // the old unconditional bridge law would have opened this chapter at
+    // 1_000 (POORER than the money the sale just paid). Falsifier: revert the
+    // exitFunded carry rule and this pin reddens.
+    const doc = campaignDoc([
+      { chapterId: "one", scenarioId: "s-a", exitKind: "pe-platform" },
+      { chapterId: "two", scenarioId: "s-b" },
+    ]);
+    const { graph, nodeId } = founderGraph(["n-1", "n-2", "n-3"]);
+    const authority = scriptedAuthority(doc, [
+      { outcome: "won", stopReason: "win:sell-accepted-above:0@60", cashEnd: 500n, exitPayout: { exitKind: "pe-platform", headlineOfferMicroUsd: 30_000n, cashSliceMicroUsd: 1_200n } },
+      { outcome: "won", cashEnd: 2_000n },
+    ]);
+    runCampaign(doc, asRunSeed(904n), { graph, nodeId, authority });
+    expect(authority.seen[1]?.doc.limits.initialFreeMicroUsd).toBe(1_200n); // the slice, verbatim
+  });
+
+  it("exitFunded is consumed EXACTLY ONCE — the heir's SECOND chapter lives on the ordinary bridge law", () => {
+    const doc = campaignDoc([
+      { chapterId: "one", scenarioId: "s-a", exitKind: "strategic-acquisition" },
+      { chapterId: "two", scenarioId: "s-b" },
+      { chapterId: "three", scenarioId: "s-c" },
+    ]);
+    const { graph, nodeId } = founderGraph(["n-1", "n-2", "n-3"]);
+    const authority = scriptedAuthority(doc, [PAID, { outcome: "won", cashEnd: 900n }, { outcome: "won", cashEnd: 4_000n }]);
+    const report = runCampaign(doc, asRunSeed(904n), { graph, nodeId, authority });
+    expect(authority.seen[1]?.doc.limits.initialFreeMicroUsd).toBe(1_200n); // heir's first chapter: paid
+    expect(report.chapterRecords[1]?.bootstrapped).toBe(true);
+    expect(authority.seen[2]?.doc.limits.initialFreeMicroUsd).toBe(1_000n); // second chapter: ordinary bridge (900 < floor 5_000)
+    expect(report.chapterRecords[2]?.bootstrapped).toBe(false);
+    expect(report.edgesSpawned.length).toBe(1); // the win at 'three' grows no payout ⇒ no second edge
+  });
+
+  it("a terminal declaring chapter that SELLS still spawns — the tour halts with the heir in graph", () => {
+    const doc = campaignDoc([{ chapterId: "one", scenarioId: "s-a", exitKind: "strategic-acquisition" }]);
+    const { graph, nodeId } = founderGraph(["n-1", "n-2", "n-3"]);
+    const authority = scriptedAuthority(doc, [PAID]);
+    const report = runCampaign(doc, asRunSeed(904n), { graph, nodeId, authority });
+    expect(report.chapterRecords.length).toBe(1);
+    expect(report.edgesSpawned.length).toBe(1);
+    expect(report.edgesSpawned[0]?.type).toBe("exit");
+    expect(report.finalNodeId).toBe("successor:chain-test:0");
+    const heir = getNode(report.finalGraph, report.finalNodeId);
+    expect(heir.identity.name).toBe("Successor of Chain Co");
+    expect(heir.parentId).toBe(nodeId);
+  });
+
+  it("tickCap, declaration and the catalog arm COEXIST in one config; un-armed chapters key-stand", () => {
+    const doc = campaignDoc([
+      { chapterId: "one", scenarioId: "s-a", exitKind: "pe-platform" },
+      { chapterId: "two", scenarioId: "s-b", tickCap: 7 },
+    ]);
+    const { graph, nodeId } = founderGraph();
+    const rates = new Map<string, MoneyUnit>([["plan:x", asMoney(9n)]]);
+    const authority = scriptedAuthority(doc, [{ outcome: "won" }, { outcome: "won" }]);
+    const report = runCampaign(doc, asRunSeed(904n), { graph, nodeId, authority, sellMarketRates: new Map([["one", rates]]) });
+    // chapter one: declared, NO tickCap, catalog armed — exitDeclaration + sellMarketRates ride
+    expect(authority.seen[0]?.config).toEqual({ exitDeclaration: { exitKind: "pe-platform" }, sellMarketRates: rates });
+    // chapter two: undeclared, NO catalog entry for its chapterId — the shape
+    // byte-stands at { tickCap } exactly (the shipped-tour posture)
+    expect(authority.seen[1]?.config).toEqual({ tickCap: 7 });
+    // won with NO payout ⇒ NO exit edge — the ordinary win branch byte-stands
+    expect(report.edgesSpawned.length).toBe(0);
+    expect("exitKind" in (report.chapterRecords[0] ?? {})).toBe(true); // the RECORD stamp is declaration-driven…
+    expect(report.chapterRecords[0]?.exitKind).toBe("pe-platform");
   });
 });
 

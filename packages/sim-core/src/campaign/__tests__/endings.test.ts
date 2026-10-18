@@ -368,13 +368,113 @@ describe("endCampaign — the declared exit is validated, never obeyed (L-V2)", 
     expect(declared.evidence.exitObserved).toBe(false);
   });
 
-  it("a TIMEOUT with a declaration is narration, NOT a lie — the asymmetry is the law", () => {
-    // A clock that ran out is silence about the promise; a WON closed on
-    // anything but the sale REFUTES it. Only the refutation throws.
-    const ending = endCampaign(report(rec({ outcome: "timeout", stopReason: "timeout@240" })), founderNode(), declaring("asset-sale"));
-    expect(ending.kind).toBe("quiet-handoff");
-    expect(ending.evidence.declaredExitKind).toBe("asset-sale");
-    expect(ending.evidence.exitObserved).toBe(false);
+  it("§E AMENDMENT — a terminal TIMEOUT with a declaration now THROWS DOC_LIE", () => {
+    // L-V2's asymmetry ("the clock running out is silence about the promise")
+    // is SUPERSEDED by the §E commission: the scenario runner evaluates a
+    // declared chapter's win line WITH the sale predicate to the doc's OWN
+    // contract horizon (win lines are ANDed — the-long-sale: survive-60 AND
+    // sell-accepted-above:0). Reaching maxSimMinutes without ever observing
+    // the accepted verdict is the simulation REFUTING the promise, not
+    // abstaining on it. Only a LOST death still narrates ("died before it
+    // sold" — hg §9.9 :35151, the obituary test above).
+    const run = () => endCampaign(report(rec({ outcome: "timeout", stopReason: "timeout@240" })), founderNode(), declaring("asset-sale"));
+    expect(run).toThrow(CampaignError);
+    expect(run).toThrow(
+      /^campaign: DOC_LIE at 'campaign "act-three-test"': the doc declares "asset-sale" but the simulation closed on "timeout@240" — endings are observed, not authored$/,
+    );
+  });
+
+  it("§E per-chapter walk — a MID-CHAIN declaration answers for its OWN close", () => {
+    // Two-chapter docs: chapters[0] declares, the FINAL chapter does not (the
+    // terminal evidence keys stay the last chapter's business — §E widened
+    // WHICH chapters must be truthful, not which ending the readout narrates).
+    const twoDoc = (firstKind: string | undefined) =>
+      parseCampaignDoc({
+        schema: "hh-campaign@1",
+        id: "act-three-test",
+        name: "The Walk",
+        chapters: [
+          { chapterId: "c-1", scenarioId: "s-a", ...(firstKind === undefined ? {} : { exitKind: firstKind }) },
+          { chapterId: "c-2", scenarioId: "s-b" },
+        ],
+        carry: { cashFloor: { thresholdMicroUsd: 5_000_000n, bridgeMicroUsd: 500_000n }, scarCapRide: true },
+      });
+
+    // PAID truth: the declaring mid-chain chapter sells, the tour plays on —
+    // NO throw; terminal handoff grows NO evidence keys (terminal undeclared).
+    const sold = endCampaign(
+      report(rec({ chapterId: "c-1", stopReason: "win:sell-accepted-above:0@60" }), rec({ chapterId: "c-2", stopReason: "win@60" })),
+      founderNode(),
+      twoDoc("strategic-acquisition"),
+    );
+    expect(sold.kind).toBe("quiet-handoff");
+    expect("declaredExitKind" in sold.evidence).toBe(false);
+
+    // Declared mid-chain chapter TIMES OUT → the walk throws, NAMING the
+    // chapter (the terminal message stays chapter-less; the paths differ).
+    expect(() =>
+      endCampaign(
+        report(rec({ chapterId: "c-1", outcome: "timeout", stopReason: "timeout@90" }), rec({ chapterId: "c-2", stopReason: "win@60" })),
+        founderNode(),
+        twoDoc("strategic-acquisition"),
+      ),
+    ).toThrow(/DOC_LIE at 'campaign "act-three-test" chapter "c-1"': the doc declares "strategic-acquisition" but the simulation closed on "timeout@90"/);
+
+    // Declared mid-chain chapter WINS WITHOUT THE SALE → same lie, same rail.
+    expect(() =>
+      endCampaign(
+        report(rec({ chapterId: "c-1", stopReason: "win@60" }), rec({ chapterId: "c-2", stopReason: "win@60" })),
+        founderNode(),
+        twoDoc("pe-platform"),
+      ),
+    ).toThrow(/chapter "c-1".*declares "pe-platform".*"win@60"/);
+
+    // Declared mid-chain chapter DIES → narration, not a lie: the chain rises
+    // through the ORDINARY death succession (null slice); the walk skips lost.
+    const died = endCampaign(
+      report(rec({ chapterId: "c-1", outcome: "lost", stopReason: DEATH_STOP }), rec({ chapterId: "c-2", stopReason: "win@60" })),
+      founderNode(),
+      twoDoc("asset-sale"),
+    );
+    expect(died.kind).toBe("quiet-handoff");
+    expect("declaredExitKind" in died.evidence).toBe(false);
+  });
+
+  it("§E walk judges an EARLY HALT — the declaring chapter may BE the terminal record", () => {
+    // The slice(0,-1) trim pre-§E left exactly one silent hole: the tour
+    // halts on a declaring chapter (timeout mid-arc — the doc's FINAL chapter
+    // never played), so the terminal check reads the UNDECLARED last spec row
+    // and stays silent while the record it just narrated is a refuted
+    // declaration. The widened walk covers every record; the doc-final
+    // message above stays chapter-less, the walk's names the chapter.
+    const haltDoc = parseCampaignDoc({
+      schema: "hh-campaign@1",
+      id: "act-three-test",
+      name: "The Early Halt",
+      chapters: [
+        { chapterId: "c-1", scenarioId: "s-a", exitKind: "strategic-acquisition" },
+        { chapterId: "c-2", scenarioId: "s-b" },
+      ],
+      carry: { cashFloor: { thresholdMicroUsd: 5_000_000n, bridgeMicroUsd: 500_000n }, scarCapRide: true },
+    });
+    // TIMEOUT as the terminal record of a mid-chain declaration → throw,
+    // naming the chapter, on the record that IS terminal.
+    expect(() =>
+      endCampaign(report(rec({ chapterId: "c-1", outcome: "timeout", stopReason: "timeout@30" })), founderNode(), haltDoc),
+    ).toThrow(/DOC_LIE at 'campaign "act-three-test" chapter "c-1"': the doc declares "strategic-acquisition" but the simulation closed on "timeout@30"/);
+    // WON without the sale → same rail.
+    expect(() =>
+      endCampaign(report(rec({ chapterId: "c-1", stopReason: "win@30" })), founderNode(), haltDoc),
+    ).toThrow(/chapter "c-1".*"win@30"/);
+    // LOST death as the terminal record → narration, not a lie (obituary;
+    // the walk skips lost closes; the death-evidence read is unchanged).
+    const died = endCampaign(
+      report(rec({ chapterId: "c-1", outcome: "lost", stopReason: DEATH_STOP })),
+      founderNode(),
+      haltDoc,
+    );
+    expect(died.kind).toBe("obituary");
+    expect("declaredExitKind" in died.evidence).toBe(false);
   });
 
   it("a WON non-sale close with a declaration throws DOC_LIE — endings are observed, not authored", () => {

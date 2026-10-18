@@ -122,7 +122,7 @@ describe("parseCampaignDoc — the §1.6 exit declaration (L-V2, money-at-the-en
     expect(Object.isFrozen(CAMPAIGN_EXIT_KINDS)).toBe(true);
   });
 
-  it("the final chapter may declare a sale-family kind; earlier chapters stay sparse", () => {
+  it("a sale-family kind may be declared; undeclared chapters stay sparse", () => {
     const doc = parseCampaignDoc({
       ...valid(),
       chapters: [
@@ -180,10 +180,15 @@ describe("parseCampaignDoc — the §1.6 exit declaration (L-V2, money-at-the-en
     ).toThrow(/BAD_ENUM at 'campaign\.chapters\[0\]\.exitKind'/);
   });
 
-  it("POSITION LAW — only the final chapter may declare an exit", () => {
-    expect(() => parseCampaignDoc({ ...three(), chapters: three().chapters.map((ch, i) => (i === 0 ? { ...ch, exitKind: "pe-platform" } : ch)) })).toThrow(
-      /BAD_RANGE at 'campaign\.chapters\[0\]\.exitKind'.*only the final chapter may declare an exit — the tour ends where the company does/,
-    );
+  it("POSITION WALL SUPERSEDED (§E) — a declaring chapter may sit at ANY position", () => {
+    // L-V2 landed a BAD_RANGE wall refusing non-final declarations ("the tour
+    // ends where the company does"). The §E commission SUPERSEDES it the same
+    // wave it is built: CAMPAIGN_EXIT's x-1 declares mid-arc because the tour
+    // PLAYS ON the paid heir (§1.6 prestige). Placement is free; the runtime
+    // DOC_LIE law in endings.ts is the guard — every declaring chapter answers
+    // for its OWN close. Grammar walls below (enum/RESERVED) are UNTOUCHED.
+    const mid = parseCampaignDoc({ ...three(), chapters: three().chapters.map((ch, i) => (i === 0 ? { ...ch, exitKind: "pe-platform" } : ch)) });
+    expect(mid.chapters[0]?.exitKind).toBe("pe-platform");
     // The same kind on the LAST chapter of the same three-chapter tour parses.
     const last = three();
     (last.chapters[2] as Record<string, unknown>).exitKind = "pe-platform";
@@ -196,7 +201,8 @@ describe("parseCampaignDoc — the §1.6 exit declaration (L-V2, money-at-the-en
 
   it("grammar precedes position — a broken value is broken wherever it sits", () => {
     // chapters[0] carries a RESERVED kind: the parseChapter wall (RESERVED)
-    // fires BEFORE the loop's position law — same for a BAD_ENUM kind.
+    // fires at the boundary regardless of position — same for a BAD_ENUM kind.
+    // (§E retired the position law; the grammar ordering it argued about stands.)
     const mid = three();
     (mid.chapters[0] as Record<string, unknown>).exitKind = "ipo";
     expect(() => parseCampaignDoc(mid)).toThrow(/RESERVED at 'campaign\.chapters\[0\]\.exitKind'/);

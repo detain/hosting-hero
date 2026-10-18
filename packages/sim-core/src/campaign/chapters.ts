@@ -1,6 +1,6 @@
-/** chapters.ts — the authored campaign content (Prologue + Act I + Act II + Act III).
+/** chapters.ts — the authored campaign content (Prologue + Act I + Act II + Act III + Exit).
  *
- *  This module is DATA riding law, zero new authority: four `hh-campaign@1`
+ *  This module is DATA riding law, zero new authority: five `hh-campaign@1`
  *  documents parsed through the L-CP1 wall (`parseCampaignDoc`), fourteen
  *  perspective-bearing or bespoke scenario documents (`hh-scenario@1`)
  *  authored in-module because `runScenario` accepts host-authored docs without
@@ -1335,20 +1335,81 @@ export const ACT_THREE_META: Readonly<Record<string, ChapterMeta>> = Object.free
 export const CAMPAIGN_ACT_THREE: CampaignDoc = parseCampaignDoc(ACT_THREE_WIRE);
 
 /* ------------------------------------------------------------------ */
+/* EXIT ARC — money at the end rides the chain (§E, L-V3)                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * THE CAMPAIGN_EXIT ARC — c-7's catalog-armed sibling, the §E commission:
+ * the tour PLAYS ON the paid heir (§1.6 prestige — "the exit is the moment").
+ * Two beats, zero new scenario docs, zero new seats (v0):
+ *  - x-1 "the-armed-close": the-long-sale RE-RIDDEN with a DECLARED exit
+ *    (strategic-acquisition) and the HOST catalog armed through
+ *    CampaignRunOptions.sellMarketRates. c-7's own row stays UNDECLARED and
+ *    its witnesses byte-stand — the declaration and the catalog live ONLY on
+ *    this campaign row + the host options, never on the scenario doc. The
+ *    chapterId differs from c-7's, so seedForChapter rolls a DIFFERENT dice
+ *    stream than the Act III run-up: x-1's census is its own, self-derived.
+ *  - x-2 "the-heir-opens": the paid heir's first quarter is the Ratchet Audit
+ *    (the-quarter-that-ran-itself, §1.11 :5353) — under new ownership the
+ *    machine genuinely runs itself. Zero cash predicate, zero intents, a
+ *    deterministic win@60: THE exitFunded law witness. The heir must open on
+ *    its SLICE (a sale-scale number far under the 1e15 floor), not the 300M
+ *    bridge, and still grade green.
+ *
+ *  BRIEF DEVIATION, DISCLOSED (disk wins): the brief's x-2 candidate was
+ *  the-quiet-month — UNPLAYABLE exit-funded: its lose line `cash-below:
+ *  150_000_000` fires AT TICK 0 on any sale-scale slice (the drill slice is
+ *  12M; even the full-catalog ceiling stays under the mandate). The ratchet
+ *  audit doc replaces it with a STRONGER fiction fit and a dice-free close.
+ *
+ *  Probe-derived witnesses ride chapters.test.ts §9 (x-1 census ×5 with the
+ *  catalog armed, exit-edge manifest shape, slice literals, x-2
+ *  cashStartMicroUsd === the spent slice — the exitFunded law in content).
+ */
+const EXIT_WIRE = {
+  schema: "hh-campaign@1",
+  id: "exit-the-heir-opens",
+  name: "The Exit — The Heir Opens",
+  chapters: [
+    { chapterId: "x-1-armed-close", scenarioId: "the-long-sale", exitKind: "strategic-acquisition" },
+    { chapterId: "x-2-heir-opens", scenarioId: "the-quarter-that-ran-itself" },
+  ],
+  carry: CARRY_RULE,
+} as const;
+
+/** Exit beat ledger. x-1 cites the-long-sale's own §1.5 wire line (the
+ *  meta↔doc equality law; the brief's :4025 run-up sentence is the TEXT anchor
+ *  already pinned in the Act III notes — the ledger mirrors the DOC), x-2 the
+ *  ratchet audit's §1.11 :5353. Negotiate follows c-9's Reach-State and Inherit
+ *  follows Negotiate — no-consecutive-safe; neither is Endure, so the exact
+ *  five-Endure census pin rides the 34-beat tour unchanged (5/34 = 14.7%). */
+export const CAMPAIGN_EXIT_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
+  "x-1-armed-close": { archetype: "Negotiate", specLine: 4019, tier: 6 },
+  "x-2-heir-opens": { archetype: "Inherit", specLine: 5353, tier: 6 },
+});
+
+/** The parsed Exit arc. */
+export const CAMPAIGN_EXIT: CampaignDoc = parseCampaignDoc(EXIT_WIRE);
+
+/* ------------------------------------------------------------------ */
 /* Combined authoring ledger (lint-law target for chapters.test.ts)     */
 /* ------------------------------------------------------------------ */
 
-/** Every chapter id → its §1.9 meta, all four arcs, insertion-ordered by act. */
+/** Every chapter id → its §1.9 meta, all five arcs, insertion-ordered by act. */
 export const CAMPAIGN_CHAPTER_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
   ...PROLOGUE_META,
   ...ACT_ONE_META,
   ...ACT_TWO_META,
   ...ACT_THREE_META,
+  ...CAMPAIGN_EXIT_META,
 });
 
-/** The four campaign docs in play order (Prologue before Act I before Act
- *  II before Act III — OD-19's act table, ADR-0019 program 3 extended by the
- *  wave-26 full-tour rung). */
+/** The five campaign docs in play order (Prologue before Act I before Act
+ *  II before Act III before the Exit arc — OD-19's act table, ADR-0019
+ *  program 3 extended by the wave-26 full-tour rung, and the wave-28 §E
+ *  commission: the Exit arc rides the ROSTER because an exit is a BEGINNING
+ *  (§1.6 plays on the heir), not because it closes the tour. It has no seat
+ *  (v0 — the {4,10,16,21,26,31} cadence pins byte-stand at 34 beats). */
 export const CAMPAIGN_ROSTER = Object.freeze(
-  [CAMPAIGN_PROLOGUE, CAMPAIGN_ACT_ONE, CAMPAIGN_ACT_TWO, CAMPAIGN_ACT_THREE] as const,
+  [CAMPAIGN_PROLOGUE, CAMPAIGN_ACT_ONE, CAMPAIGN_ACT_TWO, CAMPAIGN_ACT_THREE, CAMPAIGN_EXIT] as const,
 );

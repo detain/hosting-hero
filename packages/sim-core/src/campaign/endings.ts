@@ -241,22 +241,25 @@ function readEvidence(
  * everything-else. The empty report is the one illegal state and it fails
  * loud at the boundary.
  *
- * L-V2 (money-at-the-end 2/3): an OPTIONAL third argument — the CampaignDoc
- * whose FINAL chapter may DECLARE an exit kind. Two-arg call sites byte-stand
- * by construction (no declaration, so neither evidence key grows and no
- * DOC_LIE path is reachable). When a declaration exists it is validated
- * against the OBSERVED close, never the reverse — endings are observed, not
- * authored:
- *  - obituary (terminal LOST)      → narration only: declaredExitKind rides
- *    the evidence with exitObserved:false — "the company died before it sold"
- *    (§9.9 failure-is-narrated, hg:35151). Kind selection is UNCHANGED.
- *  - exit (sell-accepted WON)      → declaredExitKind + exitObserved:true.
- *  - quiet-handoff on a WON        → if declared, THROW DOC_LIE: the run won
- *    WITHOUT the sale the doc promised, so the promise is a lie the
- *    simulation caught. Money is never read here (only kind + stopReason).
- *  - quiet-handoff on a TIMEOUT    → narration only (exitObserved:false): a
- *    clock that ran out did not REFUTE a promise the way a non-sale win does,
- *    so it is honest, not a lie — the asymmetry is the law, mirrored below.
+ * L-V2 → §E (L-V3, money-at-the-end): an OPTIONAL third argument — the
+ * CampaignDoc whose chapters may DECLARE an exit kind at ANY position (L-V2's
+ * final-chapter wall is superseded; §E's exit arc plays ON the paid heir).
+ * Two-arg call sites byte-stand by construction (no declaration, so neither
+ * evidence key grows and no DOC_LIE path is reachable). Every declaring
+ * chapter is validated against its OWN observed close, never the reverse —
+ * endings are observed, not authored:
+ *  - LOST close                     → narration, not a lie: "the company died
+ *    before it sold" (§9.9 failure-is-narrated, hg:35151). The heir rises via
+ *    the ordinary death succession (null slice). Kind selection UNCHANGED.
+ *  - WON with the sell-accepted grammar → truth. Terminal pays the `exit`
+ *    ending (declaredExitKind + exitObserved:true); a MID-CHAIN paid close
+ *    spawns the heir and never touches the terminal evidence keys.
+ *  - WON without the sale, or TIMEOUT → THROW DOC_LIE naming the chapter.
+ *    §E amends the L-V2 timeout asymmetry: because a declared chapter's win
+ *    line is evaluated WITH the sale predicate to the doc's own contract
+ *    horizon (runner AND-semantics), a timeout REFUTES the promise — the sim
+ *    reached the doc's own last minute without ever observing the sale.
+ *    Money is never read here (only outcome + stopReason grammar).
  */
 export function endCampaign(
   report: CampaignReport,
@@ -267,18 +270,48 @@ export function endCampaign(
   if (terminal === undefined) {
     throw new CampaignError(`EMPTY at 'campaign "${report.campaignId}"': an ending needs at least one played chapter record`);
   }
-  // L-V2: the declaration is the FINAL chapter's, exactly as the parse wall
-  // enforced (only the last chapter may declare an exit).
+  // The terminal declaration stays the FINAL chapter's — it alone grows the
+  // evidence keys (§E widened WHICH chapters may declare, not which ending
+  // the readout narrates: the ending is still the tour's last word).
   const declared = campaign?.chapters.at(-1)?.exitKind;
   const kind = selectKind(terminal);
-  // A WON run that closed on anything but the sale the doc promised is the
-  // one authored-lying outcome — fail loud at the readout. A TIMEOUT is not:
-  // the clock running out is silence about the promise, not a refutation of
-  // it (the doc could still have sold had time remained), so it narrates.
-  if (declared !== undefined && terminal.outcome === "won" && kind !== "exit") {
+  // A terminal close that contradicts its declaration is the authored-lying
+  // outcome — fail loud at the readout. §E amends L-V2's timeout asymmetry:
+  // a WON-without-the-sale AND a TIMEOUT both refute a declaration (win lines
+  // evaluate the sale predicate to the doc's own horizon; reaching the last
+  // minute without it is refutation, not silence). A LOST death still narrates
+  // — the company died before it sold.
+  if (declared !== undefined && terminal.outcome !== "lost" && kind !== "exit") {
     throw new CampaignError(
       `DOC_LIE at 'campaign "${report.campaignId}"': the doc declares "${declared}" but the simulation closed on "${terminal.stopReason}" — endings are observed, not authored`,
     );
+  }
+  // §E per-chapter walk: with declarations legal at any position, EVERY
+  // declaring chapter answers for its own close. LOST narrates (death before
+  // sale); WON on the sell-accepted grammar is the paid-heir truth the chain
+  // just spawned from; everything else is a lie the simulation caught.
+  // The walk covers ALL records — including the terminal one: the check
+  // above owns the terminal lie only when the DOC's final chapter declared
+  // (its message keeps the pinned, chapter-less shape and fires first, so a
+  // doc-final declaration is never double-thrown here). When the tour
+  // HALTED EARLY on a declaring chapter (timeout mid-arc — the doc's final
+  // chapter never played), the terminal record belongs to a MID-chain
+  // declaration and this walk is its judge; leaving it out would be the
+  // one silent hole §E cannot ship.
+  if (campaign !== undefined) {
+    const declaredByChapter = new Map<string, CampaignExitKind>();
+    for (const chapter of campaign.chapters) {
+      if (chapter.exitKind !== undefined) declaredByChapter.set(chapter.chapterId, chapter.exitKind);
+    }
+    for (const record of report.chapterRecords) {
+      const chapterDeclared = declaredByChapter.get(record.chapterId);
+      if (chapterDeclared === undefined) continue;
+      if (record.outcome === "lost") continue;
+      if (record.outcome === "won" && SELL_ACCEPTED_SHAPE.test(record.stopReason)) continue;
+      throw new CampaignError(
+        `DOC_LIE at 'campaign "${report.campaignId}" chapter "${record.chapterId}"': the doc declares "${chapterDeclared}" but the simulation closed on "${record.stopReason}" — endings are observed, not authored`,
+      );
+    }
   }
   return Object.freeze({
     kind,

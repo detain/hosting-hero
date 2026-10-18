@@ -15,10 +15,15 @@
  * `perspective` is an OPTIONAL-FORWARD slot reserved for L-CP2: present in
  * v0 wire = refused by name, never silently ignored.
  *
- * L-V2 (money-at-the-end 2/3): the FINAL chapter may declare its §1.6 exit
- * kind (`exitKind`) — the vocabulary this lane bridges, validated against
- * the engine's OWN sell observation downstream (endings validate, the
- * scenario runner pays, both read-only).
+ * L-V2 → L-V3 (money-at-the-end): a chapter may declare its §1.6 exit kind
+ * (`exitKind`). L-V2 landed this as FINAL-chapter-only; the §E commission
+ * (L-V3) SUPERSEDES the position wall — a declaration is legal at any
+ * position because the tour can now PLAY ON the heir (§1.6 prestige: the
+ * exit is the moment, not the end). Placement is free; truth is observed:
+ * endings.ts refuses a declared chapter whose simulation contradicts the
+ * claim (DOC_LIE), the scenario runner pays sell-family closes, and the
+ * chain spawns the paid heir — declaration validated against the engine's
+ * OWN sell observation, never against a position in the list.
  *
  * Import law: ../types + ../kernel + ../save (+ scenario TYPES only).
  * The economy is NOT importable here (module law) — the CAMPAIGN_EXIT_KINDS ↔
@@ -178,9 +183,11 @@ export interface CampaignCarryRules {
 }
 
 /** One ordered chapter. `perspective` reserved for L-CP2 (present = refused).
- *  `exitKind` (L-V2) declares how the tour ENDS — legal on the LAST chapter
- *  only; the sale-family pair of observation + declaration is validated at
- *  the readout (endings.ts), where the simulation has already spoken. */
+ *  `exitKind` declares a §1.6 exit — legal at ANY position (§E supersedes
+ *  L-V2's final-chapter wall): a mid-chain declaration PAID-heir-spawns when
+ *  its close carries the sell-accepted grammar, and the tour plays on the
+ *  heir. Truth is runtime-observed, not positional: endings.ts throws DOC_LIE
+ *  for any declaring chapter whose simulation contradicts the claim. */
 export interface CampaignChapterSpec {
   readonly chapterId: string;
   readonly scenarioId: string;
@@ -212,6 +219,10 @@ export interface CampaignChapterRecord {
   readonly cashEndMicroUsd: bigint;
   readonly settledFacets: readonly string[];
   readonly bootstrapped: boolean;
+  /** Sparse §1.6 declaration stamp — present ONLY when the chapter declared
+   *  an exit kind (chain writes it from the spec). Digest-bearing: undeclared
+   *  arcs key-absent ⇒ byte-stand by construction. */
+  readonly exitKind?: CampaignExitKind;
 }
 
 function parseCashFloor(value: unknown, path: string): CampaignCarryCashFloor {
@@ -285,17 +296,16 @@ export function parseCampaignDoc(value: unknown, where = "campaign"): CampaignDo
   }
   if (raw.chapters.length > MAX_CHAPTERS) fail("BAD_RANGE", `${where}.chapters`, `at most ${MAX_CHAPTERS} chapters`);
   const seen = new Set<string>();
-  const chapterCount = raw.chapters.length;
   const chapters = raw.chapters.map((row, i) => {
     const ch = parseChapter(row, `${where}.chapters[${i}]`);
     if (seen.has(ch.chapterId)) fail("DUPLICATE", `${where}.chapters[${i}].chapterId`, `"${ch.chapterId}" already used`);
     seen.add(ch.chapterId);
-    // POSITION LAW (L-V2): an exit is what the tour CLOSES on — only the
-    // final chapter may declare one. Grammar (enum + RESERVED) already
-    // passed inside parseChapter; this is placement, after it.
-    if (ch.exitKind !== undefined && i < chapterCount - 1) {
-      fail("BAD_RANGE", `${where}.chapters[${i}].exitKind`, "only the final chapter may declare an exit — the tour ends where the company does");
-    }
+    // POSITION LAW SUPERSEDED (§E, L-V3): L-V2 refused non-final declarations
+    // ("the tour ends where the company does"). §E's CAMPAIGN_EXIT arc proves
+    // that premise false — the tour PLAYS ON the heir, so a mid-chain exit is
+    // the flagship use. Grammar (enum + RESERVED trio) still passes inside
+    // parseChapter BEFORE anything else; placement is now free and the real
+    // guard is runtime truth: endings.ts DOC_LIE per declaring chapter.
     return ch;
   });
   const doc: CampaignDoc = {
