@@ -10,8 +10,8 @@ import { describe, expect, it } from "vitest";
 import { asEntityId, asMoney, asRunSeed } from "../../types";
 import type { CompanyNode, MedalRecord, ScarRecord } from "../../save/index";
 import { emptyLineageGraph, newCompanyNode, reputationStateFromLedger } from "../../save/index";
-import { endCampaign, ENDING_KINDS, CampaignError } from "../index";
-import type { CampaignChapterRecord, CampaignEnding, CampaignReport } from "../index";
+import { endCampaign, ENDING_KINDS, CampaignError, CAMPAIGN_SCHEMA, parseCampaignDoc } from "../index";
+import type { CampaignChapterRecord, CampaignDoc, CampaignEnding, CampaignReport } from "../index";
 import { CAMPAIGN_ACT_TWO } from "../chapters";
 
 /* ── fixtures ─────────────────────────────────────────────────────────── */
@@ -277,5 +277,142 @@ describe("endCampaign — pure projection, loud boundary", () => {
   it("the empty report is the one illegal state and fails loud at the boundary", () => {
     expect(() => endCampaign(report(), founderNode())).toThrow(CampaignError);
     expect(() => endCampaign(report(), founderNode())).toThrow(/EMPTY at 'campaign "act-three-test"'/);
+  });
+});
+
+/* ── the declared exit (L-V2, money-at-the-end 2/3) ───────────────────── */
+
+describe("endCampaign — the declared exit is validated, never obeyed (L-V2)", () => {
+  /** Parse a one-chapter campaign doc whose FINAL chapter declares `kind`. */
+  function declaring(kind: string): CampaignDoc {
+    return parseCampaignDoc({
+      schema: CAMPAIGN_SCHEMA,
+      id: "lv2-test",
+      name: "The Long Sale",
+      chapters: [{ chapterId: "c-1", scenarioId: "s-a", exitKind: kind }],
+      carry: { cashFloor: { thresholdMicroUsd: 5_000_000n, bridgeMicroUsd: 500_000n }, scarCapRide: true },
+    });
+  }
+  function undeclaring(): CampaignDoc {
+    return parseCampaignDoc({
+      schema: CAMPAIGN_SCHEMA,
+      id: "lv2-test",
+      name: "The Long Sale",
+      chapters: [{ chapterId: "c-1", scenarioId: "s-a" }],
+      carry: { cashFloor: { thresholdMicroUsd: 5_000_000n, bridgeMicroUsd: 500_000n }, scarCapRide: true },
+    });
+  }
+
+  // The EXACT frozen evidence key set an undeclared readout emits on a
+  // default-faceted node (newCompanyNode ships zero-valued records +
+  // reputation, so those leaves ride). FALSIFIABLE PIN: if the third-arg
+  // plumbing ever let a key materialize WITHOUT a declaration — or a declared
+  // key leak into the undeclared shape — these lists go red.
+  const FROZEN_UNDECLARED_KEYS = [
+    "biggestCustomerMrrMicroUsd",
+    "chapterOutcomes",
+    "costliestMistakeMicroUsd",
+    "deathStopReason",
+    "longestPerfectStreak",
+    "medals",
+    "reputationBps",
+    "scars",
+    "worstOutageSeconds",
+  ];
+  const ALL_TERMINALS: CampaignChapterRecord[] = [
+    rec({ outcome: "lost", stopReason: DEATH_STOP }),
+    rec({ outcome: "won", stopReason: "win:sell-accepted-above:0@480" }),
+    rec({ outcome: "won", stopReason: "win@240" }),
+    rec({ outcome: "timeout", stopReason: "timeout@240" }),
+  ];
+
+  it("two-arg call sites byte-stand: the undeclared evidence shape is FROZEN", () => {
+    for (const terminal of ALL_TERMINALS) {
+      expect(Object.keys(endCampaign(report(terminal), founderNode()).evidence).sort()).toEqual(FROZEN_UNDECLARED_KEYS);
+      // Passing the doc explicitly changes NOTHING when it declares nothing…
+      expect(endCampaign(report(terminal), founderNode(), undeclaring())).toEqual(endCampaign(report(terminal), founderNode()));
+      // …and an explicit-undefined third arg is the same door.
+      expect(endCampaign(report(terminal), founderNode(), undefined)).toEqual(endCampaign(report(terminal), founderNode()));
+    }
+    // The shipped Act II doc declares no exits — the standing tour reads byte-stand.
+    for (const terminal of ALL_TERMINALS) {
+      expect(endCampaign(report(terminal), founderNode(), CAMPAIGN_ACT_TWO)).toEqual(endCampaign(report(terminal), founderNode()));
+    }
+  });
+
+  it("a declared sell-observed win: kind exit + declaredExitKind + exitObserved:true", () => {
+    const ending = endCampaign(
+      report(rec({ outcome: "won", stopReason: "win:sell-accepted-above:0@480" })),
+      founderNode(),
+      declaring("pe-bolt-on"),
+    );
+    expect(ending.kind).toBe("exit");
+    expect(ending.evidence.declaredExitKind).toBe("pe-bolt-on");
+    expect(ending.evidence.exitObserved).toBe(true);
+    // The pre-existing leaves ride untouched beside the new keys.
+    expect(ending.evidence.deathStopReason).toBeNull();
+    expect(Object.keys(ending.evidence).sort()).toEqual([...FROZEN_UNDECLARED_KEYS, "declaredExitKind", "exitObserved"].sort());
+  });
+
+  it("terminal LOST with a declaration stays an obituary — failure is NARRATED (hg §9.9 :35151)", () => {
+    // "The company died before it sold": kind/title/epitaph byte-stand (the
+    // death cause still owns the story), the EVIDENCE carries the honest
+    // promise-vs-fact pair — the narration is data, not a rewritten ending.
+    const declared = endCampaign(report(rec({ outcome: "lost", stopReason: DEATH_STOP })), founderNode(), declaring("strategic-acquisition"));
+    const plain = endCampaign(report(rec({ outcome: "lost", stopReason: DEATH_STOP })), founderNode());
+    expect(declared.kind).toBe("obituary");
+    expect(declared.title).toBe(plain.title);
+    expect(declared.epitaph).toBe(plain.epitaph);
+    expect(declared.evidence.deathStopReason).toBe(DEATH_STOP);
+    expect(declared.evidence.declaredExitKind).toBe("strategic-acquisition");
+    expect(declared.evidence.exitObserved).toBe(false);
+  });
+
+  it("a TIMEOUT with a declaration is narration, NOT a lie — the asymmetry is the law", () => {
+    // A clock that ran out is silence about the promise; a WON closed on
+    // anything but the sale REFUTES it. Only the refutation throws.
+    const ending = endCampaign(report(rec({ outcome: "timeout", stopReason: "timeout@240" })), founderNode(), declaring("asset-sale"));
+    expect(ending.kind).toBe("quiet-handoff");
+    expect(ending.evidence.declaredExitKind).toBe("asset-sale");
+    expect(ending.evidence.exitObserved).toBe(false);
+  });
+
+  it("a WON non-sale close with a declaration throws DOC_LIE — endings are observed, not authored", () => {
+    const run = () => endCampaign(report(rec({ outcome: "won", stopReason: "win@240" })), founderNode(), declaring("strategic-acquisition"));
+    expect(run).toThrow(CampaignError);
+    expect(run).toThrow(
+      /^campaign: DOC_LIE at 'campaign "act-three-test"': the doc declares "strategic-acquisition" but the simulation closed on "win@240" — endings are observed, not authored$/,
+    );
+  });
+
+  it("precedence is UNCHANGED by a declaration — obituary still outranks everything", () => {
+    // A mid-chain sell win with a declared terminal LOSS stays an obituary
+    // (the declaration rides the terminal chapter, the selection reads it).
+    const ending = endCampaign(
+      report(rec({ chapterId: "c-sell", stopReason: "win:sell-accepted-above:0@480" }), rec({ chapterId: "c-last", outcome: "lost", stopReason: DEATH_STOP })),
+      founderNode(),
+      declaring("pe-platform"),
+    );
+    expect(ending.kind).toBe("obituary");
+    expect(ending.evidence.exitObserved).toBe(false);
+  });
+
+  it("money-untouched law SURVIVES the declaration: the readout never grows a cash word", () => {
+    const node = richNode();
+    const ending = endCampaign(
+      report(rec({ outcome: "won", stopReason: "win:sell-accepted-above:0@480" })),
+      node,
+      declaring("pe-bolt-on"),
+    );
+    expect(JSON.stringify(ending, (_k, v) => (typeof v === "bigint" ? String(v) : v)).toLowerCase()).not.toContain("cash");
+    expect(Object.keys(ending).sort()).toEqual(["epitaph", "evidence", "kind", "title"]);
+  });
+
+  it("declared readouts are frozen too, and pure across repeats", () => {
+    const doc = declaring("asset-sale");
+    const first = endCampaign(report(rec({ outcome: "won", stopReason: "win:sell-accepted-above:2@90" })), founderNode(), doc);
+    const second = endCampaign(report(rec({ outcome: "won", stopReason: "win:sell-accepted-above:2@90" })), founderNode(), doc);
+    expect(second).toEqual(first);
+    expect(Object.isFrozen(first.evidence)).toBe(true);
   });
 });

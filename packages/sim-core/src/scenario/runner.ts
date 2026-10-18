@@ -77,18 +77,25 @@ import type {
   RefusedSettlement,
   RegisterContractInput,
   ReputationSignal,
+  ValuationAdjustment,
+  ValuationExitKind,
+  ValuationRevenueRow,
 } from "../economy/index.ts";
 import {
   applyReputationSignals,
   COMPANY_DEATH_CAUSES,
+  contractRemainingTerm,
+  contractedRevenueShareBps,
   defaultEconomyConfig,
   emptyEconomyState,
+  exitCashSliceMicroUsd,
   foldPostMortemFilings,
   postEntry,
   postMortemNoticeCauseId,
   postMortemReputationSignals,
   registerContractsEconomy,
   REPUTATION_INITIAL_BPS,
+  VALUATION_EXIT_KINDS,
 } from "../economy/index.ts";
 import {
   UNATTENDED_AGGRESSION,
@@ -190,6 +197,18 @@ export interface ScenarioRunConfig {
    *  or negative VALUES throw at the seam pre-tick-1 (BAD_MONEY wall below),
    *  never limping to the engine's adjudication-time RangeError (sell.ts). */
   readonly sellMarketRates?: ReadonlyMap<string, MoneyUnit>;
+  /** L-V2 (money-at-the-end 2/3, §1.6): the campaign lane's DECLARED exit kind
+   *  for this mission — an OPAQUE STRING on the scenario side (this module
+   *  never imports the campaign vocabulary; the chain bridge L-V3 wires
+   *  chapter.exitKind → here). The declaration is CONSUMED ONLY at a winning
+   *  close on the sell-accepted grammar (the report's sparse `exitPayout`),
+   *  but it is VALIDATED at the seam PRE-TICK-1 against `VALUATION_EXIT_KINDS`
+   *  (the economy leg's closed seven): a bad kind must die at config time
+   *  naming the vocabulary, never limp to the close and silently produce no
+   *  payout (the sellMarketRates BAD_MONEY posture). ABSENT ⇒ the report never
+   *  grows the key — every shipped wire byte-stands (all 31 registry wires and
+   *  all tour chapters run bare; digest-equality pinned in exitPayout.test). */
+  readonly exitDeclaration?: { readonly exitKind: string };
 }
 
 /** Cumulative trace census — the report's "what happened" roll-up. */
@@ -254,6 +273,33 @@ export interface ScenarioReport {
     readonly feeMicroUsd: MoneyUnit;
     readonly freeMicroUsd: MoneyUnit;
   }[];
+  /** L-V2 (money-at-the-end 2/3): the pure read-projection of a DECLARED exit
+   *  onto the winning close — present ONLY when the run WON on a win-line
+   *  carrying the sell-accepted grammar AND the config declared an exit kind.
+   *  Every input is ALREADY-ROLLED engine truth at the stop boundary (the
+   *  persisted sell verdicts, the notice-census counters, the reputation
+   *  ledger, the contract book at the at-close business minute) pushed through
+   *  the economy's own `exitCashSliceMicroUsd` — zero new dice, zero state,
+   *  the endDigest byte-stands by construction (sparse-key law, era/
+   *  perspective/chargeback precedent: all 31 registry wires and every tour
+   *  chapter run without a declaration and never grow this key). */
+  readonly exitPayout?: ScenarioExitPayout;
+}
+
+/** L-V2: the shape of the report-only exit payout (see `ScenarioReport`'s
+ *  `exitPayout` key). `headlineOfferMicroUsd` is the Σ of the ACCEPTED sell
+ *  verdicts' offer prices at close — the notice-shape law says every
+ *  `sell-accepted` notice carries its verdict's `offerPriceMicroUsd` as
+ *  `amount` (economy/tick.ts step 5.5, pinned economy sell-accept.test "notice
+ *  shape"); the persisted verdict map is the same truth post-amendment. The
+ *  slice is the valuation leaf's output: never above the headline (hg:5615
+ *  diligence posture), wind-down would slice to exactly 0 but the campaign
+ *  parse wall refuses that kind before it can be declared here. */
+export interface ScenarioExitPayout {
+  readonly exitKind: ValuationExitKind;
+  readonly headlineOfferMicroUsd: MoneyUnit;
+  readonly cashSliceMicroUsd: MoneyUnit;
+  readonly adjustments: readonly ValuationAdjustment[];
 }
 
 /* The F4/F5 refusal law (negative-bucket regex, settle-shape parse, opex
@@ -889,6 +935,86 @@ function isUnderTheTape(freeze: { readonly fromMinute: number; readonly toMinute
   return atTick >= freeze.fromMinute && atTick <= freeze.toMinute;
 }
 
+/* ─────────────── L-V2: money at the end — the report-only close read ─────────────── */
+
+/** The pure close read for a DECLARED, OBSERVED exit. Every input is
+ *  already-rolled engine truth at the terminal boundary:
+ *  - headline  = Σ of the ACCEPTED persisted sell verdicts' offer prices. The
+ *    notice-shape law (economy/tick.ts step 5.5, pinned economy sell-accept.test
+ *    "notice shape") says every `sell-accepted` notice carries its verdict's
+ *    `offerPriceMicroUsd` as `amount`; the verdict MAP is the same truth AFTER
+ *    amendment (a re-offered key re-rolls and overwrites), so it is the
+ *    at-close authority.
+ *  - churn / written-off bps = the observation's cumulative notice census over
+ *    the AUTHORED contract roster — the engine holds no point-in-time customer
+ *    count, and lifetime churn against the authored book is the honest
+ *    denominator (empty roster ⇒ 0n: nothing churned because nothing existed).
+ *  - concentration = largest ACTIVE MRC over the active-book sum (phases
+ *    pending/suspended/terminated are not closing revenue; MRC is authored on
+ *    the Contract, the phase is the economy mirror's). Empty/zero book ⇒ null
+ *    — ABSENCE BOOKS NO FINDING (valuation input law).
+ *  - WARCT coverage = `contractedRevenueShareBps` over the same active rows,
+ *    termEndMin read off the ECONOMY-OWNED mirror (advanced on renewal — the
+ *    at-close truth, not the doc's original date) at the at-close business
+ *    minute (the same `businessUs / MICROS_PER_MIN` reading :1391 uses).
+ *  - reputation = `observation.reputationBps`, the very ledger the §2.10 score
+ *    lane publishes.
+ *  Trust honesty (disclosed): `EconomyState.relationships` exists but
+ *  `exitCashSliceMicroUsd` takes NO trust input at all (trust rides the
+ *  per-tenant lease-value read, which is not part of this close), so no row
+ *  here consults it. ZERO streamFor calls, ZERO state writes: no new dice, and
+ *  the endDigest byte-stands by construction (×100 pinned in exitPayout.test). */
+function exitPayoutFor(
+  doc: ScenarioDoc,
+  econ: EconomyState | null,
+  contractsBook: ReadonlyMap<EntityId, Contract>,
+  game: GameState,
+  finalObs: ScenarioObservation,
+  exitKind: ValuationExitKind,
+): ScenarioExitPayout {
+  let headline = 0n;
+  for (const verdict of econ?.sellVerdicts?.values() ?? []) {
+    if (verdict.accepted) headline += verdict.offerPriceMicroUsd;
+  }
+  const roster = BigInt(doc.contracts.length);
+  const churnBps = roster === 0n ? 0n : (BigInt(finalObs.churnedCustomers) * 10_000n) / roster;
+  const writtenOffBps = roster === 0n ? 0n : (BigInt(finalObs.writtenOffCustomers) * 10_000n) / roster;
+  const atBusinessMinute = Number(game.context.clocks.businessUs / MICROS_PER_MIN);
+  let largestMrc = 0n;
+  let bookSumMrc = 0n;
+  const rows: ValuationRevenueRow[] = [];
+  if (econ !== null) {
+    for (const [contractId, ce] of econ.contractEconomy) {
+      if (ce.phase !== "active") continue;
+      const contract = contractsBook.get(contractId);
+      if (contract === undefined) continue; // defensive: the book is registered from doc.contracts
+      const mrc = contract.mrcMicroUsd;
+      if (mrc <= 0n) continue;
+      if (mrc > largestMrc) largestMrc = mrc;
+      bookSumMrc += mrc;
+      rows.push(Object.freeze({ mrcMicroUsd: mrc, remainingMonths: contractRemainingTerm(ce, atBusinessMinute) }));
+    }
+  }
+  const concentrationBps = bookSumMrc > 0n ? (largestMrc * 10_000n) / bookSumMrc : null;
+  const warctCoverageBps = rows.length > 0 ? contractedRevenueShareBps(rows) : null;
+  const headlineOffer = asMoney(headline);
+  const slice = exitCashSliceMicroUsd({
+    headlineOfferMicroUsd: headlineOffer,
+    churnBps,
+    writtenOffBps,
+    concentrationBps,
+    warctCoverageBps,
+    reputationBps: finalObs.reputationBps,
+    exitKind,
+  });
+  return Object.freeze({
+    exitKind,
+    headlineOfferMicroUsd: headlineOffer,
+    cashSliceMicroUsd: slice.cashSliceMicroUsd,
+    adjustments: Object.freeze([...slice.adjustments]),
+  });
+}
+
 /** Run one authored mission. Deterministic by construction: every random
  *  draw rides streamFor(seed, …) from the doc's engine, every mutable is
  *  minted inside, and the report is a pure fold of the run. */
@@ -952,6 +1078,28 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
   }
   const sellCatalog: ReadonlyMap<string, MoneyUnit> | undefined =
     config.sellMarketRates !== undefined && config.sellMarketRates.size > 0 ? config.sellMarketRates : undefined;
+  /* L-V2 (money-at-the-end 2/3): the exit DECLARATION is seven-slug vocabulary
+     owned by economy/valuation.ts (`VALUATION_EXIT_KINDS` — the campaign's
+     CAMPAIGN_EXIT_KINDS mirrors it, drift-pinned campaign-side). The seam
+     validates it NOW, before the first dice, even though only a winning
+     sell-accepted close consumes it: a typo'd kind that reaches the close
+     would silently pay nothing (the payout key just would not appear), and
+     silence is the one answer a declaration never earns. Plain Error per the
+     era/seedOffset/sellMarketRates precedent. The reserved-by-observability
+     trio (ipo/management-buyout/wind-down) is refused EARLIER still — by the
+     campaign parse wall (doc.ts RESERVED); by the time a string reaches this
+     config it is one of the four sale-family kinds or a fresh lie about the
+     vocabulary, and BOTH walls name all seven. */
+  let declaredExitKind: ValuationExitKind | undefined;
+  if (config.exitDeclaration !== undefined) {
+    const kind = config.exitDeclaration.exitKind;
+    if (!(VALUATION_EXIT_KINDS as readonly string[]).includes(kind)) {
+      throw new Error(
+        `scenario[BAD_ENUM] at 'runScenario.exitDeclaration': exitKind must be one of ${VALUATION_EXIT_KINDS.map((k) => `"${k}"`).join(", ")}, got ${JSON.stringify(kind)}`,
+      );
+    }
+    declaredExitKind = kind as ValuationExitKind;
+  }
   /* L-CP2: resolve the seat BEFORE the mint — noc-shift's three hands are a
    * minting fact (state.hands is the authority; the door's fallback mirrors
    * it, the pre-existing two-reading law at :845). Unarmed docs keep the
@@ -1429,6 +1577,20 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
 
   if (stopReason === "") stopReason = `timeout@${game.context.minute}`;
   const finalObs = lastObs;
+  /* L-V2 (money-at-the-end 2/3) payout gate: the run WON, its win-line really
+     carried the sell-accepted grammar (the OBSERVATION exists — the same
+     static doc read that shaped `stopReason` above; outcome "won" already
+     means every win predicate, carrier included, held at the boundary), AND
+     the config DECLARED a kind. A declaration without the sale observation is
+     narration (campaign/endings.ts), not payment; a sale observation without a
+     declaration is an offer nobody promised to close — either way the report
+     never grows the key. */
+  const exitPayout =
+    outcome === "won" &&
+    declaredExitKind !== undefined &&
+    doc.objectives.win.some((p) => p.kind === "sell-accepted-above")
+      ? exitPayoutFor(doc, econ, contractsBook, game, finalObs, declaredExitKind)
+      : undefined;
 
   return Object.freeze({
     scenarioId: doc.id,
@@ -1476,5 +1638,9 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     ...(acc.chargebackFeeRefusals.length > 0
       ? { chargebackFeeRefusals: Object.freeze([...acc.chargebackFeeRefusals]) }
       : {}),
+    // L-V2 sparse-key law: undeclared runs (all 31 registry wires + every tour
+    // chapter by construction) never grow the `exitPayout` key; the frozen
+    // payout object rides ONLY on a declared, sell-observed win.
+    ...(exitPayout === undefined ? {} : { exitPayout }),
   });
 }

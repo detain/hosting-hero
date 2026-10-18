@@ -19,6 +19,7 @@
 
 export {
   CAMPAIGN_SCHEMA,
+  CAMPAIGN_EXIT_KINDS,
   CARRY_STAFF_CAP,
   CARRY_CAST_CAP,
   CampaignError,
@@ -33,6 +34,7 @@ export type {
   CampaignChapterRecord,
   CampaignDoc,
   CampaignErrorCode,
+  CampaignExitKind,
 } from "./doc.ts";
 
 export { projectChapterCarry, applyCarryToDoc } from "./carry.ts";

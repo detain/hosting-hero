@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CAMPAIGN_SCHEMA,
+  CAMPAIGN_EXIT_KINDS,
   CARRY_CAST_CAP,
   CARRY_STAFF_CAP,
   CampaignError,
@@ -11,6 +12,7 @@ import {
   toCampaignWire,
 } from "../index";
 import { canonicalJson, fromCanonicalJson } from "../../save/index";
+import { VALUATION_EXIT_KINDS } from "../../economy/index";
 
 const valid = () => ({
   schema: CAMPAIGN_SCHEMA,
@@ -95,5 +97,128 @@ describe("parseCampaignDoc — the canonical wire boundary", () => {
     const strung = valid() as unknown as Record<string, unknown>;
     (strung.carry as Record<string, unknown>).cashFloor = { thresholdMicroUsd: "5000000", bridgeMicroUsd: "500000" };
     expect(parseCampaignDoc(strung).carry.cashFloor.thresholdMicroUsd).toBe(5_000_000n);
+  });
+});
+
+describe("parseCampaignDoc — the §1.6 exit declaration (L-V2, money-at-the-end 2/3)", () => {
+  /** Like `valid()` but THREE chapters — the position law needs a real middle. */
+  const three = () => ({
+    ...valid(),
+    chapters: [
+      { chapterId: "one", scenarioId: "the-long-weekend" },
+      { chapterId: "two", scenarioId: "the-angry-whale" },
+      { chapterId: "three", scenarioId: "the-hardest-lesson", tickCap: 300 },
+    ],
+  });
+
+  it("the bridge vocabulary is BYTE-IDENTICAL to the economy's — same seven slugs, same order", () => {
+    // CAMPAIGN_EXIT_KINDS mirrors VALUATION_EXIT_KINDS (the import law keeps
+    // economy out of doc.ts, so the mirror is pinned here instead of typed):
+    // two vocabularies that drift would make the declared kind reach
+    // exitCashSliceMicroUsd as a foreign word. Order included — the docblock
+    // cites hg:4501-4512 IN DOC ORDER on both sides.
+    expect([...CAMPAIGN_EXIT_KINDS]).toEqual([...VALUATION_EXIT_KINDS]);
+    expect(CAMPAIGN_EXIT_KINDS).toHaveLength(7);
+    expect(Object.isFrozen(CAMPAIGN_EXIT_KINDS)).toBe(true);
+  });
+
+  it("the final chapter may declare a sale-family kind; earlier chapters stay sparse", () => {
+    const doc = parseCampaignDoc({
+      ...valid(),
+      chapters: [
+        { chapterId: "one", scenarioId: "the-long-weekend" },
+        { chapterId: "two", scenarioId: "the-angry-whale", exitKind: "strategic-acquisition" },
+      ],
+    });
+    expect(doc.chapters[1]?.exitKind).toBe("strategic-acquisition");
+    // SPARSE law both ways: an undeclared chapter grows NO key.
+    expect("exitKind" in (doc.chapters[0] ?? {})).toBe(false);
+  });
+
+  it("all FOUR sale-family kinds ride; none is refused", () => {
+    for (const kind of ["strategic-acquisition", "pe-platform", "pe-bolt-on", "asset-sale"] as const) {
+      const doc = parseCampaignDoc({
+        ...valid(),
+        chapters: [{ chapterId: "one", scenarioId: "a" }, { chapterId: "two", scenarioId: "b", exitKind: kind }],
+      });
+      expect(doc.chapters[1]?.exitKind).toBe(kind);
+    }
+  });
+
+  it("the OBSERVABILITY wall refuses ipo / management-buyout / wind-down BY NAME", () => {
+    // No close mechanic observes these three in v0 — the sell-accepted grammar
+    // is the ONLY exit the engine can see, so declaring one is authored fiction.
+    for (const kind of ["ipo", "management-buyout", "wind-down"] as const) {
+      expect(() =>
+        parseCampaignDoc({
+          ...valid(),
+          chapters: [{ chapterId: "one", scenarioId: "a" }, { chapterId: "two", scenarioId: "b", exitKind: kind }],
+        }),
+      ).toThrow(new RegExp(`RESERVED at 'campaign\\.chapters\\[1\\]\\.exitKind'.*"${kind}"`));
+    }
+  });
+
+  it("off-vocabulary refuses with BAD_ENUM naming all seven kinds", () => {
+    // The refuted recon slug "mbo" is exactly the shape this wall exists for:
+    // the doc's word is "Management buyout", never the acronym.
+    let message = "";
+    try {
+      parseCampaignDoc({
+        ...valid(),
+        chapters: [{ chapterId: "one", scenarioId: "a", exitKind: "mbo" }],
+      });
+    } catch (error) {
+      message = String((error as Error).message);
+    }
+    expect(message).toMatch(/^campaign: BAD_ENUM at 'campaign\.chapters\[0\]\.exitKind'/);
+    for (const kind of CAMPAIGN_EXIT_KINDS) expect(message).toContain(`"${kind}"`);
+    expect(() =>
+      parseCampaignDoc({
+        ...valid(),
+        chapters: [{ chapterId: "one", scenarioId: "a", exitKind: 7 }],
+      }),
+    ).toThrow(/BAD_ENUM at 'campaign\.chapters\[0\]\.exitKind'/);
+  });
+
+  it("POSITION LAW — only the final chapter may declare an exit", () => {
+    expect(() => parseCampaignDoc({ ...three(), chapters: three().chapters.map((ch, i) => (i === 0 ? { ...ch, exitKind: "pe-platform" } : ch)) })).toThrow(
+      /BAD_RANGE at 'campaign\.chapters\[0\]\.exitKind'.*only the final chapter may declare an exit — the tour ends where the company does/,
+    );
+    // The same kind on the LAST chapter of the same three-chapter tour parses.
+    const last = three();
+    (last.chapters[2] as Record<string, unknown>).exitKind = "pe-platform";
+    expect(parseCampaignDoc(last).chapters[2]?.exitKind).toBe("pe-platform");
+    // A single-chapter tour IS the final chapter.
+    expect(
+      parseCampaignDoc({ ...valid(), chapters: [{ chapterId: "one", scenarioId: "a", exitKind: "asset-sale" }] }).chapters[0]?.exitKind,
+    ).toBe("asset-sale");
+  });
+
+  it("grammar precedes position — a broken value is broken wherever it sits", () => {
+    // chapters[0] carries a RESERVED kind: the parseChapter wall (RESERVED)
+    // fires BEFORE the loop's position law — same for a BAD_ENUM kind.
+    const mid = three();
+    (mid.chapters[0] as Record<string, unknown>).exitKind = "ipo";
+    expect(() => parseCampaignDoc(mid)).toThrow(/RESERVED at 'campaign\.chapters\[0\]\.exitKind'/);
+    const mid2 = three();
+    (mid2.chapters[0] as Record<string, unknown>).exitKind = "trade-sale";
+    expect(() => parseCampaignDoc(mid2)).toThrow(/BAD_ENUM at 'campaign\.chapters\[0\]\.exitKind'/);
+  });
+
+  it("the declaration round-trips the wire SPARSE — undeclared chapters emit no key", () => {
+    const doc = parseCampaignDoc(three());
+    const plain = toCampaignWire(doc);
+    // canonicalJson, not JSON.stringify: the carry floors ride real bigints.
+    expect(canonicalJson(plain)).not.toContain("exitKind");
+    const declared = three();
+    (declared.chapters[2] as Record<string, unknown>).exitKind = "pe-bolt-on";
+    const parsed = parseCampaignDoc(declared);
+    const wire = toCampaignWire(parsed);
+    expect(wire.chapters).toEqual([
+      { chapterId: "one", scenarioId: "the-long-weekend" },
+      { chapterId: "two", scenarioId: "the-angry-whale" },
+      { chapterId: "three", scenarioId: "the-hardest-lesson", tickCap: 300, exitKind: "pe-bolt-on" },
+    ]);
+    expect(parseCampaignDoc(fromCanonicalJson(canonicalJson(wire)))).toEqual(parsed);
   });
 });

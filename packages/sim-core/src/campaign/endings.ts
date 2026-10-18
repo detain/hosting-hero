@@ -18,12 +18,15 @@
  *     punchline" (hg:35160-35161).
  *  2. exit          — the FINAL chapter WON on the sell-accepted verdict
  *     grammar (`win:sell-accepted-above:…`), §1.5 "Sell the Company" — "the
- *     best possible campaign ending" (hg:4014-4021). v0 is VERDICT-OBSERVED
- *     ONLY: it reads the stopReason the (future) Act III exit chapter will emit
- *     and calls the ending — it does NOT mint a cashSlice, does NOT spawn an
- *     `exit` inheritance edge, and never touches `node.finances`. Selling is
- *     an OWNERSHIP event the money-untouched sell law reserves for the host
- *     (see economy sell-acceptance posture); this lane only narrates its verdict.
+ *     best possible campaign ending" (hg:4014-4021). Still VERDICT-OBSERVED
+ *     ONLY: it reads the stopReason the exit chapter emits (c-7 `the-long-sale`
+ *     @`5e9be02` ships it) and calls the ending — it does NOT mint a cashSlice,
+ *     does NOT spawn an `exit` inheritance edge, and never touches
+ *     `node.finances`. Selling is an OWNERSHIP event the money-untouched sell
+ *     law reserves for the host (see economy sell-acceptance posture); this
+ *     lane only narrates its verdict. (The cash side of the close is
+ *     scenario/runner.ts's report-only `exitPayout` — a READ of verdicts the
+ *     engine already rolled, and endCampaign never reads its values either.)
  *  3. quiet-handoff — everything else a run can end on: the company stood at
  *     the finish. §9.9 "The Quiet Handoff" — the infrastructure runs fine
  *     without you, the `Days Since Last Outage` counter "keeps going up after
@@ -43,12 +46,16 @@
  *  - The Goal Card lens (L14, `node.goalCard`) is authoring metadata; a
  *    goal-declared ending needs a CampaignDoc goal field (doc-field = owner
  *    wall) — NOT taken here.
- *  - The seven §1.6 ExitKinds bridge (`node.succession.exitKind`) is opaque and
- *    content-pending (WS-3 taxonomy); mapping an ending onto a specific exit
- *    kind is an owner wall — endCampaign never reads or writes `exitKind`.
+ *  - The seven §1.6 ExitKinds bridge is now a DECLARATION this lane VALIDATES
+ *    (L-V2, money-at-the-end 2/3): `endCampaign`'s optional third argument
+ *    carries the final chapter's declared kind onto the evidence as
+ *    `declaredExitKind` + `exitObserved`, and a WON-but-unsold close throws
+ *    DOC_LIE. It remains a narration seam — endCampaign never reads a cashSlice
+ *    value nor writes `node.succession`.
  *  - Due Diligence / valuation arithmetic (§1.5 :4017 "EBITDA adjusted for
- *    churn … clawed back in diligence") is NOT v0 — the exit ending is
- *    verdict-only, no multiple, no clawback. Refused.
+ *    churn … clawed back in diligence") is NOT in endings — the exit ending is
+ *    verdict-only; the cashSlice arithmetic lives in scenario/runner.ts as a
+ *    report-only READ of already-rolled verdicts (L-V2 payout). Refused here.
  *
  * Import law: ../types + ../kernel/fixed + the save type surface + ./chain +
  * ./doc. No engine, no fs, no RNG (a pure read never rolls a die).
@@ -57,7 +64,7 @@
 import type { Fixed, MoneyUnit } from "../types.ts";
 import { FIXED_SCALE } from "../kernel/fixed.ts";
 import type { CampaignRunOutcome, CompanyNode } from "../save/index.ts";
-import type { CampaignChapterRecord } from "./doc.ts";
+import type { CampaignChapterRecord, CampaignDoc, CampaignExitKind } from "./doc.ts";
 import { CampaignError } from "./doc.ts";
 import type { CampaignReport } from "./chain.ts";
 
@@ -93,6 +100,20 @@ export interface CampaignEndingEvidence {
    *  "obituary". Structured so a consumer can act on the cause without parsing
    *  the narrated epitaph. */
   readonly deathStopReason: string | null;
+  /** L-V2 (money-at-the-end 2/3): the §1.6 exit kind the FINAL chapter DECLARED
+   *  (the doc's promise), present ONLY when a declaration exists. The three
+   *  sale kinds an IPO-less engine cannot narrate as a distinct close all ride
+   *  the same sell-accepted observation, so the flavor is authored, not
+   *  derived. Sparse-key law: an UNdeclared ending never grows either key —
+   *  the EXACT frozen evidence shape stands (falsifiable pin in endings.test). */
+  readonly declaredExitKind?: CampaignExitKind;
+  /** L-V2: whether the simulation actually OBSERVED the declared close. True
+   *  exactly when kind is "exit" (the sell-accepted verdict landed); false is
+   *  the honest failure-is-narrated record — "the company died before it sold"
+   *  (obituary) or the clock ran out short of a close (timeout). A WON run that
+   *  closed WITHOUT the sell grammar never reaches a false here: it throws
+   *  DOC_LIE first (endings are observed, not authored). */
+  readonly exitObserved?: boolean;
 }
 
 /** The campaign's terminal readout — one object, fully frozen. */
@@ -173,6 +194,7 @@ function readEvidence(
   finalNode: CompanyNode,
   kind: CampaignEndingKind,
   terminal: CampaignChapterRecord,
+  declared: CampaignExitKind | undefined,
 ): CampaignEndingEvidence {
   const chapterOutcomes = Object.freeze(
     report.chapterRecords.map((row) =>
@@ -198,25 +220,70 @@ function readEvidence(
     scars: Array.isArray(finalNode.scars) ? finalNode.scars.length : 0,
     ...(rep !== undefined ? { reputationBps: rep } : {}),
     deathStopReason: kind === "obituary" ? terminal.stopReason : null,
+    // L-V2 sparse-key law: NO declaration ⇒ NEITHER key appears — the exact
+    // pre-L-V2 frozen evidence shape stands byte-for-byte (falsifiable pin).
+    ...(declared === undefined
+      ? {}
+      : {
+          declaredExitKind: declared,
+          // Observed iff the sell-accepted verdict actually landed (kind
+          // "exit"). A false here is the honest failure/handoff narration; a
+          // WON-but-not-sold close never arrives (DOC_LIE throws upstream).
+          exitObserved: kind === "exit",
+        }),
   });
 }
 
 /**
- * Project the campaign's terminal readout. Pure (same report + same node →
- * deeply-equal frozen ending) and total over every reachable report: the closed
- * three-kind union covers loss-terminal, sell-won, and everything-else. The
- * empty report is the one illegal state and it fails loud at the boundary.
+ * Project the campaign's terminal readout. Pure (same report + same node +
+ * same campaign → deeply-equal frozen ending) and total over every reachable
+ * report: the closed three-kind union covers loss-terminal, sell-won, and
+ * everything-else. The empty report is the one illegal state and it fails
+ * loud at the boundary.
+ *
+ * L-V2 (money-at-the-end 2/3): an OPTIONAL third argument — the CampaignDoc
+ * whose FINAL chapter may DECLARE an exit kind. Two-arg call sites byte-stand
+ * by construction (no declaration, so neither evidence key grows and no
+ * DOC_LIE path is reachable). When a declaration exists it is validated
+ * against the OBSERVED close, never the reverse — endings are observed, not
+ * authored:
+ *  - obituary (terminal LOST)      → narration only: declaredExitKind rides
+ *    the evidence with exitObserved:false — "the company died before it sold"
+ *    (§9.9 failure-is-narrated, hg:35151). Kind selection is UNCHANGED.
+ *  - exit (sell-accepted WON)      → declaredExitKind + exitObserved:true.
+ *  - quiet-handoff on a WON        → if declared, THROW DOC_LIE: the run won
+ *    WITHOUT the sale the doc promised, so the promise is a lie the
+ *    simulation caught. Money is never read here (only kind + stopReason).
+ *  - quiet-handoff on a TIMEOUT    → narration only (exitObserved:false): a
+ *    clock that ran out did not REFUTE a promise the way a non-sale win does,
+ *    so it is honest, not a lie — the asymmetry is the law, mirrored below.
  */
-export function endCampaign(report: CampaignReport, finalNode: CompanyNode): CampaignEnding {
+export function endCampaign(
+  report: CampaignReport,
+  finalNode: CompanyNode,
+  campaign?: CampaignDoc,
+): CampaignEnding {
   const terminal = report.chapterRecords.at(-1);
   if (terminal === undefined) {
     throw new CampaignError(`EMPTY at 'campaign "${report.campaignId}"': an ending needs at least one played chapter record`);
   }
+  // L-V2: the declaration is the FINAL chapter's, exactly as the parse wall
+  // enforced (only the last chapter may declare an exit).
+  const declared = campaign?.chapters.at(-1)?.exitKind;
   const kind = selectKind(terminal);
+  // A WON run that closed on anything but the sale the doc promised is the
+  // one authored-lying outcome — fail loud at the readout. A TIMEOUT is not:
+  // the clock running out is silence about the promise, not a refutation of
+  // it (the doc could still have sold had time remained), so it narrates.
+  if (declared !== undefined && terminal.outcome === "won" && kind !== "exit") {
+    throw new CampaignError(
+      `DOC_LIE at 'campaign "${report.campaignId}"': the doc declares "${declared}" but the simulation closed on "${terminal.stopReason}" — endings are observed, not authored`,
+    );
+  }
   return Object.freeze({
     kind,
     title: ENDING_TITLES[kind],
     epitaph: epitaphFor(kind, terminal),
-    evidence: readEvidence(report, finalNode, kind, terminal),
+    evidence: readEvidence(report, finalNode, kind, terminal, declared),
   });
 }

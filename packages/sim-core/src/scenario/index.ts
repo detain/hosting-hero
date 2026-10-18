@@ -56,6 +56,7 @@ export {
 } from "./runner.ts";
 export type {
   ScenarioOutcome,
+  ScenarioExitPayout,
   ScenarioReport,
   ScenarioRunConfig,
   ScenarioTrace,

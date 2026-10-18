@@ -15,7 +15,14 @@
  * `perspective` is an OPTIONAL-FORWARD slot reserved for L-CP2: present in
  * v0 wire = refused by name, never silently ignored.
  *
+ * L-V2 (money-at-the-end 2/3): the FINAL chapter may declare its §1.6 exit
+ * kind (`exitKind`) — the vocabulary this lane bridges, validated against
+ * the engine's OWN sell observation downstream (endings validate, the
+ * scenario runner pays, both read-only).
+ *
  * Import law: ../types + ../kernel + ../save (+ scenario TYPES only).
+ * The economy is NOT importable here (module law) — the CAMPAIGN_EXIT_KINDS ↔
+ * VALUATION_EXIT_KINDS bridge is a literal mirror, drift-pinned by test.
  */
 
 import type { RunSeed } from "../types.ts";
@@ -32,6 +39,51 @@ const NAME_MAX_CHARS = 120;
 const MAX_CHAPTERS = 64;
 const TICK_CAP_CEILING = 1_000_000;
 
+/**
+ * THE §1.6 EXIT VOCABULARY (money-at-the-end 2/3, L-V2). The seven exit
+ * types of hg:4500 "Exit types, each with a different meta-currency profile
+ * and epilogue", slugified from the doc's OWN words (verified by text):
+ *   ipo                    — hg:4501 "IPO — most currency"
+ *   strategic-acquisition  — hg:4503 "Strategic acquisition (a bigger host buys you for your customers)"
+ *   pe-platform            — hg:4505 "PE platform acquisition (they buy you as a platform to roll up others)"
+ *   pe-bolt-on             — hg:4507 "PE bolt-on (absorbed into an existing platform)"
+ *   asset-sale             — hg:4509 "Asset sale (they buy the book, not the company)"
+ *   management-buyout      — hg:4510 "Management buyout / employee ownership" — the doc's
+ *                              words are "Management buyout"; the acronym "mbo" appears
+ *                              NOWHERE in the doc, so the slug follows the doc.
+ *   wind-down              — hg:4512 "Wind-down — sell the book, sell the hardware…"
+ *
+ * The slugs and their ORDER are byte-identical to `VALUATION_EXIT_KINDS`
+ * (economy/valuation.ts, money-at-the-end 1/3) — the declaration feeds that
+ * leaf's `exitCashSliceMicroUsd`, and two vocabularies that drift would make
+ * the bridge a lie. The economy import law of THIS file forbids taking the
+ * dependency, so this is a literal mirror with a machine pin: doc.test.ts
+ * asserts exact array equality (order included) against the economy barrel.
+ */
+export const CAMPAIGN_EXIT_KINDS = Object.freeze([
+  "ipo",
+  "strategic-acquisition",
+  "pe-platform",
+  "pe-bolt-on",
+  "asset-sale",
+  "management-buyout",
+  "wind-down",
+] as const);
+export type CampaignExitKind = (typeof CAMPAIGN_EXIT_KINDS)[number];
+
+/** v0 OBSERVABILITY WALL: kinds the engine cannot yet see CLOSE. An IPO, a
+ *  management buyout and a wind-down have no close mechanic — nothing in the
+ *  simulation can produce their verdict — so a declaration would be authored
+ *  fiction the ending could never confirm. The FOUR sale-family kinds ride
+ *  because their observation IS the sell-accepted grammar (`win:sell-accepted-
+ *  above:` — AC-S @c6b69a4), which endings.ts selects and runner.ts pays.
+ *  Refused BY NAME, the optional-forward `perspective` precedent below. */
+const CAMPAIGN_RESERVED_EXIT_KINDS: readonly CampaignExitKind[] = Object.freeze([
+  "ipo",
+  "management-buyout",
+  "wind-down",
+]);
+
 export type CampaignErrorCode =
   | "BAD_RECORD"
   | "BAD_ID"
@@ -43,7 +95,11 @@ export type CampaignErrorCode =
   | "EMPTY"
   | "DUPLICATE"
   | "RESERVED"
-  | "BAD_REF";
+  | "BAD_REF"
+  /** L-V2: an authored EXIT kind the observed close contradicts — raised by
+   *  endings.ts, never by the parse wall (the parse cannot see the future;
+   *  only the finished simulation can be caught lying about it). */
+  | "DOC_LIE";
 
 export class CampaignError extends Error {
   constructor(message: string) {
@@ -121,11 +177,15 @@ export interface CampaignCarryRules {
   readonly scarCapRide: true;
 }
 
-/** One ordered chapter. `perspective` reserved for L-CP2 (present = refused). */
+/** One ordered chapter. `perspective` reserved for L-CP2 (present = refused).
+ *  `exitKind` (L-V2) declares how the tour ENDS — legal on the LAST chapter
+ *  only; the sale-family pair of observation + declaration is validated at
+ *  the readout (endings.ts), where the simulation has already spoken. */
 export interface CampaignChapterSpec {
   readonly chapterId: string;
   readonly scenarioId: string;
   readonly tickCap?: number;
+  readonly exitKind?: CampaignExitKind;
 }
 
 export interface CampaignDoc {
@@ -178,16 +238,39 @@ function parseCarry(value: unknown, path: string): CampaignCarryRules {
   return { cashFloor: parseCashFloor(raw.cashFloor, `${path}.cashFloor`), staffCap, castCap, scarCapRide: true };
 }
 
+/** The exit-kind wall (L-V2): closed vocabulary first, then the v0
+ *  observability refusal BY NAME. Grammar before position — a broken value
+ *  is broken wherever it sits; the position law is the doc loop's. */
+function asExitKind(value: unknown, path: string): CampaignExitKind {
+  if (typeof value !== "string" || !(CAMPAIGN_EXIT_KINDS as readonly string[]).includes(value)) {
+    return fail(
+      "BAD_ENUM",
+      path,
+      `expected one of ${CAMPAIGN_EXIT_KINDS.map((k) => `"${k}"`).join(", ")}, got ${JSON.stringify(value)}`,
+    );
+  }
+  const kind = value as CampaignExitKind;
+  if (CAMPAIGN_RESERVED_EXIT_KINDS.includes(kind)) {
+    return fail("RESERVED", path, `no close mechanic observes "${kind}" in v0 — the tour may end only in a sale the engine can see`);
+  }
+  return kind;
+}
+
 function parseChapter(value: unknown, path: string): CampaignChapterSpec {
   const raw = asRecord(value, path);
-  takeKeys(raw, ["chapterId", "scenarioId"], ["tickCap", "perspective"], path);
+  takeKeys(raw, ["chapterId", "scenarioId"], ["tickCap", "perspective", "exitKind"], path);
   if ("perspective" in raw) {
     fail("RESERVED", `${path}.perspective`, "optional-forward slot for L-CP2; absent-only until that lane lands");
   }
   const chapterId = asId(raw.chapterId, `${path}.chapterId`);
   const scenarioId = asNonEmptyString(raw.scenarioId, `${path}.scenarioId`, "BAD_REF");
-  if (raw.tickCap === undefined) return { chapterId, scenarioId };
-  return { chapterId, scenarioId, tickCap: asInt(raw.tickCap, `${path}.tickCap`, 1, TICK_CAP_CEILING) };
+  if (raw.tickCap === undefined && raw.exitKind === undefined) return { chapterId, scenarioId };
+  return {
+    chapterId,
+    scenarioId,
+    ...(raw.tickCap === undefined ? {} : { tickCap: asInt(raw.tickCap, `${path}.tickCap`, 1, TICK_CAP_CEILING) }),
+    ...(raw.exitKind === undefined ? {} : { exitKind: asExitKind(raw.exitKind, `${path}.exitKind`) }),
+  };
 }
 
 /** Strict boundary parse: closed vocab, exact keys, unique chapter ids, frozen. */
@@ -202,10 +285,17 @@ export function parseCampaignDoc(value: unknown, where = "campaign"): CampaignDo
   }
   if (raw.chapters.length > MAX_CHAPTERS) fail("BAD_RANGE", `${where}.chapters`, `at most ${MAX_CHAPTERS} chapters`);
   const seen = new Set<string>();
+  const chapterCount = raw.chapters.length;
   const chapters = raw.chapters.map((row, i) => {
     const ch = parseChapter(row, `${where}.chapters[${i}]`);
     if (seen.has(ch.chapterId)) fail("DUPLICATE", `${where}.chapters[${i}].chapterId`, `"${ch.chapterId}" already used`);
     seen.add(ch.chapterId);
+    // POSITION LAW (L-V2): an exit is what the tour CLOSES on — only the
+    // final chapter may declare one. Grammar (enum + RESERVED) already
+    // passed inside parseChapter; this is placement, after it.
+    if (ch.exitKind !== undefined && i < chapterCount - 1) {
+      fail("BAD_RANGE", `${where}.chapters[${i}].exitKind`, "only the final chapter may declare an exit — the tour ends where the company does");
+    }
     return ch;
   });
   const doc: CampaignDoc = {
@@ -218,13 +308,20 @@ export function parseCampaignDoc(value: unknown, where = "campaign"): CampaignDo
   return Object.freeze({ ...doc, chapters: Object.freeze([...chapters]) });
 }
 
-/** Pure wire projection (round-trips through parseCampaignDoc). */
+/** Pure wire projection (round-trips through parseCampaignDoc). Sparse keys
+ *  round-trip SPARSE: an undeclared chapter emits NO `exitKind` key (and no
+ *  `tickCap` key), per the :227 conditional-spread discipline. */
 export function toCampaignWire(doc: CampaignDoc): Record<string, unknown> {
   return {
     schema: CAMPAIGN_SCHEMA,
     id: doc.id,
     name: doc.name,
-    chapters: doc.chapters.map((ch) => (ch.tickCap === undefined ? { chapterId: ch.chapterId, scenarioId: ch.scenarioId } : { chapterId: ch.chapterId, scenarioId: ch.scenarioId, tickCap: ch.tickCap })),
+    chapters: doc.chapters.map((ch) => ({
+      chapterId: ch.chapterId,
+      scenarioId: ch.scenarioId,
+      ...(ch.tickCap === undefined ? {} : { tickCap: ch.tickCap }),
+      ...(ch.exitKind === undefined ? {} : { exitKind: ch.exitKind }),
+    })),
     carry: {
       cashFloor: { thresholdMicroUsd: doc.carry.cashFloor.thresholdMicroUsd, bridgeMicroUsd: doc.carry.cashFloor.bridgeMicroUsd },
       staffCap: doc.carry.staffCap,
