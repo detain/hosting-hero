@@ -542,10 +542,12 @@ export interface ScenarioDoc {
     readonly lose: readonly ObjectivePredicate[];
   };
   readonly limits: ScenarioLimits;
-  /** §1.2 perspective seat (L-CP2): a CLOSED-ROSTER id whose row composes
-   *  only EXISTING seams — verb dominance through the door's host
-   *  validators, sight through a pure cell projection, goal inversion as
-   *  doc data. OPTIONAL-FORWARD like rungs 6/8/10: absent ⇒ the doc gains
+  /** §1.2 perspective seat (L-CP2, full power per L-PERS): a CLOSED-ROSTER
+   *  id whose row composes only EXISTING seams — verb dominance through the
+   *  door's general `canExecute` gate (every one of the nineteen verbs
+   *  bannable, refused pre-payment, ADR-0019 program 1), sight through a
+   *  pure cell projection plus the book strip, goal inversion as doc data.
+   *  OPTIONAL-FORWARD like rungs 6/8/10: absent ⇒ the doc gains
    *  no key and every shipped wire rides byte-stand (sparse-key law). */
   readonly perspective?: { readonly id: PerspectiveId };
 }

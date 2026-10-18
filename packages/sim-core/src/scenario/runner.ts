@@ -953,11 +953,14 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
             isUnderTheTape(freezeRow, query.context.tick) ? FREEZE_REJECTION : null,
         }),
   });
-  /* L-CP2 composition (the freeze pattern one rung further): an unarmed doc
-   * keeps the EXACT door object above; an armed doc gets the perspective's
-   * unconditional tapes merged over it — a perspective ban subsumes the
-   * freeze band (never lets the verb through at any minute), while an
-   * unbanned verb's freeze validator rides on untouched. */
+  /* L-CP2 composition (the freeze pattern one rung further), FULL POWER per
+   * L-PERS: an unarmed doc keeps the EXACT door object above; an armed doc
+   * gets the perspective's general `canExecute` gate composed over it (all
+   * nineteen verbs bannable — ADR-0019 program 1). A perspective ban
+   * subsumes the freeze band STRUCTURALLY, not by tape replacement: the
+   * gate fires before payment and before the per-verb validators, so a
+   * banned verb's freeze validator is never even consulted; an unbanned
+   * verb's freeze validator rides on untouched, by identity. */
   const armedDoorIntents: IntentDoorConfig =
     perspectiveSpec === undefined ? doorIntents : applyPerspectiveToDoorConfig(doorIntents, perspectiveSpec);
   const driver = createTickDriver(
