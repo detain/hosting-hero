@@ -62,6 +62,24 @@
  * cursor hole. Witness via corpusPlan() / corpusTraffic() (local accessors;
  * the wire is untouched either way). ABSENT ⇒ byte-identical runner.
  *
+ * RULES LIVE (ADR-0019 program 5 — owner ruling: the gate-g7 host-loop
+ * mechanics are ADOPTED into the mainline runner behind an opt-in): an
+ * optional `rules: {lookupPolicyCard}` option arms the step-12.5 rule phase
+ * (`policy.createRulePhaseStep`), the door's rule-carrier map
+ * (`ruleCarriers: "mapped"` — the Book plays itself through the SAME two
+ * hands, ADR-0018), and the re-feed of each tick's `TickResult.intents`
+ * into the NEXT tick's door exactly like g7Runner (M4 stamping law: with
+ * the Book armed, door-scheduled player copies re-stamp above a sequence
+ * floor so driver rule seqs and host seqs can never collide in one feed).
+ * Firings ride the EXISTING `rule-fired` notice path with the card's id as
+ * detail — zero new NoticeKinds, zero wire change. ABSENT means no rulePhase
+ * slot, no rule door keys, no re-feed, no re-stamping — every shipped
+ * golden (money 25_005_307_300n / 25_109_732_500n, boot digests
+ * ca8863849cb3db32 / 780b1cbc61dff760) is the byte-identity proof. v0
+ * honesty: the Shadow Dial and the Kill Switch stay gate-g7-exclusive —
+ * mainline runs the live config only and feeds no `suppressedRuleIds`
+ * (gap row owed at closeout).
+ *
  * Purity law: every per-run mutable object (driver, store, plan, counters) is
  * minted inside the constructor, so two fresh instances on one seed replay
  * byte-identically through the wire (see __tests__/simCoreRunner.test.ts).
@@ -97,6 +115,7 @@ import {
   type Outcome,
   type PatienceMode,
   type PlayerIntent,
+  type PolicyCard,
   type PriceOverrideBook,
   type QosClassDef,
   type RecoveryState,
@@ -138,6 +157,7 @@ import {
   type TickDriver,
   type TickInputs,
 } from "@hh/sim-core/pipeline";
+import { createRulePhaseStep } from "@hh/sim-core/policy";
 import { ObservedStore } from "@hh/sim-core/observed";
 import {
   defaultEconomyConfig,
@@ -963,6 +983,27 @@ export interface TickFacts {
 
 const TICK_ZERO_EVENTS: readonly SimEvent[] = Object.freeze([]);
 
+/* M4 coexistence law (ADR-0019 program 5, gate-g7 precedent): with the Book
+ * armed, its re-fed intents carry driver-internal seqs from 1 upward — every
+ * door-scheduled PLAYER copy is therefore re-stamped from this floor, so a
+ * (tick,seq) pair can never collide inside one feed. Unarmed runners never
+ * touch the counter: the host's own seq passes through exactly as before. */
+const RUNNER_PLAYER_SEQ_FLOOR = 1000;
+
+/**
+ * ADR-0019 program 5 (mainline rule adoption, owner ruling): the runner-side
+ * half of the gate-g7 mechanics brought behind one opt-in. The hash book is
+ * HOST-owned — the same `lookupPolicyCard` seam g7Runner rides, NOT a
+ * cross-import of the gate's deck (lane law: no gates/g7 coupling here).
+ */
+export interface SimCoreRulesOptions {
+  /** policy-card-commit resolver, forwarded VERBATIM to the door config:
+   *  hash → card, unknown hash → null (the ordinary `unknown-card-hash`
+   *  refusal keeps the last word). The engine re-validates grammar on
+   *  commit — a lie in the book dies at the door, never in the runner. */
+  readonly lookupPolicyCard: (cardHash: string) => PolicyCard | null;
+}
+
 export interface SimCoreRunnerOptions {
   /** Deterministic run seed (whole number; the worker boot message carries it). */
   readonly seed: number;
@@ -1055,6 +1096,14 @@ export interface SimCoreRunnerOptions {
    *  the worker hosts' boot-fault channel turns them into a loud fault frame,
    *  never a crash and never a half-seeded run. */
   readonly build?: BootBuildWire | undefined;
+  /** RULES LIVE (ADR-0019 program 5): arms the step-12.5 rule phase, the
+   *  door's `ruleCarriers: "mapped"` translation, and the per-tick re-feed
+   *  of `TickResult.intents` into the next tick's door — see the header
+   *  ledger for the full law. Runner option ONLY: PROTOCOL_VERSION stays 1
+   *  and `boot` gains no field (a worker-boot rider would be additive-
+   *  optional per the @921ca7b precedent — deliberately NOT taken in v0).
+   *  ABSENT ⇒ every shipped golden is the byte-identity proof. */
+  readonly rules?: SimCoreRulesOptions | undefined;
 }
 
 export class SimCoreRunner implements SimRunner {
@@ -1105,6 +1154,16 @@ export class SimCoreRunner implements SimRunner {
   private readonly intentLog: PlayerIntent[] = [];
   /** Door schedule: intents stamped for the next headlessStep, fed EXACTLY once. */
   private pendingDoorIntents: ExternalIntent[] = [];
+  /* ADR-0019 program 5: the frozen rule-door config when the Book is armed
+     (null ⇒ every rule leg below is dead code for this instance, and the
+     shipped empty/default door config rides untouched). */
+  private readonly rules: (SimCoreRulesOptions & { readonly ruleCarriers: "mapped" }) | null;
+  /** The Book's re-feed buffer: the last advance's `TickResult.intents`,
+   *  stamped into the NEXT door pass exactly once (gate-g7 mirror law). */
+  private pendingRuleIntents: readonly PlayerIntent[] = [];
+  /** Door-copy seq counter above the M4 floor — instance-local, the purity
+   *  law covers ledgers: two fresh armed runners re-stamp identically. */
+  private doorSeq = RUNNER_PLAYER_SEQ_FLOOR;
   private counters = { served: 0, bounced: 0, blockedFalsePositive: 0, landed: 0 };
   /* ── money lane (per-instance, purity law covers the ledger) ── */
   private readonly ecoCfg: EconomyConfig;
@@ -1140,6 +1199,14 @@ export class SimCoreRunner implements SimRunner {
     }
     this.runSeed = asRunSeed(BigInt(options.seed));
     this.baseTickMs = options.tickRealMs ?? 100;
+    /* ADR-0019 program 5: ONE frozen door-config object decides every rule
+       leg (null = unarmed). ruleCarriers is NOT host-selectable here — the
+       mainline adoption ruling buys the mapped translation, and anything
+       else would re-open the unsupported-verb-carrier wall by accident. */
+    this.rules =
+      options.rules === undefined
+        ? null
+        : Object.freeze({ ...options.rules, ruleCarriers: "mapped" as const });
 
     const clocks: ClockState = initialClocks();
     /* D7 board seed resolves BEFORE the mint (fail-loud: a bad rider throws
@@ -1204,6 +1271,12 @@ export class SimCoreRunner implements SimRunner {
     const baseSlots = createDefaultSlots(config);
     const slots = Object.freeze({
       ...baseSlots,
+      /* ADR-0019 program 5: the rule phase slot arrives ONLY when armed —
+         unarmed keeps `createDefaultSlots`' emptyRulePhaseStep (zero
+         firings, zero intents) so the shipped digests never see the key.
+         v0 runs the live evaluation config; the Shadow Dial getter g7 wires
+         stays gate-exclusive (honest gap row). */
+      ...(this.rules === null ? {} : { rulePhase: createRulePhaseStep().step }),
       // The sanctioned composition seam (mirrors gates/g3): swap ONE slot.
       route: createMazeRouteStep(baseSlots.route, {
         frontDoor: NODE_EDGE,
@@ -1221,10 +1294,23 @@ export class SimCoreRunner implements SimRunner {
            PolicyCardCommit spend a focus hand). No pool ⇒ key never spread ⇒
            the door config stays the shipped empty default and every pre-
            attention golden run is frame-for-frame byte-identical (eff5694
-           absent-pool law: costs only ever bite planted pools). */
-        ...(options.attention !== undefined
-          ? { intents: Object.freeze({ attentionCost: ATTENTION_DEFAULT_COSTS }) }
-          : {}),
+           absent-pool law: costs only ever bite planted pools).
+           ADR-0019 program 5 adds the Book rail: an armed runner spreads
+           ruleCarriers "mapped" + lookupPolicyCard into the SAME intents
+           object, and the two arms are independent — attention-only,
+           rules-only, or both. Neither armed: the key is never spread and
+           the shipped goldens stay the byte-identity proof. Rule carriers
+           remain attention-EXEMPT (D4): no cost key is invented for them. */
+        ...(options.attention === undefined && this.rules === null
+          ? {}
+          : {
+              intents: Object.freeze({
+                ...(options.attention === undefined
+                  ? {}
+                  : { attentionCost: ATTENTION_DEFAULT_COSTS }),
+                ...(this.rules === null ? {} : this.rules),
+              }),
+            }),
       }),
     );
     this.store = new ObservedStore();
@@ -1434,7 +1520,15 @@ export class SimCoreRunner implements SimRunner {
       return;
     }
     if (payload.kind === "player-verb") {
-      this.pendingDoorIntents.push({ tick: this.game.context.tick + 1n, intent });
+      /* The host's own intent rides the intentLog verbatim (replay evidence);
+         only the DOOR copy re-stamps, and only when the Book is armed —
+         driver rule seqs own the low band (M4). Unarmed: untouched pass-
+         through, every shipped intent-door witness byte-stands. */
+      const scheduled =
+        this.rules === null
+          ? intent
+          : Object.freeze({ ...intent, seq: (this.doorSeq += 1) });
+      this.pendingDoorIntents.push({ tick: this.game.context.tick + 1n, intent: scheduled });
     }
   }
 
@@ -1562,6 +1656,18 @@ export class SimCoreRunner implements SimRunner {
        their plan with the host signals LIVE AT WINDOW ENTRY. */
     const envelopes: readonly WaveEnvelope[] = this.envelopesAtMinute(minute);
     const due = this.pendingDoorIntents.splice(0, this.pendingDoorIntents.length);
+    /* ADR-0019 program 5 (gate-g7 mirror): last tick's Book intents join THIS
+       pass, scheduled for the same next tick the player submitted into. The
+       door sorts the feed by (tick, seq), so array order is not authority —
+       the M4 seq bands are (rule low, player above the floor). Unarmed: the
+       buffer is permanently empty and never even read. */
+    if (this.rules !== null) {
+      const ruleTick = this.game.context.tick + 1n;
+      for (const intent of this.pendingRuleIntents) {
+        due.push(Object.freeze({ tick: ruleTick, intent }));
+      }
+      this.pendingRuleIntents = [];
+    }
 
     const inputs: TickInputs = Object.freeze({
       envelopes,
@@ -1583,6 +1689,11 @@ export class SimCoreRunner implements SimRunner {
     if (result.recoveryNotices !== undefined) {
       this.recoveryNoticeLog.push(...result.recoveryNotices);
     }
+    /* ADR-0019 program 5 re-feed handover: whatever this tick's rule phase
+       produced waits in the buffer for the NEXT door pass (one-tick reaction
+       lag, exactly the recovery channel's posture). Empty every tick when
+       unarmed — the assignment itself is gated. */
+    if (this.rules !== null) this.pendingRuleIntents = result.intents;
 
     /* step-12 observed layer: renderer-facing lane cells DERIVED FROM REAL
        driver outputs (honest entry accounting — arrival events PLUS the F2
@@ -1802,8 +1913,11 @@ export class SimCoreRunner implements SimRunner {
     }
     this.incidentClock = stepIncidentClock(this.incidentClock, incidentLosses);
     for (const firing of result.ruleFirings) {
-      void firing;
-      notices.push({ kind: "rule-fired", laneId: null, atUs: tickUs });
+      /* ADR-0019 program 5: the firing story rides the EXISTING wire shape —
+         detail names the card that fired (the gate-g7 tape's rule id, same
+         authority). Zero new NoticeKinds, zero protocol churn; unarmed
+         runners fold zero firings, so every shipped digest stands. */
+      notices.push({ kind: "rule-fired", laneId: null, atUs: tickUs, detail: String(firing.ruleId) });
     }
     /* Money-lane roll-up (protocol NoticeKind "economy-notice"): one wire
        notice per EconomyNotice the tick emitted, detail carrying the
