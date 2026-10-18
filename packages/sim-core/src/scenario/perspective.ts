@@ -291,7 +291,8 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
      (`lookupPolicyCards: false`) — the tech authors nothing, sees nothing
      authored: blindness is the card's lesson (:1324 "Remote Hands"). The
      camera law "no altitudes… no zoom" (:1340) is presentation, not a verb.
-     toggle-speed stays (see the shared HUD-utility law on the roster). */
+     toggle-speed stays (the roster-head family→verb mapping names no family
+     for it — the clock rail is presentation, never a play act). */
   "datacenter-tech": Object.freeze({
     id: "datacenter-tech",
     name: "The Datacenter Tech / Remote Hands",
@@ -332,7 +333,8 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
      the board itself). policy-card-commit is banned BY NAME (the board's
      book is someone else's religion) AND the lookup is stripped — both
      axes, per the header's argument for why they are different truths.
-     toggle-speed stays (HUD-utility law). */
+     toggle-speed stays (the roster-head family→verb mapping names no family
+     for it — presentation, never a play act). */
   "support-queue": Object.freeze({
     id: "support-queue",
     name: "The Support Queue",

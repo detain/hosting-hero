@@ -235,11 +235,11 @@ describe("chapter meta — the §1.9 authoring law", () => {
 
   it("the authored anchors are TEXT-true lines in hosting_game.md", () => {
     const book = readFileSync(fileURLToPath(new URL("../../../../../hosting_game.md", import.meta.url)), "utf8").split("\n");
-    expect(book[1478 - 1]).toContain("The Apprentice");
-    expect(book[1212 - 1]).toContain("The Support Queue");
-    expect(book[1267 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
-    expect(book[35140 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
-    expect(book[5117 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
+    expect(book[1482 - 1]).toContain("The Apprentice");
+    expect(book[1216 - 1]).toContain("The Support Queue");
+    expect(book[1271 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
+    expect(book[35154 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
+    expect(book[5125 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
     // Shipped-mission specLines ride each doc's OWN citation (the meta↔doc
     // equality law above) — the book's heading lines drift as sibling lanes
     // insert content, and this lane never re-pins another doc's anchor.

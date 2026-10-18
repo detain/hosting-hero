@@ -5,7 +5,7 @@
  *  THE COMMISSIONED LEG IS ONLY "available tech" (§0.4 :651-656 changes
  *  costs, available tech, threat sophistication, customer base, palette —
  *  the other legs have NO engine law yet and are RECORD-NOT-BUILD per the
- *  ADR-0019 program-4 commission; §5.6's unlock lattice likewise). The §1.6
+ *  ADR-0019 program 4 commission; §5.6's unlock lattice likewise). The §1.6
  *  Era Track sentence "retires some buildables (your modem bank becomes
  *  scrap)" (:4577) grounds the OBSOLETE leg, which ships as machinery only:
  *  retirement rows are pinned by FORGED fixtures, never by content dates
