@@ -191,6 +191,13 @@ describe("the meter casts no dice (zero-RNG source pin)", () => {
     expect(source).not.toMatch(/streamFor/);
     expect(source).not.toMatch(/Math\.random/);
   });
+  // L-V1 roster EXTENSION (wave-28 money-at-the-end 1/3): the valuation leaf
+  // joins the zero-rolls family — same law, same two probes, never weakened.
+  const valuationSource = readFileSync(fileURLToPath(new URL("../valuation.ts", import.meta.url)), "utf8");
+  it("valuation.ts never mentions streamFor or Math.random — price reads only booked facts", () => {
+    expect(valuationSource).not.toMatch(/streamFor/);
+    expect(valuationSource).not.toMatch(/Math\.random/);
+  });
 });
 
 describe("ledger ordering (digest determinism)", () => {
