@@ -1176,7 +1176,13 @@ LAW SOURCE for the authoring gates — verbatim-sync, technique ban-list,
 dead-slot — which the parser deliberately does NOT duplicate), globally
 unique keys, era objects reduced to {eras ascending, fallback} sharing one
 slot set, plus key resolution, plain-number era picking (exact > nearest
-earlier > fallback) and single-pass inert-brace slot filling.
+earlier > fallback) and single-pass inert-brace slot filling; and the G7
+policy content-deck boundary (cards arrive as `PolicyCardWire` JSON —
+decimal-string bigints revived at the edge, closed vocabularies re-declared
+loader-side and drift-pinned four ways by `deckVocab.test.ts`), the
+`deckCardHash` canonical lookup-key law, and the trusted boot.rules book
+fold — SHAPE only: rule MEANING stays with the evaluator (protocol.ts codec
+doctrine).
 Never touches the filesystem — the corpus is injected (CONVENTIONS §4 no
 platform access). Import: `@hh/sim-core/loader`. NOTE: CONVENTIONS formerly
 called this "zod" — FIXED 2026-10-06: §1/§1.1/§3/§4 now describe the
@@ -1223,6 +1229,13 @@ the package).
 | `fillTemplate` | `(pack, key, slots: Readonly<Record<string, string \| number>>) => string` | fill a PLAIN template by key; exact-set law (missing → MISSING_FIELD listing them, extra → UNKNOWN_FIELD listing them); era-variant keys fail loud pointing at pickEraText — no silent era guess | single-pass left-to-right; substituted braces stay inert (no recursive expansion) |
 | `fillTemplateBody` | `(body, slots, where?) => string` | the same substitution over any slot-syntax-valid body (composition partner of pickEraText); slot values are string or safe integer only | single-pass; substituted braces inert |
 | `stableSerializePackKeys` | `(pack) => string[]` | every template key across both namespaces, code-unit sorted — content-hash / corpus-diff surface | order-pinned |
+| `DECK_CARD_HASH_DOMAIN` | `"hh-deck-card-hash-v1"` | the domain tag folded into every `deckCardHash` — bump ONLY with a disclosed law change (every issued key re-pins permanently) | closed |
+| `LoadedPolicyDeck` | interface `{ schemaVersion: 1; deckId/appliesTo/note/todo: string \| null; cards: readonly PolicyCard[] }` | the frozen deck: header identity + trusted cards in AUTHORING order (ruleBookHash sorts by id itself; the deck keeps what the author wrote) | deep-frozen |
+| `LoadedBootRuleEntry` | interface `{ hash: string; card: PolicyCard }` | one boot.rules book entry — TRUSTED form, structurally the protocol.ts `BootRuleEntry` without the protocol import | frozen; card instance shared with the deck |
+| `LoadedBootRules` | interface `{ entries: readonly LoadedBootRuleEntry[] }` | the book `createRunner`/`lookupPolicyCard` consumes — structurally protocol.ts `BootRules` (entries arm) | deep-frozen |
+| `parsePolicyDeck` | `(raw: unknown) => LoadedPolicyDeck` | THE deck boundary parse — plan-driven strict (UNKNOWN_FIELD on era/availableFrom invitations), OneTwoThree 1..3 arity, decimal-string bigint revival (SUB_MICROUSD/SUB_MICROSECOND resolution walls, Q16.16 Fixed domain), dup card ids refused naming both positions; comparator↔threshold PAIRING deliberately NOT re-invented (the evaluator re-runs validatePolicyCard every fold) | deterministic, deep-frozen |
+| `deckCardHash` | `(card: PolicyCard) => string` | canonical content-deck hash v1 — fnv1a64-over-codepoints over the domain tag then EVERY card leaf at its dotted path (sorted code-unit, ␀-joined path/value, ␁-joined segments, ∅ null-sentinel, bigints as decimal text): the door's cardFingerprint grammar completed to the full card (the door omits for/unless/else); a host-computed LOOKUP KEY, never a claim — new content decks may feed ONLY this function | 16 lowercase hex; wire-identical across key order; sensitive to every clause (falsifiable matrix pinned) |
+| `bootRulesFromDeck` | `(deck: LoadedPolicyDeck) => LoadedBootRules` | deck → the trusted book (hash = deckCardHash); dup-hash guard names both positions — reachable only via hand-built decks since ids are unique by parse wall; empty book = legal armed-but-silent | deterministic |
 
 > **NOTE — `metricNamespaceTier` (ADR-0014 #D9 @65ac92f, OD-4b residual):** optional field on `type-bundle.schema.json` and `LoadedTypeBundle` — the ratified §1.7 telegraph-band ladder (`weather`/`storm`/`hunter`/`entropy`, mirroring `waves/bands.ts TELEGRAPH_BANDS`, drift-pinned; off-ladder fails `BAD_ENUM`; absent = `null` in every shipped bundle; zero engine branching on the rung). The lint-leg fold is deliberately NOT built — no threat-registry membership data on disk to lint against; it lands with real membership. The `MetricNamespaceTier` type is module-private by decision (off every barrel — invisible to the name-level verifier; export would require an API-REFERENCE row, recorded call: keep private until a consumer names it).
 
