@@ -25,7 +25,7 @@
  *    zero-mechanics inversion), the scale/reclaim portfolio beat, the c-7
  *    exit-carrier stopReason end-to-end, and the run-up-prefix EXIT witness
  *    (the tour that plays all nine hands off; the tour that SELLS ends in
- *    `exit` — §1.5 :4019's split made literal).
+ *    `exit` — §1.5 :4023's split made literal).
  * 5. The FOUR-ARC CHAIN — 27 beats on one real lineage graph: the Act II
  *    child inherits the whole Act III tour, and every earlier digest is
  *    re-checked UNMOVED on the same construction.
@@ -194,7 +194,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     const all = Object.values(CAMPAIGN_CHAPTER_META);
     const enduring = all.filter((row) => row.archetype === "Endure").length;
     // wave-26 DISCLOSED re-pin 2→4: Act III adds its two Endure beats — the
-    // ratchet audit played (c-2, §1.11 :5353) and the long gradient (c-6).
+    // ratchet audit played (c-2, §1.11 :5363) and the long gradient (c-6).
     expect(enduring).toBe(4); // a-6 + b-2 + c-2 + c-6; 4/27 = 14.8%, under §1.9's 30% cap
     expect(enduring / all.length).toBeLessThan(0.3);
   });
@@ -223,7 +223,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     // WAVE-26 RESOLUTION: Act III RESTORES the per-act floor of two WITHOUT
     // touching the global cadence — seats c-4/c-9 land at tour indices 21 and
     // 26 (gaps 5 and 5), the first act satisfying §1.9's own sentence. The
-    // 8-level design (:5126) is superseded to NINE beats by the cadence
+    // 8-level design (:5134) is superseded to NINE beats by the cadence
     // arithmetic itself: an 8-beat Act III forces either seat pair to a gap
     // of 4 (20→24 inside 18–25, or 21→25 behind b-6's 16). The lint loop
     // below is the machine proof; the ACT_THREE docblock carries the record.
@@ -254,7 +254,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     for (let i = 1; i < tiers.length; i += 1) {
       expect(tiers[i]!).toBeGreaterThanOrEqual(tiers[i - 1]!); // the rise, never a drop
     }
-    // Act III (§1.9 :5126 "Act III (Tiers 5–6)"): the same non-decreasing law
+    // Act III (§1.9 :5134 "Act III (Tiers 5–6)"): the same non-decreasing law
     // over the {5,6} band, plus the act-boundary rise — b-7's T4 hands the
     // tour to c-1's T5, the tier never falls anywhere on the twenty-seven.
     const tiers3 = CAMPAIGN_ACT_THREE.chapters.map((c) => CAMPAIGN_CHAPTER_META[c.chapterId]!.tier);
@@ -284,19 +284,19 @@ describe("chapter meta — the §1.9 authoring law", () => {
 
   it("the authored anchors are TEXT-true lines in hosting_game.md", () => {
     const book = readFileSync(fileURLToPath(new URL("../../../../../hosting_game.md", import.meta.url)), "utf8").split("\n");
-    expect(book[1482 - 1]).toContain("The Apprentice");
-    expect(book[1216 - 1]).toContain("The Support Queue");
-    expect(book[1271 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
-    expect(book[35154 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
-    expect(book[5125 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
+    expect(book[1486 - 1]).toContain("The Apprentice");
+    expect(book[1218 - 1]).toContain("The Support Queue");
+    expect(book[1275 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
+    expect(book[35168 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
+    expect(book[5133 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
     // Wave-26 Act III anchors (design authority I-AC3; substring truth on the
     // quoted line, verified by reading the lines as authored):
-    expect(book[5126 - 1]).toContain("Act III (Tiers 5–6)"); // the act law, same sentence
-    expect(book[5126 - 1]).toContain("8 levels"); // the design figure the cadence supersedes to nine
-    expect(book[5353 - 1]).toContain("do nothing and watch"); // §1.11 Ratchet Audit — c-2's law sentence
-    expect(book[1215 - 1]).toContain("Place/Connect only"); // §1.2 datacenter-tech — c-4's seat
-    expect(book[1217 - 1]).toContain("goal node inverted"); // §1.2 red-team-friday — c-9's seat
-    expect(book[4019 - 1]).toContain("the run-up"); // §1.5 Sell the Company split — c-7's level
+    expect(book[5134 - 1]).toContain("Act III (Tiers 5–6)"); // the act law, same sentence
+    expect(book[5134 - 1]).toContain("8 levels"); // the design figure the cadence supersedes to nine
+    expect(book[5363 - 1]).toContain("do nothing and watch"); // §1.11 Ratchet Audit — c-2's law sentence
+    expect(book[1217 - 1]).toContain("Place/Connect only"); // §1.2 datacenter-tech — c-4's seat
+    expect(book[1219 - 1]).toContain("goal node inverted"); // §1.2 red-team-friday — c-9's seat
+    expect(book[4023 - 1]).toContain("the run-up"); // §1.5 Sell the Company split — c-7's level
     // Shipped-mission specLines ride each doc's OWN citation (the meta↔doc
     // equality law above) — the book's heading lines drift as sibling lanes
     // insert content, and this lane never re-pins another doc's anchor.
@@ -703,7 +703,7 @@ describe("act three chain — prevention into boredom (wave-26 full tour)", () =
   });
 
   it("the run-up SELLS: a seven-beat prefix ending c-7 selects the `exit` ending — verdict-observed end-to-end", { timeout: 600_000 }, () => {
-    // §1.5 :4019's own split made literal: THE CAMPAIGN THAT SELLS ends at the
+    // §1.5 :4023's own split made literal: THE CAMPAIGN THAT SELLS ends at the
     // sale. The prefix is a data replay of the same chapter wires — per-chapter
     // seeds ride chapterId, so the c-7 record here is the SAME beat the full
     // tour plays (identical stopReason, identical cash witnesses).

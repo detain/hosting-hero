@@ -1,7 +1,7 @@
 # ADR-0019 — Owner session-9 second ruling (2026-10-18): the wave-25 depth program on the settled surface — the general `canExecute` door hook is BUILT and perspectives go FULL-POWER (19/19 bannable, roster spec-complete), the chargeback-shape funding bug is fixed by REUSING the opex refuse-not-overdraft law, Act II lands with the campaign's FIRST authored company death narrated on the real succession ledger, the era axis gets its mechanics PILOT (available-tech gates the door; `eraYearAt` is the named transition seam), the G7 rule phase rides the MAINLINE runner as an opt-in seam, the G7 panel hues are RATIFIED onto the ledger (rule-ink joins; plate grey honors it), the CARRIER-CONTRACT trace becomes an EXECUTABLE gate (TS trace-player, doc=fixture, zero drift), and era bundle-dating is ruled QUOTE-ONLY (colo 2001 is the only date the doc verbatim-grounds; every other null carries its verdict)
 
 ## Status
-**Accepted (2026-10-18).** Owner ruling, verbatim: **"go with recomendations"**
+**Accepted (2026-10-18); ridden 2026-10-18 by the wave-26 closeout (programs 4/5 follow-ons + the second-session rider below).** Owner ruling, verbatim: **"go with recomendations"**
 (owner's spelling preserved) — the standing eight-item wave-25 agenda, executed
 ENTIRELY per the closeout's recommendations, letter-for-letter:
 **1 = BUILD the general `canExecute` door hook** (then generalize the
@@ -174,6 +174,17 @@ becomes an ENGINE FACT @`22717d2`, scoped to the ONE leg §0.4 grounds:
   (343→...1,749 total). Threats/costs/customers-base/§5.6-lattice legs stay
   UNCOMMISSIONED — pilot means one leg proven, not the axis built.
 
+*Rider (2026-10-18, wave-26 closeout): the named seam became a function. Era*
+***TRANSITIONS are BUILT @`58fddc3`*** *— `composeEraPlan` opts take frozen, strictly*
+*ascending `EraTransition {atBusinessMinute, eraYear}` entries and `eraYearAt` STEPS*
+*over the host business clock, inclusive at the step minute (walls: minute ≥1,*
+*ascending, else `scenario[BAD_ERA]`/`[BAD_INT]`); gates arm from t0 (`gatesAnyYear`*
+*— mid-run key growth would be a state event), card greying stays OPENING-FROZEN*
+*(the policy-lookup seam carries no run context — named limit, pinned both ways),*
+*and absent ≡ empty ≡ pilot byte-stand. Retirement `to`-legs remain forged-fixture*
+*truth (R66): transitions move the calendar, no lane authors hardware deaths.*
+**Fresh ask (4) CLOSED.**
+
 **Program 5 — the G7 rule phase joins the MAINLINE runner, opt-in.**
 `SimCoreRunnerOptions.rules {lookupPolicyCard}` lands @`9748ee4` as a RUNNER
 OPTION ONLY — the boot wire keeps PROTOCOL_VERSION 1 UNTOUCHED (no new field;
@@ -191,6 +202,20 @@ yet — the seam exists, the adoption is a product decision); shadow/kill-switch
 legs stay g7-exclusive. The honest cost: worker chunk +12.68 kB (the rule
 phase enters the worker graph). canExecute now ALSO gates translated rule
 carriers (program 1's law, stated and tested from this side).
+
+*Rider (2026-10-18, wave-26 closeout): the named proto arm is LANDED. boot.rules*
+*rides protocol* ***v1*** *as an OPTIONAL boot field — Option A, full PolicyCard*
+*documents over the wire (@`9653a96`): encode OMITS when unset (key-free absence,*
+*5-positional callers unchanged; `simClient.boot` gains a 6th param), parse*
+*TOLERATES unknown inner keys (corpus precedent), dup-hash refusals name both*
+*positions, bigints revive decimal-string-safe. Seven frozen vocab tables ride the*
+*codec (the seventh, `POLICY_THRESHOLD_KIND_WIRE_IDS`, joined the source-read drift*
+*pins at this closeout — the docblock's seven-table claim is now machine-true),*
+*determinism + causality + fake-vs-direct twins pinned, the armed goldens*
+*byte-stand. ONE `workerRulesLookup` boundary builder feeds both worker hosts*
+*(E2b anti-drift law).*
+**Fresh ask (5) CLOSED as ARMED-ABLE** — a shipped panel passing `rules` in
+production stays owner adoption, not mechanics.
 
 **Program 6 — the G7 panel hues ratified onto the ledger; the plate honors
 it.** @`7fed0c4` discharges the wave-24 F-4 ask per recommendation:
@@ -329,6 +354,49 @@ posture), PROTOCOL_VERSION 1, all six+seven prototype gates, the door's
 per-verb validators (still live for hosts; perspectives just no longer use
 them), the 2026 ≡ era-fallback law, `save/settle.ts` writer-ownership, the
 §9.13 gate count, and every PROVISIONAL label outside the program-6 set.
+
+## Wave-26 owner ruling (session-9 second rider, 2026-10-18)
+
+Owner ruling, verbatim: **"go with recomendations , keep driving to completion"**
+(owner's spelling preserved) — the standing wave-26 agenda, executed entirely per
+the closeout's recommendations. Six lanes rode atop `0c2549e`:
+
+| Lane | What landed | SHA |
+| --- | --- | --- |
+| L-G4P | G4 plate unifies on the ledger grey — zero bespoke plate hexes repo-wide, fade 0.7→0.95, g4Hues AA suite 16 its | `d197917` |
+| L-BR1 | boot.rules — Option-A full-card codec on v1, omit-when-unset, armed goldens byte-stand (program-5 rider above) | `9653a96` |
+| L-ER-T | era transitions — the step-function seam the pilot named, door-clean (program-4 rider above) | `58fddc3` |
+| AC-E | endings v0 — obituary / exit / quiet-handoff as PURE read-projections; exit is verdict-observed (`^win:sell-accepted-above:` grammar), money-untouched; records stay immutable (digest-prefix law) | `61a1c3b` |
+| AC-S | sell-verdict predicates — `sell-accepted-above`/`sell-refused-above` over the SPARSE `sellVerdicts` observation; verdict notices, not door receipts (executed ≠ accepted pinned anti-lie) | `c6b69a4` |
+| AC-B | Act Three — 9 chapters, tour 27; first LIVE perspective seats (c-4/c-9); the ratchet audit played zero-intent (c-2); the sell run-up (c-7); nine-beat supersession arithmetic disclosed under §1.9 | `5e9be02` |
+
+**Corpse-audit law-honesty precedent (AC-B).** The brief's Act III re-ride
+candidates were tested on disk and REFUTED as content: the metastable/DDoS/
+free-tier §1.5 missions run `contracts: []` and churn to corpse by ~t44 on the
+ratified death law; the covenant/review-bomb/sev-0 books open 100B/1B/500M —
+ABOVE the authored 300M carry bridge, so the never-poorer cash-floor law
+forbids the thin-ride. Rather than forge histories, c-1/c-6/c-8 ride as
+AUTHORED HOMAGES citing the same §1.5 specLines, and only c-3 true-re-rides
+(win@40, under its t44 wall). Recorded here as PRECEDENT: a lane that catches
+its brief's own plan contradicting disk-state reports the corpse and authors
+honestly around it.
+
+**Closeout code-cures (comment/pin-only, review minors 1–3):**
+`POLICY_THRESHOLD_KIND_WIRE_IDS` joins `_policyVocabDrift` and the source-read
+drift pins (six its → seven its' claims, test title six→seven — count-neutral,
+inside the existing it); `ENDING_KINDS`' docblock no longer mislabels roster
+order as selection precedence (precedence lives in `selectKind`). Minor 2
+(BootRules envelope-type symmetry vs Wire) and minor 4 (sellMarketRates
+catalog leg) recorded on `docs/DECISIONS-PENDING.md` as hygiene candidates.
+
+**Battery at the wave-26 tip:** sim-core serial 186f/3,551 · proto 110f/1,263 ·
+api-verify PASS 1,756 · host 36 · transport 100 · relay 42 · typecheck 8/8 ·
+ci-verify 5/5 · canary PASS 151 files · validate 14 bundles / 413 `_todo` /
+16 pack markers · headless 53/5 parity `b0162ab5`/`a9b4b7b8` HELD · ZERO
+pre-existing digest goldens moved (new witnesses self-derived: `7f085357…`
+solo-ActIII, `bd36d3be…` four-arc; prior arc digests UNMOVED). Joint review:
+PROCEED, zero critical/major. The refusal census held 46 UNPAID;
+PROTOCOL_VERSION held 1; the type program stays CEASED.
 
 ## Source
 

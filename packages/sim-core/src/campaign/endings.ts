@@ -61,9 +61,10 @@ import type { CampaignChapterRecord } from "./doc.ts";
 import { CampaignError } from "./doc.ts";
 import type { CampaignReport } from "./chain.ts";
 
-/** The closed §9.9 ending vocabulary, in selection precedence order:
- *  obituary beats exit beats quiet-handoff, but the three are mutually
- *  exclusive per terminal state (a beat cannot both die and be sold). */
+/** The closed §9.9 ending vocabulary (roster order is decorative; SELECTION
+ *  precedence — obituary beats exit beats quiet-handoff — lives in
+ *  `selectKind` below). The three are mutually exclusive per terminal
+ *  state (a beat cannot both die and be sold). */
 export const ENDING_KINDS = ["obituary", "quiet-handoff", "exit"] as const;
 export type CampaignEndingKind = (typeof ENDING_KINDS)[number];
 

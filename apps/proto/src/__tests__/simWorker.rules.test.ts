@@ -56,6 +56,7 @@ import {
   POLICY_COMPARATOR_WIRE_IDS,
   POLICY_ESCALATION_TARGET_WIRE_IDS,
   POLICY_SCOPE_KIND_WIRE_IDS,
+  POLICY_THRESHOLD_KIND_WIRE_IDS,
   ProtocolError,
   assertToWorker,
   encodeBootRules,
@@ -392,12 +393,13 @@ describe("drift pins (engine grammar unions + host forwards)", () => {
     return quoted(match[1]!);
   };
 
-  it("the six wire vocabularies still match the sim-core grammar unions", () => {
+  it("the seven wire vocabularies still match the sim-core grammar unions", () => {
     expect([...POLICY_COMPARATOR_WIRE_IDS].sort()).toEqual(unionOf("Comparator").sort());
     expect([...METRIC_UNIT_WIRE_IDS].sort()).toEqual(unionOf("MetricUnit").sort());
     expect([...POLICY_ACTION_ID_WIRE_IDS].sort()).toEqual(unionOf("PolicyActionId").sort());
     expect([...POLICY_BAND_WIRE_IDS].sort()).toEqual(unionOf("DelegationBand").sort());
     expect([...POLICY_ESCALATION_TARGET_WIRE_IDS].sort()).toEqual(unionOf("PolicyEscalation").sort());
+    expect([...POLICY_THRESHOLD_KIND_WIRE_IDS].sort()).toEqual(unionOf("PolicyThreshold").sort());
     const scopeKind = typesSource.match(/export interface ScopeSelector \{[\s\S]*?kind: ([^;]+);/);
     if (scopeKind === null) throw new Error("types.ts: ScopeSelector.kind not found");
     expect([...POLICY_SCOPE_KIND_WIRE_IDS].sort()).toEqual(quoted(scopeKind[1]!).sort());

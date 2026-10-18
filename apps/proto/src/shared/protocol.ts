@@ -400,7 +400,12 @@ export const POLICY_THRESHOLD_KIND_WIRE_IDS = Object.freeze(["value", "class-ref
 const _policyVocabDrift: readonly [
   readonly Comparator[], readonly MetricUnit[], readonly PolicyActionId[],
   readonly ScopeSelector["kind"][], readonly DelegationBand[], readonly PolicyEscalation["to"][],
-] = [POLICY_COMPARATOR_WIRE_IDS, METRIC_UNIT_WIRE_IDS, POLICY_ACTION_ID_WIRE_IDS, POLICY_SCOPE_KIND_WIRE_IDS, POLICY_BAND_WIRE_IDS, POLICY_ESCALATION_TARGET_WIRE_IDS];
+  readonly PolicyThreshold["kind"][],
+] = [
+  POLICY_COMPARATOR_WIRE_IDS, METRIC_UNIT_WIRE_IDS, POLICY_ACTION_ID_WIRE_IDS,
+  POLICY_SCOPE_KIND_WIRE_IDS, POLICY_BAND_WIRE_IDS, POLICY_ESCALATION_TARGET_WIRE_IDS,
+  POLICY_THRESHOLD_KIND_WIRE_IDS,
+];
 void _policyVocabDrift;
 
 /** JSON-safe form of `PolicyThreshold` (the value arm carries WireFixed). */
