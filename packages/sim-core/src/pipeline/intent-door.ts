@@ -153,6 +153,24 @@
  *    the player (D4) — and a rule carrier whose translated payload is
  *    semantically wrong follows the ordinary value refusal, never a throw
  *    (trusted structure, validated values).
+ *  - CAN-EXECUTE GATE (ADR-0019 program 1 · lane L-CE, OPT-IN):
+ *    `config.canExecute` is the GENERAL host validator — one seam for every
+ *    verb, the missing authority behind the per-verb validators. Gate order
+ *    is FIXED: resolve-carrier → canExecute → hands → attention → handler.
+ *    It is consulted for EVERY entry that resolves to an executable verb —
+ *    player-verb carriers and G7 translated rule-carriers alike — and BEFORE
+ *    any denomination pays, so a banned verb spends nothing (this is why the
+ *    gate cannot ride the sibling validators' position inside the handler,
+ *    where payment already happened and only the refund snapshot promises
+ *    the same law). A refusal is the ordinary `intent-refused` event +
+ *    receipt with the host's reason string VERBATIM — the door mints no
+ *    code of its own for a general gate (the refusal-census-over-source law
+ *    stays at forty-six; the host's reason must itself be house grammar,
+ *    `code: detail`). Absent hook = today, byte-identically. This seam is
+ *    what lifts the perspective expressibility ceiling
+ *    (scenario/perspective.ts pins 14 of 19 verbs as not-coverable through
+ *    validator seams alone — lane L-PERS widens that table on top of this
+ *    gate; the door itself stays perspective-agnostic).
  */
 
 import type {
@@ -310,6 +328,39 @@ export interface NegotiateRejection {
   readonly reason: string;
 }
 
+/** What the host's GENERAL execute-gate sees (ADR-0019 program 1 · lane
+ *  L-CE) — the same decoupling pattern as `canPlaceDevice`, widened to every
+ *  verb: the resolved (post-translation) `verb` + parsed `args`, this pass's
+ *  context, and the read-only draft view under the W1/F5 snapshot law
+ *  (devices placed EARLIER in the same tick are visible, never a stale
+ *  board). `carrier` is G7 attribution: the legacy rule-carrier verb (e.g.
+ *  "page") when the entry is a translated Book intent, null when a player
+ *  fed it — hosts that gate the Book differently from the human read it. */
+export interface ExecuteQuery {
+  readonly verb: PlayerVerb;
+  readonly args: PlayerVerbArgs;
+  readonly carrier: string | null;
+  readonly state: GameState;
+  readonly context: TickContext;
+}
+
+/** The general gate's refusal arm. The posture DIFFERS from the per-verb
+ *  validators on purpose: `canPlaceDevice`/`canAdjustPrice`/`canSellOffer`/
+ *  `canNegotiateTerms` each supply a DETAIL the door wraps in ITS OWN fixed
+ *  code (`placement-rejected:`/`unknown-plan:`/`unknown-target:` — all
+ *  census-paid literals), because the door knows exactly which narrow
+ *  question those seams answer. For the general gate the door knows no
+ *  question, so it mints no code: the host's `reason` lands in the
+ *  `intent-refused` event and the receipt VERBATIM and must itself be house
+ *  grammar `code: detail` (e.g. `perspective-forbids: a Night-Shift seat
+ *  does not cable`). Output stays validated: `reason` must be a string —
+ *  host bugs throw rather than fork a state; a THROWING callback propagates
+ *  unchanged (a host validator that crashes is a host bug, and the door
+ *  does not catch its way out of someone else's bug). */
+export interface ExecuteRejection {
+  readonly reason: string;
+}
+
 export interface IntentDoorConfig {
   /** Hand tokens when materializing a missing GameState.hands (default 1 —
    *  T0/T2 per §7.5). Hosts SHOULD seed hands via createInitialState instead. */
@@ -340,6 +391,20 @@ export interface IntentDoorConfig {
    *  output is validated: `reason` must be a string, host bugs throw
    *  rather than fork a state. */
   readonly canNegotiateTerms?: (query: NegotiateQuery) => NegotiateRejection | null;
+  /** THE GENERAL EXECUTE GATE (ADR-0019 program 1 · lane L-CE; owner ruling
+   *  2026-10-18). Consulted for EVERY entry that resolves to an executable
+   *  verb — player-verb carriers AND G7 translated rule-carriers alike —
+   *  after carrier translation and BEFORE any denomination pays: a refused
+   *  verb spends no hands, no occupancy, no attention token, and never
+   *  reaches a handler (the per-verb validators above do not run for it).
+   *  Absent = zero behavior change (the byte-identity law, family posture).
+   *  Return null = allow; a rejection's reason lands in the refusal event
+   *  VERBATIM — host-owned `code: detail` grammar, census-46 law (the door
+   *  mints no literal for a general gate). This is the seam a perspective
+   *  (or any host policy layer) uses to ban the 14 verbs no per-verb
+   *  validator covers — scenario/perspective.ts's expressibility table
+   *  widens here in lane L-PERS. */
+  readonly canExecute?: (query: ExecuteQuery) => ExecuteRejection | null;
   /** policy-card-commit resolver: maps the payload hash to the authored card.
    *  Absent → commits refuse with "no-card-lookup". */
   readonly lookupPolicyCard?: (cardHash: string) => PolicyCard | null;
@@ -2310,6 +2375,32 @@ function executeEntry(draft: Draft, entry: ExternalIntent): void {
     label = `${carrierVerb}→${verb}`;
   } else {
     reject(carrierLabel(intent.payload), "unsupported-verb-carrier: the door executes only kind=\"player-verb\" intents");
+    return;
+  }
+
+  // CAN-EXECUTE GATE (ADR-0019 program 1 · lane L-CE): the general host
+  // validator, consulted HERE — after carrier translation (a translated Book
+  // intent joins the ordinary rail, so it answers the same gate; `carrier`
+  // keeps the rule visible to hosts that gate it differently) and before ANY
+  // denomination pays, so a refused verb spends nothing: no hands, no
+  // occupancy, no attention token, no handler, no sibling validator, and no
+  // due-release sweep touches the rail (the pre-payment position makes the
+  // refund snapshot unnecessary — there is nothing to refund, state identity
+  // on a refused-only pass is structural). The refusal is the ordinary event
+  // + receipt; the host's reason lands VERBATIM (house grammar is the host's
+  // promise, the door mints no code — census-46 law). Output validated like
+  // the siblings: non-string reason throws `IntentDoorError`; a THROWING
+  // callback propagates unchanged (host bug = crash the door, never silently
+  // permit). Absent hook = the ordinary rail, byte-identically.
+  const executeRejection = draft.config.canExecute?.({
+    verb,
+    args,
+    carrier: carrierVerb,
+    state: snapshotFor(draft),
+    context,
+  });
+  if (executeRejection !== undefined && executeRejection !== null) {
+    reject(label, requireString(executeRejection.reason, "canExecute result.reason"));
     return;
   }
 
