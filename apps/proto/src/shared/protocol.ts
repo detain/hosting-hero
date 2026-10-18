@@ -368,14 +368,21 @@ export interface BootBuildWire {
  * field path; unknown keys inside the records are ignored (envelope
  * tolerance). The bigints (threshold amounts, action values, sustained
  * duration, upkeep) follow the house decimal-string law — `WireFixed`/
- * `WireUs` — and revive HERE, at the boundary, exactly where
- * `wireIntentToPlayerIntent` revives verb args (E2b), so the runner and
- * the engine only ever see real `PolicyCard` values. SHAPE walls live here
- * (closed vocabularies, the OneTwoThree 1..3 arity, key-set uniqueness);
- * the §2.2 GRAMMAR wall is the engine's — the policy evaluator re-runs
- * `validatePolicyCard` over the whole book on every rule fold, so a lie in
- * a card faults the sim, never the codec (the "codec never re-invents a
- * deeper law" sentence from parseBootCorpus, verbatim doctrine). */
+ * `WireUs` — and the envelope KEEPS that form: `assertToWorker`'s boot arm
+ * is typed `BootRulesWire`, symmetric with its `corpus`/`build` siblings
+ * (wave-26 review minor: no trusted bigints inside a wire envelope). Every
+ * SHAPE wall stays exactly where it is — `parseBootRules` and its card-arm
+ * parsers still prove the closed vocabularies, the OneTwoThree 1..3 arity,
+ * key-set uniqueness and the decimal-string law (exact field paths, dup-
+ * hash refusal naming both positions), only WITHOUT reviving. The revival
+ * moves to the worker-boundary CONSUMPTION, the ONE `workerRulesLookup`
+ * builder — `wireIntentToPlayerIntent`'s E2b posture, where the flat parsed
+ * record becomes real `PolicyCard` values — so the runner and the engine
+ * only ever see trusted bigints. The §2.2 GRAMMAR wall is the engine's —
+ * the policy evaluator re-runs `validatePolicyCard` over the whole book on
+ * every rule fold, so a lie in a card faults the sim, never the codec (the
+ * "codec never re-invents a deeper law" sentence from parseBootCorpus,
+ * verbatim doctrine). */
 
 /** Closed wire vocabularies mirroring the sim-core grammar unions (types.ts
  *  §B 2.2). Drift-pinned against the engine source by
@@ -452,11 +459,12 @@ export interface BootRulesWire {
   readonly entries: readonly BootRuleEntryWire[];
 }
 
-/** TRUSTED forms — what `assertToWorker` hands the hosts (bigints revived,
- *  records deep-frozen). `BootRules` doubles as `SimClient.boot`'s input
- *  type: producers hand real PolicyCards (g7Deck exports them branded) and
+/** TRUSTED forms — what `workerRulesLookup` revives the parsed book INTO
+ *  (bigints revived, records deep-frozen) and what `SimClient.boot` takes as
+ *  INPUT: producers hand real PolicyCards (g7Deck exports them branded) and
  *  `encodeBootRules` stringifies at the send boundary, the sendPlayerVerb
- *  bigint law (E2b) in boot clothing. */
+ *  bigint law (E2b) in boot clothing. `assertToWorker` never hands these
+ *  out — its boot arm keeps the WIRE form above (envelope-type symmetry). */
 export interface BootRuleEntry {
   readonly hash: string;
   readonly card: PolicyCard;
@@ -467,7 +475,7 @@ export interface BootRules {
 }
 
 export type ToWorker =
-  | { readonly kind: "boot"; readonly protocol: typeof PROTOCOL_VERSION; readonly seed: string; readonly speedX: SpeedX; readonly runnerKind: RunnerKindWire; readonly corpus?: BootCorpusWire; readonly build?: BootBuildWire; readonly rules?: BootRules }
+  | { readonly kind: "boot"; readonly protocol: typeof PROTOCOL_VERSION; readonly seed: string; readonly speedX: SpeedX; readonly runnerKind: RunnerKindWire; readonly corpus?: BootCorpusWire; readonly build?: BootBuildWire; readonly rules?: BootRulesWire }
   | { readonly kind: "intent"; readonly protocol: typeof PROTOCOL_VERSION; readonly seq: number; readonly clock: ClockKind; readonly atUs: WireUs; readonly origin: "player" | "rule"; readonly payload: WireIntentPayload }
   | { readonly kind: "speed"; readonly protocol: typeof PROTOCOL_VERSION; readonly speedX: SpeedX }
   | { readonly kind: "halt"; readonly protocol: typeof PROTOCOL_VERSION };
@@ -611,14 +619,16 @@ function parseBootBoardEdge(raw: unknown, index: number): BootBoardEdgeWire {
 
 /* ───────────────────── boot.rules parse + encode + book builder ───────────────────── */
 
-/** Signed decimal-string integer → bigint (the Fixed/Money carrier; unlike
- *  parseUs there is NO non-negativity wall — threshold amounts are plain
- *  Q16.16 Fixed and may be authored negative by grammar, not by the wire). */
-function parseWireInt(path: string, raw: unknown): bigint {
+/** Signed decimal-string integer validated and KEPT in the WIRE form (the
+ *  Fixed/Money carrier; unlike parseWireUsString there is NO non-negativity
+ *  wall — threshold amounts are plain Q16.16 Fixed and may be authored
+ *  negative by grammar, not by the wire). Revival to bigint is
+ *  `workerRulesLookup`'s at the consumption boundary. */
+function parseWireIntString(path: string, raw: unknown): WireFixed {
   if (typeof raw !== "string" || !INT_RE.test(raw)) {
     throw new ProtocolError(path, "decimal-string integer (wire bigint law)", raw);
   }
-  return BigInt(raw);
+  return BigInt(raw).toString();
 }
 
 function parseStringOrNull(path: string, raw: unknown): string | null {
@@ -627,7 +637,7 @@ function parseStringOrNull(path: string, raw: unknown): string | null {
 }
 
 /** The OneTwoThree arity wall (§B 2.3.5 "one rule = one story"): the codec
- *  proves 1..3 so the TRUSTED type never lies; ordering is data, untouched. */
+ *  proves 1..3 so the tuple type never lies; ordering is data, untouched. */
 function parseOneTwoThree<T>(path: string, what: string, raw: unknown, parse: (p: string, r: unknown) => T): OneTwoThree<T> {
   if (!Array.isArray(raw) || raw.length < 1 || raw.length > 3) {
     throw new ProtocolError(path, `1..3 ${what}`, raw);
@@ -639,13 +649,13 @@ function parseOneTwoThree<T>(path: string, what: string, raw: unknown, parse: (p
   return Object.freeze([list[0]!, list[1]!, list[2]!]) as OneTwoThree<T>;
 }
 
-function parsePolicyThreshold(path: string, raw: unknown): PolicyThreshold {
+function parsePolicyThresholdWire(path: string, raw: unknown): PolicyThresholdWire {
   const rec = isRecord(path, raw);
   const kind = parseLiteral(`${path}.kind`, rec["kind"], POLICY_THRESHOLD_KIND_WIRE_IDS);
   if (kind === "value") {
     return Object.freeze({
       kind,
-      amount: parseWireInt(`${path}.amount`, rec["amount"]),
+      amount: parseWireIntString(`${path}.amount`, rec["amount"]),
       unit: parseLiteral(`${path}.unit`, rec["unit"], METRIC_UNIT_WIRE_IDS),
     });
   }
@@ -655,91 +665,94 @@ function parsePolicyThreshold(path: string, raw: unknown): PolicyThreshold {
   return Object.freeze({ kind, name: parseString(`${path}.name`, rec["name"]) });
 }
 
-function parsePolicyPredicate(path: string, raw: unknown): Predicate {
+function parsePolicyPredicateWire(path: string, raw: unknown): PolicyPredicateWire {
   const rec = isRecord(path, raw);
   return Object.freeze({
-    metric: asMetricId(parseNonEmptyString(`${path}.metric`, rec["metric"])),
+    metric: parseNonEmptyString(`${path}.metric`, rec["metric"]),
     comparator: parseLiteral(`${path}.comparator`, rec["comparator"], POLICY_COMPARATOR_WIRE_IDS),
-    threshold: parsePolicyThreshold(`${path}.threshold`, rec["threshold"]),
+    threshold: parsePolicyThresholdWire(`${path}.threshold`, rec["threshold"]),
   });
 }
 
-function parsePolicyAction(path: string, raw: unknown): PolicyAction {
+function parsePolicyActionWire(path: string, raw: unknown): PolicyActionWire {
   const rec = isRecord(path, raw);
   const valueRaw = rec["value"];
   return Object.freeze({
     id: parseLiteral(`${path}.id`, rec["id"], POLICY_ACTION_ID_WIRE_IDS),
     runbookName: parseStringOrNull(`${path}.runbookName`, rec["runbookName"]),
-    value: valueRaw === null ? null : parseWireInt(`${path}.value`, valueRaw),
+    value: valueRaw === null ? null : parseWireIntString(`${path}.value`, valueRaw),
   });
 }
 
-/** Full-shape boundary parse → trusted `PolicyCard`. Field-for-field mirror
- *  of types.ts:766; the closed vocabularies above are the ONLY walls here —
- *  grammar legality (metric-vs-comparator pairings, runbookName discipline)
- *  is the evaluator's fold-time wall, never duplicated at the seam. */
-function parsePolicyCard(path: string, raw: unknown): PolicyCard {
+/** Full-shape boundary parse → WIRE `PolicyCardWire` (field-for-field mirror
+ *  of types.ts:766, bigints kept as decimal strings). The closed
+ *  vocabularies above are the ONLY walls here — grammar legality
+ *  (metric-vs-comparator pairings, runbookName discipline) is the
+ *  evaluator's fold-time wall, never duplicated at the seam, and revival to
+ *  trusted `PolicyCard` values is `workerRulesLookup`'s at consumption. */
+function parsePolicyCardWire(path: string, raw: unknown): PolicyCardWire {
   const rec = isRecord(path, raw);
   const scopeRec = isRecord(`${path}.scope`, rec["scope"]);
   const card: {
-    id: RuleId;
-    scope: ScopeSelector;
-    when: OneTwoThree<Predicate>;
-    for?: SustainedWindow;
-    then: OneTwoThree<PolicyAction>;
-    unless?: OneTwoThree<Predicate>;
-    else?: PolicyEscalation;
+    id: string;
+    scope: { kind: ScopeSelector["kind"]; ref: string | null };
+    when: readonly PolicyPredicateWire[];
+    for?: { durationUs: WireUs };
+    then: readonly PolicyActionWire[];
+    unless?: readonly PolicyPredicateWire[];
+    else?: { to: PolicyEscalation["to"]; ref: string };
     band: DelegationBand;
-    upkeepMicroUsd: MoneyUnit;
+    upkeepMicroUsd: WireUs;
   } = {
-    id: asRuleId(parseNonEmptyString(`${path}.id`, rec["id"])),
+    id: parseNonEmptyString(`${path}.id`, rec["id"]),
     scope: Object.freeze({
       kind: parseLiteral(`${path}.scope.kind`, scopeRec["kind"], POLICY_SCOPE_KIND_WIRE_IDS),
       // "null for `estate`" (ScopeSelector docblock) is a grammar question;
       // the wire form is string-or-null and this codec does not read meaning.
       ref: parseStringOrNull(`${path}.scope.ref`, scopeRec["ref"]),
     }),
-    when: parseOneTwoThree(`${path}.when`, "predicates", rec["when"], parsePolicyPredicate),
-    then: parseOneTwoThree(`${path}.then`, "actions", rec["then"], parsePolicyAction),
+    when: parseOneTwoThree(`${path}.when`, "predicates", rec["when"], parsePolicyPredicateWire),
+    then: parseOneTwoThree(`${path}.then`, "actions", rec["then"], parsePolicyActionWire),
     band: parseLiteral(`${path}.band`, rec["band"], POLICY_BAND_WIRE_IDS),
-    upkeepMicroUsd: asMoney(parseWireInt(`${path}.upkeepMicroUsd`, rec["upkeepMicroUsd"])),
+    upkeepMicroUsd: parseWireIntString(`${path}.upkeepMicroUsd`, rec["upkeepMicroUsd"]),
   };
   const forRaw = rec["for"];
   if (forRaw !== undefined) {
     const forRec = isRecord(`${path}.for`, forRaw);
-    card.for = Object.freeze({ durationUs: parseUs(`${path}.for.durationUs`, forRec["durationUs"]) });
+    card.for = Object.freeze({ durationUs: parseWireUsString(`${path}.for.durationUs`, forRec["durationUs"]) });
   }
   const unlessRaw = rec["unless"];
   if (unlessRaw !== undefined) {
-    card.unless = parseOneTwoThree(`${path}.unless`, "predicates", unlessRaw, parsePolicyPredicate);
+    card.unless = parseOneTwoThree(`${path}.unless`, "predicates", unlessRaw, parsePolicyPredicateWire);
   }
   const elseRaw = rec["else"];
   if (elseRaw !== undefined) {
     const elseRec = isRecord(`${path}.else`, elseRaw);
-    // Discriminated-union arms need the literal narrowed by the parseLiteral
-    // result type — the freeze widens, so the boundary cast is the honest shape.
     card.else = Object.freeze({
       to: parseLiteral(`${path}.else.to`, elseRec["to"], POLICY_ESCALATION_TARGET_WIRE_IDS),
       ref: parseNonEmptyString(`${path}.else.ref`, elseRec["ref"]),
-    }) as PolicyEscalation;
+    });
   }
   return Object.freeze(card);
 }
 
 /** Parse the optional boot.rules rider (ADR-0019 program 5 follow-on): the
- *  book is a SET of {host hash → trusted card} entries. Duplicate hashes are
- *  a literal wire-field collision (unlike boot.build's DERIVED edge ids) —
- *  refused right here, naming both positions, so no second entry can shadow
- *  the first into a silent overwrite. Unknown keys inside the records are
- *  ignored: the envelope tolerance parseBootCorpus documents. */
-function parseBootRules(raw: unknown): BootRules {
+ *  book is a SET of {host hash → WIRE card} entries — the parsed boot arm
+ *  stays in wire clothing (wave-26 review minor, envelope-type symmetry with
+ *  `corpus`/`build`); revival to trusted bigints happens at the ONE
+ *  worker-boundary consumption point, `workerRulesLookup`. Duplicate hashes
+ *  are a literal wire-field collision (unlike boot.build's DERIVED edge
+ *  ids) — refused right here, naming both positions, so no second entry can
+ *  shadow the first into a silent overwrite. Unknown keys inside the records
+ *  are ignored: the envelope tolerance parseBootCorpus documents. */
+function parseBootRules(raw: unknown): BootRulesWire {
   const rec = isRecord("boot.rules", raw);
   const entriesRaw = rec["entries"];
   if (!Array.isArray(entriesRaw)) {
     throw new ProtocolError("boot.rules.entries", "array of {hash, card} book entries", entriesRaw);
   }
   const seen = new Map<string, number>();
-  const entries: BootRuleEntry[] = [];
+  const entries: BootRuleEntryWire[] = [];
   entriesRaw.forEach((entry, index) => {
     const path = `boot.rules.entries[${index}]`;
     const entryRec = isRecord(path, entry);
@@ -749,7 +762,7 @@ function parseBootRules(raw: unknown): BootRules {
       throw new ProtocolError(`${path}.hash`, `unique card hash (book is a set; duplicates entries[${first}])`, hash);
     }
     seen.set(hash, index);
-    entries.push(Object.freeze({ hash, card: parsePolicyCard(`${path}.card`, entryRec["card"]) }));
+    entries.push(Object.freeze({ hash, card: parsePolicyCardWire(`${path}.card`, entryRec["card"]) }));
   });
   return Object.freeze({ entries: Object.freeze(entries) });
 }
@@ -795,17 +808,101 @@ export function encodeBootRules(rules: BootRules): BootRulesWire {
   };
 }
 
-/** THE worker-side book materialization: parsed boot.rules → the runner's
- *  `lookupPolicyCard` seam, VERBATIM the shape the door config forwards. One
- *  shared builder for BOTH runner hosts (the `wireIntentToPlayerIntent`
- *  anti-drift law, E2b): the fake and the browser worker cannot disagree on
- *  what a booted book means. Unknown hash → null keeps the ordinary
- *  `unknown-card-hash` refusal the last word (g7Deck's seam law restated). */
-export function workerRulesLookup(rules: BootRules): {
+/* ───────── boot.rules revival — the worker-boundary consumption point ─────────
+ * `assertToWorker` proves EVERY shape wall and hands the hosts the WIRE book
+ * (envelope-type symmetry, wave-26 review minor); the decimal strings become
+ * real `PolicyCard` bigints HERE, exactly where `wireIntentToPlayerIntent`
+ * revives verb args (E2b): a bare `BigInt` on a string the parse wall already
+ * proved, branded with the same as-calls the old in-envelope parse used, and
+ * deep-frozen entry-for-entry — the trusted records are byte-identical to
+ * what the pre-symmetry boundary parse produced. */
+
+function revivePolicyThreshold(wire: PolicyThresholdWire): PolicyThreshold {
+  if (wire.kind === "value") {
+    return Object.freeze({ kind: "value", amount: BigInt(wire.amount), unit: wire.unit });
+  }
+  if (wire.kind === "class-ref") {
+    return Object.freeze({ kind: "class-ref", classId: wire.classId });
+  }
+  return Object.freeze({ kind: "event-name", name: wire.name });
+}
+
+function revivePolicyPredicate(wire: PolicyPredicateWire): Predicate {
+  return Object.freeze({
+    metric: asMetricId(wire.metric),
+    comparator: wire.comparator,
+    threshold: revivePolicyThreshold(wire.threshold),
+  });
+}
+
+function revivePolicyAction(wire: PolicyActionWire): PolicyAction {
+  return Object.freeze({
+    id: wire.id,
+    runbookName: wire.runbookName,
+    value: wire.value === null ? null : BigInt(wire.value),
+  });
+}
+
+/** The 1..3 arity is `parseOneTwoThree`'s wall at the envelope; rebuilding
+ *  the frozen tuple re-proves it (fail-loud tripwire for hand-built wire
+ *  records that skipped the parse, mirroring §B 2.3.5 rather than re-deriving
+ *  a new law). */
+function freezeOneTwoThree<T>(path: string, what: string, list: readonly T[]): OneTwoThree<T> {
+  if (list.length === 1) return Object.freeze([list[0]!]) as OneTwoThree<T>;
+  if (list.length === 2) return Object.freeze([list[0]!, list[1]!]) as OneTwoThree<T>;
+  if (list.length === 3) return Object.freeze([list[0]!, list[1]!, list[2]!]) as OneTwoThree<T>;
+  throw new ProtocolError(path, `1..3 ${what} (proved by the envelope parse)`, list.length);
+}
+
+function revivePolicyCard(path: string, wire: PolicyCardWire): PolicyCard {
+  const card: {
+    id: RuleId;
+    scope: ScopeSelector;
+    when: OneTwoThree<Predicate>;
+    for?: SustainedWindow;
+    then: OneTwoThree<PolicyAction>;
+    unless?: OneTwoThree<Predicate>;
+    else?: PolicyEscalation;
+    band: DelegationBand;
+    upkeepMicroUsd: MoneyUnit;
+  } = {
+    id: asRuleId(wire.id),
+    scope: Object.freeze({ kind: wire.scope.kind, ref: wire.scope.ref }),
+    when: freezeOneTwoThree(`${path}.when`, "predicates", wire.when.map(revivePolicyPredicate)),
+    then: freezeOneTwoThree(`${path}.then`, "actions", wire.then.map(revivePolicyAction)),
+    band: wire.band,
+    upkeepMicroUsd: asMoney(BigInt(wire.upkeepMicroUsd)),
+  };
+  if (wire.for !== undefined) {
+    card.for = Object.freeze({ durationUs: BigInt(wire.for.durationUs) });
+  }
+  if (wire.unless !== undefined) {
+    card.unless = freezeOneTwoThree(`${path}.unless`, "predicates", wire.unless.map(revivePolicyPredicate));
+  }
+  if (wire.else !== undefined) {
+    // Discriminated-union arms: the wire record keeps `to`/`ref` flat and the
+    // pairing law (to=band ⇒ a DelegationBand ref) is the evaluator's grammar
+    // wall — the boundary cast is the honest shape, never a re-invention.
+    card.else = Object.freeze({ to: wire.else.to, ref: wire.else.ref }) as PolicyEscalation;
+  }
+  return Object.freeze(card);
+}
+
+/** THE worker-side book materialization: the parsed boot's WIRE book → the
+ *  runner's `lookupPolicyCard` seam, VERBATIM the shape the door config
+ *  forwards (trusted `PolicyCard`s, bigints revived at this boundary — see
+ *  the revival section above). One shared builder for BOTH runner hosts (the
+ *  `wireIntentToPlayerIntent` anti-drift law, E2b): the fake and the browser
+ *  worker cannot disagree on what a booted book means. Unknown hash → null
+ *  keeps the ordinary `unknown-card-hash` refusal the last word (g7Deck's
+ *  seam law restated). */
+export function workerRulesLookup(rules: BootRulesWire): {
   readonly lookupPolicyCard: (cardHash: string) => PolicyCard | null;
 } {
   const byHash = new Map<string, PolicyCard>();
-  for (const entry of rules.entries) byHash.set(entry.hash, entry.card);
+  rules.entries.forEach((entry, index) => {
+    byHash.set(entry.hash, revivePolicyCard(`boot.rules.entries[${index}].card`, entry.card));
+  });
   const book = Object.freeze(byHash);
   return Object.freeze({ lookupPolicyCard: (cardHash: string) => book.get(cardHash) ?? null });
 }
@@ -1032,6 +1129,8 @@ export function assertToWorker(raw: unknown): ToWorker {
       ...(buildRaw === undefined ? {} : { build: parseBootBuild(buildRaw) }),
       // And again for the policy book (boot.rules, ADR-0019 program 5
       // follow-on): absent ⇒ no key ⇒ the runner boots UN-ARMED, byte-ident.
+      // The arm stays in its WIRE form (symmetry with corpus/build above);
+      // `workerRulesLookup` revives the bigints at worker-boundary use.
       ...(rulesRaw === undefined ? {} : { rules: parseBootRules(rulesRaw) }),
     };
   }

@@ -13,10 +13,13 @@
  *
  * Witnesses (brief-shaped):
  *  · codec: closed vocabularies + OneTwoThree arity + set-uniqueness with
- *    exact field paths; trusted↔wire revival round-trip over the REAL g7
- *    deck (parse(encode(cards)) deep-equals the originals, bigints intact);
- *    key absence pinned BOTH parsed and posted; JSON hop; unknown inner
- *    keys tolerated (envelope precedent).
+ *    exact field paths; the envelope parse keeps the WIRE form (wave-26
+ *    review minor: the boot arm is typed `BootRulesWire`, symmetric with
+ *    `corpus`/`build`) and the trusted↔wire revival round-trip runs over the
+ *    REAL g7 deck AT the worker boundary (workerRulesLookup(parse(encode
+ *    (cards))) deep-equals the originals, bigints intact); key absence
+ *    pinned BOTH parsed and posted; JSON hop; unknown inner keys tolerated
+ *    (envelope precedent).
  *  · drift pins: every wire vocabulary re-derived from types.ts source;
  *    both worker hosts forward `message.rules` (source scan).
  *  · byte-identity: no rider / empty book / booted-but-uncommitted g7 book
@@ -234,24 +237,47 @@ describe("boot.rules codec (additive protocol-v1 rider, ADR-0019 program 5 follo
     expect(Object.keys(r.posted[1]!).sort()).toEqual(["build", "kind", "protocol", "runnerKind", "seed", "speedX"]);
   });
 
-  it("trusted → wire → parse REVIVES the real g7 deck byte-for-byte (bigint law)", () => {
+  it("trusted → wire → parse KEEPS the wire form; workerRulesLookup REVIVES the g7 deck (wave-26 symmetry re-pin)", () => {
     const wire = encodeBootRules(G7_BOOT);
     const parsed = assertToWorker({
       kind: "boot", protocol: 1, seed: "g7", speedX: 1, runnerKind: "sim-core", rules: wire,
     });
     if (parsed.kind !== "boot" || parsed.rules === undefined) throw new Error("expected booted rules");
     expect(parsed.rules.entries.length).toBe(6);
+    // Envelope-type symmetry: the PARSED boot arm is the wire form — decimal
+    // strings, no trusted bigints inside a wire envelope (corpus/build law).
     for (let i = 0; i < G7_CARDS.length; i += 1) {
-      expect(parsed.rules.entries[i]!.card).toEqual(G7_CARDS[i]);
+      expect(parsed.rules.entries[i]!.card).toEqual(wire.entries[i]!.card);
       expect(parsed.rules.entries[i]!.hash).toBe(g7CardHash(G7_CARDS[i]!.id));
     }
-    // Spot the revival itself: these are bigints again, not strings.
-    const door = parsed.rules.entries[0]!.card;
+    // The revival lives at the worker-boundary consumption now (E2b posture)
+    // — spot the bigints THERE:
+    const { lookupPolicyCard } = workerRulesLookup(parsed.rules);
+    const door = lookupPolicyCard(parsed.rules.entries[0]!.hash);
+    if (door === null) throw new Error("expected the revived card");
+    expect(door).toEqual(G7_CARDS[0]);
     expect(door.then[0]!.value).toBe(2n * FIXED_ONE);
     expect(door.upkeepMicroUsd).toBe(0n);
     const threshold = door.when[0]!.threshold;
     if (threshold.kind !== "value") throw new Error("expected value threshold");
     expect(threshold.amount).toBe(40_960n);
+  });
+
+  it("revival-twin pin: encode(trusted) → parse → workerRulesLookup hands back the trusted book deep-equal (wave-26 minor)", () => {
+    // The symmetry law stated whole: moving revival from the envelope parse
+    // to the boundary builder must not move a single trusted value — for
+    // BOTH books this suite rides (the genuine g7 deck and the mainline one).
+    for (const book of [G7_BOOT, LIVE_BOOT]) {
+      const parsed = assertToWorker({
+        kind: "boot", protocol: 1, seed: "revive", speedX: 1, runnerKind: "sim-core",
+        rules: encodeBootRules(book),
+      });
+      if (parsed.kind !== "boot" || parsed.rules === undefined) throw new Error("expected booted rules");
+      const { lookupPolicyCard } = workerRulesLookup(parsed.rules);
+      expect(book.entries.map((entry) => lookupPolicyCard(entry.hash))).toEqual(
+        book.entries.map((entry) => entry.card),
+      );
+    }
   });
 
   it("wire form is JSON-safe AND survives the hop (structuredClone-free law)", () => {
@@ -288,7 +314,13 @@ describe("boot.rules codec (additive protocol-v1 rider, ADR-0019 program 5 follo
       rules: encodeBootRules({ entries: [{ hash: "rich", card: rich }] }),
     });
     if (parsed.kind !== "boot") throw new Error("expected boot");
-    expect(parsed.rules!.entries[0]!.card).toEqual(rich);
+    // Wave-26 symmetry re-pin: the parse keeps the WIRE full card (all nine
+    // arms, decimal strings); the trusted full-shape acceptance claim now
+    // reads at the revival boundary — workerRulesLookup hands back `rich`.
+    expect(Object.keys(parsed.rules!.entries[0]!.card).sort()).toEqual([
+      "band", "else", "for", "id", "scope", "then", "unless", "upkeepMicroUsd", "when",
+    ]);
+    expect(workerRulesLookup(parsed.rules!).lookupPolicyCard("rich")).toEqual(rich);
   });
 
   it("refuses malformed riders loud with exact field paths (house grammar)", () => {
@@ -339,7 +371,10 @@ describe("boot.rules codec (additive protocol-v1 rider, ADR-0019 program 5 follo
     });
     const parsed = assertToWorker(boot(tolerant));
     if (parsed.kind !== "boot") throw new Error("expected boot");
-    expect(parsed.rules!.entries[0]!.card).toEqual(LIVE_DECK[0]);
+    // Wave-26 symmetry re-pin: tolerance drops the unknown keys from the
+    // WIRE record; the trusted deep-equal claim reads at the revival edge.
+    expect(Object.keys(parsed.rules!.entries[0]!.card).sort()).not.toContain("_experimental");
+    expect(workerRulesLookup(parsed.rules!).lookupPolicyCard(parsed.rules!.entries[0]!.hash)).toEqual(LIVE_DECK[0]);
   });
 
   it("shape garbage escapes as an envelope reject, NOT a boot (corpus/build precedent)", () => {

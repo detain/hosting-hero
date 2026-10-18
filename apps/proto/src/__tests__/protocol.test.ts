@@ -14,6 +14,7 @@ import {
   encodeProjection,
   fixedToDisplay,
   requireFixed,
+  workerRulesLookup,
   type SimProjection,
 } from "../shared/protocol";
 import { MockSimRunner } from "../runner/mockSimRunner";
@@ -348,8 +349,12 @@ describe("boot.rules round-trip (ADR-0019 program 5 follow-on rider)", () => {
     const decoded = assertToWorker(throughJson(envelope));
     if (decoded.kind !== "boot" || decoded.rules === undefined) throw new Error("expected booted rules");
     expect(decoded.rules.entries.length).toBe(G7_CARDS.length);
+    // Wave-26 symmetry re-pin: the envelope parse keeps the WIRE book (this
+    // test's envelope already crosses in wire form via encodeBootRules); the
+    // trusted revival happens at the ONE worker-boundary builder.
+    const { lookupPolicyCard } = workerRulesLookup(decoded.rules);
     for (let i = 0; i < G7_CARDS.length; i += 1) {
-      expect(decoded.rules.entries[i]!.card).toEqual(G7_CARDS[i]);
+      expect(lookupPolicyCard(decoded.rules.entries[i]!.hash)).toEqual(G7_CARDS[i]);
     }
   });
 
