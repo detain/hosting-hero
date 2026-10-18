@@ -10,6 +10,11 @@
  *
  * Zero GameState/EconomyState/CompanyNode field additions: the state-freeze
  * law rides; every fact a campaign needs already has a facet.
+ *
+ * endings.ts is the campaign's terminal readout (Act III rung): a pure
+ * projection that SELECTS one of three §9.9 endings — obituary, exit,
+ * quiet-handoff — from the finished report + final node. It writes nothing and
+ * is never consulted by chain.ts, so the digest-prefix law is untouched.
  */
 
 export {
@@ -41,3 +46,11 @@ export {
   digestCampaignReport,
 } from "./chain.ts";
 export type { CampaignAuthority, CampaignRunOptions, CampaignReport } from "./chain.ts";
+
+export { endCampaign, ENDING_KINDS } from "./endings.ts";
+export type {
+  CampaignEnding,
+  CampaignEndingKind,
+  CampaignEndingEvidence,
+  CampaignChapterOutcome,
+} from "./endings.ts";
