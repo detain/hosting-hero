@@ -107,6 +107,7 @@ import {
   type ExternalIntent,
   type Fixed,
   type LaneStats,
+  type MoneyUnit,
   type NodeRecord,
   type ObservedCell,
   type ObservedKey,
@@ -1045,6 +1046,20 @@ export interface SimCoreRunnerOptions {
    *  mirrors `pricing` EXACTLY (fastForward.ts sibling). ABSENT ⇒ key
    *  OMITTED per tick (empty⇒omitted byte-identity law @984759b). */
   readonly negotiate?: NegotiateBook;
+  /** L-SMR (ADR-0016 mechanic B, wave-27): the sell-market CATALOG —
+   *  priceKey → host-authored market rate µ$, presence-spread into the money
+   *  fold's `EconomyTickIn.sellMarketRates` where it OVERRIDES the installed-
+   *  base anchor for the sell acceptance dice (economy/tick.ts step 5.5).
+   *  Mirrors the scenario lane's run-config leg EXACTLY (world fact, era
+   *  posture): a HOST fact about the market — the PANEL may never arm it, a
+   *  UI-supplied feed would be sell fiction the player grades. ABSENT ⇒ the
+   *  key is OMITTED per fold (@984759b law) ⇒ the boot goldens
+   *  (ca8863849cb3db32 / 780b1cbc61dff760) and money goldens
+   *  (25_005_307_300n / 25_109_732_500n) byte-stand. ZERO boot/protocol
+   *  change: the catalog never crosses the worker wire v0 (PROTOCOL_VERSION
+   *  stays 1) — a future `boot.catalog` rider is the candidate, NOT built
+   *  here; construction-site hosts (fakeWorker tests) pass it directly. */
+  readonly sellMarketRates?: ReadonlyMap<string, MoneyUnit>;
   /** §7.7 recovery engine (ADR-0012 wiring, mirrors fastForward.config.
    *  recovery): arms the driver's recovery fold — windows, strikes, locks
    *  and gradual-restoration throttling run inside the SIM. ABSENT ⇒ the
@@ -1132,6 +1147,10 @@ export class SimCoreRunner implements SimRunner {
   /** Lane E1 severity dial, forwarded verbatim to `corruptionOutageSecs`
    *  (undefined ⇒ the adapter's default 60n ⇒ pre-dial byte-identity). */
   private readonly corruptionOutageSecPerCorruption: bigint | undefined;
+  /* ADR-0016 mechanic B host catalog leg (L-SMR, option above): undefined on
+     every default runner — the fold spread below stays dead and the shipped
+     goldens ride untouched. */
+  private readonly sellMarketRates: ReadonlyMap<string, MoneyUnit> | undefined;
   private readonly plans = new Map<number, WavePlan>();
   private readonly envelopes = new Map<number, WaveEnvelope>();
   /** Witness of the rule inputs each lazy plan actually rode (B4 liveness). */
@@ -1332,6 +1351,7 @@ export class SimCoreRunner implements SimRunner {
     this.table = options.table ?? SHARED_WEB_G1_TABLE;
     this.familyOverride = options.familyOverride;
     this.corruptionOutageSecPerCorruption = options.corruptionOutageSecPerCorruption;
+    this.sellMarketRates = options.sellMarketRates;
     this.windows = planWaveWindowSchedule(this.table, WAVE_START_MINUTE);
     this.oversellDeclared = bundleDeclaresOversellSlider(JSON.parse(sharedWebBundleRaw));
     const chain: DirectorState[] = [];
@@ -1818,10 +1838,15 @@ export class SimCoreRunner implements SimRunner {
           /* Sell-offer forward (ADR-0016 mechanic B, mirrors the negotiate
              leg): embedded book's offer map IS sellOffers' type; absent
              book ⇒ key omitted ⇒ the money-golden-carrying input shape
-             byte-identical. No sellMarketRates leg: the proto host has no
-             catalog authority — offers anchor on keyed contract MRCs (the
-             priceKeys seam) or stay honestly unadjudicated. */
+             byte-identical. The catalog leg (L-SMR, wave-27): the host
+             option — never a panel feed (world fact, era posture) — rides
+             beside it with the SAME presence law; absent ⇒ key omitted,
+             offers anchor on keyed contract MRCs (the priceKeys seam) or
+             stay honestly unadjudicated. A non-empty catalog WITHOUT a book
+             is inert by the fold's own gate (tick.ts 5.5), so the boot and
+             money goldens byte-stand in every catalog-only arm. */
           ...(this.game.sell !== undefined ? { sellOffers: this.game.sell.entries } : {}),
+          ...(this.sellMarketRates !== undefined ? { sellMarketRates: this.sellMarketRates } : {}),
           /* Empty buffer ⇒ key omitted ⇒ the pre-death input shape (and the
              goldens riding it) byte-identical. */
           ...(this.pendingRefusalWitness.length > 0

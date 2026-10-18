@@ -174,6 +174,22 @@ export interface ScenarioRunConfig {
    *  the `transitions` echo INSIDE the sparse `era` key ONLY for a
    *  non-empty calendar). */
   readonly eraTransition?: readonly EraTransition[];
+  /** L-SMR (ADR-0016 mechanic B, wave-27): the market-rates CATALOG — priceKey
+   *  → host-authored market rate µ$, forwarded verbatim into the money fold's
+   *  `EconomyTickIn.sellMarketRates` where it OVERRIDES the installed-base
+   *  anchor for the sell acceptance dice (economy/tick.ts step 5.5). WORLD
+   *  FACT, NOT DOC DATA (era posture, ADR-0019 program 4 — a fact about the
+   *  world rides the run-config; the DOC may never carry a market feed, that
+   *  would be sell fiction, not a read: the runner's self-grading refusal
+   *  law). Keys
+   *  ride the shared priceKey grammar `{plan,contract-class,sku}:id` — the
+   *  closed set drift-pinned economy/elasticity.ts PRICE_KEY_KINDS ↔
+   *  pipeline/intent-door.ts PRICE_TARGET_KINDS. ABSENT or EMPTY ⇒ the key is
+   *  OMITTED at the fold (key-free absence, @984759b law) ⇒ every shipped
+   *  wire byte-stands (all 31 carry no catalog by construction). Non-bigint
+   *  or negative VALUES throw at the seam pre-tick-1 (BAD_MONEY wall below),
+   *  never limping to the engine's adjudication-time RangeError (sell.ts). */
+  readonly sellMarketRates?: ReadonlyMap<string, MoneyUnit>;
 }
 
 /** Cumulative trace census — the report's "what happened" roll-up. */
@@ -916,6 +932,26 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
       `scenario[BAD_ERA] at 'runScenario.eraTransition': eraTransition rides the eraYear+eraBundle pair — a bare calendar has no world to step (${String(config.eraTransition.length)} steps armed, eraYear ${String(config.eraYear)}, eraBundle ${config.eraBundle === undefined ? "undefined" : config.eraBundle.id})`,
     );
   }
+  /* L-SMR (ADR-0016 mechanic B): the sell catalog is money, so the seam
+     parses it — the engine's own refusal (economy/sell.ts) only fires when a
+     bad entry REACHES adjudication, i.e. possibly tick 50 into the run; a
+     host misconfig must die before the first dice, mirroring the era pair-
+     walls above. Non-negative bigint µ$ is the whole law (zero is legal and
+     reads as no-denominator: the fold skips it exactly like a missing rate).
+     EMPTY map ⇒ key-free absence downstream (the @984759b omission law), so
+     the derivation collapses it to undefined rather than forwarding a
+     present-but-empty key. */
+  if (config.sellMarketRates !== undefined) {
+    for (const [key, rate] of config.sellMarketRates) {
+      if (typeof rate !== "bigint" || rate < 0n) {
+        throw new Error(
+          `scenario[BAD_MONEY] at 'runScenario.sellMarketRates': market rate for '${key}' must be a non-negative bigint of micro-USD, got ${String(rate)}`,
+        );
+      }
+    }
+  }
+  const sellCatalog: ReadonlyMap<string, MoneyUnit> | undefined =
+    config.sellMarketRates !== undefined && config.sellMarketRates.size > 0 ? config.sellMarketRates : undefined;
   /* L-CP2: resolve the seat BEFORE the mint — noc-shift's three hands are a
    * minting fact (state.hands is the authority; the door's fallback mirrors
    * it, the pre-existing two-reading law at :845). Unarmed docs keep the
@@ -1251,10 +1287,15 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
            observation.sellVerdicts — acceptance, the thing the door receipt
            never proved. Shipped wires carry no sell rail, so `game.sell`
            stays absent and every mission digest rides byte-identical. The
-           sellMarketRates catalog leg STAYS absent by design: the fold's
-           installed-base anchor (a registered contract's price-key MRC) is
-           the only price authority a scenario may ever reach — inventing a
-           scenario-owned market feed would be sell fiction, not a read. */
+           sellMarketRates catalog leg (L-SMR, wave-27 review-minor #4) rides
+           the HOST's run-config above — a world fact in the era posture. It
+           may NEVER become doc data: the fold's anchor is either the host's
+           honest market reading or the installed base (a registered
+           contract's price-key MRC); a scenario-owned market feed would be
+           sell fiction, not a read — the self-grading refusal law stands,
+           relocated from the leg to its source. Absent/empty catalog ⇒ key
+           omitted (key-free absence @984759b) ⇒ every shipped wire byte-stands. */
+        ...(sellCatalog === undefined ? {} : { sellMarketRates: sellCatalog }),
         topic: "scenario",
         dunningEngineOwned: doc.limits.dunningEngineOwned,
         witness: refusalWitness,
