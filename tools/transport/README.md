@@ -127,6 +127,33 @@ Sim usage is exclusively via `@hh/sim-core` subpath exports (`./types`,
 `./kernel`, `./replay`, `./observed`); relay usage via the `relay-tools`
 barrel. Zero sim-core edits.
 
+## Repro the §4.1 trace without vitest
+
+A human (or a PHP carrier author, or any shell) can replay the exact
+CARRIER-CONTRACT.md §4.1 reference trace against the real hub without the
+test runner:
+
+```sh
+cd tools/transport
+node --experimental-transform-types test/carrierTrace.repro.ts
+```
+
+It parses the fenced JSONL block (the same fail-loud drift discipline as the
+CI player `test/carrierTrace.test.ts` — the block, not the prose, is the
+authority), drives the real hub + real clients over a synchronous replay
+port, prints all 27 hub out-frames in global fan order (index, seat,
+canonical bytes), the client-side witnesses (§4.1 item 3, informational),
+and the computed `timelineDigest`. **Exit semantics:** `0` only when every
+emission byte-equals its `out` row in fan order, the §4.5 codec round-trip
+ritual holds, every `drain` consumed exactly its paired `in`, the terminal
+`end` witness matches (logLen, lastStamp, ledger BYTES, digest), the digest
+equals the hard-pinned `de1d4c0f941333eb` (§4.3), the frame census equals
+the pinned 27, and the scenario faulted nothing; any divergence prints a
+full report and exits `1`. It is deliberately NOT part of the vitest surface
+(the include stays `test/**/*.test.ts`) — this is the repro-outside-CI arm.
+Law for editors: the router here and in the CI player must change together;
+neither owns authority — the fence does.
+
 ## Deferred rungs (named, not silently open)
 
 - **Auth** (who may hold seat "alice") — PHP/Workerman's room layer; the
