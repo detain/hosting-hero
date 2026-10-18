@@ -189,7 +189,7 @@
     "availableFrom": "2009",
     "obsoleteBy": null,
     "eraOverrides": {},
-    "_todo": "§0.4 era grid names 2009 = shared/cPanel era; obsoleteBy null = still an active line in the era grid (never obsoleted on-page)."
+    "_todo": "§0.4 era grid names 2009 = shared/cPanel era — the grid sentence verbatim: '2009 shared-hosting-and-cPanel' (:653); the 2026-10-18 era-dating pass (ADR-0019 program 8) recorded the quote so the anti-forgery gate in loader/__tests__/era-dating.test.ts machine-checks it against hosting_game.md. Known doc-internal divergence RECORDED, not resolved: §9.1's campaign dates 'shared hosting (2003)' (:32959); the §0.4 grid is the shelf table the resolver reads and §9.1 is one campaign's retelling, so the authored value stays 2009 — both phrases' continued presence in the doc is pinned. obsoleteBy null = still an active line in the era grid (never obsoleted on-page)."
   },
 
   "economy": {

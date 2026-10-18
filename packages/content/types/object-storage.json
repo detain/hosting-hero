@@ -181,7 +181,7 @@
     "availableFrom": null,
     "obsoleteBy": null,
     "eraOverrides": {},
-    "_todo": "§0.4 era grid does not date the object-storage line; §5.6:20785 documents it only on the PREREQUISITE side ('Object storage + verified restores → unlocks Backup/DR'). Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass."
+    "_todo": "§0.4 era grid does not date the object-storage line; §5.6:20785 documents it only on the PREREQUISITE side ('Object storage + verified restores → unlocks Backup/DR'). Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass. VERDICT 2026-10-18 (era-dating pass, ADR-0019 program 8): the owning pass searched the doc for founding prose and found NONE — hosting_game.md contains no '2006' anywhere and no 'mid-2000s' outside this pack's own 1998 rung (a worldbuilding phrase in lane-authored copy, not doc prose; the §0.3 'S3-alike' row names the class without dating it). STAYS NULL. The 1998 rung's denial ('Pre-era for this line, declared honestly') is now machine-pinned by loader/__tests__/era-dating.test.ts: the resolver may never grant this line 1998."
   },
 
   "economy": {

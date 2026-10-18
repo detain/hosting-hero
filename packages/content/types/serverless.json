@@ -180,7 +180,7 @@
     "availableFrom": null,
     "obsoleteBy": null,
     "eraOverrides": {},
-    "_todo": "§0.4 era grid does not date the serverless line; §5.6:20798 gates it by CAPABILITY, not era — 'Kubernetes competence + multi-tenant isolation → unlocks Container platform / PaaS, then Serverless' (verbatim) — a prerequisite set, recorded in relations.unlocks, not an availableFrom year. Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass."
+    "_todo": "§0.4 era grid does not date the serverless line; §5.6:20798 gates it by CAPABILITY, not era — 'Kubernetes competence + multi-tenant isolation → unlocks Container platform / PaaS, then Serverless' (verbatim) — a prerequisite set, recorded in relations.unlocks, not an availableFrom year. Placeholder per §0.4 R66 law — never invented; status is 'undocumented' to the era resolver until the owning pass. VERDICT 2026-10-18 (era-dating pass, ADR-0019 program 8): no date prose exists — the doc names no '2014' at all (zero matches), its first-visitor cold-start material (§1.3/§4.2 'First visit expensive, resumption cheap') is joke-and-mechanics, undated, and the 2016 rung's 'true opening rung' claim is the pack's SYNTHESIS of the §5.6 capability gate — synthesis is not the doc's word, so R66 refuses to launder it into a shelf date. STAYS NULL. The rungs' absences ('Nothing on this shelf exists yet' 1998; opening at 2016) are machine-pinned by loader/__tests__/era-dating.test.ts: the resolver may never grant this line 1998 or 2008."
   },
 
   "economy": {

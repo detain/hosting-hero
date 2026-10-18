@@ -102,8 +102,12 @@ describe("real-content Ruleset Diff Lint verdict", () => {
     const bundles = typeFiles.map((name) => loadTypeBundle(readJson("types", name)));
     const live2010 = bundlesLiveInEra(bundles, 2010, { includeUndocumented: true });
     expect(live2010).toEqual(["official:backup-archival", "official:ci-build-farm", "official:colo", "official:dbaas", "official:dedicated", "official:dns-hosting", "official:exchange-colo", "official:game-servers", "official:mail-hosting", "official:object-storage", "official:observability", "official:serverless", "official:shared-web", "official:trunk-group-voip"]);
-    // dedicated, dns-hosting, game-servers, mail-hosting and object-storage eras.availableFrom are unauthored placeholders
-    // (§0.4 R66): without the undocumented opt-in they must NOT be silently granted.
-    expect(bundlesLiveInEra(bundles, 2010)).toEqual(["official:shared-web"]);
+    // The 2026-10-18 era-dating pass (ADR-0019 program 8) authored two shelf
+    // dates — colo 2001 and shared-web 2009, both graded from the §0.4 grid
+    // sentence and machine-pinned by era-dating.test.ts — so documented-only
+    // 2010 lists exactly the dated pair. The other twelve eras.availableFrom
+    // remain unauthored placeholders (§0.4 R66): without the undocumented
+    // opt-in they must NOT be silently granted.
+    expect(bundlesLiveInEra(bundles, 2010)).toEqual(["official:colo", "official:shared-web"]);
   });
 });
