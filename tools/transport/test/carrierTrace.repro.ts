@@ -31,6 +31,9 @@
  * off-limits to this lane (wave-27 brief). So the router below is a faithful
  * copy of the player's, with `fail`-throw seams replaced by a divergence
  * COLLECTOR so one run reports every byte diff, not just the first.
+ * Wave-28 hygiene closed one fidelity drift: the §2.12 `in.synth` marker
+ * validation (player :155) was missing from this parser — both arms now run
+ * the same fail-loud grammar and reject the same corrupt fences.
  * LAW for future editors: this router and the player's must change together;
  * the §4.1 fence they consume is the single authority, never either file.
  *
@@ -63,6 +66,7 @@ interface FrameLine {
   readonly c: "in" | "out" | "resend";
   readonly line: number;
   readonly seat: string;
+  readonly synth: string | null; // carrier-authorship marker (§2.12), in-lines only
   readonly frame: TransportFrame;
   readonly embedded: string; // JSON.stringify of the doc's parsed f (document key order)
   readonly canonical: string; // encodeFrame(frame) — §1.3 canonical bytes
@@ -149,7 +153,9 @@ function parseTraceLine(index: number, raw: string): TraceLine {
     if (typeof rec["f"] !== "object" || rec["f"] === null || Array.isArray(rec["f"])) fail(line, `${String(c)}.f must be a frame object`);
     const embedded = JSON.stringify(rec["f"]);
     const frame = decodeFrame(embedded); // the REAL codec parses the recorded bytes — fail-loud on an illegal frame
-    return { c, line, seat, frame, embedded, canonical: encodeFrame(frame) };
+    const synth = c === "in" ? (rec["synth"] ?? null) : undefined;
+    if (c === "in" && synth !== null && typeof synth !== "string") fail(line, "in.synth marker must be a string");
+    return { c, line, seat, synth: (synth ?? null) as string | null, frame, embedded, canonical: encodeFrame(frame) };
   }
   if (c === "end") {
     const logLen = rec["logLen"];
