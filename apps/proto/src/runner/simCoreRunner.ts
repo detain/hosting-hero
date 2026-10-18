@@ -1055,7 +1055,12 @@ export interface SimCoreRunnerOptions {
    *  UI-supplied feed would be sell fiction the player grades. ABSENT ⇒ the
    *  key is OMITTED per fold (@984759b law) ⇒ the boot goldens
    *  (ca8863849cb3db32 / 780b1cbc61dff760) and money goldens
-   *  (25_005_307_300n / 25_109_732_500n) byte-stand. ZERO boot/protocol
+   *  (25_005_307_300n / 25_109_732_500n) byte-stand. PRESENT-BUT-EMPTY is
+   *  behaviorally identical: an empty Map spreads through, sell.ts anchor-
+   *  misses every key and the money fold keeps identity (pinned
+   *  simCoreRunner.catalog.test.ts — empty-option 100-frame digests
+   *  byte-equal to OFF); the scenario leg collapses empty⇒omission at its
+   *  own seam. ZERO boot/protocol
    *  change: the catalog never crosses the worker wire v0 (PROTOCOL_VERSION
    *  stays 1) — a future `boot.catalog` rider is the candidate, NOT built
    *  here; construction-site hosts (fakeWorker tests) pass it directly. */

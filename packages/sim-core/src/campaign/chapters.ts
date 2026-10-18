@@ -1292,8 +1292,10 @@ export const CAMPAIGN_ACT_TWO: CampaignDoc = parseCampaignDoc(ACT_TWO_WIRE);
  *   (300M + two 5M invoices, dunning-quiet) — the registry twins corpse at
  *   the same clock (deaths ["churn-collapse"]), the §1.6 floor clause heals.
  * - digests: solo 7f0853575030d719 (×100 Set.size 1, twin byte-equal);
- *   four-arc tail bd36d3be169cf130 with the three earlier arc digests
- *   RE-PROVEN UNMOVED (28df3ca4e6c90977 / 86595ae9b21853b3 / 18ef1b5675d0ea27).
+ *   four-arc tail 739d411cd5329eb1. WAVE-27 note: growing Act II to twelve
+ *   beats (b6187c4) MOVED the four-arc tail (was bd36d3be169cf130) and the
+ *   three-arc digest (was 18ef1b5675d0ea27, now 5f79eb776a0bafaf); the two
+ *   earlier arc digests 28df3ca4e6c90977 / 86595ae9b21853b3 RE-PROVEN UNMOVED.
  */
 const ACT_THREE_WIRE = {
   schema: "hh-campaign@1",
