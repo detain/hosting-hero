@@ -599,7 +599,18 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
    - The relation-glyph chord below is PORT-SHAPE DATA (R32 glyph identity),
      not ledger jobs: #e07b39 is the power GLYPH hue (deliberately distinct
      from ledger "copper" #c97a45, which carries the canvas power-tree job),
-     #e8e6df control / #9f7be6 trust / #9aa7b8 plate-mix are materials. Kept.
+     #e8e6df control / #9f7be6 trust are materials. Kept.
+   - The plate-mix LEFT the residue list (wave-26 owner ruling: zero bespoke
+     plate hexes repo-wide). Its off-ledger #9aa7b8 retired onto the ledger
+     grey — the G7 recipe @7fed0c4, var(--hh-hue-grey) over var(--hh-surface)
+     — at a deeper lift (90%, not 88%) because this plate carries ink G7's
+     does not: a faded kind/meta pair and the alarm line. The retired literal
+     put the 2008 accent id at an unaudited 4.20, and the old 0.7 fade cleared
+     the 4.5 floor at NO lift (2008 topped at 3.57 even on bare surface) —
+     the pairings moved, the floors never did. The hairline plate stroke is
+     decorative with its rationale earned (census `accent-hairline-frame`
+     precedent); the full pairing audit lives-parses every dial in
+     __tests__/g4Hues.test.ts.
    - State channels ride ledger vars: alarm klaxon (device danger, pull-to-
      disconnect, danger manifest), azure bounce-notice (door refusals — the
      bounce hue was minted round-4 precisely for commands bounced off the
@@ -614,7 +625,7 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
   --g4-hue-control: #e8e6df;
   --g4-hue-trust: #9f7be6;
   --g4-grid: color-mix(in srgb, var(--hh-accent) 14%, transparent);
-  --g4-plate: color-mix(in srgb, var(--hh-surface) 82%, #9aa7b8);
+  --g4-plate: color-mix(in srgb, var(--hh-surface) 90%, var(--hh-hue-grey));
   --g4-ink: var(--hh-accent);
   font-family: var(--hh-typeface, "Space Grotesk", monospace);
   color: var(--g4-ink);
@@ -655,7 +666,7 @@ const visibleReceipts = computed(() => snap.value.receipts.slice(-9).reverse());
 
 .g4-device-plate { fill: var(--g4-plate); stroke: color-mix(in srgb, var(--g4-ink) 60%, transparent); stroke-width: 1; rx: 6; }
 .g4-device-id { fill: var(--g4-ink); font-size: 15px; font-weight: 700; letter-spacing: 0.05em; }
-.g4-device-kind, .g4-device-meta { fill: var(--g4-ink); font-size: 10.5px; opacity: 0.7; }
+.g4-device-kind, .g4-device-meta { fill: var(--g4-ink); font-size: 10.5px; opacity: 0.95; } /* 0.7 faded below the 4.5 floor in 3 eras — g4Hues moved the fade, never the floor */
 .g4-device-alarm { fill: var(--hh-hue-alarm); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
 
 .g4-edge { fill: none; }
