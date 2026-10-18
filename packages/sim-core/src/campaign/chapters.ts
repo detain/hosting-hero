@@ -1,12 +1,15 @@
 /** chapters.ts — the authored campaign content (Prologue + Act I + Act II + Act III).
  *
  *  This module is DATA riding law, zero new authority: four `hh-campaign@1`
- *  documents parsed through the L-CP1 wall (`parseCampaignDoc`), twelve
+ *  documents parsed through the L-CP1 wall (`parseCampaignDoc`), fourteen
  *  perspective-bearing or bespoke scenario documents (`hh-scenario@1`)
  *  authored in-module because `runScenario` accepts host-authored docs without
  *  scenarios.ts registration (the L-CP3 PerspectiveScenarioWire precedent —
- *  two §1.2 seats in Act I, one seat plus THE HARDEST LESSON death level in
- *  Act II, and eight Act III levels — two seats, three authored homages of
+ *  two seats in Act I, two seats plus THE HARDEST LESSON death level plus the
+ *  wave-27 money-ledger beats in Act II — where the noc-shift seat is worn a
+ *  SECOND time at b-11, the campaign's first perspective REUSE (no lint law
+ *  forbids it: roster membership and cadence are per-chapter tests) — and eight
+ *  Act III levels — two seats, three authored homages of
  *  §1.5 fiction, and the bespoke beats including the exit run-up; see the
  *  ACT_THREE notes for the corpse-audit roster law) — and a chapter-meta
  *  ledger (archetype / specLine / perspective /
@@ -43,18 +46,28 @@
  *    the shipped doc), so Act I tests assert the win-through ledger. Act II
  *    answers the gap with an AUTHORED level that dies in the shape — the
  *    §1.6 shortening made playable (see ACT_TWO notes: probe trail verbatim).
- *  - §1.9's per-act "two perspective levels" floor is met by Act I, filed as
- *    direct tension by Act II (one seat — a 7-beat act cannot hold two seats
- *    ≥5 apart after the vigil at tour index 10), and RESTORED by Act III:
- *    seats c-4/c-9 land at indices 21 and 26, gaps 5 and 5 — the first act to
- *    satisfy §1.9's floor-of-two without breaking the global every-5 cadence.
- *    The Prologue is exempt BY OD-19 (first-mastery-inside-3-minutes: a seat swap
+ *  - §1.9's per-act "two perspective levels" floor was met by Act I, filed as
+ *    direct tension by the 7-beat Act II (a second seat could not fit ≥5 after
+ *    b-6's tour index 16), and was RESTORED by Act III (seats c-4/c-9 at indices
+ *    21 and 26 — gaps 5 and 5 under the standing global every-5 law).
+ *    WAVE-27 RESOLUTION (dated rider 2026-10-19, owner-commissioned full-12
+ *    growth): Act II now carries TWO seats — b-6 and b-11 — with b-11 REUSING
+ *    the §1.2 noc-shift roster row: the campaign's first perspective reuse,
+ *    lawful by construction (the lint law is roster-membership + cadence, and
+ *    PERSPECTIVE_EXPRESSIBILITY is keyed per perspective, never per chapter).
+ *    The whole-tour seats land at indices 4, 10, 16, 21, 26, 31 — gaps
+ *    {6,6,5,5,5} — for the FIRST TIME IN CAMPAIGN HISTORY every act sits at the
+ *    per-act floor of two without breaking the cadence. The tension the 7-beat
+ *    act filed is CLOSED by the growth its own _todo commissioned.
+ *    The Prologue stays exempt BY OD-19 (first-mastery-inside-3-minutes: a seat swap
  *    before the player knows the default seat is tuition friction, not shape).
  *  - Act III's re-ride roster is CORPSE-filtered (wave-26 probe trail,
  *    ACT_THREE docblock verbatim): every shipped §1.5 storm doc the design
  *    dossier proposed either opens ABOVE the scripted bridge (the-covenant
  *    100B, review-bomb 1B, the-sev-0 500M — the never-poorer cash-floor law
- *    refuses silent rebases and no new thin-ride exception is granted) or
+ *    refuses silent rebases and grants no ACT III thin-ride exception (the
+ *    machinery is Act II's alone, and its roster grew only inside Act II at
+ *    the wave-27 full-12 expansion) or
  *    rides to a WIN AS A DISSOLVED COMPANY (an empty book arms §2.9's
  *    churn-floor watch from t1, the three-day spell executes the company at
  *    ~t44 cash-independently, and a doc without a death lose-line grades the
@@ -117,7 +130,7 @@ export interface ChapterMeta {
   /** L-CP2 seat when the chapter is a perspective level (§1.2 roster id). */
   readonly perspectiveId?: string;
   /** §2.11 tier the beat rides. Prologue/Act I teach T0–2 by OD-19 fiat and
-   *  ship no row; every Act II chapter declares 3 or 4 (§1.9 :5117's
+   *  ship no row; every Act II chapter declares 3 or 4 (§1.9 :5133's
    *  "Tiers 3–4"), and every Act III chapter declares 5 or 6 (§1.9 :5126's
    *  "Act III (Tiers 5–6)"), the lint law reading the rise from these
    *  numbers. Tier 5/6 has no bespoke engine mechanics at the level layer —
@@ -348,6 +361,141 @@ const NOC_ONCALL_DESK_WIRE = {
 } satisfies PerspectiveScenarioWire;
 
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* Act II wave-27 authored docs — the prevention-shift seat, the cert cliff */
+/* ------------------------------------------------------------------ */
+
+/** NOC Shift seat worn a SECOND time — the campaign first perspective REUSE
+ *  (wave-27; legality disclosed in the ACT_TWO notes: roster membership +
+ *  cadence are per-chapter tests and PERSPECTIVE_EXPRESSIBILITY is keyed per
+ *  perspective). :1274 sentence again — "A pure reactive level: no building
+ *  allowed, only triage." — but the fiction moved: THE PHONE RINGS AGAIN, AND
+ *  THIS TIME THE DESK IS THE PREVENTION. The rail is deliberately b-6 twin
+ *  (the taxed t5 escalation pair refuses attention-debt through the rung-6 loan
+ *  law; place AND connect die at the seat tape; five replies hold the four-
+ *  tick cadence) because the beat is the SAME desk after the lessons — the
+ *  census is b-6 mirror and the green-site arithmetic (1/min on 100 slots)
+ *  makes the zero-economy bridge verbatim the whole bankroll. specLine 1274
+ *  (b-6 1267 predates the heading drift — the meta-to-doc equality law is
+ *  per chapter, and this doc cites the TEXT-true heading line). */
+const NOC_PREVENTION_SHIFT_WIRE = {
+  schema: "hh-scenario@1",
+  id: "noc-prevention-shift",
+  name: "The Prevention Shift",
+  brief:
+    "The phone rings again, and this time the desk is the prevention: the same taxed NOC chair, the same taped build hands, a queue that remembers last quarter page. Escalate what you must, and let prevention be the boring win it was always supposed to be.",
+  specRef: "§1.5 The Prevention Shift (campaign-authored perspective level — the §1.2 noc-shift seat worn a second time)",
+  specLine: 1274,
+  perspective: { id: "noc-shift" },
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [],
+  traffic: {
+    tableId: "noc-prevention-shift",
+    // Green-site arithmetic, b-6 verbatim: the lesson is at the door.
+    segments: [{ fromMinute: 0, ratePerMin: 1 }],
+  },
+  intents: [
+    // The taxed phone, twin-row — escalation culture priced by rung 6.
+    { atTick: 5, verb: "communicate", args: { target: null, note: "prevent-escalate-a" } },
+    { atTick: 5, verb: "communicate", args: { target: null, note: "prevent-escalate-b" } },
+    // The two build thoughts the prevention desk still forbids.
+    { atTick: 11, verb: "place-device", args: { nodeId: "web-1", deviceKind: "web", template: null } },
+    { atTick: 15, verb: "connect-ports", args: { relation: "data", from: "web-1", to: "web-2", slot: null } },
+    // The prevention itself: five more replies on the four-tick cadence.
+    { atTick: 9, verb: "communicate", args: { target: null, note: "prevent-q-2" } },
+    { atTick: 13, verb: "communicate", args: { target: null, note: "prevent-q-3" } },
+    { atTick: 17, verb: "communicate", args: { target: null, note: "prevent-q-4" } },
+    { atTick: 21, verb: "communicate", args: { target: null, note: "prevent-q-5" } },
+    { atTick: 25, verb: "communicate", args: { target: null, note: "prevent-q-6" } },
+  ],
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 30 },
+      { kind: "intents-executed-above", verb: "communicate", count: 5 },
+      { kind: "intents-executed-below", count: 8 },
+      { kind: "intents-refused-above", verb: "communicate", count: 0 },
+      { kind: "intents-refused-above", verb: "place-device", count: 0 },
+      { kind: "intents-refused-above", verb: "connect-ports", count: 0 },
+      { kind: "bounces-below", count: 1 },
+    ],
+    lose: [{ kind: "death-by-cause", cause: "any" }],
+  },
+  limits: {
+    maxSimMinutes: 60,
+    handCapacity: 1,
+    // The seat overrides attention cost verbatim from rung 6: capacity one,
+    // the phone taxed at one attention per call.
+    attention: { capacity: 1, cost: { communicate: 1 } },
+  },
+} satisfies PerspectiveScenarioWire;
+
+/** b-12: §1.5 "The Certificate Expired / Cert Apocalypse" (:3275 — "At T+0
+ *  your wildcard cert expires and every visitor sees a scary browser warning";
+ *  "a non-attack can be worse than an attack"). AUTHORED because the campaign
+ *  clock must land ON the cliff, not after it: the play is a SCHEDULE race —
+ *  four certificates coming off a reissue calendar against a ticking term-end
+ *  — and the meta files it Schedule, not the heading Reach-State label (the
+ *  heading names the goal state; the archetype names the PLAY; the c-7
+ *  Negotiate-vs-Reach-State discretion at :4019 is the precedent, disclosed).
+ *  The traffic scar is the Sev-0 arc arithmetic re-skinned (8/min browser-
+ *  warning bleed, the t60 crater to 2, the t150 reissue window back to 14 on
+ *  400 slots — rho ~ 0, the bounces gates are ASSERTIONS). The four 5M monthly
+ *  accounts cliff at biz-minute 24_000 = ceil(24_000*7/720) = sim t234 —
+ *  INSIDE the 240 win clock (the parse wall law: a cliff past the cap is a
+ *  refusal, "the renewal drama can never play"), and autoRenew:false hands
+ *  every account to the retention dice. The five campaign seeds take the dice
+ *  honestly: the cliff lapses a shifting 1-to-3 of the four certificates, so
+ *  the grade is churn-below:4 vs churn-above:3 — survival needs ONE renewed
+ *  certificate; only the total calendar failure loses (never observed on the
+ *  five probed seeds). Opens UNSET — ON the
+ *  scripted bridge verbatim (equality satisfies the never-poorer law; no
+ *  thin-ride exception needed, unlike its three re-ride siblings above). */
+const THE_CERT_CLIFF_WIRE = {
+  schema: "hh-scenario@1",
+  id: "the-cert-cliff",
+  name: "The Certificate Cliff",
+  brief:
+    "The wildcard expired and every visitor now sees the scary warning: four certificates must come off the reissue calendar before the board read, while the traffic scar bleeds, craters, and demands the reopen. Schedule the race and close the act on prevention measured in churn.",
+  specRef: "§1.5 The Certificate Expired (campaign-authored Act II level — the scheduled reissue race)",
+  specLine: 3275,
+  board: {
+    nodes: [{ id: "web-1", kind: "shared-web", slots: 400, serviceTimeUs: 2_000_000 }],
+    edges: [],
+  },
+  contracts: [
+    // Four certs on four schedules — every one a retention dice at the cliff.
+    { id: "cc-01", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: false },
+    { id: "cc-02", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: false },
+    { id: "cc-03", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: false },
+    { id: "cc-04", mrcMicroUsd: 5_000_000, billingCycle: "monthly", termEndMin: 24_000, termMonths: 1, autoRenew: false },
+  ],
+  traffic: {
+    tableId: "cert-cliff-scar",
+    segments: [
+      { fromMinute: 0, ratePerMin: 8 },
+      { fromMinute: 60, ratePerMin: 2 },
+      { fromMinute: 150, ratePerMin: 14 },
+    ],
+  },
+  objectives: {
+    win: [
+      { kind: "survive-minutes", minutes: 240 },
+      { kind: "churn-below", count: 4 },
+      { kind: "bounces-below", count: 1 },
+      { kind: "no-death-cause", cause: "any" },
+    ],
+    lose: [
+      { kind: "death-by-cause", cause: "any" },
+      { kind: "churn-above", count: 3 },
+      { kind: "bounces-above", count: 32 },
+    ],
+  },
+  limits: { maxSimMinutes: 360, dunningEngineOwned: true },
+} satisfies ScenarioWire;
+
 /* Act III authored docs — homages, seats, bespoke beats (wave-26)      */
 /* ------------------------------------------------------------------ */
 
@@ -618,7 +766,10 @@ const LONG_GRADIENT_WIRE = {
  *  runner.ts's verdict-observed stopReason rides that predicate into the
  *  terminal record — the rung AC-E's endCampaign selects `exit` on
  *  (^win:sell-accepted-above:, @61a1c3b). Anchor law (installed base, NOT a
- *  catalog — the scenario runner never wires sellMarketRates; the only price
+ *  catalog — a doc-carried catalog is FORBIDDEN by the parse wall itself
+ *  ("limits must not carry sellMarketRates"), and the wave-27 host-config
+ *  catalog leg landing on top can only READ one, never mint chapter
+ *  authority; the only price
  *  authority a doc may reach is its own keyed book, sell.ts's anchor):
  *  plan:long-sale anchors at ls-01's 50M MRC, sku:long-sale-b at ls-02's 30M.
  *  Offers at 60% of anchor sit past the acceptance-clamp's deep-cheap ceiling
@@ -762,6 +913,8 @@ export const CHAPTER_AUTHORED_DOCS: Readonly<Record<string, ScenarioDoc>> = Obje
   "support-desk-vigil": parseScenarioDoc(SUPPORT_DESK_VIGIL_WIRE),
   "the-hardest-lesson": parseScenarioDoc(HARDEST_LESSON_WIRE),
   "noc-oncall-desk": parseScenarioDoc(NOC_ONCALL_DESK_WIRE),
+  "noc-prevention-shift": parseScenarioDoc(NOC_PREVENTION_SHIFT_WIRE),
+  "the-cert-cliff": parseScenarioDoc(THE_CERT_CLIFF_WIRE),
   "the-metastable-window": parseScenarioDoc(METASTABLE_WINDOW_WIRE),
   "the-quarter-that-ran-itself": parseScenarioDoc(QUARTER_THAT_RAN_ITSELF_WIRE),
   "the-floor-and-aisle": parseScenarioDoc(FLOOR_AND_AISLE_WIRE),
@@ -893,12 +1046,12 @@ export const ACT_ONE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
 export const CAMPAIGN_ACT_ONE: CampaignDoc = parseCampaignDoc(ACT_ONE_WIRE);
 
 /* ------------------------------------------------------------------ */
-/* ACT II — process → prevention (Tiers 3–4, §1.9 :5117)                 */
+/* ACT II — process → prevention (Tiers 3–4, §1.9 :5133)                 */
 /* ------------------------------------------------------------------ */
 
 /**
- * Seven chapters on the §2.11 Working-Capital tier (:1183 "Deferred revenue,
- * annual prepay, DSO, dunning, bad debt" — the money lessons Act I only
+ * Twelve chapters on the §2.11 Working-Capital tier (:1187 "Deferred revenue,
+ *  annual prepay, DSO, dunning, bad debt" — the money lessons Act I only
  * gestured at), riding the T3 plateau into the T4 succession ash: the
  * money-works re-ride opens on its own authored fiction (300M = the bridge
  * verbatim), the quiet beats test the book, and b-4 THE HARDEST LESSON is the
@@ -908,20 +1061,32 @@ export const CAMPAIGN_ACT_ONE: CampaignDoc = parseCampaignDoc(ACT_ONE_WIRE);
  * succession fires FOR REAL (failure_restart edge + failureOnlyUnlock
  * manifest), and the successor's first chapter b-5 opens on the manifested
  * ledger — an Inherit beat whose "fogged board you didn't build" (§1.9 :5093)
- * is now literally true. Ending on b-7's prevention shift: the child weathers
- * the chargeback wave the parent never saw coming.
+ * Ending on the prevention thesis completed: the child weathers the chargeback
+ * wave the parent never saw coming (b-7), wears the taxed NOC desk a SECOND
+ * time as prevention rather than triage (b-11), and closes the act racing a
+ * certificate cliff its own reissue calendar must beat (b-12).
  *
- * PROPORTIONALITY (recorded honestly, §1.9 :5117): the act is TWELVE levels
- * at full design; this ships SEVEN — the death-in-shape headline, its
- * succession consequence, the tier plateau, and the rehab witness, in the
- * leanest set that makes the arc. §1.9's per-act floor of TWO perspective
- * levels is in DIRECT TENSION with the global ~every-5 cadence the L-CP3 lint
- * law has carried since Act I (a-8's seat at tour index 10 forces any second
- * Act-II seat past index 15, and two seats ≥5 apart cannot fit in a 7-beat
- * act): Act II ships ONE seat (b-6, tour index 16, gap 6) and files the
- * tension rather than break the cadence law. `_todo: §1.9 per-act seat floor
- * (2) vs every-5 global cadence — resolve at full-12 expansion (ADR-0019
- * program 3 note; owner taste row).`
+ * PROPORTIONALITY (§1.9 :5133 act law; wave-27 full-12 growth — the owner-
+ * commissioned expansion that closes the tension this paragraph filed): the
+ * act is TWELVE levels at full design and now SHIPS twelve — the death
+ * headline, its succession consequence, the tier plateau, the rehab witness,
+ * plus the three money-ledger re-rides the §1.6 floor clause prices as NAMED
+ * thin-rides (b-8 collections at 5B authored, b-9 breach at 1B, b-10 Sev-0 at
+ * 500M) and the prevention-shift seat closing the act thesis on the phone it
+ * learned to price. §1.9 per-act floor of TWO perspective levels is RESOLVED
+ * (dated rider 2026-10-19): the 7-beat act could not hold a second seat ≥5
+ * after b-6 tour index 16 and filed the tension; the 12-beat act fits b-11 at
+ * tour index 21 — the whole 32-beat tour seats land at 4, 10, 16, 21, 26, 31,
+ * gaps {6,6,5,5,5}, every act at the floor of two for the FIRST TIME IN
+ * CAMPAIGN HISTORY without breaking the global every-5 cadence.
+ * b-11 REUSES the §1.2 noc-shift roster row — the campaign first perspective
+ * reuse — and it is lawful by construction: the lint tests are roster-
+ * membership + cadence per chapter, and PERSPECTIVE_EXPRESSIBILITY is keyed
+ * by perspective, never by chapter. The fiction earns it: prevention is the
+ * SAME desk after the lessons, not a new desk (the 27-beat tour never reused
+ * a seat; the 32-beat tour reuse is disclosed here and in the b-11 meta row).
+ * _todo: §1.9 per-act seat floor (2) vs every-5 global cadence — RESOLVED at
+ * the full-12 expansion (ADR-0019 program 3 note; owner taste row).
  *
  * PROBE TRAIL (2026-10-18, the death-shape law — candidates run thin-opened
  * at the 300M bridge, never forced):
@@ -983,6 +1148,11 @@ const ACT_TWO_WIRE = {
     { chapterId: "b-5-fogged-board", scenarioId: "runway-six-weeks" },
     { chapterId: "b-6-oncall-desk", scenarioId: "noc-oncall-desk" },
     { chapterId: "b-7-chargeback-shift", scenarioId: "chargeback-wave" },
+    { chapterId: "b-8-collections-week", scenarioId: "collections-week" },
+    { chapterId: "b-9-post-breach", scenarioId: "post-breach-aftermath" },
+    { chapterId: "b-10-sev-0", scenarioId: "the-sev-0" },
+    { chapterId: "b-11-prevention-shift", scenarioId: "noc-prevention-shift" },
+    { chapterId: "b-12-cert-cliff", scenarioId: "the-cert-cliff" },
   ],
   carry: CARRY_RULE,
 } as const;
@@ -990,13 +1160,23 @@ const ACT_TWO_WIRE = {
 /**
  * The never-poorer law (cash-floor lint) carries an AUTHORED exception list:
  * a chapter may open below its authored war chest ONLY when the thin opening
- * is probe-witnessed funding-honest — today exactly one doc, the rehabilitation
- * beat itself. The exception is a DATA row so the lint stays a law with a
- * named, testable seam, never a silently deleted check.
+ * is probe-witnessed funding-honest. The list is DATA so the lint stays a law
+ * with a named, testable seam, never a silently deleted check. FOUR
+ * exceptions, all Act II, all probe-witnessed at the 300M scripted bridge:
+ * the rehabilitation beat itself (b-7) and the wave-27 money-ledger re-rides
+ * (b-8/b-9/b-10) — the three §1.5 siege docs whose authored war chests the
+ * act thesis walks THROUGH at bridge scale, each landing its win line with
+ * the dunning ladder telling the truth on every probed seed.
  */
 export const ACT_TWO_THIN_RIDE_EXCEPTIONS: Readonly<Record<string, string>> = Object.freeze({
   "chargeback-wave":
     "authored 100_000_000_000 µ$ opens on the 300M scripted bridge: the composeSignalRows funding-honest guard (@075a840) turns the thin rebase into a LIVE chargebackFeeRefusals witness (probe win@200, 1 refusal, zero crash) — the Act II prevention thesis, priced.",
+  "collections-week":
+    "authored 5_000_000_000 µ$ opens on the 300M scripted bridge: hourly paper settles from the first hour and the two autoRenew anchors re-sign at their cliff — win@240 probe-witnessed on all five campaign seeds; churn takes accounts, never the company (the cause-specific churn-collapse die-arm never fires in-chain).",
+  "post-breach-aftermath":
+    "authored 1_000_000_000 µ$ opens on the 300M scripted bridge: the six shaken accounts write off at their dice and the board read at t320 lands inside the written-off-below:7 ceiling on all five probed seeds — the breach survives on collections discipline, not on the parent 1B cushion.",
+  "the-sev-0":
+    "authored 500_000_000 µ$ opens on the 300M scripted bridge: the scar arc (10 to 2 to 14 per minute on 24 slots) is dice-free at the bridge — the recovery delta, the bounce budget, and cashEnd land IDENTICAL on all five seeds.",
 });
 
 /** Act II beat ledger. specLines ride each doc's OWN citation (§1.5 heading
@@ -1009,6 +1189,19 @@ export const ACT_TWO_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
   "b-5-fogged-board": { archetype: "Inherit", specLine: 3769, tier: 4 },
   "b-6-oncall-desk": { archetype: "Hold-Without-Hands", specLine: 1267, tier: 4, perspectiveId: "noc-shift" },
   "b-7-chargeback-shift": { archetype: "Diagnose", specLine: 3737, tier: 4 },
+  // wave-27 full-12 beats. b-8/b-9/b-10 re-ride shipped registry docs and
+  // cite THEIR OWN specLines (the meta-to-doc equality law); each opens above
+  // the bridge and rides a NAMED thin-ride exception (see the exception rows
+  // below). b-11 wears the noc-shift seat a SECOND time — the campaign first
+  // perspective reuse, lawful by construction (PROPORTIONALITY rider) and
+  // narratively earned: prevention is the same desk after the lessons; the
+  // 27-beat tour never reused a seat. b-12 files Schedule against its
+  // heading Reach-State label — the c-7 precedent, disclosed in its docblock.
+  "b-8-collections-week": { archetype: "Endure", specLine: 3794, tier: 4 },
+  "b-9-post-breach": { archetype: "Diagnose", specLine: 3229, tier: 4 },
+  "b-10-sev-0": { archetype: "Reach-State", specLine: 3256, tier: 4 },
+  "b-11-prevention-shift": { archetype: "Hold-Without-Hands", specLine: 1274, tier: 4, perspectiveId: "noc-shift" },
+  "b-12-cert-cliff": { archetype: "Schedule", specLine: 3275, tier: 4 },
 });
 
 /** The parsed Act Two. */
@@ -1059,9 +1252,10 @@ export const CAMPAIGN_ACT_TWO: CampaignDoc = parseCampaignDoc(ACT_TWO_WIRE);
  *   (:3673) fires win@40 BEFORE the churn-floor's t44 verdict — probe-clean
  *   at the bridge, deaths [] (the dossier's the-covenant/review-bomb
  *   candidates open at 100B/1B, violating the never-poorer law; the-sev-0's
- *   500M does too; no new thin-ride exception is granted — the exception
- *   machinery stays Act II's alone, and the lint pin "excepted ⇒ ACT_TWO"
- *   is the falsifier that keeps it so).
+ *   500M does too — Act III grants no thin-ride exception of its own; the
+ *   machinery stays Act II's alone (its roster grew to FOUR named rows at the
+ *   wave-27 full-12 expansion, zero Act-III rows), and the lint pin
+ *   "excepted ⇒ ACT_TWO" is the falsifier that keeps it so).
  * - the-tier-ceiling law: tiers 5/6 never had bespoke level mechanics in the
  *   engine (ADR-0018 ceiling list) — the built door verbs (scale/reclaim/
  *   sell/shield) are the mechanics, and the geography is BOARD DATA. Act III

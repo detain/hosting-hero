@@ -6,14 +6,19 @@
  *    non-consecutive, Endure under 30%, perspective cap + every-5 cadence,
  *    the Act II T3→T4 and Act III T5→T6 tier rhythms, unique ids, meta↔doc
  *    specLine agreement, hosting_game.md text anchors, the bridge-never-poorer
- *    cash-floor law with its ONE named thin-ride exception — Act III adds
- *    ZERO exceptions: every c-doc opens at or below the bridge).
+ *    cash-floor law with its FOUR named thin-ride exceptions — every one of
+ *    them Act II (the b-7 rehabilitation beat plus the three wave-27 siege
+ *    re-rides); Act III adds ZERO: every c-doc opens at or below the bridge).
  * 2. The RUNTIME truth: prologue + Act I keep their probe-confirmed win-through
  *    ledgers untouched; ACT II ships the headline — the first authored chapter
  *    that DIES IN THE SHAPE, so chain.ts succession fires through a real
  *    ledger (failure_restart edge, null cash slice, one-spend bootstrap,
  *    obituary museum row) — plus the falsifier that proves the death is
  *    shape-driven: raise the bridge and the same doc wins with zero edges.
+ *    Wave-27 grows the act to TWELVE beats: three §1.5 money-ledger re-rides,
+ *    the campaign's first perspective REUSE (b-11 wears the noc-shift seat a
+ *    second time, resolving the §1.9 per-act seat floor), and a certificate-
+ *    cliff finale that opens ON the scripted bridge with no exception.
  * 3. The THREE-ARC CHAIN (prologue → Act I → testimony → Act II) on one real
  *    lineage graph, where the parent carries fifteen settled chapters and the
  *    child boots the closing beats. Kept SEPARATE from the four-arc test on
@@ -26,7 +31,7 @@
  *    exit-carrier stopReason end-to-end, and the run-up-prefix EXIT witness
  *    (the tour that plays all nine hands off; the tour that SELLS ends in
  *    `exit` — §1.5 :4023's split made literal).
- * 5. The FOUR-ARC CHAIN — 27 beats on one real lineage graph: the Act II
+ * 5. The FOUR-ARC CHAIN — 32 beats on one real lineage graph: the Act II
  *    child inherits the whole Act III tour, and every earlier digest is
  *    re-checked UNMOVED on the same construction.
  *
@@ -128,9 +133,9 @@ function run(campaign: CampaignDoc): CampaignReport {
 
 /** Act II runs on a testimony-seeded founder: b-4's death must find the 3-node
  *  minimum or chain.ts refuses the succession by law (BAD_REF). */
-function runUnlocked(campaign: CampaignDoc): CampaignReport {
+function runUnlocked(campaign: CampaignDoc, seedOffset = 0): CampaignReport {
   const { graph, nodeId } = founder();
-  return runCampaign(campaign, BASE_SEED, { graph: seedTestimony(graph, nodeId), nodeId, authority });
+  return runCampaign(campaign, BASE_SEED, { graph: seedTestimony(graph, nodeId), nodeId, authority, seedOffset });
 }
 
 /** One shared Act-I traversal (≈2,075 engine ticks) — collected once,
@@ -193,13 +198,14 @@ describe("chapter meta — the §1.9 authoring law", () => {
   it("Endure stays under 30% of the whole campaign", () => {
     const all = Object.values(CAMPAIGN_CHAPTER_META);
     const enduring = all.filter((row) => row.archetype === "Endure").length;
-    // wave-26 DISCLOSED re-pin 2→4: Act III adds its two Endure beats — the
-    // ratchet audit played (c-2, §1.11 :5363) and the long gradient (c-6).
-    expect(enduring).toBe(4); // a-6 + b-2 + c-2 + c-6; 4/27 = 14.8%, under §1.9's 30% cap
+    // wave-26 re-pin 2→4 (c-2 + c-6), wave-27 DISCLOSED re-pin 4→5: b-8
+    // collections-week is an Endure beat — the accounts arrive on their own
+    // calendar and the act endures the ledger. 5/32 = 15.6%.
+    expect(enduring).toBe(5); // a-6 + b-2 + b-8 + c-2 + c-6, under §1.9's 30% cap
     expect(enduring / all.length).toBeLessThan(0.3);
   });
 
-  it("perspective levels: exactly five, cap 1/chapter, five-beat cadence, roster ids", () => {
+  it("perspective levels: six seat rows on five distinct roster ids, cap 1/chapter, five-beat cadence", () => {
     const seatIds = Object.entries(CAMPAIGN_CHAPTER_META)
       .filter(([, row]) => row.perspectiveId !== undefined)
       .map(([id]) => id);
@@ -207,6 +213,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
       "a-2-apprentice-desk",
       "a-8-support-vigil",
       "b-6-oncall-desk",
+      "b-11-prevention-shift",
       "c-4-floor-and-aisle",
       "c-9-red-team-friday",
     ]);
@@ -215,27 +222,35 @@ describe("chapter meta — the §1.9 authoring law", () => {
       expect((PERSPECTIVE_IDS as readonly string[]).includes(row.perspectiveId!), row.perspectiveId).toBe(true);
     }
     // The ~every-5 cadence over the WHOLE tour (L-CP3's per-act gap law,
-    // globalized the day a second act joined the roster). Act II shipping
-    // ONE seat is the honest resolution of §1.9's per-act floor of two vs
-    // this cadence: a 7-beat act cannot hold two seats ≥5 apart after the
-    // vigil at tour index 10 (16 and 21 — 21 is outside the act). Tension
-    // recorded in the ACT_TWO docblock; full-12 expansion owns it.
-    // WAVE-26 RESOLUTION: Act III RESTORES the per-act floor of two WITHOUT
-    // touching the global cadence — seats c-4/c-9 land at tour indices 21 and
-    // 26 (gaps 5 and 5), the first act satisfying §1.9's own sentence. The
-    // 8-level design (:5134) is superseded to NINE beats by the cadence
-    // arithmetic itself: an 8-beat Act III forces either seat pair to a gap
-    // of 4 (20→24 inside 18–25, or 21→25 behind b-6's 16). The lint loop
-    // below is the machine proof; the ACT_THREE docblock carries the record.
+    // globalized the day a second act joined the roster).
+    // WAVE-26: Act III restored the per-act floor of two WITHOUT touching the
+    // global cadence (c-4/c-9 at 21/26, gaps 5 and 5).
+    // WAVE-27 FULL RESOLUTION: Act II grows to twelve beats and seats its
+    // SECOND desk — b-11 wears the noc-shift roster row a second time, the
+    // campaign's first perspective REUSE. No lint law forbids it: the §1.9
+    // laws are roster membership + cadence + cap-1-per-chapter, and
+    // PERSPECTIVE_EXPRESSIBILITY is per-perspective (noc-shift's rails are
+    // already witnessed lawful at b-6). The 27-beat tour never reused a
+    // seat; the 32-beat tour does it once, and every act of the campaign
+    // finally sits at §1.9's own per-act floor of two. Seats at tour indices
+    // {4,10,16,21,26,31} — gaps {6,6,5,5,5}.
     const positions = seatIds.map((id) => TOUR.findIndex((row) => row.chapterId === id));
     for (let i = 1; i < positions.length; i += 1) {
       expect(positions[i]! - positions[i - 1]!).toBeGreaterThanOrEqual(5);
     }
+    // The wave-27 exact-shape pin: the cadence is not merely lawful, it is
+    // the arithmetic the resolution was built on — every gap six, six, five,
+    // five, five across thirty-two beats.
+    expect(positions).toEqual([4, 10, 16, 21, 26, 31]);
+    expect(positions.slice(1).map((pos, i) => pos - positions[i]!)).toEqual([6, 6, 5, 5, 5]);
     // The seats live on the scenario docs (the L-CP2 join — the campaign
     // chapter wire still refuses a `perspective` key, RESERVED).
     expect(resolveChapterDoc("apprentice-desk-shift").perspective?.id).toBe("apprentice");
     expect(resolveChapterDoc("support-desk-vigil").perspective?.id).toBe("support-queue");
     expect(resolveChapterDoc("noc-oncall-desk").perspective?.id).toBe("noc-shift");
+    // b-11 rides the SAME roster row through a different scenario doc — the
+    // join is per-doc, so reuse costs the law nothing.
+    expect(resolveChapterDoc("noc-prevention-shift").perspective?.id).toBe("noc-shift");
     // Wave-26's two Act-III seats ride the same join — the scenario doc owns
     // the perspective row, the campaign wire never does.
     expect(resolveChapterDoc("the-floor-and-aisle").perspective?.id).toBe("datacenter-tech");
@@ -255,8 +270,9 @@ describe("chapter meta — the §1.9 authoring law", () => {
       expect(tiers[i]!).toBeGreaterThanOrEqual(tiers[i - 1]!); // the rise, never a drop
     }
     // Act III (§1.9 :5134 "Act III (Tiers 5–6)"): the same non-decreasing law
-    // over the {5,6} band, plus the act-boundary rise — b-7's T4 hands the
-    // tour to c-1's T5, the tier never falls anywhere on the twenty-seven.
+    // over the {5,6} band, plus the act-boundary rise — b-12's T4 hands the
+    // tour to c-1's T5, the tier never falls anywhere on the thirty-two.
+    // Wave-27's b-8..b-12 rows are all T4: the act rides its ceiling.
     const tiers3 = CAMPAIGN_ACT_THREE.chapters.map((c) => CAMPAIGN_CHAPTER_META[c.chapterId]!.tier);
     for (const tier of tiers3) expect(tier === 5 || tier === 6, String(tier)).toBe(true);
     for (let i = 1; i < tiers3.length; i += 1) {
@@ -287,6 +303,8 @@ describe("chapter meta — the §1.9 authoring law", () => {
     expect(book[1486 - 1]).toContain("The Apprentice");
     expect(book[1218 - 1]).toContain("The Support Queue");
     expect(book[1275 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
+    expect(book[1274 - 1]).toContain("NOC Shift"); // the seat heading b-11 cites (wave-27)
+    expect(book[3275 - 1]).toContain("Certificate Expired"); // §1.5 cert cliff — b-12's heading
     expect(book[35168 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
     expect(book[5133 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
     // Wave-26 Act III anchors (design authority I-AC3; substring truth on the
@@ -310,8 +328,9 @@ describe("chapter meta — the §1.9 authoring law", () => {
     expect(bridge).toBeLessThan(threshold);
     // Act II rides the SAME bridge (probe-grounded: every Act-II chapter wins
     // or dies honestly under it — the act inherits the number, never re-tunes
-    // it), and it inherits the never-poorer law with EXACTLY one named
-    // exception, each exception a probe-witnessed thin-ride (see below).
+    // or dies honestly under it), and it inherits the never-poorer law with FOUR named
+    // exceptions (b-7 + the wave-27 siege re-rides), each a probe-witnessed
+    // thin-ride. b-11/b-12 need NONE: both open ON the bridge (see below).
     expect(CAMPAIGN_ACT_TWO.carry.cashFloor.bridgeMicroUsd).toBe(bridge);
     for (const doc of CAMPAIGN_ROSTER) {
       expect(doc.carry.cashFloor.thresholdMicroUsd).toBe(threshold);
@@ -430,7 +449,7 @@ describe("act one chain — panic into process", () => {
 describe("act two chain — process into prevention (ADR-0019 program 3)", () => {
   const report = SHARED_ACT_TWO; // collected once — six won, one LOST IN THE SHAPE
 
-  it("seven beats: six won, b-4 dies float-insolvent under the lawful bridge", () => {
+  it("twelve beats: eleven won, b-4 dies float-insolvent under the lawful bridge", () => {
     expect(report.campaignId).toBe("act-two-process-to-prevention");
     expect(report.chapterRecords.map((r) => [r.nodeId, r.chapterId, r.outcome, r.stopReason])).toEqual([
       ["co", "b-1-money-works", "won", "win@240"],
@@ -440,6 +459,11 @@ describe("act two chain — process into prevention (ADR-0019 program 3)", () =>
       [CHILD_ID, "b-5-fogged-board", "won", "win@600"],
       [CHILD_ID, "b-6-oncall-desk", "won", "win@30"],
       [CHILD_ID, "b-7-chargeback-shift", "won", "win@200"],
+      [CHILD_ID, "b-8-collections-week", "won", "win@240"],
+      [CHILD_ID, "b-9-post-breach", "won", "win@320"],
+      [CHILD_ID, "b-10-sev-0", "won", "win@240"],
+      [CHILD_ID, "b-11-prevention-shift", "won", "win@30"],
+      [CHILD_ID, "b-12-cert-cliff", "won", "win@240"],
     ]);
     // b-1 is index 0: the BASE doc untouched — and its authored opening IS
     // the bridge (300M verbatim), the one re-ride that opens on its own words.
@@ -519,10 +543,12 @@ describe("act two chain — process into prevention (ADR-0019 program 3)", () =>
     expect(childManifestSpent(child)).toBe(true);
     expect(child.museum.some((row) => row.id === `bootstrap:${CHILD_ID}` && row.sourceFacet === "succession")).toBe(true);
     expect(() => spendInheritanceOnChild(report.finalGraph, asEntityId(CHILD_ID))).toThrow(/manifest already spent/);
-    // The child runs the closing three beats from the manifested ledger:
-    // fogged board, taxed phone, the prevention shift it survived broke.
-    expect(child.finances.cashMicroUsd).toBe(1_819_644n);
-    expect(child.medals.filter((m) => m.kind === "chapter-won")).toHaveLength(3);
+    // The child runs the closing EIGHT beats from the manifested ledger:
+    // fogged board, taxed phone, the prevention shift it survived broke, the
+    // money-ledger sieges (b-8/b-9/b-10), the prevention seat worn twice, and
+    // the certificate cliff the act ends on — its settled cash is b-12's.
+    expect(child.finances.cashMicroUsd).toBe(316_398_000n);
+    expect(child.medals.filter((m) => m.kind === "chapter-won")).toHaveLength(8);
   });
 
   it("the death is SHAPE-driven, not rigged: bridge 600M ⇒ same doc wins, zero edges", { timeout: 600_000 }, () => {
@@ -543,6 +569,10 @@ describe("act two chain — process into prevention (ADR-0019 program 3)", () =>
     // the ninety-minute clock — the company that died at t73 rides to t90.
     expect(alt.chapterRecords.map((r) => r.stopReason)).toEqual([
       "win@240", "win@100", "win@240", "win@90", "win@600", "win@30", "win@200",
+      // wave-27: the re-rides win at 600M too; b-12's churn dice are cash-
+      // invariant (the cliff is a calendar), b-11 is zero-economy — its cash
+      // simply IS the bridge, the purest bridge-scaling witness in the act.
+      "win@240", "win@320", "win@240", "win@30", "win@240",
     ]);
     expect(alt.edgesSpawned).toHaveLength(0);
     expect(alt.chapterRecords.every((r) => r.nodeId === "co")).toBe(true);
@@ -570,12 +600,81 @@ describe("act two chain — process into prevention (ADR-0019 program 3)", () =>
     expect(r.cashEndMicroUsd).toBe(993_070n);
   });
 
-  it("digest ×100 Set.size 1 + byte-equal twin over the seven-beat succession graph", { timeout: 600_000 }, () => {
+  it("five campaign seeds: the wave-27 back half holds its win lines on every offset", { timeout: 900_000 }, () => {
+    // b-8/b-9 ride dice — hourly collections and write-off paths shift the
+    // cashEnd every seed. b-10 is dice-free at the bridge, b-11 is zero-
+    // economy (its cash IS the bridge), and b-12's cliff is a CALENDAR: the
+    // retention dice decide WHICH certificates lapse, never the board read.
+    // b-4's death line does not flicker on any of the five.
+    const BACK_HALF: readonly (readonly [string, string, string])[][] = [
+      [["b-8-collections-week", "win@240", "10055709"], ["b-9-post-breach", "win@320", "942845"], ["b-10-sev-0", "win@240", "509196000"], ["b-11-prevention-shift", "win@30", "300000000"], ["b-12-cert-cliff", "win@240", "316398000"]],
+      [["b-8-collections-week", "win@240", "28233829"], ["b-9-post-breach", "win@320", "90782"], ["b-10-sev-0", "win@240", "509196000"], ["b-11-prevention-shift", "win@30", "300000000"], ["b-12-cert-cliff", "win@240", "316398000"]],
+      [["b-8-collections-week", "win@240", "192338"], ["b-9-post-breach", "win@320", "58420"], ["b-10-sev-0", "win@240", "509196000"], ["b-11-prevention-shift", "win@30", "300000000"], ["b-12-cert-cliff", "win@240", "316398000"]],
+      [["b-8-collections-week", "win@240", "29372054"], ["b-9-post-breach", "win@320", "1771"], ["b-10-sev-0", "win@240", "509196000"], ["b-11-prevention-shift", "win@30", "300000000"], ["b-12-cert-cliff", "win@240", "316398000"]],
+      [["b-8-collections-week", "win@240", "29206105"], ["b-9-post-breach", "win@320", "1380402"], ["b-10-sev-0", "win@240", "509196000"], ["b-11-prevention-shift", "win@30", "300000000"], ["b-12-cert-cliff", "win@240", "316398000"]],
+    ];
+    for (let off = 0; off < 5; off += 1) {
+      const alt = runUnlocked(CAMPAIGN_ACT_TWO, off);
+      expect(alt.chapterRecords[3]!.stopReason, `offset ${off}`).toBe("lose:death-by-cause:any@73");
+      expect(alt.chapterRecords.slice(7).map((r) => [r.chapterId, r.stopReason, `${r.cashEndMicroUsd}`]), `offset ${off}`).toEqual(BACK_HALF[off]);
+    }
+  });
+
+  it("b-11 wears the noc-shift seat a SECOND time: the b-6 rail's prevention twin, dice-free ×5", () => {
+    const rebased = applyCarryToDoc(CHAPTER_AUTHORED_DOCS["noc-prevention-shift"]!, {
+      openingCashMicroUsd: 300_000_000n, contractCasts: [], staffCast: [], scarCount: 0,
+    });
+    expect(rebased.limits.initialFreeMicroUsd).toBe(300_000_000n);
+    for (let off = 0; off < 5; off += 1) {
+      const r = runScenario(rebased, BASE_SEED, { seedOffset: off });
+      expect(r.outcome, `offset ${off}`).toBe("won");
+      expect(r.stopReason, `offset ${off}`).toBe("win@30");
+      expect(r.perspective?.id, `offset ${off}`).toBe("noc-shift");
+      expect(r.observation.intentsExecuted, `offset ${off}`).toBe(6);
+      expect(r.observation.intentsExecutedByVerb?.communicate ?? 0, `offset ${off}`).toBe(6);
+      // The twin of b-6's refusal shape: the phone taxed at capacity one,
+      // build AND cable both dead at the tape — the SAME seat, the same
+      // bite, one act of lessons later.
+      expect(r.observation.intentsRefusedByVerb, `offset ${off}`).toEqual({ communicate: 1, "connect-ports": 1, "place-device": 1 });
+      expect(r.cashEndMicroUsd, `offset ${off}`).toBe(300_000_000n); // zero-economy: the cash IS the bridge
+    }
+  });
+
+  it("b-12 opens ON the bridge (no exception) and grades the cliff dice honestly ×5", () => {
+    const rebased = applyCarryToDoc(CHAPTER_AUTHORED_DOCS["the-cert-cliff"]!, {
+      openingCashMicroUsd: 300_000_000n, contractCasts: [], staffCast: [], scarCount: 0,
+    });
+    // The doc's initialFree is UNSET — the carry rebase lands it verbatim ON
+    // the scripted bridge: equality satisfies the never-poorer law, so this
+    // finale needs no thin-ride exception (unlike its three siege siblings).
+    expect(rebased.limits.initialFreeMicroUsd).toBe(300_000_000n);
+    const churn: number[] = [];
+    const settled: number[] = [];
+    const cash: string[] = [];
+    for (let off = 0; off < 5; off += 1) {
+      const r = runScenario(rebased, BASE_SEED, { seedOffset: off });
+      expect(r.stopReason, `offset ${off}`).toBe("win@240");
+      expect(r.observation.bounces, `offset ${off}`).toBe(0); // 400 slots — the scar never bounces
+      expect(r.observation.reputationBps, `offset ${off}`).toBe(5_000n); // no dunning story — the flat book holds
+      churn.push(r.observation.churnedCustomers);
+      settled.push(r.observation.settledInvoices);
+      cash.push(`${r.cashEndMicroUsd}`);
+    }
+    // The retention dice lapse a shifting 1–3 of the four certificates at
+    // the t234 cliff — the act closes on prevention MEASURED in churn, and
+    // the grade only fails if the whole calendar lapses (churn-above:3, never
+    // observed on the five probed seeds).
+    expect(churn).toEqual([3, 2, 1, 1, 1]);
+    expect(settled).toEqual([4, 3, 3, 4, 4]);
+    expect(cash).toEqual(["316398000", "312298500", "312298500", "316398000", "316398000"]);
+  });
+
+  it("digest ×100 Set.size 1 + byte-equal twin over the twelve-beat succession graph", { timeout: 600_000 }, () => {
     const digests = new Set<string>();
     for (let i = 0; i < 100; i += 1) digests.add(digestCampaignReport(report));
     expect(digests.size).toBe(1);
     expect(digestCampaignReport(runUnlocked(CAMPAIGN_ACT_TWO))).toBe(digestCampaignReport(SHARED_ACT_TWO));
-    expect(digestCampaignReport(report)).toBe("d31af220a83033ce"); // run-captured 2026-10-18 (testimony-seeded "First Light Inc")
+    expect(digestCampaignReport(report)).toBe("cd82b8b88a125e66"); // run-captured 2026-10-18, WAVE-27 twelve-beat re-pin (testimony-seeded "First Light Inc")
   });
 });
 
@@ -594,7 +693,7 @@ describe("three-arc chain — prologue into Act I into Act II, one real ledger",
 
     expect(digestCampaignReport(first)).toBe("28df3ca4e6c90977"); // prologue truth UNMOVED by Act II
     expect(digestCampaignReport(second)).toBe("86595ae9b21853b3"); // Act I on the prologue's graph
-    expect(digestCampaignReport(third)).toBe("18ef1b5675d0ea27"); // Act II on the full parent ledger
+    expect(digestCampaignReport(third)).toBe("5f79eb776a0bafaf"); // Act II on the full parent ledger — wave-27 twelve-beat re-pin (run-captured 2026-10-18)
 
     // The parent node carries the WHOLE career: 3+8+4 museum beats (the last
     // one an obituary), fourteen medals, fifteen attributions — and the death
@@ -827,7 +926,7 @@ describe("act three chain — prevention into boredom (wave-26 full tour)", () =
 /* 8. FOUR-ARC CHAIN — the full tour on one real lineage graph          */
 /* ------------------------------------------------------------------ */
 
-describe("four-arc chain — twenty-seven beats, one real lineage graph", () => {
+describe("four-arc chain — thirty-two beats, one real lineage graph", () => {
   it("the Act II child walks all of Act III; every earlier digest byte-stands UNMOVED", { timeout: 900_000 }, () => {
     const first = run(CAMPAIGN_PROLOGUE);
     const second = runCampaign(CAMPAIGN_ACT_ONE, BASE_SEED, {
@@ -841,13 +940,13 @@ describe("four-arc chain — twenty-seven beats, one real lineage graph", () => 
 
     expect(digestCampaignReport(first)).toBe("28df3ca4e6c90977"); // UNMOVED by two acts of content
     expect(digestCampaignReport(second)).toBe("86595ae9b21853b3"); // UNMOVED
-    expect(digestCampaignReport(third)).toBe("18ef1b5675d0ea27"); // UNMOVED — per-arc digest scoping holds;
+    expect(digestCampaignReport(third)).toBe("5f79eb776a0bafaf"); // wave-27 re-pin (identical construction to the three-arc test's third digest — per-arc digest scoping holds;
     // and the runner's exit-grammar edit moves NOTHING here: no beat before
     // Act III carries a sell-accepted-above win line, so every plain
     // `win@<minute>` stamp is byte-for-byte the string it always was.
-    expect(digestCampaignReport(fourth)).toBe("bd36d3be169cf130"); // run-captured 2026-10-18 (child node, self-derived)
+    expect(digestCampaignReport(fourth)).toBe("739d411cd5329eb1"); // run-captured 2026-10-18, WAVE-27 tour re-pin (child node, self-derived)
 
-    // The successor's full career: three Act-II beats, nine Act-III beats,
+    // The successor's full career: eight Act-II beats (wave-27), nine Act-III beats,
     // zero further edges — the tour never dies twice.
     expect(fourth.chapterRecords.map((r) => [r.nodeId, r.outcome, r.stopReason])).toEqual([
       [CHILD_ID, "won", "win@240"],
@@ -870,6 +969,6 @@ describe("four-arc chain — twenty-seven beats, one real lineage graph", () => 
     // terminal beat it always would (the exit still needs the carrier).
     const ending = endCampaign(fourth, getNode(fourth.finalGraph, fourth.finalNodeId));
     expect(ending.kind).toBe("quiet-handoff");
-    expect(ending.evidence.medals).toBe(12); // b-5..b-7 + c-1..c-9
+    expect(ending.evidence.medals).toBe(17); // b-5..b-12 + c-1..c-9
   });
 });
