@@ -522,6 +522,12 @@ interface Accumulator {
   /** Wave five: cumulative CorruptOutcomes from the driver's side channel
    *  (result.corruptions) — 0 while no `limits.corrupts` arm exists. */
   corruptions: number;
+  /** Act III rung: cumulative sell ADJUDICATION notices (foldNoticeCensus) —
+   *  the door books offers; only the fold's verdict dice land here. Both 0
+   *  while no offer ever reaches a verdict (the observation key stays absent
+   *  — sparse-key law, pre-rung shape preserved). */
+  sellAccepted: number;
+  sellRefused: number;
 }
 
 function foldNoticeCensus(
@@ -534,6 +540,8 @@ function foldNoticeCensus(
     if (notice.kind === "invoice-paid") acc.settledInvoices += 1;
     else if (notice.kind === "churned-voluntary" || notice.kind === "cliff-lapsed") acc.churnedCustomers += 1;
     else if (notice.kind === "written-off") acc.writtenOffCustomers += 1;
+    else if (notice.kind === "sell-accepted") acc.sellAccepted += 1;
+    else if (notice.kind === "sell-refused") acc.sellRefused += 1;
     else if (notice.kind === "company-dissolved") {
       const cause = parseDeathCause(notice.causeId);
       if (cause !== null && !acc.deaths.includes(cause)) acc.deaths.push(cause);
@@ -574,6 +582,12 @@ function snapshotObservation(
     corruptions: acc.corruptions,
     arrivalsByFamily: sortedCensus(acc.arrivalsByFamily),
     windowSums,
+    /* Act III rung (sparse-key law): the verdict pair appears ONLY once a
+       verdict has landed — the mint snapshot and every verdict-free run keep
+       the exact pre-rung observation shape. */
+    ...(acc.sellAccepted + acc.sellRefused > 0
+      ? { sellVerdicts: Object.freeze({ accepted: acc.sellAccepted, refused: acc.sellRefused }) }
+      : {}),
   });
 }
 
@@ -1123,6 +1137,8 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     chargebacksApplied: 0,
     chargebackFeeRefusals: [],
     corruptions: 0,
+    sellAccepted: 0,
+    sellRefused: 0,
   };
   const eventsByKind = new Map<string, number>();
   const noticesByKind = new Map<string, number>();
@@ -1228,13 +1244,17 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
         /* ADR-0016 mechanic C: undefined cursor ⇒ identity opex path ⇒
            shipped mission digests byte-ident (see the mint above). */
         warmth: warmthCursor,
-        /* ADR-0016 mechanic B honest gap: no shipped mission doc can carry a
-           sell-offer book — the door is never fed `sell-offer` intents in v0
-           (rung-8 vocabulary has no sell predicate), so `game.sell` is absent
-           and tickFold's presence-gated spread keeps every mission digest
-           byte-identical. No sellMarketRates leg here either: the fold's
-           installed-base anchor is the only authority a mission could ever
-           reach, and inventing scenario sell semantics is a future rung. */
+        /* ADR-0016 mechanic B — the READ-LEG ships (Act III rung, wave 26): a
+           `sell-offer` intent on the doc's rail books `game.sell` through the
+           real door, tickFold's presence-gated spread feeds the fold's step-
+           5.5 adjudication dice, and the verdict notices fold into
+           observation.sellVerdicts — acceptance, the thing the door receipt
+           never proved. Shipped wires carry no sell rail, so `game.sell`
+           stays absent and every mission digest rides byte-identical. The
+           sellMarketRates catalog leg STAYS absent by design: the fold's
+           installed-base anchor (a registered contract's price-key MRC) is
+           the only price authority a scenario may ever reach — inventing a
+           scenario-owned market feed would be sell fiction, not a read. */
         topic: "scenario",
         dunningEngineOwned: doc.limits.dunningEngineOwned,
         witness: refusalWitness,

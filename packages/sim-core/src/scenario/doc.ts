@@ -52,7 +52,7 @@ export const SCENARIO_BRIEF_MAX_CHARS = 280;
  *  CLOSED authored mission, not an open-ended weekend. */
 export const SCENARIO_MAX_MINUTES_CAP = 2880;
 
-/** The twenty-nine legal objective predicates (§1.5 mission verbs, mapped
+/** The thirty-one legal objective predicates (§1.5 mission verbs, mapped
  *  onto observables that EXIST today — see objectives.ts for each reading).
  *  Rungs 1–3 of the vocab ladder (runner.test.ts header) shipped here:
  *  written-off-count, metrics-delta-over-window, family-labeled arrivals.
@@ -76,7 +76,17 @@ export const SCENARIO_MAX_MINUTES_CAP = 2880;
  *  per-verb receipt census the runner folds off `TickResult.doorReceipts`, so
  *  a mission can name WHICH verb survived, not only how many receipts came
  *  back. A predicate with no `verb` keeps its exact whole-rail total reading;
- *  the vocabulary stays twenty-nine kinds — this is a dimension, not a kind. */
+ *  the vocabulary stayed twenty-nine kinds at that rung — this is a
+ *  dimension, not a kind.
+ *  Act III rung (wave twenty-six): the `sell-accepted-above` /
+ *  `sell-refused-above` pair counts the sell book's ADJUDICATION notices
+ *  (`sell-accepted` / `sell-refused`, economy/sell.ts verdicts folded at
+ *  money-lane step 5.5). Acceptance is not execution: a `sell-offer` intent
+ *  the door books only earns a verdict once the fold weighs it against the
+ *  installed-base anchor (a registered contract's price-key MRC), so an
+ *  executed-but-unadjudicated offer moves `intents-executed-*` and leaves
+ *  this pair at zero. Zero while no verdict has ever landed — the
+ *  pre-channel byte shape of every shipped mission is untouched. */
 export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "survive-minutes",
   "cash-above",
@@ -107,6 +117,8 @@ export const SCENARIO_PREDICATE_KINDS = Object.freeze([
   "postmortem-credits-below",
   "corruption-above",
   "corruption-below",
+  "sell-accepted-above",
+  "sell-refused-above",
 ] as const);
 
 /** The closed metric vocab a `metric-delta-over-window` predicate may name
@@ -239,6 +251,17 @@ export type ObjectivePredicate =
        *  silently corrupted instead of bouncing. Non-zero only while the
        *  doc arms `limits.corrupts`; the corrupts mode never bounces, which
        *  IS the green-dashboard lie this pair scores through. */
+      readonly count: number;
+    }
+  | {
+      readonly kind: "sell-accepted-above" | "sell-refused-above";
+      /** Whole-run count of the sell book's ADJUDICATION notices
+       *  (`sell-accepted` / `sell-refused`, economy/sell.ts at money-lane
+       *  step 5.5). The Act III rung reads ACCEPTANCE, not execution: an
+       *  offer the door books but the fold never adjudicates (its price key
+       *  has no installed-base anchor behind it) earns no verdict and never
+       *  moves this count — the door receipt lives on `intents-executed-*`.
+       *  Zero while no verdict has ever landed (sparse observation key). */
       readonly count: number;
     };
 
@@ -984,6 +1007,8 @@ const PREDICATE_FIELDS: Readonly<Record<ScenarioPredicateKind, readonly string[]
   "postmortem-credits-below": ["kind", "bps"],
   "corruption-above": ["kind", "count"],
   "corruption-below": ["kind", "count"],
+  "sell-accepted-above": ["kind", "count"],
+  "sell-refused-above": ["kind", "count"],
 });
 
 /** Rung-9 optional per-verb dim on the intent four — parsed at the wall so
@@ -1045,6 +1070,8 @@ function parsePredicate(raw: unknown, path: string): ObjectivePredicate {
     case "covenant-breached-count-above":
     case "chargebacks-above":
     case "corruption-above":
+    case "sell-accepted-above":
+    case "sell-refused-above":
       return Object.freeze({ kind: typedKind, count: readInt(src, "count", path, "BAD_PREDICATE", 0, 1_000_000) });
     case "intents-executed-above":
     case "intents-refused-above": {

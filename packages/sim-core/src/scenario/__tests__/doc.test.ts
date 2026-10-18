@@ -558,8 +558,8 @@ describe("wave-five walls — channels ladder (door intents, economy signals)", 
     expect(wall("BAD_PREDICATE", () => parseScenarioDoc(pastTheWall)).path).toContain("bps");
   });
 
-  it("the vocab census is twenty-nine kinds (wave-five channels +8, conversions +2)", () => {
-    expect(SCENARIO_PREDICATE_KINDS).toHaveLength(29);
+  it("the vocab census is thirty-one kinds (wave-five channels +8, conversions +2, sell verdicts +2)", () => {
+    expect(SCENARIO_PREDICATE_KINDS).toHaveLength(31);
   });
 
   it("rung 9: the intent four accept an optional verb; the wall parses it closed", () => {

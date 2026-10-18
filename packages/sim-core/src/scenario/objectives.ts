@@ -87,6 +87,13 @@ export interface ScenarioObservation {
   readonly windowSums: Readonly<
     Record<string, { readonly current: number; readonly baseline: number; readonly complete: boolean }>
   >;
+  /** Act III rung: the sell book's adjudicated verdicts — cumulative
+   *  `sell-accepted` / `sell-refused` notices folded from the money lane
+   *  (economy/sell.ts dice at step 5.5). SPARSE: the key is absent while no
+   *  verdict has ever landed, and it stays absent for an offer the door
+   *  BOOKED but the fold never ADJUDICATED (no installed-base anchor behind
+   *  its price key) — acceptance is not execution. */
+  readonly sellVerdicts?: { readonly accepted: number; readonly refused: number };
 }
 
 /** A fresh, honest zero-observation (used before the first tick). */
@@ -216,6 +223,12 @@ export function objectiveHolds(obs: ScenarioObservation, predicate: ObjectivePre
       return obs.corruptions > predicate.count;
     case "corruption-below":
       return obs.corruptions < predicate.count;
+    case "sell-accepted-above":
+      // Act III law: above = strictly greater (count N arms fire at N+1), and
+      // an absent sparse key reads zero — acceptance never borrows execution.
+      return (obs.sellVerdicts?.accepted ?? 0) > predicate.count;
+    case "sell-refused-above":
+      return (obs.sellVerdicts?.refused ?? 0) > predicate.count;
   }
 }
 
@@ -287,6 +300,8 @@ export function objectiveLine(predicate: ObjectivePredicate): string {
       return `${predicate.kind}:${predicate.bps}`;
     case "corruption-above":
     case "corruption-below":
+    case "sell-accepted-above":
+    case "sell-refused-above":
       return `${predicate.kind}:${predicate.count}`;
   }
 }
@@ -369,6 +384,10 @@ function progressOf(obs: ScenarioObservation, predicate: ObjectivePredicate): Fi
       return clampRatio(BigInt(predicate.count - obs.corruptions), BigInt(predicate.count));
     case "corruption-above":
       return clampRatio(BigInt(obs.corruptions), BigInt(predicate.count + 1));
+    case "sell-accepted-above":
+      return clampRatio(BigInt(obs.sellVerdicts?.accepted ?? 0), BigInt(predicate.count + 1));
+    case "sell-refused-above":
+      return clampRatio(BigInt(obs.sellVerdicts?.refused ?? 0), BigInt(predicate.count + 1));
   }
 }
 
