@@ -36,6 +36,7 @@ import type {
   EntityId,
   ExternalIntent,
   GameState,
+  MoneyUnit,
   ObservedKey,
   PlayerIntent,
   PlayerVerbArgs,
@@ -193,6 +194,18 @@ export interface ScenarioReport {
    *  `observation` above stays WHOLE TRUTH under every seat: seeing is not
    *  being, hide never reaches the fold (pinned by the whole-truth test). */
   readonly perspective?: ScenarioPerspectiveReport;
+  /** L-GUARD (ADR-0019 program 2): present ONLY when a signal-minute found
+   *  `free` below the cfg-owned chargeback fee — the funding-honest record
+   *  of every fee the ledger refused (sorted-visit order). Sparse-key law:
+   *  funded docs never grow the key, their reports stay byte-ident. The
+   *  disputes themselves stay on the trace regardless (observation +
+   *  notices + rating — the wave is never dropped). */
+  readonly chargebackFeeRefusals?: readonly {
+    readonly atBusinessMinute: SimMinute;
+    readonly contractId: EntityId;
+    readonly feeMicroUsd: MoneyUnit;
+    readonly freeMicroUsd: MoneyUnit;
+  }[];
 }
 
 /* The F4/F5 refusal law (negative-bucket regex, settle-shape parse, opex
@@ -435,6 +448,19 @@ function firstTriggered(evaluations: readonly (GuardEvaluation | null)[], guards
   return null;
 }
 
+/** One fee the ledger refused while the dispute itself stayed on the
+ *  trace (funding-honest law above). Module-private: the report field
+ *  carries the shape inline, no new barrel names (internal-function
+ *  posture — the guard is composition policy, not wire vocabulary). */
+interface ChargebackFeeRefusal {
+  /** Engine cause-grammar clock (the `economy:chargeback:<id>:<n>` minute —
+   *  business time, NOT the row's sim-minute schedule key). */
+  readonly atBusinessMinute: SimMinute;
+  readonly contractId: EntityId;
+  readonly feeMicroUsd: MoneyUnit;
+  readonly freeMicroUsd: MoneyUnit;
+}
+
 /** Everything the report counts, folded per tick from notices + outcomes. */
 interface Accumulator {
   settledInvoices: number;
@@ -457,6 +483,10 @@ interface Accumulator {
   intentsExecutedByVerb: Map<string, number>;
   intentsRefusedByVerb: Map<string, number>;
   chargebacksApplied: number;
+  /** Funding-honest law: fees the ledger refused (sorted-visit order, same
+   *  stream the posts read). Empty while every signal minute can pay — the
+   *  report key stays absent (sparse-key law, byte-shape preserved). */
+  chargebackFeeRefusals: ChargebackFeeRefusal[];
   /** Wave five: cumulative CorruptOutcomes from the driver's side channel
    *  (result.corruptions) — 0 while no `limits.corrupts` arm exists. */
   corruptions: number;
@@ -551,6 +581,27 @@ function postmortemCreditsSum(econ: EconomyState | null): bigint {
  *  author amount — the fee is cfg-owned (cfg.fees.chargebackFeeMicroUsd),
  *  exactly as in the engine, and an authored number would be dead weight
  *  on the wire.
+ *
+ *  FUNDING-HONEST LAW (ADR-0019 program 2, the L-CP3 shelf ticket): the
+ *  step-8.5 trio sat OUTSIDE both money-lane insolvency guards — inside
+ *  the fold a negative-bucket throw voids the whole tick (catch-and-void),
+ *  and a scheduled opex burn the book cannot cover is REFUSED at the tick
+ *  head; the composer's fee post had neither, so a doc re-based onto a
+ *  thin carry opening (campaign bridge: 300_000_000 µ$) crashed the chain
+ *  once the dunning dice wound `free` below the $20 fee. The guard reuses
+ *  the refuse-not-overdraft law (tickFold's opex pre-check, same `<` —
+ *  at free == fee the fee still pays, bottoming at zero): the CASH leg is
+ *  refused with a report witness naming minute/contract/fee/free, while
+ *  the EVENT legs stay verbatim — the dispute notice, the §2.10 rating
+ *  signal, and the chargebacksApplied census. The wave is never dropped:
+ *  a processor still assessed the chargeback; only the ledger says NO to
+ *  moving money it does not have. Deliberate posture, NOT an engine drift:
+ *  inside the fold the same insolvency would void the whole tick (losing
+ *  that minute's notices with it); the composer keeps the authored event
+ *  stream truthful because here the event is the doc's own wire, not a
+ *  host-forwarded input. Fee refusals do NOT arm the guardrail refusal
+ *  census (refusedBurnsThisTick is player-scheduled-burn semantics; the
+ *  witness + the doc's own cash trajectory carry the funding story).
  */
 
 interface MutableSignalRows {
@@ -607,14 +658,30 @@ function composeSignalRows(input: {
         );
       }
       const causeId = asCauseId(`economy:chargeback:${row.contractId}:${now}`);
-      const posted = postEntry(econ.journal, econ.cash, {
-        causeId,
-        atBusinessMin: now,
-        moneyColour: "red",
-        delta: { free: asMoney(-cfg.fees.chargebackFeeMicroUsd) },
-        context: `chargeback ${row.contractId}`,
-      });
-      econ = Object.freeze({ ...econ, journal: posted.journal, cash: posted.cash });
+      const fee = cfg.fees.chargebackFeeMicroUsd;
+      if (econ.cash.free < fee) {
+        /* Funding-honest law (ADR-0019 program 2): the CASH leg refuses —
+           same `<` as tickFold's opex pre-check, at free == fee the fee
+           still pays and bottoms at zero — while the EVENT legs below run
+           verbatim. The wave is never silently dropped. */
+        acc.chargebackFeeRefusals.push(
+          Object.freeze({
+            atBusinessMinute: now,
+            contractId: row.contractId,
+            feeMicroUsd: fee,
+            freeMicroUsd: econ.cash.free,
+          }),
+        );
+      } else {
+        const posted = postEntry(econ.journal, econ.cash, {
+          causeId,
+          atBusinessMin: now,
+          moneyColour: "red",
+          delta: { free: asMoney(-fee) },
+          context: `chargeback ${row.contractId}`,
+        });
+        econ = Object.freeze({ ...econ, journal: posted.journal, cash: posted.cash });
+      }
       foldNoticeCensus([{ kind: "chargeback-posted", causeId }], acc, noticesByKind);
       repSignals.push({ kind: "chargeback", causeId, contractId: row.contractId });
       acc.chargebacksApplied += 1;
@@ -979,6 +1046,7 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     intentsExecutedByVerb: new Map(),
     intentsRefusedByVerb: new Map(),
     chargebacksApplied: 0,
+    chargebackFeeRefusals: [],
     corruptions: 0,
   };
   const eventsByKind = new Map<string, number>();
@@ -1243,5 +1311,9 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     ...(perspectiveSpec === undefined
       ? {}
       : { perspective: perspectiveReportFor(perspectiveSpec, config.perspectiveView) }),
+    // L-GUARD sparse-key law: funded runs never grow the `chargebackFeeRefusals` key.
+    ...(acc.chargebackFeeRefusals.length > 0
+      ? { chargebackFeeRefusals: Object.freeze([...acc.chargebackFeeRefusals]) }
+      : {}),
   });
 }
