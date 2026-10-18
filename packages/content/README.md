@@ -62,6 +62,9 @@ packs/backup-archival.i18n.json     ticket pack for official:backup-archival —
 packs/dbaas.i18n.json               ticket pack for official:dbaas — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys on {2008,2016,2026} (chatter.cellar.static, ticket.subject.pool, ticket.subject.upgrade — L-ER-C); decision namespace stays era-flat
 packs/observability.i18n.json     ticket pack for official:observability — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys — chatter.wall.hum and loading.tip.fan on {2008,2016,2026}, codex.cardinality on {2016,2026} (L-ER-D); decision namespace stays era-flat
 packs/ci-build-farm.i18n.json     ticket pack for official:ci-build-farm — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys on {2008,2016,2026} (chatter.desk.wall, chatter.runner.hum, forum.thread.matrix — L-ER-C); decision namespace stays era-flat
+decks/watch-the-door.json         deck:watch-the-door (appliesTo core:g7) — the g7 proto book re-authored as data: 6 cards, mainline entity ids only
+decks/cold-aisle.json             deck:cold-aisle (appliesTo official:shared-web) — inform/consult-heavy posture, 5 advisory cards on edge/origin/lane cells
+decks/sleepless.json              deck:sleepless (appliesTo official:serverless) — 3 cards, incl one DELIBERATE unmapped-carrier wall card (failover)
 script/validate.mjs                 Node-stdlib structural validator (no npm deps)
 ```
 
@@ -704,6 +707,51 @@ codex. Unlocks ground on the §5.6 Automation ladder, whose rungs name the busin
 CI/CD are the prereq flags, and the ladder's own law — "Each step converts toil … into capex plus
 blast radius" (:20671-20672) — is the fatal spoken before the card drew it.
 
+### Policy decks (G7 content-decks, 2026-10-18)
+
+The first authored rule books under `decks/` — three decks, fourteen cards. The
+conventions, in bullets so nothing here can ever be mistaken for a Key-literals
+row (the README sync law is pack-`decision`-scoped; decks ship no pack copy):
+
+- **File/id law (packs parallel):** filename is the bare slug (`watch-the-door.json`),
+  the `deck:` prefix lives INSIDE the `deckId` key. `appliesTo` resolves either to a
+  shipped bundle id (`official:shared-web`, `official:serverless`) or to a
+  `core:<name>` host target (`core:g7`) — the validator enforces both arms.
+- **Two-wall header:** the loader (`parsePolicyDeck`) and the validator
+  (`checkDeckCard`) each refuse unknown header keys, and their closed sets differ —
+  the loader refuses `name`/`_provenance`, the validator refuses `note`. Shipped
+  decks therefore carry the intersection only: `schemaVersion`, `deckId`,
+  `appliesTo`, `cards`, `_todo`. All provenance cites (§7.14 lines, witnesses) and
+  every deviation note ride the deck-level `_todo` string.
+- **Grammar:** cards are the §7.14 policy-grammar-v1 documents with bigints as
+  decimal strings. Triggers name ONLY the published-cell metric census
+  (`utilizationRho`, `retryPressure`, `ratePerMin`, `health`, `reputation`) and
+  scope refs name ONLY ids the mainline runner actually publishes
+  (`edge`/`waf`/`deep`/`origin`, `lane/ingress-1`, `company`) — the honest zero-fire
+  witness @9653a96 showed gate-scoped cards commit but never fire, so a card
+  outside the witnessed-crossing set carries its disclosure by id in the deck
+  `_todo`. `queueDepth` is deliberately absent (the state-economics fold publishes
+  it as a JS number and the grammar's numeric comparator refuses non-bigint raw —
+  such a trigger would halt the fold); `mrrMicroUsd` likewise (no engine publisher).
+  Upkeep ships `0` everywhere with a PROVISIONAL note: §7.14:28524 says each card
+  carries a small upkeep, and the billing fold that would charge it does not exist.
+- **No hashes in JSON:** card hashes are host-computed (`deckCardHash`);
+  `bootRulesFromDeck` derives the boot.rules entries. The loader test pins the
+  literal golden per shipped card — self-derived at authoring, permanent re-pins.
+- **Parity pin:** `watch-the-door` mirrors the six cards of
+  `apps/proto/src/gates/g7/g7Deck.ts` field-for-field modulo disclosed retargets
+  (scope refs `node/edge`→`edge`, `node/origin`→`origin`; BUSY 40960→16384, the
+  threshold witnessed to cross on the mainline runner). The hand-transcribed twins
+  live in `packages/sim-core/src/loader/__tests__/shipDecks.test.ts`; if g7Deck ever
+  changes, that test reddens — the pin working.
+- **Validator deck leg:** duplicate card ids fail; cross-deck id collisions and
+  wholly-unmapped carrier actions (`failover`, `dispatch-remote-hands`,
+  `run-runbook`, `queue-change`) warn — the two shipped failover cards are
+  DELIBERATE wall-card content keeping the bought-verb wall visible as data. Deck
+  `_todo` markers print under a separate `DECK TODO INVENTORY` counter (3 since
+  the first decks landed); the bundle inventory stays 413. The §9.11 technique-ban
+  scan runs over every deck string, prose notes included.
+
 ## Validate
 
 ```bash
@@ -755,7 +803,14 @@ trimming would delete doc-mandated content). Pack `_todo` markers
 print under a **separate** `PACK TODO INVENTORY` counter; the bundle inventory
 (413 since the L-EM era-availability row in colo.json 2026-10-18; 412 at the type-14 ci-build-farm authoring pass 2026-10-17; 377 at type-13, 343 at type-12, 311 at type-11, 278 at type-10, 245 at type-9, 212 at type-8, 186 at type-7, 159 at type-6, 133 at type-5, 108 at type-4, 84 at type-3, 63 at wave-1) is untouched by
 pack authoring — no test pins the printed number, though sibling lane memory
-quotes the wave-1 figure.
+quotes the wave-1 figure. **Policy decks** (`decks/*.json`) validate against
+`schema/policy-deck.schema.json` (G7A): deckId/file-name slug law, `appliesTo`
+resolves (shipped bundle id or `core:<name>`), card ids unique within a deck
+(cross-deck duplicates warn), card grammar mirrors the loader's `parsePolicyDeck`
+clause-for-clause, wholly-unmapped carrier actions warn (wall-card content, never
+a fail), and deck `_todo` markers print under a separate `DECK TODO INVENTORY`
+counter. The §9.11 ban-list scan covers every string in every deck. See
+§Policy decks above for the two-wall header law and the mainline-firing honor wall.
 
 ## The authoring laws this directory obeys
 

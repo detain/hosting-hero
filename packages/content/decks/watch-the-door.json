@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "deckId": "deck:watch-the-door",
+  "appliesTo": "core:g7",
+  "cards": [
+    {
+      "id": "watch-the-door:watch-the-door",
+      "scope": { "kind": "object", "ref": "edge" },
+      "when": [
+        {
+          "metric": "utilizationRho",
+          "comparator": ">",
+          "threshold": { "kind": "value", "amount": "16384", "unit": "count" }
+        }
+      ],
+      "then": [
+        { "id": "raise-inspection-depth", "runbookName": null, "value": "131072" }
+      ],
+      "band": "execute",
+      "upkeepMicroUsd": "0"
+    },
+    {
+      "id": "watch-the-door:page-the-founder",
+      "scope": { "kind": "object", "ref": "edge" },
+      "when": [
+        {
+          "metric": "utilizationRho",
+          "comparator": ">",
+          "threshold": { "kind": "value", "amount": "16384", "unit": "count" }
+        }
+      ],
+      "then": [
+        { "id": "page", "runbookName": null, "value": null }
+      ],
+      "band": "execute",
+      "upkeepMicroUsd": "0"
+    },
+    {
+      "id": "watch-the-door:shed-the-small",
+      "scope": { "kind": "object", "ref": "edge" },
+      "when": [
+        {
+          "metric": "utilizationRho",
+          "comparator": ">",
+          "threshold": { "kind": "value", "amount": "16384", "unit": "count" }
+        }
+      ],
+      "then": [
+        { "id": "shed-class", "runbookName": null, "value": null }
+      ],
+      "band": "execute",
+      "upkeepMicroUsd": "0"
+    },
+    {
+      "id": "watch-the-door:escape-hatch",
+      "scope": { "kind": "object", "ref": "origin" },
+      "when": [
+        {
+          "metric": "utilizationRho",
+          "comparator": ">",
+          "threshold": { "kind": "value", "amount": "16384", "unit": "count" }
+        }
+      ],
+      "then": [
+        { "id": "failover", "runbookName": null, "value": null }
+      ],
+      "band": "execute",
+      "upkeepMicroUsd": "0"
+    },
+    {
+      "id": "watch-the-door:the-underwriter",
+      "scope": { "kind": "object", "ref": "origin" },
+      "when": [
+        {
+          "metric": "utilizationRho",
+          "comparator": ">",
+          "threshold": { "kind": "value", "amount": "49152", "unit": "count" }
+        }
+      ],
+      "then": [
+        { "id": "scale-out", "runbookName": null, "value": "131072" }
+      ],
+      "band": "inform",
+      "upkeepMicroUsd": "0"
+    },
+    {
+      "id": "watch-the-door:ask-the-senior",
+      "scope": { "kind": "object", "ref": "edge" },
+      "when": [
+        {
+          "metric": "utilizationRho",
+          "comparator": ">",
+          "threshold": { "kind": "value", "amount": "16384", "unit": "count" }
+        }
+      ],
+      "then": [
+        { "id": "open-ticket", "runbookName": null, "value": null }
+      ],
+      "band": "consult",
+      "upkeepMicroUsd": "0"
+    }
+  ],
+  "_todo": "PROVENANCE: this is the six-card gates/g7 book (apps/proto/src/gates/g7/g7Deck.ts:41-51,75-82) re-authored as shipped JSON, riding the four composed-grammar examples of hosting_game.md §7.14:28518-28522 — 'web-tier CPU > 85%' scale-out (:28518) rides the-underwriter, 'a drive fails then open a ticket' and 'page me' (:28519-28520) ride ask-the-senior and page-the-founder, 'load > 90% then shed class 4' (:28521) rides shed-the-small, 'raise inspection depth to Sample on the edge tier' (:28522) rides watch-the-door. DEVIATION (never-invent law): the doc speaks CPU, p95 and load cells the mainline never publishes; utilizationRho is the published Q16.16 Fixed load-pressure cell (pipeline/defaults.ts:1755-1756) and stands proxy for all of them — a p95 latency metric does not exist in the engine and was NOT named here. DEVIATION: the g7 board's BUSY threshold 40960 retargets to 16384 — the mainline runner's edge rho alternates 0/32768 (6 arrivals/min into a one-slot edge), so 40960 would be an honest NEVER-fire (the @9653a96 zero-fire witness); 16384 is the crossing witnessed at frame 6 in apps/proto/src/__tests__/simCoreRunner.rules.test.ts (seed 42n). DEVIATION: scope refs retarget node/edge and node/origin (g7's private micro-board ids) to edge and origin — the mainline runner's entity ids; card ids gain the deck slug as a namespace (the house id grammar forbids the brief-era dotted form). DEVIATION: escape-hatch is the bought-verb wall kept as CONTENT — failover rides no RULE_CARRIER_MAP entry (intent-door.ts:795-799), so the fired rule reaches an unsupported-carrier refusal at the door; this mirrors g7Deck's thesis verbatim (ticker-yes, board-no, ADR-0018) and the validator's unmapped-carrier warning is expected, not an oversight. DEVIATION: §7.14:28518's 'unless budget remaining < $200' arm is omitted, not faked — no budget cell is published to observed on the mainline (company::mrrMicroUsd has no engine publisher, discovered during the G7 recon); likewise the :28519-28520 'unless second failure in this array' counter arm and dispatch-remote-hands carrier are not carried (no published second-failure cell the grammar would honor), and the :28522 'for 60s' sustained window rides bare predicates because no shipped witness armed the for-arm. UPKEEP: §7.14:28524 'each carries a small upkeep' — every upkeepMicroUsd here is 0, PROVISIONAL: no billing fold reads a committed card yet (engine gap, not a documented waiver); a future upkeep charge must re-derive these keys. HEADER LAW: the deck carries only the loader-intersection header keys — the strict loader refuses name and _provenance (loader/decks.ts DECK_TOP_LEVEL_KEYS) while the validator refuses note, so provenance rides this string, not a field."
+}
