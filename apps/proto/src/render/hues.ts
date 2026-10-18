@@ -47,6 +47,17 @@ export const HUE_LEDGER = {
    *  BudgetManager's hue identity, and both jobs are DOM-only channels. */
   alarm: { job: "chrome-alarm-klaxon", hex: 0xef6a5a },
   azure: { job: "bounce-notice", hex: 0x6fb6ff },
+  /* ADR-0019 program 6 — the G7 hand-origin ghost-violet joins the ledger as
+   *  its OWN job. §7.14 Ghost Hands: every channel the Book holds (rail token,
+   *  firing tape lines) must read as AUTOMATION ink, distinct from the
+   *  player's chrome-ink hold and from free hands. Until now the hue was
+   *  gate-local identity DATA — machine-legal under the value-collision scan
+   *  but never ratified as a semantic (wave-24 review F-4). It is a
+   *  deliberate near-miss on `violet` (pre-classification 0x8f5fe8): the
+   *  Book's ink reads as the player channel's family, one desaturation away
+   *  — a ghost, not a rival. Not in ALERT_HUES: rule-ink is a DOM identity
+   *  channel, never a canvas alert draw through the BudgetManager. */
+  "rule-ink": { job: "rule-ink", hex: 0xb49ce8 },
 } as const satisfies Record<string, { readonly job: string; readonly hex: number }>;
 
 export type LedgerHue = keyof typeof HUE_LEDGER;

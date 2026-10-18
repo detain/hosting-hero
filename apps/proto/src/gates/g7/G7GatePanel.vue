@@ -16,10 +16,11 @@
   real text, refusal copy). HUE LAW (hueLawGates scans gates/): state channels
   ride var(--hh-hue-*) ledger jobs — azure bounce (refusals), green served-ok
   (executions), alarm (the wall card), gold money-meters. The two HAND-ORIGIN
-  inks are gate-local identity DATA (no ledger job owns "who holds the hand"):
-  #d7e3ea is chrome ink (a neutral, not a ledger value) for player holds;
-  #b49ce8 is a deliberately desaturated ghost-violet near-miss for Book holds
-  — the Ghost Hands population of §7.14 rendered as one channel, not sprites.
+  inks: Book holds ride the ledger's `rule-ink` job (ADR-0019 program 6 — the
+  Ghost Hands population of §7.14 rendered as one channel, not sprites; a
+  deliberate desaturated near-miss on `violet`, ratified ON the ledger rather
+  than spelled in the gate); player holds stay #d7e3ea — chrome ink, a
+  hueLaw-allowlist neutral, and a neutral carries no ledger job.
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
@@ -275,19 +276,24 @@ const HEADLINE = "two boards, one pool — the unwatched board runs on its stand
 </template>
 
 <style scoped>
-/* gate-local chord on the era tokens (--hh-*): the ledger vars carry every
-   semantic channel; the two hand-origin inks are identity DATA (documented
-   above), never ledger re-spells — hueLawGates scans this block and finds
-   zero ledger-valued literals and zero invented --hh-hue-* names. */
+/* gate-local chord on the era tokens (--hh-*): EVERY semantic channel — the
+   hand-origin inks included (rule-ink joined the ledger, ADR-0019 program 6) —
+   rides a ledger var; the only spelled hex left here is the allowlisted
+   chrome-ink neutral. hueLawGates scans this block: zero ledger-valued
+   literals, zero invented --hh-hue-* names. The plate lift uses the ledger
+   grey (its neutral-aggregate job); the lift was re-tuned 82%→88% surface
+   when the off-ledger #9aa7b8 retired — accent plate labels need the AA 4.5
+   text floor in all four canon eras, and the weakest pairing (2008 blue on
+   plate) moves 4.20 → 4.92 under the house contrast math (g7Hues.test.ts). */
 .g7 {
   --g7-ink: var(--hh-accent);
   --g7-line: color-mix(in srgb, var(--hh-accent) 35%, transparent);
   --g7-grid-line: color-mix(in srgb, var(--hh-accent) 12%, transparent);
-  --g7-plate: color-mix(in srgb, var(--hh-surface) 82%, #9aa7b8);
+  --g7-plate: color-mix(in srgb, var(--hh-surface) 88%, var(--hh-hue-grey));
   --g7-hand-player: #d7e3ea; /* chrome ink neutral — a human holding a hand */
-  --g7-hand-rule: #b49ce8;   /* ghost violet — §7.14 Ghost Hands, desaturated
-                                by design: near-miss on ledger violet, not a
-                                re-spell of any ledger job */
+  --g7-hand-rule: var(--hh-hue-rule-ink); /* §7.14 Ghost Hands — the Book's
+                             signature ink, ledger job "rule-ink": a by-design
+                             desaturated near-miss on violet, not a re-spell */
   font-family: var(--hh-typeface, "Space Grotesk", monospace);
   color: var(--g7-ink);
   display: flex;
@@ -334,7 +340,14 @@ const HEADLINE = "two boards, one pool — the unwatched board runs on its stand
 .g7-hand--free { opacity: 0.55; }
 .g7-hand--player { color: var(--g7-hand-player); }
 .g7-hand--rule { color: var(--g7-hand-rule); animation: g7-ghost 1.4s steps(2) infinite alternate; }
-@keyframes g7-ghost { to { opacity: 0.62; } }
+/* steps(2,end) renders the pair {1.00, 0.84} — the trough endpoint itself is
+   never displayed, but the rendered dip must keep rule-ink on the body wash
+   above the AA 4.5 text floor in every era (0.84 dip = 4.65–5.12; the retired
+   0.62 endpoint dipped to 4.45 in 2008). ADR-0019 program 6 pairing adjust. */
+@keyframes g7-ghost { to { opacity: 0.68; } }
+@media (prefers-reduced-motion: reduce) {
+  .g7-hand--rule { animation: none; } /* the ghost rests at full ink */
+}
 .g7-pip { font-size: 13px; }
 .g7-pip--free { color: var(--hh-hue-white); }
 .g7-pip--held { color: var(--hh-hue-alarm); }
@@ -350,7 +363,11 @@ const HEADLINE = "two boards, one pool — the unwatched board runs on its stand
 
 .g7-board { width: 100%; background: var(--hh-surface); border: 1px solid var(--g7-line); border-radius: var(--hh-radius, 12px); }
 .g7-plate { fill: var(--g7-plate); stroke: color-mix(in srgb, var(--g7-ink) 60%, transparent); rx: 6; }
-.g7-plate--spare { fill: color-mix(in srgb, var(--g7-plate) 80%, var(--hh-hue-green)); }
+.g7-plate--spare { stroke: var(--hh-hue-green); } /* spare = green FRAME, not
+   a green fill wash: any wash strong enough to read would sink the accent
+   plate labels below the AA text floor (2008: 3.36); the frame clears the UI
+   3:1 floor by width (green on plate = 6.18 in every era) and the db labels
+   then ride the audited plain-plate pairing — g7Hues.test.ts. */
 .g7-plate-id { fill: var(--g7-ink); font-size: 13px; font-weight: 700; }
 .g7-plate-meta { fill: var(--g7-ink); font-size: 10.5px; opacity: 0.8; }
 .g7-plate-depth { fill: var(--hh-hue-green); font-size: 10.5px; }

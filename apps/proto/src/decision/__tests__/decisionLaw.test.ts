@@ -102,6 +102,18 @@ describe("decision law scans", () => {
     }
   });
 
+  it("calibration rows carry the ratify label — contiguous grammar, zero provisional prose", () => {
+    // ADR-0019 program 6: the §7.6 decision-highlight numerics were ratified
+    // 2026-10-18. The e2a1bba house grammar pins as a grep-able contiguous
+    // literal at every DECISION_* block — and the retired banner wording must
+    // be gone, so a label can never sit half-flipped.
+    const source = readFileSync(join(DECISION_DIR, "annotate.ts"), "utf8");
+    expect(
+      [...source.matchAll(/RATIFIED 2026-10-18 \(ADR-0019 program 6\)/g)].length,
+    ).toBeGreaterThanOrEqual(3);
+    expect(/provisional taste|un-ratified/i.test(source)).toBe(false);
+  });
+
   it("hue law: rail styles are era tokens + ledger vars + allowlisted neutrals", () => {
     const rail = readFileSync(join(DECISION_DIR, "DecisionRail.vue"), "utf8");
     const css = stripComments(stripStyleBlocksToCss(rail));

@@ -101,11 +101,13 @@ export interface DecisionFrame {
   readonly next: SimProjection;
 }
 
-/* ═══════════════════════ provisional taste constants ═══════════════════════ */
-/* Every number here is an un-ratified calibration row, pinned by test. */
+/* ═══════════════════════ game-feel calibration constants ═══════════════════ */
+/* The §7.6 decision-highlight numerics, ratified by the owner on 2026-10-18.
+ * Every value below is byte-identical to the pre-ratification numbers pinned
+ * by test — a future change here is a design change, never an un-claim. */
 
 /** Fork windows, sim µs. Surge/refusal act on patience tempo (minutes);
- *  tuning/money forks act on the hour. */
+ *  tuning/money forks act on the hour. RATIFIED 2026-10-18 (ADR-0019 program 6). */
 export const DECISION_WINDOWS: Readonly<Record<DecisionKind, SimTimeUs>> = Object.freeze({
   "surge-fork": 300_000_000n, // 5 min — visitor-patience scale
   "fp-fork": 600_000_000n, // 10 min — dial retune is a shift, not a reflex
@@ -114,14 +116,16 @@ export const DECISION_WINDOWS: Readonly<Record<DecisionKind, SimTimeUs>> = Objec
   "cash-burn": 1_800_000_000n, // 30 min — money decisions breathe slower
 });
 
-/** Fold weights for the rank score (§7.6's three clauses made arithmetic). */
+/** Fold weights for the rank score (§7.6's three clauses made arithmetic).
+ *  RATIFIED 2026-10-18 (ADR-0019 program 6). */
 export const DECISION_SCORE_WEIGHTS: Readonly<{
   closing: number;
   viability: number;
   resource: number;
 }> = Object.freeze({ closing: 0.5, viability: 0.3, resource: 0.2 });
 
-/** Delta gates — below these, the frame is not evidence of a fork. */
+/** Delta gates — below these, the frame is not evidence of a fork.
+ *  RATIFIED 2026-10-18 (ADR-0019 program 6). */
 export const DECISION_GATES: Readonly<{
   fpMin: number;
   bounceMin: number;
