@@ -5,7 +5,7 @@
  */
 import type { SimRunner } from "./simRunner";
 import { MockSimRunner } from "./mockSimRunner";
-import { SimCoreRunner, type CorpusDriveOptions } from "./simCoreRunner";
+import { SimCoreRunner, type CorpusDriveOptions, type SimCoreRulesOptions } from "./simCoreRunner";
 import type { BootBuildWire } from "../shared/protocol";
 
 export type RunnerKind = "mock" | "sim-core";
@@ -19,12 +19,20 @@ export type RunnerKind = "mock" | "sim-core";
  *  structural board edges) forwarded into SimCoreRunner's `options.build`;
  *  ABSENT ⇒ today's seed exactly, byte-ident. The mock has no door and no
  *  board — a build rider on a mock boot is the same wiring bug as corpus+mock
- *  and faults identically. */
+ *  and faults identically.
+ *  `rules` (ADR-0019 program 5 follow-on, boot.rules rider): the worker-side
+ *  book (`shared/protocol.ts` `workerRulesLookup` builds it from the parsed
+ *  entries) forwarded into SimCoreRunner's `options.rules` — the step-12.5
+ *  rule phase + `ruleCarriers: "mapped"` door translation arm. ABSENT ⇒ the
+ *  key is never spread ⇒ today's UN-ARMED runner, byte-ident. The mock has
+ *  no door and no rule phase — a Book on a mock boot is the same wiring bug
+ *  as corpus/build and faults identically. */
 export function createRunner(
   kind: RunnerKind,
   seed: number,
   corpus?: CorpusDriveOptions,
   build?: BootBuildWire,
+  rules?: SimCoreRulesOptions,
 ): SimRunner {
   if (kind === "mock") {
     if (corpus !== undefined) {
@@ -33,6 +41,9 @@ export function createRunner(
     if (build !== undefined) {
       throw new Error('createRunner: build rider requires runnerKind "sim-core"');
     }
+    if (rules !== undefined) {
+      throw new Error('createRunner: rules rider requires runnerKind "sim-core"');
+    }
     return new MockSimRunner(seed);
   }
   // Real @hh/sim-core pipeline + observed store, behind the same protocol.
@@ -40,6 +51,7 @@ export function createRunner(
     seed,
     ...(corpus === undefined ? {} : { corpus }),
     ...(build === undefined ? {} : { build }),
+    ...(rules === undefined ? {} : { rules }),
   });
 }
 

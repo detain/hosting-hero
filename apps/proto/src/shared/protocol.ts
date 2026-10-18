@@ -16,19 +16,36 @@
  */
 import {
   asEntityId,
+  asMetricId,
+  asMoney,
+  asRuleId,
   PLAYER_VERBS,
   type ClockKind,
   type ClockState,
+  type Comparator,
+  type DelegationBand,
   type EntityId,
   type Fixed,
   type LaneStats,
+  type MetricUnit,
+  type MoneyUnit,
   type ObservedCell,
   type ObservedKey,
+  type OneTwoThree,
   type PlayerIntent,
   type PlayerVerbArgs,
+  type PolicyAction,
+  type PolicyActionId,
+  type PolicyCard,
+  type PolicyEscalation,
+  type PolicyThreshold,
+  type Predicate,
+  type RuleId,
+  type ScopeSelector,
   type SimMinute,
   type SimTick,
   type SimTimeUs,
+  type SustainedWindow,
 } from "@hh/sim-core";
 
 /* ═══════════════════════════ Errors ═══════════════════════════ */
@@ -323,8 +340,129 @@ export interface BootBuildWire {
   readonly board?: readonly BootBoardEdgeWire[];
 }
 
+/* ───────────────────── boot.rules rider (ADR-0019 program 5 follow-on) ─────────────
+ * The wave-25 runner leg (@9748ee4) armed the Book behind a plain runner
+ * option and explicitly left the wire for a later additive rider — this is
+ * that rider. A boot may now carry THE POLICY BOOK itself: every entry is
+ * the host's own lookup hash paired with the full PolicyCard document, so
+ * `createRunner` can hand the door the same `lookupPolicyCard` seam the
+ * gates and the direct-runner tests ride, across any worker hop.
+ *
+ * Why the CARD crosses (and not just hashes — the lane's Option-B probe):
+ * PolicyCards are app-side authored data. packages/content carries ZERO
+ * card documents (upkeepMicroUsd greps empty across the corpus; the loader
+ * parses ruleset CARDS, not policy cards), and g7Deck lives gates/g7 — the
+ * worker graph cannot reach any book by itself. A hash-only boot would
+ * require cards already reachable; they are not, so Option B degenerates
+ * into Option A. The hash rides as an OPAQUE KEY because the fingerprint
+ * grammar is host-owned (g7Deck's `g7-card|…` summary vs the mainline
+ * deck's `l-g7m-card|…` — the door treats it as a lookup string, never a
+ * claim, types.ts `PolicyCardCommitArgs`); the worker must not re-derive
+ * what the committing player already knows, and protocol.ts must not gain
+ * a digest dependency to try.
+ *
+ * Wire law = `boot.corpus`/`boot.build` precedent (@1165368 / @921ca7b):
+ * PROTOCOL_VERSION stays 1, the rider is additive-optional, absent ⇒ the
+ * key is never posted, never parsed, never present (legacy boots byte-
+ * identical); present-but-malformed SHAPE ⇒ ProtocolError with the exact
+ * field path; unknown keys inside the records are ignored (envelope
+ * tolerance). The bigints (threshold amounts, action values, sustained
+ * duration, upkeep) follow the house decimal-string law — `WireFixed`/
+ * `WireUs` — and revive HERE, at the boundary, exactly where
+ * `wireIntentToPlayerIntent` revives verb args (E2b), so the runner and
+ * the engine only ever see real `PolicyCard` values. SHAPE walls live here
+ * (closed vocabularies, the OneTwoThree 1..3 arity, key-set uniqueness);
+ * the §2.2 GRAMMAR wall is the engine's — the policy evaluator re-runs
+ * `validatePolicyCard` over the whole book on every rule fold, so a lie in
+ * a card faults the sim, never the codec (the "codec never re-invents a
+ * deeper law" sentence from parseBootCorpus, verbatim doctrine). */
+
+/** Closed wire vocabularies mirroring the sim-core grammar unions (types.ts
+ *  §B 2.2). Drift-pinned against the engine source by
+ *  `__tests__/simWorker.rules.test.ts` — the BIGINT_ARG_FIELDS law: a member
+ *  joining an engine union without joining its table reddens there first. */
+export const POLICY_COMPARATOR_WIRE_IDS = Object.freeze([">", "<", "changed", "fails", "completes"] as const);
+export const METRIC_UNIT_WIRE_IDS = Object.freeze([
+  "percent", "us", "ms", "count", "micro-usd", "ratio", "minutes",
+] as const);
+export const POLICY_ACTION_ID_WIRE_IDS = Object.freeze([
+  "scale-out", "shed-class", "page", "open-ticket", "dispatch-remote-hands",
+  "raise-inspection-depth", "failover", "run-runbook", "drain", "queue-change",
+] as const);
+export const POLICY_SCOPE_KIND_WIRE_IDS = Object.freeze([
+  "object", "role", "query", "class", "estate",
+] as const);
+export const POLICY_BAND_WIRE_IDS = Object.freeze(["inform", "consult", "execute"] as const);
+export const POLICY_ESCALATION_TARGET_WIRE_IDS = Object.freeze(["band", "role", "runbook"] as const);
+export const POLICY_THRESHOLD_KIND_WIRE_IDS = Object.freeze(["value", "class-ref", "event-name"] as const);
+/** Compile-time direction only (no runtime cost): each table stays a subset
+ *  of its engine union; the ADD direction is the source-grep drift pin's. */
+const _policyVocabDrift: readonly [
+  readonly Comparator[], readonly MetricUnit[], readonly PolicyActionId[],
+  readonly ScopeSelector["kind"][], readonly DelegationBand[], readonly PolicyEscalation["to"][],
+] = [POLICY_COMPARATOR_WIRE_IDS, METRIC_UNIT_WIRE_IDS, POLICY_ACTION_ID_WIRE_IDS, POLICY_SCOPE_KIND_WIRE_IDS, POLICY_BAND_WIRE_IDS, POLICY_ESCALATION_TARGET_WIRE_IDS];
+void _policyVocabDrift;
+
+/** JSON-safe form of `PolicyThreshold` (the value arm carries WireFixed). */
+export type PolicyThresholdWire =
+  | { readonly kind: "value"; readonly amount: WireFixed; readonly unit: MetricUnit }
+  | { readonly kind: "class-ref"; readonly classId: string }
+  | { readonly kind: "event-name"; readonly name: string };
+
+export interface PolicyPredicateWire {
+  readonly metric: string;
+  readonly comparator: Comparator;
+  readonly threshold: PolicyThresholdWire;
+}
+
+export interface PolicyActionWire {
+  readonly id: PolicyActionId;
+  readonly runbookName: string | null;
+  /** Decimal-string Fixed, or null (the verbs that take no parameter). */
+  readonly value: WireFixed | null;
+}
+
+/** JSON-safe form of sim-core `PolicyCard` — field-for-field, bigints as
+ *  decimal strings. Optional arms (`for`/`unless`/`else`) follow the
+ *  omit-when-unset law on BOTH sides of the seam. */
+export interface PolicyCardWire {
+  readonly id: string;
+  readonly scope: { readonly kind: ScopeSelector["kind"]; readonly ref: string | null };
+  readonly when: readonly PolicyPredicateWire[];
+  readonly for?: { readonly durationUs: WireUs };
+  readonly then: readonly PolicyActionWire[];
+  readonly unless?: readonly PolicyPredicateWire[];
+  readonly else?: { readonly to: PolicyEscalation["to"]; readonly ref: string };
+  readonly band: DelegationBand;
+  readonly upkeepMicroUsd: WireUs;
+}
+
+/** One book entry: the host's opaque lookup hash + the card it resolves to. */
+export interface BootRuleEntryWire {
+  readonly hash: string;
+  readonly card: PolicyCardWire;
+}
+
+export interface BootRulesWire {
+  readonly entries: readonly BootRuleEntryWire[];
+}
+
+/** TRUSTED forms — what `assertToWorker` hands the hosts (bigints revived,
+ *  records deep-frozen). `BootRules` doubles as `SimClient.boot`'s input
+ *  type: producers hand real PolicyCards (g7Deck exports them branded) and
+ *  `encodeBootRules` stringifies at the send boundary, the sendPlayerVerb
+ *  bigint law (E2b) in boot clothing. */
+export interface BootRuleEntry {
+  readonly hash: string;
+  readonly card: PolicyCard;
+}
+
+export interface BootRules {
+  readonly entries: readonly BootRuleEntry[];
+}
+
 export type ToWorker =
-  | { readonly kind: "boot"; readonly protocol: typeof PROTOCOL_VERSION; readonly seed: string; readonly speedX: SpeedX; readonly runnerKind: RunnerKindWire; readonly corpus?: BootCorpusWire; readonly build?: BootBuildWire }
+  | { readonly kind: "boot"; readonly protocol: typeof PROTOCOL_VERSION; readonly seed: string; readonly speedX: SpeedX; readonly runnerKind: RunnerKindWire; readonly corpus?: BootCorpusWire; readonly build?: BootBuildWire; readonly rules?: BootRules }
   | { readonly kind: "intent"; readonly protocol: typeof PROTOCOL_VERSION; readonly seq: number; readonly clock: ClockKind; readonly atUs: WireUs; readonly origin: "player" | "rule"; readonly payload: WireIntentPayload }
   | { readonly kind: "speed"; readonly protocol: typeof PROTOCOL_VERSION; readonly speedX: SpeedX }
   | { readonly kind: "halt"; readonly protocol: typeof PROTOCOL_VERSION };
@@ -464,6 +602,207 @@ function parseBootBoardEdge(raw: unknown, index: number): BootBoardEdgeWire {
     slot,
     ...(idRaw === undefined ? {} : { id: parseNonEmptyString(`${path}.id`, idRaw) }),
   });
+}
+
+/* ───────────────────── boot.rules parse + encode + book builder ───────────────────── */
+
+/** Signed decimal-string integer → bigint (the Fixed/Money carrier; unlike
+ *  parseUs there is NO non-negativity wall — threshold amounts are plain
+ *  Q16.16 Fixed and may be authored negative by grammar, not by the wire). */
+function parseWireInt(path: string, raw: unknown): bigint {
+  if (typeof raw !== "string" || !INT_RE.test(raw)) {
+    throw new ProtocolError(path, "decimal-string integer (wire bigint law)", raw);
+  }
+  return BigInt(raw);
+}
+
+function parseStringOrNull(path: string, raw: unknown): string | null {
+  if (raw === null) return null;
+  return parseString(path, raw);
+}
+
+/** The OneTwoThree arity wall (§B 2.3.5 "one rule = one story"): the codec
+ *  proves 1..3 so the TRUSTED type never lies; ordering is data, untouched. */
+function parseOneTwoThree<T>(path: string, what: string, raw: unknown, parse: (p: string, r: unknown) => T): OneTwoThree<T> {
+  if (!Array.isArray(raw) || raw.length < 1 || raw.length > 3) {
+    throw new ProtocolError(path, `1..3 ${what}`, raw);
+  }
+  const list: T[] = [];
+  raw.forEach((entry, index) => list.push(parse(`${path}[${index}]`, entry)));
+  if (list.length === 1) return Object.freeze([list[0]]) as OneTwoThree<T>;
+  if (list.length === 2) return Object.freeze([list[0]!, list[1]!]) as OneTwoThree<T>;
+  return Object.freeze([list[0]!, list[1]!, list[2]!]) as OneTwoThree<T>;
+}
+
+function parsePolicyThreshold(path: string, raw: unknown): PolicyThreshold {
+  const rec = isRecord(path, raw);
+  const kind = parseLiteral(`${path}.kind`, rec["kind"], POLICY_THRESHOLD_KIND_WIRE_IDS);
+  if (kind === "value") {
+    return Object.freeze({
+      kind,
+      amount: parseWireInt(`${path}.amount`, rec["amount"]),
+      unit: parseLiteral(`${path}.unit`, rec["unit"], METRIC_UNIT_WIRE_IDS),
+    });
+  }
+  if (kind === "class-ref") {
+    return Object.freeze({ kind, classId: parseString(`${path}.classId`, rec["classId"]) });
+  }
+  return Object.freeze({ kind, name: parseString(`${path}.name`, rec["name"]) });
+}
+
+function parsePolicyPredicate(path: string, raw: unknown): Predicate {
+  const rec = isRecord(path, raw);
+  return Object.freeze({
+    metric: asMetricId(parseNonEmptyString(`${path}.metric`, rec["metric"])),
+    comparator: parseLiteral(`${path}.comparator`, rec["comparator"], POLICY_COMPARATOR_WIRE_IDS),
+    threshold: parsePolicyThreshold(`${path}.threshold`, rec["threshold"]),
+  });
+}
+
+function parsePolicyAction(path: string, raw: unknown): PolicyAction {
+  const rec = isRecord(path, raw);
+  const valueRaw = rec["value"];
+  return Object.freeze({
+    id: parseLiteral(`${path}.id`, rec["id"], POLICY_ACTION_ID_WIRE_IDS),
+    runbookName: parseStringOrNull(`${path}.runbookName`, rec["runbookName"]),
+    value: valueRaw === null ? null : parseWireInt(`${path}.value`, valueRaw),
+  });
+}
+
+/** Full-shape boundary parse → trusted `PolicyCard`. Field-for-field mirror
+ *  of types.ts:766; the closed vocabularies above are the ONLY walls here —
+ *  grammar legality (metric-vs-comparator pairings, runbookName discipline)
+ *  is the evaluator's fold-time wall, never duplicated at the seam. */
+function parsePolicyCard(path: string, raw: unknown): PolicyCard {
+  const rec = isRecord(path, raw);
+  const scopeRec = isRecord(`${path}.scope`, rec["scope"]);
+  const card: {
+    id: RuleId;
+    scope: ScopeSelector;
+    when: OneTwoThree<Predicate>;
+    for?: SustainedWindow;
+    then: OneTwoThree<PolicyAction>;
+    unless?: OneTwoThree<Predicate>;
+    else?: PolicyEscalation;
+    band: DelegationBand;
+    upkeepMicroUsd: MoneyUnit;
+  } = {
+    id: asRuleId(parseNonEmptyString(`${path}.id`, rec["id"])),
+    scope: Object.freeze({
+      kind: parseLiteral(`${path}.scope.kind`, scopeRec["kind"], POLICY_SCOPE_KIND_WIRE_IDS),
+      // "null for `estate`" (ScopeSelector docblock) is a grammar question;
+      // the wire form is string-or-null and this codec does not read meaning.
+      ref: parseStringOrNull(`${path}.scope.ref`, scopeRec["ref"]),
+    }),
+    when: parseOneTwoThree(`${path}.when`, "predicates", rec["when"], parsePolicyPredicate),
+    then: parseOneTwoThree(`${path}.then`, "actions", rec["then"], parsePolicyAction),
+    band: parseLiteral(`${path}.band`, rec["band"], POLICY_BAND_WIRE_IDS),
+    upkeepMicroUsd: asMoney(parseWireInt(`${path}.upkeepMicroUsd`, rec["upkeepMicroUsd"])),
+  };
+  const forRaw = rec["for"];
+  if (forRaw !== undefined) {
+    const forRec = isRecord(`${path}.for`, forRaw);
+    card.for = Object.freeze({ durationUs: parseUs(`${path}.for.durationUs`, forRec["durationUs"]) });
+  }
+  const unlessRaw = rec["unless"];
+  if (unlessRaw !== undefined) {
+    card.unless = parseOneTwoThree(`${path}.unless`, "predicates", unlessRaw, parsePolicyPredicate);
+  }
+  const elseRaw = rec["else"];
+  if (elseRaw !== undefined) {
+    const elseRec = isRecord(`${path}.else`, elseRaw);
+    // Discriminated-union arms need the literal narrowed by the parseLiteral
+    // result type — the freeze widens, so the boundary cast is the honest shape.
+    card.else = Object.freeze({
+      to: parseLiteral(`${path}.else.to`, elseRec["to"], POLICY_ESCALATION_TARGET_WIRE_IDS),
+      ref: parseNonEmptyString(`${path}.else.ref`, elseRec["ref"]),
+    }) as PolicyEscalation;
+  }
+  return Object.freeze(card);
+}
+
+/** Parse the optional boot.rules rider (ADR-0019 program 5 follow-on): the
+ *  book is a SET of {host hash → trusted card} entries. Duplicate hashes are
+ *  a literal wire-field collision (unlike boot.build's DERIVED edge ids) —
+ *  refused right here, naming both positions, so no second entry can shadow
+ *  the first into a silent overwrite. Unknown keys inside the records are
+ *  ignored: the envelope tolerance parseBootCorpus documents. */
+function parseBootRules(raw: unknown): BootRules {
+  const rec = isRecord("boot.rules", raw);
+  const entriesRaw = rec["entries"];
+  if (!Array.isArray(entriesRaw)) {
+    throw new ProtocolError("boot.rules.entries", "array of {hash, card} book entries", entriesRaw);
+  }
+  const seen = new Map<string, number>();
+  const entries: BootRuleEntry[] = [];
+  entriesRaw.forEach((entry, index) => {
+    const path = `boot.rules.entries[${index}]`;
+    const entryRec = isRecord(path, entry);
+    const hash = parseNonEmptyString(`${path}.hash`, entryRec["hash"]);
+    const first = seen.get(hash);
+    if (first !== undefined) {
+      throw new ProtocolError(`${path}.hash`, `unique card hash (book is a set; duplicates entries[${first}])`, hash);
+    }
+    seen.set(hash, index);
+    entries.push(Object.freeze({ hash, card: parsePolicyCard(`${path}.card`, entryRec["card"]) }));
+  });
+  return Object.freeze({ entries: Object.freeze(entries) });
+}
+
+function encodePolicyThreshold(threshold: PolicyThreshold): PolicyThresholdWire {
+  if (threshold.kind === "value") {
+    return { kind: "value", amount: threshold.amount.toString(), unit: threshold.unit };
+  }
+  return threshold; // the class-ref / event-name arms are already JSON-safe
+}
+
+function encodePolicyPredicate(predicate: Predicate): PolicyPredicateWire {
+  return { metric: predicate.metric, comparator: predicate.comparator, threshold: encodePolicyThreshold(predicate.threshold) };
+}
+
+function encodePolicyAction(action: PolicyAction): PolicyActionWire {
+  return {
+    id: action.id,
+    runbookName: action.runbookName,
+    value: action.value === null ? null : action.value.toString(),
+  };
+}
+
+/** Trusted PolicyCard → JSON-safe wire form (exported: the send-boundary
+ *  half of the E2b bigint law — real bigints in, decimal strings out). */
+export function encodePolicyCard(card: PolicyCard): PolicyCardWire {
+  return {
+    id: card.id,
+    scope: { kind: card.scope.kind, ref: card.scope.ref },
+    when: card.when.map(encodePolicyPredicate),
+    ...(card.for === undefined ? {} : { for: { durationUs: card.for.durationUs.toString() } }),
+    then: card.then.map(encodePolicyAction),
+    ...(card.unless === undefined ? {} : { unless: card.unless.map(encodePolicyPredicate) }),
+    ...(card.else === undefined ? {} : { else: { to: card.else.to, ref: card.else.ref } }),
+    band: card.band,
+    upkeepMicroUsd: card.upkeepMicroUsd.toString(),
+  };
+}
+
+export function encodeBootRules(rules: BootRules): BootRulesWire {
+  return {
+    entries: rules.entries.map((entry) => ({ hash: entry.hash, card: encodePolicyCard(entry.card) })),
+  };
+}
+
+/** THE worker-side book materialization: parsed boot.rules → the runner's
+ *  `lookupPolicyCard` seam, VERBATIM the shape the door config forwards. One
+ *  shared builder for BOTH runner hosts (the `wireIntentToPlayerIntent`
+ *  anti-drift law, E2b): the fake and the browser worker cannot disagree on
+ *  what a booted book means. Unknown hash → null keeps the ordinary
+ *  `unknown-card-hash` refusal the last word (g7Deck's seam law restated). */
+export function workerRulesLookup(rules: BootRules): {
+  readonly lookupPolicyCard: (cardHash: string) => PolicyCard | null;
+} {
+  const byHash = new Map<string, PolicyCard>();
+  for (const entry of rules.entries) byHash.set(entry.hash, entry.card);
+  const book = Object.freeze(byHash);
+  return Object.freeze({ lookupPolicyCard: (cardHash: string) => book.get(cardHash) ?? null });
 }
 
 /* ═══════════════════════════ Encode (trusted → wire) ═══════════════════════ */
@@ -670,6 +1009,7 @@ export function assertToWorker(raw: unknown): ToWorker {
   if (kind === "boot") {
     const corpusRaw = rec["corpus"];
     const buildRaw = rec["build"];
+    const rulesRaw = rec["rules"];
     return {
       kind,
       protocol: PROTOCOL_VERSION,
@@ -685,6 +1025,9 @@ export function assertToWorker(raw: unknown): ToWorker {
       ...(corpusRaw === undefined ? {} : { corpus: parseBootCorpus(corpusRaw) }),
       // Same absent-means-no-key law (D7 build-state rider, ADR-0014 #D7).
       ...(buildRaw === undefined ? {} : { build: parseBootBuild(buildRaw) }),
+      // And again for the policy book (boot.rules, ADR-0019 program 5
+      // follow-on): absent ⇒ no key ⇒ the runner boots UN-ARMED, byte-ident.
+      ...(rulesRaw === undefined ? {} : { rules: parseBootRules(rulesRaw) }),
     };
   }
   return {

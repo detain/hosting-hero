@@ -6,7 +6,7 @@
  * owns exactly one `SimRunner`, and replies with `ProjectionWire` batches only.
  * It never receives DOM, canvas or Vue — same file runs under any WorkerHost.
  */
-import { assertToWorker, encodeProjection, wireIntentToPlayerIntent } from "../shared/protocol";
+import { assertToWorker, encodeProjection, wireIntentToPlayerIntent, workerRulesLookup } from "../shared/protocol";
 import { workerCorpusDrive } from "../shared/corpusHost";
 import { createRunner, type SimRunner } from "../runner";
 
@@ -36,13 +36,18 @@ host.onmessage = (event: MessageEvent): void => {
          D7 build rider (ADR-0014 #D7): `build` forwards the opening door
          rail/board to the SAME construction try/catch — a semantically bad
          rider (zero-capacity rail, duplicate/dangling seeded edge) faults
-         the boot through this exact channel, never crashes the worker. */
+         the boot through this exact channel, never crashes the worker.
+          boot.rules (ADR-0019 program 5 follow-on): the parsed book becomes
+          the runner's rules option through the ONE shared workerRulesLookup
+          builder (fakeWorker mirrors this branch verbatim) — the Book arms
+          the step-12.5 phase; absent ⇒ un-armed, byte-ident legacy boot. */
       try {
         runner = createRunner(
           message.runnerKind,
           seed,
           message.corpus === undefined ? undefined : workerCorpusDrive(message.corpus),
           message.build,
+          message.rules === undefined ? undefined : workerRulesLookup(message.rules),
         );
       } catch (error) {
         post({

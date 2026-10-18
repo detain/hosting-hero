@@ -1099,9 +1099,11 @@ export interface SimCoreRunnerOptions {
   /** RULES LIVE (ADR-0019 program 5): arms the step-12.5 rule phase, the
    *  door's `ruleCarriers: "mapped"` translation, and the per-tick re-feed
    *  of `TickResult.intents` into the next tick's door — see the header
-   *  ledger for the full law. Runner option ONLY: PROTOCOL_VERSION stays 1
-   *  and `boot` gains no field (a worker-boot rider would be additive-
-   *  optional per the @921ca7b precedent — deliberately NOT taken in v0).
+   *  ledger for the full law. Reached over the wire by `boot.rules`
+   *  (shared/protocol.ts rider, ADR-0019 program 5 follow-on): PROTOCOL_VERSION
+   *  stays 1, absent ⇒ byte-identity; the worker hosts build this option from
+   *  the parsed book via the ONE `workerRulesLookup` builder (v0's
+   *  "deliberately NOT taken" rider note @921ca7b is now taken).
    *  ABSENT ⇒ every shipped golden is the byte-identity proof. */
   readonly rules?: SimCoreRulesOptions | undefined;
 }

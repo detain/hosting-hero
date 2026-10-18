@@ -4,7 +4,7 @@
  * when Worker construction fails. The runner advances synchronously on
  * `pump()` so tests never depend on timers.
  */
-import { assertToWorker, encodeProjection, wireIntentToPlayerIntent } from "../shared/protocol";
+import { assertToWorker, encodeProjection, wireIntentToPlayerIntent, workerRulesLookup } from "../shared/protocol";
 import { workerCorpusDrive } from "../shared/corpusHost";
 import type { PlayerIntent } from "@hh/sim-core";
 import { createRunner, type SimRunner } from "../runner";
@@ -52,6 +52,9 @@ export class FakeWorkerLike {
          corpus semantics (runnerKind-honoring precedent); `build` forwards
          identically so a semantically bad rider faults the boot here exactly
          as it would in the browser worker (lastRunner null, ready never sent).
+         boot.rules rider (ADR-0019 program 5 follow-on): the SAME shared
+         workerRulesLookup builder arms the book here exactly as in
+         sim.worker.ts — hosts cannot drift on what a booted book means.
          Seed stays the fake's fixed 1 — pump()-driven determinism, share codes
          are the real worker's concern. */
       try {
@@ -60,6 +63,7 @@ export class FakeWorkerLike {
           1,
           message.corpus === undefined ? undefined : workerCorpusDrive(message.corpus),
           message.build,
+          message.rules === undefined ? undefined : workerRulesLookup(message.rules),
         );
       } catch (error) {
         this.runner = null;

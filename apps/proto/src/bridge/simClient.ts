@@ -12,8 +12,10 @@
 import {
   assertFromWorker,
   decodeProjection,
+  encodeBootRules,
   type BootBuildWire,
   type BootCorpusWire,
+  type BootRules,
   type SimProjection,
   type SpeedX,
   type WireIntentPayload,
@@ -56,13 +58,20 @@ export class SimClient {
    *  positions-1-3-unchanged shape @1165368 set): optional opening build
    *  state (door hands capacity + structural board edges) forwarded to the
    *  sim-core runner. Omitted ⇒ never posted; both riders are sim-core-only
-   *  (mock boot + rider is a wiring bug the worker hosts fault loud). */
+   *  (mock boot + rider is a wiring bug the worker hosts fault loud).
+   *  `rules` (ADR-0019 program 5 follow-on, boot.rules rider): the POLICY
+   *  BOOK — host-hash → trusted PolicyCard entries, stringified to the wire
+   *  form here by `encodeBootRules` (the sendPlayerVerb bigint law in boot
+   *  clothing; g7Deck's real-branded cards go in, decimal strings go over).
+   *  Omitted ⇒ key never posted ⇒ the runner boots UN-ARMED byte-ident.
+   *  Sim-core-only, exactly like corpus/build (mock + Book is a wiring bug). */
   boot(
     seed: string,
     speedX: SpeedX = 1,
     runnerKind: "mock" | "sim-core" = "mock",
     corpus?: BootCorpusWire,
     build?: BootBuildWire,
+    rules?: BootRules,
   ): void {
     this.worker.postMessage({
       kind: "boot",
@@ -72,6 +81,7 @@ export class SimClient {
       runnerKind,
       ...(corpus === undefined ? {} : { corpus }),
       ...(build === undefined ? {} : { build }),
+      ...(rules === undefined ? {} : { rules: encodeBootRules(rules) }),
     });
   }
 

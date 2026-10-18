@@ -8,6 +8,7 @@ import {
   ProtocolError,
   assertFromWorker,
   assertToWorker,
+  encodeBootRules,
   decodeProjection,
   displayToFixed,
   encodeProjection,
@@ -328,5 +329,32 @@ describe("display helpers", () => {
     const intCell = [...original.observed.values()].find((c) => typeof c.value === "number");
     expect(intCell).toBeDefined();
     expect(() => requireFixed(intCell, "queueDepth")).toThrow(/fixed encoding/);
+  });
+});
+
+describe("boot.rules round-trip (ADR-0019 program 5 follow-on rider)", () => {
+  it("the REAL g7 deck revives deep-equal through the worst transport", async () => {
+    const { G7_CARDS, g7CardHash } = await import("../gates/g7/g7Deck");
+    const envelope = {
+      kind: "boot",
+      protocol: 1,
+      seed: "g7",
+      speedX: 1,
+      runnerKind: "sim-core",
+      rules: encodeBootRules({
+        entries: G7_CARDS.map((card) => ({ hash: g7CardHash(card.id), card })),
+      }),
+    };
+    const decoded = assertToWorker(throughJson(envelope));
+    if (decoded.kind !== "boot" || decoded.rules === undefined) throw new Error("expected booted rules");
+    expect(decoded.rules.entries.length).toBe(G7_CARDS.length);
+    for (let i = 0; i < G7_CARDS.length; i += 1) {
+      expect(decoded.rules.entries[i]!.card).toEqual(G7_CARDS[i]);
+    }
+  });
+
+  it("boot without the rider parses key-free (additive-optional law)", () => {
+    const decoded = assertToWorker({ kind: "boot", protocol: 1, seed: "x", speedX: 1, runnerKind: "sim-core" });
+    expect("rules" in decoded).toBe(false);
   });
 });
