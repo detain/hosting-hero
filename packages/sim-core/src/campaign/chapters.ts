@@ -130,7 +130,7 @@ export interface ChapterMeta {
   /** L-CP2 seat when the chapter is a perspective level (§1.2 roster id). */
   readonly perspectiveId?: string;
   /** §2.11 tier the beat rides. Prologue/Act I teach T0–2 by OD-19 fiat and
-   *  ship no row; every Act II chapter declares 3 or 4 (§1.9 :5133's
+   *  ship no row; every Act II chapter declares 3 or 4 (§1.9 :5137's
    *  "Tiers 3–4"), and every Act III chapter declares 5 or 6 (§1.9 :5126's
    *  "Act III (Tiers 5–6)"), the lint law reading the rise from these
    *  numbers. Tier 5/6 has no bespoke engine mechanics at the level layer —
@@ -500,7 +500,7 @@ const THE_CERT_CLIFF_WIRE = {
 /* ------------------------------------------------------------------ */
 
 /** c-1 homage: the §1.5 "Metastable" fiction (surge-then-wall on an eight-slot
- *  edge, :4092) re-authored with the ONE clause the campaign cadence cannot
+ *  edge, :4096) re-authored with the ONE clause the campaign cadence cannot
  *  wait for — a live book. The shipped registry doc runs contracts:[]; under
  *  the scripted bridge its empty arms §2.9's churn-floor from t1, the
  *  three-day spell dissolves the company at ~t44, and with no death lose-line
@@ -516,7 +516,7 @@ const METASTABLE_WINDOW_WIRE = {
   brief:
     "Act III opens where Act II's prevention ended: a surge that would cascade if the book went quiet. The eight-slot edge hums, a three-minute storm breaks over it, and the degraded wall waits for one unlucky backlog. Survive the quarter-hour after the ladder.",
   specRef: "§1.5 Metastable (campaign-authored Act III homage — the §1.6 floor clause added)",
-  specLine: 4092,
+  specLine: 4096,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -972,7 +972,7 @@ const PROLOGUE_WIRE = {
 /** Prologue beat ledger (§1.9 archetype + hosting_game.md anchor per chapter). */
 export const PROLOGUE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
   "p-1-triage-desk": { archetype: "Hold-Without-Hands", specLine: 3673 },
-  "p-2-borrowed-thunder": { archetype: "Reach-State", specLine: 4063 },
+  "p-2-borrowed-thunder": { archetype: "Reach-State", specLine: 4067 },
   "p-3-handover-queue": { archetype: "Schedule", specLine: 3896 },
 });
 
@@ -1038,7 +1038,7 @@ export const ACT_ONE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
   "a-4-deadbeat-quarter": { archetype: "Inherit", specLine: 3806 },
   "a-5-price-hike": { archetype: "Negotiate", specLine: 3818 },
   "a-6-quiet-month": { archetype: "Endure", specLine: 3479 },
-  "a-7-rfo": { archetype: "Diagnose", specLine: 4050 },
+  "a-7-rfo": { archetype: "Diagnose", specLine: 4054 },
   "a-8-support-vigil": { archetype: "Hold-Without-Hands", specLine: 1212, perspectiveId: "support-queue" },
 });
 
@@ -1046,7 +1046,7 @@ export const ACT_ONE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
 export const CAMPAIGN_ACT_ONE: CampaignDoc = parseCampaignDoc(ACT_ONE_WIRE);
 
 /* ------------------------------------------------------------------ */
-/* ACT II — process → prevention (Tiers 3–4, §1.9 :5133)                 */
+/* ACT II — process → prevention (Tiers 3–4, §1.9 :5137)                 */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -1066,7 +1066,7 @@ export const CAMPAIGN_ACT_ONE: CampaignDoc = parseCampaignDoc(ACT_ONE_WIRE);
  * time as prevention rather than triage (b-11), and closes the act racing a
  * certificate cliff its own reissue calendar must beat (b-12).
  *
- * PROPORTIONALITY (§1.9 :5133 act law; wave-27 full-12 growth — the owner-
+ * PROPORTIONALITY (§1.9 :5137 act law; wave-27 full-12 growth — the owner-
  * commissioned expansion that closes the tension this paragraph filed): the
  * act is TWELVE levels at full design and now SHIPS twelve — the death
  * headline, its succession consequence, the tier plateau, the rehab witness,
@@ -1183,7 +1183,7 @@ export const ACT_TWO_THIN_RIDE_EXCEPTIONS: Readonly<Record<string, string>> = Ob
  *  line for re-rides; the authored levels cite their §9.9/§1.2 anchors). */
 export const ACT_TWO_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
   "b-1-money-works": { archetype: "Convert", specLine: 3855, tier: 3 },
-  "b-2-slow-week": { archetype: "Endure", specLine: 4041, tier: 3 },
+  "b-2-slow-week": { archetype: "Endure", specLine: 4045, tier: 3 },
   "b-3-skeleton-weekend": { archetype: "Hold-Without-Hands", specLine: 3662, tier: 3 },
   "b-4-hardest-lesson": { archetype: "Reach-State", specLine: 35140, tier: 3 },
   "b-5-fogged-board": { archetype: "Inherit", specLine: 3769, tier: 4 },
@@ -1240,7 +1240,7 @@ export const CAMPAIGN_ACT_TWO: CampaignDoc = parseCampaignDoc(ACT_TWO_WIRE);
  * DESIGN AUTHORITY: I-AC3 dossier (owner-approved, wave-26 "go with
  * recommendations"). Roster substitutions vs the dossier's letters, all
  * probe-forced (the corpse audit, header disclosure above):
- * - c-1/c-6/c-8 are authored HOMAGES of the metastable (:4092) / ddos-season
+ * - c-1/c-6/c-8 are authored HOMAGES of the metastable (:4096) / ddos-season
  *   (:3994) / free-tier-flood (:3590) fiction — the registry docs' empty
  *   books churn-die cash-independently at ~t44 and none carries a death
  *   lose-line, so under the campaign clock they win as CORPSES (probe
@@ -1320,7 +1320,7 @@ const ACT_THREE_WIRE = {
  *  re-ride equals the registry doc's citation), seats cite their §1.2 roster
  *  lines, bespoke beats cite their law sentences. */
 export const ACT_THREE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
-  "c-1-storm-window": { archetype: "Convert", specLine: 4092, tier: 5 },
+  "c-1-storm-window": { archetype: "Convert", specLine: 4096, tier: 5 },
   "c-2-quarter-that-ran-itself": { archetype: "Endure", specLine: 5353, tier: 5 },
   "c-3-understaffed-sunday": { archetype: "Reach-State", specLine: 3673, tier: 5 },
   "c-4-floor-and-aisle": { archetype: "Build-to-Spec", specLine: 1215, tier: 5, perspectiveId: "datacenter-tech" },

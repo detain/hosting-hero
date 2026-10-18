@@ -398,6 +398,71 @@ solo-ActIII, `bd36d3be…` four-arc; prior arc digests UNMOVED). Joint review:
 PROCEED, zero critical/major. The refusal census held 46 UNPAID;
 PROTOCOL_VERSION held 1; the type program stays CEASED.
 
+## Wave-27 owner ruling (session-10, 2026-10-18)
+
+Owner ruling, verbatim: **"go with recomendations , keep driving to completion"**
+(owner's spelling preserved) — the same standing word that drove wave-26 drove
+wave-27: the wave-26 closeout's four drivables, executed to completion without
+check-ins, all CLOSED. No new laws were needed; nothing here re-opens a
+ratified decision.
+
+**ADR census decision (author-before-write, the 0015/0018/0019 law honored
+literally):** every wave-27 citation form was greped BEFORE authoring —
+`git log a8b7eae..HEAD -p` shows `ADR-0019` ×18, `ADR-0016` ×8, `ADR-0012` ×1,
+`ADR-0018` ×1, and `ADR-0020` occurs ZERO times in wave code (the repo's single
+`ADR-0020` string is this file's own predecessor record in
+`reports/audit/SUMMARY.md` describing its zero-occurrence). The wave-27 record
+therefore rides **ADR-0019 as this dated rider section — NOT a new ADR.**
+
+| Lane | What landed | SHA |
+| --- | --- | --- |
+| L-TRACE | carrier-contract §4.1 trace REPRO SCRIPT — 453-line standalone (`node --experimental-transform-types test/carrierTrace.repro.ts`, rc 0, 27 frames byte-equal, digest `de1d4c0f941333eb`); a human replays the reference trace WITHOUT vitest; fence stays the fixture, zero authority added; vitest surface UNCHANGED (8f/100 count-exact — script uncollected); falsified by three armed doc-mutation probes | `db64667` |
+| L-ENV | BootRules envelope-TYPE symmetry (wave-26 review minor #1 CLOSED) — `ToWorker.boot.rules` becomes `BootRulesWire`, symmetric with corpus/build riders; every shape wall field-path-for-field-path; revival moves to `workerRulesLookup` (E2b single-builder for both workers); POSTED JSON byte-identical (2,124-byte cmp proof vs `a8b7eae`); boot goldens `ca8863849cb3db32`/`780b1cbc61dff760` + money goldens BYTE-STAND | `a757f6c` |
+| L-SMR | `sellMarketRates` catalog HOST legs (wave-26 review minor #4 CLOSED as commissioned) — `ScenarioRunConfig.sellMarketRates` + `SimCoreRunnerOptions.sellMarketRates`, config-only: NO boot field, NO doc field — the world fact rides the run-config (era posture) and the runner's self-grading refusal law survives relocated; pre-tick-1 `scenario[BAD_MONEY]` seam wall; 31 shipped wires digest-equal armed-vs-bare; c-7 STAYS catalog-LESS (never-certain witness untouched) | `adc8b64` |
+| L-A2 | Act II completes at TWELVE beats (V2) — b-8/b-9/b-10 ride their shipped §1.5 registry docs (thin-ride exceptions 1→4), b-11 the-prevention-shift REUSES the noc-shift seat (campaign FIRST reuse), b-12 the-cert-cliff AUTHORED (§1.5 :3275, opens ON the bridge); seats {4,10,16,21,26,31} gaps {6,6,5,5,5} — every act at §1.9's per-act floor of TWO for the first time in campaign history; the standing DP:293 seat-floor tension RESOLVED, not recorded | `b6187c4` |
+
+**Three adjudicated judgment calls.** (1) **The noc-shift seat REUSE** — the
+per-act floor of two across five acts left no arithmetic path that avoided
+repeating a perspective before tour index 31; the V1 honeymoon alternative was
+probed and SUPERSEDED. §1.9's lint is roster membership + cadence + cap-1, and
+`PERSPECTIVE_EXPRESSIBILITY` is per-perspective — reuse is LAWFUL; the choice
+was made against the standing owner-taste row (ratify-or-cure ask below).
+(2) **Disk-wins regrade (b-12):** the first cut graded `churn-above:2` and LOST
+3 of 5 seeds on disk; the lose line was re-graded to `churn-above:3` and every
+seed won — verified twice. Recon's stale digest hints (`381b5439`/`047c8728`)
+were similarly SUPERSEDED by self-derived disk truth (`cd82b8b88a125e66`,
+`5f79eb776a0bafaf`, `739d411cd5329eb1`). (3) **Flip direction is ENGINE truth
+(L-SMR):** the catalog ABOVE the offer buys ACCEPTANCE, below buys refusal
+(sell.ts deviation math) — the commission's parenthetical read inverted; the
+lane pinned from the engine at both altitudes rather than guessing
+(pin-from-engine, never guess).
+
+**Closeout code-cures (comment-only, review minors):** **F6** — the wave-26
+Act-III header digest bullet in `campaign/chapters.ts` still asserted the
+four-arc tail `bd36d3be169cf130` and 3-arc `18ef1b5675d0ea27 RE-PROVEN
+UNMOVED`; `b6187c4` moved both downstream digests — prose now states the
+current truth (tail `739d411cd5329eb1`, 3-arc `5f79eb776a0bafaf`, wave-27 move
+noted inline; prologue `28df3ca4e6c90977` and Act-I `86595ae9b21853b3`
+re-proven UNMOVED). **F3** — the `sellMarketRates` runner docblock gained the
+empty-case sentence (present-but-EMPTY Map spreads through and is behaviorally
+identical — sell.ts anchor-miss + money-fold identity, pinned
+`simCoreRunner.catalog.test.ts:125-128`; the scenario leg collapses
+empty⇒omission). Both cures rode `b0c2571`.
+
+**Battery at the wave-27 tip:** sim-core serial 187f/3,567 · proto 111f/1,272
+· transport 100 (repro rc 0 alongside, uncollected) · relay 42 · host 36 ·
+typecheck 8/8 · ci-verify 5/5 · canary PASS 151 files · api-verify PASS 1,756
+(ZERO export delta — the legs are config fields, not new names) · validate
+14 bundles / 413 `_todo` / 16 pack markers · headless 53/5 parity
+`b0162ab554c4665a18892f2139d7fee8`/`a9b4b7b81c2fbedd7d50246936a458d1` HELD ·
+build 954.75/547.42/1673.64/103.08 kB. ZERO pre-existing digest goldens moved
+outside the disclosed campaign self-derived trio (L-A2's own Act-II/3-arc/4-arc
+witnesses GREW with the act — the move was the lane's commission); every boot/
+money/shed/drain/g4/g5 golden BYTE-STOOD. Joint review: PROCEED, zero
+critical/major. Nineteen door verbs UNCHANGED; the refusal census held 46
+UNPAID; PROTOCOL_VERSION held 1; the type program stays CEASED (fifteenth-card
+CEASE restated).
+
 ## Source
 
 - Owner ruling: session-9 second ruling, verbatim **"go with recomendations"**

@@ -154,6 +154,25 @@
 > now machine-TRUE — and the `ENDING_KINDS` roster-order-vs-precedence comment);
 > the wave-25 six-ask register is ANSWERED (three CLOSED, three STAND); the live
 > register is the wave-26 section below.
+>
+> **2026-10-18 session-10 rider (wave-27 depth chain), executed as ADR-0019's
+> wave-27 rider section:** the owner's standing word — verbatim **"go with
+> recomendations , keep driving to completion"** — drove wave-27 too: the
+> wave-26 closeout's four drivables, all CLOSED without check-ins. Carrier-trace
+> repro script `db64667` (the §4.1 trace replays OUTSIDE vitest; the fence is the
+> fixture; transport vitest surface 100/8 UNCHANGED) · BootRules envelope
+> symmetry `a757f6c` (wave-26 minor #1 CLOSED; POSTED JSON byte-identical, boot
+> goldens BYTE-STAND) · sellMarketRates host legs `adc8b64` (wave-26 minor #4
+> CLOSED as commissioned; config-only — NO boot field, NO doc field; c-7
+> deliberately catalog-less) · Act II at TWELVE beats `b6187c4` (V2: the tour's
+> FIRST perspective reuse — noc-shift seats a second time; seats
+> {4,10,16,21,26,31} gaps {6,6,5,5,5}, every act at §1.9's per-act floor of two
+> — the standing seat-floor tension RESOLVED, not recorded). Battery: sim-core
+> serial 187f/3,567 · proto 111f/1,272 · api-verify PASS 1,756 (ZERO export
+> delta) · canary 151 · ZERO pre-existing goldens moved (campaign self-derived
+> trio disclosed). Joint review PROCEED (zero critical/major); review F6+F3
+> cured comment-only at `b0c2571`. The wave-26 register's two build-asks are
+> CLOSED; the live register is the wave-27 section below.
 
 **Source of truth:** `reports/MASTER_REPORT.md §6`. Citations: a bare `§N.M` = a section of `MASTER_REPORT.md`; source-doc headings are always written `hosting_game.md §x.y`.
 **Rule for implementers:** none of these may be resolved silently in code. Each maps to a named config knob in `docs/PHASE1-PLAN.md` / `docs/CONVENTIONS.md §5`. **§0 legend:** OPEN = owner decision requested; PENDING = sub-decision created *by* a ratified decision, recommendation given, owner sign-off outstanding.
@@ -268,15 +287,76 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 
 ---
 
-## Fresh owner asks (2026-10-18, wave-26 closeout — raised by the wave-26 lanes and this closeout's disclosures; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
+## Fresh owner asks (2026-10-18, wave-27 closeout — raised by the wave-27 lanes and this closeout's disclosures; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
+
+- **The noc-shift seat REUSE — ratify-or-cure.** L-A2 closed Act II at twelve
+  beats by seating the tour's FIRST perspective reuse (`b6187c4`): lawful under
+  §1.9 (lint = roster membership + cadence + cap-1; `PERSPECTIVE_EXPRESSIBILITY`
+  is per-perspective), and the ONLY arithmetic path to every act at the per-act
+  floor of two. The V1 honeymoon alternative was probed and SUPERSEDED — both
+  recorded in ADR-0019's wave-27 rider. Ratify reuse as a standing tour device,
+  or commission a cure chapter; this was the standing owner-taste row the
+  orchestrator ruled on, disclosed here rather than buried.
+- **`boot.catalog` rider.** `adc8b64` names the exact candidate: if the owner
+  wants market catalogs ACROSS the worker wire, the boot.corpus (`1165368`) /
+  boot.rules (`9653a96`) shape is the precedent — additive-optional,
+  omit-when-unset, PROTOCOL_VERSION stays 1. v0 deliberately keeps the catalog
+  host-side; the runner option never crosses the wire.
+- **c-7 catalog-armed variant.** The sell run-up chapter STAYS catalog-less by
+  the never-certain law — its verdict census [[4,0],[4,0],[4,0],[3,1],[4,0]] is
+  the witness; arming a catalog into it would MOVE that census. Owner commission
+  required, not silently available.
+- **proto empty-map collapse symmetry (cosmetic).** The scenario leg collapses an
+  EMPTY `sellMarketRates` map to key-free absence (the `984759b` law); the proto
+  runner spreads presence-only, so an empty Map rides through but is
+  behaviorally identical (pinned `simCoreRunner.catalog.test.ts:125-128`).
+  A symmetric collapse would be tidier; nothing depends on it.
+- **repro-script synth-marker validation gap (F1 NIT hygiene).** The CI player
+  parses and counts the `synth` carrier-authorship markers (§2.12) on `in`
+  lines; the `db64667` repro clone routes the same fence WITHOUT validating the
+  marker. A cure touches the edit-together pair (repro router + player), so it
+  rides here as a hygiene commission — the pair's falsifiability is already
+  pinned by the doc-mutation probes.
+- **tools/perf A/B re-baseline of the proto build vs `db64667`.** The L-ENV A/B
+  ran against `a8b7eae`; the wave chain since relocated ≈+1.22 kB of worker
+  bytes (per-lane disclosures: 953.40→954.62 at `a757f6c`, →954.75 at
+  `adc8b64`). One `tools/perf ab` pass keeps the build ledger current —
+  measurement hygiene, no code change.
+- **Remaining owner walls (standing, restated whole):** branching campaign /
+  Pivot-Map ADR supersession · the goal-card doc field · the seven §1.6 ExitKind
+  bridge (endings v0 @`61a1c3b` deliberately never reads it; exit-EDGE cashSlice/
+  valuation math stays a wall) · tier-real-mechanics beyond the door verbs for the
+  card-identity legs · corpus-in-campaign · the PHP production carrier for co-op ·
+  the canvas inspector · the apprentice×communicate author-and-delegate reading
+  (wave-25 register — STANDS) · the era-probe witness hexes staying RELATIVE
+  (wave-25 register — STANDS) · **credential audit — URGENT (standing)**.
+
+---
+
+## Fresh owner asks (2026-10-18, wave-26 closeout — the two build-asks CLOSED 2026-10-18 by wave-27 above; the walls bullet now rides the wave-27 restatement; the live register is the section above)
 
 - **BootRules envelope-type symmetry (hygiene).** boot.rules ships full `PolicyCard`
   documents over the wire (Option A) while other boot riders keep dedicated
   `*Wire` mirror types; a symmetric `BootRulesWire` envelope is a typing tidy-up —
   the mechanics are DONE and pinned, nothing here re-opens `9653a96`.
+  **CLOSED 2026-10-18 @`a757f6c` — `ToWorker.boot.rules` is now `BootRulesWire`
+  (symmetric with corpus/build); revival moved to `workerRulesLookup` (E2b
+  single-builder for sim.worker + fakeWorker); every shape wall preserved
+  field-path-for-field-path; POSTED JSON byte-identical (2,124-byte cmp proof vs
+  `a8b7eae`); boot goldens `ca8863849cb3db32`/`780b1cbc61dff760` BYTE-STAND;
+  `SimClient.boot` still takes trusted `BootRules` — encode-at-send-boundary.**
 - **`sellMarketRates` catalog leg.** The sell-verdict predicates (`c6b69a4`)
   adjudicate against the host threshold alone; the §1.5 diligence-era market-rate
   catalog is unbuilt content+economy work awaiting owner commission.
+  **CLOSED 2026-10-18 @`adc8b64` as HOST LEGS (wave-26 minor #4 as commissioned):
+  `ScenarioRunConfig.sellMarketRates` + `SimCoreRunnerOptions.sellMarketRates`,
+  config-only — NO boot field, NO doc field (the runner's self-grading refusal
+  law survives RELOCATED: the doc may never carry a market feed, the host may
+  read one; era precedent); pre-tick-1 `scenario[BAD_MONEY]` seam wall; flip
+  direction pinned from ENGINE truth (catalog ABOVE offer ⇒ accepted). c-7
+  deliberately catalog-less (never-certain witness UNTOUCHED); the content-side
+  §1.5 market-rate catalog COPY stays owner-future, and the `boot.catalog`
+  wire rider is the named candidate in the live register above — not taken.**
 - **Remaining owner walls (standing, restated whole):** branching campaign /
   Pivot-Map ADR supersession · the goal-card doc field · the seven §1.6 ExitKind
   bridge (endings v0 @`61a1c3b` deliberately never reads it; exit-EDGE cashSlice/
@@ -290,7 +370,7 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 
 - **G4GatePanel `#9aa7b8` plate-mix unification.** L-RATIFY retired the literal from G7 (now `var(--hh-hue-grey)`@88%, AA-passed) but G4's documented gate-local plate-mix (:602/:617) keeps its own copy — wave-24 F-4 named only the G7 pair. One ledger consumption point or a sanctioned second site: owner taste. **CLOSED @`d197917` — unified onto the ledger grey (fade 0.7→0.95); zero bespoke plate hexes repo-wide, one consumption point.**
 - **Apprentice×communicate strict-alternative.** The seat KEEPS communicate on the campaign's author-and-delegate reading (§1.2 :1479 "junior team members execute actions under supervision"; chapters.ts asserts communicate executes x4). A strict "apprentice decides nothing" reading bans it (ban would be 17) — flipping requires re-authoring the apprentice chapters. Ruling only if the reading is contested. **STANDS — Act III rode the seat as authored; no ruling sought.**
-- **Act II→full-12 seat-floor cadence.** 7-of-12 authored per the proportionality law; the §1.9 per-act floor (2) vs every-5 global cadence tension is recorded (ADR-0019 program 3 note; chapters.ts:475). Resolve when the act completes. **STANDS for Act II — and Act III resolved its OWN arithmetic at nine beats (§1.9 rider @`5e9be02`: 8 beats force a seat-gap of 4 under the every-5/cadence law; 9 land idx 21/26 with gaps 5/5, the first act honoring the per-act floor of two).**
+- **Act II→full-12 seat-floor cadence.** 7-of-12 authored per the proportionality law; the §1.9 per-act floor (2) vs every-5 global cadence tension is recorded (ADR-0019 program 3 note; chapters.ts:475). Resolve when the act completes. **STANDS for Act II — and Act III resolved its OWN arithmetic at nine beats (§1.9 rider @`5e9be02`: 8 beats force a seat-gap of 4 under the every-5/cadence law; 9 land idx 21/26 with gaps 5/5, the first act honoring the per-act floor of two). CLOSED 2026-10-18 @`b6187c4` (V2): Act II completed at twelve beats — b-11 the-prevention-shift REUSES the noc-shift seat, the tour's first perspective reuse and the ONLY arithmetic path to every act at the per-act floor of two; seats {4,10,16,21,26,31} gaps {6,6,5,5,5}. The reuse was an orchestrator ruling on this standing owner-taste row — disclosed as the live register's ratify-or-cure ask; the V1 honeymoon alternative is on record, probed and superseded.**
 - **Era TRANSITION mechanics.** `eraYearAt` is a v0-constant seam BY RULING (R66); mid-run era flips — and the greyed-card question "do already-built nodes with the retired tech degrade?" — are the named follow-on when the owner commissions transitions. **CLOSED @`58fddc3` — transitions BUILT: host-forwarded step function over the business clock, inclusive at the step minute, gates armed from t0, card-grey OPENING-FROZEN as a named limit; the degrade question stays doc-side (retirement `to`-legs fixture-only, R66 holds).**
 - **`boot.rules` proto arm.** L-G7M shipped the runner seam with production UN-ARMED by decision; arming a panel (G7-on-mainline or the Act row) is the owner's adoption call. **CLOSED @`9653a96` as ARMED-ABLE: Option-A full-card codec on protocol v1, omit-when-unset, armed goldens byte-stand; a production panel passing `rules` remains owner ADOPTION, not mechanics.**
 - **Era-probe witness hexes stay RELATIVE.** `6aecd417…`/`38e72c42…` appear only in test TRAIL lines (self-derived witnesses, relative-by-design like the Act-II trio) — they are NOT pinned authority; record before anyone "verifies" them against disk. **STANDS — and wave-26 added its own self-derived trail hexes the same way (era-transitions pristine trio `6aecd417…`/`38e72c42…`/`7688b0ee…`, probe method disclosed); relative-by-design now covers the era-transitions twins too.**

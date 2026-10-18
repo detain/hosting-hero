@@ -116,7 +116,7 @@
  *    ninety-percent truth: the segments keep their organic cover labels
  *    while the arrival die rolls every mint's identity from the authored
  *    familyWeights table, and the census counts the ROLL.
- *  - the-not-invented-yet → "The Era Track" (~line 4572, L-EM): the §0.4
+ *  - the-not-invented-yet → "The Era Track" (~line 4576, L-EM): the §0.4
  *    grid sentence "Whole branches of the tech tree are greyed out with
  *    'not invented yet'" as ENGINE FACT — the era is run CONFIG (eraYear +
  *    eraBundle), never doc data, so this wire's eraless byte-stand pins
@@ -358,7 +358,7 @@ const METASTABLE_WIRE = {
   brief:
     "An eight-slot edge node hums at half load until a three-minute surge quadruples arrivals past capacity. Short enough, the queue drains before the ten-minute degraded wall closes; long enough, backlog and retries lock it solid — some seeds drain, some cascade.",
   specRef: "§1.5 Metastable",
-  specLine: 4092,
+  specLine: 4096,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -399,7 +399,7 @@ const METASTABLE_CORPUS_WIRE = {
   brief:
     "The eight-slot edge node hums at half load, then cites the shipped quarter: a scanner drizzle at the half-hour mark is weatherable; stack the finale behind it and backlog plus retries lock capacity past the degraded wall — the storm rides the content's schedule.",
   specRef: "§1.5 Metastable",
-  specLine: 4092,
+  specLine: 4096,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -1265,7 +1265,7 @@ const SLOW_WEEK_AFTER_WIRE = {
   brief:
     "The outage is over and nothing is broken — everything is fragile. The mechanics are all consequences: the post-mortem you file (or fudge), and the rating the next bad month tests against the floor your honesty built.",
   specRef: "§1.5 The Slow Week After",
-  specLine: 4041,
+  specLine: 4045,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1315,7 +1315,7 @@ const SLOW_WEEK_AFTER_WIRE = {
 
 /* ──────────────────── Someone Else's Outage ────────────────────────── */
 
-/** §1.5 "Someone Else's Outage" (:4063) — the C1 door channel's second
+/** §1.5 "Someone Else's Outage" (:4067) — the C1 door channel's second
  *  story, told from the OTHER side of the rail. A major region elsewhere
  *  dies and the internet notices your status page anyway: every ticket is
  *  about a failure you did not have. The engine says it plainly — the
@@ -1344,7 +1344,7 @@ const SOMEONE_ELSES_OUTAGE_WIRE = {
   brief:
     "A cloud region far away caught fire and your status page caught the blame. Nothing is broken here — the hour is pure queue: reply, reply, reply, and never let the one-hand door refuse a frightened customer.",
   specRef: "§1.5 Someone Else's Outage",
-  specLine: 4063,
+  specLine: 4067,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1388,8 +1388,8 @@ const SOMEONE_ELSES_OUTAGE_WIRE = {
 
 /* ──────────────────────────── The RFO ──────────────────────────────── */
 
-/** §1.5 "The RFO" (:4050) — the signals channel's blame-culture story,
- *  deliberately the MIRROR of "The Slow Week After" (:4041). That pilot
+/** §1.5 "The RFO" (:4054) — the signals channel's blame-culture story,
+ *  deliberately the MIRROR of "The Slow Week After" (:4045). That pilot
  *  proved adjudication: the same filing flips on changesInFlight (one
  *  clean change credits, two blur into ambiguity and forfeit). This one
  *  flips on STYLE, and the wire has a word for it: `style: "blame"` is
@@ -1421,7 +1421,7 @@ const THE_RFO_WIRE = {
   brief:
     "Enterprise paper demands a Reason-For-Outage after the region dies. Write it blameless and the house floor halves the next hit; print a finger-pointing doc for the logs and the second outage lands at full weight on a brand nobody trusts.",
   specRef: "§1.5 The RFO",
-  specLine: 4050,
+  specLine: 4054,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1467,7 +1467,7 @@ const THE_RFO_WIRE = {
 
 /* ───────────────────────── Threshold Day ───────────────────────────── */
 
-/** §1.5 "The Threshold Day" (:4102) — the corrupts channel (16c6add)
+/** §1.5 "The Threshold Day" (:4106) — the corrupts channel (16c6add)
  *  gets its conversion, and the channel is LITERALLY the spec's thesis:
  *  "nothing changed" — no attack, no deploy, no failure — the board just
  *  grew into a limit. On a bounce-mode board a queue jam screams through
@@ -1505,7 +1505,7 @@ const THE_THRESHOLD_DAY_WIRE = {
   brief:
     "No attack, no deploy, no drama — just the graph you stopped watching. The board serves exactly five a minute; the sixth arrival is the threshold. On a corrupts board the queue rots in silence while the bounce meter insists nothing is happening.",
   specRef: "§1.5 The Threshold Day",
-  specLine: 4102,
+  specLine: 4106,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 5, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -1705,7 +1705,7 @@ const CHANGE_FREEZE_WIRE = {
  *  malicious-dominant composition (registry-core families: scanner-drizzle,
  *  vulnerable-plugin-compromise, wp-login-brute-squad, layer7-mimic all
  *  malicious; the wave-5 crest is systemic-dominant and its storm dice are
- *  deliberately outside this band — the metastable-corpus :4092 twin keeps
+ *  deliberately outside this band — the metastable-corpus :4096 twin keeps
  *  the finale for its own cascade witness).
  *  Same abuse-ceiling reading as the segments twin (:3590), narrowed to the
  *  malicious census pair per this lane's vocab: the citation must flood
@@ -2052,7 +2052,7 @@ const FREE_TIER_FLOOD_MIX_WIRE = {
 
 /* ───────────── The Not-Invented-Yet — era pilot (§0.4/§1.6, L-EM) ───────────── */
 
-/** §1.6 "The Era Track" (:4572) + §0.4's grid sentence (:656), through the
+/** §1.6 "The Era Track" (:4576) + §0.4's grid sentence (:656), through the
  *  L-EM era door stage (scenario/eraAvailability.ts — ADR-0019 program 4):
  *  the FIRST engine implementation of "not invented yet". The era arms from
  *  run CONFIG (eraYear + eraBundle), never from the wire, so this doc is
@@ -2073,7 +2073,7 @@ const NOT_INVENTED_YET_WIRE = {
   brief:
     "The calendar says 1998 and the tech tree agrees: the door refuses both shared-web placements without taking a single hand — 'not invented yet' as engine fact — while the plain generic box still slides in. Arm 2026: the identical script executes three for three.",
   specRef: "§1.6 The Era Track",
-  specLine: 4572,
+  specLine: 4576,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
