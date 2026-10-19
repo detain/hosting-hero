@@ -288,7 +288,53 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 
 ---
 
-## Fresh owner asks (2026-10-19, wave-29 closeout — the wave-28 eight asks dispositioned below; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
+## Fresh owner asks (2026-10-19, wave-30 closeout — the wave-29 register dispositioned below where still standing; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
+
+**The 2026-10-19d owner batch (verbatim "go / recomendations and kep
+going") opened register gate (a) — the CONTENT RETUNE — with the lane
+recommendations standing: (b)-(e) named deferrals stay named, (f)
+epilogue-UI stays walled (the proto has NO campaign host surface to
+consume it), (viii) the valuation ladder stays gated behind the playtest
+not yet run. A mid-wave stop was honored and "go" resumed. One lane +
+three review cures executed atop `ca9f7bb`:**
+
+- **(a) Content retune — upkeep "small" numerics — CLOSED @`3dd65cf`
+  (cures @`0e6847b`).** THE promised motion of the upkeep fold is now
+  CONTENT: the PROVISIONAL ladder inform 5,000 / consult 10,000 /
+  execute 25,000 / failover-wall execute 40,000 µ$/sim-min rides all
+  fourteen shipped deck cards (Σ watch-the-door 130,000 ⇒ t420 bill
+  54,600,000 µ$; cold-aisle 35,000 ⇒ 14,700,000; sleepless 50,000 ⇒
+  21,000,000). ALL 14 deckCardHash goldens re-derived (old→new table in
+  the commit body — named, not hidden). The live first-bill witness
+  `scenario/__tests__/deckUpkeepLive.test.ts` 7 its (t420 EXACT; the
+  floor-first bounce twin lands cashEnd EXACTLY 5,000,000n with the
+  cards STAYING committed; ×100 determinism; dormant roster
+  byte-stand). The g7Deck.ts 0n gate fiction deliberately NOT retuned
+  (the commission names shipped decks only) — the machine-pinned
+  UPKEEP_DIVERGENCE list + the NEW proto-side drift pin (W30-01) close
+  the enforcement loop BOTH directions. **The upkeep ladder JOINS THE
+  RATIFY-ON-PLAYTEST SET** alongside the wave-28 valuation ladder
+  (W28-04) and the wave-29 upkeep semantics. Engine truths pinned this
+  wave: the armed-COMMITTED proto pair `2a7a977a541b08a9`/
+  `6a314d31f2f2f889` is ZERO-MOTION **BY LAW** (the frame digest is the
+  PROJECTION; ruleBook content never crosses that wire — upkeep motion
+  lives in the STATE digest, witnessed scenario-side, review
+  re-proved); a t419 unarmed digest twin is IMPOSSIBLE by construction
+  and the claim was discharged on the money channel instead, disclosed
+  in-test.
+
+**Still standing from the wave-29 register (posture unchanged):**
+(b) card-shed-on-nonpayment wall · (c) forward-charging · (d) droplet
+fidelity · (e) suspension-aware accrual · (f) endings-UI epilogue
+consumption — WALL: the proto has no campaign host surface; the 37
+voice lines ship and nothing renders them — **(i) NEW: epilogue-UI
+consumption is the only obvious next BUILD if commissioned** (the
+endings evidence keys are live engine output; rendering them is a proto
+feature, owner call) · (g) panel deck-picker beyond watch-the-door ·
+(h) G7 wire-graph hygiene. The standing walls restated WHOLE under the
+wave-29 header below stay WHOLE.
+
+## Fresh owner asks (2026-10-19, wave-29 closeout — SUPERSEDED AS THE LIVE REGISTER by the wave-30 section above; the wave-28 eight asks dispositioned below; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
 
 **Dispositioned by the 2026-10-19 owner batch — register asks (i)-(vi)
 COMMISSIONED and BUILT this wave, (vii)-(viii) explicitly NOT commissioned
@@ -370,7 +416,8 @@ COMMISSIONED and BUILT this wave, (vii)-(viii) explicitly NOT commissioned
 
 **NEW asks (raised by the wave-29 lanes and this closeout's disclosures):**
 
-- **(a) Content retune — upkeep "small" numerics.** THE disclosed
+- **(a) Content retune — upkeep "small" numerics. CLOSED @`3dd65cf`
+  (wave-30) — see the live register above.** Was THE disclosed
   golden-mover: authoring deck upkeep moves the fourteen deckCardHash
   goldens, the boot.rules wire witnesses and the L-PA armed pairs
   automatically (hostile drift pins). Owner commission, content lane.

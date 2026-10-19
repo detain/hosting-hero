@@ -696,6 +696,81 @@ forms in the wave's code**. Wave-29 therefore rides ADR-0019 as this dated
 rider. The fifteenth-card CEASE (ADR-0017 #8) is restated untouched:
 wave-29 added ZERO hosting types.
 
+## Wave-30 owner ruling (2026-10-19 session-10d)
+
+The owner's standing batch of 2026-10-19 (verbatim **"go / recomendations
+and kep going"**) opened register gate **(a) — the CONTENT RETUNE**, the
+promised motion the wave-29 upkeep fold named. The recommendations stood:
+(b)-(e) named deferrals stay named, (f) epilogue-UI stays walled (the proto
+has NO campaign host surface to consume it), (viii) the valuation ladder
+stays gated behind the playtest not yet run. A mid-wave stop was honored
+and "go" resumed. One lane + three review cures executed atop `ca9f7bb`;
+the whole wave moved ZERO pre-existing digest goldens.
+
+| Lane | What landed | SHA |
+|---|---|---|
+| L-RT (a) | The upkeep ladder on the shipped decks — the fourteen deck cards take PROVISIONAL small numerics: **inform 5,000 / consult 10,000 / execute 25,000 µ$ per sim-minute**, and an execute card whose THEN arm is the bought-verb wall (failover meets `unsupported-verb-carrier` at the door) rides **40,000** — the dearest delegation a book can hold. Deck sums: watch-the-door 130,000 (t420 bill 54,600,000 µ$), cold-aisle 35,000 (14,700,000), sleepless 50,000 (21,000,000). Grounds: §7.14:28536 "each carries a small **upkeep**" (the doc names upkeep, never a calendar) + the delegation-band semantics at :28601-28602 (the deeper a card acts FOR you, the more it costs to keep) + §1.1's first-upkeep-bill beat :845 + hg:16453 pricing upkeep as "a recurring staff-hand cost" — upkeep is staff-shaped, and staff is what executing rules replace. ALL numerics PROVISIONAL, **ratify-on-playtest** — the ladder joins the wave-28 `exitKindFactorBps` queue. The 14 `deckCardHash` goldens ALL re-derived (old→new table in the commit body — the named motion, not hidden: retuning upkeep re-derives every card key). NEW live witness `scenario/__tests__/deckUpkeepLive.test.ts` 7 its: the shipped watch-the-door book bills ON-SCENE at the t420 roll (cash 75,000,000→20,400,000 µ$ EXACT, timeout@430); the floor-first $5M bankroll twin BOUNCES the bill — cashEnd EXACTLY 5,000,000n, cards STAY committed; cold-aisle arrivals/served byte-equal through the zero-fire roster law; ×100 determinism Set.size 1; the dormant roster byte-stands (`6aecd417c317a910c75e37f4da14b272`/`ee277ee1b9719a1ce412fd0a3564eebb`/`df1538b3baabe2e93fa79799a6830230`). `g7Deck.ts`'s 0n gate fiction deliberately NOT retuned (the commission names the shipped decks only) — `shipDecks.test.ts`'s machine-pinned UPKEEP_DIVERGENCE list replaces naive field equality | @`3dd65cf` |
+
+**Two engine findings surfaced, both witness-pinned, both honest
+surprises.** (1) **The armed COMMITTED proto pair did NOT move — and why
+is the law.** The frame digests the proto tests pin are digests of the
+PROJECTION; `GameState.ruleBook` content (where the upkeep numerics live)
+never crosses the projection wire — motion lives in the STATE digest
+(`pipeline/digest.ts`) and is witnessed scenario-side.
+`2a7a977a541b08a9`/`6a314d31f2f2f889` stand byte-stand; the reviewer
+independently re-proved the zero-motion. (2) **A t419 unarmed digest twin
+is impossible by construction.** Once a deck is committed, ruleBook is
+state content — armed ≠ dormant from tick 1 (the deckRules law) — so no
+per-tick digest twin exists at the state level with upkeep pinned; the
+claim was discharged on the money channel instead (the t420 bill witnessed
++ dormant byte-stand by roster law), disclosed in-test rather than
+papered.
+
+**Review findings dispositioned.** Joint review PROCEED, zero critical /
+zero major. The three minors were CURED in closeout @`0e6847b`:
+**W30-01** — the loader-side UPKEEP_DIVERGENCE list can only SEE the
+shipped JSON and its hand-transcribed twins (import law); the real g7Deck
+side was unpinned. A proto-side drift pin joined
+`apps/proto/__tests__/deckBoot.rules.test.ts` (each gate card stays 0n
+while its shipped twin rides the ladder — a silent upkeep move on EITHER
+body of material now reddens a test); the shipDecks docblock was rescoped
+honestly to name it. **W30-02** — band cites extended `:28594-28599` →
+`:28594-28602` in the deck `_todo` strings (×4) + the shipDecks ladder
+comment: the wave-29 riders line-shifted the material, the definitions
+land :28601-28602 under ### Delegation Bands (:28598); content-verify
+caught one MORE stale cite the review had not named (cold-aisle's "95%
+right" :28541-28543 → :28546-28547) — re-anchored, disclosed. **W30-03** —
+the :845 first-upkeep-bill beat sits under §1.1 (The scale ladder), not
+§1.6 — the wave-30 text had inherited the mislabel from wave-29 record
+prose; corrected in the test header + the three deck `_todo`s. The
+historical wave-29 records (this file's verbatim quote block,
+SUMMARY.md:2156, DP:309) KEEP the mislabel as record. No findings numbered
+W30-04/05 exist — the review's remaining re-verification legs (hash-table
+re-derivation, the zero-motion claim, the byte-stand list, ladder-cite
+verbatim-truth, UPKEEP_DIVERGENCE minimality, the t419 honesty, floor-
+first) all passed clean. One lane-work discrepancy disclosed at the time:
+the brief quoted the watch-the-door sum as 135,000 ⇒ 56.7M bill; disk (and
+the shipped ladder) says 130,000 ⇒ 54.6M — disk won.
+
+**Cited-form census (wave-26/27/28/29 discipline re-run):**
+`git log ca9f7bb..HEAD -p | grep -oE 'ADR-00[0-9]{2}' | sort | uniq -c` →
+ADR-0016 ×13 (the ratify-on-playtest register pointers) · ADR-0018 ×8
+(wall-card citations) · ADR-0019 ×1 — **zero ADR-0020/0021/0030 forms in
+the wave's code**. Wave-30 therefore rides this file as the dated rider
+above. The fifteenth-card CEASE (ADR-0017 #8) is restated untouched:
+wave-30 added ZERO hosting types.
+
+**Battery at the closeout tip.** sim-core serial **196f/3,796** (3,789+7
+EXACT — the cures add zero sim-core tests) · proto **113f/1,304**
+(1,303+1 = the W30-01 pin) · transport 100/8 + repro `de1d4c0f941333eb`
+UNMOVED · relay 42 · host 36 · headless 53/5 parity `b0162ab5`/`a9b4b7b8`
+HELD · api-verify PASS **1,785 — ZERO export delta the whole wave** ·
+canary 153 · validate exit0 bundles 14 / packs 15 / decks 3, TODO 413 /
+WARN 16 / DECK-TODO 3 / Key-literals 123 all neutral · typecheck 8/8 ·
+build worker 955.45 / fakeWorker 547.42 / CSS 103.08 byte-flat,
+index 1,696.35→1,697.56 (+1.21 kB the retuned `?raw` deck numerics riding
+the main chunk) · ci-verify 5/5.
+
 ## Source
 
 - Owner ruling: session-9 second ruling, verbatim **"go with recomendations"**

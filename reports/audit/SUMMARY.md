@@ -2184,3 +2184,47 @@ All six commissioned asks CLOSED (i-iv BUILT, v+vi content-BUILT); the meta-curr
 ### Program status
 
 Waves 1–29 landed. master ahead of pushed-origin `98edaee` by five lane commits + this closeout; push ceremony stands with the orchestrator. The engine can now bill for its own rules, arm its own book in production, tell its seven endings, and bind its doctrine by one hash — the content-retune commission is the loaded next trigger.
+
+
+## WAVE-30 closeout — session-10d ruling on the wave-29 register (verbatim "go / recomendations and kep going"): the PROMISED-MOTION wave — the fourteen shipped deck cards take REAL upkeep numerics, the first bills land ON-SCENE from shipped content, and money-in-motion becomes engine truth — with an honest ZERO-MOTION surprise on the proto side (2026-10-19)
+
+**Context.** The owner's 2026-10-19 standing batch opened register gate **(a) — the CONTENT RETUNE**, the named promised motion of the wave-29 upkeep fold (`b59dbeb`). The lane recommendations stood: (b)-(e) named deferrals stay named; (f) epilogue-UI stayed walled (the proto has NO campaign host surface — building one is a new feature, owner call); (viii) the valuation ladder stays gated behind the playtest not yet run. A mid-wave stop was honored, "go" resumed. ONE lane ran atop `ca9f7bb`; joint review returned PROCEED zero critical / zero major, three minors cured in closeout @`0e6847b`.
+
+### Ledger (by lane)
+
+- **L-RT @`3dd65cf`** — the upkeep ladder as CONTENT: the fourteen shipped deck cards take PROVISIONAL small numerics — inform 5,000 / consult 10,000 / execute 25,000 µ$/sim-minute, and an execute card whose THEN arm is the bought-verb wall (failover meets `unsupported-verb-carrier` at the door) rides 40,000, the dearest delegation a book can hold. Deck sums: watch-the-door 130,000 (t420 bill 54,600,000 µ$), cold-aisle 35,000 (14,700,000), sleepless 50,000 (21,000,000). Grounds: §7.14:28536 "each carries a small **upkeep**" (the doc names upkeep, never a calendar) + delegation bands :28601-28602 + §1.1 :845 first-bill beat + hg:16453 "a recurring staff-hand cost" — upkeep is staff-shaped, and staff is what executing rules replace. ALL 14 `deckCardHash` goldens re-derived (old→new table in the commit body — the named motion, not hidden). NEW live witness `scenario/__tests__/deckUpkeepLive.test.ts` 7 its: t420 bills the shipped book EXACTLY (cash 75,000,000→20,400,000 µ$, timeout@430); floor-first $5M twin BOUNCES — cashEnd EXACTLY 5,000,000n, cards STAY committed; cold-aisle arrivals/served byte-equal through the zero-fire roster law; ×100 determinism Set.size 1; dormant roster byte-stands (`6aecd417c317a910c75e37f4da14b272`/`ee277ee1b9719a1ce412fd0a3564eebb`/`df1538b3baabe2e93fa79799a6830230`). The g7Deck.ts 0n gate fiction deliberately NOT retuned (commission names shipped decks only) — `shipDecks.test.ts` machine-pins the UPKEEP_DIVERGENCE list; wire upkeep decimals moved where tests quote them (`productionRules.ts` :181, `deckBoot.rules.test.ts` UPKEEP_BY_ID).
+- **Closeout @`0e6847b`** — review cures: **W30-01** proto-side UPKEEP_DIVERGENCE drift pin (`deckBoot.rules.test.ts` +1 its — each g7Deck card stays 0n WHILE its shipped twin rides the ladder; the loader test's cross-app blindspot CLOSED; shipDecks docblock rescoped honestly) · **W30-02** band cites `:28594-28599`→`:28594-28602` (×4 deck `_todo`s + shipDecks comment; definitions land :28601-28602 under ### Delegation Bands :28598 — wave-29 riders shifted the material) + content-verify caught cold-aisle's "95% right" `:28541-28543`→`:28546-28547` · **W30-03** §1.6→§1.1 section-label honesty for the :845 first-upkeep-bill beat (test header + all three decks). Historical wave-29 record prose keeps its mislabels as record.
+
+### The zero-motion surprise (engine truth, pinned)
+
+The armed-COMMITTED proto pair `2a7a977a541b08a9`/`6a314d31f2f2f889` did NOT move under the retune — and why is the LAW: the frame digests the proto tests pin are digests of the PROJECTION; `GameState.ruleBook` content never crosses the projection wire. Upkeep motion lives in the STATE digest (`pipeline/digest.ts`) and is witnessed scenario-side (the t419 digest-level unarmed twin is IMPOSSIBLE by construction — armed ≠ dormant from tick 1 — discharged on the money channel, disclosed in-test). Reviewer independently re-proved both claims.
+
+### Battery
+
+| Gate | Result |
+|---|---|
+| sim-core serial | **196f / 3,796** rc 0 (3,789+7 EXACT; zero PRE-EXISTING goldens moved) |
+| proto serial | **113f / 1,304** (1,303+1 = W30-01 pin, disclosed) |
+| transport / relay / host | 100/8 + repro rc 0 `de1d4c0f941333eb` UNMOVED · 42 · 36 |
+| headless | 53/5 parity `b0162ab5`/`a9b4b7b8` HELD |
+| api-verify | PASS **1,785** — ZERO export delta the WHOLE wave (the retune is VALUES in JSON, not names) |
+| validate | exit 0 — 14 bundles / 15 packs / decks=3 / 413 `_todo` / 18 pack-markers / DECK-TODO 3 / WARN 16 / Key-literals 123 — ALL counters neutral |
+| canary / typecheck / ci-verify | 153 files · 8/8 · 5/5 |
+| build | worker 955.45 / fakeWorker 547.42 / index **1,697.56** / CSS 103.08 kB (worker/fakeWorker/CSS byte-flat vs wave-29 tip; +1.21 kB index = the retuned `?raw` deck numerics on the main chunk) |
+| digests | 14 deckCardHash goldens re-derived BY COMMISSION (commit-body table); dormant twins `ca8863849cb3db32`/`780b1cbc61dff760`, money `25_005_307_300n`/`25_109_732_500n`, versus `cd1296c54df0e9c6`, armed pair `2a7a977a541b08a9`/`6a314d31f2f2f889` ALL BYTE-STAND |
+
+### Census — ZERO markers moved
+
+✅321 🔧1,016 ⚠️0 ❌2,222 📝30 = 3,589 — UNCHANGED; wave-30 amends dated rider text and the :55 status block in place (all edits zero-line-count), never a heading marker. Asserted by recount on the final tree.
+
+### Findings disposition
+
+Review PROCEED 0C/0M; W30-01/02/03 CURED in-closeout (above); W30-04/05 never existed — the review's other legs (hash re-derivation, zero-motion re-proof, byte-stand list, ladder-cite verbatim-truth, UPKEEP_DIVERGENCE minimality, t419 honesty, floor-first) passed clean. Disclosed: the closeout brief's watch-the-door Σ arithmetic (135,000 ⇒ 56.7M) lost to disk (130,000 ⇒ 54.6M); the scenario dir file-count reads 16f (deckUpkeepLive joined), not the brief's 15f — it-count 601 EXACT; the MS wave-28 "WARNINGS 16 (= 14 cards' upkeep-0n + 2 authored)" formula was FALSE AT AUTHORING (validator never warned upkeep; the 16 = 14 wave-title placeholders + 2 failover walls) — cured honestly.
+
+### Owner state
+
+Ask (a) CLOSED @`3dd65cf`. The upkeep ladder joins the ratify-on-playtest set alongside the wave-28 valuation ladder (W28-04) and wave-29 semantics. Register stands: (b)-(h) + NEW (i) epilogue-UI consumption — the only obvious next BUILD if commissioned (the endings evidence keys are live engine output; nothing renders them). All standing walls restated in DECISIONS-PENDING; the fifteenth-card CEASE UNTOUCHED — wave-30 added ZERO hosting types.
+
+### Program status
+
+Waves 1–30 landed. master ahead of pushed-origin `ca9f7bb` by the lane + cures + this closeout; push ceremony stands with the orchestrator.
