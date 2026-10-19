@@ -5,13 +5,18 @@
  * prototype gate from the frozen `ALL_GATE_MOUNTS` aggregate (gates/index.ts
  * is the single source — a new gate dir adds one spread line there and lands
  * in the selector automatically). Default view = G1; the "Sandbox" entry
- * returns the original mock-runner WorldStage + instrument chrome.
+ * returns the WorldStage + instrument chrome driven by the mainline
+ * sim-core worker (the mock toy stays behind explicit `runnerKind: "mock"`
+ * boots in tests — see bootClient).
  *
  * Gate panels are self-contained: each brings its own runner/scenario and
  * mounts INTO the stage slot — the shell never rewrites gate internals.
  *
- * Boot order: observed store ← SimClient ← worker (mock runner) — the sandbox
- * keeps booting the worker exactly as before, so switching back is instant.
+ * Boot order: observed store ← SimClient ← worker (mainline stepper,
+ * sim-core) — the sandbox boots the worker through the REAL boot path,
+ * armed with the production deck book (`runner/productionRules.ts`, owner
+ * ruling 2026-10-19: watch-the-door on the mainline stepper; the dormant
+ * switch keeps the un-armed wire reachable for tests).
  * Chrome never scales with the camera; era re-skins via exactly 4 tokens;
  * Readout Mode and ChromaMeter are always one key away (§1.10).
  */
@@ -30,6 +35,7 @@ import { buildCandidates, formatMicroUsd, formatRunClock, isSpiking, worstState,
 import { connectionState, ingestProjection, fault, projection as projectionRef } from "./state/observedStore";
 import { era, nextEra, setEra } from "./i18n/eraState";
 import { SimClient, asWorkerLike, type WorkerLike } from "./bridge/simClient";
+import { productionBootRules } from "./runner/productionRules";
 import { globalBudget } from "./render/budget";
 import DecisionRail from "./decision/DecisionRail.vue"; // §7.6 marked-decision rail
 import LossCard from "./chrome/LossCard.vue"; // §9.9 obituary — batch-E v0 death rider consumer
@@ -56,7 +62,7 @@ const railEntries = computed<readonly RailEntry[]>(() => [
     title: mount.title,
     subtitle: mount.subtitle,
   })),
-  { id: SANDBOX_ID, badge: "00", title: "Sandbox — mock runner", subtitle: "The original g1-smoke canvas, instruments and bezel chrome (no gate engine)." },
+  { id: SANDBOX_ID, badge: "00", title: "Sandbox — mainline stepper", subtitle: "The g1-smoke canvas, instruments and bezel chrome, driven by the real sim-core worker — boot.rules armed with the shipped watch-the-door deck (owner-ratified 2026-10-19; inert until a card is committed)." },
   { id: SIMLAB_ID, badge: "LAB", title: "Sim Lab — unattended + coverage", subtitle: "Service benches, not gates: run a whole weekend head-full-stop through @hh/sim-core/unattended, and paint the §2.1 coverage grid with the shared-web roster." },
 ]);
 
@@ -109,7 +115,14 @@ function bootClient(worker: WorkerLike): void {
     onReady: (info) => console.info(`[proto] runner ready: ${info.runnerId}@${info.engineVersion}`),
   });
   clientRef.value = client;
-  client.boot("g1-smoke-001", 1);
+  // Production mainline boot (owner ruling 2026-10-19): the sandbox boots
+  // the REAL sim-core stepper through the same 6-positional wire every
+  // headless witness uses; `productionBootRules()` answers the shipped
+  // watch-the-door book when armed (default) and undefined when dormant —
+  // undefined ⇒ the `rules` key is never posted ⇒ the exact pre-adoption
+  // wire. The mock toy remains reachable via explicit `runnerKind: "mock"`
+  // boots (tests only — mock + Book is a wiring bug the hosts fault loud).
+  client.boot("g1-smoke-001", 1, "sim-core", undefined, undefined, productionBootRules());
 }
 
 onBeforeUnmount(() => {
