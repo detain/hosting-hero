@@ -261,7 +261,7 @@ date that lands** — grounded VERBATIM in the §0.4 grid sentence "2001 dot-com
 colo" (:653; the pack's 1998 rung already denies a pre-2001 world).
 shared-web KEEPS 2009 (same grid sentence is the sketch precedent) and its
 `_todo` now QUOTES the grid verbatim while RECORDING — not resolving — the
-§9.1 "shared hosting (2003)" divergence (:32959): the grid is the shelf
+§9.1 "shared hosting (2005)" divergence (:32959): the grid is the shelf
 authority. Four verdict-appended nulls (object-storage, serverless,
 ci-build-farm, exchange-colo — each names WHY no quote exists: the serverless
 "first-visit joke" date is undated fiction, the ci 2016 sketch has no grid
@@ -476,7 +476,7 @@ ratify-records and defer-records; dispositions as executed:
 |---|---|---|
 | L-ENV (hygiene 1) | proto `sellMarketRates` empty-map collapse — presence-spread omits the empty map, mirroring the scenario @`984759b` law; `?raw` source-pin + collapse/absence twins; boot goldens `ca8863849cb3db32`/`780b1cbc61dff760` and money `25_005_307_300n`/`25_109_732_500n` byte-stand | @`7357b85` |
 | L-TRACE (hygiene 2) | transport repro synth-marker validation — the synthetic-outage marker is validated against the real causeId grammar before the trace is trusted; player untouched; digest `de1d4c0f941333eb` + 27-frame census UNMOVED; vitest surface 100/8 UNCHANGED | @`04c0d7e` |
-| L-V1 (money-at-the-end 1/3) | `economy/valuation.ts` PURE leaf — `VALUATION_EXIT_KINDS` (the seven §1.6 kinds in doc order @hg:4500-4512), acquiror bands 10-18× monthly revenue (hg:24368-24378; the colo NOI floor-map is an honest partial), `warctMonths`, `tenantWholeLeaseValueMicroUsd` (the WARCT leg — DEFER-recorded in the wave-27 register, UN-FROZEN and BUILT here), `exitCashSliceMicroUsd` — slice = headline × Π(diligence) clamped [floor, headline] THEN the exit-kind factor; wind-down is EXACT 0; 20 PROVISIONAL consts machine-pinned 20/0; zero-rolls; fold byte-identity twin `4cf033f0e8d27621` (the 72,223-char walk INDEPENDENTLY reproduced by the reviewer cross-tree) | @`980ab58` |
+| L-V1 (money-at-the-end 1/3) | `economy/valuation.ts` PURE leaf — `VALUATION_EXIT_KINDS` (the seven §1.6 kinds in doc order @hg:4502-4514), acquiror bands 10-18× monthly revenue (hg:24372-24382; the colo NOI floor-map is an honest partial), `warctMonths`, `tenantWholeLeaseValueMicroUsd` (the WARCT leg — DEFER-recorded in the wave-27 register, UN-FROZEN and BUILT here), `exitCashSliceMicroUsd` — slice = headline × Π(diligence) clamped [floor, headline] THEN the exit-kind factor; wind-down is EXACT 0; 20 PROVISIONAL consts machine-pinned 20/0; zero-rolls; fold byte-identity twin `4cf033f0e8d27621` (the 72,223-char walk INDEPENDENTLY reproduced by the reviewer cross-tree) | @`980ab58` |
 | L-V2 (money-at-the-end 2/3) | ExitKind bridge — `CAMPAIGN_EXIT_KINDS` seven in doc order drift-pinned against valuation's copy; ipo/management-buyout/wind-down RESERVED (the trio is refused at campaign parse — the documented division of labor vs valuation carrying wind-down at factor 0); `DOC_LIE` code; `endCampaign` gained its third optional arg (2-arg calls byte-stand); scenario `exitDeclaration` pays the PRE-TICK-1 `BAD_ENUM` wall; `report.exitPayout` SPARSE engine-truth: headline = Σ accepted PERSISTED verdicts (the 30M-not-120M amendment law, `exitPayout.test.ts:124`), the TRUST ledger is NOT consulted | @`ce2ec1c` |
 | L-V3 (money-at-the-end 3/3) | chain exit-edges + `exitFunded` carry + the `CAMPAIGN_EXIT` arc — won+exitPayout edges spawn the heir PLAYING ON with the manifest `cashSlice` riding and `failureOnlyUnlock` forced null; the CAMPAIGN_EXIT x-1/x-2 chapter pair (`the-long-sale` strategic-acquisition host-armed catalog 40M/24M; `the-quarter-that-ran-itself`); witnesses census [4,0]×4+[3,1]@off2 (never-certain survives), slice 24M/15M, cashStart===slice, arm==unarmed digest-IDENTICAL ×5 (the 9,500-ceiling clamp disclosed as a non-over-claim test); x-2 archetype Inherit; Endure 5/34 = 14.7%; seats byte-stand | @`2c69d77` |
 | L-G7A (content-decks 1/4) | `policy-deck.schema.json` + validate.mjs deck leg — 21/21 probes; interpreter caps recorded honestly (minItems/maxItems work; boolean `additionalProperties` does NOT; enums strings-only); carriers disk-truth ACTION_IDS drain/shed-class, the four unmapped (failover/dispatch-remote-hands/queue-change/run-runbook) named | @`a498a49` |
@@ -568,6 +568,133 @@ digests NEW this wave (disclosed permanently): the five exit-arc hexes
 `b4f7777519ebc0a8`/`41109fcf67c40ec3`/`fb7ab9bd3bfac7ca`/`6598a67ebcf6cb9d`/
 `88dbd147c1d13d41`, the fourteen deck card-hash goldens, and the valuation
 fold twin `4cf033f0e8d27621`.
+
+## Wave-29 owner ruling (2026-10-19 session-10c)
+
+The owner batch of 2026-10-19 commissioned the wave-28 register: asks
+**(i) (ii) (iii) (iv) (v) (vi) — RATIFIED**; (vii) family-targeted cards
+stays a NAMED GAP (the per-family observed cells still do not exist) and
+(viii) the `exitKindFactorBps` ladder stays on the ratify-on-playtest
+queue. Five lanes ran atop `98edaee`; the whole wave moved ZERO pre-existing
+goldens. Dispositions as executed:
+
+| Lane | What landed | SHA |
+|---|---|---|
+| L-VD (iii) | `deckCardHash` declared THE versus doctrine hash law (ruling verbatim: "kills the three-local-hash-laws drift risk permanently") — `DefenseDeck.policyCardsByHash` binds `hh-deck-card-hash-v1` keys; the deck.ts FINGERPRINT LAW became the DOCTRINE BINDING LAW, adjudicating the older local hash laws (two proto gate fictions stay gate fictions per the G7B posture; the door's `cardFingerprint` stays M3 whole-book identity; versus `hh-card-v1` stays the DEFAULT in-match ruleBook index — the 2026-10-09 ratification split accordingly, ruleBook-index half stands, deck-ref half superseded). `versus/__tests__/doctrineDecks.test.ts` 13 its: LIVE deck→DefenseDeck→door-commit witness, wire-vs-revived BYTE-IDENTICAL doctrine commit, key-space disjointness BOTH directions (a `hh-card-v1` fingerprint bounces `unknown-card-hash` off a booted book; a deck hash misses `defaultPolicyCardIndex`), embedded-cards smuggling refused, falsifiable source-read pin; loader/decks.ts header now records the adoption | @`fc18f2e` |
+| L-PA (ii) | Production arming of the G7 seam — the ONE `SimClient.boot` call site in the repo (App.vue `bootClient()`, previously the mock-default 2-positional call — deviation disclosed: the brief assumed it was sim-core) now boots the sim-core runner carrying `deck:watch-the-door` through the existing `boot.rules` wire rider: `src/runner/productionRules.ts` parses `?raw` at MAIN-thread module load (`parsePolicyDeck → bootRulesFromDeck`, fail-loud at module scope) and the worker revives via the one shared `workerRulesLookup`; PROTOCOL_VERSION stays 1. cold-aisle/sleepless NOT armed — the ruling arms watch-the-door on the mainline boot only; panel-local `SimCoreRunner` constructions are direct engine seams, not boot sites, and stay unarmed per scope discipline | @`7510bac` |
+| L-RDR (v)+(vi) | The campaign epilogue bank — `packs/campaign.i18n.json`: packId `pack:campaign.i18n`, appliesTo `core:campaign`, decision 0 / flavour 37 / slots 0 (7 exit kinds × {headline, body1..3, profile} + 2 prestige framing), era axis DECLARED on the OD-22(c) four-rung canon with every body era-flat (2026 fallback voice — "an un-aged key is an honest voice, never a hole"), provenance 32 doc-anchored cites + 5 honest nulls. (vi) content half: the seven `codex.exit.<kind>.profile` lines ARE the meta-currency NARRATIVE; the MECHANICS stay walled (cash/reputation/scars remain kind-blind — owner wall stands) | @`ed5bfa8` |
+| L-U1 (i) | The upkeep BILLING fold — the DP wall becomes an engine leg: `deriveUpkeepDraft` reads the FULL card docs already persisted in `GameState.ruleBook` (no new state, no forwarding leg, no digest-schema change — the book already lives inside the state digest, so digests move exactly when the ledger does); ONE `rule-upkeep:mN` draft per business-month roll riding the ORDINARY opex loop — floor-first refuse-not-overdraft (bounced bill ⇒ `refusedBurnsThisTick++` ⇒ the freeCashDepleted guard, the OPEX-REFUSED ×N census and the L4 death-forwarding chain ride FREE; `NEGATIVE_BUCKET_LAW` catch-and-void stays last resort); the calendar is the fold's OWN 43,200-business-minute floor (shared warmth helpers renamed `BUSINESS_MONTH_MINUTES`/`businessMonthOf` — both legs one grid; NOT `econ.monthIndex`, which freezes at terminal death — the @`eff5694` attention-seam falsifier pinned); compose order FIXED law `[warmth?, upkeep?, ...authored]` (source- AND behavior-pinned); `createUpkeepCursor` minted UNCONDITIONALLY at both fold hosts (ruleBook is REQUIRED state that grows mid-run — the warmth presence-gate shape would strand every mid-run book); retroactive accrual v0 | @`b59dbeb` |
+| L-U2 (iv) | The scenario deck seam — `ScenarioRunConfig.rules?: LoadedBootRules` (`bootRulesFromDeck` output verbatim — WORLD FACT NOT DOC DATA: a doc may never select its own book, the era/sellMarketRates self-grading posture); PRE-TICK-1 `BAD_RULES` plain-Error walls (empty entries REFUSED as host bug; dup hash names BOTH positions per L-BR1; every card through `validatePolicyCard`) — `ScenarioErrorCode` union untouched; the book rides the BASE door as a conditional `lookupPolicyCard` spread, the standing perspective-strip→era-grey chain layering over it unchanged; sparse `report.rulesArmed` echo (the ARMED book in host order, never the committed subset). First upkeep bite ON-SCENE: a forged edge-object card at 25,000 µ$/sim-min bills EXACTLY 10,500,000 µ$ at the t420 roll, card SILENT (billing is roster law, not fire law); floor-first twin 5M bounces the bill with cash untouched and `guard:freeCashDepleted` halting, card STAYS committed. `scenario/__tests__/deckRules.test.ts` 13 its | @`304c9d0` |
+
+**The zero-golden law held because it was PROVED, not assumed.** L-U1's own
+words, recorded verbatim as the program's headline:
+
+> zero-golden holds because every shipped run satisfies dormant-book ∧
+> ends-before-t420 ∧ non-fold-host; the promised motion lands with the
+> content retune, not here.
+
+Witnessed, not recalled: full sim-core serial 194f/3,776 green with ZERO
+pre-existing test edits; the two shipped fastForward witnesses replay
+byte-ident at their pre-lane values (drip `406c3770ba0f867c490d068e1be54a30`,
+funded `f131fba4d09883f83911c031dcf40b2f`); a booked-vs-upkeep-omitted
+1,300-fold twin is digest-equal while the book is empty; headless 53 parity
+`b0162ab5`/`a9b4b7b8` HELD (pipeline-only — the fold is host-side, immune by
+construction); proto 113f/1,303 (L-PA's post-arming baseline, zero re-pins);
+`apps/proto/src/runner` has zero tickFold reach — immunity by IMPORT
+DIRECTION, pinned by the census test (the same law makes g5 and versus
+immune). Non-vacuity PROVEN, not argued: the reviewer ran a live red-probe —
+5 exact reddens when the floor-guard is removed.
+
+**The era-grey DEAD PATH, found and closed (L-U2).**
+`applyEraAvailabilityToDoorConfig` grows the greyed-lookup only when
+`plan.greyedPolicyCardIds` is non-empty — and the scenario runner NEVER
+passed `composeEraPlan` its policyCards map. Era grey-out of policy cards was
+therefore DEAD at scenario altitude even for a door carrying a book, ever
+since the grey law shipped; the discovery lands as the `eraPolicyCards`
+config leg (cardId→techId, host-resolved content knowledge; rides the era
+pair, bare throws `BAD_ERA`). The lane additionally REFUSED the brief's
+"refused pre-grey, executed post-step" wording — it CONFLICTS with the L-ER-T
+OPENING-FROZEN law (the grey never steps) — and pinned the opening-frozen law
+BOTH directions instead, disclosed. Seeing the book grey is a presentation
+fact frozen at opening; committing from it is the door's business.
+
+**The reserved-pack carve-out law (L-RDR).** `pack:campaign.i18n` +
+`core:campaign` is a CLOSED reserved identity with exactly two named
+exceptions in `loader/packs.ts`, each placed BEFORE an untouched strict wall:
+an empty DECISION namespace is legal only under the exact parsed packId +
+appliesTo PAIR (half-match stays refused), and an empty slot glossary is
+legal for the same identity (the validator's dead-slot law forbids a dummy
+entry as workaround). Empty FLAVOUR is never carved out — a voice bank with
+no voice is a bug. The validator mirrors the identity law: the reserved claim
+is exclusive and fail-loud BEFORE the orphan guard (the G7A mirror law
+@`a498a49` onto the pack-claim side), the ≥5 decision floor INVERTS to
+must-be-0 for the reserved line, and the fourteen line packs ride identical
+code paths (`deepCheckPack` extraction preserved their messages byte-for-
+message).
+
+**The panel-arming posture (L-PA).** Arming is ADOPTION, not mechanism — the
+seam was proven end-to-end @`34bb32e`; wave-29 flips the one boot site. The
+posture is pinned BOTH directions: a dormant boot is byte-identical to the
+pre-adoption wire (omit-when-unset @`a757f6c`; `ca8863849cb3db32`/
+`780b1cbc61dff760` + money `25_005_307_300n`/`25_109_732_500n` UNMOVED), and
+armed-but-uncommitted is state-INERT through the production module (same
+legacy hexes). The opt-out switch `productionRulesArmed()/
+setProductionRulesArmed()` is a TESTS-ONLY lever, not a user-facing dial; the
+rail entry retitled "Sandbox — mainline stepper" honestly.
+
+**PROVISIONAL upkeep semantics and the promised motion.** Cadence monthly /
+retroactive accrual / no-lapse are PROVISIONAL readings of §7.14 ("each
+carries a small upkeep", disk :28536) and §1.6's "first upkeep bill" (:845) —
+neither numerically specifies cadence. Named deferrals, one docblock line
+each: card-shed-on-nonpayment (the lapse fiction — layer inversion, own
+commission), forward-charging refinement, per-minute droplets (the §4.1
+"Upkeep Drip" @hg:15066 is presentation fiction; a journal line per minute
+per card is spam), suspension-aware accrual (the D-2 suspension concept does
+not exist on the door book yet), dunning-cascade upkeep (category error —
+dunning is customer money; the Book is player opex). THE CONTENT RETUNE IS
+THE PROMISED-MOTION EVENT: decks ship `upkeepMicroUsd: 0n` PROVISIONAL, and
+commissioning "small" numerics WILL re-derive the fourteen deckCardHash
+goldens and the boot.rules wire witnesses — that motion is deferred BY
+DISCIPLINE, not by omission.
+
+**Ledger.** api-verify PASS 1,785 across the whole wave, ZERO export delta
+(L-U1's cursor lives in `internal/tickFold.ts` — internal is api-verify-blind
+by construction). Serial ladder attributed per-commit: 192f/3,741 (@`98edaee`)
+→ +1f/+13t L-VD → 193f/3,754 → +0f/+2t L-RDR falsifiers → 193f/3,756 →
++1f/+20t L-U1 → 194f/3,776 → +1f/+13t L-U2 → **195f/3,789** at @`304c9d0`.
+Proto 112f/1,291 → 113f/1,303 (+12 L-PA, zero re-pins). Versus dir 6f/191 →
+7f/204 (the brief-era 189 was stale — disk truth 191 pre-lane). Loader dir
+14f/257 → 14f/259. Scenario dir 14f/581 → 15f/594. **NEW self-derived
+digests, disclosed permanently:** the armed production-boot 100-frame pair
+`2a7a977a541b08a9`/`6a314d31f2f2f889` (stated as NEW at @`7510bac`, never
+presented as moved), and the dormant upkeep-doc scenario digest
+`8aca5ba270e51597bece5fafca361122` (pre-seam literals captured at @`b59dbeb`
+in a detached worktree — shipped wires `6aecd417c317a910c75e37f4da14b272`,
+the-long-weekend `ee277ee1b9719a1ce412fd0a3564eebb`, understaffed-sunday
+`df1538b3baabe2e93fa79799a6830230` all byte-stand, the first cross-agreeing
+with the standing eraTransitions pin). Review: joint review PROCEED, zero
+critical / zero major; W29-01/03/05 not carried to closeout; W29-02 (loose
+:5633 pack anchor) cured in the closeout re-anchor sweep; W29-04 APPLIED —
+the closeout build ledger reads worker 955.45 / fakeWorker 547.42 / index
+1,696.35 / CSS 103.08 at final tip — W29-04's 1,696.28 held at the wave tip;
+the +0.07 kB is this closeout's deck/pack `_todo` cure growing the bundled
+`?raw` bank (worker/fakeWorker/CSS byte-flat, disclosed) — and L-PA's
+1,694.85 was true only at its own commit:
+L-U1's tickFold +143 lines ride the main chunk via the PRE-EXISTING
+App.vue→unattendedLab→`@hh/sim-core/unattended`→fastForward→internal/tickFold
+edge — a graph-hygiene note, not introduced this wave); W29-06 (ENV,
+owner-side, REPORT only): a stray `/home/my/vitest.config.ts` hijacks vitest
+upward-discovery for worktrees outside the workspace — recommend the owner
+retire or rename it.
+
+**ADR census for the record (wave-26/27/28 discipline re-run):**
+`git diff 98edaee..HEAD | grep -oE 'ADR-00[0-9]{2}' | sort | uniq -c` →
+ADR-0009 ×1 · ADR-0014 ×1 (#D9) · ADR-0016 ×7 (register pointers) ·
+ADR-0018 ×5 (era register — the campaign bank's OD-22(c) canon + §0.4 rider
+cites) · ADR-0019 ×1 (L-U2's attributive "ADR-0019 (iv)") — **zero ADR-0020
+forms in the wave's code**. Wave-29 therefore rides ADR-0019 as this dated
+rider. The fifteenth-card CEASE (ADR-0017 #8) is restated untouched:
+wave-29 added ZERO hosting types.
 
 ## Source
 

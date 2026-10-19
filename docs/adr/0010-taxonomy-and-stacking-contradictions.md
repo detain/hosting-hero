@@ -63,9 +63,9 @@ proposals below are now owner law, executed verbatim as written.
 
 (a) Treat the **shipped §2.1-derived defense set** (`defenseRoles.ts`:
 Absorb/Classify/Meter/Contain/Detect/Recover/Deter/Divert/Negotiate) as the law
-defense vocabulary. At the next spec re-markup: amend the §4.5 heading (16291) text
+defense vocabulary. At the next spec re-markup: amend the §4.5 heading (16295) text
 to the shipped nine (Block removed, Negotiate/Meter/Deter/Divert/Absorb present),
-and amend §4.2 (15178) to state that the nine BUILD roles are a **planned
+and amend §4.2 (15182) to state that the nine BUILD roles are a **planned
 content-tagging layer**, not the Coverage Grid's vocabulary — the shared-tag promise
 becomes a Phase-2 task ("tag every buildable with both a build role and its defense
 coverage"), not a broken present-tense claim. No code change proposed.
@@ -80,12 +80,12 @@ refinements of the MAX law, not as current obligations.
 
 > **RULED 2026-10-09b (a) = (i)** — shipped §2.1-derived nine (`defenseRoles.ts`:
 > Absorb/Classify/Meter/Contain/Detect/Recover/Deter/Divert/Negotiate) is THE law
-> defense vocabulary; §4.2 (15178) and §4.5 (16291) spec prose amended with law-notes
+> defense vocabulary; §4.2 (15182) and §4.5 (16295) spec prose amended with law-notes
 > at this re-markup; the nine BUILD roles re-scoped as a **Phase-2 content-tagging
 > task** in the MODULE-STATUS gap register. No code change.
 >
 > **RULED 2026-10-09b (b) = (i)** — MAX-never-sum combine law RETAINED; §4.5
-> stacking prose (16331) annotated superseded-by-implementation with the ratified-law
+> stacking prose (16335) annotated superseded-by-implementation with the ratified-law
 > note; the unbuilt clauses (diminishing returns, synergy, latency-additive,
 > Waste Indicator) sit in the gap register as POSSIBLE FUTURE refinements of the MAX
 > law — explicitly NOT obligations, and **no unify/multiplicative lane is scheduled**.

@@ -173,7 +173,7 @@
 > trio disclosed). Joint review PROCEED (zero critical/major); review F6+F3
 > cured comment-only at `b0c2571`. The wave-26 register's two build-asks are
 > CLOSED; the live register is the wave-27 section below.
-> **2026-10-19 session-10b ruling (wave-28: money-at-the-end + content-decks + hygiene), executed as a dated rider inside ADR-0019:** the owner ratified the whole wave-27 recommendation set — "RATIFIED ALL RECOMMENDATIONS — WAVE-28 opens." **MONEY-AT-THE-END BUILT as ONE program:** @`980ab58` `economy/valuation.ts` pure leaf (the seven §1.6 kinds in doc order, 10-18× revenue bands hg:24368-24378, the WARCT leg UN-FROZEN from the wave-27 defer, `exitCashSliceMicroUsd` = headline × Π(diligence) clamped [floor,headline] THEN the exit-kind factor — wind-down EXACT 0 — twenty PROVISIONAL consts machine-pinned 20/0, zero-rolls, fold twin `4cf033f0e8d27621` reproduced cross-tree by the reviewer) · @`ce2ec1c` the campaign/scenario bridge (`CAMPAIGN_EXIT_KINDS` seven drift-pinned; ipo/management-buyout/wind-down RESERVED — refused at parse; `endCampaign` 3rd optional arg, 2-arg byte-stand; `report.exitPayout` SPARSE engine-truth: headline = Σ ACCEPTED PERSISTED verdicts — the 30M-not-120M law — TRUST ledger not consulted) · @`2c69d77` chain exit-edges (heir plays ON with manifest `cashSlice`; `failureOnlyUnlock` forced null) **with one LAW CHANGE on record**: the `exitFunded` carry — a PAID-exit heir opens on PROCEEDS, not the 300M bridge; §2.5's "failure is poorer, not paid" reverse-honored, falsified BOTH directions — **and one self-superseding amendment inside the wave (§E)**: the V2 `BAD_RANGE` position wall → the V3 per-declaring-chapter `DOC_LIE` walk (post-timeline timeout now THROWS; the early-halt silent-hole closed; reviewer: stricter where it matters, only the false-negative position proxy loosened). **G7 CONTENT-DECKS BUILT as a four-lane program:** schema + validate.mjs deck leg @`a498a49` (21/21 probes; interpreter caps recorded honestly — minItems/maxItems work, boolean `additionalProperties` does NOT, enums strings-only) · `loader/decks.ts` + `deckCardHash` `hh-deck-card-hash-v1` wire-form-IDENTICAL to the boot.rules fold @`2cdf014` (4-way vocab drift pin types↔loader↔schema↔protocol, live-mutation-verified by the reviewer) · THREE decks / 14 cards @`9948681` (watch-the-door = the g7Deck six re-targeted BUSY 40960→16384; cold-aisle five all-advisory; sleepless authors the panic-failover WALL card as content; HONESTY LAWS shipped: `queueDepth` excluded — JS-number publish would fire a lie, `company::mrrMicroUsd` omitted-not-faked, lane-cell crossings INFERRED with per-card `_todo`, upkeep `0n` PROVISIONAL — **the upkeep BILLING fold is the NEW named owner wall**) · full-loop witness deck-JSON→boot→worker→ARMED MAINLINE @`34bb32e` (rule-fired f7 configure-node+communicate EXECUTED, shed-class pays hands, f22 failover refusal; DORMANT[0]==`ca8863849cb3db32` goldens byte-stand; cold-aisle zero door receipts + queue-etiquette never-fires falsifier). **HYGIENE CLOSED:** proto empty-map collapse @`7357b85` · repro synth-marker validation @`04c0d7e` (player untouched; digest `de1d4c0f941333eb` + 27 census UNMOVED) · tools/perf A/B MEASURED (worker 953.40→954.78 · index 1,671.91→1,673.67 · fakeWorker/CSS flat vs `db64667`; W28-03 NIT: end-state exact, not re-measured at final tip). **RATIFY-RECORDED:** noc-shift seat-reuse as a standing device (V1 honeymoon variant stays on record) · author-and-delegate · the relative era hexes · the playtest posture · the era-mechanics freeze. **DEFER-RECORDED:** boot.catalog · linear-branching (campaign stays LINEAR — RE-RATIFIED) · goal-card sugar until a HUD · corpus-in-campaign · canvas inspector · PHP carrier (Node-sidecar-only-if-MP) · in-flight-kill · slug-12 · render harness · deck-preview · c-7 STAYS catalog-less (never-certain census [4,0]×4+[3,1]@off2 survives as witness @`2c69d77`); sell-acceptance dice VERIFIED-SHIPPED @`24f90bc` (record, not new work). The fifteenth-card CEASE (ADR-0017 #8) RESTATED UNTOUCHED — zero types added. Battery: sim-core serial 192f/3,741 · proto 112f/1,291 · transport 100/8 + repro rc0 · relay 42 · host 36 · headless 53/5 parity HELD · api-verify PASS 1,785 (1,756+19+3+7 EXACT) · validate decks=3 WARN 16 413/16 · canary 153 · typecheck 8/8 · ci-verify 5/5. Joint review PROCEED zero critical/major; W28-01..03 NITs + W28-04 MINOR (the exitKindFactorBps ladder + slice-order join the ratify-on-playtest queue). The wave-27 register is dispositioned; the live register is the wave-28 section below.
+> **2026-10-19 session-10b ruling (wave-28: money-at-the-end + content-decks + hygiene), executed as a dated rider inside ADR-0019:** the owner ratified the whole wave-27 recommendation set — "RATIFIED ALL RECOMMENDATIONS — WAVE-28 opens." **MONEY-AT-THE-END BUILT as ONE program:** @`980ab58` `economy/valuation.ts` pure leaf (the seven §1.6 kinds in doc order, 10-18× revenue bands hg:24372-24382, the WARCT leg UN-FROZEN from the wave-27 defer, `exitCashSliceMicroUsd` = headline × Π(diligence) clamped [floor,headline] THEN the exit-kind factor — wind-down EXACT 0 — twenty PROVISIONAL consts machine-pinned 20/0, zero-rolls, fold twin `4cf033f0e8d27621` reproduced cross-tree by the reviewer) · @`ce2ec1c` the campaign/scenario bridge (`CAMPAIGN_EXIT_KINDS` seven drift-pinned; ipo/management-buyout/wind-down RESERVED — refused at parse; `endCampaign` 3rd optional arg, 2-arg byte-stand; `report.exitPayout` SPARSE engine-truth: headline = Σ ACCEPTED PERSISTED verdicts — the 30M-not-120M law — TRUST ledger not consulted) · @`2c69d77` chain exit-edges (heir plays ON with manifest `cashSlice`; `failureOnlyUnlock` forced null) **with one LAW CHANGE on record**: the `exitFunded` carry — a PAID-exit heir opens on PROCEEDS, not the 300M bridge; §2.5's "failure is poorer, not paid" reverse-honored, falsified BOTH directions — **and one self-superseding amendment inside the wave (§E)**: the V2 `BAD_RANGE` position wall → the V3 per-declaring-chapter `DOC_LIE` walk (post-timeline timeout now THROWS; the early-halt silent-hole closed; reviewer: stricter where it matters, only the false-negative position proxy loosened). **G7 CONTENT-DECKS BUILT as a four-lane program:** schema + validate.mjs deck leg @`a498a49` (21/21 probes; interpreter caps recorded honestly — minItems/maxItems work, boolean `additionalProperties` does NOT, enums strings-only) · `loader/decks.ts` + `deckCardHash` `hh-deck-card-hash-v1` wire-form-IDENTICAL to the boot.rules fold @`2cdf014` (4-way vocab drift pin types↔loader↔schema↔protocol, live-mutation-verified by the reviewer) · THREE decks / 14 cards @`9948681` (watch-the-door = the g7Deck six re-targeted BUSY 40960→16384; cold-aisle five all-advisory; sleepless authors the panic-failover WALL card as content; HONESTY LAWS shipped: `queueDepth` excluded — JS-number publish would fire a lie, `company::mrrMicroUsd` omitted-not-faked, lane-cell crossings INFERRED with per-card `_todo`, upkeep `0n` PROVISIONAL — **the upkeep BILLING fold is the NEW named owner wall**) · full-loop witness deck-JSON→boot→worker→ARMED MAINLINE @`34bb32e` (rule-fired f7 configure-node+communicate EXECUTED, shed-class pays hands, f22 failover refusal; DORMANT[0]==`ca8863849cb3db32` goldens byte-stand; cold-aisle zero door receipts + queue-etiquette never-fires falsifier). **HYGIENE CLOSED:** proto empty-map collapse @`7357b85` · repro synth-marker validation @`04c0d7e` (player untouched; digest `de1d4c0f941333eb` + 27 census UNMOVED) · tools/perf A/B MEASURED (worker 953.40→954.78 · index 1,671.91→1,673.67 · fakeWorker/CSS flat vs `db64667`; W28-03 NIT: end-state exact, not re-measured at final tip). **RATIFY-RECORDED:** noc-shift seat-reuse as a standing device (V1 honeymoon variant stays on record) · author-and-delegate · the relative era hexes · the playtest posture · the era-mechanics freeze. **DEFER-RECORDED:** boot.catalog · linear-branching (campaign stays LINEAR — RE-RATIFIED) · goal-card sugar until a HUD · corpus-in-campaign · canvas inspector · PHP carrier (Node-sidecar-only-if-MP) · in-flight-kill · slug-12 · render harness · deck-preview · c-7 STAYS catalog-less (never-certain census [4,0]×4+[3,1]@off2 survives as witness @`2c69d77`); sell-acceptance dice VERIFIED-SHIPPED @`24f90bc` (record, not new work). The fifteenth-card CEASE (ADR-0017 #8) RESTATED UNTOUCHED — zero types added. Battery: sim-core serial 192f/3,741 · proto 112f/1,291 · transport 100/8 + repro rc0 · relay 42 · host 36 · headless 53/5 parity HELD · api-verify PASS 1,785 (1,756+19+3+7 EXACT) · validate decks=3 WARN 16 413/16 · canary 153 · typecheck 8/8 · ci-verify 5/5. Joint review PROCEED zero critical/major; W28-01..03 NITs + W28-04 MINOR (the exitKindFactorBps ladder + slice-order join the ratify-on-playtest queue). The wave-27 register is dispositioned; the live register is the wave-28 section below.
 
 **Source of truth:** `reports/MASTER_REPORT.md §6`. Citations: a bare `§N.M` = a section of `MASTER_REPORT.md`; source-doc headings are always written `hosting_game.md §x.y`.
 **Rule for implementers:** none of these may be resolved silently in code. Each maps to a named config knob in `docs/PHASE1-PLAN.md` / `docs/CONVENTIONS.md §5`. **§0 legend:** OPEN = owner decision requested; PENDING = sub-decision created *by* a ratified decision, recommendation given, owner sign-off outstanding.
@@ -256,7 +256,7 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 | **OD-22** | Era grid — which eras are playable — **DECIDED 2026-10-09b (option c): ERA CANON = 1998 + 2026 FOR v1 (what ships today); the 4-era plan (~1998 / ~2008 / ~2016 / 2026) is RATIFIED AS THE CAMPAIGN-PHASE PLAN — the era-count ⚠️s resolve as ruled law, further token sets land with the campaign lane, not before** | Headings 31810 / 31837 / 32366 (now 🔧, ruled): era-tokens.css ships exactly 1998/2026; the spec corpus assumed 5–6 playable eras (§0.4 era grid, "30 lines × 5 eras"); packs ship 2 era-codes — MATCHES the ratified v1 canon | 2-era v1 / 4-era plan — **chosen (c)** | proto skin lanes (campaign-phase token sets), content era-varied copy, media/prompts era-cross material, §8.10 hero rows |
 | **OD-23** | Support-hands / two-denominations IMPLEMENTATION scheduling — **DECIDED 2026-10-09b (option a): DESIGN LANE OPENS NOW, paired with OD-4a's focus-hand loan ledger (one attention-denomination design covering both)** | OD-6 is RECORDED DECIDED (`ea7acee`); heading 14424→14436 re-markuped 🔧 at this ruling — the scheduling question the row posed is answered | design lane opened 2026-10-09b, paired with OD-4a ledger — **chosen (a)**; execution status: ~~design lane queued~~ machinery SHIPPED (`eff5694` pool/loans + `179861d` `ATTENTION_DEFAULT_COSTS`); **2026-10-16 session-4 (ADR-0014 #D4): the per-verb tax {Communicate 1, PolicyCardCommit 1} is FULLY RATIFIED — this row's question is CLOSED** | Hands Dock, The Bridge tempo, support-tax doom-loop (§2.12), business-threat hand competition (§2.9 8504) |
 | **OD-24** | Pricing as a mechanic — player pricing verbs + dead dials — **DECIDED 2026-10-09b (option a) — OWNER OVERRIDE of the fleet/lane recommendation (c): FULL PRICING SURFACE WILL BE BUILT — player pricing verb(s) through the intent door, the ~21 unbuilt dial consumers, an elasticity model (provisional tuning, ratify-on-playtest), and the oversell-ratio host knob. 8:1 recorded as the PROPOSED shared-web starting ratio (pending taste). Execution status: build wave queued. **2026-10-14 session-3: elasticity coefficients 150/80/50 bps, ±10% dead band, [0.5×,3×] clamps CONFIRMED-PROVISIONAL; oversell-ratio 8:1 proposal ~~CONFIRMED-PROVISIONAL~~ — `OVERSELL_RATIO_MICRO = 8_000_000n` shipped `2ef5cae` at `apps/proto/src/runner/waveRules.ts:124` (ADR-0013 ruling 12(iii)/(vi)). **2026-10-16 session-4 (ADR-0014 #D4): FULL RATIFY NOW — elasticity set {churn 150 %, retention 80 %, recovery 50 % coefficients, ±10 % dead-band, churn clamp [0.5×,3×], retention floor 0.1× — the retention-vs-churn ASYMMETRY ratified DELIBERATE}, oversell 8:1, and the GRANDFATHER-WINS-over-price-override billing order are RATIFIED AS LAW (written §6.12 concessions outrank the §6.5 dial in the invoice base chain); confirmed-provisional superseded for these sets** | Headings 22940→22952 (now 🔧) / 22992→23004 (🔧 — engine seam live `4856a42`, host wiring rides the queued wave): pricing was engine-side data only, no pricing verb among the 8 door verbs, 21 of 29 declared dials unbuilt, `oversell-ratio` parsed with zero host-side consumers | full surface (a) — **chosen by owner override** | economy pricing lane, proto door-verb extension (9th+ verb), elasticity model tuning pass, gap-register clusters 3/13/14, commercialSliders dead-config cleanup |
-| **OD-25** | Endgame / insolvency posture (how the company can die) — **DECIDED 2026-10-09b (option a): THREE CANONICAL DEATHS — float-insolvency, covenant-default, churn-collapse — ARE THE DEATH TAXONOMY; the endings lane builds on them (the MODULE-STATUS:101 host-fund-vs-settle-side call resolves inside float-insolvency design). 2026-10-14 session-3: death thresholds {churnFloor 1, churn 3 d, float 3 d, grace 10 d} ~~PROVISIONAL-CONFIRMED~~ (`economy/config.ts` death block — PROVISIONAL tags swept by the session-4 ratification, R3b lane) — ratify-on-playtest ~~continues~~ (ADR-0013 ruling 12(ii))**; **2026-10-16 session-4 (ADR-0014 #D4): FULL RATIFIED — {churnFloor 1, churn-collapse 3 d, float-insolvency 3 d + refused settles, grace 10 d} are LAW; the ratify-on-playtest lever CLOSES for them; changing a threshold is now a law change** | MODULE-STATUS:101 owner call + heading 24433 PARTIAL / §6.10's 13 unlisted failure modes (cluster 19): death today = freeCash throw + guardrail halts only; covenant machinery shipped `57ea80e` (breach notices + OD-25 silent-pin); churn primitives ship | three-death taxonomy — **chosen (a)**; execution status: endings design lane queued | campaign/endings lane, §6.10 catalogue mapping onto the three canonical deaths, unattended halt semantics, lose-slowly pin (34683) | — **RIDDEN 2026-10-18 (wave-26): endings v0 LANDED @`61a1c3b` — obituary / exit / quiet-handoff as pure read-projections off the terminal chapter record (money-untouched, records immutable); the exit-EDGE valuation/cashSlice stays the named owner wall.** |
+| **OD-25** | Endgame / insolvency posture (how the company can die) — **DECIDED 2026-10-09b (option a): THREE CANONICAL DEATHS — float-insolvency, covenant-default, churn-collapse — ARE THE DEATH TAXONOMY; the endings lane builds on them (the MODULE-STATUS:101 host-fund-vs-settle-side call resolves inside float-insolvency design). 2026-10-14 session-3: death thresholds {churnFloor 1, churn 3 d, float 3 d, grace 10 d} ~~PROVISIONAL-CONFIRMED~~ (`economy/config.ts` death block — PROVISIONAL tags swept by the session-4 ratification, R3b lane) — ratify-on-playtest ~~continues~~ (ADR-0013 ruling 12(ii))**; **2026-10-16 session-4 (ADR-0014 #D4): FULL RATIFIED — {churnFloor 1, churn-collapse 3 d, float-insolvency 3 d + refused settles, grace 10 d} are LAW; the ratify-on-playtest lever CLOSES for them; changing a threshold is now a law change** | MODULE-STATUS:101 owner call + heading 24433 PARTIAL / §6.10's 13 unlisted failure modes (cluster 19): death today = freeCash throw + guardrail halts only; covenant machinery shipped `57ea80e` (breach notices + OD-25 silent-pin); churn primitives ship | three-death taxonomy — **chosen (a)**; execution status: endings design lane queued | campaign/endings lane, §6.10 catalogue mapping onto the three canonical deaths, unattended halt semantics, lose-slowly pin (34691) | — **RIDDEN 2026-10-18 (wave-26): endings v0 LANDED @`61a1c3b` — obituary / exit / quiet-handoff as pure read-projections off the terminal chapter record (money-untouched, records immutable); the exit-EDGE valuation/cashSlice stays the named owner wall.** |
 
 ---
 
@@ -288,7 +288,136 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 
 ---
 
-## Fresh owner asks (2026-10-19, wave-28 closeout — the wave-27 six asks + walls dispositioned below; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
+## Fresh owner asks (2026-10-19, wave-29 closeout — the wave-28 eight asks dispositioned below; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
+
+**Dispositioned by the 2026-10-19 owner batch — register asks (i)-(vi)
+COMMISSIONED and BUILT this wave, (vii)-(viii) explicitly NOT commissioned
+(the wave-28 eight asks stay intact as history below):**
+
+- **(i) Upkeep BILLING fold — CLOSED (BUILT).** @`b59dbeb`: the DP wall
+  becomes an engine leg — `deriveUpkeepDraft` reads the FULL card docs
+  already persisted in `GameState.ruleBook` (no new state, no forwarding leg,
+  no digest-schema change — the book lives inside the state digest, so
+  digests move exactly when the ledger does); ONE `rule-upkeep:mN` draft per
+  business-month roll on the shared `BUSINESS_MONTH_MINUTES`/`businessMonthOf`
+  grid (the fold's OWN 43,200-floor, NOT `econ.monthIndex` — the frozen-at-
+  death falsifier pinned); floor-first refuse-not-overdraft through the
+  ORDINARY opex loop (memo `<topic>:opex:rule-upkeep:mN`; the guard, the
+  OPEX-REFUSED ×N census and the L4 death-forwarding chain ride FREE);
+  unconditional cursor mint at BOTH fold hosts; retroactive accrual v0.
+  PROVISIONS: cadence / retroactive / no-lapse are PROVISIONAL readings of
+  §7.14 and §1.6's "first upkeep bill" — neither numerically specifies
+  cadence. Named deferrals: card-shed-on-nonpayment, forward-charging,
+  per-minute droplets (hg:15066), suspension-aware accrual, dunning-cascade
+  (category error — the Book is player opex). **THE CONTENT-RETUNE RIDER:**
+  the decks ship upkeep "0" PROVISIONAL — commissioning "small" numerics
+  WILL re-derive the fourteen deckCardHash goldens and the boot.rules wire
+  witnesses; that is the PROMISED-MOTION event, deferred BY DISCIPLINE, not
+  by omission. ZERO shipped goldens moved (dormant-book ∧ ends-before-t420 ∧
+  non-fold-host — immunity by import direction; reviewer PROVED non-vacuity
+  with a live red-probe: 5 exact reddens).
+- **(ii) Panel PRODUCTION arming — CLOSED (BUILT).** @`7510bac`: App.vue
+  `bootClient()` — the repo's ONE `.boot` call site — boots the sim-core
+  runner carrying `deck:watch-the-door` through the existing `boot.rules`
+  wire rider, parsed at MAIN-thread module load (`runner/productionRules.ts`:
+  ?raw → `parsePolicyDeck` → `bootRulesFromDeck`, fail-loud at module scope);
+  opt-out switch `productionRulesArmed()/setProductionRulesArmed()` is a
+  TESTS-ONLY lever; dormant twins `ca8863849cb3db32`/`780b1cbc61dff760` +
+  money `25_005_307_300n`/`25_109_732_500n` BYTE-STAND; NEW armed pair
+  `2a7a977a541b08a9`/`6a314d31f2f2f889` self-derived and disclosed;
+  cold-aisle/sleepless NOT armed — the ruling arms the one mainline boot.
+- **(iii) Versus doctrine adoption via content decks — CLOSED (BUILT).**
+  @`fc18f2e`: `deckCardHash` is THE doctrine hash law (owner ruling verbatim:
+  "kills the three-local-hash-laws drift risk permanently") — versus
+  docblock-law + `doctrineDecks.test.ts` 13 its (LIVE deck→DefenseDeck→door-
+  commit witness; wire-vs-revived BYTE-IDENTICAL doctrine commit; key-space
+  disjointness BOTH directions; falsifiable source-read pin);
+  `cd1296c54df0e9c6` UNMOVED; api-verify zero delta; the loader/decks.ts
+  header adoption sentence lands with this closeout (lane-owed).
+- **(iv) Scenario-run deck seam — CLOSED (BUILT).** @`304c9d0`:
+  `ScenarioRunConfig.rules?: LoadedBootRules` (TYPE-only import precedent
+  :136 — WORLD FACT NOT DOC DATA: a doc may never select its own book, the
+  era/sellMarketRates posture); PRE-tick-1 `BAD_RULES` plain-Error walls
+  (dup hash names BOTH positions; `ScenarioErrorCode` union untouched); the
+  book rides the BASE door as a conditional `lookupPolicyCard` spread — the
+  unarmed object is IDENTICAL (dormant byte-stand
+  `8aca5ba270e51597bece5fafca361122`, re-derived by the reviewer at
+  @`b59dbeb`); sparse `report.rulesArmed` echo; first upkeep bite ON-SCENE
+  t420 −10_500_000n exact + floor-first 5M twin (card STAYS committed) +
+  `freeCashDepleted` halt. The lane ALSO closed the era-grey DEAD PATH (new
+  `eraPolicyCards` leg — grey-out had NEVER reached `composeEraPlan` at
+  scenario altitude) and REFUSED the brief's "executed post-step" wording,
+  pinning the opening-frozen law BOTH directions instead, disclosed.
+- **(v) §1.6 epilogue prose — CLOSED (BUILT, content).** @`ed5bfa8`: the
+  `pack:campaign.i18n` epilogue bank — 37 flavour lines: seven
+  `codex.exit.<kind>` documents × {headline, body1-3, profile} + 2 framing;
+  decision-0 / slots-0 under the new reserved-pack identity law (validator
+  reserved-claim extension + TWO loader carve-outs placed BEFORE untouched
+  throws; the fourteen line packs' messages byte-ident); provenance 32
+  doc-anchored cites + 5 honest nulls; packs 14→15; loader falsifiers +2
+  (`packs.test.ts` 14f/257→14f/259); validate TODO 413 UNMOVED / pack-markers
+  16→18 / Key-literals 123 UNMOVED.
+- **(vi) Exit meta-currencies — CONTENT CLOSED, MECHANICS WALLED.**
+  @`ed5bfa8`: the seven `codex.exit.<kind>.profile` lines ARE the
+  meta-currency NARRATIVE; engine meta-currencies stay a NAMED WALL —
+  cash/reputation/scars remain kind-blind by design.
+- **(vii) Family-targeted cards — NOT COMMISSIONED; stays a NAMED GAP.**
+  Per-family observed cells still do not exist; cold-aisle's
+  inferred-crossings workaround stands.
+- **(viii) W28-04 exit-ladder taste rows — NOT COMMISSIONED; queue
+  unchanged.** `exitKindFactorBps` + the slice-ORDER law stay PROVISIONAL,
+  machine-pinned, ratified only by playtest.
+
+**NEW asks (raised by the wave-29 lanes and this closeout's disclosures):**
+
+- **(a) Content retune — upkeep "small" numerics.** THE disclosed
+  golden-mover: authoring deck upkeep moves the fourteen deckCardHash
+  goldens, the boot.rules wire witnesses and the L-PA armed pairs
+  automatically (hostile drift pins). Owner commission, content lane.
+- **(b) Card-shed-on-nonpayment.** §7.14's lapse fiction is an ENGINE DESIGN
+  wall: cards are rule-carriers with no ownership state — bolting lapse to
+  the fold is a layer inversion. Own commission.
+- **(c) Forward-charging refinement.** v0 bills only accrued-to-date at the
+  roll; billing forward into the entering month is a design choice, not a
+  bug.
+- **(d) Per-minute droplet fidelity.** §4.1's "Upkeep Drip" (hg:15066) is
+  presentation fiction over a monthly ledger; true per-minute journal lines
+  per card are spam by construction. Ratify monthly or fund the drip fold.
+- **(e) Suspension-aware accrual.** If a door-book suspend state ever lands,
+  upkeep should pause under suspension — one docblock line until then.
+- **(f) Endings-UI consumption of the epilogue bank.** The 37 voice lines
+  ship; no proto/HUD lane renders them yet. Proto lane.
+- **(g) Panel deck-picker beyond watch-the-door.** The armed mainline boot is
+  hard-wired to `deck:watch-the-door`; a selector (cold-aisle/sleepless/
+  user decks) is a UI adoption call — engine-ready.
+- **(h) G7 wire-graph hygiene.** The proto index chunk carries the upkeep
+  fold via the PRE-EXISTING App.vue→unattendedLab→`@hh/sim-core/unattended`
+  →fastForward→`internal/tickFold` edge (W29-04 note — NOT introduced this
+  wave; a lazy-boundary refactor only if size matters).
+
+**Remaining owner walls (standing, restated whole, wave-29 posture):**
+linear-branching RE-RATIFIED (campaign stays LINEAR) · the goal-card doc
+field until a HUD exists · **ExitKind half-B — the cashSlice ARRIVAL math
+stays deferred PER DESIGN** (the exit-edge slice + heir
+`cashStart === slice` shipped wave-28; arrival-side recomputation at
+inheritance is a named future leg) · tier-real mechanics beyond the door
+verbs for the card-identity legs · corpus-in-campaign · the canvas inspector
+· the PHP production carrier for co-op (Node-sidecar-only-if-MP) · the
+render-harness numerics (OD-10/12) · slug-12 (data-only affix) · the
+coverage deck-preview · the playtest mandate (ratify-on-playtest set stands,
+W28-04 ladder included) · the in-flight-kill wedge (keep-defer;
+bounced-and-attributed when built) · **boot.catalog stays named-not-taken**
+(the wave-27 DEFER-RECORD unchanged; `SellCatalog` is still the only boot
+catalog) · **c-7 STAYS catalog-less** per its own wave-27 disposition — its
+armed sibling is the x-1 exit run-up (host catalog 40M/24M) CLOSED with the
+exit program @`2c69d77`, do not re-raise · apprentice×communicate RATIFIED
+2026-10-18b · era-probe RELATIVE RATIFIED · **credential audit CLOSED
+2026-10-19 owner-side** (the owner is the second writer; the
+ls-remote-before-push discipline stands as working practice) · **the
+fifteenth-card CEASE (ADR-0017 #8) — RESTATED UNTOUCHED: wave-29 added ZERO
+hosting types.**
+
+## Fresh owner asks (2026-10-19, wave-28 closeout — the wave-27 six asks + walls dispositioned below; the eight NEW asks DISPOSITIONED 2026-10-19 by the wave-29 batch above ((i)-(vi) BUILT, (vii)-(viii) stand — (vii) named-gap, (viii) playtest queue); the live register is the section above; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
 
 **Dispositioned by the 2026-10-18b owner batch (wave-27 register kept intact
 as history below):**
@@ -303,7 +432,7 @@ as history below):**
   the arm==unarmed digest-IDENTICAL ×5 clamp test are on disk.
 - **WARCT leg — CLOSED (BUILT).** @`980ab58` `tenantWholeLeaseValueMicroUsd` —
   the wave-27 DEFER was UN-FROZEN by the same batch. The reserved-vs-spot
-  eviction discount stays a NAMED-FUTURE leg (hg:24890-24892) — recorded,
+  eviction discount stays a NAMED-FUTURE leg (hg:24894-24896) — recorded,
   not forced.
 - **sell-acceptance dice — CLOSED as VERIFIED-SHIPPED @`24f90bc` (record).**
   The engine's acceptance roll already existed; the wave verified, added no
