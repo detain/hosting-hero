@@ -90,6 +90,12 @@ const JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
 // A bundle-referenced key may only ever live in `decision` of ITS OWN pack.
 const DECISION_ROOTS = new Set(["type","visitor","goal","scarce","skin","economy","cac","verbs","relations","scenarios","handover","rosetta","terms","refusal","alert","status","wave"]);
 const FLAVOUR_ROOTS = new Set(["ticket","press","forum","chatter","loading","abuse","canary","intern","sticky","vendor","achievement","codex"]);
+// Reserved campaign claim (wave-29, owner ruling 2026-10-19 "(v)/(vi)", mirroring the
+// G7A reserved-deck-id law @a498a49 onto the PACK claim side): the exit voice bank is
+// the campaign line's, and the campaign line is not a type bundle — no bundle may
+// claim this pack, and the pack is deep-validated by the same walls as the line packs.
+const RESERVED_CAMPAIGN_PACK = "packs/campaign.i18n.json";
+const RESERVED_CAMPAIGN_LINE = "core:campaign";
 const PACK_KEY_RE = /^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/;
 const SLOT_TOKEN_RE = /\{([^{}]*)\}/g;
 const SLOT_NAME_RE = /^[a-z][A-Za-z0-9]*$/;
@@ -505,22 +511,29 @@ const checkTemplate = (tpl, where, pack, usedSlots) => {
 
 const packsClaimed = new Set();
 const parsedPacks = []; // { rel, pack }
-for (const { rel, b } of bundles) {
-  if (typeof b.ticketPack !== "string" || !b.ticketPack.startsWith("file:packs/")) continue; // already failed above
-  const packRel = b.ticketPack.slice("file:".length);
-  if (!existsSync(join(ROOT, packRel))) { fail(rel, `ticketPack '${packRel}' does not exist on disk (R46)`); continue; }
-  if (packsClaimed.has(packRel)) { fail(rel, `ticketPack '${packRel}' already claimed by another bundle`); continue; }
-  packsClaimed.add(packRel);
-  const pack = readJson(packRel);
-  if (!pack) continue;
+
+// The deep walls every shipped pack passes — extracted VERBATIM from the bundle claim
+// loop below so the reserved campaign bank (deep-checked after it with reserved=true)
+// cannot be a second-class file: same schema, same scanNulls ledger, same root
+// vocabulary walls, same 600-char/brace/slot/technique bans, same provenance coverage
+// law. The only divergence is the decision floor: a line pack must carry >=5 decision
+// templates; the reserved bank must carry ZERO — the epilogue is read AFTER the
+// verdict, never while deciding (§9.3 separation law, spoken the other way).
+function deepCheckPack(packRel, pack, ownerId, reserved) {
   validateAgainst(packSchema, pack, packRel);
   scanNulls(pack, packRel, packTodos);
   parsedPacks.push({ rel: packRel, pack });
-  if (pack.appliesTo !== undefined && pack.appliesTo !== b.id) fail(packRel, `appliesTo '${pack.appliesTo}' != bundle id '${b.id}'`);
+  if (pack.appliesTo !== undefined && pack.appliesTo !== ownerId)
+    fail(packRel, `appliesTo '${pack.appliesTo}' != ${reserved ? "reserved claimant" : "bundle id"} '${ownerId}'`);
   for (const ek of Object.keys(pack.eraCodes ?? {})) if (!/^\d{4}$/.test(ek)) fail(`${packRel}.eraCodes.${ek}`, "era code must be a 4-digit year");
   const decision = pack.decision ?? {};
   const flavour = pack.flavour ?? {};
-  if (Object.keys(decision).length < 5) fail(packRel, "decision namespace under-populated (<5 templates)");
+  if (reserved) {
+    if (Object.keys(decision).length !== 0)
+      fail(packRel, "the reserved campaign bank is flavour-only — decision:0 is the law, not a gap (the epilogue surface is read AFTER the verdict, never while deciding — §9.3 separation wall)");
+  } else if (Object.keys(decision).length < 5) {
+    fail(packRel, "decision namespace under-populated (<5 templates)");
+  }
   if (Object.keys(flavour).length < 5) fail(packRel, "flavour namespace under-populated (<5 templates)");
   const usedSlots = new Set();
   for (const [mapName, map, roots] of [["decision", decision, DECISION_ROOTS], ["flavour", flavour, FLAVOUR_ROOTS]]) {
@@ -546,8 +559,32 @@ for (const { rel, b } of bundles) {
   for (const pk of Object.keys(prov)) {
     if (pk === "_todo") continue;
     if (!(pk in decision) && !(pk in flavour)) fail(`${packRel}._provenance.${pk}`, "provenance entry with no matching template key");
-  }
+  }}
+
+for (const { rel, b } of bundles) {
+  if (typeof b.ticketPack !== "string" || !b.ticketPack.startsWith("file:packs/")) continue; // already failed above
+  const packRel = b.ticketPack.slice("file:".length);
+  if (!existsSync(join(ROOT, packRel))) { fail(rel, `ticketPack '${packRel}' does not exist on disk (R46)`); continue; }
+  if (packsClaimed.has(packRel)) { fail(rel, `ticketPack '${packRel}' already claimed by another bundle`); continue; }
+  packsClaimed.add(packRel);
+  const pack = readJson(packRel);
+  if (!pack) continue;
+  deepCheckPack(packRel, pack, b.id, false);
 }
+
+// The reserved campaign claim, checked BEFORE the orphan guard so the bank is never
+// an orphan: it exists, and a bundle that ever grows a ticketPack pointing at this
+// file fails as a colliding claim (G7A mirror law, wave-29).
+if (packsClaimed.has(RESERVED_CAMPAIGN_PACK))
+  fail(RESERVED_CAMPAIGN_PACK, `referenced by a bundle ticketPack — '${RESERVED_CAMPAIGN_PACK}' is reserved to the campaign line '${RESERVED_CAMPAIGN_LINE}' (G7A mirror law)`);
+else if (!existsSync(join(ROOT, RESERVED_CAMPAIGN_PACK)))
+  fail(RESERVED_CAMPAIGN_PACK, "the reserved campaign voice bank does not exist on disk (wave-29 claim law: the mechanics stay walled; the bank does not go missing)");
+else {
+  packsClaimed.add(RESERVED_CAMPAIGN_PACK);
+  const campaignPack = readJson(RESERVED_CAMPAIGN_PACK);
+  if (campaignPack) deepCheckPack(RESERVED_CAMPAIGN_PACK, campaignPack, RESERVED_CAMPAIGN_LINE, true);
+}
+
 
 // Orphan guard: a pack file no bundle claims is drift waiting to happen.
 for (const f of dataFiles.filter((x) => x.startsWith("packs") && x.endsWith(".i18n.json")))

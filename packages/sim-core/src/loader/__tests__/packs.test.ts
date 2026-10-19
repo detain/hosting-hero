@@ -29,10 +29,13 @@ function packText(name: string): string {
   return readFileSync(join(PACKS_DIR, name), "utf8");
 }
 
-/** The fourteen disk packs (code-unit by file name) — the era-pin collector
- *  (L-ER-G) widened this suite's real-corpus arms from the two baseline packs
- *  to the whole bank so no type pack's era copy is policed only by the proto
- *  flavour-feed pins. ADR-0018 program 1a landed era bodies in all of them. */
+/** The fifteen disk packs — fourteen line packs + the reserved campaign voice
+ *  bank (code-unit by file name) — the era-pin collector (L-ER-G) widened this
+ *  suite's real-corpus arms from the two baseline packs to the whole bank so
+ *  no type pack's era copy is policed only by the proto flavour-feed pins.
+ *  ADR-0018 program 1a landed era bodies in all fourteen line packs; the
+ *  bank (wave-29, owner ruling "(v)") ships era-flat with zero decision keys
+ *  under the two reserved-pack carve-outs in packs.ts. */
 const DISK_PACK_FILES: readonly string[] = readdirSync(PACKS_DIR)
   .filter((name) => name.endsWith(".i18n.json"))
   .sort();
@@ -81,10 +84,11 @@ function variantOf(pack: LoadedI18nPack, key: string): Extract<I18nTemplate, { k
 }
 
 describe("loadI18nPack — the two REAL packs parse through the strict boundary", () => {
-  test("all fourteen disk packs load through the strict boundary with zero errors (L-ER-G widening)", () => {
+  test("all fifteen disk packs load through the strict boundary with zero errors (L-ER-G widening; wave-29 bank under the carve-outs)", () => {
     // the two baseline packs parse at module top (SHARED/GAME) — this arm
-    // proves the twelve type packs the era fans touched still parse too
-    expect(DISK_PACK_FILES.length).toBe(14);
+    // proves the twelve type packs the era fans touched still parse too, and
+    // the reserved campaign bank lands under its two named carve-outs
+    expect(DISK_PACK_FILES.length).toBe(15);
     for (const file of DISK_PACK_FILES) {
       expect(() => parsePackText(file), file).not.toThrow();
     }
@@ -175,9 +179,9 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
     }
   });
 
-  test("era-variant roster across ALL FOURTEEN disk packs — the L-ER-G collector census, parsed through the strict boundary", () => {
+  test("era-variant roster across ALL FIFTEEN disk packs — the L-ER-G collector census, parsed through the strict boundary", () => {
     // Same 42-key truth era-canon.test.ts counts on raw JSON, re-derived here
-    // through loadI18nPack: every one of the fourteen packs parses at the
+    // through loadI18nPack: every one of the fifteen packs parses at the
     // boundary AND its era-variant roster (key → ascending rungs actually
     // authored) matches the disk table. Re-pinned from disk probes 2026-10-17;
     // the rung SETS differ per key on purpose — packs whose product class was
@@ -192,6 +196,7 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
         ["loading.tip.rto", [1998, 2008, 2016, 2026]],
         ["ticket.subject.hollow", [2008, 2016, 2026]],
       ])],
+      ["campaign", new Map()], // reserved exit voice bank (wave-29): axis DECLARED, bodies era-flat — zero variant keys by law
       ["ci-build-farm", new Map([
         ["chatter.desk.wall", [2008, 2016, 2026]],
         ["chatter.runner.hum", [2008, 2016, 2026]],
@@ -281,6 +286,42 @@ describe("loadI18nPack — the two REAL packs parse through the strict boundary"
       }
     }
     expect(totalKeys).toBe(42);
+  });
+
+  test("the reserved campaign bank loads flavour-only through both carve-outs (wave-29, owner ruling \"(v)\")", () => {
+    // The disk bank is the carve-outs' ONLY member: decision 0, slots 0,
+    // flavour 37 — the validator's reserved-bank inversion (deepCheckPack
+    // reserved=true) mirrored at the parse boundary.
+    const bank = parsePackText("campaign.i18n.json");
+    expect(bank.packId).toBe("pack:campaign.i18n");
+    expect(bank.appliesTo).toBe("core:campaign");
+    expect(bank.decision.size).toBe(0);
+    expect(bank.slots.size).toBe(0);
+    expect(bank.flavour.size).toBe(37);
+    for (const key of bank.flavour.keys()) expect(key.startsWith("codex.exit."), key).toBe(true);
+    for (const key of stableSerializePackKeys(bank)) expect(bank.provenance.has(key), key).toBe(true);
+  });
+
+  test("the carve-outs do not leak — half-matched forgeries and line packs stay under the full walls (wave-29 falsifiers)", () => {
+    const bankWire = cloneJson(JSON.parse(packText("campaign.i18n.json")) as Record<string, unknown>);
+    // right packId, wrong claimant → reserved identity not earned → the both-
+    // surfaces wall fires on the empty decision namespace (a glossary is kept
+    // so the earlier slots wall cannot mask the leg under test)
+    bankWire.appliesTo = "official:shared-web";
+    bankWire.slots = { amount: { kind: "money", desc: "forged glossary to reach the decision wall" } };
+    expectPackError(() => loadI18nPack(bankWire), "OUT_OF_RANGE", "the decision namespace is empty");
+    // a LINE pack that empties its decision surface → same wall, same message
+    const lineForge = forge("game");
+    lineForge.decision = {};
+    expectPackError(() => loadI18nPack(lineForge), "OUT_OF_RANGE", "the decision namespace is empty");
+    // a line pack with an empty slot glossary → the glossary wall stands
+    const glossaryForge = forge("game");
+    glossaryForge.slots = {};
+    expectPackError(() => loadI18nPack(glossaryForge), "OUT_OF_RANGE", "the slot glossary is empty");
+    // the bank itself must still SPEAK: a flavour-empty reserved pack is a bug
+    const silentBank = cloneJson(JSON.parse(packText("campaign.i18n.json")) as Record<string, unknown>);
+    silentBank.flavour = {};
+    expectPackError(() => loadI18nPack(silentBank), "OUT_OF_RANGE", "the flavour namespace is empty");
   });
 
   test("the result is deep-frozen and the maps are sealed (no .set surface)", () => {

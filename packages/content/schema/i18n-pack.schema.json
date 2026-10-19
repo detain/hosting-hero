@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": { "type": "integer", "enum": [1] },
     "packId": { "type": "string", "pattern": "^pack:[a-z0-9][a-z0-9.-]*$" },
-    "appliesTo": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*$" },
+    "appliesTo": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*$", "description": "The namespaced owner: a type bundle id (official:<line>) for the fourteen line packs, or the reserved campaign line id core:campaign for the exit voice bank (validate.mjs reserved-claim law, G7A mirror, wave-29)." },
     "locale": { "type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$" },
     "note": { "type": "string" },
     "eraCodes": {
@@ -29,7 +29,7 @@
     },
     "decision": {
       "type": "object",
-      "description": "Sober surface: strings shown while deciding or losing (labels, terms, refusals, alerts, status rungs). §9.3 clauses 2-3. Never funny at the moment of loss.",
+      "description": "Sober surface: strings shown while deciding or losing (labels, terms, refusals, alerts, status rungs). §9.3 clauses 2-3. Never funny at the moment of loss. The reserved campaign voice bank (appliesTo core:campaign, wave-29) is the declared exception in the other direction: its decision namespace must stay EMPTY — epilogues are read after the verdict.",
       "additionalProperties": { "type": ["string", "object"] }
     },
     "flavour": {

@@ -22,7 +22,10 @@
  *   absent required field    → MISSING_FIELD (also: fillTemplate missing slots)
  *   shape / type failure     → WRONG_TYPE    (template neither string nor era object)
  *   identifier failure       → BAD_PATTERN   (packId, locale, key, era year, slot token)
- *   count outside a floor    → OUT_OF_RANGE  (empty namespace, zero era entries)
+ *   count outside a floor    → OUT_OF_RANGE  (empty namespace, zero era entries;
+ *                                             the reserved campaign bank's empty
+ *                                             decision surface + empty glossary
+ *                                             are the named carve-outs — wave-29)
  *
  * Determinism laws: no Math.random, no Date, no Intl, no localeCompare.
  * Every dynamic-key map is built from code-unit-SORTED entries (era maps by
@@ -101,6 +104,27 @@ const LOCALE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
 const PACK_KEY_RE = /^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/;
 const ERA_YEAR_RE = /^\d{4}$/;
 const SLOT_NAME_RE = /^[a-z][A-Za-z0-9]*$/;
+
+/**
+ * The reserved campaign voice bank (wave-29, owner ruling 2026-10-19: "(v)
+ * epilogue prose — content wave"; L-EP stop-report rider, mirrored from
+ * packages/content/script/validate.mjs `RESERVED_CAMPAIGN_PACK` /
+ * `RESERVED_CAMPAIGN_LINE`, itself the G7A reserved-deck-id law @a498a49
+ * applied to the pack claim side). The exit bank ships FLAVOUR-ONLY with ZERO
+ * slots: the epilogue is read AFTER the verdict, so its decision surface is
+ * empty BY LAW, and its lines take no {slots} (the validator's dead-slot law
+ * forbids a dummy glossary entry as a workaround). The two shape floors below
+ * — `parseNamespace` (both-surfaces wall) and `parseSlotGlossary` (empty-
+ * glossary wall) — take the named carve-out ONLY when the parsed PAIR matches
+ * this identity: a half-matched forgery stays under the full walls, and all
+ * fourteen line packs are behaviorally untouched.
+ */
+const RESERVED_CAMPAIGN_PACK_ID = "pack:campaign.i18n";
+const RESERVED_CAMPAIGN_LINE = "core:campaign";
+
+function isReservedCampaignBank(packId: string, appliesTo: string): boolean {
+  return packId === RESERVED_CAMPAIGN_PACK_ID && appliesTo === RESERVED_CAMPAIGN_LINE;
+}
 
 /* ═════════════════════ loaded (trusted) shapes ═════════════════════ */
 
@@ -347,10 +371,18 @@ function parseNamespace(
   roots: readonly string[],
   eraYears: ReadonlySet<number>,
   seen: Set<string>,
+  reserved: boolean,
 ): Map<string, I18nTemplate> {
   const source = asRecord(value, mapName);
   const keys = Object.keys(source).sort(compareCodeUnits);
   if (keys.length === 0) {
+    // Reserved-bank carve-out (wave-29, owner ruling "(v)"): an EMPTY decision
+    // namespace is the campaign bank's law, not a gap — epilogues are read
+    // after the verdict, never while deciding (§9.3 separation wall, spoken
+    // the other way; mirrors validate.mjs deepCheckPack(reserved=true), which
+    // inverts the same floor from ">=5" to "must be 0"). The FLAVOUR surface
+    // never takes this branch: a voice bank with no voice is a bug.
+    if (reserved && mapName === "decision") return new Map<string, I18nTemplate>();
     throw new LoaderError("OUT_OF_RANGE", mapName, `the ${mapName} namespace is empty — every pack carries both surfaces`);
   }
   const templates = new Map<string, I18nTemplate>();
@@ -396,7 +428,7 @@ function parseEraCodes(value: unknown): { readonly map: ReadonlyMap<number, stri
   return { map: sealedMap(entries), years };
 }
 
-function parseSlotGlossary(value: unknown): ReadonlyMap<string, LoadedI18nSlot> {
+function parseSlotGlossary(value: unknown, reserved: boolean): ReadonlyMap<string, LoadedI18nSlot> {
   const source = asRecord(value, "slots");
   const out: (readonly [string, LoadedI18nSlot])[] = [];
   for (const key of Object.keys(source).sort(compareCodeUnits)) {
@@ -420,6 +452,12 @@ function parseSlotGlossary(value: unknown): ReadonlyMap<string, LoadedI18nSlot> 
     ]);
   }
   if (out.length === 0) {
+    // Reserved-bank carve-out (wave-29, owner ruling "(v)"): the campaign
+    // epilogue lines take no {slots}, and the validator's dead-slot law
+    // forbids padding the glossary with unused entries — an empty glossary is
+    // this bank's proven shape, not an omission (see RESERVED_CAMPAIGN_PACK_ID
+    // above; the fourteen line packs stay under the unmodified wall).
+    if (reserved) return sealedMap([]);
     throw new LoaderError("OUT_OF_RANGE", "slots", "the slot glossary is empty — templates reference {slots} by name");
   }
   return sealedMap(out);
@@ -502,12 +540,17 @@ export function loadI18nPack(raw: unknown): LoadedI18nPack {
   const eraCodesRaw = getOptional(source, "eraCodes");
   const eraCodes = eraCodesRaw === undefined ? parseEraCodes({}) : parseEraCodes(eraCodesRaw);
 
-  const slots = parseSlotGlossary(getRequired(source, "slots", ""));
+  // Reserved campaign bank identity (wave-29, owner ruling "(v)"): the two
+  // shape walls below take the named carve-out ONLY for the exact parsed
+  // packId+appliesTo pair — every line pack computes false and is unchanged.
+  const reserved = isReservedCampaignBank(packId, appliesTo);
+
+  const slots = parseSlotGlossary(getRequired(source, "slots", ""), reserved);
 
   // Shared `seen` set carries the global-uniqueness assertion across the wall.
   const templateKeys = new Set<string>();
-  const decisionMap = parseNamespace("decision", getRequired(source, "decision", ""), DECISION_ROOTS, eraCodes.years, templateKeys);
-  const flavourMap = parseNamespace("flavour", getRequired(source, "flavour", ""), FLAVOUR_ROOTS, eraCodes.years, templateKeys);
+  const decisionMap = parseNamespace("decision", getRequired(source, "decision", ""), DECISION_ROOTS, eraCodes.years, templateKeys, reserved);
+  const flavourMap = parseNamespace("flavour", getRequired(source, "flavour", ""), FLAVOUR_ROOTS, eraCodes.years, templateKeys, reserved);
 
   const provenance = parseProvenance(getRequired(source, "_provenance", ""), templateKeys);
   const todoRaw = getOptional(source, "_todo");

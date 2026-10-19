@@ -109,7 +109,7 @@ describe("era canon — packs stay inside the ratified four-era axis (OD-22(c))"
     }
   });
 
-  it("at authoring time: ALL FOURTEEN packs speak the full four-rung canon — the era axis is corpus-wide, 42 variant keys deep", () => {
+  it("at authoring time: ALL FIFTEEN disk packs speak the full four-rung canon — the era axis is corpus-wide, 42 variant keys deep (the reserved bank declares the axis with zero bodies — wave-29)", () => {
     // Census of the CURRENT copy axis — L-ER-B landed the quad-rung copy on
     // shared-web (4 era keys) and game (2); the L-ER-C..F fan waves then put
     // THREE era keys in every one of the twelve type packs (36) — 42 keys total.
@@ -123,6 +123,11 @@ describe("era canon — packs stay inside the ratified four-era axis (OD-22(c))"
     // every pack authors real era bodies. Re-derived from disk 2026-10-17.
     const counts = authored.map(([name]) => [name, countEraVariantKeys(parsePack(name))] as const);
     const EXPECTED: Record<string, number> = {
+      // The reserved campaign voice bank (wave-29): the four-rung axis is
+      // DECLARED in eraCodes (the YEARS leg above passes on the declaration)
+      // and every body ships era-flat — zero variant keys by authoring law,
+      // the honest null shape, never a forged era fan.
+      "campaign.i18n.json": 0,
       "shared-web.i18n.json": 4, // slashdot, dev-left, cron, cold-aisle (all quad-rung)
       "game.i18n.json": 2, // griefed + quiet.naming (pack-unique flavour, quad-rung)
       "backup-archival.i18n.json": 3,

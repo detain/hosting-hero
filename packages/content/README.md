@@ -62,6 +62,7 @@ packs/backup-archival.i18n.json     ticket pack for official:backup-archival —
 packs/dbaas.i18n.json               ticket pack for official:dbaas — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys on {2008,2016,2026} (chatter.cellar.static, ticket.subject.pool, ticket.subject.upgrade — L-ER-C); decision namespace stays era-flat
 packs/observability.i18n.json     ticket pack for official:observability — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys — chatter.wall.hum and loading.tip.fan on {2008,2016,2026}, codex.cardinality on {2016,2026} (L-ER-D); decision namespace stays era-flat
 packs/ci-build-farm.i18n.json     ticket pack for official:ci-build-farm — 66 grammar templates, decision 37 / flavour 29; three era-variant FLAVOUR keys on {2008,2016,2026} (chatter.desk.wall, chatter.runner.hum, forum.thread.matrix — L-ER-C); decision namespace stays era-flat
+packs/campaign.i18n.json        the campaign line's EXIT VOICE BANK (wave-29) — 37 FLAVOUR templates, decision 0 BY LAW (epilogues are read after the verdict — validate.mjs reserved-bank inversion); seven §1.6 exit kinds × (headline + 3 body + meta-currency profile) + 2 prestige framing lines, key grammar codex.exit.<kind>.<role>; zero slots; era axis DECLARED on the OD-22(c) four-rung canon with every body era-flat (2026 = the authored fallback voice); claimed by the reserved campaign line id core:campaign (G7A mirror law), never by a type bundle; the meta-currency MECHANICS stay owner-walled (2026-10-19 ruling (vi))
 decks/watch-the-door.json         deck:watch-the-door (appliesTo core:g7) — the g7 proto book re-authored as data: 6 cards, mainline entity ids only
 decks/cold-aisle.json             deck:cold-aisle (appliesTo official:shared-web) — inform/consult-heavy posture, 5 advisory cards on edge/origin/lane cells
 decks/sleepless.json              deck:sleepless (appliesTo official:serverless) — 3 cards, incl one DELIBERATE unmapped-carrier wall card (failover)
@@ -700,7 +701,7 @@ finale whose beat is the fatal. Pack 66 templates 37/29, slots 18 all live; thre
 {2008,2016,2026} since ADR-0018 program 1a (L-ER-C: chatter.desk.wall, chatter.runner.hum,
 forum.thread.matrix — §0.4 still names no CI cell, so the 1998 rung rides the current-voice
 fallback), refusal×5 / status.rung×5 / vendor×4 byte-identical across
-all fourteen packs; `type.ci-build-farm.name` pins "Green Light" — the heading's FIRST segment,
+all fourteen line packs (the reserved campaign voice bank `packs/campaign.i18n.json` carries no decision register at all — flavour-only by law, so this byte-identity wall has no member there); `type.ci-build-farm.name` pins "Green Light" — the heading's FIRST segment,
 per the §Key literals first-span rule — and the codename "Untrusted Code, By Design" rides the
 codex. Unlocks ground on the §5.6 Automation ladder, whose rungs name the business outright
 ("Shell Scripts → Config Management → Immutable Images → CI/CD → …" :20670): the two rungs before
@@ -782,7 +783,10 @@ entries/wave, first wave ≤40% par, trough ≥45% below peak, ≤2 primary role
 >30%, fresh role every 4th wave, hard waves draw ≥2 denominations, entries sum
 to 100%, envelope `overWaves` resolve) · bundle `waveTable` file refs resolve on
 disk (missing file = warning) · **ticket packs**: every `file:packs/…` ref exists
-and is claimed by exactly one bundle (no orphans) · pack validates against
+and is claimed by exactly one bundle (no orphans); the one reserved
+exception is `packs/campaign.i18n.json`, claimed by the campaign line id `core:campaign`
+and deep-checked by the same walls with the decision floor inverted to must-be-empty
+(G7A mirror law, wave-29) · pack validates against
 `schema/i18n-pack.schema.json` · **every dotted key a bundle references resolves
 in that pack's `decision` namespace** (missing = fail; found in `flavour` = fail)
 · **decision/flavour root vocabularies are disjoint** — the §9.3 separation law is
