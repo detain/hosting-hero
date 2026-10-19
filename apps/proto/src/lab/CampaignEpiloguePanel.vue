@@ -119,7 +119,7 @@ function bumpOffset(delta: number): void {
 
     <div v-if="view !== null && !running" role="tabpanel" class="epilogue-ending" data-test="epilogue-ending">
       <p class="epilogue-source" :data-source="view.source" data-test="epilogue-source">
-        {{ view.source === "fixture" ? `test fixture — ${view.sourceNote}` : view.sourceNote }}
+        {{ view.sourceNote }}
         · {{ view.campaignId }} · <span data-test="epilogue-digest">{{ digestLabel }}</span>
       </p>
       <h3 class="epilogue-title" data-test="epilogue-title">{{ view.title }}</h3>
