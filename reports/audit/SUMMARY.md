@@ -2228,3 +2228,43 @@ Ask (a) CLOSED @`3dd65cf`. The upkeep ladder joins the ratify-on-playtest set al
 ### Program status
 
 Waves 1–30 landed. master ahead of pushed-origin `ca9f7bb` by the lane + cures + this closeout; push ceremony stands with the orchestrator.
+
+
+## WAVE-31 closeout — session-10e commissioning the one drivable ask: the EPILOGUE-UI v0 — the Sim Lab gains a third bench that renders CAMPAIGN endings from the REAL engine, the §1.6 epilogue bank finally gets a mouth (side-loaded, never shelved), and the sanctioned `./campaign/chapters` exports-key sets the barrel-law-preserving precedent for future content paths (2026-10-19)
+
+**Context.** The wave-30 closeout ended the program at an owner wall with exactly one drivable item: ask (i) — epilogue-UI consumption ("the endings evidence keys are live engine output; nothing renders them; the proto has zero campaign host surface — the lane is a feature"). The owner's deferred-items directive commissioned it as a small v0: a lab-panel stepper that runs CAMPAIGN_EXIT and renders exit evidence. Everything else stayed where the owner left it: (b)-(e) named deferrals, the valuation + upkeep ladders ratify-on-playtest, the fifteenth-card CEASE, the playtest mandate standing. ONE lane (L-EPI) executed atop `c8d4915`; joint review PROCEED (0 critical / 0 major); one cosmetic minor cured in-wave.
+
+### Ledger (by lane)
+
+- **L-EPI @`80be0b0` (+1,168/−5, 9 files — 4 created, 3 proto edits, sanctioned pair)** — the third Sim Lab bench tab, "epilogue". `lab/campaignLab.ts` (pure model, 443 ln): closed two-arm roster — the **exit-declared** arm forges a single-beat campaign doc (`x-1-armed-close`/`the-long-sale`/`strategic-acquisition`) and runs it end-to-end ⇒ ending kind `exit` carrying the declared + observed evidence, the 24M edge slice, the 48M payout-repro headline, diligence legs [7500, 10000, 9000, 5000] bps; the **exit-arc** arm runs the shipped `CAMPAIGN_EXIT` ⇒ the honest QUIET-HANDOFF ending — a mid-chain declaration validates but does NOT narrate, and the panel renders that asymmetry (the exit edge + payout repro stay visible as declaration-evidence while the ending stays the tour's last word). Offset knob 0–4 rides the seeds incl. the offset-2 15M scar variant; breathe-per-leg law honored (zero timers at mount); witnesses RE-DERIVED by the engine in-test, NOT laundered from suite hexes; twin determinism per arm; the DOC_LIE falsifier (a tickCap-30 halt doc whose close refutes its declaration) proves the error lane renders. `lab/CampaignEpiloguePanel.vue` (229 ln): engine title/epitaph VERBATIM (§9.9: dry, accurate, never a punchline), '?'-honest evidence grid via chrome/numberLaw (absent facts print '?', never a coerced zero), chapter tape, exit ledger, epilogue prose resolved through a `getEra()`-tracking computed. **Prose SIDE-LOAD, never shelf registration**: the 37-key `packs/campaign.i18n.json` bank rides `?raw` through `loadI18nPack`/`pickEraText`/`fillTemplateBody` — packStore/flavourFeed deliberately unregistered (bank ≠ shelf flavour, the wave-29 ruling applied; ~10 pool/roster pins spared); era-flat byte-stand pinned (1998 ≡ 2026). Honest cuts: the OBITUARY kind renders ONLY through a labeled test fixture (no shipped content reaches it live — forging one would violate "endings are observed, not authored"); the parse-RESERVED kinds (ipo/management-buyout/wind-down) get NO chips (a chip would be UI fiction the engine's parse walls refuse to honor). The optional full-tour arm SKIPPED (per-chapter-arc breathe legs over four arcs are not cheap — disclosed deviation). Sanctioned sim-core delta: ONE `./campaign/chapters` exports key (chapters.ts stays barrel-less BY WRITTEN LAW; `campaign/index.ts` untouched — api-verify's barrel-walking census stays 1,785 EXACT) + the in-commit API-REFERENCE import-surface row; App.vue touched by its rail SUBTITLE string only.
+- **F1 cure @`33a736b`** — the panel prefixed 'test fixture — ' onto a sourceNote that already begins with it; the model is now the single authority (template prints `view.sourceNote` verbatim); the dom pin survives via `toContain`; one-line delta, count-neutral, index −60 B.
+
+### Findings disposition
+
+Review PROCEED 0C/0M. **F1 RECOMMENDED — CURED** (above). **F2 NOTED — phrasing law adopted:** the commit-body phrase "zero campaign tokens" is literally loose (the pre-existing generic word 'campaign' rides the baseline artifacts identically); the TRUE claim is **zero BENCH symbols** (epilogue/CAMPAIGN_EXIT/CHAPTER_AUTHORED/the-long-sale/runEpilogue) in both worker artifacts — all closeout doc lines use this phrasing. **F3 NOTED:** review-brief diffstat typo; disk +1,168 stands. **F4 NOTED, no action:** the `#fff 3%` color-mix is house 3-digit convention, hueLaw-legal. Law surfaces PASS untouched: hue zero-hex (ledger names only), textLaw, a11y roster, BudgetManager zero claims, lab/index explicit names.
+
+### Battery
+
+| Gate | Result |
+|---|---|
+| sim-core serial | **196f / 3,796** rc 0 — UNMOVED (zero sim-core files/tests added; the exports-key inertness proof) |
+| proto serial | **115f / 1,324** (113f/1,304 → +2f/+20t EXACT — campaignLab 12 + campaignEpilogue.dom 8; zero pre-existing re-pins) |
+| transport / relay / host | 100/8 + repro rc 0 `de1d4c0f941333eb` UNMOVED · 42 · 36 |
+| headless | 53/5 parity `b0162ab5`/`a9b4b7b8` HELD |
+| api-verify | PASS **1,785** — ZERO export delta the WHOLE wave (the file-direct key is barrel-invisible; the import-map leg rode @`80be0b0`'s doc row) |
+| validate | exit 0 — 14 bundles / 15 packs / decks=3 / 413 `_todo` / 18 pack-markers / DECK-TODO 3 / WARN 16 / Key-literals 123 — ALL counters neutral |
+| canary / typecheck / ci-verify | 153 files · 8/8 · 5/5 |
+| build | worker **955.45 kB cmp-IDENTICAL** / fakeWorker **547.42 kB same-size** (sole 8-byte embedded index-chunk filename-hash delta) / index 1,697.56 → 1,775.55 at the lane → **1,775.49** at the F1 cure (+77.93 kB net = the sanctioned campaign bench edge App→lab→campaign→scenario/save + bank `?raw` + the-long-sale chain, main-side ONLY) / CSS 103.08 → **107.79 kB** (+4,712 B net-new scoped `.epilogue-*` rules — the build lane refused the brief's CSS-flat prediction; attribution proven by detached-worktree A/B at `c8d4915`) |
+| digests | ZERO goldens moved — dormant twins `ca8863849cb3db32`/`780b1cbc61dff760`, money `25_005_307_300n`/`25_109_732_500n`, armed pair `2a7a977a541b08a9`/`6a314d31f2f2f889`, versus `cd1296c54df0e9c6`, parity, the seven tour hexes, every ×100 chain ALL BYTE-STAND |
+
+### Census — ZERO markers moved
+
+✅321 🔧1,016 ⚠️0 ❌2,222 📝30 = 3,589 — UNCHANGED; wave-31 amends the :55 status block and dated rider text in place (the §1.6 epilogue-bank rider gains the RENDERED clause inside existing rider lines — zero new heading markers), asserted by recount on the final tree. specLine window audit: the §1.6 rider ride kept every cited line inside its ±12 honesty window (in-place amendment, zero re-anchors); scenario+campaign serial GREEN unaided after the hg edits.
+
+### Owner state
+
+Ask (i) CLOSED @`80be0b0`+@`33a736b`. Wave-29 ask (h) (wire-graph hygiene) DISPOSED by measurement — the main-chunk accretion is attributed and disclosed; a graph-hygiene pass (worker-side bench execution / code-splitting the lab) is RECOMMENDED-FUTURE, NOT commissioned; the worker stays quarantined BY PROOF (zero bench symbols in either artifact). NEW named wall recorded, NOT commissioned: the **live-obituary arm** needs one losing terminal beat in content (a single authored wire flip would suffice). Epilogue meta-currency display stays owner-walled (ruling (vi)); campaign-save persistence stays out of the proto remit; (b)-(e) + (g) unchanged; (f) discharged by the (i) build. All standing walls restated in DECISIONS-PENDING; the fifteenth-card CEASE UNTOUCHED — wave-31 added ZERO hosting types. The PLAYTEST MANDATE remains the biggest unlock.
+
+### Program status
+
+Waves 1–31 landed. master ahead of pushed-origin `c8d4915` by the lane + cure + this closeout; push ceremony stands with the orchestrator.

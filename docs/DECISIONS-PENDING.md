@@ -288,7 +288,85 @@ Source: `reports/audit/SUMMARY.md` PROBLEMS + group TOP-PROBLEMS (audit commit `
 
 ---
 
-## Fresh owner asks (2026-10-19, wave-30 closeout — the wave-29 register dispositioned below where still standing; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
+## Fresh owner asks (2026-10-19, wave-31 closeout — the wave-30 register dispositioned below where still standing; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
+
+**The 2026-10-19e owner commission opened register ask (i) — the
+EPILOGUE-UI v0 — the one build the wave-30 closeout named as drivable with
+NO new law. One lane (L-EPI) executed atop `c8d4915`; review PROCEED
+(0 critical / 0 major), one cosmetic minor cured same wave:**
+
+- **(i) Epilogue-UI v0 — CLOSED @`80be0b0` (F1 cure @`33a736b`).** The Sim
+  Lab gains a third bench tab, "epilogue", rendering CAMPAIGN endings from
+  the LIVE engine: pure model `lab/campaignLab.ts` (closed two-arm roster —
+  exit-declared single-beat forged doc ⇒ kind `exit` with
+  declared/observed evidence + 24M edge slice + 48M headline + diligence
+  legs [7500, 10000, 9000, 5000] bps; exit-arc `CAMPAIGN_EXIT` ⇒ honest
+  quiet-handoff non-narration while the ledger shows the paid edge; offset
+  knob 0–4 incl. the offset-2 15M scar variant; breathe-per-leg law
+  honored, zero timers at mount) + `CampaignEpiloguePanel.vue` (engine
+  title/epitaph VERBATIM; '?'-honest evidence grid via chrome/numberLaw;
+  chapter tape; exit ledger; epilogue prose; DOC_LIE visible via
+  role=alert — endings are observed, not authored). The prose is
+  SIDE-LOADED from `packs/campaign.i18n.json?raw` through
+  `loadI18nPack`/`pickEraText`/`fillTemplateBody` — packStore/flavourFeed
+  deliberately NOT registered (bank ≠ shelf flavour; the wave-29 ruling
+  applied, ~10 pool/roster pins spared). Obituary reachable ONLY via a
+  labeled test fixture; the parse-RESERVED kinds get no chips. The
+  sanctioned sim-core delta is ONE exports key (`./campaign/chapters`) +
+  the in-commit API-REFERENCE import-surface row — the barrel-law-preserving
+  pattern future content modules reuse (ADR-0019 wave-31 rider). Battery:
+  proto 115f/1,324 (+2f/+20t EXACT) · sim-core UNMOVED 196f/3,796 ·
+  api-verify 1,785 ZERO delta · zero goldens moved.
+
+**Fresh asks (post wave-31):**
+
+- **Epilogue meta-currency display — STAYS OWNER-WALLED** (ruling (vi)
+  unchanged): the bench renders the evidence readout; meta-currency as
+  spendable prestige input at the epilogue era is not commissioned.
+- **Live-obituary arm — NEW named wall.** No shipped content reaches the
+  obituary ending (every campaign beat today wins or hands off at the
+  terminal); a genuine live obituary needs ONE losing terminal beat in
+  content — a single authored wire flip would suffice (the engine already
+  honors it: `deathStopReason` rides the evidence facet). RECORDED as a
+  named wall, NOT commissioned; the bench's labeled-fixture path proves the
+  renderer total over the closed 3-kind union meanwhile.
+- **Campaign-save persistence stays OUT of the proto remit** — the bench
+  runs a scratch company through `save/settle` in memory; a Long-Save-
+  persistent bench is a save/host lane call.
+- **(g) Panel deck-picker beyond watch-the-door — UNCHANGED** (owner
+  adoption call, engine-ready). **(b)-(e) wave-29 named deferrals —
+  UNCHANGED:** (b) card-shed-on-nonpayment wall · (c) forward-charging ·
+  (d) droplet fidelity · (e) suspension-aware accrual. **(f)
+  endings-UI epilogue consumption — DISCHARGED by the (i) build above**
+  (the bench renders; an in-game endings SCREEN stays content/owner scope).
+
+**MAIN-CHUNK ACCRETION NOTE — wave-29 ask (h) (wire-graph hygiene) is
+DISPOSED by measurement, not refactor.** The sanctioned campaign bench edge
+(App.vue→lab→`@hh/sim-core/campaign`→scenario/save) grew the proto index
+chunk 1,697.56→1,775.55 kB at the lane commit (1,775.49 kB at the post-cure
+tip; CSS 103.08→107.79 kB net-new scoped rules). The WORKER graph stays
+quarantined BY PROOF: sim.worker cmp-IDENTICAL 955.45 kB, fakeWorker
+same-size 8-byte-token-delta — zero BENCH SYMBOLS (epilogue/CAMPAIGN_EXIT/
+CHAPTER_AUTHORED/the-long-sale/runEpilogue) in either artifact (review F2
+phrasing law: "zero bench symbols", never "zero campaign tokens" — the
+pre-existing generic word 'campaign' rides the baseline artifacts
+identically). A graph-hygiene pass (worker-side bench execution /
+code-splitting the lab) is RECOMMENDED-FUTURE, NOT commissioned — the
+ADR-0008-era posture (measure, disclose, do not pre-empt). W29-06 (the
+stray `/home/my/vitest.config.ts` hijacking out-of-workspace vitest runs)
+stays owner-side housekeeping.
+
+**Standing walls restated WHOLE (wave-31 posture):** branching-linear
+RE-RATIFIED · goal-card doc-sugar until a HUD exists · cashSlice-arrival
+math deferred PER DESIGN · tier-real mechanics beyond the door verbs ·
+corpus-in-campaign · the canvas inspector · the PHP production carrier
+(Node-sidecar-only-if-MP) · WARCT content copy · in-flight-kill keep-defer ·
+slug-12 · render numerics · deck-preview · **PLAYTEST MANDATE** (the
+valuation ladder W28-04 AND the upkeep ladder both ride ratify-on-playtest —
+the biggest unlock standing) · c-7 stays catalog-less · `boot.catalog`
+named-not-taken · the fifteenth-card CEASE (ADR-0017 #8).
+
+## Fresh owner asks (2026-10-19, wave-30 closeout — SUPERSEDED AS THE LIVE REGISTER by the wave-31 section above; the type-program CEASE (ADR-0017 #8) and every standing STOP still standing)
 
 **The 2026-10-19d owner batch (verbatim "go / recomendations and kep
 going") opened register gate (a) — the CONTENT RETUNE — with the lane

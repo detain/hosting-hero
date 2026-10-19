@@ -247,6 +247,7 @@ expressibility ceiling (`scenario/perspective.ts`) rode this seam DOWN —
 L-PERS @`817c82c` (ADR-0019 program 1 generalization) retired the
 fourteen-verb `not-coverable-v0` column: all nineteen verbs are bannable
 through the gate and the roster is spec-complete.)
+WAVE-31-CLOSEOUT docs pass 2026-10-19 (api-verify 1,785 → 1,785 — ZERO export delta the whole wave: the L-EPI epilogue-bench proto Δ touches `packages/sim-core/package.json` only, via the sanctioned `./campaign/chapters` file-direct import key — the `## Import surface` row rode @`80be0b0` in-commit because the api-verify import-map leg needs the doc token; `chapters.ts` stays barrel-less BY WRITTEN LAW (authored content-data, not API surface), so the barrel-name census cannot see the key and stays at 1,785 — the barrel-law-preserving precedent future foreign hosts of content modules reuse. Doc bodies otherwise UNTOUCHED this wave.)
 Ground truth = source
 on disk, this commit.** Every name below was verified against the module files
 and the package `exports` map, and is machine-policed by
