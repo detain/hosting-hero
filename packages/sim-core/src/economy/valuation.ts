@@ -19,18 +19,18 @@
  *
  * THE GROUNDING TABLE (every factor quotes the doc verbatim; the NUMBERS are
  * PROVISIONAL taste — register posture ADR-0016 #10, ratify-on-playtest):
- *  - WARCT + contracted revenue % (hg:24948-24950): "**Weighted Average
+ *  - WARCT + contracted revenue % (hg:24956-24958): "**Weighted Average
  *    Remaining Contract Term** and **contracted revenue %** (the fraction of
  *    MRR with >12 months left)." — both read-only legs below. The §6.9
- *    modifier row (hg:24386-24387) calls WARCT "**the single biggest multiple
+ *    modifier row (hg:24392-24393) calls WARCT "**the single biggest multiple
  *    driver in colo and managed services**".
- *  - MRC is the annuity (hg:24894, §6.12 three-component bill): "**MRC**
+ *  - MRC is the annuity (hg:24902, §6.12 three-component bill): "**MRC**
  *    (monthly recurring) is the annuity." The per-tenant value below is a
  *    MULTIPLE OF MONTHLY REVENUE (the doc's own unit column), and the term
  *    rides the slope — see the DISCLOSED COMPOSITION NOTE on
  *    `tenantWholeLeaseValueMicroUsd` for why recon's literal "multiple × TCV"
  *    was adapted (double-counts months against the doc's 10-18x monthly band).
- *  - Per-line multiples (hg:24371-24373): "Shared / VPS book | EBITDA
+ *  - Per-line multiples (hg:24377-24379): "Shared / VPS book | EBITDA
  *    multiple, or monthly-revenue multiple | 3-6x EBITDA / 10-18x monthly
  *    revenue" · "Managed / cloud services | EBITDA or ARR multiple | 6-12x
  *    EBITDA" · "Colocation | **NOI and cap rate, like real estate** | 6-9%
@@ -38,20 +38,20 @@
  *    {plan|contract-class|sku}; the colo NOI band floor-maps onto the
  *    revenue band (the honest-partial note lives on the table itself — NOI
  *    needs expense truth the engine does not have).
- *  - The headline itself (§6.7, hg:23731-23732): "A multiple of ARR (or NOI,
+ *  - The headline itself (§6.7, hg:23735-23736): "A multiple of ARR (or NOI,
  *    or backlog — see §6.9's per-line valuation bases) modified by your
  *    diligence report." This leg composes the modification; authoring the
  *    headline offer is the acquisition-offer lane, not this file.
- *  - Diligence posture (§1.12, hg:5614-5615): "each finding either **knocks
+ *  - Diligence posture (§1.12, hg:5616-5617): "each finding either **knocks
  *    a turn off the multiple**, **moves money into escrow**, or **converts
  *    purchase price into an earnout.** The level is won on final **proceeds**,
  *    not headline price." — hence every adjustment is a DISCOUNT: the slice is
  *    NEVER above the headline, exactly as trust is never above 1.0 upward
  *    (the negotiate.ts goodwill-ceiling posture, mirrored).
- *  - Concentration (hg:24429-24431): "If one customer or one business line
+ *  - Concentration (hg:24435-24437): "If one customer or one business line
  *    exceeds **40% of revenue**, valuation takes a hit" — STRICTLY above 40
  *    is the law ("exceeds"); the magnitude borrows the §6.9 modifier row's
- *    only number (hg:24387-24388): "**revenue concentration** (>25% in one
+ *    only number (hg:24393-24394): "**revenue concentration** (>25% in one
  *    customer typically costs **20-30% of the multiple**)".
  *  - Term slope (hg:1670-1671): "**The escalator** - 3%/yr baked into the
  *    lease. A five-year deal is worth ~15% more than it looks" — 300 bps per
@@ -68,7 +68,7 @@
  *    the CAMPAIGN parse wall, a later lane, refuses wind-down before this
  *    function is ever reached; the division of labor is on the table itself).
  *
- * THE RESERVED-VS-SPOT ROW (hg:24884-24886): "**Reserved 1-3 year contracts
+ * THE RESERVED-VS-SPOT ROW (hg:24890-24892): "**Reserved 1-3 year contracts
  * (30-50% below spot, often prepaid)** are how the hardware is financed.
  * **On-demand** is the middle. **Spot/preemptible** monetizes the residual
  * and is reclaimable at any moment." The doc gives NO revenue multiple for
@@ -137,13 +137,13 @@ export interface MultipleBandBps {
  *  pins mirror the sell lane: kind list === elasticity PRICE_KEY_KINDS ===
  *  the door's private PRICE_TARGET_KINDS (source-read, import law honored).
  *
- *  THE COLO HONEST-PARTIAL (hg:24373): "Colocation | **NOI and cap rate,
+ *  THE COLO HONEST-PARTIAL (hg:24379): "Colocation | **NOI and cap rate,
  *  like real estate** | 6-9% cap rate (~11-16x NOI)". The engine has NO
  *  expense truth — no NOI, no EBITDA — so `contract-class` (the B2B
  *  contracted book) rides the REVENUE basis with the shared-band FLOOR and
  *  the colo band's TOP: the shape of "lease term remaining, tenant credit
  *  quality" pricing, stripped of the part the books cannot support. The
- *  managed row's "6-12x EBITDA" is the same refusal (hg:24372): pricing on
+ *  managed row's "6-12x EBITDA" is the same refusal (hg:24378): pricing on
  *  a basis the engine cannot compute would be forged truth. */
 export const VALUATION_MULTIPLE_BANDS_BPS: Readonly<Record<PriceTargetKind, MultipleBandBps>> =
   DEFAULT_VALUATION_CONFIG.bandsBps;
@@ -207,7 +207,7 @@ export function contractRemainingTerm(
   return floorDiv(remaining, BUSINESS_MONTH_MINUTES);
 }
 
-/** The doc's first number (hg:24949): "**Weighted Average Remaining Contract
+/** The doc's first number (hg:24957): "**Weighted Average Remaining Contract
  *  Term** …" — MRC-weighted average of whole remaining months, in MONTHS.
  *  UNIT HONESTY (disclosed): the recon brief named this `warctBps`; WARCT is
  *  measured in months, not basis points, so the shipped name says MONTHS
@@ -229,7 +229,7 @@ export function warctMonths(rows: readonly ValuationRevenueRow[]): bigint {
   return termMass / weight;
 }
 
-/** The doc's second number (hg:24949-24950): "**contracted revenue %** (the
+/** The doc's second number (hg:24957-24958): "**contracted revenue %** (the
  *  fraction of MRR with >12 months left)" — STRICTLY more than twelve whole
  *  months ("with >12 months left"), Σ qualifying MRC / Σ MRC x 10_000,
  *  floor. Empty / all-zero-MRC book ⇒ 0n (same absence law as
@@ -277,12 +277,12 @@ export interface TenantLeaseValueInput {
  *  quality into the building, and it prices BAD quality too).
  *
  *  DISCLOSED COMPOSITION NOTE (disk wins over recon): recon spelled this leg
- *  "band multiple x MRC-annuity (TCV)"; the doc's band UNITS (hg:24371
+ *  "band multiple x MRC-annuity (TCV)"; the doc's band UNITS (hg:24377
  *  "10-18x monthly revenue") are multiples of MONTHLY REVENUE, so multiplying
  *  them by the full remaining TCV would price a 12-month contract at 120-216x
  *  monthly revenue — the months counted twice. The annuity instead sets the
  *  PRICING HORIZON (term slope) and TCV stays the named home of the
- *  reserved-vs-spot future leg (hg:24884-24886). A month-to-month tenant
+ *  reserved-vs-spot future leg (hg:24890-24892). A month-to-month tenant
  *  (`remainingMonths` 0) still prices at the band FLOOR — the doc's bands are
  *  whole-book readings ("Shared / VPS book | … 10-18x monthly revenue"), and
  *  this is the per-tenant share of exactly that shape.
@@ -333,7 +333,7 @@ export function tenantWholeLeaseValueMicroUsd(
 export interface ValuationAdjustment {
   readonly basis: ValuationAdjustmentBasis;
   /** The realized discount, bps of 1.0 — ALWAYS <= BPS_DEN: diligence knocks
-   *  price OFF (hg:5614 "knocks a turn off the multiple"); nothing in this
+   *  price OFF (hg:5616 "knocks a turn off the multiple"); nothing in this
    *  family ever adds (the slice is never above the headline). */
   readonly factorBps: bigint;
 }
@@ -341,11 +341,11 @@ export interface ValuationAdjustment {
 export const VALUATION_ADJUSTMENT_BASES = Object.freeze([
   Object.freeze({
     basis: "churn",
-    cite: "hg:24361-24362 \u201CMRR/ARR x a multiple, modified by growth rate, NRR, churn, concentration, margin, reputation and infrastructure quality.\u201D"
+    cite: "hg:24365-24366 \u201CMRR/ARR x a multiple, modified by growth rate, NRR, churn, concentration, margin, reputation and infrastructure quality.\u201D"
   }),
   Object.freeze({
     basis: "concentration",
-    cite: "hg:24430-24431 \u201CIf one customer or one business line exceeds 40% of revenue, valuation takes a hit\u201D"
+    cite: "hg:24436-24437 \u201CIf one customer or one business line exceeds 40% of revenue, valuation takes a hit\u201D"
   }),
   Object.freeze({
     basis: "exit-kind",
@@ -357,11 +357,11 @@ export const VALUATION_ADJUSTMENT_BASES = Object.freeze([
   }),
   Object.freeze({
     basis: "term-coverage",
-    cite: "hg:24888-24890 \u201Ccontract-term coverage - what fraction of your hardware's financing term is covered by contracted revenue\u201D"
+    cite: "hg:24894-24896 \u201Ccontract-term coverage - what fraction of your hardware's financing term is covered by contracted revenue\u201D"
   }),
   Object.freeze({
     basis: "written-off",
-    cite: "hg:24389-24390 \u201Cquality of earnings (are your numbers reconcilable? unreconcilable books cost turns)\u201D"
+    cite: "hg:24395-24396 \u201Cquality of earnings (are your numbers reconcilable? unreconcilable books cost turns)\u201D"
   }),
 ] as const);
 
@@ -383,7 +383,7 @@ export interface ExitCashSliceInput {
    *  reading is unavailable — ABSENCE books NO finding (a diligence memo
    *  cannot flag a number the books never showed). */
   readonly concentrationBps: bigint | null;
-  /** Contract-term coverage of the financing term, bps (hg:24888), or null.
+  /** Contract-term coverage of the financing term, bps (hg:24894), or null.
    *  Readings above 10_000 clamp to full (never-above-headline: over-
    *  coverage buys NO bonus). */
   readonly warctCoverageBps: bigint | null;
@@ -419,7 +419,7 @@ function legOrNothing(basis: ValuationAdjustmentBasis, factorBps: bigint): Valua
  *  see the ValuationConfig docblocks for the per-basis hg sentence). The
  *  product NEVER re-inflates above 1.0 (all factors <= 1.0 by construction),
  *  and `sliceFloorBps` keeps the DILIGENCE legs from collectively eating
- *  more than half the headline in v0 — the escrow lesson (hg:24407-24412:
+ *  more than half the headline in v0 — the escrow lesson (hg:24413-24418:
  *  "10-20% of purchase price held in escrow" and "sells at '5x EBITDA' and
  *  receives 62% of it at close") is modeled through the KIND factor and the
  *  per-leg discounts, not by letting findings run to zero.
@@ -487,7 +487,7 @@ export function exitCashSliceMicroUsd(
     bpsOf(bpsOf(input.headlineOfferMicroUsd, productBps, "exitCashSliceMicroUsd diligence"),
       kindClamped, "exitCashSliceMicroUsd exit kind"),
   );
-  if (cash > input.headlineOfferMicroUsd) cash = input.headlineOfferMicroUsd; // NEVER above headline (hg:5615: proceeds, not headline)
+  if (cash > input.headlineOfferMicroUsd) cash = input.headlineOfferMicroUsd; // NEVER above headline (hg:5617: proceeds, not headline)
   legs.push(Object.freeze({ basis: "exit-kind", factorBps: kindClamped }));
   legs.sort((a, b) => (a.basis < b.basis ? -1 : a.basis > b.basis ? 1 : 0));
   return Object.freeze({ cashSliceMicroUsd: cash, adjustments: Object.freeze(legs) });

@@ -297,7 +297,7 @@ export function deriveActRow(state: GameState, nodeId: string): ActRowModel {
     Object.freeze({ key: "shed", label: "shed lowest-value load", enabled: exists, verb: PlayerVerb.ShedLoad, options: Object.freeze({}), title: noNode }),
   ]);
 
-  /* throttle — the donut-shrink (§7.16 prose ~hosting_game:7806): ceiling =
+  /* throttle — the donut-shrink (§7.16 prose ~hosting_game:7808): ceiling =
      roster − cut; the door's bad-cut-slots ceiling is roster−1. */
   const cut = exists ? nodeThrottleCut(state.throttle, id, minute, reclaims) : null;
   const nextCut = (cut ?? 0) + 1;

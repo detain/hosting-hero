@@ -6,15 +6,15 @@
  *     from a stream keyed (runSeed, "economy/churn", business-month index,
  *     contractId) so the SAME (seed, contract, month) always gives the SAME
  *     answer (§4.1 R-16; determinism ×100 is a CI gate). Base rates: Sheet C
- *     real-market bands (§6.16:25610), bundle-keyed in config.
+ *     real-market bands (§6.16:25618), bundle-keyed in config.
  *  2. INVOLUNTARY churn — card failure → dunning pipeline (see dunning.ts);
  *     this module only exposes the failure-rate helper the tick uses.
  *
  * Renewal cliffs are NOT rolled here — contract.ts resolves them as DATA
- * (renew/lapse/escalate) with retention from the term matrix (§6.12:24772);
+ * (renew/lapse/escalate) with retention from the term matrix (§6.12:24778);
  * the cliff rate simply replaces the monthly rate in the cliff month.
  *
- * The GHOSTED FORECAST (§7.15 / hosting_game.md:28660: "tickets → churn,
+ * The GHOSTED FORECAST (§7.15 / hosting_game.md:28670: "tickets → churn,
  * 30–60 day lag; show as forecast, not a timer"): support signals light a
  * fuse with a seeded 30–60 day lag; while lit, the fuse adds bps to the
  * contract's effective churn rate until an intervention defuses it or the

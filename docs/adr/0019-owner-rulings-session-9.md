@@ -463,6 +463,112 @@ critical/major. Nineteen door verbs UNCHANGED; the refusal census held 46
 UNPAID; PROTOCOL_VERSION held 1; the type program stays CEASED (fifteenth-card
 CEASE restated).
 
+
+## Wave-28 owner ruling (2026-10-19 session-10b)
+
+The owner returned on 2026-10-18 (ruling 2026-10-18b, session-10b): **RATIFIED
+ALL RECOMMENDATIONS — WAVE-28 opens.** The batch carried build-asks,
+ratify-records and defer-records; dispositions as executed:
+
+**BUILT:**
+
+| Lane | What landed | SHA |
+|---|---|---|
+| L-ENV (hygiene 1) | proto `sellMarketRates` empty-map collapse — presence-spread omits the empty map, mirroring the scenario @`984759b` law; `?raw` source-pin + collapse/absence twins; boot goldens `ca8863849cb3db32`/`780b1cbc61dff760` and money `25_005_307_300n`/`25_109_732_500n` byte-stand | @`7357b85` |
+| L-TRACE (hygiene 2) | transport repro synth-marker validation — the synthetic-outage marker is validated against the real causeId grammar before the trace is trusted; player untouched; digest `de1d4c0f941333eb` + 27-frame census UNMOVED; vitest surface 100/8 UNCHANGED | @`04c0d7e` |
+| L-V1 (money-at-the-end 1/3) | `economy/valuation.ts` PURE leaf — `VALUATION_EXIT_KINDS` (the seven §1.6 kinds in doc order @hg:4500-4512), acquiror bands 10-18× monthly revenue (hg:24368-24378; the colo NOI floor-map is an honest partial), `warctMonths`, `tenantWholeLeaseValueMicroUsd` (the WARCT leg — DEFER-recorded in the wave-27 register, UN-FROZEN and BUILT here), `exitCashSliceMicroUsd` — slice = headline × Π(diligence) clamped [floor, headline] THEN the exit-kind factor; wind-down is EXACT 0; 20 PROVISIONAL consts machine-pinned 20/0; zero-rolls; fold byte-identity twin `4cf033f0e8d27621` (the 72,223-char walk INDEPENDENTLY reproduced by the reviewer cross-tree) | @`980ab58` |
+| L-V2 (money-at-the-end 2/3) | ExitKind bridge — `CAMPAIGN_EXIT_KINDS` seven in doc order drift-pinned against valuation's copy; ipo/management-buyout/wind-down RESERVED (the trio is refused at campaign parse — the documented division of labor vs valuation carrying wind-down at factor 0); `DOC_LIE` code; `endCampaign` gained its third optional arg (2-arg calls byte-stand); scenario `exitDeclaration` pays the PRE-TICK-1 `BAD_ENUM` wall; `report.exitPayout` SPARSE engine-truth: headline = Σ accepted PERSISTED verdicts (the 30M-not-120M amendment law, `exitPayout.test.ts:124`), the TRUST ledger is NOT consulted | @`ce2ec1c` |
+| L-V3 (money-at-the-end 3/3) | chain exit-edges + `exitFunded` carry + the `CAMPAIGN_EXIT` arc — won+exitPayout edges spawn the heir PLAYING ON with the manifest `cashSlice` riding and `failureOnlyUnlock` forced null; the CAMPAIGN_EXIT x-1/x-2 chapter pair (`the-long-sale` strategic-acquisition host-armed catalog 40M/24M; `the-quarter-that-ran-itself`); witnesses census [4,0]×4+[3,1]@off2 (never-certain survives), slice 24M/15M, cashStart===slice, arm==unarmed digest-IDENTICAL ×5 (the 9,500-ceiling clamp disclosed as a non-over-claim test); x-2 archetype Inherit; Endure 5/34 = 14.7%; seats byte-stand | @`2c69d77` |
+| L-G7A (content-decks 1/4) | `policy-deck.schema.json` + validate.mjs deck leg — 21/21 probes; interpreter caps recorded honestly (minItems/maxItems work; boolean `additionalProperties` does NOT; enums strings-only); carriers disk-truth ACTION_IDS drain/shed-class, the four unmapped (failover/dispatch-remote-hands/queue-change/run-runbook) named | @`a498a49` |
+| L-G7B (content-decks 2/4) | `loader/decks.ts` + `deckCardHash` (`hh-deck-card-hash-v1` — fnv1a64 over the decimal-text fold ⇒ boot.rules wire-form-IDENTICAL, pinned) + `bootRulesFromDeck`; boundary codes ONLY, zero-new; the 4-way vocab drift pin types↔loader↔schema↔protocol live-mutation-verified by the reviewer; pairing split loader-shape/evaluator-meaning | @`2cdf014` |
+| L-G7C (content-decks 3/4) | FIRST DECKS `decks/{watch-the-door,cold-aisle,sleepless}.json` — 14 cards, ids `{slug}:{name}`; watch-the-door is the g7Deck's six re-targeted (BUSY 40960→16384); cold-aisle's five are all-advisory (§7.14 band semantics); sleepless authors the panic-failover WALL card as content. HONESTY LAWS shipped: `queueDepth` EXCLUDED (JS-number publish — firing it would be a lie), `company::mrrMicroUsd` has no engine publisher (omitted-not-faked), lane-cell crossings are INFERRED with per-card `_todo` machine-walked, upkeep `0n` PROVISIONAL. validate decks=3 WARNINGS 16=14+2 authored, DECK-TODO 3 | @`9948681` |
+| L-G7D (content-decks 4/4) | full-loop witness deck-JSON→boot→worker→ARMED MAINLINE→rule-fired f7 configure-node+communicate EXECUTED, shed-class pays hands, f22 failover refusal; DORMANT[0]==`ca8863849cb3db32`; cold-aisle zero door receipts + the queue-etiquette never-fires falsifier; proto +19 exact | @`34bb32e` |
+| tools/perf A/B re-baseline (hygiene 3) | MEASURED db64667→04c0d7e: worker 953.40→954.78 kB, index 1,671.91→1,673.67 kB, fakeWorker and CSS flat (the L-ENV relocation delta). No commit (measurement record); W28-03 NIT recorded — the A/B was not re-measured at the final tip, end-state exact |
+
+**RATIFY-RECORDED:** the noc-shift seat-reuse as a standing device (the V1
+honeymoon variant stays on record) · author-and-delegate as an operating law ·
+the relative era hexes · the playtest posture (the ratify-on-playtest queue
+stands and grows — W28-04 joins it) · the era-mechanics freeze.
+
+**DEFER-RECORDED:** boot.catalog · linear-branching (campaign stays LINEAR —
+RE-RATIFIED) · goal-card sugar until a HUD exists · corpus-in-campaign · the
+canvas inspector · the PHP/Workerman carrier (Node-sidecar-only-if-MP) ·
+in-flight-kill (keep-defer; bounced-and-attributed when built) · slug-12 ·
+the render harness · deck-preview · c-7 stays catalog-less (the catalog-armed
+sibling chapter was a BUILD item the standing never-certain census converted
+to a defer — the chapter was NOT re-authored) · sell-acceptance dice
+VERIFIED-SHIPPED @`24f90bc` (record, not new work). The one UN-FREEZE: the
+WARCT leg moved from DEFER to BUILT inside the money-at-the-end program
+@`980ab58`, as listed above.
+
+**Fifteenth-card CEASE (ADR-0017 #8): restated untouched** — the type program
+stays ceased; wave-28 added ZERO hosting types.
+
+Two law-changes rode the money program and are recorded here because they
+amend ratified posture, not merely add to it:
+
+1. **The exitFunded carry is a LAW CHANGE (L-V3 @`2c69d77`).** The §2.5 Long
+   Save succession law reads "failure is poorer, not paid" — the pre-exit
+   chain therefore carried the fixed 300M bridge to every heir. That was
+   right for failure and WRONG for a paid exit: an heir whose predecessor
+   SOLD THE COMPANY WAS PAID; giving that heir the bridge instead of the
+   proceeds would be §2.5's own sentence inverted into a lie. The chain now
+   carries `exitFunded`: a paid-exit heir opens on its manifest `cashSlice`
+   (proceeds), a failed run still opens on the bridge. The law is
+   reverse-honored — the amendment preserves the sentence's intent by
+   dividing on the one fact the sentence never contemplated (being paid) —
+   and it was falsified BOTH directions (bridge-for-paid reddens,
+   proceeds-for-failed reddens). Reviewer-proven; disclosed in the commit
+   body.
+2. **The §E amendment superseded itself inside one wave (L-V2→L-V3).** L-V2
+   @`ce2ec1c` shipped the §E exit-timing law as a `BAD_RANGE` position wall
+   (a declaration in a chapter the run never reaches would not throw —
+   out-of-window stamps only). L-V3 @`2c69d77` superseded that with the
+   per-declaring-chapter `DOC_LIE` walk: every declaration is checked
+   against the chapter that declared it, so a post-timeline timeout now
+   THROWS and the early-halt silent-hole is closed. Reviewer verdict:
+   STRICTER where it matters; only the false-negative position proxy
+   loosened. Supersession inside one wave is recorded as one amendment,
+   not two regimes.
+
+**NEW OWNER WALL named by the program: the upkeep BILLING fold.** The decks
+ship `upkeepMicroUsd: 0n` PROVISIONAL because an upkeep BILLING fold would be
+a money-ledger fold — golden-moving by construction — and the standing
+discipline says that is its own owner-commissioned program, not a closeout
+rider. Named, unbuilt, first item on the wave-28 register
+(`docs/DECISIONS-PENDING.md`).
+
+**ADR census for the record (wave-26/27 discipline re-run):**
+`git log 52e199f..HEAD -p | grep -oE 'ADR-00[0-9]{2}' | sort | uniq -c` →
+ADR-0013 ×1 · ADR-0014 ×8 · ADR-0015 ×4 · ADR-0016 ×51 · ADR-0017 ×3 ·
+ADR-0018 ×4 · ADR-0019 ×6 — **zero ADR-0020 forms in the wave's code**: no
+such file exists, the only `ADR-0020` strings in the repo are the wave-26/27
+census meta-statements themselves. The 51 ADR-0016 cites are POINTER cites
+into its pre-existing numbered register (#10 carries the
+PROVISIONAL/ratify-on-playtest posture the valuation ladder rides; #8 is the
+deferred relationship ask @`relationship.ts:19-22` whose meter-side the
+diligence posture partially discharges; the mechanics B/C host-seam labels
+and #11's sell ratifications ride their lanes); the ATTRIBUTIVE program
+lettering (L-V2 "ADR-0016 #10 program, ADR-0019"; "ADR-0019 program 3" in
+the chapters tests) lands on THIS record. WAVE-28 therefore rides ADR-0019
+as this dated rider.
+
+Battery at the pre-closeout tip @`2c69d77` (reviewer-measured, re-verified by
+this closeout at the final tip): sim-core 192 files / 3,741 tests exit 0 ·
+proto 112/1,291 · transport 100/8 + repro rc0 · relay 42 · host 36 · headless
+53/5 parity `b0162ab5…`/`a9b4b7b8…` HELD · api-verify PASS 1,785
+(1,756+19+3+7 EXACT — the export ledger reconciles: +19 economy valuation,
++7 loader decks, +2 campaign bridge names, +1 scenario payout type) ·
+validate exit0 bundles=14 decks=3 WARN 16 413/16 · canary 153
+(151+valuation.ts+decks.ts, fully attributed) · typecheck 8/8 · build
+worker 955.45/fakeWorker 547.42/index 1,678.88/CSS 103.08 kB · ci-verify 5/5
+· dist zero deck-JSON leaks. The seven tour hexes, the c-7 census, the
+failure-edge nulls and the boot/money goldens ALL byte-stand. Self-derived
+digests NEW this wave (disclosed permanently): the five exit-arc hexes
+`b4f7777519ebc0a8`/`41109fcf67c40ec3`/`fb7ab9bd3bfac7ca`/`6598a67ebcf6cb9d`/
+`88dbd147c1d13d41`, the fourteen deck card-hash goldens, and the valuation
+fold twin `4cf033f0e8d27621`.
+
 ## Source
 
 - Owner ruling: session-9 second ruling, verbatim **"go with recomendations"**

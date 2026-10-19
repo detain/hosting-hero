@@ -235,7 +235,7 @@ export const PERSPECTIVE_IDS: readonly PerspectiveId[] = Object.freeze(
   ["apprentice", "datacenter-tech", "noc-shift", "red-team-friday", "support-queue"] as const,
 );
 
-/* The six-verb families (§1.9 :4989-4991, verbatim): Observe (open an
+/* The six-verb families (§1.9 :4991-4993, verbatim): Observe (open an
  * overlay / read a graph), Diagnose (narrow symptom to cause), Place &
  * Connect (add a node, draw a link), Tune (move a slider, set a policy),
  * Triage (assign a hand / choose what burns), Commit (schedule a change
@@ -281,7 +281,7 @@ export const PERSPECTIVE_V0: Readonly<Record<PerspectiveId, PerspectiveSpec>> = 
      "The upstairs 'player' (the NOC) sends you instructions that are
      sometimes wrong." (:1327-1328)
      "Only" is exclusive in the doc's own grammar: everything outside the
-     Place & Connect family (§1.9 :4990 "add a node, draw a link") is
+     Place & Connect family (§1.9 :4992 "add a node, draw a link") is
      banned — fifteen verbs: the named "no Observe" reads as configure-node
      (inspection depth IS opening the overlay, the door's only observing
      verb), plus the whole business/policy/commit set the cold-aisle seat

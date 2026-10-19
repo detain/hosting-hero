@@ -373,7 +373,7 @@ describe("shipped decks — mainline firing + honor walls", () => {
     expect(nameError.code).toBe("UNKNOWN_FIELD");
     expect(nameError.path).toBe("name");
     const withProvenance = readDeckWire("sleepless.json");
-    withProvenance["_provenance"] = { cards: "§7.14:28518-28522" };
+    withProvenance["_provenance"] = { cards: "§7.14:28526-28530" };
     const provError = parseError(withProvenance);
     expect(provError.code).toBe("UNKNOWN_FIELD");
     expect(provError.path).toBe("_provenance");

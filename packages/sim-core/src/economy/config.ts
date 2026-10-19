@@ -131,7 +131,7 @@ export interface ChurnConfig {
   /** Retention used when the term length is off-matrix — RATIFIED 2026-10-16 (ADR-0015 #1). */
   readonly renewalRetentionFallbackBps: bigint;
   /** Ghosted-forecast fuse window: tickets → churn lag 30–60 days — LIVE
-   *  band (§7.15 / hosting_game.md:28660). */
+   *  band (§7.15 / hosting_game.md:28670). */
   readonly ghostedSignalLagMinDays: number;
   readonly ghostedSignalLagMaxDays: number;
   /** A lit fuse decays out after this many quiet days — RATIFIED 2026-10-16 (ADR-0015 #1); doc:
@@ -530,9 +530,9 @@ export const DEFAULT_SELL_CONFIG: SellConfig = Object.freeze({
  *  magnitude is a house PROVISIONAL taste (ADR-0016 #10 — ratify-on-playtest). */
 export interface ValuationConfig {
   /** Per-line multiple bands, bps of 1.0× of the tenant's own MONTHLY
-   *  revenue. hg:24371 "Shared / VPS book | EBITDA multiple, or
+   *  revenue. hg:24377 "Shared / VPS book | EBITDA multiple, or
    *  monthly-revenue multiple | 3–6× EBITDA / 10–18× monthly revenue" ·
-   *  hg:24373 "Colocation | NOI and cap rate, like real estate | 6–9% cap
+   *  hg:24379 "Colocation | NOI and cap rate, like real estate | 6–9% cap
    *  rate (≈11–16× NOI)" — the contract-class line is the NOI floor-map
    *  honest-partial (the engine has no expense truth; see the band note in
    *  economy/valuation.ts). */
@@ -545,35 +545,35 @@ export interface ValuationConfig {
    *  deal is worth ~15% more than it looks" → 300 bps per WHOLE remaining
    *  year, capped at the band top. */
   readonly termSlopeBpsPerYear: bigint;
-  /** hg:24430-24431 "If one customer or one business line exceeds 40% of
+  /** hg:24436-24437 "If one customer or one business line exceeds 40% of
    *  revenue, valuation takes a hit" — STRICTLY above (the doc says
    *  "exceeds"). */
   readonly concentrationThresholdBps: bigint;
   /** Magnitude of that hit. The only number the doc attaches to
-   *  concentration is hg:24387-24388 ">25% in one customer typically costs
+   *  concentration is hg:24393-24394 ">25% in one customer typically costs
    *  20–30% of the multiple" → mid-band 25%. */
   readonly concentrationPenaltyBps: bigint;
-  /** Per-bps-of-monthly-churn knock. hg:24361-24362 lists "churn" among the
+  /** Per-bps-of-monthly-churn knock. hg:24365-24366 lists "churn" among the
    *  modifiers of the MRR/ARR multiple but gives no magnitude → taste. */
   readonly churnDiligenceFactorBps: bigint;
   /** Per-bps-of-lifetime-written-off knock — the quality-of-earnings leg,
-   *  hg:24389-24390 "quality of earnings (are your numbers reconcilable?
+   *  hg:24395-24396 "quality of earnings (are your numbers reconcilable?
    *  unreconcilable books cost turns)". Written-off revenue is the books'
    *  own reconcilability stain, so the factor runs gentler than churn. */
   readonly writtenOffDiligenceFactorBps: bigint;
   /** Leverage of the contract-term-coverage reading (gap from full buys the
-   *  discount linearly). hg:24888-24890 "contract-term coverage — what
+   *  discount linearly). hg:24894-24896 "contract-term coverage — what
    *  fraction of your hardware's financing term is covered by contracted
-   *  revenue"; hg:24386 WARCT is "the single biggest multiple driver" →
+   *  revenue"; hg:24392 WARCT is "the single biggest multiple driver" →
    *  the strongest diligence leg in the book. */
   readonly termCoverageLeverageBps: bigint;
-  /** Leverage of (1 − company reputation). hg:24361 "reputation" is in the
+  /** Leverage of (1 − company reputation). hg:24365 "reputation" is in the
    *  modifier list; no magnitude given → taste. */
   readonly reputationLeverageBps: bigint;
   /** Floor on the diligence product BEFORE the exit-kind factor multiplies
    *  (the split floor law: economy/valuation.ts exitCashSliceMicroUsd
-   *  docblock). hg:24409 "10–20% of purchase price held in escrow" + the
-   *  hg:24412 62%-received lesson: findings shave price, they do not
+   *  docblock). hg:24415 "10–20% of purchase price held in escrow" + the
+   *  hg:24418 62%-received lesson: findings shave price, they do not
    *  collectively erase it — the DEAL SHAPE (exit kind) may. */
   readonly sliceFloorBps: bigint;
   /** §1.6 exit profiles, hg:4499-4512 — seven endings "each with a
@@ -592,19 +592,19 @@ export const DEFAULT_VALUATION_CONFIG: ValuationConfig = Object.freeze({
    * MAGNITUDES await a playtest. The leaf that reads this book casts zero
    * dice (zero-rolls roster pin in economy/__tests__). */
   bandsBps: Object.freeze({
-    plan: Object.freeze({ floorBps: 100_000n, topBps: 180_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24371 shared/VPS "10–18× monthly revenue"
-    "contract-class": Object.freeze({ floorBps: 100_000n, topBps: 160_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24373 colo "≈11–16× NOI" floor-mapped to revenue basis (NOI needs expense truth the engine lacks)
-    sku: Object.freeze({ floorBps: 100_000n, topBps: 180_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24884 reserved-vs-spot row gives NO multiple for on-demand lines; spot-eviction discount = named-future leg
+    plan: Object.freeze({ floorBps: 100_000n, topBps: 180_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24377 shared/VPS "10–18× monthly revenue"
+    "contract-class": Object.freeze({ floorBps: 100_000n, topBps: 160_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24379 colo "≈11–16× NOI" floor-mapped to revenue basis (NOI needs expense truth the engine lacks)
+    sku: Object.freeze({ floorBps: 100_000n, topBps: 180_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24890 reserved-vs-spot row gives NO multiple for on-demand lines; spot-eviction discount = named-future leg
   }),
   trustLeverageBps: 500n, // PROVISIONAL (ADR-0016 #10) — ±1000 bps trust ⇒ ∓5% price; hg:1674 credit-quality-prices-the-building
   termSlopeBpsPerYear: 300n, // PROVISIONAL (ADR-0016 #10) — hg:1670-1671 "A five-year deal is worth ~15% more than it looks" (3%/yr)
-  concentrationThresholdBps: 4_000n, // PROVISIONAL (ADR-0016 #10) — hg:24430 "exceeds 40% of revenue"; law is STRICT (>), 4000 exactly books no hit
-  concentrationPenaltyBps: 2_500n, // PROVISIONAL (ADR-0016 #10) — hg:24387-24388 "costs 20–30% of the multiple" mid-band
-  churnDiligenceFactorBps: 200n, // PROVISIONAL (ADR-0016 #10) — hg:24361 churn is a modifier, magnitude ungiven → taste
-  writtenOffDiligenceFactorBps: 50n, // PROVISIONAL (ADR-0016 #10) — hg:24389-24390 quality-of-earnings leg, gentler than churn
-  termCoverageLeverageBps: 5_000n, // PROVISIONAL (ADR-0016 #10) — hg:24888-24890 term coverage; hg:24386 WARCT "single biggest multiple driver"
-  reputationLeverageBps: 2_000n, // PROVISIONAL (ADR-0016 #10) — hg:24361 reputation modifier, magnitude ungiven → taste
-  sliceFloorBps: 5_000n, // PROVISIONAL (ADR-0016 #10) — diligence alone never takes more than half; hg:24409-24412 escrow lesson
+  concentrationThresholdBps: 4_000n, // PROVISIONAL (ADR-0016 #10) — hg:24436 "exceeds 40% of revenue"; law is STRICT (>), 4000 exactly books no hit
+  concentrationPenaltyBps: 2_500n, // PROVISIONAL (ADR-0016 #10) — hg:24393-24394 "costs 20–30% of the multiple" mid-band
+  churnDiligenceFactorBps: 200n, // PROVISIONAL (ADR-0016 #10) — hg:24365 churn is a modifier, magnitude ungiven → taste
+  writtenOffDiligenceFactorBps: 50n, // PROVISIONAL (ADR-0016 #10) — hg:24395-24396 quality-of-earnings leg, gentler than churn
+  termCoverageLeverageBps: 5_000n, // PROVISIONAL (ADR-0016 #10) — hg:24894-24896 term coverage; hg:24392 WARCT "single biggest multiple driver"
+  reputationLeverageBps: 2_000n, // PROVISIONAL (ADR-0016 #10) — hg:24365 reputation modifier, magnitude ungiven → taste
+  sliceFloorBps: 5_000n, // PROVISIONAL (ADR-0016 #10) — diligence alone never takes more than half; hg:24415-24418 escrow lesson
   exitKindFactorBps: Object.freeze({
     "ipo": 10_000n, // PROVISIONAL (ADR-0016 #10) — hg:4501-4502 IPO: public market sets the price, "most currency" (currency quality, not cash %, is the meta-axis)
     "strategic-acquisition": 10_000n, // PROVISIONAL (ADR-0016 #10) — hg:4503-4504 "highest multiple"; synergies live IN the headline, slice not discounted twice
@@ -690,7 +690,7 @@ export function defaultEconomyConfig(): EconomyConfig {
     },
     churn: {
       monthlyLogoChurnBpsByBundle: {
-        shared: 450n, // 3–6% MID §6.16:25610
+        shared: 450n, // 3–6% MID §6.16:25618
         vps: 600n, // 4–8% MID
         "managed-wordpress": 225n, // 1.5–3% MID
         dedicated: 150n, // 1–2% MID
@@ -698,9 +698,9 @@ export function defaultEconomyConfig(): EconomyConfig {
         "enterprise-managed": 35n, // 0.2–0.5% MID
       },
       fallbackMonthlyBps: 450n, // RATIFIED 2026-10-16 (ADR-0015 #1); = shared rate
-      renewalRetentionBpsByTermMonths: { 0: 5500n, 12: 7800n, 24: 8200n, 36: 8500n }, // LIVE §6.12:24772
+      renewalRetentionBpsByTermMonths: { 0: 5500n, 12: 7800n, 24: 8200n, 36: 8500n }, // LIVE §6.12:24778
       renewalRetentionFallbackBps: 5500n, // RATIFIED 2026-10-16 (ADR-0015 #1); monthly rung
-      ghostedSignalLagMinDays: 30, // LIVE §7.15/hosting_game:28660
+      ghostedSignalLagMinDays: 30, // LIVE §7.15/hosting_game:28670
       ghostedSignalLagMaxDays: 60, // LIVE
       ghostedSignalDecayDays: 90, // RATIFIED 2026-10-16 (ADR-0015 #1)
       ghostedSignalAddBps: 300n, // RATIFIED 2026-10-16 (ADR-0015 #1)

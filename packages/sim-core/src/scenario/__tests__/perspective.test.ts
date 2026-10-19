@@ -308,7 +308,7 @@ describe("the roster rows (§1.2 anchors and spec-complete ban sets)", () => {
     expect(spec.handCapacity).toBe(3);
     expect(spec.attentionCostOverride).toEqual({ communicate: 1 });
     // :1209 "no Place/Connect" + :1267 "no building allowed, only triage" —
-    // the family (§1.9 :4990 "add a node, draw a link") is place/connect/
+    // the family (§1.9 :4992 "add a node, draw a link") is place/connect/
     // disconnect. communicate stays a TAX (the purest variant's phone
     // :1271-1272 is escalation friction, not a prohibition); shed-load
     // stays: Triage is the dominant verb, never a ban.

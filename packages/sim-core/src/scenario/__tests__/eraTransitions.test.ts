@@ -501,7 +501,7 @@ describe("runScenario with a stepping era — wire #31's intents straddle the bu
     });
     expect(report.outcome).toBe("won");
     expect(report.observation.intentsExecutedByVerb["place-device"]).toBe(2); // t20 modem + t30 generic
-    expect(report.observation.intentsRefusedByVerb["place-device"]).toBe(1); // t150 — "your modem bank becomes scrap" (§1.6 :4577)
+    expect(report.observation.intentsRefusedByVerb["place-device"]).toBe(1); // t150 — "your modem bank becomes scrap" (§1.6 :4579)
     expect(report.era!.transitions).toEqual([{ atBusinessMinute: 10000, eraYear: 2016 }]);
     // controls, self-derived: frozen-2001 never refuses the modem (ex=3, rf=0
     // — the shared-web LINE greys but no intent asks it); frozen-2016 refuses

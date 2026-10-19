@@ -61,7 +61,7 @@ describe("churn determinism — the (seed, contract, month) key law (task-4)", (
   });
 });
 
-describe("rate table wiring (Sheet C §6.16:25610 MIDs)", () => {
+describe("rate table wiring (Sheet C §6.16:25618 MIDs)", () => {
   it("bundle lookup falls back for unknown ids and clamps at certainty", () => {
     expect(effectiveMonthlyChurnBps("vps", CONTRACTS[0]!, [], 0, cfg)).toBe(600n);
     expect(effectiveMonthlyChurnBps("nonexistent", CONTRACTS[0]!, [], 0, cfg)).toBe(cfg.churn.fallbackMonthlyBps);

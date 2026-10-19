@@ -1327,7 +1327,7 @@ export enum PlayerVerb {
    *  (~:28825: "every object's inspector has an 'Act' row of at most four
    *  one-click emergency verbs… drain, restart, isolate, shed" — drain is
    *  `disconnect-drain` and shed is `shed-load` today; isolate is the
-   *  named Act verb this lands; §7.5 Incident Mode ~:26759 also names it).
+   *  named Act verb this lands; §7.5 Incident Mode ~:26767 also names it).
    *  One-click ⇒ COMMIT class, one hand / one tick. The door records the
    *  FENCE into the OPTIONAL `GameState.isolate` book — a half-open
    *  window per node `[effective, release)`, last-write-wins — and

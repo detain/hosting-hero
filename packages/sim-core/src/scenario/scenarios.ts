@@ -116,7 +116,7 @@
  *    ninety-percent truth: the segments keep their organic cover labels
  *    while the arrival die rolls every mint's identity from the authored
  *    familyWeights table, and the census counts the ROLL.
- *  - the-not-invented-yet → "The Era Track" (~line 4576, L-EM): the §0.4
+ *  - the-not-invented-yet → "The Era Track" (~line 4578, L-EM): the §0.4
  *    grid sentence "Whole branches of the tech tree are greyed out with
  *    'not invented yet'" as ENGINE FACT — the era is run CONFIG (eraYear +
  *    eraBundle), never doc data, so this wire's eraless byte-stand pins
@@ -2052,7 +2052,7 @@ const FREE_TIER_FLOOD_MIX_WIRE = {
 
 /* ───────────── The Not-Invented-Yet — era pilot (§0.4/§1.6, L-EM) ───────────── */
 
-/** §1.6 "The Era Track" (:4576) + §0.4's grid sentence (:656), through the
+/** §1.6 "The Era Track" (:4578) + §0.4's grid sentence (:656), through the
  *  L-EM era door stage (scenario/eraAvailability.ts — ADR-0019 program 4):
  *  the FIRST engine implementation of "not invented yet". The era arms from
  *  run CONFIG (eraYear + eraBundle), never from the wire, so this doc is
@@ -2073,7 +2073,7 @@ const NOT_INVENTED_YET_WIRE = {
   brief:
     "The calendar says 1998 and the tech tree agrees: the door refuses both shared-web placements without taking a single hand — 'not invented yet' as engine fact — while the plain generic box still slides in. Arm 2026: the identical script executes three for three.",
   specRef: "§1.6 The Era Track",
-  specLine: 4576,
+  specLine: 4578,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],

@@ -279,7 +279,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     for (let i = 1; i < tiers.length; i += 1) {
       expect(tiers[i]!).toBeGreaterThanOrEqual(tiers[i - 1]!); // the rise, never a drop
     }
-    // Act III (§1.9 :5134 "Act III (Tiers 5–6)"): the same non-decreasing law
+    // Act III (§1.9 :5136 "Act III (Tiers 5–6)"): the same non-decreasing law
     // over the {5,6} band, plus the act-boundary rise — b-12's T4 hands the
     // tour to c-1's T5, the tier never falls anywhere on the thirty-two.
     // Wave-27's b-8..b-12 rows are all T4: the act rides its ceiling.
@@ -323,13 +323,13 @@ describe("chapter meta — the §1.9 authoring law", () => {
     expect(book[1275 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
     expect(book[1274 - 1]).toContain("NOC Shift"); // the seat heading b-11 cites (wave-27)
     expect(book[3275 - 1]).toContain("Certificate Expired"); // §1.5 cert cliff — b-12's heading
-    expect(book[35174 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
-    expect(book[5137 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
+    expect(book[35188 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
+    expect(book[5139 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
     // Wave-26 Act III anchors (design authority I-AC3; substring truth on the
     // quoted line, verified by reading the lines as authored):
-    expect(book[5138 - 1]).toContain("Act III (Tiers 5–6)"); // the act law, same sentence
-    expect(book[5138 - 1]).toContain("8 levels"); // the design figure the cadence supersedes to nine
-    expect(book[5369 - 1]).toContain("do nothing and watch"); // §1.11 Ratchet Audit — c-2's law sentence
+    expect(book[5140 - 1]).toContain("Act III (Tiers 5–6)"); // the act law, same sentence
+    expect(book[5140 - 1]).toContain("8 levels"); // the design figure the cadence supersedes to nine
+    expect(book[5371 - 1]).toContain("do nothing and watch"); // §1.11 Ratchet Audit — c-2's law sentence
     expect(book[1217 - 1]).toContain("Place/Connect only"); // §1.2 datacenter-tech — c-4's seat
     expect(book[1219 - 1]).toContain("goal node inverted"); // §1.2 red-team-friday — c-9's seat
     expect(book[4025 - 1]).toContain("the run-up"); // §1.5 Sell the Company split — c-7's level

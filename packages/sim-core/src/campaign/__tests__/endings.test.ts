@@ -354,7 +354,7 @@ describe("endCampaign — the declared exit is validated, never obeyed (L-V2)", 
     expect(Object.keys(ending.evidence).sort()).toEqual([...FROZEN_UNDECLARED_KEYS, "declaredExitKind", "exitObserved"].sort());
   });
 
-  it("terminal LOST with a declaration stays an obituary — failure is NARRATED (hg §9.9 :35151)", () => {
+  it("terminal LOST with a declaration stays an obituary — failure is NARRATED (hg §9.9 :35185)", () => {
     // "The company died before it sold": kind/title/epitaph byte-stand (the
     // death cause still owns the story), the EVIDENCE carries the honest
     // promise-vs-fact pair — the narration is data, not a rewritten ending.
@@ -376,7 +376,7 @@ describe("endCampaign — the declared exit is validated, never obeyed (L-V2)", 
     // sell-accepted-above:0). Reaching maxSimMinutes without ever observing
     // the accepted verdict is the simulation REFUTING the promise, not
     // abstaining on it. Only a LOST death still narrates ("died before it
-    // sold" — hg §9.9 :35151, the obituary test above).
+    // sold" — hg §9.9 :35185, the obituary test above).
     const run = () => endCampaign(report(rec({ outcome: "timeout", stopReason: "timeout@240" })), founderNode(), declaring("asset-sale"));
     expect(run).toThrow(CampaignError);
     expect(run).toThrow(

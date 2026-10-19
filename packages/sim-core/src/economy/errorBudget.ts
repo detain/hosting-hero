@@ -5,7 +5,7 @@
  * across levels").
  *
  * Accounting is in integer SECONDS (bigint): the doc's derived table
- * (§6.16:25629) lands exactly on whole seconds for the fine rows —
+ * (§6.16:25637) lands exactly on whole seconds for the fine rows —
  * 99.9% → 2592 s ("43 m"), 99.95% → 1296 s ("21 m 36 s"),
  * 99.99% → 259 s ("4 m 19 s") — and `budgetSecondsFor` floors, matching the
  * doc's floor-style readouts. NOTE (§6.16 internal inconsistency): the two

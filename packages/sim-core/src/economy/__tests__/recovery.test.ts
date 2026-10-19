@@ -111,7 +111,7 @@ describe("parseRecoveryCostConfig — fail-loud boundary", () => {
   });
 });
 
-describe("restoreOptions — the rebuild-vs-restart table (§7.7:27561)", () => {
+describe("restoreOptions — the rebuild-vs-restart table (§7.7:27569)", () => {
   it("both strategies cost the SAME cash; only time and risk differ", () => {
     const [redundancyFirst, serveFirst] = restoreOptions(CFG);
     expect(RESTORE_STRATEGIES).toEqual([redundancyFirst.strategy, serveFirst.strategy]);

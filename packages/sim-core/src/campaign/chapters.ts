@@ -18,7 +18,7 @@
  *  AUTHORING discipline enforced by chapters.test.ts, not engine state.
  *
  *  Shape canon (hosting_game.md, located by TEXT 2026-10-17):
- *  - §1.9 Three-Act Shape (~:5108): Act I (T0–2) teaches the core loop; each
+ *  - §1.9 Three-Act Shape (~:5110): Act I (T0–2) teaches the core loop; each
  *    act carries at minimum two perspective-shift levels and one scenario.
  *  - §1.9 11-archetype taxonomy (~:5067): Endure is the DEFAULT and must stay
  *    under 30% of the campaign; no two consecutive levels share a tag.
@@ -34,7 +34,7 @@
  *    SCRIPTED BRIDGE replaces the war chest — every chapter after the first
  *    opens at the bridge, so the act is playable regardless of how thin the
  *    last win left the bankroll.
- *  - §1.11 The Ratchet Audit (:5349): "a level that tests only your
+ *  - §1.11 The Ratchet Audit (:5351): "a level that tests only your
  *    carried-over automation", the doc's own audit sentence — "the *ideal*
  *    play is to do nothing and watch" (:5353). Act III c-2 plays it with a
  *    ZERO-intent rail and a win line that fails the moment a hand moves.
@@ -130,8 +130,8 @@ export interface ChapterMeta {
   /** L-CP2 seat when the chapter is a perspective level (§1.2 roster id). */
   readonly perspectiveId?: string;
   /** §2.11 tier the beat rides. Prologue/Act I teach T0–2 by OD-19 fiat and
-   *  ship no row; every Act II chapter declares 3 or 4 (§1.9 :5137's
-   *  "Tiers 3–4"), and every Act III chapter declares 5 or 6 (§1.9 :5126's
+   *  ship no row; every Act II chapter declares 3 or 4 (§1.9 :5139's
+   *  "Tiers 3–4"), and every Act III chapter declares 5 or 6 (§1.9 :5128's
    *  "Act III (Tiers 5–6)"), the lint law reading the rise from these
    *  numbers. Tier 5/6 has no bespoke engine mechanics at the level layer —
    *  the beats ride BUILT door verbs and the board itself, fiction-as-data
@@ -269,7 +269,7 @@ const HARDEST_LESSON_WIRE = {
   brief:
     "The pilot account signs at zero, the books stay honest, and the payroll rail never blinks: eighty-eight minutes of burn against one bridge-sized bankroll. Revenue is not a promise; it is a clause. Reach the ninetieth minute — the ledger will tell you what you signed.",
   specRef: "§1.5 The Hardest Lesson (campaign-authored succession level)",
-  specLine: 35140,
+  specLine: 35154,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -543,7 +543,7 @@ const METASTABLE_WINDOW_WIRE = {
   },
 } satisfies ScenarioWire;
 
-/** c-2 the Ratchet Audit played (§1.11 :5349, "a level that tests only your
+/** c-2 the Ratchet Audit played (§1.11 :5351, "a level that tests only your
  *  carried-over automation"; :3675 names the Long Weekend "the model for the
  *  recurring Ratchet Audit"): the doc's OWN audit sentence is the design
  *  brief — "the *ideal* play is to do nothing and watch" (:5353). So the rail
@@ -558,8 +558,8 @@ const QUARTER_THAT_RAN_ITSELF_WIRE = {
   name: "The Quarter That Ran Itself",
   brief:
     "The automation you carried here is the whole level: a green three-node board, a monthly book that signs itself, and traffic that never asks for you. The ratchet audit is no test of hands — the ideal play is to do nothing and watch, and the ledger grades exactly that.",
-  specRef: "§1.5 The Ratchet Audit (campaign-authored Act III level — §1.11 :5349)",
-  specLine: 5353,
+  specRef: "§1.5 The Ratchet Audit (campaign-authored Act III level — §1.11 :5351)",
+  specLine: 5355,
   board: {
     nodes: [
       { id: "qr-web", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 },
@@ -662,7 +662,7 @@ const FLOOR_AND_AISLE_WIRE = {
   limits: { maxSimMinutes: 60 },
 } satisfies PerspectiveScenarioWire;
 
-/** c-5 the portfolio beat played with the BUILT tier verbs (§1.9 :5126 "Act
+/** c-5 the portfolio beat played with the BUILT tier verbs (§1.9 :5128 "Act
  *  III (Tiers 5–6) — portfolio and geography"): scale-node reserves capacity
  *  the market may not need (the growth), reclaim-node voids bookings at the
  *  tombstone (the shrink). The Shrink archetype — the doc's beat line is the
@@ -678,8 +678,8 @@ const GROWTH_THAT_SHRANK_WIRE = {
   name: "The Growth That Shrank Itself",
   brief:
     "Portfolio work at the scale desk: book two capacity pads, then reclaim them before the forecast you never read becomes a graveyard. Growth is a booking, shrink is a tombstone, and the beat rides the door's own arithmetic between them.",
-  specRef: "§1.5 The Growth That Shrank Itself (campaign-authored Act III level — §1.9 :5126 portfolio)",
-  specLine: 5126,
+  specRef: "§1.5 The Growth That Shrank Itself (campaign-authored Act III level — §1.9 :5128 portfolio)",
+  specLine: 5128,
   board: {
     nodes: [
       { id: "gr-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 },
@@ -1046,7 +1046,7 @@ export const ACT_ONE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
 export const CAMPAIGN_ACT_ONE: CampaignDoc = parseCampaignDoc(ACT_ONE_WIRE);
 
 /* ------------------------------------------------------------------ */
-/* ACT II — process → prevention (Tiers 3–4, §1.9 :5137)                 */
+/* ACT II — process → prevention (Tiers 3–4, §1.9 :5139)                 */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -1060,13 +1060,13 @@ export const CAMPAIGN_ACT_ONE: CampaignDoc = parseCampaignDoc(ACT_ONE_WIRE);
  * §9.9 obituary writes itself (`lose:death-by-cause:any@73`), chain.ts
  * succession fires FOR REAL (failure_restart edge + failureOnlyUnlock
  * manifest), and the successor's first chapter b-5 opens on the manifested
- * ledger — an Inherit beat whose "fogged board you didn't build" (§1.9 :5093)
+ * ledger — an Inherit beat whose "fogged board you didn't build" (§1.9 :5095)
  * Ending on the prevention thesis completed: the child weathers the chargeback
  * wave the parent never saw coming (b-7), wears the taxed NOC desk a SECOND
  * time as prevention rather than triage (b-11), and closes the act racing a
  * certificate cliff its own reissue calendar must beat (b-12).
  *
- * PROPORTIONALITY (§1.9 :5137 act law; wave-27 full-12 growth — the owner-
+ * PROPORTIONALITY (§1.9 :5139 act law; wave-27 full-12 growth — the owner-
  * commissioned expansion that closes the tension this paragraph filed): the
  * act is TWELVE levels at full design and now SHIPS twelve — the death
  * headline, its succession consequence, the tier plateau, the rehab witness,
@@ -1185,7 +1185,7 @@ export const ACT_TWO_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
   "b-1-money-works": { archetype: "Convert", specLine: 3855, tier: 3 },
   "b-2-slow-week": { archetype: "Endure", specLine: 4045, tier: 3 },
   "b-3-skeleton-weekend": { archetype: "Hold-Without-Hands", specLine: 3662, tier: 3 },
-  "b-4-hardest-lesson": { archetype: "Reach-State", specLine: 35140, tier: 3 },
+  "b-4-hardest-lesson": { archetype: "Reach-State", specLine: 35154, tier: 3 },
   "b-5-fogged-board": { archetype: "Inherit", specLine: 3769, tier: 4 },
   "b-6-oncall-desk": { archetype: "Hold-Without-Hands", specLine: 1267, tier: 4, perspectiveId: "noc-shift" },
   "b-7-chargeback-shift": { archetype: "Diagnose", specLine: 3737, tier: 4 },
@@ -1208,11 +1208,11 @@ export const ACT_TWO_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
 export const CAMPAIGN_ACT_TWO: CampaignDoc = parseCampaignDoc(ACT_TWO_WIRE);
 
 /* ------------------------------------------------------------------ */
-/* ACT III — prevention → boredom (Tiers 5–6, §1.9 :5126)               */
+/* ACT III — prevention → boredom (Tiers 5–6, §1.9 :5128)               */
 /* ------------------------------------------------------------------ */
 
 /**
- * Nine chapters on the §1.9 Act-III line (:5126 "portfolio and geography"),
+ * Nine chapters on the §1.9 Act-III line (:5128 "portfolio and geography"),
  * the prevention act exhaling into the machinery it built: the ratchet audit
  * played with a ZERO-intent rail (c-2 — §1.11's own audit sentence made
  * law: "the *ideal* play is to do nothing and watch" :5353), the floor-tech's
@@ -1225,7 +1225,7 @@ export const CAMPAIGN_ACT_TWO: CampaignDoc = parseCampaignDoc(ACT_TWO_WIRE);
  * on the goal inverted: Red Team Friday (c-9), §1.2 :1217's "same six verbs
  * with the goal node inverted" — perspective-as-objective, zero mechanics.
  *
- * THE 8→9 SUPERSESSION (arithmetic, not taste): §1.9 :5126 names EIGHT
+ * THE 8→9 SUPERSESSION (arithmetic, not taste): §1.9 :5128 names EIGHT
  * levels; this ships NINE, and the campaign's own cadence law forces the
  * extra beat. The global every-5 seat law has ridden chapters.test.ts since
  * Act I (a-8 at tour index 10, b-6 at 16 — the 7-beat Act II physically
@@ -1321,10 +1321,10 @@ const ACT_THREE_WIRE = {
  *  lines, bespoke beats cite their law sentences. */
 export const ACT_THREE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
   "c-1-storm-window": { archetype: "Convert", specLine: 4096, tier: 5 },
-  "c-2-quarter-that-ran-itself": { archetype: "Endure", specLine: 5353, tier: 5 },
+  "c-2-quarter-that-ran-itself": { archetype: "Endure", specLine: 5355, tier: 5 },
   "c-3-understaffed-sunday": { archetype: "Reach-State", specLine: 3673, tier: 5 },
   "c-4-floor-and-aisle": { archetype: "Build-to-Spec", specLine: 1215, tier: 5, perspectiveId: "datacenter-tech" },
-  "c-5-growth-that-shrank": { archetype: "Shrink", specLine: 5126, tier: 5 },
+  "c-5-growth-that-shrank": { archetype: "Shrink", specLine: 5128, tier: 5 },
   "c-6-long-gradient": { archetype: "Endure", specLine: 3994, tier: 6 },
   "c-7-long-sale": { archetype: "Negotiate", specLine: 4019, tier: 6 },
   "c-8-institution-watch": { archetype: "Diagnose", specLine: 3590, tier: 6 },
@@ -1350,7 +1350,7 @@ export const CAMPAIGN_ACT_THREE: CampaignDoc = parseCampaignDoc(ACT_THREE_WIRE);
  *    chapterId differs from c-7's, so seedForChapter rolls a DIFFERENT dice
  *    stream than the Act III run-up: x-1's census is its own, self-derived.
  *  - x-2 "the-heir-opens": the paid heir's first quarter is the Ratchet Audit
- *    (the-quarter-that-ran-itself, §1.11 :5353) — under new ownership the
+ *    (the-quarter-that-ran-itself, §1.11 :5355) — under new ownership the
  *    machine genuinely runs itself. Zero cash predicate, zero intents, a
  *    deterministic win@60: THE exitFunded law witness. The heir must open on
  *    its SLICE (a sale-scale number far under the 1e15 floor), not the 300M
@@ -1380,12 +1380,12 @@ const EXIT_WIRE = {
 /** Exit beat ledger. x-1 cites the-long-sale's own §1.5 wire line (the
  *  meta↔doc equality law; the brief's :4025 run-up sentence is the TEXT anchor
  *  already pinned in the Act III notes — the ledger mirrors the DOC), x-2 the
- *  ratchet audit's §1.11 :5353. Negotiate follows c-9's Reach-State and Inherit
+ *  ratchet audit's §1.11 :5355. Negotiate follows c-9's Reach-State and Inherit
  *  follows Negotiate — no-consecutive-safe; neither is Endure, so the exact
  *  five-Endure census pin rides the 34-beat tour unchanged (5/34 = 14.7%). */
 export const CAMPAIGN_EXIT_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
   "x-1-armed-close": { archetype: "Negotiate", specLine: 4019, tier: 6 },
-  "x-2-heir-opens": { archetype: "Inherit", specLine: 5353, tier: 6 },
+  "x-2-heir-opens": { archetype: "Inherit", specLine: 5355, tier: 6 },
 });
 
 /** The parsed Exit arc. */

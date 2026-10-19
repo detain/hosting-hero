@@ -12,7 +12,7 @@
     "appliesTo": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*$", "description": "Bundle-id grammar (validate.mjs ID_RE namespace form). Resolves at runtime to a shipped types/*.json id OR a reserved core:* id \u2014 the hand-enforced resolution wall; v0 has no bundle claimant for decks, so no reverse orphan law is invented." },
     "cards": {
       "type": "array",
-      "description": "The book. An empty array is legal (boot.rules {entries:[]} posture); card ids must be unique within one deck (door card-id-collision law, intent-door.ts handlePolicyCardCommit) \u2014 duplicates across co-shipped decks are a hand-enforced WARN.",
+      "description": "The book. An empty array is legal (boot.rules {entries:[]} posture); duplicate card ids within one deck FAIL mechanically \u2014 both the hand-written validator (validate.mjs deck leg) and the loader parse wall, naming both positions (the door's card-id-collision law, intent-door.ts handlePolicyCardCommit: the book is a set keyed by id); duplicates across co-shipped decks get a mechanical WARN (never a fail) \u2014 hosts keying lookup by id must adjudicate.",
       "items": {
         "type": "object",
         "required": ["id", "scope", "when", "then", "band", "upkeepMicroUsd"],

@@ -9,7 +9,7 @@
  * @86cff89), throttle followed (ADR-0016 @81b0589) — this module lands
  * restart and closes the row. §7.5's reference durations (~:26741:
  * "restart a service **20s**") price it as a desk tap, and the card it
- * serves is operational truth everywhere (§2's memory-leak law ~:20209:
+ * serves is operational truth everywhere (§2's memory-leak law ~:20211:
  * "Auto-restarting a service that leaks memory means you never diagnose" —
  * the flush is why a restart CLEARS, the bounded window is why you still
  * have to).

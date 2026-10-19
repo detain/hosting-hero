@@ -12,7 +12,7 @@
  *     in-dir; structural typing is the compatibility witness, pinned in
  *     economy/__tests__/recovery.test.ts).
  *
- *  2. `restoreOptions` — the rebuild-vs-restart decision table (§7.7:27561
+ *  2. `restoreOptions` — the rebuild-vs-restart decision table (§7.7:27569
  *     "Restore service or restore redundancy?"): both options pay the SAME
  *     cash total (conservation law: the choice buys TIME, not money); what
  *     differs is time-to-service and the exposure window during which the
@@ -205,7 +205,7 @@ export function recoveryOpexEntries(
 
 /* ─────────────────── rebuild-vs-restart (the stated choice) ──────────────── */
 
-/** The two defensible recovery orders (§7.7:27561). The helper NEVER picks
+/** The two defensible recovery orders (§7.7:27569). The helper NEVER picks
  *  — "the game should never say which is correct". */
 export const RESTORE_STRATEGIES = ["restore-redundancy-first", "serve-on-single-copy"] as const;
 export type RestoreStrategy = (typeof RESTORE_STRATEGIES)[number];

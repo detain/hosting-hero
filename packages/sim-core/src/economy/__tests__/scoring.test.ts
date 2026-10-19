@@ -37,7 +37,7 @@ describe("scorecard resolves to the ratified OD-1 choice (task-6 flip)", () => {
     expect(new Set(SCORECARD_CANDIDATES.map((c) => c.tuningSheet))).toEqual(new Set(["A", "B", "C"]));
   });
 
-  it("weight sets match the doc rows exactly (§6.9/§6.16:25639-25641)", () => {
+  it("weight sets match the doc rows exactly (§6.9/§6.16:25647-25649)", () => {
     const uptime = SCORECARD_CANDIDATES[0]!;
     expect(uptime.weights[AXIS.UPTIME]).toBe(30);
     expect(uptime.weights[AXIS.PERFORMANCE]).toBe(20);
@@ -103,7 +103,7 @@ describe("fifth-axis displacement — 'worth 20, proportionally' (§6.9)", () =>
   });
 });
 
-describe("composite scoring + grade bands (S≥92 A≥82 B≥70 C≥58 D≥45 F §6.16:25638)", () => {
+describe("composite scoring + grade bands (S≥92 A≥82 B≥70 C≥58 D≥45 F §6.16:25646)", () => {
   const axes = (v: bigint) =>
     new Map([
       [AXIS.UPTIME, v],

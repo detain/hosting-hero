@@ -1989,7 +1989,7 @@ function handleNegotiateTerms(draft: Draft, args: NegotiateTermsArgs): HandlerVe
  * ADR-0015 session-6 roster extension ISOLATE ↔ fence (the 16th verb) — the
  * ONLY side effect is the book write. §1.3 dbaas card (hosting_game.md
  * ~:2243: "**Verb: isolate and throttle.** **The boss is a split brain.**");
- * §7.16 Act-row law (~:28825) names isolate among the four one-click
+ * §7.16 Act-row law (~:28835) names isolate among the four one-click
  * emergency verbs — one-click lands it in the COMMIT class; §7.5 Incident
  * Mode (~:26759) cites it in the incident verb set (the SET is host
  * choreography, not the door). The door books the WINDOW — a half-open

@@ -15,7 +15,7 @@
  *     win arms grow no key);
  *   - zero new dice: bare vs declared reports are byte-ident apart from the
  *     sparse key, endDigest included, on every offset (×100 twin);
- *   - the never-above-headline clamp (hg:5615 diligence posture) and the
+ *   - the never-above-headline clamp (hg:5617 diligence posture) and the
  *     always-present exit-kind leg; the runner seam accepts ALL SEVEN kinds
  *     (wind-down slices to exactly 0 — the campaign parse wall, doc.ts
  *     RESERVED, is what keeps that kind from ever being declared in play;

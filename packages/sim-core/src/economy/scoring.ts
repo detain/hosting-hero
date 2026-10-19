@@ -12,7 +12,7 @@
  * unresolved caller must fail loud (Law 4), never score by a guessed rubric.
  *
  * Provenance of the three candidates (hosting_game.md line cites):
- *  - "uptime-first" — §6.9 DEFAULT / §6.16:25639 Uptime 30 / Perf 20 /
+ *  - "uptime-first" — §6.9 DEFAULT / §6.16:25647 Uptime 30 / Perf 20 /
  *    Profit 30 / Growth 20.
  *  - "conversion-first" — §6.9 ⚔️ CONVERSION-FIRST: Conversion 35 /
  *    Profit 25 / Resilience 20 / Growth 20 (uptime folded into conversion).
@@ -90,7 +90,7 @@ export const SCORECARD_CANDIDATES: readonly ScorecardCandidate[] = [
     "uptime-first",
     "A",
     { [AXIS.UPTIME]: 30, [AXIS.PERFORMANCE]: 20, [AXIS.PROFITABILITY]: 30, [AXIS.GROWTH]: 20 },
-    "hosting_game.md §6.9 default / §6.16:25639",
+    "hosting_game.md §6.9 default / §6.16:25647",
   ),
   candidate(
     "conversion-first",
@@ -205,7 +205,7 @@ export function compositeScore(
 
 export type Grade = "S" | "A" | "B" | "C" | "D" | "F";
 
-/** S≥92 A≥82 B≥70 C≥58 D≥45 F — LIVE §6.16:25638 (bands sourced from sheet B
+/** S≥92 A≥82 B≥70 C≥58 D≥45 F — LIVE §6.16:25646 (bands sourced from sheet B
  *  per Appendix D). Stored as bps of 100 so comparison stays integer. */
 export const GRADE_BANDS_BPS: readonly (readonly [Grade, bigint])[] = [
   ["S", 9200n],

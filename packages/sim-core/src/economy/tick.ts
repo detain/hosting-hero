@@ -1369,7 +1369,7 @@ function rollBusinessMonth(
     w.notices.push({ kind: "spiral-flagged", contractId: asEntityId("company"), atBusinessMin: now, causeId: asCauseId(`economy:spiral:m${newMonth}`) });
   }
 
-  /* Voluntary churn cohort roll for the ENTERED month (§6.16:25610). */
+  /* Voluntary churn cohort roll for the ENTERED month (§6.16:25618). */
   for (const id of ids) {
     const econ = w.econ.get(id);
     if (econ === undefined || econ.phase !== "active") continue;
@@ -1786,7 +1786,7 @@ function evaluateLoseSlowly(w: Working, now: SimMinute, cfg: EconomyConfig): voi
 /* ────────────────────────── default cliff rule ────────────────────────── */
 
 /** Lapse-by-default law (§6.4): auto-renew contracts renew evergreen;
- *  otherwise the cohort roll draws the term-matrix retention (§6.12:24772).
+ *  otherwise the cohort roll draws the term-matrix retention (§6.12:24778).
  *  Stream slot = term-end minute ⇒ one pinned draw per (contract, term).
  *  `priceRetentionFactorBps` (OD-24(a) part 2, default exactly 1.0) scales
  *  the retention bps BEFORE that single draw — hike shrinks the win chance,
