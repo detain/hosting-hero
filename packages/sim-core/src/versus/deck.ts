@@ -8,7 +8,9 @@
  * budget); a defender commits a DEFENSE DECK (buildable set resolved
  * against a caller-supplied palette universe — the door's `canPlaceDevice`
  * decoupling pattern — plus policy-card REFS by hash only, a doctrine ref,
- * and a hand capacity). Cards are never embedded; hashes bind them.
+ * and a hand capacity). Cards are never embedded; hashes bind them — and
+ * since owner ruling 2026-10-19 the binding law for shipped content-deck
+ * cards is the shared `deckCardHash` (see `DefenseDeck`).
  *
  * Determinism: every number in a deck is an integer (safe-int bps — the
  * same "no floats in state-visible math" law as kernel Fixed). Parsers are
@@ -278,19 +280,32 @@ export interface ThreatDeck {
  *  (the cards themselves ride the ruleBook, never the deck), a doctrine
  *  ref string, and the reserve hand capacity.
  *
- *  FINGERPRINT LAW (owner-ratified 2026-10-09, ADR-0009 versus row):
- *  `policyCardHashes` entries MUST be `hh-card-v1` content fingerprints
- *  produced by `cardContentFingerprint` (match.ts) — NOT card ids. Identity
- *  is bytes of content: a re-authored card is a different key, so a deck
- *  committed against old bytes can never resolve to new ones (the
- *  reveal-binds-bytes precedent). The parser stays content-agnostic (opaque
- *  non-empty strings, dup-gated) — key validity is the door's question:
- *  a hash the host's fingerprint index misses bounces as `unknown-card-hash`. */
+ *  DOCTRINE BINDING LAW (owner ruling 2026-10-19 — "Versus doctrine via
+ *  decks — yes; kills the three-local-hash-laws drift risk permanently",
+ *  RATIFIED): entries binding a SHIPPED CONTENT-DECK card MUST be
+ *  `deckCardHash` keys (loader/decks.ts @2cdf014, domain
+ *  `hh-deck-card-hash-v1`) — the ONE hash law binding content-deck cards
+ *  into a DefenseDeck, so a booted `bootRulesFromDeck` book resolves every
+ *  doctrine hash through the same key the deck was hashed with. The other
+ *  local laws keep their separate, narrower identities: the two proto-local
+ *  summaries (g7Deck cardSummary, simCoreRunner.rules.test private fold)
+ *  stay gate fictions per the G7B posture, the door's file-local
+ *  `cardFingerprint` stays M3 whole-book identity, and versus's own
+ *  `hh-card-v1` fingerprint (`cardContentFingerprint`, match.ts) stays the
+ *  DEFAULT in-match ruleBook index key — a fourth doctrine-key law is never
+ *  allowed to be minted again. The key spaces are DISJOINT by witness
+ *  (__tests__/doctrineDecks.test.ts: a legacy fingerprint misses a
+ *  deck-bound lookup as `unknown-card-hash`, and vice versa). The parser
+ *  stays content-agnostic (opaque non-empty strings, dup-gated) — key
+ *  validity is the door's question. This supersedes the deck-ref half of the
+ *  2026-10-09 hh-card-v1 flip; the ruleBook-index half of that ratification
+ *  stands. */
 export interface DefenseDeck {
   readonly kind: "defense";
   readonly id: string;
   readonly buildables: readonly string[];
-  /** `hh-card-v1` content fingerprints (cardContentFingerprint), never card ids. */
+  /** `deckCardHash` keys (loader/decks.ts — the one doctrine hash law, owner
+   *  ruling 2026-10-19) binding shipped content-deck cards; see DefenseDeck. */
   readonly policyCardHashes: readonly string[];
   readonly doctrineRef: string;
   readonly handCapacity: number;

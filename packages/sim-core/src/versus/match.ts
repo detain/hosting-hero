@@ -507,7 +507,11 @@ export interface DefenderCommit {
    *  — owner-ratified 2026-10-09 flip: the default indexes ruleBook by
    *  CONTENT FINGERPRINT, never by card.id (which is display metadata only).
    *  The door treats the callback as opaque, so a host wiring its own map
-   *  controls its own key space — fingerprint keys are the lane law. */
+   *  controls its own key space — fingerprint keys are the lane law. Under
+   *  the 2026-10-19 doctrine-via-decks ruling, a host arming its doctrine
+   *  from a SHIPPED CONTENT DECK wires this map in `deckCardHash` keys
+   *  instead (loader/decks.ts @2cdf014); the door stays opaque either way —
+   *  witness versus/__tests__/doctrineDecks.test.ts. */
   readonly policyCardsByHash?: ReadonlyMap<string, PolicyCard>;
   readonly nodes: readonly VersusNodeCommit[];
   readonly edges?: readonly VersusEdgeCommit[];
@@ -734,8 +738,11 @@ export function versusRuleBookHash(ruleBook: readonly PolicyCard[]): string {
  *    old commitment hash resolves to the old bytes or to nothing — a card
  *    cannot be swapped under its own name (the reveal-binds-bytes precedent
  *    of commit.ts, applied to per-card lookup);
- *  • `policyCardHashes` (defense deck) and the default `policyCardsByHash`
- *    index are `hh-card-v1` fingerprints from here on.
+ *  • the default `policyCardsByHash` index is an `hh-card-v1` fingerprint map.
+ *    (`DefenseDeck.policyCardHashes` no longer lives here: under owner ruling
+ *    2026-10-19 the doctrine binding for shipped content decks moved to the
+ *    one doctrine hash law, `deckCardHash` — versus/deck.ts states it,
+ *    doctrineDecks.test.ts witnesses it. The key spaces are disjoint by test.)
  *
  * Like every hash in this family this is a deterministic fingerprint, not a
  * cryptographic digest; the version tag means a future format change gets a
