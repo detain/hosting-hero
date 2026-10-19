@@ -15,13 +15,19 @@
  *    comparator law halts on) and mrrMicroUsd (a chrome key with NO engine
  *    publisher) are pinned ABSENT by name, with reasons below.
  *  - HASH LAW: deckCardHash goldens are load-bearing re-pins (self-derived at
- *    authoring 2026-10-18, disclosed in the shipping commit body). JSON ships
- *    no hashes — the host computes (protocol.ts:355-362 opaque-key law).
+ *    authoring 2026-10-18, RE-DERIVED at the wave-30 content retune when the
+ *    promised upkeep motion landed — the 14 old→new keys ride that commit
+ *    body). JSON ships no hashes — the host computes (protocol.ts:355-362
+ *    opaque-key law).
  *  - PARITY DRIFT PIN: watch-the-door mirrors the gates/g7 six-card book
  *    (apps/proto/src/gates/g7/g7Deck.ts:41-51,75-82). The expected cards are
  *    hand-transcribed here — a loader test may not import apps/** — so if
  *    g7Deck ever changes, THIS test reddens. That is the pin working, not
  *    breaking: retarget deliberately and re-transcribe, or leave both still.
+ *    DISCLOSED DIVERGENCE (wave-30): upkeep — shipped decks ride the small
+ *    PROVISIONAL ladder, the g7 gate constants stay 0n (gate fiction is
+ *    separate from live content); parity holds on every field except the
+ *    machine-pinned divergence rows below.
  *
  * The parser mechanics themselves (vocabularies, arity, decimal-string law,
  * dup ids, era fences) are decks.test.ts's turf — nothing here re-litigates
@@ -173,35 +179,38 @@ describe("shipped decks — deckCardHash v1 law", () => {
     expect(all.size).toBe(14);
   });
 
-  // Self-derived at authoring (2026-10-18) from this exact JSON — permanent
-  // load-bearing re-pins: ANY leaf move in a shipped card re-derives its key
-  // and reddens these literals. That is the lookup-key law doing its job.
+  // Self-derived at authoring (2026-10-18), RE-DERIVED at the wave-30 content
+  // retune (upkeep 0 → the small-value ladder re-keystrokes every card — the
+  // promised motion of the wave-29 rider, old→new in the commit body). From
+  // this exact JSON, permanent load-bearing re-pins: ANY leaf move in a
+  // shipped card re-derives its key and reddens these literals. That is the
+  // lookup-key law doing its job.
   it("cold-aisle hash goldens", () => {
     expect(goldenMap("cold-aisle.json")).toEqual({
-      "cold-aisle:murmur-the-bell": "219684b9c2879b8a",
-      "cold-aisle:ask-the-senior-again": "8b7e8348eba19c84",
-      "cold-aisle:quarter-watch": "a7f7fa9afc3b0237",
-      "cold-aisle:queue-etiquette": "49c00fab1887d23b",
-      "cold-aisle:health-ribbon": "5d3f28bdd154d7a5",
+      "cold-aisle:murmur-the-bell": "07872042156b0c23",
+      "cold-aisle:ask-the-senior-again": "fb195f752cfc2dbd",
+      "cold-aisle:quarter-watch": "814bf11301e5d782",
+      "cold-aisle:queue-etiquette": "90c1149fffeed59a",
+      "cold-aisle:health-ribbon": "25e157a84610179c",
     });
   });
 
   it("sleepless hash goldens", () => {
     expect(goldenMap("sleepless.json")).toEqual({
-      "sleepless:cold-thought-count": "b8b4518dcd4e9943",
-      "sleepless:second-wind": "d856b6da8870f525",
-      "sleepless:panic-failover": "ce359ebf4893d6e3",
+      "sleepless:cold-thought-count": "86194eb20593b0e4",
+      "sleepless:second-wind": "a8833576d20d87fc",
+      "sleepless:panic-failover": "6fc54cc18eafe4df",
     });
   });
 
   it("watch-the-door hash goldens", () => {
     expect(goldenMap("watch-the-door.json")).toEqual({
-      "watch-the-door:watch-the-door": "896577059838a558",
-      "watch-the-door:page-the-founder": "0a39cef08d241106",
-      "watch-the-door:shed-the-small": "cf99181c78add653",
-      "watch-the-door:escape-hatch": "812a5ed5ca22b155",
-      "watch-the-door:the-underwriter": "75583c74926155d1",
-      "watch-the-door:ask-the-senior": "6bbff9d7c29733b4",
+      "watch-the-door:watch-the-door": "3d40a6bd7be36a6d",
+      "watch-the-door:page-the-founder": "844da135e611941f",
+      "watch-the-door:shed-the-small": "c562a9d3204b1986",
+      "watch-the-door:escape-hatch": "cbe0cb31ab601d39",
+      "watch-the-door:the-underwriter": "2c0e9763ab2d1bc8",
+      "watch-the-door:ask-the-senior": "7d93c1199556c3ed",
     });
   });
 
@@ -265,7 +274,15 @@ function goldenMap(name: string): Record<string, string> {
  * retargets (also in the deck _todo): scope refs node/edge→edge,
  * node/origin→origin; BUSY amount 40960→16384 (mainline-witnessed crossing;
  * 40960 is the g7-storm board's line the mainline never reaches); card ids
- * gain the `watch-the-door:` namespace. Order is the g7 stamping order. */
+ * gain the `watch-the-door:` namespace. Order is the g7 stamping order.
+ * DISCLOSED DIVERGENCE (wave-30 content retune): UPKEEP. The shipped JSON now
+ * carries the small PROVISIONAL ladder (inform 5k / consult 10k / execute 25k
+ * / execute-wall-card 40k µ$ per sim-minute); the g7 gate constants stay 0n —
+ * gate fiction is a separate body of material from live content and the
+ * retune commission named only the shipped decks. The twins below therefore
+ * hold on every field EXCEPT upkeep, and the divergence list is machine-pinned
+ * (shipped value per card id, gate value 0n) so a silent move on EITHER side
+ * reddens this test. */
 
 function twin(
   id: string,
@@ -287,22 +304,54 @@ function twin(
     ]),
     then: Object.freeze([Object.freeze({ id: actionId, runbookName: null, value })]),
     band,
-    upkeepMicroUsd: asMoney(0n),
+    upkeepMicroUsd: asMoney(0n), // the g7 gate fiction: unpriced, BY DESIGN (see divergence below)
   }) as PolicyCard;
 }
 
+/** The machine-pinned disclosed divergence: shipped upkeep per card vs the
+ *  g7 twin's 0n. If the ladder retunes, flip these together with the JSON. */
+const UPKEEP_DIVERGENCE: Readonly<Record<string, { readonly shipped: bigint; readonly gate: bigint }>> =
+  Object.freeze({
+    "watch-the-door:watch-the-door": Object.freeze({ shipped: 25_000n, gate: 0n }),
+    "watch-the-door:page-the-founder": Object.freeze({ shipped: 25_000n, gate: 0n }),
+    "watch-the-door:shed-the-small": Object.freeze({ shipped: 25_000n, gate: 0n }),
+    "watch-the-door:escape-hatch": Object.freeze({ shipped: 40_000n, gate: 0n }),
+    "watch-the-door:the-underwriter": Object.freeze({ shipped: 5_000n, gate: 0n }),
+    "watch-the-door:ask-the-senior": Object.freeze({ shipped: 10_000n, gate: 0n }),
+  });
+
+/** Erase the ONE disclosed-divergent field for the structural equality walk. */
+function withoutUpkeep(card: PolicyCard): PolicyCard {
+  return { ...card, upkeepMicroUsd: asMoney(0n) };
+}
+
 describe("shipped decks — watch-the-door parity against the gates/g7 book", () => {
-  it("all six cards equal the hand-transcribed g7 twins, field for field", () => {
+  it("all six cards equal the hand-transcribed g7 twins on every field EXCEPT the disclosed upkeep divergence", () => {
     const parsed = DECKS.find((meta) => meta.name === "watch-the-door.json")?.deck.cards;
     expect(parsed).toBeDefined();
-    expect([...(parsed as readonly PolicyCard[])]).toEqual([
+    const twins: readonly PolicyCard[] = [
       twin("watch-the-door", "edge", 16_384n, "raise-inspection-depth", 131_072n, "execute"),
       twin("page-the-founder", "edge", 16_384n, "page", null, "execute"),
       twin("shed-the-small", "edge", 16_384n, "shed-class", null, "execute"),
       twin("escape-hatch", "origin", 16_384n, "failover", null, "execute"),
       twin("the-underwriter", "origin", 49_152n, "scale-out", 131_072n, "inform"),
       twin("ask-the-senior", "edge", 16_384n, "open-ticket", null, "consult"),
-    ]);
+    ];
+    const cards = parsed as readonly PolicyCard[];
+    // Upkeep-erased, the two books are FIELD FOR FIELD identical — the parity law holds.
+    expect(cards.map(withoutUpkeep)).toEqual(twins.map(withoutUpkeep));
+    // And the divergence is exactly the disclosed set: shipped side carries the
+    // ladder, gate side carries 0n — each id checked against its own row.
+    for (const card of cards) {
+      const row = UPKEEP_DIVERGENCE[String(card.id)];
+      if (row === undefined) throw new Error(`undisclosed card id ${String(card.id)} in the shipped book`);
+      expect(card.upkeepMicroUsd).toBe(row.shipped);
+    }
+    for (const t of twins) {
+      const twinRow = UPKEEP_DIVERGENCE[String(t.id)];
+      if (twinRow === undefined) throw new Error(`twin id ${String(t.id)} missing from the divergence list`);
+      expect(t.upkeepMicroUsd).toBe(twinRow.gate);
+    }
   });
 });
 
@@ -354,11 +403,35 @@ describe("shipped decks — mainline firing + honor walls", () => {
     }
   });
 
-  it("upkeep law: every card costs 0 µ$ and every deck says PROVISIONAL (billing fold BUILT — 0 bills nothing)", () => {
+  it("upkeep law (wave-30 retune): every card carries its PROVISIONAL ladder value; each deck Σ pins; _todo discloses", () => {
+    // The ladder (orchestrator recommendation, doc-grounded on §7.14:28536
+    // 'each carries a small upkeep' + the delegation semantics at :28594-
+    // 28599, PROVISIONAL ratify-on-playtest per ADR-0016 #10): inform 5,000 /
+    // consult 10,000 / execute 25,000 µ$ per sim-minute — and an execute card
+    // whose THEN arm is the bought-verb wall (failover) is priced ABOVE the
+    // plain execute at 40,000. The rule is DERIVED from the card's own band +
+    // verb, not copied from the JSON: the 14 hash goldens above are the
+    // per-card literals; this is the LAW that explains them.
+    const ladderOf = (card: PolicyCard): bigint => {
+      if (card.band === "inform") return 5_000n;
+      if (card.band === "consult") return 10_000n;
+      return card.then[0]?.id === "failover" ? 40_000n : 25_000n;
+    };
+    const DECK_SUM: Readonly<Record<string, bigint>> = Object.freeze({
+      "watch-the-door.json": 130_000n, // 3×25k execute + 40k wall + 5k inform + 10k consult
+      "cold-aisle.json": 35_000n, // 3×5k inform + 2×10k consult — all advisory, no wall line here
+      "sleepless.json": 50_000n, // 2×5k inform + 40k wall (panic-failover)
+    });
     for (const meta of DECKS) {
-      for (const card of meta.deck.cards) expect(card.upkeepMicroUsd).toBe(0n);
+      let sum = 0n;
+      for (const card of meta.deck.cards) {
+        expect(card.upkeepMicroUsd, `${meta.name}: ${String(card.id)} off the ladder`).toBe(ladderOf(card));
+        sum += card.upkeepMicroUsd;
+      }
+      expect(sum, `${meta.name} Σ upkeep`).toBe(DECK_SUM[meta.name]);
       expect(meta.deck.todo).toContain("PROVISIONAL");
       expect(meta.deck.todo).toMatch(/upkeep/i);
+      expect(meta.deck.todo).toContain("THE RETUNE LANDED");
     }
   });
 

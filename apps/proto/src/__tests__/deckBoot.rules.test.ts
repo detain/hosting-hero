@@ -46,6 +46,11 @@
  *    keeps the WIRE form (decimal strings), workerRulesLookup revives the
  *    branded bigints, every revived card deep-equals its trusted loader
  *    twin (a757f6c's boundary law, now exercised with shipped content).
+ *    Wave-30 content retune: the upkeep literals these walks speak moved 0 →
+ *    the small PROVISIONAL ladder (5k/10k/25k/40k per band, wall-card above)
+ *    — the ladder map below is the test-side authority; dormant/no-commit and
+ *    money witnesses are UNTOUCHED by design (no commit ⇒ no ruleBook ⇒ no
+ *    upkeep anywhere in the digest).
  *
  * Hash literals are pinned only STRUCTURALLY (16-hex, set-unique,
  * self-consistent): the deckCardHash LAW values belong to the loader's own
@@ -119,6 +124,29 @@ const hashFor = (book: LoadedBootRules, id: string): string => {
   if (found === undefined) throw new Error(`shipped deck has no card "${id}"`);
   return found.hash;
 };
+
+/* The wave-30 content retune: the shipped decks carry the small PROVISIONAL
+ * ladder (inform 5,000 / consult 10,000 / execute 25,000 µ$ per sim-minute,
+ * and the execute WALL card — failover, the bought-verb refusal — 40,000).
+ * This map is the TEST-SIDE authority: a JSON drift off the ladder reddens
+ * every upkeep witness below (loader-side shipDecks.test.ts pins the law and
+ * the 14 hash goldens; here we exercise the wire with the real values). */
+const UPKEEP_BY_ID: Readonly<Record<string, bigint>> = Object.freeze({
+  "watch-the-door:watch-the-door": 25_000n,
+  "watch-the-door:page-the-founder": 25_000n,
+  "watch-the-door:shed-the-small": 25_000n,
+  "watch-the-door:escape-hatch": 40_000n,
+  "watch-the-door:the-underwriter": 5_000n,
+  "watch-the-door:ask-the-senior": 10_000n,
+  "cold-aisle:murmur-the-bell": 5_000n,
+  "cold-aisle:ask-the-senior-again": 10_000n,
+  "cold-aisle:quarter-watch": 5_000n,
+  "cold-aisle:queue-etiquette": 5_000n,
+  "cold-aisle:health-ribbon": 10_000n,
+  "sleepless:cold-thought-count": 5_000n,
+  "sleepless:second-wind": 5_000n,
+  "sleepless:panic-failover": 40_000n,
+});
 
 /** THE one wire path every direct arm boots through: the trusted book goes
  *  out as BootRulesWire (encodeBootRules), comes back through the envelope
@@ -249,7 +277,8 @@ describe("shipped decks at the loader boundary (JSON → trusted boot book)", ()
     const first = WATCH.entries[0]!.card.when[0]!.threshold;
     if (first.kind !== "value") throw new Error("expected a value threshold");
     expect(first.amount).toBe(16_384n);
-    for (const deck of decks) for (const entry of deck.entries) expect(entry.card.upkeepMicroUsd).toBe(0n);
+    for (const deck of decks)
+      for (const entry of deck.entries) expect(entry.card.upkeepMicroUsd).toBe(UPKEEP_BY_ID[String(entry.card.id)]);
   });
 
   it("every book entry is keyed by deckCardHash(card) — 16-hex, set-unique across all 14", () => {
@@ -299,14 +328,14 @@ describe("the deck book crosses the wire whole (a757f6c symmetry, shipped conten
       expect(parsed.rules.entries.length).toBe(book.entries.length);
       for (let i = 0; i < book.entries.length; i += 1) {
         expect(parsed.rules.entries[i]!.card).toEqual(wire.entries[i]!.card);
-        expect(parsed.rules.entries[i]!.card.upkeepMicroUsd).toBe("0");
+        expect(parsed.rules.entries[i]!.card.upkeepMicroUsd).toBe(String(UPKEEP_BY_ID[String(book.entries[i]!.card.id)])); // decimal-string boundary, retuned values
       }
       const { lookupPolicyCard } = workerRulesLookup(parsed.rules);
       for (const entry of book.entries) {
         const revived = lookupPolicyCard(entry.hash);
         expect(revived).toEqual(entry.card); // the trusted loader card, whole
         if (revived === null) throw new Error("expected the revived card");
-        expect(revived.upkeepMicroUsd).toBe(0n); // branded bigint at the boundary
+        expect(revived.upkeepMicroUsd).toBe(UPKEEP_BY_ID[String(entry.card.id)]); // branded bigint at the boundary
         const threshold = revived.when[0]!.threshold;
         if (threshold.kind !== "value") throw new Error("expected a value threshold");
         expect(typeof threshold.amount).toBe("bigint");

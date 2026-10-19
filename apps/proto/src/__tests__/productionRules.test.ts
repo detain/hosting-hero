@@ -25,6 +25,9 @@
  *      self-derived at this lane (disclosed: these hexes never existed
  *      before the adoption; the legacy pair stays pinned on the dormant
  *      twin above, NOT re-presented here), plus its determinism twin.
+ *      WAVE-30 RETUNE: re-derived from the engine and BYTE-STANDING — the
+ *      projection wire carries no ruleBook content, so upkeep ladder motion
+ *      is invisible at this altitude (disclosed zero-motion, see section (e)).
  *
  * Posture pins: mock + production book REFUSES the boot (the wiring-bug
  * fault channel, step-5 honesty walk); App.vue's single production `.boot(`
@@ -178,7 +181,10 @@ describe("the production boot message · boot.rules crosses the real parser", ()
     expect(wire.entries.length).toBe(6);
     for (let i = 0; i < 6; i += 1) {
       expect(wire.entries[i]!.hash).toBe(PRODUCTION_DECK_BOOK.entries[i]!.hash);
-      expect(wire.entries[i]!.card.upkeepMicroUsd).toBe("0"); // the decimal-string boundary, unbroken
+      // The decimal-string boundary, unbroken — wave-30 retune moved the VALUES
+      // (small PROVISIONAL ladder: execute 25k×3, escape-hatch wall 40k, the-underwriter
+      // inform 5k, ask-the-senior consult 10k, in authoring order), not the grammar.
+      expect(wire.entries[i]!.card.upkeepMicroUsd).toBe(["25000", "25000", "25000", "40000", "5000", "10000"][i]);
     }
     // The REAL envelope parser — shape walls included — takes what the app posts:
     const parsed = assertToWorker(worker.posted[0]!);
@@ -286,7 +292,18 @@ describe("armed committed production run · the first 100-frame digest pair (NEW
      UNMOVED on the dormant twins above; re-presenting those here would be a
      golden move, and this is not one. The commit rail diverges the run at f0
      (first landing commit — the deckBoot causality law), so even frame 0 of
-     the armed production run is not the legacy boot frame. */
+     the armed production run is not the legacy boot frame.
+     WAVE-30 CONTENT RETUNE: the pair below was RE-DERIVED FROM THE ENGINE and
+     stands BYTE-IDENTICAL — the assumed motion does not exist at this altitude.
+     cardFingerprint (which absorbs String(upkeepMicroUsd)) lives in the STATE
+     digest (pipeline/digest.ts ruleBook block) and the scenario endDigest
+     channel; the proto projection wire never carries ruleBook content, so a
+     100-frame armed-committed run with upkeep 25k/40k/5k/10k projects the same
+     frames as with upkeep 0 (no money moves before the t420 roll either). The
+     pair therefore stays a 0-motion pin at this altitude — the retune's
+     hash-level motion (deckCardHash goldens, ruleBookHash) is pinned
+     loader-side, and the STATE-digest consequence is witnessed scenario-side
+     in scenario/__tests__/deckUpkeepLive.test.ts. */
   let armed: readonly string[] | null = null;
   function armedDigests(): readonly string[] {
     if (armed === null) armed = Object.freeze(frameDigests(productionWireLoop(100, true).received));
