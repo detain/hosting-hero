@@ -132,6 +132,7 @@ import {
   budgetMinRemainingSec,
   buildSample,
   collectFacts,
+  createUpkeepCursor,
   createWarmthCursor,
   dependencyEdgesFor,
   foldMoneyLaneTick,
@@ -970,6 +971,12 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
      path — and every shipped weekend digest byte-ident; the seam lights up
      the moment a host carries the book into runUnattended. */
   const warmthCursor = createWarmthCursor(game0);
+  /* Owner-commissioned 2026-10-19: the rule-upkeep cursor rides the SAME
+     calendar authority, minted UNCONDITIONALLY (the ruleBook is required
+     state and can grow mid-run through the door — presence-gating at t0
+     would strand mid-run books). Shipped weekends carry empty- or
+     zero-upkeep books ⇒ the fold derives null ⇒ byte-identity. */
+  const upkeepCursor = createUpkeepCursor(game0);
   const cashStart: bigint = game.cash.free;
   let arrivalsSeen = 0;
   let stop: UnattendedStop | null = null;
@@ -1031,6 +1038,11 @@ function runUnattendedInner(config: RunUnattendedConfig, surge: SurgeWindow | nu
            mN`) inside the existing OPEX-REFUSED ×N census. Undefined
            cursor ⇒ the drafts list rides by identity (byte-identity law). */
         warmth: warmthCursor,
+        /* The upkeep leg (owner-commissioned 2026-10-19): the fold derives
+           the `rule-upkeep:mN` draft at every month roll when the book owes
+           — same bounce census (`<topic>:opex:rule-upkeep:mN` identity), no
+           new warn, no new refusal law (see the fold's upkeep section). */
+        upkeep: upkeepCursor,
         /* ADR-0016 mechanic B: the host catalog rides the fold verbatim;
            undefined ⇒ key omitted inside the fold ⇒ sell dice anchor on the
            installed base only (byte-identity law for every sell-absent

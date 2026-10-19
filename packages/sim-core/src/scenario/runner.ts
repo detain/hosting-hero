@@ -119,6 +119,7 @@ import {
   GUARD_TRAILING_WINDOW_MIN,
   buildSample,
   collectFacts,
+  createUpkeepCursor,
   createWarmthCursor,
   dependencyEdgesFor,
   foldMoneyLaneTick,
@@ -1345,6 +1346,12 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
      IDENTITY — every shipped mission digest byte-ident. The seam exists
      so a scale-arming doc lights the charge without a third fold copy. */
   const warmthCursor = createWarmthCursor(game0);
+  /* Owner-commissioned 2026-10-19: the rule-upkeep cursor — minted
+     UNCONDITIONALLY (the ruleBook is required state; a mid-run door
+     commit must find its meter already running). Shipped wires start an
+     empty book and none schedule a `policy-card-commit` rail, so the fold
+     derives null every roll and every mission digest byte-stands. */
+  const upkeepCursor = createUpkeepCursor(game0);
   const cashStart = game.cash.free;
   const mintFacts: TickFacts = Object.freeze({
     minute: game.context.minute,
@@ -1428,6 +1435,11 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
         /* ADR-0016 mechanic C: undefined cursor ⇒ identity opex path ⇒
            shipped mission digests byte-ident (see the mint above). */
         warmth: warmthCursor,
+        /* The upkeep leg (owner-commissioned 2026-10-19): derived
+           `rule-upkeep:mN` draft rides the same bounce census
+           (`<topic>:opex:rule-upkeep:mN`), no new warn, no new refusal
+           law — see the fold's upkeep section and the mint above. */
+        upkeep: upkeepCursor,
         /* ADR-0016 mechanic B — the READ-LEG ships (Act III rung, wave 26): a
            `sell-offer` intent on the doc's rail books `game.sell` through the
            real door, tickFold's presence-gated spread feeds the fold's step-

@@ -2,7 +2,8 @@
  * internal/tickFold.ts — the SHARED per-tick host fold, the single home for
  * the sequence every tick-boundary host performs around the driver:
  * scheduled-opex posting (plus the ADR-0016 mechanic C derived
- * scale-warmth draft at every business-month roll) with the ledger-
+ * scale-warmth draft and the owner-commissioned rule-upkeep draft, both
+ * billed at every business-month roll) with the ledger-
  * refusal bounce, the economy tick with the insolvent-settle boundary
  * (review F4), the OD-25(a) refuse-
  * settlements witness stream feeding the float-death watch (review F5),
@@ -179,19 +180,19 @@ function opexWitnessFor(topic: string, draft: TickFoldOpexDraft): RefusedSettlem
   });
 }
 
-/* ═══════════════════════ scale warmth — the month-roll derived draft (ADR-0016 mechanic C) ══════════ */
+/* ═══════════════════════ the fold's business-month calendar (warmth + upkeep legs) ═══════════ */
 
-/** The business-calendar month the warmth cursor rolls on — the SAME
+/** The business-calendar month both derived-opex legs roll on — the SAME
  *  43,200-minute grid `attentionMonthOf` (unattended/fastForward.ts
  *  @eff5694) copies from economy's rollBusinessMonth: the law is COPIED,
  *  not imported — internal/ must not reach unattended/ or pipeline/ at
  *  runtime (header dependency law), and the mint helper carries no cfg to
  *  derive it from `cfg.calendar.minutesPerMonth`. The clock is monotonic,
  *  so plain floor division is the exact twin of economy's floorDiv. */
-const WARMTH_MONTH_MINUTES = 43_200;
+const BUSINESS_MONTH_MINUTES = 43_200;
 
-function warmthMonthOf(game: GameState): number {
-  return Math.floor(Number(game.context.clocks.businessUs / MICROS_PER_MIN) / WARMTH_MONTH_MINUTES);
+function businessMonthOf(game: GameState): number {
+  return Math.floor(Number(game.context.clocks.businessUs / MICROS_PER_MIN) / BUSINESS_MONTH_MINUTES);
 }
 
 /** The host-carried month identity for the warmth leg — the witness-array
@@ -211,7 +212,7 @@ export interface MoneyLaneWarmthCursor {
  *  first charge lands on the first roll INTO the next month: rent for the
  *  coming period, the payroll-g5 rhythm (`gate5:opex:payroll:mN`). */
 export function createWarmthCursor(game: GameState): MoneyLaneWarmthCursor | undefined {
-  return game.scale === undefined ? undefined : { monthCursor: warmthMonthOf(game) };
+  return game.scale === undefined ? undefined : { monthCursor: businessMonthOf(game) };
 }
 
 /** AS-OF twin of pipeline/defaults.ts `scaleWarmInForce` (the entry half —
@@ -239,7 +240,7 @@ function warmthInForceAt(entry: ScaleEntry, atBusinessMinute: SimMinute): ScaleE
 function deriveWarmthDraft(p: MoneyLaneTickParams): TickFoldOpexDraft | null {
   const cursor = p.warmth;
   if (cursor === undefined) return null;
-  const month = warmthMonthOf(p.game);
+  const month = businessMonthOf(p.game);
   if (month <= cursor.monthCursor) return null;
   cursor.monthCursor = month;
   const businessMinute = Number(p.game.context.clocks.businessUs / MICROS_PER_MIN);
@@ -253,6 +254,101 @@ function deriveWarmthDraft(p: MoneyLaneTickParams): TickFoldOpexDraft | null {
   const amountMicroUsd = BigInt(slots) * (p.cfg.warmth ?? DEFAULT_WARMTH_CONFIG).rateMicroUsdPerSlotMonth;
   if (amountMicroUsd < 1n) return null;
   return Object.freeze({ atMinute: p.minute, amountMicroUsd, memo: `scale-warmth:m${month}` });
+}
+
+/* ═══════════════════════ rule upkeep — the month-roll book bill (owner-commissioned 2026-10-19) ═══════════════════════ */
+
+/** The host-carried bill identity for the upkeep leg — the warmth cursor's
+ *  shape extended with one minute. `monthCursor` holds the month identity
+ *  (one charge per roll, the warmth law verbatim); `lastBillMinute` is the
+ *  sim-minute of the last roll the fold consumed, so each bill charges the
+ *  FULL month window in µ$-per-sim-minute × minutes. The pair is minted by
+ *  the host and advanced IN PLACE by the fold — cursor mutation never
+ *  touches GameState, so the digest sees only posted entries.
+ *
+ *  What the fold reads is `GameState.ruleBook` (types.ts:2672 — the FULL
+ *  PolicyCard docs persist in state, the hash is the sibling field): NO new
+ *  persistence, NO forwarding leg, NO GameState slice, NO digest-schema
+ *  change. The book already lives inside the state digest (gate-g7 truth),
+ *  so a run's digests move exactly when the ledger does.
+ *
+ *  Cadence is the fold's OWN calendar law — `businessMonthOf` above, the
+ *  43,200-minute floor of `game.context.clocks.businessUs`, NOT
+ *  `econ.monthIndex`: the ledger's own counter FREEZES once a company
+ *  dissolves (terminal folds no-op) but a calendar month is a calendar
+ *  month whether the ledger is alive or not (the attention seam's pinned
+ *  law @eff5694, falsifier in upkeep-fold.test.ts).
+ *
+ *  Amount: Σ card.upkeepMicroUsd over the whole book × Δ sim-minutes since
+ *  the last bill-minute (the doc unit is µ$/sim-minute, types.ts:775 —
+ *  "each carries a small **upkeep** (every rule is a thing that can be
+ *  wrong)", hosting_game.md §7.14 Policy Book, disk line 28531; Tier 1's
+ *  "first upkeep bill", hosting_game.md:845).
+ *
+ *  PROVISIONAL semantics (owner ratifies by playtest — hg "the first
+ *  upkeep bill" cadence is not numerically specified): monthly cadence on
+ *  the business calendar, RETROACTIVE accrual (a card committed mid-month
+ *  bills from the last bill-minute, not from its commit minute — the
+ *  forward-charging refinement is named-deferred below), and no lapse:
+ *  unpaid upkeep refuses (floor-first) but never sheds the card.
+ *  Named-deferred, one line each:
+ *  • dunning-cascade upkeep — category error: dunning is a customer-money
+ *    machine, the Book is the player's own opex;
+ *  • card-shed-on-nonpayment — layer inversion (money must not rewrite a
+ *    door book); follow-on lane if ever wanted;
+ *  • per-minute droplets — hosting_game.md "The Upkeep Drip" (§4.1
+ *    buildable-design rules, disk heading line 15062) is presentation
+ *    fiction; a journal line per
+ *    minute per card is spam the ledger was never built for;
+ *  • suspension-aware accrual — the PolicyStore D-2 suspension concept
+ *    does not exist on the door book yet (nothing to pause the meter on). */
+export interface MoneyLaneUpkeepCursor {
+  monthCursor: number;
+  lastBillMinute: SimMinute;
+}
+
+/** Mint the run's upkeep cursor from the state the host STARTS on.
+ *  UNCONDITIONALLY unlike the warmth mint (which presence-gates on the
+ *  optional Scale book): `ruleBook` is a REQUIRED GameState field that
+ *  GROWS MID-RUN through the door's `policy-card-commit` verb, so a
+ *  presence-gated mint at t0 would strand every mid-run book forever.
+ *  The zero path is the derivation, not the mint — an empty book sums to
+ *  0 µ$/min, the draft is null, the drafts array rides `opexDrafts` BY
+ *  IDENTITY, and every shipped run (all empty- or zero-upkeep books)
+ *  byte-stands. Seeds the CURRENT month and the current sim-minute, so
+ *  the first bill covers exactly the window from mint to first roll
+ *  (hosts mint from `game0` at minute 0; a primed mid-quarter mint stays
+ *  honest the same way the warmth cursor's does). */
+export function createUpkeepCursor(game: GameState): MoneyLaneUpkeepCursor {
+  return { monthCursor: businessMonthOf(game), lastBillMinute: game.context.minute };
+}
+
+/** The fold's per-tick upkeep question: has the business calendar entered
+ *  a NEW month, and if so what does the Book owe for the window just
+ *  closed? Returns ONE derived draft or null — and ALWAYS consumes the
+ *  month identity AND the window when the cursor rolls: a zero-book month
+ *  still passed, and its window closes (retroactive accrual measures from
+ *  the last ROLL, never from run start across a passed month). The draft
+ *  rides the ORDINARY opex loop below — floor-first: it POSTS when the
+ *  bankroll covers it and BOUNCES when it doesn't (witness identity
+ *  `<topic>:opex:rule-upkeep:mN` carries the memo through the existing
+ *  OPEX-REFUSED ×N census and the L4 freeCashDepletion→death chain for
+ *  free) — the fold invents no second refusal law. A negative window is
+ *  an impossible clock; the `< 1n` guard (the warmth law verbatim) makes
+ *  it a safe null rather than a refund. */
+function deriveUpkeepDraft(p: MoneyLaneTickParams): TickFoldOpexDraft | null {
+  const cursor = p.upkeep;
+  if (cursor === undefined) return null;
+  const month = businessMonthOf(p.game);
+  if (month <= cursor.monthCursor) return null;
+  cursor.monthCursor = month;
+  const windowMinutes = BigInt(p.minute - cursor.lastBillMinute);
+  cursor.lastBillMinute = p.minute;
+  let perSimMinute = 0n;
+  for (const card of p.game.ruleBook) perSimMinute += card.upkeepMicroUsd;
+  const amountMicroUsd = perSimMinute * windowMinutes;
+  if (amountMicroUsd < 1n) return null;
+  return Object.freeze({ atMinute: p.minute, amountMicroUsd, memo: `rule-upkeep:m${month}` });
 }
 
 /* ═══════════════════════════ notary mirror + outage fan-out ═══════════════════════ */
@@ -335,6 +431,17 @@ export interface MoneyLaneTickParams {
    *  loop iterates `opexDrafts` BY IDENTITY — every scale-absent run
    *  byte-ident (the zero-golden law's load-bearing arm). */
   readonly warmth?: MoneyLaneWarmthCursor | undefined;
+  /** The rule-upkeep cursor (host-carried, minted UNCONDITIONALLY per run
+   *  via `createUpkeepCursor` — the ruleBook is required state and grows
+   *  mid-run through the door): PRESENT ⇒ the fold derives at most one
+   *  `rule-upkeep:mN` draft per business-month roll (Σ card.upkeepMicroUsd
+   *  × the window's sim-minutes, see the upkeep section above). Composition
+   *  order is FIXED law: [warmth?, upkeep?, ...authored] — deterministic
+   *  ledger order, pinned by source-scan AND a same-tick double-roll
+   *  behavior witness. An empty/zero-upkeep book ⇒ null draft ⇒ the loop
+   *  still iterates `opexDrafts` BY IDENTITY — the shipped corpus's
+   *  byte-identity arm. ABSENT cursor ⇒ never consulted. */
+  readonly upkeep?: MoneyLaneUpkeepCursor | undefined;
   /** ADR-0016 mechanic B host catalog authority for the sell dice
    *  (priceKey -> market rate µ$): forwarded verbatim into EconomyTickIn
    *  .sellMarketRates. ABSENT ⇒ key omitted ⇒ offers anchor only on the
@@ -374,9 +481,9 @@ export interface MoneyLaneTickResult {
 }
 
 /**
- * The ONE money-lane tick fold (warmth-derived + scheduled opex → economy
- * tick → refusal witnesses → seq-clear), byte-identical to the loops both
- * lanes ran before consolidation.
+ * The ONE money-lane tick fold (warmth- and upkeep-derived + scheduled opex
+ * → economy tick → refusal witnesses → seq-clear), byte-identical to the
+ * loops both lanes ran before consolidation.
  *
  * INSOLVENT-SETTLE BOUNDARY (review F4): economy/ refuses negative buckets
  * by THROWING a raw RangeError from deep inside settle → draftEntry →
@@ -411,7 +518,19 @@ export function foldMoneyLaneTick(p: MoneyLaneTickParams): MoneyLaneTickResult {
   let opexBounces = 0;
 
   const warmthDraft = deriveWarmthDraft(p);
-  const drafts = warmthDraft === null ? p.opexDrafts : [warmthDraft, ...p.opexDrafts];
+  const upkeepDraft = deriveUpkeepDraft(p);
+  /* Composition order is FIXED law: warmth, then upkeep, then authored —
+   * the ledger's same-minute seq order must never depend on derivation
+   * accidents. Both derived drafts null ⇒ `opexDrafts` rides BY IDENTITY
+   * (the zero-golden law's load-bearing arm). */
+  const drafts =
+    warmthDraft === null && upkeepDraft === null
+      ? p.opexDrafts
+      : [
+          ...(warmthDraft === null ? [] : [warmthDraft]),
+          ...(upkeepDraft === null ? [] : [upkeepDraft]),
+          ...p.opexDrafts,
+        ];
 
   for (const draft of drafts) {
     if (econ.cash.free < draft.amountMicroUsd) {
