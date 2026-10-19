@@ -4,7 +4,7 @@
  * watch-the-door book with its retuned small PROVISIONAL upkeep ladder —
  * rides the L-U2 scenario seam (@304c9d0) into runScenario, six cards commit
  * through the ordinary door rail, and the L-U1 fold (@b59dbeb) bills the
- * whole book at the t420 business-month roll. This is §1.6's beat :845 —
+ * whole book at the t420 business-month roll. This is §1.1's beat :845 —
  * "the first upkeep bill" — told end-to-end FROM CONTENT, not from a forged
  * witness card (deckRules.test.ts owns the forged-card chamber; this file
  * owns the shipped-numerics consequence).

@@ -281,8 +281,12 @@ function goldenMap(name: string): Record<string, string> {
  * gate fiction is a separate body of material from live content and the
  * retune commission named only the shipped decks. The twins below therefore
  * hold on every field EXCEPT upkeep, and the divergence list is machine-pinned
- * (shipped value per card id, gate value 0n) so a silent move on EITHER side
- * reddens this test. */
+ * (shipped value per card id, gate value 0n): a silent move on EITHER side
+ * THIS test can see — the shipped JSON or these hand-transcribed twins —
+ * reddens it HERE; the real g7Deck.ts constants are invisible across the
+ * apps boundary (import law) and are pinned PROTO-side at
+ * apps/proto/src/__tests__/deckBoot.rules.test.ts (UPKEEP_DIVERGENCE drift
+ * pin, wave-30 closeout W30-01). */
 
 function twin(
   id: string,
@@ -405,8 +409,10 @@ describe("shipped decks — mainline firing + honor walls", () => {
 
   it("upkeep law (wave-30 retune): every card carries its PROVISIONAL ladder value; each deck Σ pins; _todo discloses", () => {
     // The ladder (orchestrator recommendation, doc-grounded on §7.14:28536
-    // 'each carries a small upkeep' + the delegation semantics at :28594-
-    // 28599, PROVISIONAL ratify-on-playtest per ADR-0016 #10): inform 5,000 /
+    // 'each carries a small upkeep' + the delegation bands at :28594-28602
+    // (definitions land :28601-28602 — line-shifted by the wave-29 riders;
+    // W30-02 re-anchor), PROVISIONAL ratify-on-playtest per ADR-0016 #10):
+    // inform 5,000 /
     // consult 10,000 / execute 25,000 µ$ per sim-minute — and an execute card
     // whose THEN arm is the bought-verb wall (failover) is priced ABOVE the
     // plain execute at 40,000. The rule is DERIVED from the card's own band +

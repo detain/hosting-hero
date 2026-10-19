@@ -48,7 +48,10 @@
  *    twin (a757f6c's boundary law, now exercised with shipped content).
  *    Wave-30 content retune: the upkeep literals these walks speak moved 0 →
  *    the small PROVISIONAL ladder (5k/10k/25k/40k per band, wall-card above)
- *    — the ladder map below is the test-side authority; dormant/no-commit and
+ *    — the ladder map below is the test-side authority; a pin inside the
+ *    parse walk binds the gates/g7 gate book to the 0n fiction AGAINST it
+ *    (UPKEEP_DIVERGENCE, W30-01 — the loader side cannot see g7Deck.ts by
+ *    import law); dormant/no-commit and
  *    money witnesses are UNTOUCHED by design (no commit ⇒ no ruleBook ⇒ no
  *    upkeep anywhere in the digest).
  *
@@ -80,6 +83,7 @@ import {
 import { SimCoreRunner } from "../runner/simCoreRunner";
 import { FakeWorkerLike } from "../bridge/fakeWorker";
 import { SimClient } from "../bridge/simClient";
+import { G7_CARDS } from "../gates/g7/g7Deck";
 import watchTheDoorRaw from "../../../../packages/content/decks/watch-the-door.json?raw";
 import coldAisleRaw from "../../../../packages/content/decks/cold-aisle.json?raw";
 import sleeplessRaw from "../../../../packages/content/decks/sleepless.json?raw";
@@ -311,6 +315,23 @@ describe("shipped decks at the loader boundary (JSON → trusted boot book)", ()
     expect(() =>
       assertToWorker({ kind: "boot", protocol: 1, seed: "dup", speedX: 1, runnerKind: "sim-core", rules: wire }),
     ).toThrow(/duplicates entries\[0\]/);
+  });
+
+  it("UPKEEP_DIVERGENCE law: the gates/g7 book stays the 0n fiction while its shipped twin rides the ladder", () => {
+    // W30-01 drift pin. shipDecks.test.ts machine-pins the SHIPPED side and
+    // its own hand-transcribed twins; the real gates/g7/g7Deck.ts constants
+    // are invisible to a loader test (import law) — so the PROTO side pins
+    // them HERE: a silent upkeep move on EITHER body of material reddens a
+    // test. The wave-30 commission named only the shipped decks — gate
+    // fiction (0n, unpriced by design) and live content (the PROVISIONAL
+    // ladder) stay separate bodies of material.
+    expect(G7_CARDS.length).toBe(6);
+    for (const gate of G7_CARDS) {
+      expect(gate.upkeepMicroUsd, `g7 gate fiction must stay unpriced: ${String(gate.id)}`).toBe(0n);
+      const shipped = UPKEEP_BY_ID[`watch-the-door:${String(gate.id)}`];
+      if (shipped === undefined) throw new Error(`shipped book has no twin for gate card "${String(gate.id)}"`);
+      expect(shipped, `shipped twin must ride the paid ladder: ${String(gate.id)}`).toBeGreaterThan(0n);
+    }
   });
 });
 
