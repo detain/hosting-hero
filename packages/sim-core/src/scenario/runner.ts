@@ -340,7 +340,7 @@ export interface ScenarioReport {
  *  `sell-accepted` notice carries its verdict's `offerPriceMicroUsd` as
  *  `amount` (economy/tick.ts step 5.5, pinned economy sell-accept.test "notice
  *  shape"); the persisted verdict map is the same truth post-amendment. The
- *  slice is the valuation leaf's output: never above the headline (hg:5617
+ *  slice is the valuation leaf's output: never above the headline (hg:5621
  *  diligence posture), wind-down would slice to exactly 0 but the campaign
  *  parse wall refuses that kind before it can be declared here. */
 export interface ScenarioExitPayout {

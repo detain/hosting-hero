@@ -46,17 +46,17 @@ const TICK_CAP_CEILING = 1_000_000;
 
 /**
  * THE §1.6 EXIT VOCABULARY (money-at-the-end 2/3, L-V2). The seven exit
- * types of hg:4500 "Exit types, each with a different meta-currency profile
+ * types of hg:4502 "Exit types, each with a different meta-currency profile
  * and epilogue", slugified from the doc's OWN words (verified by text):
- *   ipo                    — hg:4501 "IPO — most currency"
- *   strategic-acquisition  — hg:4503 "Strategic acquisition (a bigger host buys you for your customers)"
- *   pe-platform            — hg:4505 "PE platform acquisition (they buy you as a platform to roll up others)"
- *   pe-bolt-on             — hg:4507 "PE bolt-on (absorbed into an existing platform)"
- *   asset-sale             — hg:4509 "Asset sale (they buy the book, not the company)"
- *   management-buyout      — hg:4510 "Management buyout / employee ownership" — the doc's
+ *   ipo                    — hg:4503 "IPO — most currency"
+ *   strategic-acquisition  — hg:4505 "Strategic acquisition (a bigger host buys you for your customers)"
+ *   pe-platform            — hg:4511 "PE platform acquisition (they buy you as a platform to roll up others)"
+ *   pe-bolt-on             — hg:4511 "PE bolt-on (absorbed into an existing platform)"
+ *   asset-sale             — hg:4511 "Asset sale (they buy the book, not the company)"
+ *   management-buyout      — hg:4512 "Management buyout / employee ownership" — the doc's
  *                              words are "Management buyout"; the acronym "mbo" appears
  *                              NOWHERE in the doc, so the slug follows the doc.
- *   wind-down              — hg:4512 "Wind-down — sell the book, sell the hardware…"
+ *   wind-down              — hg:4514 "Wind-down — sell the book, sell the hardware…"
  *
  * The slugs and their ORDER are byte-identical to `VALUATION_EXIT_KINDS`
  * (economy/valuation.ts, money-at-the-end 1/3) — the declaration feeds that

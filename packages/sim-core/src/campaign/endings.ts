@@ -11,14 +11,14 @@
  * The three kinds, and the exact law each is grounded in:
  *
  *  1. obituary      — the FINAL chapter is a loss. §9.9 "Failure is Narrated,
- *     Not Punished" (hg:35185-35188): "an obituary page with the real cause —
+ *     Not Punished" (hg:35193-35196): "an obituary page with the real cause —
  *     derived from the simulation, not authored". The epitaph carries the
  *     terminal `stopReason` VERBATIM; the §9.9 guardrail is absolute — "the
  *     game is never funny at the moment of loss … dry and accurate, never a
- *     punchline" (hg:35194-35195).
+ *     punchline" (hg:35202-35203).
  *  2. exit          — the FINAL chapter WON on the sell-accepted verdict
  *     grammar (`win:sell-accepted-above:…`), §1.5 "Sell the Company" — "the
- *     best possible campaign ending" (hg:4020-4027). Still VERDICT-OBSERVED
+ *     best possible campaign ending" (hg:4022-4027). Still VERDICT-OBSERVED
  *     ONLY: it reads the stopReason the exit chapter emits (c-7 `the-long-sale`
  *     @`5e9be02` ships it) and calls the ending — it does NOT mint a cashSlice,
  *     does NOT spawn an `exit` inheritance edge, and never touches
@@ -31,7 +31,7 @@
  *     the finish. §9.9 "The Quiet Handoff" — the infrastructure runs fine
  *     without you, the `Days Since Last Outage` counter "keeps going up after
  *     the credits start … the best ending available for a game with this
- *     thesis" (hg:35159-35162). Its evidence rides the records facet EXACTLY as
+ *     thesis" (hg:35167-35170). Its evidence rides the records facet EXACTLY as
  *     disk holds it: `worstOutageSeconds` / `longestPerfectStreak` are the two
  *     outage/streak facts the save owns — there is no separate "days since last
  *     outage" number to read, so the readout quotes what exists rather than
@@ -133,21 +133,21 @@ export interface CampaignEnding {
 const SELL_ACCEPTED_SHAPE = /^win:sell-accepted-above:/;
 
 const ENDING_TITLES: Record<CampaignEndingKind, string> = Object.freeze({
-  // hg:35188 "Failure is Narrated, Not Punished" — the obituary page.
+  // hg:35196 "Failure is Narrated, Not Punished" — the obituary page.
   obituary: "The Obituary",
-  // hg:35157 "The Quiet Handoff".
+  // hg:35165 "The Quiet Handoff".
   "quiet-handoff": "The Quiet Handoff",
-  // hg:4020 "Sell the Company" — the run-up + the Due Diligence close.
+  // hg:4022 "Sell the Company" — the run-up + the Due Diligence close.
   exit: "The Exit",
 });
 
 function selectKind(terminal: CampaignChapterRecord): CampaignEndingKind {
-  // 1. obituary (hg:35185) — the FINAL beat is a loss. Earlier mid-chain
+  // 1. obituary (hg:35193) — the FINAL beat is a loss. Earlier mid-chain
   //    losses do not select: they birth an heir (chain.ts) and the tour walks on.
   if (terminal.outcome === "lost") return "obituary";
-  // 2. exit (hg:4020) — the FINAL beat WON on the sell-accepted verdict.
+  // 2. exit (hg:4022) — the FINAL beat WON on the sell-accepted verdict.
   if (terminal.outcome === "won" && SELL_ACCEPTED_SHAPE.test(terminal.stopReason)) return "exit";
-  // 3. quiet-handoff (hg:35157) — the company stood at the end: the tour
+  // 3. quiet-handoff (hg:35165) — the company stood at the end: the tour
   //    finished won, or the clock ran out (timeout) with no dissolution, no sale.
   return "quiet-handoff";
 }
@@ -155,13 +155,13 @@ function selectKind(terminal: CampaignChapterRecord): CampaignEndingKind {
 function epitaphFor(kind: CampaignEndingKind, terminal: CampaignChapterRecord): string {
   switch (kind) {
     case "obituary":
-      // hg:35188 — the real cause, straight from the simulation, verbatim.
+      // hg:35196 — the real cause, straight from the simulation, verbatim.
       return `The company did not survive its last chapter. Cause, as the simulation recorded it: ${terminal.stopReason}.`;
     case "exit":
-      // hg:4021-4023 — dry, no number: the verdict is the ending, not a valuation.
+      // hg:4023-4025 — dry, no number: the verdict is the ending, not a valuation.
       return "The company was sold. The run-up closed, and every boring decision the game taught held.";
     case "quiet-handoff":
-      // hg:35160-35162 — the board runs fine without you.
+      // hg:35168-35170 — the board runs fine without you.
       return "You handed the company to your team and left. The board keeps its uptime; Days Since Last Outage keeps counting after the credits start.";
   }
 }
@@ -249,7 +249,7 @@ function readEvidence(
  * chapter is validated against its OWN observed close, never the reverse —
  * endings are observed, not authored:
  *  - LOST close                     → narration, not a lie: "the company died
- *    before it sold" (§9.9 failure-is-narrated, hg:35185). The heir rises via
+ *    before it sold" (§9.9 failure-is-narrated, hg:35193). The heir rises via
  *    the ordinary death succession (null slice). Kind selection UNCHANGED.
  *  - WON with the sell-accepted grammar → truth. Terminal pays the `exit`
  *    ending (declaredExitKind + exitObserved:true); a MID-CHAIN paid close

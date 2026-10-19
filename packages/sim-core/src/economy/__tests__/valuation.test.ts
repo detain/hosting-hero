@@ -70,7 +70,7 @@ describe("contractRemainingTerm (whole months, floor, never negative)", () => {
 
 /* ═══════════════════════════ the WARCT family ══════════════════════════════ */
 
-describe("warctMonths (hg:24957 weighted average remaining contract term)", () => {
+describe("warctMonths (hg:24961 weighted average remaining contract term)", () => {
   it("equal-MRC 12 + 24 months averages to 18", () => {
     expect(warctMonths([row(M100, 12), row(M100, 24)])).toBe(18n);
   });
@@ -95,7 +95,7 @@ describe("warctMonths (hg:24957 weighted average remaining contract term)", () =
   });
 });
 
-describe("contractedRevenueShareBps (hg:24958 fraction of MRR with >12 months left)", () => {
+describe("contractedRevenueShareBps (hg:24962 fraction of MRR with >12 months left)", () => {
   it("CONTRACTED_REVENUE_MIN_MONTHS is the doc's twelve, named not dialed", () => {
     expect(CONTRACTED_REVENUE_MIN_MONTHS).toBe(12);
   });
@@ -114,7 +114,7 @@ describe("contractedRevenueShareBps (hg:24958 fraction of MRR with >12 months le
 
 /* ═══════════════════════ the closed-kind band table ════════════════════════ */
 
-describe("VALUATION_MULTIPLE_BANDS_BPS (hg:24377-24379 per-line bases)", () => {
+describe("VALUATION_MULTIPLE_BANDS_BPS (hg:24381-24383 per-line bases)", () => {
   it("keyed EXACTLY by the elasticity kinds (closed set, no extras, no drift)", () => {
     expect(Object.keys(VALUATION_MULTIPLE_BANDS_BPS)).toEqual([...PRICE_KEY_KINDS]);
   });
@@ -147,11 +147,11 @@ describe("VALUATION_MULTIPLE_BANDS_BPS (hg:24377-24379 per-line bases)", () => {
 
 describe("tenantWholeLeaseValueMicroUsd (the per-tenant lease annuity read)", () => {
   const base = { mrcMicroUsd: asMoney(M100), priceKeyKind: "plan" as const, trustBps: null as bigint | null };
-  it("month-to-month prices at the band FLOOR (10x monthly revenue — hg:24377 lower bound)", () => {
+  it("month-to-month prices at the band FLOOR (10x monthly revenue — hg:24381 lower bound)", () => {
     expect(tenantWholeLeaseValueMicroUsd({ ...base, remainingMonths: 0 })).toBe(asMoney(1_000_000_000n));
     expect(tenantWholeLeaseValueMicroUsd({ ...base, remainingMonths: 3 })).toBe(asMoney(1_000_000_000n));
   });
-  it("the doc's own witness: a five-year deal is worth ~15% more (hg:1671) — slope 3%/yr whole years", () => {
+  it("the doc's own witness: a five-year deal is worth ~15% more (hg:1673) — slope 3%/yr whole years", () => {
     expect(tenantWholeLeaseValueMicroUsd({ ...base, remainingMonths: 60 })).toBe(asMoney(1_150_000_000n));
     expect(tenantWholeLeaseValueMicroUsd({ ...base, remainingMonths: 71 })).toBe(asMoney(1_150_000_000n)); // floor(71/12)=5
     expect(tenantWholeLeaseValueMicroUsd({ ...base, remainingMonths: 72 })).toBe(asMoney(1_180_000_000n));
@@ -236,7 +236,7 @@ describe("exitCashSliceMicroUsd (headline x diligence product x kind)", () => {
     expect(res.cashSliceMicroUsd).toBe(HEAD);
     expect(res.adjustments).toEqual([{ basis: "exit-kind", factorBps: 10_000n }]);
   });
-  it("the slice is NEVER above the headline (hg:5617: proceeds, not headline price)", () => {
+  it("the slice is NEVER above the headline (hg:5621: proceeds, not headline price)", () => {
     const res = exitCashSliceMicroUsd({
       ...clean,
       warctCoverageBps: 12_000n, // over-coverage buys NO bonus (clamped)
@@ -245,12 +245,12 @@ describe("exitCashSliceMicroUsd (headline x diligence product x kind)", () => {
     expect(res.cashSliceMicroUsd).toBe(HEAD);
     expect(res.adjustments.length).toBe(1); // no diligence legs booked at all
   });
-  it("churn 500 bps knocks halfAway(500 x 200 / 10_000) = 10 bps (hg:24365 churn is a modifier)", () => {
+  it("churn 500 bps knocks halfAway(500 x 200 / 10_000) = 10 bps (hg:24369 churn is a modifier)", () => {
     const res = exitCashSliceMicroUsd({ ...clean, churnBps: 500n });
     expect(res.adjustments).toContainEqual({ basis: "churn", factorBps: 9_990n });
     expect(res.cashSliceMicroUsd).toBe(asMoney(999_000_000n));
   });
-  it("concentration is STRICTLY above the threshold: 4,000 books no hit, 4,001 costs 25% (hg:24436 exceeds, hg:24393 20-30%)", () => {
+  it("concentration is STRICTLY above the threshold: 4,000 books no hit, 4,001 costs 25% (hg:24440 exceeds, hg:24397 20-30%)", () => {
     expect(exitCashSliceMicroUsd({ ...clean, concentrationBps: 4_000n }).adjustments.length).toBe(1);
     const hit = exitCashSliceMicroUsd({ ...clean, concentrationBps: 4_001n });
     expect(hit.adjustments).toContainEqual({ basis: "concentration", factorBps: 7_500n });
@@ -265,7 +265,7 @@ describe("exitCashSliceMicroUsd (headline x diligence product x kind)", () => {
     expect(res.adjustments).toContainEqual({ basis: "reputation", factorBps: 8_000n });
     expect(res.cashSliceMicroUsd).toBe(asMoney(800_000_000n));
   });
-  it("the split floor law: diligence alone cannot take more than half (hg:24415 escrow), pinned on a fully-toxic book", () => {
+  it("the split floor law: diligence alone cannot take more than half (hg:24419 escrow), pinned on a fully-toxic book", () => {
     const res = exitCashSliceMicroUsd({
       ...clean,
       churnBps: 10_000n,
@@ -284,7 +284,7 @@ describe("exitCashSliceMicroUsd (headline x diligence product x kind)", () => {
     expect(res.adjustments.map((a) => a.factorBps)).toEqual([9_800n, 10_000n, 8_000n, 5_000n, 9_950n]);
     expect(res.cashSliceMicroUsd).toBe(asMoney(500_000_000n)); // product 3_901 floored to sliceFloorBps 5_000
   });
-  it("wind-down lands on EXACT zero — the floor guards diligence, the deal shape may erase (hg:4512)", () => {
+  it("wind-down lands on EXACT zero — the floor guards diligence, the deal shape may erase (hg:4514)", () => {
     const res = exitCashSliceMicroUsd({
       ...clean,
       churnBps: 10_000n,
@@ -295,7 +295,7 @@ describe("exitCashSliceMicroUsd (headline x diligence product x kind)", () => {
     expect(res.adjustments.map((a) => a.basis)).toEqual(["churn", "exit-kind", "reputation"]);
     expect(res.adjustments.find((a) => a.basis === "exit-kind")?.factorBps).toBe(0n);
   });
-  it("the seven kinds order the doc's cash profiles (hg:4499-4512)", () => {
+  it("the seven kinds order the doc's cash profiles (hg:4501-4514)", () => {
     const cashFor = (kind: ValuationExitKind): MoneyUnit =>
       exitCashSliceMicroUsd({ ...clean, exitKind: kind }).cashSliceMicroUsd;
     expect(cashFor("ipo")).toBe(HEAD);
@@ -467,7 +467,7 @@ describe("purity (zero rolls, fold byte-identity, PROVISIONAL census)", () => {
     expect(block).not.toMatch(/RATIFIED/);
   });
 
-  it("the exit vocabulary is the doc's seven, in doc order (hg:4501-4512)", () => {
+  it("the exit vocabulary is the doc's seven, in doc order (hg:4503-4514)", () => {
     expect(VALUATION_EXIT_KINDS).toEqual([
       "ipo",
       "strategic-acquisition",

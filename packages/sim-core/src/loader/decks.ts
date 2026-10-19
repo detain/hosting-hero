@@ -47,7 +47,10 @@
  * `l-g7m-card|… → canonicalDigest`, and the door's file-local
  * `cardFingerprint` folded by `ruleBookHash` (intent-door.ts M3 — whole-book
  * identity, ␀-joined fixed-order walk omitting the optional for/unless/else
- * arms). deckCardHash is the content-deck successor: the SAME kernel family
+ * arms), and versus ADOPTS deckCardHash for its doctrine binding (owner
+ * ruling 2026-10-19; witness versus/__tests__/doctrineDecks.test.ts), so the
+ * only hashes that ever bind a content deck are this function's.
+ * deckCardHash is the content-deck successor: the SAME kernel family
  * (`fnv1a64OverCodePoints`, no avalanche — a deterministic fingerprint, not
  * a cryptographic digest) and the SAME grammar furniture (␀/␁ separators,
  * the "\u2205" null sentinel, decimal bigint strings), but a COMPLETE

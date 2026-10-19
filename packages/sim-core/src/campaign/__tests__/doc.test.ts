@@ -116,7 +116,7 @@ describe("parseCampaignDoc — the §1.6 exit declaration (L-V2, money-at-the-en
     // economy out of doc.ts, so the mirror is pinned here instead of typed):
     // two vocabularies that drift would make the declared kind reach
     // exitCashSliceMicroUsd as a foreign word. Order included — the docblock
-    // cites hg:4501-4512 IN DOC ORDER on both sides.
+    // cites hg:4503-4514 IN DOC ORDER on both sides.
     expect([...CAMPAIGN_EXIT_KINDS]).toEqual([...VALUATION_EXIT_KINDS]);
     expect(CAMPAIGN_EXIT_KINDS).toHaveLength(7);
     expect(Object.isFrozen(CAMPAIGN_EXIT_KINDS)).toBe(true);

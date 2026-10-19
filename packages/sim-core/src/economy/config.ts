@@ -530,53 +530,53 @@ export const DEFAULT_SELL_CONFIG: SellConfig = Object.freeze({
  *  magnitude is a house PROVISIONAL taste (ADR-0016 #10 — ratify-on-playtest). */
 export interface ValuationConfig {
   /** Per-line multiple bands, bps of 1.0× of the tenant's own MONTHLY
-   *  revenue. hg:24377 "Shared / VPS book | EBITDA multiple, or
+   *  revenue. hg:24381 "Shared / VPS book | EBITDA multiple, or
    *  monthly-revenue multiple | 3–6× EBITDA / 10–18× monthly revenue" ·
-   *  hg:24379 "Colocation | NOI and cap rate, like real estate | 6–9% cap
+   *  hg:24383 "Colocation | NOI and cap rate, like real estate | 6–9% cap
    *  rate (≈11–16× NOI)" — the contract-class line is the NOI floor-map
    *  honest-partial (the engine has no expense truth; see the band note in
    *  economy/valuation.ts). */
   readonly bandsBps: Readonly<Record<PriceTargetKind, MultipleBandBps>>;
   /** Price sensitivity of the relationship meter (economy/relationship.ts,
-   *  ±1000 bps signed). hg:1674 "tenant credit quality affects your
+   *  ±1000 bps signed). hg:1676 "tenant credit quality affects your
    *  building's valuation". */
   readonly trustLeverageBps: bigint;
-  /** hg:1670-1671 "The escalator — 3%/yr baked into the lease. A five-year
+  /** hg:1672-1673 "The escalator — 3%/yr baked into the lease. A five-year
    *  deal is worth ~15% more than it looks" → 300 bps per WHOLE remaining
    *  year, capped at the band top. */
   readonly termSlopeBpsPerYear: bigint;
-  /** hg:24436-24437 "If one customer or one business line exceeds 40% of
+  /** hg:24440-24437 "If one customer or one business line exceeds 40% of
    *  revenue, valuation takes a hit" — STRICTLY above (the doc says
    *  "exceeds"). */
   readonly concentrationThresholdBps: bigint;
   /** Magnitude of that hit. The only number the doc attaches to
-   *  concentration is hg:24393-24394 ">25% in one customer typically costs
+   *  concentration is hg:24397-24398 ">25% in one customer typically costs
    *  20–30% of the multiple" → mid-band 25%. */
   readonly concentrationPenaltyBps: bigint;
-  /** Per-bps-of-monthly-churn knock. hg:24365-24366 lists "churn" among the
+  /** Per-bps-of-monthly-churn knock. hg:24369-24366 lists "churn" among the
    *  modifiers of the MRR/ARR multiple but gives no magnitude → taste. */
   readonly churnDiligenceFactorBps: bigint;
   /** Per-bps-of-lifetime-written-off knock — the quality-of-earnings leg,
-   *  hg:24395-24396 "quality of earnings (are your numbers reconcilable?
+   *  hg:24399-24400 "quality of earnings (are your numbers reconcilable?
    *  unreconcilable books cost turns)". Written-off revenue is the books'
    *  own reconcilability stain, so the factor runs gentler than churn. */
   readonly writtenOffDiligenceFactorBps: bigint;
   /** Leverage of the contract-term-coverage reading (gap from full buys the
-   *  discount linearly). hg:24894-24896 "contract-term coverage — what
+   *  discount linearly). hg:24898-24900 "contract-term coverage — what
    *  fraction of your hardware's financing term is covered by contracted
-   *  revenue"; hg:24392 WARCT is "the single biggest multiple driver" →
+   *  revenue"; hg:24396 WARCT is "the single biggest multiple driver" →
    *  the strongest diligence leg in the book. */
   readonly termCoverageLeverageBps: bigint;
-  /** Leverage of (1 − company reputation). hg:24365 "reputation" is in the
+  /** Leverage of (1 − company reputation). hg:24369 "reputation" is in the
    *  modifier list; no magnitude given → taste. */
   readonly reputationLeverageBps: bigint;
   /** Floor on the diligence product BEFORE the exit-kind factor multiplies
    *  (the split floor law: economy/valuation.ts exitCashSliceMicroUsd
-   *  docblock). hg:24415 "10–20% of purchase price held in escrow" + the
-   *  hg:24418 62%-received lesson: findings shave price, they do not
+   *  docblock). hg:24419 "10–20% of purchase price held in escrow" + the
+   *  hg:24422 62%-received lesson: findings shave price, they do not
    *  collectively erase it — the DEAL SHAPE (exit kind) may. */
   readonly sliceFloorBps: bigint;
-  /** §1.6 exit profiles, hg:4499-4512 — seven endings "each with a
+  /** §1.6 exit profiles, hg:4501-4514 — seven endings "each with a
    *  different meta-currency profile and epilogue". wind-down carries 0:
    *  "sell the book, sell the hardware, pay the creditors, keep what's
    *  left" — no purchase price exists to slice; the CAMPAIGN parse wall
@@ -592,27 +592,27 @@ export const DEFAULT_VALUATION_CONFIG: ValuationConfig = Object.freeze({
    * MAGNITUDES await a playtest. The leaf that reads this book casts zero
    * dice (zero-rolls roster pin in economy/__tests__). */
   bandsBps: Object.freeze({
-    plan: Object.freeze({ floorBps: 100_000n, topBps: 180_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24377 shared/VPS "10–18× monthly revenue"
-    "contract-class": Object.freeze({ floorBps: 100_000n, topBps: 160_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24379 colo "≈11–16× NOI" floor-mapped to revenue basis (NOI needs expense truth the engine lacks)
-    sku: Object.freeze({ floorBps: 100_000n, topBps: 180_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24890 reserved-vs-spot row gives NO multiple for on-demand lines; spot-eviction discount = named-future leg
+    plan: Object.freeze({ floorBps: 100_000n, topBps: 180_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24381 shared/VPS "10–18× monthly revenue"
+    "contract-class": Object.freeze({ floorBps: 100_000n, topBps: 160_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24383 colo "≈11–16× NOI" floor-mapped to revenue basis (NOI needs expense truth the engine lacks)
+    sku: Object.freeze({ floorBps: 100_000n, topBps: 180_000n }), // PROVISIONAL (ADR-0016 #10) — hg:24894 reserved-vs-spot row gives NO multiple for on-demand lines; spot-eviction discount = named-future leg
   }),
-  trustLeverageBps: 500n, // PROVISIONAL (ADR-0016 #10) — ±1000 bps trust ⇒ ∓5% price; hg:1674 credit-quality-prices-the-building
-  termSlopeBpsPerYear: 300n, // PROVISIONAL (ADR-0016 #10) — hg:1670-1671 "A five-year deal is worth ~15% more than it looks" (3%/yr)
-  concentrationThresholdBps: 4_000n, // PROVISIONAL (ADR-0016 #10) — hg:24436 "exceeds 40% of revenue"; law is STRICT (>), 4000 exactly books no hit
-  concentrationPenaltyBps: 2_500n, // PROVISIONAL (ADR-0016 #10) — hg:24393-24394 "costs 20–30% of the multiple" mid-band
-  churnDiligenceFactorBps: 200n, // PROVISIONAL (ADR-0016 #10) — hg:24365 churn is a modifier, magnitude ungiven → taste
-  writtenOffDiligenceFactorBps: 50n, // PROVISIONAL (ADR-0016 #10) — hg:24395-24396 quality-of-earnings leg, gentler than churn
-  termCoverageLeverageBps: 5_000n, // PROVISIONAL (ADR-0016 #10) — hg:24894-24896 term coverage; hg:24392 WARCT "single biggest multiple driver"
-  reputationLeverageBps: 2_000n, // PROVISIONAL (ADR-0016 #10) — hg:24365 reputation modifier, magnitude ungiven → taste
-  sliceFloorBps: 5_000n, // PROVISIONAL (ADR-0016 #10) — diligence alone never takes more than half; hg:24415-24418 escrow lesson
+  trustLeverageBps: 500n, // PROVISIONAL (ADR-0016 #10) — ±1000 bps trust ⇒ ∓5% price; hg:1676 credit-quality-prices-the-building
+  termSlopeBpsPerYear: 300n, // PROVISIONAL (ADR-0016 #10) — hg:1672-1673 "A five-year deal is worth ~15% more than it looks" (3%/yr)
+  concentrationThresholdBps: 4_000n, // PROVISIONAL (ADR-0016 #10) — hg:24440 "exceeds 40% of revenue"; law is STRICT (>), 4000 exactly books no hit
+  concentrationPenaltyBps: 2_500n, // PROVISIONAL (ADR-0016 #10) — hg:24397-24398 "costs 20–30% of the multiple" mid-band
+  churnDiligenceFactorBps: 200n, // PROVISIONAL (ADR-0016 #10) — hg:24369 churn is a modifier, magnitude ungiven → taste
+  writtenOffDiligenceFactorBps: 50n, // PROVISIONAL (ADR-0016 #10) — hg:24399-24400 quality-of-earnings leg, gentler than churn
+  termCoverageLeverageBps: 5_000n, // PROVISIONAL (ADR-0016 #10) — hg:24898-24900 term coverage; hg:24396 WARCT "single biggest multiple driver"
+  reputationLeverageBps: 2_000n, // PROVISIONAL (ADR-0016 #10) — hg:24369 reputation modifier, magnitude ungiven → taste
+  sliceFloorBps: 5_000n, // PROVISIONAL (ADR-0016 #10) — diligence alone never takes more than half; hg:24419-24422 escrow lesson
   exitKindFactorBps: Object.freeze({
-    "ipo": 10_000n, // PROVISIONAL (ADR-0016 #10) — hg:4501-4502 IPO: public market sets the price, "most currency" (currency quality, not cash %, is the meta-axis)
-    "strategic-acquisition": 10_000n, // PROVISIONAL (ADR-0016 #10) — hg:4503-4504 "highest multiple"; synergies live IN the headline, slice not discounted twice
-    "pe-platform": 9_000n, // PROVISIONAL (ADR-0016 #10) — hg:4505-4506 platform deal: disciplined price, "second bite" thesis waits elsewhere
-    "pe-bolt-on": 8_000n, // PROVISIONAL (ADR-0016 #10) — hg:4507-4508 "lower multiple ... high churn" — folded into the buyer's model, cash follows
-    "asset-sale": 7_000n, // PROVISIONAL (ADR-0016 #10) — hg:4509-4510 "you keep the liabilities" — liabilities-shedding asymmetry = named-future leg
-    "management-buyout": 5_000n, // PROVISIONAL (ADR-0016 #10) — hg:4511 "lowest cash" (seller paper, not proceeds)
-    "wind-down": 0n, // PROVISIONAL (ADR-0016 #10) — hg:4512 no purchase price exists to slice; campaign parse wall refuses the kind BEFORE this call (documented division of labor)
+    "ipo": 10_000n, // PROVISIONAL (ADR-0016 #10) — hg:4503-4504 IPO: public market sets the price, "most currency" (currency quality, not cash %, is the meta-axis)
+    "strategic-acquisition": 10_000n, // PROVISIONAL (ADR-0016 #10) — hg:4509-4510 "highest multiple"; synergies live IN the headline, slice not discounted twice
+    "pe-platform": 9_000n, // PROVISIONAL (ADR-0016 #10) — hg:4509-4510 platform deal: disciplined price, "second bite" thesis waits elsewhere
+    "pe-bolt-on": 8_000n, // PROVISIONAL (ADR-0016 #10) — hg:4509-4510 "lower multiple ... high churn" — folded into the buyer's model, cash follows
+    "asset-sale": 7_000n, // PROVISIONAL (ADR-0016 #10) — hg:4513-4512 "you keep the liabilities" — liabilities-shedding asymmetry = named-future leg
+    "management-buyout": 5_000n, // PROVISIONAL (ADR-0016 #10) — hg:4513 "lowest cash" (seller paper, not proceeds)
+    "wind-down": 0n, // PROVISIONAL (ADR-0016 #10) — hg:4514 no purchase price exists to slice; campaign parse wall refuses the kind BEFORE this call (documented division of labor)
   }),
 });
 

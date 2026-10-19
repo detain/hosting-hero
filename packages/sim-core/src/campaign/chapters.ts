@@ -154,7 +154,7 @@ const APPRENTICE_DESK_SHIFT_WIRE = {
   brief:
     "You are the apprentice: the runbook says you may only write rules, and the door believes it. Every build thought dies at the tape — so answer the frightened queue with your hands where the seat allows them, and let the senior's board stand.",
   specRef: "§1.5 The Apprentice's Desk (campaign-authored perspective level)",
-  specLine: 1478,
+  specLine: 1480,
   perspective: { id: "apprentice" },
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
@@ -202,7 +202,7 @@ const SUPPORT_DESK_VIGIL_WIRE = {
   brief:
     "From the support desk the board is a rumour and the price list is somebody else's religion. All you own is the queue — so work it to silence, and let every build-and-price temptation break on the seat's tape where the campaign can see it.",
   specRef: "§1.5 The Support Desk Vigil (campaign-authored perspective level)",
-  specLine: 1212,
+  specLine: 1214,
   perspective: { id: "support-queue" },
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
@@ -269,7 +269,7 @@ const HARDEST_LESSON_WIRE = {
   brief:
     "The pilot account signs at zero, the books stay honest, and the payroll rail never blinks: eighty-eight minutes of burn against one bridge-sized bankroll. Revenue is not a promise; it is a clause. Reach the ninetieth minute — the ledger will tell you what you signed.",
   specRef: "§1.5 The Hardest Lesson (campaign-authored succession level)",
-  specLine: 35154,
+  specLine: 35162,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -311,7 +311,7 @@ const NOC_ONCALL_DESK_WIRE = {
   brief:
     "Six things break in twenty minutes and the building stays dark: no boards get built from a NOC chair. Work the queue, route what you must — and learn what a phone costs when the attention pool is already spoken for.",
   specRef: "§1.5 The On-Call Desk (campaign-authored perspective level)",
-  specLine: 1267,
+  specLine: 1269,
   perspective: { id: "noc-shift" },
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
@@ -385,7 +385,7 @@ const NOC_PREVENTION_SHIFT_WIRE = {
   brief:
     "The phone rings again, and this time the desk is the prevention: the same taxed NOC chair, the same taped build hands, a queue that remembers last quarter page. Escalate what you must, and let prevention be the boring win it was always supposed to be.",
   specRef: "§1.5 The Prevention Shift (campaign-authored perspective level — the §1.2 noc-shift seat worn a second time)",
-  specLine: 1274,
+  specLine: 1276,
   perspective: { id: "noc-shift" },
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
@@ -460,7 +460,7 @@ const THE_CERT_CLIFF_WIRE = {
   brief:
     "The wildcard expired and every visitor now sees the scary warning: four certificates must come off the reissue calendar before the board read, while the traffic scar bleeds, craters, and demands the reopen. Schedule the race and close the act on prevention measured in churn.",
   specRef: "§1.5 The Certificate Expired (campaign-authored Act II level — the scheduled reissue race)",
-  specLine: 3275,
+  specLine: 3277,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 400, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -516,7 +516,7 @@ const METASTABLE_WINDOW_WIRE = {
   brief:
     "Act III opens where Act II's prevention ended: a surge that would cascade if the book went quiet. The eight-slot edge hums, a three-minute storm breaks over it, and the degraded wall waits for one unlucky backlog. Survive the quarter-hour after the ladder.",
   specRef: "§1.5 Metastable (campaign-authored Act III homage — the §1.6 floor clause added)",
-  specLine: 4096,
+  specLine: 4098,
   board: {
     nodes: [{ id: "web-1", kind: "shared-web", slots: 8, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -559,7 +559,7 @@ const QUARTER_THAT_RAN_ITSELF_WIRE = {
   brief:
     "The automation you carried here is the whole level: a green three-node board, a monthly book that signs itself, and traffic that never asks for you. The ratchet audit is no test of hands — the ideal play is to do nothing and watch, and the ledger grades exactly that.",
   specRef: "§1.5 The Ratchet Audit (campaign-authored Act III level — §1.11 :5351)",
-  specLine: 5355,
+  specLine: 5359,
   board: {
     nodes: [
       { id: "qr-web", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 },
@@ -610,7 +610,7 @@ const FLOOR_AND_AISLE_WIRE = {
   brief:
     "Two datacenters, one company, and you are the hands in the aisle. Place and cable what the portfolio decided in halls you will never price or phone: build the row that wins the beat, and let one swallowed reach for the desk phone stand as the year's performance review.",
   specRef: "§1.5 The Floor and the Aisle (campaign-authored perspective level)",
-  specLine: 1215,
+  specLine: 1217,
   perspective: { id: "datacenter-tech" },
   board: {
     nodes: [
@@ -679,7 +679,7 @@ const GROWTH_THAT_SHRANK_WIRE = {
   brief:
     "Portfolio work at the scale desk: book two capacity pads, then reclaim them before the forecast you never read becomes a graveyard. Growth is a booking, shrink is a tombstone, and the beat rides the door's own arithmetic between them.",
   specRef: "§1.5 The Growth That Shrank Itself (campaign-authored Act III level — §1.9 :5128 portfolio)",
-  specLine: 5128,
+  specLine: 5132,
   board: {
     nodes: [
       { id: "gr-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 },
@@ -729,7 +729,7 @@ const LONG_GRADIENT_WIRE = {
   brief:
     "No single wave, just the season: an attack baseline that climbs every hour for four hours past a ten-slot edge. The gradient that stays polite ends the clock with the node out of the degraded wall; the bounces ledger is the season's whole weather report. Endure the curve.",
   specRef: "§1.5 DDoS Season (campaign-authored Act III homage — the §1.6 floor clause added)",
-  specLine: 3994,
+  specLine: 3996,
   board: {
     nodes: [{ id: "edge-1", kind: "shared-web", slots: 10, serviceTimeUs: 20_000_000 }],
     edges: [],
@@ -787,7 +787,7 @@ const LONG_SALE_WIRE = {
   brief:
     "The run-up is not a board fight — it is a price negotiation with the market. Two keyed accounts anchor the book; four offers at sixty cents on the anchor ask the dice what the ledger already knows. Land one acceptance inside the hour and the exit opens.",
   specRef: "§1.5 Sell the Company — the run-up (campaign-authored Act III level)",
-  specLine: 4019,
+  specLine: 4021,
   board: {
     nodes: [{ id: "ls-1", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -832,7 +832,7 @@ const INSTITUTION_WATCH_WIRE = {
   brief:
     "Two hours of genuine blogs, then the miners arrive: the free tier turns the edge queue into a census of intentions. Keep the abuse ceiling down without strangling the organic stream that made the tier worth running — the families are the read.",
   specRef: "§1.5 Free Tier Flood (campaign-authored Act III homage — the §1.6 floor clause added)",
-  specLine: 3590,
+  specLine: 3592,
   board: {
     nodes: [{ id: "edge-1", kind: "shared-web", slots: 60, serviceTimeUs: 2_000_000 }],
     edges: [],
@@ -880,7 +880,7 @@ const RED_TEAM_FRIDAY_WIRE = {
   brief:
     "Same hands, same door, inverted objective: you are Friday's attacker with the runbook on your side. Two slots against eight visitors a minute, and a ledger grading bounces as the honest scorecard. Break the target by twenty-five and the red team wins.",
   specRef: "§1.5 Red Team Friday (campaign-authored perspective level — §1.2 :1217)",
-  specLine: 1217,
+  specLine: 1219,
   perspective: { id: "red-team-friday" },
   board: {
     nodes: [{ id: "target-1", kind: "shared-web", slots: 2, serviceTimeUs: 20_000_000 }],
@@ -971,9 +971,9 @@ const PROLOGUE_WIRE = {
 
 /** Prologue beat ledger (§1.9 archetype + hosting_game.md anchor per chapter). */
 export const PROLOGUE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
-  "p-1-triage-desk": { archetype: "Hold-Without-Hands", specLine: 3673 },
-  "p-2-borrowed-thunder": { archetype: "Reach-State", specLine: 4067 },
-  "p-3-handover-queue": { archetype: "Schedule", specLine: 3896 },
+  "p-1-triage-desk": { archetype: "Hold-Without-Hands", specLine: 3675 },
+  "p-2-borrowed-thunder": { archetype: "Reach-State", specLine: 4069 },
+  "p-3-handover-queue": { archetype: "Schedule", specLine: 3898 },
 });
 
 /** The parsed Prologue. parse-at-module-init = fail-loud: any authoring drift
@@ -1032,14 +1032,14 @@ const ACT_ONE_WIRE = {
 
 /** Act I beat ledger. */
 export const ACT_ONE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
-  "a-1-launch-day": { archetype: "Build-to-Spec", specLine: 3161 },
-  "a-2-apprentice-desk": { archetype: "Escort", specLine: 1478, perspectiveId: "apprentice" },
-  "a-3-angry-whale": { archetype: "Convert", specLine: 3424 },
-  "a-4-deadbeat-quarter": { archetype: "Inherit", specLine: 3806 },
-  "a-5-price-hike": { archetype: "Negotiate", specLine: 3818 },
-  "a-6-quiet-month": { archetype: "Endure", specLine: 3479 },
-  "a-7-rfo": { archetype: "Diagnose", specLine: 4054 },
-  "a-8-support-vigil": { archetype: "Hold-Without-Hands", specLine: 1212, perspectiveId: "support-queue" },
+  "a-1-launch-day": { archetype: "Build-to-Spec", specLine: 3163 },
+  "a-2-apprentice-desk": { archetype: "Escort", specLine: 1480, perspectiveId: "apprentice" },
+  "a-3-angry-whale": { archetype: "Convert", specLine: 3426 },
+  "a-4-deadbeat-quarter": { archetype: "Inherit", specLine: 3808 },
+  "a-5-price-hike": { archetype: "Negotiate", specLine: 3820 },
+  "a-6-quiet-month": { archetype: "Endure", specLine: 3481 },
+  "a-7-rfo": { archetype: "Diagnose", specLine: 4056 },
+  "a-8-support-vigil": { archetype: "Hold-Without-Hands", specLine: 1214, perspectiveId: "support-queue" },
 });
 
 /** The parsed Act One. */
@@ -1182,13 +1182,13 @@ export const ACT_TWO_THIN_RIDE_EXCEPTIONS: Readonly<Record<string, string>> = Ob
 /** Act II beat ledger. specLines ride each doc's OWN citation (§1.5 heading
  *  line for re-rides; the authored levels cite their §9.9/§1.2 anchors). */
 export const ACT_TWO_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
-  "b-1-money-works": { archetype: "Convert", specLine: 3855, tier: 3 },
-  "b-2-slow-week": { archetype: "Endure", specLine: 4045, tier: 3 },
-  "b-3-skeleton-weekend": { archetype: "Hold-Without-Hands", specLine: 3662, tier: 3 },
-  "b-4-hardest-lesson": { archetype: "Reach-State", specLine: 35154, tier: 3 },
-  "b-5-fogged-board": { archetype: "Inherit", specLine: 3769, tier: 4 },
-  "b-6-oncall-desk": { archetype: "Hold-Without-Hands", specLine: 1267, tier: 4, perspectiveId: "noc-shift" },
-  "b-7-chargeback-shift": { archetype: "Diagnose", specLine: 3737, tier: 4 },
+  "b-1-money-works": { archetype: "Convert", specLine: 3857, tier: 3 },
+  "b-2-slow-week": { archetype: "Endure", specLine: 4047, tier: 3 },
+  "b-3-skeleton-weekend": { archetype: "Hold-Without-Hands", specLine: 3664, tier: 3 },
+  "b-4-hardest-lesson": { archetype: "Reach-State", specLine: 35162, tier: 3 },
+  "b-5-fogged-board": { archetype: "Inherit", specLine: 3771, tier: 4 },
+  "b-6-oncall-desk": { archetype: "Hold-Without-Hands", specLine: 1269, tier: 4, perspectiveId: "noc-shift" },
+  "b-7-chargeback-shift": { archetype: "Diagnose", specLine: 3739, tier: 4 },
   // wave-27 full-12 beats. b-8/b-9/b-10 re-ride shipped registry docs and
   // cite THEIR OWN specLines (the meta-to-doc equality law); each opens above
   // the bridge and rides a NAMED thin-ride exception (see the exception rows
@@ -1197,11 +1197,11 @@ export const ACT_TWO_META: Readonly<Record<string, ChapterMeta>> = Object.freeze
   // narratively earned: prevention is the same desk after the lessons; the
   // 27-beat tour never reused a seat. b-12 files Schedule against its
   // heading Reach-State label — the c-7 precedent, disclosed in its docblock.
-  "b-8-collections-week": { archetype: "Endure", specLine: 3794, tier: 4 },
-  "b-9-post-breach": { archetype: "Diagnose", specLine: 3229, tier: 4 },
-  "b-10-sev-0": { archetype: "Reach-State", specLine: 3256, tier: 4 },
-  "b-11-prevention-shift": { archetype: "Hold-Without-Hands", specLine: 1274, tier: 4, perspectiveId: "noc-shift" },
-  "b-12-cert-cliff": { archetype: "Schedule", specLine: 3275, tier: 4 },
+  "b-8-collections-week": { archetype: "Endure", specLine: 3796, tier: 4 },
+  "b-9-post-breach": { archetype: "Diagnose", specLine: 3231, tier: 4 },
+  "b-10-sev-0": { archetype: "Reach-State", specLine: 3258, tier: 4 },
+  "b-11-prevention-shift": { archetype: "Hold-Without-Hands", specLine: 1276, tier: 4, perspectiveId: "noc-shift" },
+  "b-12-cert-cliff": { archetype: "Schedule", specLine: 3277, tier: 4 },
 });
 
 /** The parsed Act Two. */
@@ -1320,15 +1320,15 @@ const ACT_THREE_WIRE = {
  *  re-ride equals the registry doc's citation), seats cite their §1.2 roster
  *  lines, bespoke beats cite their law sentences. */
 export const ACT_THREE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
-  "c-1-storm-window": { archetype: "Convert", specLine: 4096, tier: 5 },
-  "c-2-quarter-that-ran-itself": { archetype: "Endure", specLine: 5355, tier: 5 },
-  "c-3-understaffed-sunday": { archetype: "Reach-State", specLine: 3673, tier: 5 },
-  "c-4-floor-and-aisle": { archetype: "Build-to-Spec", specLine: 1215, tier: 5, perspectiveId: "datacenter-tech" },
-  "c-5-growth-that-shrank": { archetype: "Shrink", specLine: 5128, tier: 5 },
-  "c-6-long-gradient": { archetype: "Endure", specLine: 3994, tier: 6 },
-  "c-7-long-sale": { archetype: "Negotiate", specLine: 4019, tier: 6 },
-  "c-8-institution-watch": { archetype: "Diagnose", specLine: 3590, tier: 6 },
-  "c-9-red-team-friday": { archetype: "Reach-State", specLine: 1217, tier: 6, perspectiveId: "red-team-friday" },
+  "c-1-storm-window": { archetype: "Convert", specLine: 4098, tier: 5 },
+  "c-2-quarter-that-ran-itself": { archetype: "Endure", specLine: 5359, tier: 5 },
+  "c-3-understaffed-sunday": { archetype: "Reach-State", specLine: 3675, tier: 5 },
+  "c-4-floor-and-aisle": { archetype: "Build-to-Spec", specLine: 1217, tier: 5, perspectiveId: "datacenter-tech" },
+  "c-5-growth-that-shrank": { archetype: "Shrink", specLine: 5132, tier: 5 },
+  "c-6-long-gradient": { archetype: "Endure", specLine: 3996, tier: 6 },
+  "c-7-long-sale": { archetype: "Negotiate", specLine: 4021, tier: 6 },
+  "c-8-institution-watch": { archetype: "Diagnose", specLine: 3592, tier: 6 },
+  "c-9-red-team-friday": { archetype: "Reach-State", specLine: 1219, tier: 6, perspectiveId: "red-team-friday" },
 });
 
 /** The parsed Act Three. */
@@ -1384,8 +1384,8 @@ const EXIT_WIRE = {
  *  follows Negotiate — no-consecutive-safe; neither is Endure, so the exact
  *  five-Endure census pin rides the 34-beat tour unchanged (5/34 = 14.7%). */
 export const CAMPAIGN_EXIT_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
-  "x-1-armed-close": { archetype: "Negotiate", specLine: 4019, tier: 6 },
-  "x-2-heir-opens": { archetype: "Inherit", specLine: 5355, tier: 6 },
+  "x-1-armed-close": { archetype: "Negotiate", specLine: 4021, tier: 6 },
+  "x-2-heir-opens": { archetype: "Inherit", specLine: 5359, tier: 6 },
 });
 
 /** The parsed Exit arc. */

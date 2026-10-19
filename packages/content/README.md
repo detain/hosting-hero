@@ -735,7 +735,7 @@ row (the README sync law is pack-`decision`-scoped; decks ship no pack copy):
   it as a JS number and the grammar's numeric comparator refuses non-bigint raw —
   such a trigger would halt the fold); `mrrMicroUsd` likewise (no engine publisher).
   Upkeep ships `0` everywhere with a PROVISIONAL note: §7.14:28524 says each card
-  carries a small upkeep, and the billing fold that would charge it does not exist.
+  carries a small upkeep; the billing fold BILLS monthly floor-first @`b59dbeb` — the decks' 0n upkeep keeps every card billing-dormant until the named retune commission.
 - **No hashes in JSON:** card hashes are host-computed (`deckCardHash`);
   `bootRulesFromDeck` derives the boot.rules entries. The loader test pins the
   literal golden per shipped card — self-derived at authoring, permanent re-pins.

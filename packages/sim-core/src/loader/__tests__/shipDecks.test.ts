@@ -354,7 +354,7 @@ describe("shipped decks — mainline firing + honor walls", () => {
     }
   });
 
-  it("upkeep law: every card costs 0 µ$ and every deck says PROVISIONAL (no billing fold exists)", () => {
+  it("upkeep law: every card costs 0 µ$ and every deck says PROVISIONAL (billing fold BUILT — 0 bills nothing)", () => {
     for (const meta of DECKS) {
       for (const card of meta.deck.cards) expect(card.upkeepMicroUsd).toBe(0n);
       expect(meta.deck.todo).toContain("PROVISIONAL");

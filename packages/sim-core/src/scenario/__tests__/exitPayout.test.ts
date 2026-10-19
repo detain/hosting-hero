@@ -15,7 +15,7 @@
  *     win arms grow no key);
  *   - zero new dice: bare vs declared reports are byte-ident apart from the
  *     sparse key, endDigest included, on every offset (×100 twin);
- *   - the never-above-headline clamp (hg:5617 diligence posture) and the
+ *   - the never-above-headline clamp (hg:5621 diligence posture) and the
  *     always-present exit-kind leg; the runner seam accepts ALL SEVEN kinds
  *     (wind-down slices to exactly 0 — the campaign parse wall, doc.ts
  *     RESERVED, is what keeps that kind from ever being declared in play;
@@ -150,7 +150,7 @@ describe("exitPayout — engine truth at the declared winning close (L-V2)", () 
   it("the runner seam accepts all seven kinds — wind-down slices to EXACTLY 0 (division of labor)", () => {
     // Campaign's parse wall (doc.ts RESERVED) is what keeps ipo/mbo/wind-down
     // from being DECLARED in play; the runner stays vocabulary-honest and the
-    // economy leaf stays total: wind-down's kind factor is 0 (hg:4512 — "keep
+    // economy leaf stays total: wind-down's kind factor is 0 (hg:4514 — "keep
     // what's left"), so the slice is zero, and the exit-kind leg says so.
     expect(VALUATION_EXIT_KINDS).toHaveLength(7);
     const payout = runScenario(SALE_DOC, BASE_SEED, DECLARED("wind-down"))?.exitPayout;

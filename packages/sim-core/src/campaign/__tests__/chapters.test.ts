@@ -318,21 +318,21 @@ describe("chapter meta — the §1.9 authoring law", () => {
 
   it("the authored anchors are TEXT-true lines in hosting_game.md", () => {
     const book = readFileSync(fileURLToPath(new URL("../../../../../hosting_game.md", import.meta.url)), "utf8").split("\n");
-    expect(book[1486 - 1]).toContain("The Apprentice");
-    expect(book[1218 - 1]).toContain("The Support Queue");
-    expect(book[1275 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
-    expect(book[1274 - 1]).toContain("NOC Shift"); // the seat heading b-11 cites (wave-27)
-    expect(book[3275 - 1]).toContain("Certificate Expired"); // §1.5 cert cliff — b-12's heading
-    expect(book[35188 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
-    expect(book[5139 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
+    expect(book[1488 - 1]).toContain("The Apprentice");
+    expect(book[1220 - 1]).toContain("The Support Queue");
+    expect(book[1277 - 1]).toContain("no building allowed"); // the NOC seat's ban, verbatim
+    expect(book[1276 - 1]).toContain("NOC Shift"); // the seat heading b-11 cites (wave-27)
+    expect(book[3277 - 1]).toContain("Certificate Expired"); // §1.5 cert cliff — b-12's heading
+    expect(book[35196 - 1]).toContain("obituary page"); // §9.9 — the Hardest Lesson's anchor
+    expect(book[5143 - 1]).toContain("Act II (Tiers 3–4)"); // the act law itself
     // Wave-26 Act III anchors (design authority I-AC3; substring truth on the
     // quoted line, verified by reading the lines as authored):
-    expect(book[5140 - 1]).toContain("Act III (Tiers 5–6)"); // the act law, same sentence
-    expect(book[5140 - 1]).toContain("8 levels"); // the design figure the cadence supersedes to nine
-    expect(book[5371 - 1]).toContain("do nothing and watch"); // §1.11 Ratchet Audit — c-2's law sentence
-    expect(book[1217 - 1]).toContain("Place/Connect only"); // §1.2 datacenter-tech — c-4's seat
-    expect(book[1219 - 1]).toContain("goal node inverted"); // §1.2 red-team-friday — c-9's seat
-    expect(book[4025 - 1]).toContain("the run-up"); // §1.5 Sell the Company split — c-7's level
+    expect(book[5144 - 1]).toContain("Act III (Tiers 5–6)"); // the act law, same sentence
+    expect(book[5144 - 1]).toContain("8 levels"); // the design figure the cadence supersedes to nine
+    expect(book[5375 - 1]).toContain("do nothing and watch"); // §1.11 Ratchet Audit — c-2's law sentence
+    expect(book[1219 - 1]).toContain("Place/Connect only"); // §1.2 datacenter-tech — c-4's seat
+    expect(book[1221 - 1]).toContain("goal node inverted"); // §1.2 red-team-friday — c-9's seat
+    expect(book[4027 - 1]).toContain("the run-up"); // §1.5 Sell the Company split — c-7's level
     // Shipped-mission specLines ride each doc's OWN citation (the meta↔doc
     // equality law above) — the book's heading lines drift as sibling lanes
     // insert content, and this lane never re-pins another doc's anchor.
