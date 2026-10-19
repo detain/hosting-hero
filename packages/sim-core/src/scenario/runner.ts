@@ -40,6 +40,8 @@ import type {
   ObservedKey,
   PlayerIntent,
   PlayerVerbArgs,
+  PolicyCard,
+  RuleId,
   RunSeed,
   SimMinute,
   SimTick,
@@ -67,7 +69,7 @@ import type {
   IntentDoorConfig,
   PlaceDeviceQuery,
 } from "../pipeline/index.ts";
-import { createRulePhaseStep } from "../policy/index.ts";
+import { createRulePhaseStep, validatePolicyCard } from "../policy/index.ts";
 import type {
   CompanyDeathCause,
   EconomyConfig,
@@ -134,6 +136,7 @@ import { applyPerspectiveToDoorConfig, perspectiveReportFor, PERSPECTIVE_V0 } fr
 import type { EraPlan, EraTransition } from "./eraAvailability.ts";
 import { applyEraAvailabilityToDoorConfig, composeEraPlan } from "./eraAvailability.ts";
 import type { LoadedTypeBundle } from "../loader/bundle.ts";
+import type { LoadedBootRules } from "../loader/decks.ts";
 import type { ObjectiveProgress, ScenarioObservation } from "./objectives.ts";
 import { objectiveHolds, objectiveLine, progressAll } from "./objectives.ts";
 
@@ -210,6 +213,42 @@ export interface ScenarioRunConfig {
    *  grows the key — every shipped wire byte-stands (all 31 registry wires and
    *  all tour chapters run bare; digest-equality pinned in exitPayout.test). */
   readonly exitDeclaration?: { readonly exitKind: string };
+  /** L-U2 (ADR-0019 (iv), owner ruling 2026-10-19): the host-armed POLICY
+   *  BOOK — loader-resolved `boot.rules` entries (`bootRulesFromDeck` output
+   *  rides verbatim: `{entries:[{hash, card}]}`, DP:351-355 prescription).
+   *  WORLD FACT, NOT DOC DATA (era/sellMarketRates posture): a doc may never
+   *  select its own book — that would be self-grading, not a deck. Absent ⇒
+   *  the door's `lookupPolicyCard` key is NEVER grown (conditional spread on
+   *  the base door object) ⇒ every shipped wire byte-stands (all 31 registry
+   *  wires and every tour chapter arm it bare; roster-pinned in
+   *  deckRules.test). Armed, `policy-card-commit` resolves through the book:
+   *  commit semantics unchanged (1 hand / 1 tick, door-maintained whole-book
+   *  hash), and once a card is in `state.ruleBook` the L-U1 upkeep fold bills
+   *  Σ upkeepMicroUsd per business-month roll — the seam where upkeep first
+   *  bites. PRE-TICK-1 walls (plain-Error config grammar): EMPTY entries are
+   *  a host bug (the loader itself legalizes armed-but-silent decks — this
+   *  leg's presence must mean a book), a duplicate hash throws NAMING BOTH
+   *  POSITIONS (L-BR1 codec posture), and every card passes the engine's own
+   *  `validatePolicyCard` — all three speak `scenario[BAD_RULES]`.
+   *  Composition over the other door layers is the standing chain, unchanged:
+   *  perspective `lookupPolicyCards: false` STRIPS the armed book (seat beats
+   *  host — pinned), and an era plan that greys a committed card's id answers
+   *  `unknown-card-hash` for it (activation pinned — before this seam the
+   *  grey path was dead in scenarios, see `eraPolicyCards`). */
+  readonly rules?: LoadedBootRules;
+  /** L-U2: the cardId → techId map the era gate greys policy cards through
+   *  (`composeEraPlan`'s `opts.policyCards`, host-resolved content knowledge
+   *  — the loader deck and the bundle's `eras.availability` rows are the two
+   *  books the scenario never joins itself). Rides the eraYear+eraBundle pair
+   *  exactly like `eraTransition` (a bare map has no world to grey against).
+   *  HONEST DISCLOSURE: `applyEraAvailabilityToDoorConfig` only grows the
+   *  greyed-lookup when `plan.greyedPolicyCardIds` is non-empty AND the door
+   *  has a lookup — the runner never passed `policyCards`, so era grey-out of
+   *  policy cards was DEAD at scenario altitude even with a book wired; this
+   *  leg plus `rules` activates it end-to-end (the LIVE grey twin in
+   *  deckRules.test is the activation proof). ABSENT ⇒ the compose opts
+   *  object is byte-identical to today's (and with it every eraless run). */
+  readonly eraPolicyCards?: ReadonlyMap<string, string>;
 }
 
 /** Cumulative trace census — the report's "what happened" roll-up. */
@@ -285,6 +324,14 @@ export interface ScenarioReport {
    *  perspective/chargeback precedent: all 31 registry wires and every tour
    *  chapter run without a declaration and never grow this key). */
   readonly exitPayout?: ScenarioExitPayout;
+  /** L-U2 sparse-key law: present ONLY when the host armed a policy book
+   *  (`config.rules`). The echo is the ARMED BOOK (host posture), not the
+   *  committed subset — what the door could resolve, in host order, hash +
+   *  card id verbatim. A perspective strip or era grey never edits the echo
+   *  (it reports the seam, not the seat's verdict); an unarmed run never
+   *  grows the key (all 31 registry wires and every tour chapter —
+   *  falsifiable in deckRules.test via the dormant twin). */
+  readonly rulesArmed?: readonly { readonly hash: string; readonly cardId: RuleId }[];
 }
 
 /** L-V2: the shape of the report-only exit payout (see `ScenarioReport`'s
@@ -1052,11 +1099,18 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     eraPlan = composeEraPlan(
       config.eraBundle,
       config.eraYear,
-      config.eraTransition === undefined ? {} : { transitions: config.eraTransition },
+      {
+        ...(config.eraTransition === undefined ? {} : { transitions: config.eraTransition }),
+        ...(config.eraPolicyCards === undefined ? {} : { policyCards: config.eraPolicyCards }),
+      },
     );
   } else if (config.eraTransition !== undefined) {
     throw new Error(
       `scenario[BAD_ERA] at 'runScenario.eraTransition': eraTransition rides the eraYear+eraBundle pair — a bare calendar has no world to step (${String(config.eraTransition.length)} steps armed, eraYear ${String(config.eraYear)}, eraBundle ${config.eraBundle === undefined ? "undefined" : config.eraBundle.id})`,
+    );
+  } else if (config.eraPolicyCards !== undefined) {
+    throw new Error(
+      `scenario[BAD_ERA] at 'runScenario.eraPolicyCards': eraPolicyCards rides the eraYear+eraBundle pair — a bare card→tech map has no world year to grey against (${String(config.eraPolicyCards.size)} mappings armed, eraYear ${String(config.eraYear)}, eraBundle ${config.eraBundle === undefined ? "undefined" : config.eraBundle.id})`,
     );
   }
   /* L-SMR (ADR-0016 mechanic B): the sell catalog is money, so the seam
@@ -1100,6 +1154,47 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
       );
     }
     declaredExitKind = kind as ValuationExitKind;
+  }
+  /* L-U2 (owner ruling 2026-10-19 (iv)): the policy BOOK is host config, so
+     the seam parses it — the door's own refusals (unknown-card-hash) only
+     fire at commit time; a mis-wired book must die BEFORE the first dice,
+     the era/sellMarketRates/exitDeclaration wall posture. Three walls, all
+     plain Error in the house `scenario[CODE] at 'path': detail` grammar
+     (BAD_RULES joins the config-leg codes, NOT the doc-parse ScenarioError
+     union — the wire never carries this leg). The loader already refuses
+     dup hashes deck-side (bootRulesFromDeck); this wall guards the composed
+     multi-deck book and mirrors the L-BR1 codec's both-positions naming.
+     EMPTY entries REFUSE here even though `bootRulesFromDeck` legalizes an
+     armed-but-silent deck: at THIS altitude passing `rules: {entries:[]}`
+     can only be a host bug — the seam's presence must mean a book. */
+  let rulesBook: Map<string, PolicyCard> | undefined;
+  if (config.rules !== undefined) {
+    const entries = config.rules.entries;
+    if (entries.length === 0) {
+      throw new Error(
+        `scenario[BAD_RULES] at 'runScenario.rules': an empty book is a host bug — the loader legalizes armed-but-silent decks, but passing 'rules' with zero entries arms a door that can only refuse`,
+      );
+    }
+    const seen = new Map<string, number>();
+    const book = new Map<string, PolicyCard>();
+    entries.forEach((entry, index) => {
+      const first = seen.get(entry.hash);
+      if (first !== undefined) {
+        throw new Error(
+          `scenario[BAD_RULES] at 'runScenario.rules.entries[${String(index)}]': duplicate card hash "${entry.hash}" at entries[${String(first)}] and entries[${String(index)}] — the book is a set keyed by hash`,
+        );
+      }
+      seen.set(entry.hash, index);
+      try {
+        validatePolicyCard(entry.card);
+      } catch (err) {
+        throw new Error(
+          `scenario[BAD_RULES] at 'runScenario.rules.entries[${String(index)}].card': ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+      book.set(entry.hash, entry.card);
+    });
+    rulesBook = book;
   }
   /* L-CP2: resolve the seat BEFORE the mint — noc-shift's three hands are a
    * minting fact (state.hands is the authority; the door's fallback mirrors
@@ -1202,9 +1297,22 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
    * normal hand FIRST, then occupy a free attention token (door law); the
    * freeze validators answer only under the tape, both inclusive ends. */
   const freezeRow = doc.limits.freeze;
+  /* L-U2: the host-armed book resolves through a closure over the parsed
+   * Map (a per-call binding, not the `let` — narrowing-safe and honest that
+   * the door answers from the frozen-at-parse book). Unarmed, the door
+   * object below is EXACTLY today's {handCapacity, attentionCost?, freeze?}
+   * (byte-stand law), and the standing composition chain (perspective strip
+   * → era grey, both spread AFTER this) layers over the key unchanged: a
+   * stripping seat replaces the lookup with () => null (seat beats host),
+   * an era plan greying a card id answers unknown-card-hash via the wrapper. */
+  const rulesLookup =
+    rulesBook === undefined
+      ? undefined
+      : ((book: Map<string, PolicyCard>) => (hash: string) => book.get(hash) ?? null)(rulesBook);
   const doorIntents: IntentDoorConfig = Object.freeze({
     handCapacity: Math.max(1, effectiveHandCapacity),
     ...(attentionLimit === undefined ? {} : { attentionCost: attentionLimit.cost }),
+    ...(rulesLookup === undefined ? {} : { lookupPolicyCard: rulesLookup }),
     ...(freezeRow === undefined
       ? {}
       : {
@@ -1654,5 +1762,18 @@ export function runScenario(doc: ScenarioDoc, seed: RunSeed, config: ScenarioRun
     // chapter by construction) never grow the `exitPayout` key; the frozen
     // payout object rides ONLY on a declared, sell-observed win.
     ...(exitPayout === undefined ? {} : { exitPayout }),
+    // L-U2 sparse-key law: an unarmed run (all 31 registry wires + every tour
+    // chapter by construction) never grows the `rulesArmed` key; the echo is
+    // the ARMED BOOK in host order (hash + card id), never the committed
+    // subset — the seam reports what the door COULD resolve.
+    ...(config.rules === undefined
+      ? {}
+      : {
+          rulesArmed: Object.freeze(
+            config.rules.entries.map((entry) =>
+              Object.freeze({ hash: entry.hash, cardId: entry.card.id }),
+            ),
+          ),
+        }),
   });
 }
