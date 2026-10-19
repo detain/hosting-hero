@@ -63,7 +63,7 @@ const railEntries = computed<readonly RailEntry[]>(() => [
     subtitle: mount.subtitle,
   })),
   { id: SANDBOX_ID, badge: "00", title: "Sandbox — mainline stepper", subtitle: "The g1-smoke canvas, instruments and bezel chrome, driven by the real sim-core worker — boot.rules armed with the shipped watch-the-door deck (owner-ratified 2026-10-19; inert until a card is committed)." },
-  { id: SIMLAB_ID, badge: "LAB", title: "Sim Lab — unattended + coverage", subtitle: "Service benches, not gates: run a whole weekend head-full-stop through @hh/sim-core/unattended, and paint the §2.1 coverage grid with the shared-web roster." },
+  { id: SIMLAB_ID, badge: "LAB", title: "Sim Lab — unattended + coverage + epilogue", subtitle: "Service benches, not gates: run a whole weekend head-full-stop through @hh/sim-core/unattended, paint the §2.1 coverage grid with the shared-web roster, and render a campaign's ending on the real engine with its §1.6 epilogue." },
 ]);
 
 const activeMount = computed<GateMount | null>(

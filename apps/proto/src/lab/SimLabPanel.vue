@@ -2,14 +2,15 @@
 /**
  * SimLabPanel — the rail's single "Sim Lab" entry (sandbox mechanic: it is
  * NOT a §9.13 gate; gates/index.ts never hears of it). Internal tabs keep
- * BOTH lab panels mounted with v-show so a ran weekend survives a tab flip —
+ * ALL lab panels mounted with v-show so a ran weekend survives a tab flip —
  * the report is the point of the bench, not scenery.
  */
 import { ref } from "vue";
 import UnattendedLabPanel from "./UnattendedLabPanel.vue";
 import CoverageGridPanel from "./CoverageGridPanel.vue";
+import CampaignEpiloguePanel from "./CampaignEpiloguePanel.vue";
 
-type LabTab = "weekend" | "coverage";
+type LabTab = "weekend" | "coverage" | "epilogue";
 const tab = ref<LabTab>("weekend");
 </script>
 
@@ -38,12 +39,26 @@ const tab = ref<LabTab>("weekend");
       >
         Coverage Grid
       </button>
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="tab === 'epilogue'"
+        class="lab-tab"
+        :class="{ active: tab === 'epilogue' }"
+        data-test="lab-tab-epilogue"
+        @click="tab = 'epilogue'"
+      >
+        Epilogue
+      </button>
     </nav>
     <div v-show="tab === 'weekend'" role="tabpanel" data-test="lab-panel-weekend">
       <UnattendedLabPanel />
     </div>
     <div v-show="tab === 'coverage'" role="tabpanel" data-test="lab-panel-coverage">
       <CoverageGridPanel />
+    </div>
+    <div v-show="tab === 'epilogue'" role="tabpanel" data-test="lab-panel-epilogue">
+      <CampaignEpiloguePanel />
     </div>
   </div>
 </template>

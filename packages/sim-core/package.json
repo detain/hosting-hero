@@ -21,6 +21,7 @@
     "./save": "./src/save/index.ts",
     "./scenario": "./src/scenario/index.ts",
     "./campaign": "./src/campaign/index.ts",
+    "./campaign/chapters": "./src/campaign/chapters.ts",
     "./versus": "./src/versus/index.ts",
     "./coverage": "./src/coverage/index.ts",
     "./unattended": "./src/unattended/index.ts",
