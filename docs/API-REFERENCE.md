@@ -2424,10 +2424,11 @@ remain reported-only — hand to the owning lanes:
    — FIXED 2026-10-06 (docs-sync): the row now reads "flood over
    `TopologyGraph` + `DomainSet` (the TWO-LAYER LAW meeting in `blast.ts`)",
    matching `topology/blast.ts`, which never references the observed layer.
-4. **economy barrel comment is stale.** `economy/index.ts` says the package
-   root "deliberately does NOT re-export this module", but `src/index.ts`
-   DOES star-export `./economy/index.ts` (and disambiguates its
-   `TuningSheet`). Comment vs code — integrator lane's call which way to fix.
+4. ~~**economy barrel comment is stale.**~~ — FIXED 2026-10-23 (WAVE-32
+   STEP-4 comment leg): `economy/index.ts` now says the truth — the package
+   root DOES star-export `./economy/index.ts` (and disambiguates its
+   `TuningSheet`) — while the subpath `@hh/sim-core/economy` remains the
+   preferred import for fine-grained consumers per the root header.
 5. ~~**`save/index.ts` breaks the resolution law**~~ — RESOLVED at landing:
    the barrel now uses explicit `.ts` specifiers like every other lane.
    Residual rename to watch: root ships save's codec quartet only as

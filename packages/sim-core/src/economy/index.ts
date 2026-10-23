@@ -1,8 +1,9 @@
 /**
  * `@hh/sim-core` economy module barrel (pipeline step 12, MASTER_REPORT
  * §4.4 C5). Import ONLY through here from outside the directory; the
- * package-root src/index.ts deliberately does NOT re-export this module —
- * sibling workstreams consume `@hh/sim-core/economy` via their own wiring.
+ * package-root src/index.ts DOES re-export this module (root barrel star
+ * line) — but fine-grained consumers should still prefer the subpath
+ * `@hh/sim-core/economy` per the root header's own import guidance.
  */
 
 export * from "./money.ts";

@@ -71,7 +71,9 @@ export function incidentScale(speed: SpeedFactor): ClockScale {
 
 /** Business clock default: 30-day month every 7 real minutes
  *  = 2_592_000 s / 420 s = 43200/7 business µs per real µs.
- *  OD-2/D-1 pending — flip this ONE constant when the owner settles it. */
+ *  OD-2 RATIFIED 2026-10-09 (`24dfcfe`, ADR-0009 rec #2) — month stays
+ *  7 real-min AS-SHIPPED; the Sheet-B 4-min contradiction closed DECLINED
+ *  (§7.13 doctrine won). */
 export const BUSINESS_SCALE_DEFAULT: ClockScale = { num: 43_200n, den: 7n };
 
 /** Wall clock passes real time through unchanged (injected deltas). */
