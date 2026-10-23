@@ -905,6 +905,64 @@ const RED_TEAM_FRIDAY_WIRE = {
   limits: { maxSimMinutes: 60 },
 } satisfies PerspectiveScenarioWire;
 
+/** THE LOSING TERMINAL BEAT (§1.6 Progression — Growth Death, hg:24513):
+ *  "You grew fast, CAC-financed, and the working-capital gap ate you." The
+ *  bible's §9.9 terminal-beat law (:35194) reads "Losing a company should read
+ *  as a chapter, not a game over" — this is the chapter. The doc is hubris
+ *  made playable: a grown four-node footprint (web/app/db/edge — the fleet
+ *  the player is PROUD of), one $0 pilot anchor (revenue is a clause, not a
+ *  fact), and an expansion payroll ladder of 120 × 10M µ$ minutes against a
+ *  240M scripted opening. The bankroll zeroes at t24, the refuse-not-overdraft
+ *  law arms the float-insolvency watch (Mechanically a subtype of insolvency —
+ *  hg:24516), and the three-day spell dissolves the company at t67, five seeds
+ *  steady (probe 2026-10-23; the falsifier is arithmetic: relax the rail to 23
+ *  rows and cash never touches zero — the doc timeouts). The win line is the
+ *  mirage the growth is made of: reach the 2,880-minute fiscal-year horizon —
+ *  SCENARIO_MAX_MINUTES_CAP itself, a clock the authored life can never stand
+ *  to (elapsedMin ≤ maxSim = 180 < 2880; AIRTIGHT by the runner's own terminal
+ *  grammar, no dice asked). The beat loses BY CONSTRUCTION: dissolution is the
+ *  only reachable terminal, and the obituary's real cause rides the wire the
+ *  simulation wrote (lose:death-by-cause:any@67), not one this doc authored. */
+const GROWTH_DEATH_WIRE = {
+  schema: "hh-scenario@1",
+  id: "growth-death",
+  name: "Growth Death",
+  brief:
+    "Four nodes, a hundred slots each, and a $0 anchor signed for the logo. A hundred and twenty minutes of expansion payroll against one season's bankroll, asked to reach the fiscal-year horizon — 2,880 minutes. The horizon is a mirage; the working-capital gap is not.",
+  specRef: "§1.6 Growth Death (campaign-authored losing terminal beat — the working-capital gap, hg:24513)",
+  specLine: 24514,
+  board: {
+    nodes: [
+      { id: "gd-web", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 },
+      { id: "gd-app", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 },
+      { id: "gd-db", kind: "shared-web", slots: 100, serviceTimeUs: 4_000_000 },
+      { id: "gd-edge", kind: "shared-web", slots: 100, serviceTimeUs: 2_000_000 },
+    ],
+    edges: [],
+  },
+  contracts: [
+    { id: "gd-anchor", mrcMicroUsd: 0, billingCycle: "monthly", termEndMin: 6_000, termMonths: 1, autoRenew: true },
+  ],
+  traffic: {
+    tableId: "growth-death",
+    segments: [{ fromMinute: 0, ratePerMin: 1 }],
+  },
+  objectives: {
+    win: [{ kind: "survive-minutes", minutes: 2_880 }],
+    lose: [{ kind: "death-by-cause", cause: "any" }],
+  },
+  limits: {
+    maxSimMinutes: 180,
+    initialFreeMicroUsd: 240_000_000,
+    opex: Array.from({ length: 120 }, (_unused, i) => ({
+      atMinute: i + 1,
+      amountMicroUsd: 10_000_000,
+      memo: `gd-burn-${String(i + 1).padStart(2, "0")}`,
+    })),
+    handCapacity: 1,
+  },
+} satisfies ScenarioWire;
+
 /** The docs this module OWNS (authored, not registered in scenarios.ts).
  *  Hosts resolve chapter docs via `docOf = (id) => CHAPTER_AUTHORED_DOCS[id]
  *  ?? shippedScenario(id)` — the L-CP1 authority seam, unchanged. */
@@ -923,6 +981,7 @@ export const CHAPTER_AUTHORED_DOCS: Readonly<Record<string, ScenarioDoc>> = Obje
   "the-long-sale": parseScenarioDoc(LONG_SALE_WIRE),
   "the-institution-watch": parseScenarioDoc(INSTITUTION_WATCH_WIRE),
   "red-team-friday": parseScenarioDoc(RED_TEAM_FRIDAY_WIRE),
+  "growth-death": parseScenarioDoc(GROWTH_DEATH_WIRE),
 });
 
 /* ------------------------------------------------------------------ */
@@ -1392,24 +1451,77 @@ export const CAMPAIGN_EXIT_META: Readonly<Record<string, ChapterMeta>> = Object.
 export const CAMPAIGN_EXIT: CampaignDoc = parseCampaignDoc(EXIT_WIRE);
 
 /* ------------------------------------------------------------------ */
+/* FINALE — the losing terminal beat (L-D, §1.6 obituary live)          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * THE CAMPAIGN_FINALE ARC — the ONE losing terminal beat the §9.9 obituary
+ * law (:35194, "Losing a company should read as a chapter, not a game over")
+ * waited for. The tour has always ended in a handoff (the Exit arc's heir
+ * plays on, §1.6 prestige); this arc is the tour's other word — the chapter
+ * where the growth eats the company and endCampaign finally reaches
+ * `obituary` on a REAL run, its cause verbatim from the simulation
+ * (hg:35196 "the real cause — derived from the simulation, not authored").
+ *
+ * One beat, one authored doc (GROWTH_DEATH_WIRE — see its header for the
+ * arithmetic): the heir's own hubris chapter, growth at any cost, losing by
+ * construction. The win line is the fiscal-year mirage (survive-minutes:2880,
+ * the runner's own cap — unreachable by the terminal grammar before maxSim
+ * can ever be stood to), and the only reachable terminal is the float-
+ * insolvent dissolution the expansion rail signs. Because the chapter is the
+ * LAST of its arc, chain.ts' heir law does NOT fire (succession needs
+ * DEATH_SHAPE + chapters-remaining): the run breaks on the death, the
+ * terminal record is lost, and the ending is the obituary — the real cause,
+ * dry and accurate (hg:35203), never a punchline.
+ *
+ * Cadence arithmetic (the 35-beat tour): the finale appends at tour index 34
+ * with NO seat, so the {4,10,16,21,26,31} pins byte-stand unmoved; it wears
+ * Reach-State (c-7's Negotiate/x-1 and x-2's Inherit precede it — the seam is
+ * Inherit→Reach-State, consecutive-safe), and it is NOT Endure, so the five-
+ * Endure census holds at 5/35 = 14.3% (§1.9's 30% cap). Its opening (240M)
+ * sits UNDER the 300M scripted bridge — the never-poorer law needs no
+ * exception. Tier 6 extends the exit's top rung (the seam law is >=: the
+ * death is the same tour's last rung, not a new band).
+ */
+const FINALE_WIRE = {
+  schema: "hh-campaign@1",
+  id: "finale-growth-death",
+  name: "Growth Death — The Last Fiscal Year",
+  chapters: [{ chapterId: "f-1-growth-death", scenarioId: "growth-death" }],
+  carry: CARRY_RULE,
+} as const;
+
+/** Finale beat ledger — one chapter, no seat, the tour's losing terminal. */
+export const FINALE_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
+  "f-1-growth-death": { archetype: "Reach-State", specLine: 24514, tier: 6 },
+});
+
+/** The parsed Finale arc. */
+export const CAMPAIGN_FINALE: CampaignDoc = parseCampaignDoc(FINALE_WIRE);
+
+/* ------------------------------------------------------------------ */
 /* Combined authoring ledger (lint-law target for chapters.test.ts)     */
 /* ------------------------------------------------------------------ */
 
-/** Every chapter id → its §1.9 meta, all five arcs, insertion-ordered by act. */
+/** Every chapter id → its §1.9 meta, all six arcs, insertion-ordered by act. */
 export const CAMPAIGN_CHAPTER_META: Readonly<Record<string, ChapterMeta>> = Object.freeze({
   ...PROLOGUE_META,
   ...ACT_ONE_META,
   ...ACT_TWO_META,
   ...ACT_THREE_META,
   ...CAMPAIGN_EXIT_META,
+  ...FINALE_META,
 });
 
-/** The five campaign docs in play order (Prologue before Act I before Act
+/** The six campaign docs in play order (Prologue before Act I before Act
  *  II before Act III before the Exit arc — OD-19's act table, ADR-0019
  *  program 3 extended by the wave-26 full-tour rung, and the wave-28 §E
  *  commission: the Exit arc rides the ROSTER because an exit is a BEGINNING
  *  (§1.6 plays on the heir), not because it closes the tour. It has no seat
- *  (v0 — the {4,10,16,21,26,31} cadence pins byte-stand at 34 beats). */
+ *  (v0 — the {4,10,16,21,26,31} cadence pins byte-stand at 34 beats). The
+ *  wave-32 Finale rides LAST (L-D, owner-commissioned): the losing terminal
+ *  beat — the tour's other word after the heir, and still seatless, so every
+ *  cadence pin byte-stands at 35 beats). */
 export const CAMPAIGN_ROSTER = Object.freeze(
-  [CAMPAIGN_PROLOGUE, CAMPAIGN_ACT_ONE, CAMPAIGN_ACT_TWO, CAMPAIGN_ACT_THREE, CAMPAIGN_EXIT] as const,
+  [CAMPAIGN_PROLOGUE, CAMPAIGN_ACT_ONE, CAMPAIGN_ACT_TWO, CAMPAIGN_ACT_THREE, CAMPAIGN_EXIT, CAMPAIGN_FINALE] as const,
 );

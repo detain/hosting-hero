@@ -1,8 +1,8 @@
 /**
  * chapters.test.ts — the authored campaign content (L-CP3 + ADR-0019 program 3).
  *
- * Five halves:
- * 1. The §1.9 AUTHORING lint loop over the whole five-arc tour (archetypes
+ * Seven halves:
+ * 1. The §1.9 AUTHORING lint loop over the whole six-arc tour (archetypes
  *    non-consecutive, Endure under 30%, perspective cap + every-5 cadence,
  *    the Act II T3→T4 and Act III T5→T6 tier rhythms, unique ids, meta↔doc
  *    specLine agreement, hosting_game.md text anchors, the bridge-never-poorer
@@ -39,6 +39,18 @@
  *    the chain with its cash slice (gift forced null), the heir opens ON THE
  *    PROCEEDS (exitFunded law — never the bridge), and the tour's OWN
  *    four-arc digests stand re-checked with the arm absent.
+ * 7. The FINALE arc (L-D, owner-commissioned §9.9 :35194 losing terminal
+ *    beat) — ONE beat, authored to lose: Growth Death's win line is the
+ *    2,880-minute horizon the sim clock can never reach, its capital gap is
+ *    the doc's own arithmetic, and the last-beat death makes the campaign
+ *    endCampaign answer OBITUARY for real (the witness ×5 seeds). The
+ *    falsifier is the same doc with the burn cut below the opening: no
+ *    death, no obituary — the loss is by construction, not by accident.
+ *    The obituary's CAUSE rides the museum row + epitaph verbatim from the
+ *    simulation; the content bank ships zero obituary prose BY LAW
+ *    (§9.9 :35196 — the real cause is derived, never authored). Every
+ *    earlier arc digest is byte-stand re-checked; the 35-beat tour never
+ *    moves a seat.
  *
  * Every pinned outcome below was produced by running the chain (probes
  * 2026-10-17 / 2026-10-18) — the lane's law is probe-don't-fake, and these
@@ -82,9 +94,11 @@ import {
   CAMPAIGN_CHAPTER_META,
   CAMPAIGN_EXIT,
   CAMPAIGN_EXIT_META,
+  CAMPAIGN_FINALE,
   CAMPAIGN_PROLOGUE,
   CAMPAIGN_ROSTER,
   CHAPTER_AUTHORED_DOCS,
+  FINALE_META,
   PROLOGUE_META,
 } from "../chapters";
 
@@ -173,6 +187,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     [CAMPAIGN_ACT_TWO, ACT_TWO_META],
     [CAMPAIGN_ACT_THREE, ACT_THREE_META],
     [CAMPAIGN_EXIT, CAMPAIGN_EXIT_META],
+    [CAMPAIGN_FINALE, FINALE_META],
   ];
 
   it("every chapter id is unique across the whole content", () => {
@@ -211,6 +226,11 @@ describe("chapter meta — the §1.9 authoring law", () => {
     // calendar and the act endures the ledger. 5/32 = 15.6%.
     // WAVE-28: the tour grows to 34 beats and the count HOLDS at five — the
     // exit arc wears Negotiate (x-1) + Inherit (x-2), no Endure. 5/34 = 14.7%.
+    // WAVE-32 (L-D): the owner-commissioned finale grows the tour to 35 beats
+    // and the count STILL holds at five — Growth Death wears Reach-State (the
+    // mirage of the next milestone, never the endurance of a ledger), and the
+    // seatless beat appends past the last seat so the cadence pins never
+    // move. 5/35 = 14.3%.
     expect(enduring).toBe(5); // a-6 + b-2 + b-8 + c-2 + c-6, under §1.9's 30% cap
     expect(enduring / all.length).toBeLessThan(0.3);
   });
@@ -297,6 +317,13 @@ describe("chapter meta — the §1.9 authoring law", () => {
     const tiersX = CAMPAIGN_EXIT.chapters.map((c) => CAMPAIGN_CHAPTER_META[c.chapterId]!.tier);
     for (const tier of tiersX) expect(tier === 6, String(tier)).toBe(true);
     expect(tiersX[0]!).toBeGreaterThanOrEqual(tiers3[tiers3.length - 1]!); // 6 >= 6 at the seam
+    // The Finale (L-D): the death beat rides the same top rung — the tour is
+    // at its peak when the hubris chapter closes it, and it never falls
+    // anywhere on the thirty-five. Seam law >= again (not >): the finale is
+    // not a new band rising, it is the last rung extended one beat further.
+    const tiersF = CAMPAIGN_FINALE.chapters.map((c) => CAMPAIGN_CHAPTER_META[c.chapterId]!.tier);
+    for (const tier of tiersF) expect(tier === 6, String(tier)).toBe(true);
+    expect(tiersF[0]!).toBeGreaterThanOrEqual(tiersX[tiersX.length - 1]!); // 6 >= 6 at the seam
   });
 
   it("every scenarioId resolves through the authority; every chapter meta rides its doc", () => {
@@ -333,6 +360,13 @@ describe("chapter meta — the §1.9 authoring law", () => {
     expect(book[1219 - 1]).toContain("Place/Connect only"); // §1.2 datacenter-tech — c-4's seat
     expect(book[1221 - 1]).toContain("goal node inverted"); // §1.2 red-team-friday — c-9's seat
     expect(book[4027 - 1]).toContain("the run-up"); // §1.5 Sell the Company split — c-7's level
+    // The finale's anchors (L-D): the §6 Growth Death sentence IS the beat —
+    // float-insolvency is its named mechanic, verbatim (hg:24516), so the
+    // doc's death-by-float is the bible's own failure shape — and the §9.9
+    // law the whole losing-terminal commission rides: a lost company reads
+    // as a CHAPTER, not a game over.
+    expect(book[24514 - 1]).toContain("working-capital gap ate you"); // §6 Growth Death — f-1's specLine
+    expect(book[35194 - 1]).toContain("not a game over"); // §9.9 — the losing terminal beat's own law
     // Shipped-mission specLines ride each doc's OWN citation (the meta↔doc
     // equality law above) — the book's heading lines drift as sibling lanes
     // insert content, and this lane never re-pins another doc's anchor.
@@ -371,7 +405,7 @@ describe("chapter meta — the §1.9 authoring law", () => {
     }
   });
 
-  it("named-cast caps ride the §1.6 law (3 staff / 12 cast) in all five arcs", () => {
+  it("named-cast caps ride the §1.6 law (3 staff / 12 cast) in all six arcs", () => {
     for (const doc of CAMPAIGN_ROSTER) {
       expect(doc.carry.staffCap).toBe(3);
       expect(doc.carry.castCap).toBe(12);
@@ -1019,12 +1053,19 @@ describe("exit arc — money at the end rides the chain (§E, L-V3)", () => {
   /** One shared armed traversal (≈150 engine ticks across both beats). */
   const SHARED_EXIT = runArc(0);
 
-  it("roster shape: the Exit is the fifth arc; the c-7 shipped row stays key-absent", () => {
-    expect(CAMPAIGN_ROSTER).toHaveLength(5);
+  it("roster shape: the Exit is the fifth arc, the Finale the sixth; the c-7 shipped row stays key-absent", () => {
+    expect(CAMPAIGN_ROSTER).toHaveLength(6);
     expect(CAMPAIGN_ROSTER[4]!.id).toBe("exit-the-heir-opens");
+    expect(CAMPAIGN_ROSTER[5]!.id).toBe("finale-growth-death");
+    expect(TOUR.length).toBe(35); // the census the seat/tier/Endure pins above are arithmetic on
     expect(CAMPAIGN_EXIT.chapters.map((c) => [c.chapterId, c.scenarioId, c.exitKind ?? null])).toEqual([
       ["x-1-armed-close", "the-long-sale", "strategic-acquisition"],
       ["x-2-heir-opens", "the-quarter-that-ran-itself", null],
+    ]);
+    // The finale is ONE beat with NO declaration — the obituary is observed,
+    // the doc declares nothing for it (the exitKind key stays absent here too).
+    expect(CAMPAIGN_FINALE.chapters.map((c) => [c.chapterId, c.scenarioId, c.exitKind ?? null])).toEqual([
+      ["f-1-growth-death", "growth-death", null],
     ]);
     // c-7 — the sibling beat whose doc x-1 re-uses — must NOT grow the key:
     // the declaration lives on the CAMPAIGN row, the scenario doc is untouched.
@@ -1187,5 +1228,137 @@ describe("exit arc — money at the end rides the chain (§E, L-V3)", () => {
     expect(() => endCampaign(r, getNode(r.finalGraph, r.finalNodeId), haltDoc)).toThrow(
       /^campaign: DOC_LIE at 'campaign "exit-arc-halt-test" chapter "x-1-armed-close"': the doc declares "strategic-acquisition" but the simulation closed on "timeout@30" — endings are observed, not authored$/,
     );
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* 7. THE FINALE — the owner-commissioned losing terminal beat (L-D)   */
+/* ------------------------------------------------------------------ */
+
+describe("finale arc — the losing terminal beat makes the obituary live (L-D)", () => {
+  /** The death line the docs' own arithmetic lands on — five seeds, two burn
+   *  ladders, one opening (probe 2026-10-23): cash zeroes at t24, refuses
+   *  sustain, the float-insolvency spell closes the company at t67. */
+  const DEATH = "lose:death-by-cause:any@67";
+
+  function runFinale(seedOffset = 0): CampaignReport {
+    // Plain founder: the finale never succeeds itself — a last-beat death
+    // breaks the tour (heir law needs chapters-remaining), so the 3-node
+    // succession minimum is never consulted.
+    const { graph, nodeId } = founder();
+    return runCampaign(CAMPAIGN_FINALE, BASE_SEED, { graph, nodeId, authority, seedOffset });
+  }
+
+  it("witness ×5 seeds: a real campaign run reaches the OBITUARY — cause verbatim", { timeout: 600_000 }, () => {
+    for (let off = 0; off < 5; off += 1) {
+      const r = runFinale(off);
+      expect(r.campaignId).toBe("finale-growth-death");
+      expect(r.chapterRecords.map((x) => [x.nodeId, x.chapterId, x.outcome, x.stopReason]), `offset ${off}`).toEqual([
+        ["co", "f-1-growth-death", "lost", DEATH],
+      ]);
+      expect(r.edgesSpawned, `offset ${off}`).toHaveLength(0);
+      const ending = endCampaign(r, getNode(r.finalGraph, r.finalNodeId), CAMPAIGN_FINALE);
+      expect(ending.kind, `offset ${off}`).toBe("obituary");
+      expect(ending.title).toBe("The Obituary");
+      expect(ending.epitaph).toBe(
+        `The company did not survive its last chapter. Cause, as the simulation recorded it: ${DEATH}.`,
+      );
+      expect(ending.evidence.deathStopReason).toBe(DEATH);
+      const outcomes = ending.evidence.chapterOutcomes as readonly { chapterId: string; outcome: string }[];
+      expect(outcomes).toHaveLength(1);
+      expect(outcomes[0]!.chapterId).toBe("f-1-growth-death");
+      expect(outcomes[0]!.outcome).toBe("lost");
+      // The doc declared nothing, so nothing is narrated: a terminal beat
+      // earns its ending from the simulation, not from the author.
+      expect("declaredExitKind" in ending.evidence).toBe(false);
+      expect("exitObserved" in ending.evidence).toBe(false);
+    }
+  });
+
+  it("the obituary page rides the ledger: museum memorial, real cause, zero medals", { timeout: 300_000 }, () => {
+    const r = runFinale();
+    // The money-shape of a lost chapter (Act II's law): facets are narration
+    // only — no finances facet, no medals facet.
+    expect(r.chapterRecords[0]!.settledFacets).toEqual(["attributionEvents", "museum"]);
+    const node = getNode(r.finalGraph, r.finalNodeId);
+    const memorial = node.museum.find((row) => row.id === "chapter:finale-growth-death:f-1-growth-death:0");
+    expect(memorial).toBeDefined();
+    expect(memorial!.memorialNote).toBe(DEATH); // §9.9: the real cause, verbatim
+    expect(memorial!.sourceFacet).toBe("scenario");
+    expect(node.medals.filter((m) => m.kind === "chapter-won")).toHaveLength(0); // death earns nothing
+    expect(node.attributionEvents).toHaveLength(1); // losses attribute too
+  });
+
+  it("epilogue law: the obituary's prose is SIMULATION-derived — the bank ships none of it", () => {
+    const packPath = fileURLToPath(new URL("../../../../../packages/content/packs/campaign.i18n.json", import.meta.url));
+    const pack = JSON.parse(readFileSync(packPath, "utf8")) as { flavour: Record<string, unknown> };
+    const keys = Object.keys(pack.flavour);
+    expect(keys).toHaveLength(37); // census pin: the bank is exactly its 37 exit-codex lines
+    // NOT ONE key names the obituary or the handoff: §9.9 :35196 — the page
+    // carries "the real cause — derived from the simulation, not authored".
+    // An authored obituary line would violate the ending's own law, so the
+    // live beat's epilogue prose is exactly the two simulation-fed strings:
+    // the epitaph (above, verbatim) and the museum memorialNote.
+    expect(keys.filter((k) => /obituar|handoff|quiet/i.test(k))).toEqual([]);
+    // The bank's only obituary-adjacent line is an EXIT-kind flavour (the
+    // wind-down post-mortem headline) — text-true on disk, and the one place
+    // the word may live: a declared sale's prose, not a death's.
+    expect(JSON.stringify(pack)).toContain("The obituary nobody has to write");
+  });
+
+  it("falsifier by construction: cut the capital gap, the death and the obituary vanish", { timeout: 600_000 }, () => {
+    const doc = resolveChapterDoc("growth-death");
+    const chapterSeed = runFinale().chapterRecords[0]!.runSeed;
+    // Same seed, same doc as the chain played: the heavy rail dies on schedule.
+    const heavy = runScenario(doc, chapterSeed, {});
+    expect(heavy.outcome).toBe("lost");
+    expect(heavy.stopReason).toBe(DEATH);
+    expect(heavy.observation.deaths).toEqual(["float-insolvency"]);
+    // Relax the expansion ladder BELOW the authored opening (23 × 10M = 230M
+    // < 240M): cash never touches zero, no refused settle arms the spell. The
+    // 24-row edge (240M EXACT) was probed too — still no death: the loss is
+    // the doc's arithmetic with margin, not a knife-edge accident.
+    const relaxed: ScenarioDoc = { ...doc, limits: { ...doc.limits, opex: doc.limits.opex.slice(0, 23) } };
+    const r = runScenario(relaxed, chapterSeed, {});
+    expect(r.outcome).toBe("timeout"); // the 2,880-minute horizon is out of clock-reach by parse law
+    expect(r.stopReason).toBe("timeout@180");
+    expect(r.observation.deaths).toEqual([]);
+    // Chain level: with the relaxed doc in the SAME finale wire, endCampaign
+    // CANNOT answer obituary — a timeout terminal is a quiet handoff. The
+    // losing beat is content-designed, never machinery-accidental.
+    const relaxedAuthority: CampaignAuthority = {
+      ...authority,
+      docOf: (id: string): ScenarioDoc => (id === "growth-death" ? relaxed : authority.docOf(id)),
+    };
+    const { graph, nodeId } = founder();
+    const cr = runCampaign(CAMPAIGN_FINALE, BASE_SEED, { graph, nodeId, authority: relaxedAuthority });
+    expect(cr.chapterRecords[0]!.stopReason).toBe("timeout@180");
+    const ending = endCampaign(cr, getNode(cr.finalGraph, cr.finalNodeId), CAMPAIGN_FINALE);
+    expect(ending.kind).toBe("quiet-handoff");
+    expect(ending.evidence.deathStopReason).toBeNull();
+  });
+
+  it("digest ×100 Set.size 1 + byte-equal twin + the self-derived finale hex", { timeout: 900_000 }, () => {
+    const report = runFinale();
+    const digests = new Set<string>();
+    for (let i = 0; i < 100; i += 1) digests.add(digestCampaignReport(report));
+    expect(digests.size).toBe(1);
+    expect(digestCampaignReport(runFinale())).toBe(digestCampaignReport(report));
+    expect(digestCampaignReport(report)).toBe("60a4877fcba83ae2"); // run-captured 2026-10-23 (self-derived: a NEW sixth arc has no prior hex; every EXISTING arc's pin byte-stands in its own describe — none flattens the roster, so 35 beats moved nothing)
+  });
+
+  it("byte-stand twin: the untouched Act III tour ends EXACTLY as before", () => {
+    // Honest non-overclaim (the lane's law): adding the finale moved NO
+    // earlier arc. Re-assert the untouched nine-beat tour from the shared
+    // module traversal — last beat, zero edges, the run-captured solo hex,
+    // and the ending the machinery already chose for it.
+    const last = SHARED_ACT_THREE.chapterRecords[SHARED_ACT_THREE.chapterRecords.length - 1]!;
+    expect([last.chapterId, last.outcome, last.stopReason]).toEqual(["c-9-red-team-friday", "won", "win@25"]);
+    expect(SHARED_ACT_THREE.chapterRecords).toHaveLength(9);
+    expect(SHARED_ACT_THREE.edgesSpawned).toHaveLength(0);
+    expect(digestCampaignReport(SHARED_ACT_THREE)).toBe("7f0853575030d719"); // UNMOVED
+    expect(
+      endCampaign(SHARED_ACT_THREE, getNode(SHARED_ACT_THREE.finalGraph, SHARED_ACT_THREE.finalNodeId), CAMPAIGN_ACT_THREE).kind,
+    ).toBe("quiet-handoff");
   });
 });
