@@ -23,7 +23,7 @@
  * strings.
  */
 import { asEntityId, observedKey, type EntityId } from "@hh/sim-core/types";
-import { fixedToDisplay, type BootBuildWire, type BootCorpusWire, type EventNotice, type ProtoCell, type SimProjection } from "../shared/protocol";
+import { fixedToDisplay, type BootBuildWire, type BootCorpusWire, type BootRules, type EventNotice, type ProtoCell, type SimProjection } from "../shared/protocol";
 import { compareCodeUnits } from "../chrome/textLaw";
 
 /** The App-owned rail id (never collides with a "G<n>" gateId). */
@@ -50,6 +50,37 @@ export const SESSION_BUILD: BootBuildWire = Object.freeze({
     Object.freeze({ relation: "trust" as const, from: "deep", to: "origin" }),
     Object.freeze({ relation: "power" as const, from: "origin", to: "edge", slot: "psu-a" }),
   ]),
+});
+
+/**
+ * Boot RIDERS — the frozen constants above, generalized so a boot call site
+ * takes its seed/corpus/build as ONE data parameter.
+ *
+ * The campaign's chapter docs CANNOT ride this wire today: each chapter
+ * carries synthetic traffic tables and off-mainline boards outside the
+ * boot.corpus (shipped slices only) / boot.build (the door's four seedable
+ * nodes only) protocol — a per-chapter live worker boot is a NEW sim-core
+ * seam, refused under the frozen-engine directive and reported for a
+ * follow-on lane. The parameterization stands as the seam-shaped hole: the
+ * future product run passes chapter-derived riders; nobody touches the
+ * boot call site again.
+ *
+ * DEFAULT_SESSION_RIDERS ARE the frozen SESSION_* constants (twin-pinned to
+ * the wire payload by sessionRiders.test.ts); `rules` is an ABSENT key so
+ * `riders.rules ?? productionBootRules()` reproduces today's exact
+ * positional boot — the dormant path stays byte-stand by construction.
+ */
+export interface SessionBootRiders {
+  readonly seed: string;
+  readonly corpus: BootCorpusWire;
+  readonly build: BootBuildWire;
+  readonly rules?: BootRules;
+}
+
+export const DEFAULT_SESSION_RIDERS: SessionBootRiders = Object.freeze({
+  seed: SESSION_SEED,
+  corpus: SESSION_CORPUS,
+  build: SESSION_BUILD,
 });
 
 /* ─────────────────────── seeded edge ids (derived grammar) ───────────────────────

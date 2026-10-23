@@ -37,7 +37,9 @@ import GateRail, { type RailEntry } from "./chrome/GateRail.vue";
 import InstrumentBezel from "./chrome/instruments/InstrumentBezel.vue";
 import SimLabPanel from "./lab/SimLabPanel.vue";
 import SessionPanel from "./session/SessionPanel.vue";
-import { SESSION_BUILD, SESSION_CORPUS, SESSION_ID, SESSION_SEED } from "./session/sessionModel";
+import CampaignPanel from "./campaign/CampaignPanel.vue";
+import { CAMPAIGN_ID } from "./campaign/campaignModel";
+import { DEFAULT_SESSION_RIDERS, SESSION_ID, type SessionBootRiders } from "./session/sessionModel";
 import { asPumpHost, clearSessionHandle, setSessionHandle } from "./session/sessionBus";
 import { G1_INSTRUMENTS } from "./chrome/instruments/registry";
 import { ALL_GATE_MOUNTS, type GateMount } from "./gates";
@@ -59,7 +61,8 @@ const SANDBOX_ID = "sandbox";
  *  the §9.13 six are frozen). */
 const SIMLAB_ID = "sim-lab";
 // The SESSION view id (slice-(d), rail entry #9) rides the same App-owned
-// badge route; sessionModel.SESSION_ID is its single source.
+// badge route; sessionModel.SESSION_ID is its single source. The CAMPAIGN
+// view id (rail entry #10) rides it too — campaignModel.CAMPAIGN_ID.
 
 // Era toggle lifted to i18n/eraState (shared ref) — pack copy tracks it too.
 const readout = ref(false);
@@ -77,6 +80,7 @@ const railEntries = computed<readonly RailEntry[]>(() => [
   { id: SANDBOX_ID, badge: "00", title: "Sandbox — mainline stepper", subtitle: "The g1-smoke canvas, instruments and bezel chrome, driven by the real sim-core worker — boot.rules armed with the shipped watch-the-door deck (owner-ratified 2026-10-19; inert until a card is committed)." },
   { id: SIMLAB_ID, badge: "LAB", title: "Sim Lab — unattended + coverage + epilogue", subtitle: "Service benches, not gates: run a whole weekend head-full-stop through @hh/sim-core/unattended, paint the §2.1 coverage grid with the shared-web roster, and render a campaign's ending on the real engine with its §1.6 epilogue." },
   { id: SESSION_ID, badge: "SESS", title: "Session — one continuous colo run", subtitle: "The slice-(d) product session: the shipped colo quarter (boot.corpus) over a seeded four-node maze (boot.build), the watch-the-door book armed (boot.rules), the money lane live, the intent door open from tick 1 — until the company dissolves." },
+  { id: CAMPAIGN_ID, badge: "CAMP", title: "Campaign — the roster of careers", subtitle: "The §1.6 six-arc, 35-chapter roster played through the REAL engine chain — arc careers settle per Matrix-B law, the terminal line is the objective fold verbatim, and the carried company persists across sessions in named long-save slots." },
 ]);
 
 const activeMount = computed<GateMount | null>(
@@ -84,7 +88,10 @@ const activeMount = computed<GateMount | null>(
 );
 const isSimLab = computed(() => activeMount.value === null && view.value === SIMLAB_ID);
 const isSession = computed(() => activeMount.value === null && view.value === SESSION_ID);
-const isSandbox = computed(() => activeMount.value === null && !isSimLab.value && !isSession.value);
+const isCampaign = computed(() => activeMount.value === null && view.value === CAMPAIGN_ID);
+const isSandbox = computed(
+  () => activeMount.value === null && !isSimLab.value && !isSession.value && !isCampaign.value,
+);
 
 const projection = computed(() => projectionRef.value);
 const candidates = computed(() => (projection.value === null ? [] : buildCandidates(projection.value)));
@@ -154,11 +161,14 @@ function bootDefaultRunner(client: SimClient): void {
 
 /** SESSION boot (slice-(d)): the same client, the same worker — the boot
  *  branch stops the previous runner before minting, so re-boot is
- *  protocol-native. corpus + build riders ride the frozen sessionModel
- *  data; the book is the SAME production leg as the sandbox (main-thread
- *  import law: productionRules never crosses into the worker graph). */
-function bootSessionRunner(client: SimClient): void {
-  client.boot(SESSION_SEED, 1, "sim-core", SESSION_CORPUS, SESSION_BUILD, productionBootRules());
+ *  protocol-native. riders ride the frozen sessionModel data (DEFAULT —
+ *  the positional boot values are byte-ident to the pre-rider call, twin-
+ *  pinned by sessionRiders.test.ts); the book is the SAME production leg
+ *  as the sandbox (main-thread import law: productionRules never crosses
+ *  into the worker graph). A future product run passes chapter-derived
+ *  riders through this one seam. */
+function bootSessionRunner(client: SimClient, riders: SessionBootRiders = DEFAULT_SESSION_RIDERS): void {
+  client.boot(riders.seed, 1, "sim-core", riders.corpus, riders.build, riders.rules ?? productionBootRules());
   setSessionHandle({ client, host: asPumpHost(hostRef.value) });
 }
 
@@ -279,6 +289,20 @@ const speedAria = computed(() =>
       :data-test-id="`gate-stage-${SESSION_ID}`"
     >
       <SessionPanel />
+    </section>
+
+    <!-- CAMPAIGN (wave-32 slice-(e)-adjacent): the rail badge route's fourth
+         product view. No boot branch anywhere — the roster plays through the
+         synchronous engine chain in-thread (Sim Lab's epilogue posture), and
+         the carried company rides long-save text through named browser slots. -->
+    <section
+      v-else-if="isCampaign"
+      class="gate-stage"
+      role="tabpanel"
+      aria-label="campaign — the roster of careers"
+      :data-test-id="`gate-stage-${CAMPAIGN_ID}`"
+    >
+      <CampaignPanel />
     </section>
 
     <template v-else>

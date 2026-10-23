@@ -332,12 +332,20 @@ describe("the production wiring · source-pinned, worker-graph-clean", () => {
     // is joined by the ONE SESSION boot (slice-(d)) — both go through
     // productionBootRules, both ride the SAME client (re-boot is protocol-
     // native). Any third boot() site is drift; the arg lists are pinned below.
+    // The L-E campaign lane then parameterized the SESSION site's args into
+    // SessionBootRiders; the wiring LAW stands — the call still arms
+    // productionBootRules() (via the absent-rules default leg) and the frozen
+    // colo riders are DEFAULT_SESSION_RIDERS, identity-pinned in
+    // session/__tests__/sessionRiders.test.ts against the wire payload.
     expect(boots.length).toBe(2);
     expect(app).toMatch(
       /client\.boot\("g1-smoke-001", 1, "sim-core", undefined, undefined, productionBootRules\(\)\);/,
     );
     expect(app).toMatch(
-      /client\.boot\(SESSION_SEED, 1, "sim-core", SESSION_CORPUS, SESSION_BUILD, productionBootRules\(\)\);/,
+      /client\.boot\(riders\.seed, 1, "sim-core", riders\.corpus, riders\.build, riders\.rules \?\? productionBootRules\(\)\);/,
+    );
+    expect(app).toMatch(
+      /function bootSessionRunner\(client: SimClient, riders: SessionBootRiders = DEFAULT_SESSION_RIDERS\): void \{/,
     );
     expect(app).toMatch(/import \{ productionBootRules \} from "\.\/runner\/productionRules"/);
   });
