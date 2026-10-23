@@ -39,7 +39,7 @@ import SimLabPanel from "./lab/SimLabPanel.vue";
 import SessionPanel from "./session/SessionPanel.vue";
 import CampaignPanel from "./campaign/CampaignPanel.vue";
 import { CAMPAIGN_ID } from "./campaign/campaignModel";
-import { DEFAULT_SESSION_RIDERS, SESSION_ID, type SessionBootRiders } from "./session/sessionModel";
+import { DEFAULT_SESSION_RIDERS, SESSION_BOARD_EDGES, SESSION_ID, type SessionBootRiders } from "./session/sessionModel";
 import { asPumpHost, clearSessionHandle, setSessionHandle } from "./session/sessionBus";
 import { G1_INSTRUMENTS } from "./chrome/instruments/registry";
 import { ALL_GATE_MOUNTS, type GateMount } from "./gates";
@@ -288,7 +288,22 @@ const speedAria = computed(() =>
       aria-label="session — one continuous colo run"
       :data-test-id="`gate-stage-${SESSION_ID}`"
     >
-      <SessionPanel />
+      <!-- Weld 3: the product session gets the interactive canvas beside the
+           panel — same clientRef submit discipline as the sandbox, the boot
+           rider's hands + seeded cables restated for the intent machine
+           (boardIntent initialEdges law: the host quoting its own build). -->
+      <div class="sess-split">
+        <div class="sess-panels">
+          <SessionPanel />
+        </div>
+        <div class="sess-canvas-col" data-test="sess-canvas">
+          <WorldStage
+            :submit="(args, clock) => clientRef?.sendPlayerVerb(args, clock)"
+            :hand-capacity="DEFAULT_SESSION_RIDERS.build.hands"
+            :seed-edges="SESSION_BOARD_EDGES"
+          />
+        </div>
+      </div>
     </section>
 
     <!-- CAMPAIGN (wave-32 slice-(e)-adjacent): the rail badge route's fourth
@@ -352,6 +367,27 @@ const speedAria = computed(() =>
     color-mix(in srgb, var(--hh-surface) 82%, #fff 4%) 0%,
     color-mix(in srgb, var(--hh-surface) 98%, #000 2%) 70%
   );
+}
+/* Weld 3 — session split: panel legs beside the interactive canvas. The
+   canvas column is the positioned ancestor WorldStage's absolute inset:0
+   wrap fills; the panel column scrolls on its own so a long tape never
+   pushes the board off-screen. */
+.sess-split {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(340px, 46%);
+  align-items: stretch;
+  height: 100%;
+}
+.sess-panels {
+  overflow: auto;
+  height: 100%;
+  min-width: 0;
+}
+.sess-canvas-col {
+  position: relative;
+  height: 100%;
+  min-height: 480px;
+  border-left: 1px solid color-mix(in srgb, var(--hh-accent) 22%, transparent);
 }
 .rho-chip {
   align-self: center;

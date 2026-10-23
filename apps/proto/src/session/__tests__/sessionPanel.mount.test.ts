@@ -10,12 +10,18 @@
  *    setTimeout and requestAnimationFrame are spied for the whole mount);
  *  · the dissolved rider halts the run host-side (engine keeps folding —
  *    B3 law), the end-of-run panel shows the CAUSAL epilogue, the Stop button
- *    and every verb go disabled, and the fake's runner witness is gone.
+ *    and every verb go disabled, and the fake's runner witness is gone;
+ *  · weld 2: the unlock leg mounts L-G's UnlockLedger HONESTLY EMPTY —
+ *    zero census in DOM, and a source law that no data props are ever
+ *    passed (a fake populated ledger is forbidden until the engine +
+ *    protocol unlock seams land; see the panel header).
  */
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { canonicalDigest } from "@hh/sim-core/replay";
 import { encodeProjection, type EventNotice, type SimProjection } from "../../shared/protocol";
 import { FakeWorkerLike } from "../../bridge/fakeWorker";
@@ -123,5 +129,29 @@ describe("SessionPanel renders a live colo session", () => {
     fake.pump(3);
     expect(projection.value).toBe(lastFrame); // no further frames after terminal
     expect(canonicalDigest(encodeProjection(lastFrame))).toBeTruthy();
+  });
+});
+
+describe("SessionPanel — the unlock leg is honestly empty (weld 2)", () => {
+  it("L-G's UnlockLedger mounts with its zero census and the seam note", async () => {
+    const { fake } = bootSession();
+    const w = mount(SessionPanel);
+    wrappers.push(w);
+    fake.pump(3);
+    await nextTick();
+    expect(w.find('[data-test="unlock-ledger"]').exists()).toBe(true);
+    expect(w.get('[data-test="unlock-census"]').text().replace(/\s+/g, " ")).toContain("0 earned");
+    expect(w.find('[data-test="unlock-earned-empty"]').exists()).toBe(true);
+    expect(w.find('[data-test="sess-unlock-seam"]').exists()).toBe(true);
+  });
+
+  it("source law: the mount carries NO data props — a fake populated ledger is forbidden", () => {
+    const src = readFileSync(join(process.cwd(), "src", "session", "SessionPanel.vue"), "utf8");
+    // Exactly one bare self-closing mount; any :cards/:lines/:satisfied/
+    // :proposals/:ladder binding would be inventing engine data the wire
+    // cannot deliver — this pin reddens the day someone tries.
+    const mounts = src.match(/<UnlockLedger\b[^>]*\/>/g) ?? [];
+    expect(mounts).toHaveLength(1);
+    expect(mounts[0]).toBe("<UnlockLedger />");
   });
 });

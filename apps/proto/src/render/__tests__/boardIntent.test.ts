@@ -7,10 +7,12 @@
  * mint grammar cannot silently diverge; (2) the full pointer/keyboard
  * grammar through the machine (arm → preview → terms → commit, Escape mints
  * nothing, release-on-nothing mints nothing); (3) the wire fold (cables and
- * placed ghosts are learned from door receipts only, seq-guarded against
- * rAF re-reads, and a rule-deck configure stays honestly depth-invisible);
- * (4) the client refusal mirror — every predicted law bounces BEFORE a mint;
- * (5) dark-desk law + determinism twin + zero-timers source scan.
+ * placed ghosts are learned from door receipts at runtime, seq-guarded
+ * against rAF re-reads, and a rule-deck configure stays honestly
+ * depth-invisible) — the one sanctioned exception is the host's OWN boot
+ * rider restated once at construction (initialEdges, weld 3); (4) the
+ *  client refusal mirror — every predicted law bounces BEFORE a mint;
+ *  (5) dark-desk law + determinism twin + zero-timers source scan.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -42,6 +44,7 @@ import {
   predictDisconnect,
   type CableEdge,
   type MintArgs,
+  type SeedCable,
 } from "../boardIntent";
 import type { SimProjection } from "../../shared/protocol";
 
@@ -488,6 +491,84 @@ describe("projection fold (the wire is the only ground truth)", () => {
     // the token cannot tell rule from seat; the anchor folds the seat depth
     expect(machine.pending.length).toBe(0);
     expect(machine.depthOf("waf")).toBe("challenge");
+  });
+});
+
+/* ═══════════ seeded cables (weld 3 — the host's boot rider) ═══════════ */
+
+/** SESSION_BUILD.board restated — the same four records the session boots
+ *  the door with (host quoting its OWN input, the initialEdges law). */
+const SESSION_SEED: readonly SeedCable[] = [
+  { relation: "data", from: "edge", to: "waf", slot: null },
+  { relation: "control", from: "waf", to: "deep", slot: null },
+  { relation: "trust", from: "deep", to: "origin", slot: null },
+  { relation: "power", from: "origin", to: "edge", slot: "psu-a" },
+];
+
+describe("initialEdges: the boot rider seeds the ledger at construction", () => {
+  it("four seeded cables land under the door's derived grammar, psu-a slot and all", () => {
+    const machine = createBoardIntentMachine({ sink: vi.fn(), handCapacity: 3, initialEdges: SESSION_SEED });
+    expect(machine.handCapacity).toBe(3);
+    expect(machine.sortedEdges().map((e) => e.edgeId)).toEqual([
+      "edge:control:waf->deep",
+      "edge:data:edge->waf",
+      "edge:power:origin->edge:psu-a",
+      "edge:trust:deep->origin",
+    ]);
+    const power = machine.ledger.get("edge:power:origin->edge:psu-a");
+    expect(power).toMatchObject({ relation: "power", from: "origin", to: "edge", slot: "psu-a" });
+  });
+
+  it("a seeded cable is pull-disconnectable — the mint is the door record", () => {
+    const sink = vi.fn();
+    const machine = createBoardIntentMachine({ sink, initialEdges: SESSION_SEED });
+    machine.pullCable("edge:trust:deep->origin");
+    expect(machine.preview).toMatchObject({ kind: "disconnect", edgeId: "edge:trust:deep->origin" });
+    expect(machine.confirmPreview()).toBe(true);
+    const [args] = sink.mock.calls[0] as [Record<string, string | null>];
+    expect(args).toEqual({ verb: "disconnect-drain", edgeId: "edge:trust:deep->origin" });
+  });
+
+  it("re-connecting a seeded route bounces edge-exists BEFORE any mint", () => {
+    const sink = vi.fn();
+    const machine = createBoardIntentMachine({ sink, initialEdges: SESSION_SEED });
+    machine.toggleWiring();
+    machine.attemptConnect("edge#data", "waf#data");
+    expect(sink).not.toHaveBeenCalled();
+    expect(machine.chip).toMatchObject({ source: "preview", verb: "connect-ports" });
+    expect(machine.chip?.reason).toContain('edge-exists: "edge:data:edge->waf"');
+  });
+
+  it("the runtime wire stays the authority: a pull receipt removes a seeded cable", () => {
+    const machine = createBoardIntentMachine({ sink: vi.fn(), initialEdges: SESSION_SEED });
+    machine.ingest(
+      frame(2, 4, [{ kind: "intent-executed", detail: "disconnect-drain: pulled:edge:data:edge->waf" }]),
+    );
+    expect(machine.ledger.has("edge:data:edge->waf")).toBe(false);
+    expect(machine.ledger.has("edge:power:origin->edge:psu-a")).toBe(true);
+  });
+
+  it("no option, no seed — the sandbox ledger still opens empty (byte-stand)", () => {
+    const machine = createBoardIntentMachine();
+    expect(machine.ledger.size).toBe(0);
+    expect(machine.handCapacity).toBe(SANDBOX_HAND_CAPACITY);
+  });
+
+  it("sessionModel.SESSION_BOARD_EDGES equals the boot rider's own board (drift pin)", () => {
+    const src = readFileSync(join(process.cwd(), "src", "session", "sessionModel.ts"), "utf8");
+    expect(src).toContain("SESSION_BOARD_EDGES");
+    // the four seeded cables here are the four the panel file freezes
+    expect(SESSION_SEED.length).toBe(4);
+    expect(SESSION_SEED.map((e) => deriveEdgeId(e.relation, e.from, e.to, e.slot)).sort()).toEqual([
+      "edge:control:waf->deep",
+      "edge:data:edge->waf",
+      "edge:power:origin->edge:psu-a",
+      "edge:trust:deep->origin",
+    ]);
+    // and each equals the SESSION_EDGE_IDS literals the verb rail targets
+    for (const literal of ["edge:data:edge->waf", "edge:control:waf->deep", "edge:trust:deep->origin", "edge:power:origin->edge:psu-a"]) {
+      expect(src).toContain(literal);
+    }
   });
 });
 

@@ -5,9 +5,14 @@
   The play unit is the ARC (campaignModel's header carries the full engine
   law: chapter-atomic chain + founding-tick thread refusal), the terminal is
   the real objective fold (stopReason verbatim per chapter), and the ending
-  is the real `endCampaign` readout. This is the PLAIN end-of-chapter
-  banner: L-G's richer EpilogueCard (src/progression/**) welds on top of
-  the same state later — nothing here duplicates its slot.
+  readout is L-G's EpilogueCard (src/progression/**) welded in: the live
+  `endCampaign` result feeds it directly; after a slot reload it is rebuilt
+  from the persisted ending snapshot (campaignModel.endingFromSnapshot —
+  inverse of the snapshot fold, declared-exit keys never fabricated). The
+  museum shelf and succession record ride in as the final node's plain-data
+  carriers (campaignModel.epilogueCarriers); payout stays honest-absent —
+  the engine's CampaignReport does not surface per-chapter ScenarioReports,
+  so exitPayout has no campaign-side carrier (named seam, see report).
 
   Persistence rides the engine's canonical long-save text codec
   (storage/longSave) through named browser slots (storage/saveSlots): no
@@ -20,6 +25,7 @@
 -->
 <script setup lang="ts">
 import { computed, ref, shallowRef } from "vue";
+import type { CampaignEnding } from "@hh/sim-core/campaign";
 import {
   CAMPAIGN_ARCS,
   ROSTER_ARC_IDS,
@@ -28,10 +34,13 @@ import {
   campaignSaveText,
   campaignStateFromSave,
   createCampaignState,
+  endingFromSnapshot,
+  epilogueCarriers,
   nextArcId,
   playArc,
 } from "./campaignModel";
 import type { CampaignState } from "./campaignModel";
+import { EpilogueCard } from "../progression";
 import { browserStorage, listSlots, readCampaignSave, writeCampaignSave } from "../storage/saveSlots";
 import type { SlotStorage } from "../storage/saveSlots";
 import { SaveSlotError } from "../storage/saveSlots";
@@ -61,7 +70,23 @@ const slots = computed(() => {
 
 const ledger = computed(() => campaignLedger(state.value));
 const playable = computed(() => nextArcId(state.value));
-const lastEnding = computed(() => state.value.lastEnding);
+
+/** The ending the card is showing RIGHT NOW (live play), if any. Cleared on
+ *  load/blank so a reloaded career never re-plays its predecessor's ending
+ *  as if it had just happened. shallowRef: a CampaignEnding is engine-frozen
+ *  plain data, never deep-proxied. */
+const liveEnding = shallowRef<CampaignEnding | null>(null);
+
+/** Card source: the live ending verbatim, else the persisted snapshot
+ *  rebuilt (reload-survivable epilogue), else nothing. */
+const epilogue = computed<CampaignEnding | null>(() => {
+  if (liveEnding.value !== null) return liveEnding.value;
+  const persisted = state.value.lastEnding;
+  return persisted === null ? null : endingFromSnapshot(persisted);
+});
+
+/** Final node's museum + succession carriers (plain data, honest absence). */
+const carriers = computed(() => epilogueCarriers(state.value));
 
 function breathe(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
@@ -81,6 +106,7 @@ async function onPlay(arcId: string): Promise<void> {
   try {
     const result = playArc(state.value, arcId);
     state.value = result.state;
+    liveEnding.value = result.ending;
     notice.value = null;
   } catch (error) {
     failure.value = error instanceof Error ? error.message : String(error);
@@ -124,6 +150,7 @@ function onLoad(name: string): void {
   }
   try {
     state.value = campaignStateFromSave(text);
+    liveEnding.value = null;
     pendingOverwrite.value = null;
     notice.value = `loaded "${name}" — the company resumes at its next unplayed arc`;
   } catch (error) {
@@ -133,6 +160,7 @@ function onLoad(name: string): void {
 
 function onNewCareer(): void {
   state.value = createCampaignState();
+  liveEnding.value = null;
   pendingOverwrite.value = null;
   notice.value = "a blank carried company — the roster opens at the prologue";
 }
@@ -162,23 +190,17 @@ function onNewCareer(): void {
     <p v-if="notice !== null" class="camp-notice" data-test="camp-notice">{{ notice }}</p>
 
     <aside
-      v-if="lastEnding !== null"
+      v-if="epilogue !== null"
       class="camp-ending"
       data-test="camp-ending"
       role="alert"
-      :aria-label="`ending — ${lastEnding.title}`"
+      :aria-label="`ending — ${epilogue.title}`"
     >
-      <h3 class="camp-ending-title" data-test="camp-ending-title">{{ lastEnding.title }}</h3>
-      <p class="camp-ending-kind" data-test="camp-ending-kind">{{ lastEnding.kind }}</p>
-      <p class="camp-ending-epitaph">{{ lastEnding.epitaph }}</p>
-      <p class="camp-ending-facts">
-        <span>{{ lastEnding.medals }} medals</span>
-        <span>{{ lastEnding.scars }} scars</span>
-        <span v-if="lastEnding.reputationBps !== undefined">{{ lastEnding.reputationBps }} bps reputation</span>
-        <span v-if="lastEnding.deathStopReason !== null" class="camp-death-line" data-test="camp-ending-death">
-          {{ lastEnding.deathStopReason }}
-        </span>
-      </p>
+      <EpilogueCard
+        :ending="epilogue"
+        :museum="carriers?.museum ?? null"
+        :succession="carriers?.succession ?? null"
+      />
     </aside>
 
     <ol class="camp-roster" aria-label="campaign roster">
@@ -341,33 +363,8 @@ function onNewCareer(): void {
   background: color-mix(in srgb, var(--hh-surface) 88%, var(--hh-hue-rule-ink) 12%);
   padding: 10px 12px;
 }
-.camp-ending-title {
-  margin: 0;
-  font-size: 15px;
-  color: var(--hh-hue-rule-ink);
-}
-.camp-ending-kind {
-  margin: 2px 0 0;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--hh-hue-gold);
-}
-.camp-ending-epitaph {
-  margin: 6px 0 0;
-  font-size: 13px;
-  opacity: 0.9;
-}
-.camp-ending-facts {
-  margin: 6px 0 0;
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  opacity: 0.78;
-}
-.camp-death-line {
-  color: var(--hh-hue-alarm);
-}
+/* The banner internals are EpilogueCard's own scoped styles (weld 1) —
+   only the frame belongs to the panel. */
 .camp-roster {
   list-style: none;
   margin: 0;

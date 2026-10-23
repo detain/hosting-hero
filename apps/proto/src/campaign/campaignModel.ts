@@ -30,10 +30,10 @@
  * epilogue bench already runs this exact machinery in-browser).
  */
 import { CAMPAIGN_CHAPTER_META, CAMPAIGN_ROSTER, CHAPTER_AUTHORED_DOCS } from "@hh/sim-core/campaign/chapters";
-import type { CampaignChapterRecord, CampaignDoc, CampaignEnding } from "@hh/sim-core/campaign";
-import { endCampaign, runCampaign } from "@hh/sim-core/campaign";
+import type { CampaignChapterRecord, CampaignDoc, CampaignEnding, CampaignEndingKind } from "@hh/sim-core/campaign";
+import { ENDING_KINDS, endCampaign, runCampaign } from "@hh/sim-core/campaign";
 import type { CampaignAuthority, CampaignReport } from "@hh/sim-core/campaign";
-import type { LineageGraph } from "@hh/sim-core/save";
+import type { LineageGraph, MuseumExhibitRecord, Succession } from "@hh/sim-core/save";
 import { emptyLineageGraph, foundCompany, getNode, parseRunInstance, settleRun } from "@hh/sim-core/save";
 import { runScenario, shippedScenario } from "@hh/sim-core/scenario";
 import type { EntityId, MoneyUnit, RunSeed } from "@hh/sim-core/types";
@@ -261,6 +261,52 @@ export function playArc(state: CampaignState, arcId: string): ArcPlayResult {
     })),
     heirLines: report.edgesSpawned.length,
   };
+}
+
+/* ───────────────────────────── epilogue ───────────────────────────── */
+
+/** Rebuild a full CampaignEnding from a persisted snapshot — the inverse of
+ *  the private `endingSnapshot` above. The slot parse wall (storage/longSave)
+ *  already enforced kind-on-vocab and typed rows, so this is a trusted
+ *  re-shape, not a re-validation; the guard is the fail-loud backstop for a
+ *  hand-built caller. DeclaredExit keys are NEVER fabricated: a snapshot
+ *  carries no declaredExitKind/exitObserved, so the rebuilt evidence honestly
+ *  omits them and the epilogue card's own NO_DATA lines answer for it. */
+export function endingFromSnapshot(snapshot: CampaignEndingSnapshot): CampaignEnding {
+  const kind = snapshot.kind;
+  if (!(ENDING_KINDS as readonly string[]).includes(kind)) {
+    throw new CampaignModelError("bad-ending", `snapshot kind "${kind}" off-vocab ${ENDING_KINDS.join("|")}`);
+  }
+  return {
+    kind: kind as CampaignEndingKind,
+    title: snapshot.title,
+    epitaph: snapshot.epitaph,
+    evidence: {
+      chapterOutcomes: snapshot.chapterOutcomes,
+      medals: snapshot.medals,
+      scars: snapshot.scars,
+      deathStopReason: snapshot.deathStopReason,
+      ...(snapshot.reputationBps === undefined ? {} : { reputationBps: snapshot.reputationBps }),
+    },
+  };
+}
+
+/** The plain-data carriers EpilogueCard accepts besides the ending (L-G
+ *  contract): the final node's museum shelf and succession record. null
+ *  before any career closed, and null (never a throw inside a render path)
+ *  if a mark points at a node the carried graph does not hold — the card
+ *  then rides its honest-absence lines. */
+export interface EpilogueCarriers {
+  readonly museum: readonly MuseumExhibitRecord[];
+  readonly succession: Succession;
+}
+
+export function epilogueCarriers(state: CampaignState): EpilogueCarriers | null {
+  const last = state.marks[state.marks.length - 1];
+  if (last === undefined) return null;
+  const node = state.graph.nodes.get(asEntityId(last.finalNodeId));
+  if (node === undefined) return null;
+  return { museum: node.museum, succession: node.succession };
 }
 
 /* ─────────────────────────── persistence ─────────────────────────── */

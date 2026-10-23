@@ -2,9 +2,10 @@
  * CampaignPanel mount laws (jsdom, real engine, stubbed storage): the roster
  * renders the six arcs with honest NEXT/LOCKED/PLAYED states; playing the
  * prologue through the REAL chain updates the ledger, chapter rows and the
- * ending banner; Save now writes a named slot, and a fresh panel instance
- * LOADING that slot resumes at Act One with the prologue's ledger and
- * ending intact; the overwrite law is a two-step confirm, never silent; a
+ * ending readout — the banner is now WELD-2's mounted L-G EpilogueCard (live
+ * ending or snapshot-rebuilt); Save now writes a named slot, and a fresh
+ * panel loads it
+ * and resumes at Act One with the prologue's ledger and epilogue card intact; the overwrite law is a two-step confirm, never silent; a
  * corrupt slot lists honestly with a disabled Load.
  *
  * The prologue measures ~60ms of synchronous engine — cheap enough to play
@@ -80,8 +81,18 @@ describe("CampaignPanel — real play through the UI", () => {
     await w.get('[data-test="camp-play-prologue-first-light"]').trigger("click");
     await untilPresent(() => w.find('[data-test="camp-ending"]').exists());
 
-    expect(w.get('[data-test="camp-ending-kind"]').text()).toContain("quiet-handoff");
-    expect(w.get('[data-test="camp-ending-title"]').text()).toContain("The Quiet Handoff");
+    expect(w.get('[data-test="epilogue-kind"]').text()).toContain("quiet-handoff");
+    expect(w.get('[data-test="epilogue-title"]').text()).toContain("The Quiet Handoff");
+    // WELD-2: the banner is L-G's EpilogueCard, not the old plain block.
+    // Payout has no campaign-side carrier (engine seam owed) — the card's
+    // honest-absence line must state it, never a fabricated money block.
+    expect(w.find('[data-test="epilogue-money"]').exists()).toBe(false);
+    expect(w.find('[data-test="epilogue-money-absent"]').exists()).toBe(true);
+    // The succession record of the final node rode in as a plain-data
+    // carrier (≥1 row proves the wiring; a null carrier drops this row).
+    expect(w.findAll('[data-test="epilogue-succession-row"]').length).toBeGreaterThanOrEqual(1);
+    expect(w.findAll('[data-test="epilogue-fact"]').length).toBeGreaterThanOrEqual(7);
+    expect(w.find('[data-test="epilogue-museum"]').exists()).toBe(true);
     expect(w.findAll('[data-test^="camp-chapter-row-"]')).toHaveLength(3);
     expect(w.get('[data-test="camp-status-prologue-first-light"]').text()).toContain("PLAYED");
     expect(w.get('[data-test="camp-status-act-one-panic-to-process"]').text()).toContain("NEXT");
@@ -107,7 +118,10 @@ describe("CampaignPanel — real play through the UI", () => {
     await w2.get('[data-test="camp-slot-load-first-quarter"]').trigger("click");
     await untilPresent(() => w2.get('[data-test="camp-ledger"]').text().includes("1/6"));
     expect(w2.get('[data-test="camp-status-prologue-first-light"]').text()).toContain("PLAYED");
-    expect(w2.get('[data-test="camp-ending-kind"]').text()).toContain("quiet-handoff");
+    // The reload path rebuilds the SAME ending card from the persisted
+    // snapshot (endingFromSnapshot) — no live play happened in this panel.
+    expect(w2.get('[data-test="epilogue-kind"]').text()).toContain("quiet-handoff");
+    expect(w2.get('[data-test="epilogue-title"]').text()).toContain("The Quiet Handoff");
     expect(w2.get('[data-test="camp-slot-load-first-quarter"]').attributes("disabled")).toBeUndefined();
     w2.unmount();
   });

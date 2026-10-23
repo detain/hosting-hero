@@ -23,8 +23,9 @@
  * strings.
  */
 import { asEntityId, observedKey, type EntityId } from "@hh/sim-core/types";
-import { fixedToDisplay, type BootBuildWire, type BootCorpusWire, type BootRules, type EventNotice, type ProtoCell, type SimProjection } from "../shared/protocol";
+import { fixedToDisplay, type BootBoardEdgeWire, type BootBuildWire, type BootCorpusWire, type BootRules, type EventNotice, type ProtoCell, type SimProjection } from "../shared/protocol";
 import { compareCodeUnits } from "../chrome/textLaw";
+import type { SeedCable } from "../render/boardIntent";
 
 /** The App-owned rail id (never collides with a "G<n>" gateId). */
 export const SESSION_ID = "session";
@@ -42,14 +43,19 @@ export const SESSION_CORPUS: BootCorpusWire = Object.freeze({
  *  four-node maze board. The 3-capacity is playable law, not decoration:
  *  the wire test feeds four communicate verbs in one tick and the fourth
  *  refuses `hands-exhausted` exactly like §7.5 promises. */
+/** The maze as its own definite array (the rider type's board is optional;
+ *  our boot is not). SESSION_BOARD_EDGES below maps THIS, so the stage seed
+ *  can never silently derive from an absent field. */
+const SESSION_BOARD: readonly BootBoardEdgeWire[] = Object.freeze([
+  Object.freeze({ relation: "data" as const, from: "edge", to: "waf" }),
+  Object.freeze({ relation: "control" as const, from: "waf", to: "deep" }),
+  Object.freeze({ relation: "trust" as const, from: "deep", to: "origin" }),
+  Object.freeze({ relation: "power" as const, from: "origin", to: "edge", slot: "psu-a" }),
+]);
+
 export const SESSION_BUILD: BootBuildWire = Object.freeze({
   hands: 3,
-  board: Object.freeze([
-    Object.freeze({ relation: "data" as const, from: "edge", to: "waf" }),
-    Object.freeze({ relation: "control" as const, from: "waf", to: "deep" }),
-    Object.freeze({ relation: "trust" as const, from: "deep", to: "origin" }),
-    Object.freeze({ relation: "power" as const, from: "origin", to: "edge", slot: "psu-a" }),
-  ]),
+  board: SESSION_BOARD,
 });
 
 /**
@@ -96,12 +102,28 @@ export const SESSION_EDGE_IDS = Object.freeze({
   powerOriginEdge: "edge:power:origin->edge:psu-a",
 });
 
+/* ─────────────────── seeded cables for the stage (weld 3) ───────────────────
+ * The same boot rider restated for the canvas: boardIntent's initialEdges
+ * law is the HOST quoting its OWN build.board input, so the WorldStage
+ * mounted beside this panel paints the four seeded cables at tick 0 while
+ * the door's wire receipts remain the sole runtime authority. */
+export const SESSION_BOARD_EDGES: readonly SeedCable[] = Object.freeze(
+  SESSION_BOARD.map((e) => Object.freeze({
+    relation: e.relation,
+    from: e.from,
+    to: e.to,
+    slot: e.slot ?? null,
+  })),
+);
+
 /* ───────────────────────────── door verbs ─────────────────────────────
  * The intent door is open from tick 1: every row is a COMPLETE flat wire
  * record for simClient.sendPlayerVerb (VERB_ARG_SHAPES law: every arg key
  * must ride; string-or-null fields accept null). `id` keys the button.
- * NO canvas: L-B owns pointer→intent; the session arms the door the way
- * every gate panel does — discrete verb records. */
+ * The discrete records stay the panel's door armament (every gate panel's
+ * posture); since weld 3 the canvas beside the panel mints the SAME verb
+ * shapes through the intent machine — L-B owns pointer→intent, these rows
+ * own button→intent. */
 export type WireArgRecord = Readonly<Record<string, string | number | null>>;
 
 export interface DoorVerbRow {

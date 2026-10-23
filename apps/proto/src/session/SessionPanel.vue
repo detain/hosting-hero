@@ -11,11 +11,24 @@
  * verbs via sendPlayerVerb, halt via client.halt(). Zero timers (the worker
  * ticks itself; the Step button pumps the in-process fake — a user gesture,
  * the G4 law). Zero globalBudget claims. Colors: era tokens + hue vars only.
+ *
+ * UNLOCK SEAM (loud, deliberate — weld 2): the UnlockLedger below mounts
+ * EMPTY by honesty, not by omission. The engine surfaces unlock proposals
+ * only through TickResult.unlockProposals when the host wires options.unlocks
+ * into createTickDriver — src/runner/simCoreRunner.ts does NOT wire it, and
+ * the SimProjection wire (shared/protocol.ts) carries no proposals field.
+ * Feeding the ledger needs BOTH seams: (1) runner unlock-observer wiring,
+ * (2) a sparse protocol carrier — whose key growth would move the frozen
+ * boot/frame-digest goldens (owner-gated program, not a weld). The
+ * satisfied-set input likewise has no session-level engine source
+ * (nodesUnlocked is a save facet, not a projection cell). A fake populated
+ * ledger is FORBIDDEN; this empty census is the true state.
  */
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { connectionState, projection } from "../state/observedStore";
 import { hudPermanentRows } from "../chrome/metrics";
 import { CAUSAL_EPILOGUE, CAUSE_UNKNOWN_EPILOGUE, extractDeathCause, extractDeathPhase } from "../chrome/deathWatch";
+import { UnlockLedger } from "../progression";
 import { sessionHandle, type SessionPumpHost } from "./sessionBus";
 import {
   SESSION_DOOR_VERBS,
@@ -185,6 +198,17 @@ function display(n: number | null): string {
       </ul>
       <p v-if="ruleFires.length" class="sess-rules" data-test="sess-rules">
         book fired: <span v-for="f in ruleFires" :key="f" class="rule-chip">{{ f }}</span>
+      </p>
+    </section>
+
+    <section class="sess-leg" aria-label="unlock ledger leg" data-test="sess-unlock-leg">
+      <h2>Unlocks</h2>
+      <UnlockLedger />
+      <p class="sess-unlock-seam" data-test="sess-unlock-seam">
+        The ledger is honestly empty: this session's runner wires no unlock
+        observer and the projection wire carries no proposals field, so no
+        real unlock facts can reach it yet. Feeding it is a named engine +
+        protocol seam (see this panel's header), not a fake feed.
       </p>
     </section>
 

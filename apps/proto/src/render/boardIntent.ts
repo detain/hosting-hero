@@ -379,6 +379,20 @@ interface PendingToken {
 export interface BoardIntentOptions {
   readonly sink?: ((args: MintArgs, clock: ClockKind) => void) | null;
   readonly handCapacity?: number;
+  /** Cables the HOST itself authored into the boot rider (boot.build.board),
+   *  restated for the ledger so a session that booted seeded cables paints
+   *  them at tick 0. This is the host quoting its OWN boot input — never
+   *  engine-board sniffing: the door's wire receipts remain the only
+   *  runtime authority (the fold paths below are untouched by seeding). */
+  readonly initialEdges?: readonly SeedCable[];
+}
+
+/** One seeded cable (shape mirrors the boot.build wire's edge records). */
+export interface SeedCable {
+  readonly relation: BoardRelation;
+  readonly from: string;
+  readonly to: string;
+  readonly slot: string | null;
 }
 
 /** §7.5 default hand rail for the sandbox — drift-pinned (boardIntent.test)
@@ -415,6 +429,10 @@ export class BoardIntentMachine {
   constructor(options: BoardIntentOptions = {}) {
     this.sink = options.sink ?? null;
     this.handCapacity = options.handCapacity ?? SANDBOX_HAND_CAPACITY;
+    for (const seed of options.initialEdges ?? []) {
+      const edgeId = deriveEdgeId(seed.relation, seed.from, seed.to, seed.slot);
+      this._ledger.set(edgeId, { edgeId, relation: seed.relation, from: seed.from, to: seed.to, slot: seed.slot });
+    }
   }
 
   /* ── observation surface (HUD + tests) ── */

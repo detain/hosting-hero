@@ -45,25 +45,37 @@ describe("the §3.1 onIntent seam is implemented, not just named", () => {
   });
 
   it("WorldStage binds the hook to the host submit prop and shares one machine", () => {
-    expect(STAGE).toContain("createBoardIntentMachine()");
+    // Weld 3 made the machine construction carry the host's rider options
+    // (handCapacity/seedEdges via spreads) — the single-machine law holds.
+    expect(STAGE).toContain("createBoardIntentMachine({");
     expect(STAGE).toContain("view.onIntent = (args, clock) => props.submit?.(args, clock)");
     expect(STAGE).toContain("globalBudget, board");
     expect(STAGE).toContain('import BoardIntentHud from "./BoardIntentHud.vue"');
     expect(STAGE).toContain("<BoardIntentHud :machine=\"board\" />");
     expect(STAGE).toMatch(/submit\?: \(\(args: MintArgs, clock: ClockKind\) => void\) \| null/);
+    // A canvas that cannot init fails loud-dark, never as a silent void or
+    // an unhandled rejection (weld 3's jsdom law):
+    expect(STAGE).toContain(".catch(");
+    expect(STAGE).toContain('data-test="stage-fault"');
   });
 
   it("the shell welds the stage: App.vue binds :submit to the client's sendPlayerVerb", () => {
     const APP = source("src", "App.vue");
-    // Exactly one WorldStage mount in the shell (the sandbox v-else branch;
-    // the session branch mounts SessionPanel, not a second stage).
-    expect(APP.match(/<WorldStage\b/g) ?? []).toHaveLength(1);
+    // Two WorldStage mounts in the shell (weld 3 re-pin, was exactly one):
+    // the sandbox v-else branch AND the session split beside SessionPanel.
+    // Both bind the SAME clientRef submit discipline.
+    expect(APP.match(/<WorldStage\b/g) ?? []).toHaveLength(2);
     // The mount carries the weld — minted verbs leave through the SAME
     // SimClient the gates ride. Falsifiable both ways: in a world without
     // the weld the bare `<WorldStage />` (dark desk) is what the shell
     // renders, and these two assertions fail in opposite directions.
     expect(APP).toContain('<WorldStage :submit="(args, clock) => clientRef?.sendPlayerVerb(args, clock)" />');
     expect(APP).not.toContain("<WorldStage />");
+    // Weld 3: the session stage rides the boot rider restated — hands from
+    // DEFAULT_SESSION_RIDERS, cables from SESSION_BOARD_EDGES (host quoting
+    // its own build; boardIntent's initialEdges law).
+    expect(APP).toContain(':hand-capacity="DEFAULT_SESSION_RIDERS.build.hands"');
+    expect(APP).toContain(':seed-edges="SESSION_BOARD_EDGES"');
   });
 
   it("the pure module crosses into chrome exactly once, for the text law", () => {
