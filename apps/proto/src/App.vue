@@ -17,6 +17,13 @@
  * armed with the production deck book (`runner/productionRules.ts`, owner
  * ruling 2026-10-19: watch-the-door on the mainline stepper; the dormant
  * switch keeps the un-armed wire reachable for tests).
+ *
+ * SESSION (slice-(d), wave-32): entering the SESSION view RE-BOOTS the same
+ * client with the colo riders (corpus + build + the same production book);
+ * the worker's boot branch stops the previous runner, so one client, one
+ * worker, and the observed store never sees interleaved runs. Leaving the
+ * view re-boots the sandbox default. The panel halts the run itself on the
+ * company-dissolved rider (chrome/deathWatch authority).
  * Chrome never scales with the camera; era re-skins via exactly 4 tokens;
  * Readout Mode and ChromaMeter are always one key away (§1.10).
  */
@@ -29,6 +36,9 @@ import WorldStage from "./chrome/WorldStage.vue";
 import GateRail, { type RailEntry } from "./chrome/GateRail.vue";
 import InstrumentBezel from "./chrome/instruments/InstrumentBezel.vue";
 import SimLabPanel from "./lab/SimLabPanel.vue";
+import SessionPanel from "./session/SessionPanel.vue";
+import { SESSION_BUILD, SESSION_CORPUS, SESSION_ID, SESSION_SEED } from "./session/sessionModel";
+import { asPumpHost, clearSessionHandle, setSessionHandle } from "./session/sessionBus";
 import { G1_INSTRUMENTS } from "./chrome/instruments/registry";
 import { ALL_GATE_MOUNTS, type GateMount } from "./gates";
 import { buildCandidates, formatMicroUsd, formatRunClock, isSpiking, worstState, rhoDisplayOf } from "./chrome/metrics";
@@ -48,6 +58,8 @@ const SANDBOX_ID = "sandbox";
  *  mechanic as the sandbox (App.vue owns it; gates/index.ts is untouched —
  *  the §9.13 six are frozen). */
 const SIMLAB_ID = "sim-lab";
+// The SESSION view id (slice-(d), rail entry #9) rides the same App-owned
+// badge route; sessionModel.SESSION_ID is its single source.
 
 // Era toggle lifted to i18n/eraState (shared ref) — pack copy tracks it too.
 const readout = ref(false);
@@ -64,13 +76,15 @@ const railEntries = computed<readonly RailEntry[]>(() => [
   })),
   { id: SANDBOX_ID, badge: "00", title: "Sandbox — mainline stepper", subtitle: "The g1-smoke canvas, instruments and bezel chrome, driven by the real sim-core worker — boot.rules armed with the shipped watch-the-door deck (owner-ratified 2026-10-19; inert until a card is committed)." },
   { id: SIMLAB_ID, badge: "LAB", title: "Sim Lab — unattended + coverage + epilogue", subtitle: "Service benches, not gates: run a whole weekend head-full-stop through @hh/sim-core/unattended, paint the §2.1 coverage grid with the shared-web roster, and render a campaign's ending on the real engine with its §1.6 epilogue." },
+  { id: SESSION_ID, badge: "SESS", title: "Session — one continuous colo run", subtitle: "The slice-(d) product session: the shipped colo quarter (boot.corpus) over a seeded four-node maze (boot.build), the watch-the-door book armed (boot.rules), the money lane live, the intent door open from tick 1 — until the company dissolves." },
 ]);
 
 const activeMount = computed<GateMount | null>(
   () => ALL_GATE_MOUNTS.find((mount) => mount.gateId === view.value) ?? null,
 );
 const isSimLab = computed(() => activeMount.value === null && view.value === SIMLAB_ID);
-const isSandbox = computed(() => activeMount.value === null && !isSimLab.value);
+const isSession = computed(() => activeMount.value === null && view.value === SESSION_ID);
+const isSandbox = computed(() => activeMount.value === null && !isSimLab.value && !isSession.value);
 
 const projection = computed(() => projectionRef.value);
 const candidates = computed(() => (projection.value === null ? [] : buildCandidates(projection.value)));
@@ -108,25 +122,58 @@ onMounted(() => {
   bootClient(worker);
 });
 
+/** The host behind the ONE client (real Worker or the FakeWorkerLike
+ *  fallback); re-boot swaps runners inside it, never the host itself. */
+const hostRef = shallowRef<WorkerLike | null>(null);
+
 function bootClient(worker: WorkerLike): void {
+  hostRef.value = worker;
   const client = new SimClient(worker, {
     onProjection: (frame) => ingestProjection(frame),
     onFault: (message) => fault(message),
     onReady: (info) => console.info(`[proto] runner ready: ${info.runnerId}@${info.engineVersion}`),
   });
   clientRef.value = client;
-  // Production mainline boot (owner ruling 2026-10-19): the sandbox boots
-  // the REAL sim-core stepper through the same 6-positional wire every
-  // headless witness uses; `productionBootRules()` answers the shipped
-  // watch-the-door book when armed (default) and undefined when dormant —
-  // undefined ⇒ the `rules` key is never posted ⇒ the exact pre-adoption
-  // wire. The mock toy remains reachable via explicit `runnerKind: "mock"`
-  // boots (tests only — mock + Book is a wiring bug the hosts fault loud).
+  // The fake fallback resolves asynchronously — if the player already
+  // picked SESSION by then, the FIRST boot must be the session boot.
+  if (view.value === SESSION_ID) bootSessionRunner(client);
+  else bootDefaultRunner(client);
+}
+
+// Production mainline boot (owner ruling 2026-10-19): the sandbox boots
+// the REAL sim-core stepper through the same 6-positional wire every
+// headless witness uses; `productionBootRules()` answers the shipped
+// watch-the-door book when armed (default) and undefined when dormant —
+// undefined ⇒ the `rules` key is never posted ⇒ the exact pre-adoption
+// wire. The mock toy remains reachable via explicit `runnerKind: "mock"`
+// boots (tests only — mock + Book is a wiring bug the hosts fault loud).
+function bootDefaultRunner(client: SimClient): void {
+  clearSessionHandle();
   client.boot("g1-smoke-001", 1, "sim-core", undefined, undefined, productionBootRules());
 }
 
+/** SESSION boot (slice-(d)): the same client, the same worker — the boot
+ *  branch stops the previous runner before minting, so re-boot is
+ *  protocol-native. corpus + build riders ride the frozen sessionModel
+ *  data; the book is the SAME production leg as the sandbox (main-thread
+ *  import law: productionRules never crosses into the worker graph). */
+function bootSessionRunner(client: SimClient): void {
+  client.boot(SESSION_SEED, 1, "sim-core", SESSION_CORPUS, SESSION_BUILD, productionBootRules());
+  setSessionHandle({ client, host: asPumpHost(hostRef.value) });
+}
+
+// View switch = boot switch (one client, one run at a time): entering
+// SESSION hands the wire the colo riders; leaving re-boots the sandbox.
+watch(view, (next, prev) => {
+  const client = clientRef.value;
+  if (client === null) return; // fake fallback path boots on arrival
+  if (next === SESSION_ID) bootSessionRunner(client);
+  else if (prev === SESSION_ID) bootDefaultRunner(client);
+});
+
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", onGlobalKey);
+  clearSessionHandle();
   clientRef.value?.destroy();
 });
 
@@ -222,6 +269,16 @@ const speedAria = computed(() =>
       data-test-id="gate-stage-sim-lab"
     >
       <SimLabPanel />
+    </section>
+
+    <section
+      v-else-if="isSession"
+      class="gate-stage"
+      role="tabpanel"
+      aria-label="session — one continuous colo run"
+      :data-test-id="`gate-stage-${SESSION_ID}`"
+    >
+      <SessionPanel />
     </section>
 
     <template v-else>

@@ -325,12 +325,19 @@ describe("armed committed production run · the first 100-frame digest pair (NEW
 /* ═════════════════ wiring + worker-graph law (source pins) ═════════════════ */
 
 describe("the production wiring · source-pinned, worker-graph-clean", () => {
-  it("App.vue's ONE production boot flips to the mainline stepper with the production book", () => {
+  it("App.vue's production boots flip to the mainline stepper with the production book (slice-(d) census: TWO sites, default + SESSION)", () => {
     const app = readFileSync(join(process.cwd(), "src", "App.vue"), "utf8");
     const boots = app.match(/client\.boot\(/g) ?? [];
-    expect(boots.length).toBe(1); // the census: exactly one production boot site
+    // The 2026-10-23 session lane moved this census 1→2: the ONE default boot
+    // is joined by the ONE SESSION boot (slice-(d)) — both go through
+    // productionBootRules, both ride the SAME client (re-boot is protocol-
+    // native). Any third boot() site is drift; the arg lists are pinned below.
+    expect(boots.length).toBe(2);
     expect(app).toMatch(
       /client\.boot\("g1-smoke-001", 1, "sim-core", undefined, undefined, productionBootRules\(\)\);/,
+    );
+    expect(app).toMatch(
+      /client\.boot\(SESSION_SEED, 1, "sim-core", SESSION_CORPUS, SESSION_BUILD, productionBootRules\(\)\);/,
     );
     expect(app).toMatch(/import \{ productionBootRules \} from "\.\/runner\/productionRules"/);
   });

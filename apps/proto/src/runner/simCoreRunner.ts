@@ -62,6 +62,14 @@
  * cursor hole. Witness via corpusPlan() / corpusTraffic() (local accessors;
  * the wire is untouched either way). ABSENT ⇒ byte-identical runner.
  *
+ * PER-NODE ATTRIBUTION (slice-(d), MODULE-STATUS lane-blind row): on a
+ * corpus board the runner ALSO publishes cumulative per-node entry/outcome
+ * cells (edge/waf/deep/origin plus honest unattributed overflow) as NEW
+ * observed keys — the lane cells stay lane-wide aggregates and their write
+ * code is untouched. The batch rides the same `options.corpus` gate as the
+ * drive mode, so the smoke-lane toy boot never sees these keys: every
+ * shipped digest is byte-stand by construction, not by re-pin.
+ *
  * RULES LIVE (ADR-0019 program 5 — owner ruling: the gate-g7 host-loop
  * mechanics are ADOPTED into the mainline runner behind an opt-in): an
  * optional `rules: {lookupPolicyCard}` option arms the step-12.5 rule phase
@@ -100,6 +108,7 @@ import {
   type AttentionState,
   type BoardEdgeRecord,
   type BoardState,
+  type CauseId,
   type ClockState,
   type Contract,
   type DependencyEdge,
@@ -902,9 +911,9 @@ function toProtoCell(key: ObservedKey, cell: ObservedCell<unknown>): ProtoCell {
  *  every unit NEW to the roster without an arrival event (re-entered); the
  *  outcome stream is unioned in so a unit that enters and terminates within
  *  one tick is still seen. Pure over id sets — real ticks and synthetic
- *  fixtures alike flow through the same law. CAVEAT: this is a LANE-BLIND
- *  placeholder aggregate (the runner owns exactly one lane); multi-lane
- *  boards need per-node attribution before reuse. */
+ *  fixtures alike flow through the same law. CAVEAT: this stays a LANE-WIDE
+ *  aggregate by design; per-node attribution (slice-(d)) rides the runner's
+ *  ADDITIONAL corpus-gated `adapter:attribution` cells, not this function. */
 export function partitionLaneEntries(input: {
   readonly priorUnitIds: ReadonlySet<EntityId>;
   readonly arrivalUnitIds: ReadonlySet<EntityId>;
@@ -990,6 +999,46 @@ const TICK_ZERO_EVENTS: readonly SimEvent[] = Object.freeze([]);
  * (tick,seq) pair can never collide inside one feed. Unarmed runners never
  * touch the counter: the host's own seq passes through exactly as before. */
 const RUNNER_PLAYER_SEQ_FLOOR = 1000;
+
+/* ── per-node attribution (slice-(d) session board, corpus-only) ──────────
+ * On a corpus board — real shipped traffic over the multi-node maze — the
+ * lane aggregate stops being the whole story, so the runner publishes
+ * cumulative per-node entry/outcome cells ALONGSIDE it. The lane cells'
+ * write code is untouched and the smoke-lane toy boot never emits these
+ * keys (the batch rides the `options.corpus` gate), so every shipped
+ * golden — boot digests, armed pair, money literals — stands BY
+ * CONSTRUCTION, not by re-pin. */
+type AttributionProp =
+  | "entryArrivalsTotal"
+  | "outcomeServedTotal"
+  | "outcomeBouncedTotal"
+  | "outcomeFalsePositiveTotal"
+  | "outcomeLandedTotal";
+
+/** The maze roster — the same four nodes mintBuildBoard may seed edges over. */
+const ATTRIBUTION_NODES = Object.freeze([NODE_EDGE, NODE_WAF, NODE_DEEP, NODE_ORIGIN] as const);
+const ATTRIBUTION_PROPS = Object.freeze([
+  "entryArrivalsTotal",
+  "outcomeServedTotal",
+  "outcomeBouncedTotal",
+  "outcomeFalsePositiveTotal",
+  "outcomeLandedTotal",
+] as const satisfies readonly AttributionProp[]);
+
+/** Honest overflow: a unit that ENTERED and terminated inside one tick has
+ *  no post-advance roster to read its entry hop from (the driver prunes it
+ *  before step 5 sees it — never a silent drop into an arbitrary node).
+ *  Precedent: the versus lane's unattributed floor. */
+const ENTRY_UNATTRIBUTED = asEntityId("entry/unattributed");
+/** Bounces can structurally carry a null node (R-10 silent bounces) — those
+ *  stories land here rather than being folded into a guess. */
+const OUTCOME_UNATTRIBUTED = asEntityId("outcome/unattributed");
+
+interface AttributionWrite {
+  readonly key: ObservedKey;
+  readonly cell: ObservedCell<unknown>;
+  readonly causeId: CauseId;
+}
 
 /**
  * ADR-0019 program 5 (mainline rule adoption, owner ruling): the runner-side
@@ -1180,6 +1229,10 @@ export class SimCoreRunner implements SimRunner {
   private dial: Fixed = fromRatio(8n, 10n);
   /** Lane-split totals (minted per instance — the purity law covers ledgers). */
   private readonly split: MazeSplitLedger = { express: 0, deep: 0, deepByFamily: {} };
+  /* Slice-(d) per-node totals (corpus boards only — see the attribution
+   * vocabulary above). Minted per instance: the purity law covers ledgers,
+   * so two fresh runners on one seed replay the cells identically. */
+  private readonly attributionTotals = new Map<EntityId, Partial<Record<AttributionProp, number>>>();
   private readonly intentLog: PlayerIntent[] = [];
   /** Door schedule: intents stamped for the next headlessStep, fed EXACTLY once. */
   private pendingDoorIntents: ExternalIntent[] = [];
@@ -1733,12 +1786,23 @@ export class SimCoreRunner implements SimRunner {
     for (const event of result.events) {
       if (event.kind === "arrival") arrivalUnitIds.add(event.unitId);
     }
-    const entries = partitionLaneEntries({
-      priorUnitIds,
-      arrivalUnitIds,
-      currentUnitIds: new Set<EntityId>(this.game.units.keys()),
-      outcomeUnitIds: new Set<EntityId>(result.outcomes.map((outcome) => outcome.unitId)),
-    });
+    const currentUnitIds = new Set<EntityId>(this.game.units.keys());
+    const outcomeUnitIds = new Set<EntityId>(result.outcomes.map((outcome) => outcome.unitId));
+    const entries = partitionLaneEntries({ priorUnitIds, arrivalUnitIds, currentUnitIds, outcomeUnitIds });
+    /* Slice-(d) per-node attribution: the corpus board earns it, the
+     * smoke-lane toy boot never sees the call (golden law — the gate IS the
+     * drive mode). Id-enumeration mirrors partitionLaneEntries' law exactly,
+     * so the entry cells conserve against the lane aggregate. */
+    if (this.corpusDrive !== null) {
+      this.recordAttribution({
+        priorUnitIds,
+        arrivalUnitIds,
+        currentUnitIds,
+        outcomeUnitIds,
+        events: result.events,
+        state: this.game,
+      });
+    }
     const ratePerMin = fromInt(entries.organic + entries.reentered);
     const health = this.laneHealthFromNodes(this.game);
     const tickUs = this.game.context.clocks.simUs;
@@ -1781,6 +1845,10 @@ export class SimCoreRunner implements SimRunner {
           cell: countCell(this.edgeIsArmed(this.game)),
           causeId: asCauseId(`adapter:maze:${this.game.context.tick}:armed`),
         }),
+        /* Corpus-board attribution batch (slice-(d)): fixed roster, every
+         * tick — a zero on the wire means ZERO, not unknown (the maze
+         * cells' posture). Absent key on every default boot: frozen wire. */
+        ...(this.corpusDrive === null ? [] : this.attributionWrites(this.game.context.tick)),
       ]),
       tickUs,
     );
@@ -2053,6 +2121,82 @@ export class SimCoreRunner implements SimRunner {
   private edgeIsArmed(state: GameState): number {
     const door = state.nodes.get(NODE_EDGE);
     return door !== undefined && door.inspectionDepth !== "pass-through" ? 1 : 0;
+  }
+
+  /** Fold one tick into the per-node totals (corpus boards only — the single
+   *  call site is gated on `this.corpusDrive`). The entry enumeration mirrors
+   *  `partitionLaneEntries`' id law EXACTLY (arrivals + roster-new + the
+   *  outcome-leg union), so Σ(entry cells incl. unattributed) equals
+   *  organic + reentered by construction. Entry node = the unit's first
+   *  route hop read from the POST-advance roster; a unit that entered and
+   *  terminated inside one tick is pruned before step 5 and cannot be
+   *  attributed — it lands in the honest overflow, never guessed. Outcome
+   *  attribution consumes the driver EVENTS (the terminal node is on the
+   *  event, never on the wire notice — the outcome rows carry no node). */
+  private recordAttribution(input: {
+    readonly priorUnitIds: ReadonlySet<EntityId>;
+    readonly arrivalUnitIds: ReadonlySet<EntityId>;
+    readonly currentUnitIds: ReadonlySet<EntityId>;
+    readonly outcomeUnitIds: ReadonlySet<EntityId>;
+    readonly events: readonly SimEvent[];
+    readonly state: GameState;
+  }): void {
+    const enter = (id: EntityId): void => {
+      const unit = input.state.units.get(id);
+      const hop = unit?.routeHops[0];
+      this.bumpAttribution(hop ?? ENTRY_UNATTRIBUTED, "entryArrivalsTotal");
+    };
+    for (const id of input.arrivalUnitIds) enter(id);
+    for (const id of input.currentUnitIds) {
+      if (input.priorUnitIds.has(id) || input.arrivalUnitIds.has(id)) continue;
+      enter(id);
+    }
+    for (const id of input.outcomeUnitIds) {
+      if (
+        input.priorUnitIds.has(id) ||
+        input.arrivalUnitIds.has(id) ||
+        input.currentUnitIds.has(id)
+      ) {
+        continue;
+      }
+      enter(id);
+    }
+    for (const event of input.events) {
+      if (event.kind === "served") this.bumpAttribution(event.nodeId, "outcomeServedTotal");
+      else if (event.kind === "bounced")
+        this.bumpAttribution(event.nodeId ?? OUTCOME_UNATTRIBUTED, "outcomeBouncedTotal");
+      else if (event.kind === "blocked-false-positive")
+        this.bumpAttribution(event.nodeId, "outcomeFalsePositiveTotal");
+      else if (event.kind === "landed") this.bumpAttribution(event.targetId, "outcomeLandedTotal");
+    }
+  }
+
+  /** Fixed-key emission (see the call site): the four maze nodes carry the
+   *  full 5-prop grid; the two overflow entities carry only their one
+   *  structurally-possible prop — an unattributed serve cannot exist. */
+  private attributionWrites(tick: SimTick): readonly AttributionWrite[] {
+    const writes: AttributionWrite[] = [];
+    const push = (entity: EntityId, prop: AttributionProp): void => {
+      writes.push(
+        Object.freeze({
+          key: observedKey(entity, prop),
+          cell: countCell(this.attributionTotals.get(entity)?.[prop] ?? 0),
+          causeId: asCauseId(`adapter:attribution:${tick}:${String(entity)}:${prop}`),
+        }),
+      );
+    };
+    for (const node of ATTRIBUTION_NODES) {
+      for (const prop of ATTRIBUTION_PROPS) push(node, prop);
+    }
+    push(ENTRY_UNATTRIBUTED, "entryArrivalsTotal");
+    push(OUTCOME_UNATTRIBUTED, "outcomeBouncedTotal");
+    return Object.freeze(writes);
+  }
+
+  private bumpAttribution(entity: EntityId, prop: AttributionProp): void {
+    const row = this.attributionTotals.get(entity) ?? {};
+    row[prop] = (row[prop] ?? 0) + 1;
+    this.attributionTotals.set(entity, row);
   }
 
   /** Worst-node saturation → headroom: health = clamp(1 − max ρ). ρ is a
