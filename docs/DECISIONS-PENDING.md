@@ -323,22 +323,70 @@ NO new law. One lane (L-EPI) executed atop `c8d4915`; review PROCEED
 - **Epilogue meta-currency display — STAYS OWNER-WALLED** (ruling (vi)
   unchanged): the bench renders the evidence readout; meta-currency as
   spendable prestige input at the epilogue era is not commissioned.
-- **Live-obituary arm — NEW named wall.** No shipped content reaches the
-  obituary ending (every campaign beat today wins or hands off at the
-  terminal); a genuine live obituary needs ONE losing terminal beat in
-  content — a single authored wire flip would suffice (the engine already
-  honors it: `deathStopReason` rides the evidence facet). RECORDED as a
-  named wall, NOT commissioned; the bench's labeled-fixture path proves the
-  renderer total over the closed 3-kind union meanwhile.
-- **Campaign-save persistence stays OUT of the proto remit** — the bench
-  runs a scratch company through `save/settle` in memory; a Long-Save-
-  persistent bench is a save/host lane call.
+- **Live-obituary arm — CLOSED LANDED 2026-10-23 (WAVE-32 @`becf2a2`, consumed in-browser
+  @`e8be143`/@`e41d019`).** The sixth arc's finale beat `f-1-growth-death` IS the one losing
+  terminal beat this wall named: CAC-financed growth zeroes the bankroll at t24 and dissolves
+  the company float-insolvent at t67, and `endCampaign` answers OBITUARY for a REAL run — no
+  fixture anywhere in the path. The §6.10 `Growth Death` heading flips ❌→🔧 with the beat, and
+  the §9.9 `The Quiet Handoff` heading flips with it — the wave's SECOND marker (the handoff is
+  `endCampaign`'s DEFAULT surviving-run terminal: landed by live arc play @`e8be143`, rendered
+  by the epilogue card @`e41d019`; the post-credits counter stays authored presentation scope).
+  Final census 321/1,018/0/2,220/30 = 3,589.
+  The renderer-total proof over the closed 3-kind union stands; the labeled-fixture path
+  survives as the earlier truth of the wave-31 tree, no longer the only obituary road.
+- **Campaign-save persistence — LANDED as LONG SAVE slots v0 2026-10-23 (WAVE-32 @`e8be143`).**
+  The wave-31 write (scratch company in memory only) is superseded: the campaign rail wraps
+  the engine canonical `serializeLongSave`/`parseLongSave` (never hand-rolled) over named
+  `hh-long-save:v1:<slot>` localStorage slots — no silent overwrite (two-click confirm, throw
+  at the port), corrupt slots LISTED never repaired, marks stay OPAQUE in the replayBundle and
+  strict-parse refuses forgeries; reload resumes the next unplayed arc with
+  scars/museum/records. Mode-tiering (OD-16(a)) stays untouched — this is the save SLICE,
+  not loop scoping.
 - **(g) Panel deck-picker beyond watch-the-door — UNCHANGED** (owner
   adoption call, engine-ready). **(b)-(e) wave-29 named deferrals —
   UNCHANGED:** (b) card-shed-on-nonpayment wall · (c) forward-charging ·
   (d) droplet fidelity · (e) suspension-aware accrual. **(f)
   endings-UI epilogue consumption — DISCHARGED by the (i) build above**
   (the bench renders; an in-game endings SCREEN stays content/owner scope).
+
+**Fresh asks (2026-10-23, post wave-32):**
+
+- **Seam A — per-chapter `ScenarioReport` in `CampaignReport`:** the exit money is engine-true
+  but uncarried to the campaign proto-side (`exitPayout` lives on the SCENARIO report;
+  `CampaignReport` records terminal rows only), so the EpilogueCard renders its `:payout`
+  honestly absent for every shipped campaign run. Engine lane: report-shape addition +
+  save-shape review — the cheapest leg to epilogue completeness.
+- **Seam B — unlock wire program — OWNER-GATED:** `SimCoreRunner.options.unlocks` + a sparse
+  `SimProjection`/protocol carrier are what the session's UnlockLedger awaits; wire-KEY growth
+  is frame/boot DIGEST territory (the frozen boot twins `ca8863849cb3db32`/`780b1cbc61dff760`
+  and the armed pair are exactly the class a sparse-key addition threatens), so the ledger's
+  census stays honestly empty (@`e41d019` source-law pin) until the owner gates the program.
+- **Seam C — satisfied-set save→session read:** the cleanest unlock leg — pure host-side
+  projection over Long-Save facets, ZERO wire/digest exposure — clean-but-unscheduled.
+- **Per-chapter LIVE worker boot:** chapter docs carry synthetic traffic tables + off-mainline
+  boards OUTSIDE `boot.corpus`/`boot.build` wire capability (campaign plays through the
+  main-thread scenario host while the session rides the real worker); the `SessionBootRiders`
+  hole is PREPARED @`e8be143` — the engine seam leg is owed, and any new wire key joins the
+  seam-B owner gate.
+- **The PLAYTEST MANDATE is UNCHANGED — still the biggest unlock in the program.** The upkeep +
+  valuation ladders and every PROVISIONAL-B value stand ratify-on-playtest; wave-32 widened what
+  a playtest session can cover (rail entries #9 SESS + #10 CAMP now play real arcs to real
+  endings, obituary included, in the browser).
+- **Media regen — a DEFERRED COMMISSION (owner, 2026-10-23):** the owner will want ALL
+  images/videos regenerated at a point — media lanes stand DOWN until commissioned. The real
+  asset gap is PIXEL SPRITE KITS (the `@hh/assetpack` pipeline contract ships with placeholder
+  solid-hue seed art; the substrate mount HOLD waits on the same real atlases) + AUDIO SAMPLES
+  (the AudioBus façade has zero samples to load). Diffusion renders are the WRONG SHAPE for both
+  and remain look-dev only.
+- **Sync anomaly — origin's foreign npm lockfiles (owner disposition BEFORE the push
+  ceremony, recorded 2026-10-23):** origin/master `5a1cdb6` (dep-sec-patcher) added FOUR npm
+  `package-lock.json` files INSIDE this pnpm workspace — `packages/sim-core/`,
+  `tools/assetpack/`, `tools/headless/`, `tools/perf/` (+10,399 lines) — alongside its
+  `pnpm-lock.yaml` refresh; `2e9d8ff` (dependabot vue/vite/vue-tsc/@types-node patch bumps) is
+  the other behind-side commit. The install law is pnpm frozen-lockfile; the npm locks are
+  dead weight that can drift and mislead tooling. master has DIVERGED (ahead 7 / behind 2 atop
+  merge-base `3e26ff1`): resolution (ff-pull/rebase then delete-or-accept the four npm locks)
+  is the owner's push decision — the closeout lane records it and touched neither ref.
 
 **MAIN-CHUNK ACCRETION NOTE — wave-29 ask (h) (wire-graph hygiene) is
 DISPOSED by measurement, not refactor.** The sanctioned campaign bench edge
