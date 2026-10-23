@@ -10,6 +10,9 @@
  *    Pixi layer;
  *  · WorldStage.vue mounts the HUD, builds the machine, and binds
  *    onIntent → the host `submit` prop (the SimClient.sendPlayerVerb shape);
+ *  · App.vue welds the sandbox mount to that prop — the mouse's verbs reach
+ *    the door, closing the parent diff L-B @17ba785 owed (no SHA self-quote:
+ *    the weld commit rides the record, the pin below is the authority);
  *  · the pure module's only chrome import is textLaw (ordering leaf) — the
  *    render→chrome direction stays a single deliberate hairline;
  *  · the HUD keeps the proven chrome disciplines: describeRefusal voicing,
@@ -48,6 +51,19 @@ describe("the §3.1 onIntent seam is implemented, not just named", () => {
     expect(STAGE).toContain('import BoardIntentHud from "./BoardIntentHud.vue"');
     expect(STAGE).toContain("<BoardIntentHud :machine=\"board\" />");
     expect(STAGE).toMatch(/submit\?: \(\(args: MintArgs, clock: ClockKind\) => void\) \| null/);
+  });
+
+  it("the shell welds the stage: App.vue binds :submit to the client's sendPlayerVerb", () => {
+    const APP = source("src", "App.vue");
+    // Exactly one WorldStage mount in the shell (the sandbox v-else branch;
+    // the session branch mounts SessionPanel, not a second stage).
+    expect(APP.match(/<WorldStage\b/g) ?? []).toHaveLength(1);
+    // The mount carries the weld — minted verbs leave through the SAME
+    // SimClient the gates ride. Falsifiable both ways: in a world without
+    // the weld the bare `<WorldStage />` (dark desk) is what the shell
+    // renders, and these two assertions fail in opposite directions.
+    expect(APP).toContain('<WorldStage :submit="(args, clock) => clientRef?.sendPlayerVerb(args, clock)" />');
+    expect(APP).not.toContain("<WorldStage />");
   });
 
   it("the pure module crosses into chrome exactly once, for the text law", () => {

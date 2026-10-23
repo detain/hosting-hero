@@ -282,7 +282,7 @@ const speedAria = computed(() =>
     </section>
 
     <template v-else>
-      <WorldStage />
+      <WorldStage :submit="(args, clock) => clientRef?.sendPlayerVerb(args, clock)" />
       <BezelHud :worst-state="worst" :spiking="spiking" />
 
       <section class="instrument-rail" aria-label="instrument rail">
